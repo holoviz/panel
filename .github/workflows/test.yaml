@@ -33,7 +33,6 @@ defaults:
 
 env:
   DISPLAY: ":99.0"
-  PYTHONIOENCODING: "utf-8"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   COV: "--cov=./panel --cov-report=xml --cov-append"
 
@@ -102,7 +101,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-39", "test-312"]
+              "environment": ["test-310", "test-312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -110,7 +109,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-39", "test-310", "test-311", "test-312"]
+              "environment": ["test-310", "test-311", "test-312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -198,6 +197,8 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
         id: install
+      - name: Build pyodide wheels
+        run: pixi run -e test-ui "python ./scripts/build_pyodide_wheels.py"
       - name: Launch JupyterLab
         shell: pixi run -e test-ui bash -el {0}
         run: |

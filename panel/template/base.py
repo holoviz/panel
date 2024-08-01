@@ -133,6 +133,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         else:
             self.nb_template = nb_template or self.template
         self._documents: list[Document] = []
+        self._refs: dict[Document, str] = {}
         self._server = None
         self._layout = self._build_layout()
         self._setup_design()
@@ -179,6 +180,9 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         doc = session_context._document
         if doc in state._templates:
             del state._templates[doc]
+        ref = self._refs.pop(doc, None)
+        if ref:
+            state._fake_roots.remove(ref)
         self._documents.remove(doc)
 
     def _init_doc(
@@ -215,9 +219,9 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         stylesheets, sizing_modes = {}, {}
         tracked_models = set()
         for name, (obj, tags) in self._render_items.items():
-
             # Render root without pre-processing
-            model = obj.get_root(document, comm, preprocess=False)
+            with config.set(design=self.design):
+                model = obj.get_root(document, comm, preprocess=False)
             model.name = name
             model.tags = model.tags + [tag for tag in tags if tag not in model.tags]
             mref = model.ref['id']
@@ -962,10 +966,10 @@ class Template(BaseTemplate):
           A Panel component to embed in the template.
         """
         if name in self._render_items:
-            raise ValueError('The name %s has already been used for '
+            raise ValueError(f'The name {name} has already been used for '
                              'another panel. Ensure each panel '
                              'has a unique name by which it can be '
-                             'referenced in the template.' % name)
+                             'referenced in the template.')
         self._render_items[name] = (_panel(panel), tags)
         self._layout[0].object = repr(self) # type: ignore
 
@@ -982,8 +986,8 @@ class Template(BaseTemplate):
           Any valid Jinja2 variable type.
         """
         if name in self._render_variables:
-            raise ValueError('The name %s has already been used for '
+            raise ValueError(f'The name {name} has already been used for '
                              'another variable. Ensure each variable '
                              'has a unique name by which it can be '
-                             'referenced in the template.' % name)
+                             'referenced in the template.')
         self._render_variables[name] = value

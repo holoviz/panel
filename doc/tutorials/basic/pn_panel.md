@@ -46,7 +46,7 @@ print(component)
 component.servable()
 ```
 
-Your cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked a [`Markdown`](../../reference/panes/Markdown.ipynb) *pane* to display the `str` object.
+Your cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked a [`Markdown`](../../reference/panes/Markdown.md) *pane* to display the `str` object.
 
 Let's verify that *markdown strings* are actually displayed and rendered nicely.
 
@@ -96,7 +96,7 @@ component.servable()
 ```
 
 :::{tip}
-If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.ipynb) *widget* and [Perspective](../../reference/panes/Perspective.ipynb) *pane*.
+If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.md) *widget* and [Perspective](../../reference/panes/Perspective.md) *pane*.
 :::
 
 ## Display Plots
@@ -141,7 +141,7 @@ print(component)
 component.servable()
 ```
 
-Please notice that `pn.panel` chose a [`Vega`](../../reference/panes/Vega.ipynb) pane to display the [Altair](https://altair-viz.github.io/) figure.
+Please notice that `pn.panel` chose a [`Vega`](../../reference/panes/Vega.md) pane to display the [Altair](https://altair-viz.github.io/) figure.
 
 :::{note}
 Vega is the name of the JavaScript plotting library used by Altair.
@@ -179,7 +179,7 @@ print(component)
 component.servable()
 ```
 
-Please notice that `pn.panel` chose a [`HoloViews`](../../reference/panes/HoloViews.ipynb) pane to display the [hvPlot](https://hvplot.holoviz.org/user_guide/Customization.html) figure.
+Please notice that `pn.panel` chose a [`HoloViews`](../../reference/panes/HoloViews.md) pane to display the [hvPlot](https://hvplot.holoviz.org/user_guide/Customization.html) figure.
 
 :::{note}
 [hvPlot](https://hvplot.holoviz.org) is the **easy to use** plotting sister of Panel. It works similarly to the familiar [Pandas `.plot` API](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html). hvPlot is built on top of the data visualization library [HoloViews](https://holoviews.org/). hvPlot, HoloViews, and Panel are all part of the [HoloViz](https://holoviz.org/) family.
@@ -228,12 +228,12 @@ print(component)
 component.servable()
 ```
 
-Please notice `pn.panel` chose a [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) pane to display the Matplotlib figure.
+Please notice `pn.panel` chose a [`Matplotlib`](../../reference/panes/Matplotlib.md) pane to display the Matplotlib figure.
 
 :::{note}
-In the example above we provided arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) pane is selected.
+In the example above we provided arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib`](../../reference/panes/Matplotlib.md) pane is selected.
 
-The arguments `dpi`, `format` and `tight` would not make sense if a string was provided as an argument to `pn.panel`. In that case, `pn.panel` would pick a [Markdown](../../reference/panes/Markdown.ipynb) *pane* and the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
+The arguments `dpi`, `format` and `tight` would not make sense if a string was provided as an argument to `pn.panel`. In that case, `pn.panel` would pick a [Markdown](../../reference/panes/Markdown.md) *pane* and the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
 :::
 
 ::::
@@ -264,7 +264,7 @@ print(component)
 component.servable()
 ```
 
-Please notice that `pn.panel` chose a [`Plotly`](../../reference/panes/Plotly.ipynb) pane to display the Plotly figure.
+Please notice that `pn.panel` chose a [`Plotly`](../../reference/panes/Plotly.md) pane to display the Plotly figure.
 
 :::{note}
 We must add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly Javascript dependencies in the browser.
@@ -299,7 +299,7 @@ component.servable()
 
 ## Display any Python object in a layout
 
-If we place objects in a [*layout*](https://panel.holoviz.org/reference/index.html#layouts) like [`pn.Column`](../../reference/layouts/Column.ipynb) (more about layouts later), then the layout will apply `pn.panel` for us automatically.
+If we place objects in a [*layout*](https://panel.holoviz.org/reference/index.html#layouts) like [`pn.Column`](../../reference/layouts/Column.md) (more about layouts later), then the layout will apply `pn.panel` for us automatically.
 
 Run the code below:
 
@@ -318,7 +318,7 @@ print(component)
 component.servable()
 ```
 
-Please notice that the image of the dice is very tall. To fine-tune the way it is displayed, we can use `pn.panel` with arguments.
+Please notice that the image of the wind turbine is quite large. To fine-tune the way it is displayed, we can use `pn.panel` with arguments.
 
 Run the code below:
 

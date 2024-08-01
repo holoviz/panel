@@ -5,10 +5,12 @@ models rendered on the frontend.
 """
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import difflib
 import inspect
 import logging
+import pathlib
 import re
 import sys
 import textwrap
@@ -20,6 +22,7 @@ from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, Union,
 )
 
+import jinja2
 import numpy as np
 import param
 
@@ -46,14 +49,17 @@ from .models.reactive_html import (
 from .util import (
     HTML_SANITIZER, classproperty, edit_readonly, escape, updating,
 )
-from .viewable import Layoutable, Renderable, Viewable
+from .util.checks import import_available
+from .viewable import (
+    Child, Children, Layoutable, Renderable, Viewable,
+)
 
 if TYPE_CHECKING:
     import pandas as pd
 
     from bokeh.document import Document
     from bokeh.events import Event
-    from bokeh.model import Model
+    from bokeh.model import Model, ModelEvent
     from bokeh.models.sources import DataDict, Patches
     from pyviz_comms import Comm
 
@@ -132,6 +138,9 @@ class Syncable(Renderable):
         # A dictionary of bokeh property changes being processed
         self._changing = {}
 
+        # Whether the component is watching the stylesheets
+        self._watching_stylesheets = False
+
         # Sets up watchers to process manual updates to models
         if self._manual_params:
             self._internal_callbacks.append(
@@ -203,8 +212,12 @@ class Syncable(Renderable):
             stylesheets += properties['stylesheets']
             wrapped = []
             for stylesheet in stylesheets:
-                if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
-                    stylesheet = ImportedStyleSheet(url=stylesheet)
+                if isinstance(stylesheet, str) and stylesheet.split('?')[0].endswith('.css'):
+                    cache = (state._stylesheets if state.curdoc else {}).get(state.curdoc, {})
+                    if stylesheet in cache:
+                        stylesheet = cache[stylesheet]
+                    else:
+                        cache[stylesheet] = stylesheet = ImportedStyleSheet(url=stylesheet)
                 wrapped.append(stylesheet)
             properties['stylesheets'] = wrapped
         return properties
@@ -348,6 +361,9 @@ class Syncable(Renderable):
             model, _ = self._models.pop(ref, None)
             model._callbacks = {}
             model._event_callbacks = {}
+        if not self._models and self._watching_stylesheets:
+            self._watching_stylesheets.set()
+            self._watching_stylesheets = False
         comm, client_comm = self._comms.pop(ref, (None, None))
         if comm:
             try:
@@ -365,6 +381,27 @@ class Syncable(Renderable):
     ) -> dict[str, Any]:
         changes = {event.name: event.new for event in events}
         return self._process_param_change(changes)
+
+    def _setup_autoreload(self):
+        from .config import config
+        paths = [sts for sts in self._stylesheets if isinstance(sts, pathlib.PurePath)]
+        if (self._watching_stylesheets or not (config.autoreload and paths and import_available('watchfiles'))):
+            return
+        self._watching_stylesheets = asyncio.Event()
+        state.execute(self._watch_stylesheets)
+
+    async def _watch_stylesheets(self):
+        import watchfiles
+        base_dir = pathlib.Path(inspect.getfile(type(self))).parent
+        paths = []
+        for sts in self._stylesheets:
+            if isinstance(sts, pathlib.PurePath):
+                if not sts.absolute().is_file():
+                    sts = base_dir / sts
+                if sts.is_file():
+                    paths.append(sts)
+        async for _ in watchfiles.awatch(*paths, stop_event=self._watching_stylesheets):
+            self.param.trigger('stylesheets')
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         named_events = {event.name: event for event in events}
@@ -545,7 +582,8 @@ class Reactive(Syncable, Viewable):
 
     def __init__(self, refs=None, **params):
         for name, pobj in self.param.objects('existing').items():
-            if name not in self._param__private.explicit_no_refs:
+            if (name not in self._param__private.explicit_no_refs and
+                not isinstance(pobj, Child)):
                 pobj.allow_refs = True
         if refs is not None:
             self._refs = refs
@@ -839,6 +877,34 @@ class Reactive(Syncable, Viewable):
             assert_target_syncable(self, target, mapping)
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)
+
+    def _send_event(self, Event: ModelEvent, **event_kwargs):
+        """
+        Send an event to the frontend
+
+        Arguments
+        ----------
+        Event: Bokeh.Event
+            The event to send to the frontend
+        event_kwargs: dict
+            Additional keyword arguments to pass to the event
+            This will create the following event:
+            Event(model=model, **event_kwargs)
+
+        """
+        for ref, (model, _) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
+            event = Event(model=model, **event_kwargs)
+            _viewable, root, doc, comm = state._views[ref]
+            if comm or state._unblocked(doc) or not doc.session_context:
+                with unlocked():
+                    doc.callbacks.send_event(event)
+                if comm and 'embedded' not in root.tags:
+                    push(doc, comm)
+            else:
+                cb = partial(doc.callbacks.send_event, event)
+                doc.add_next_tick_callback(cb)
 
 
 TData = Union['pd.DataFrame', 'DataDict']
@@ -1209,9 +1275,6 @@ class ReactiveData(SyncableData):
 
     __abstract = True
 
-    def __init__(self, **params):
-        super().__init__(**params)
-
     def _update_selection(self, indices: list[int]) -> None:
         self.selection = indices
 
@@ -1221,9 +1284,20 @@ class ReactiveData(SyncableData):
         dtype = old_values.dtype
         converted: list | np.ndarray | None = None
         if dtype.kind == 'M':
-            if values.dtype.kind in 'if':# TODO: need to doublecheck if this is still needed
-                NATs = np.isnan(values)
-                converted = np.where(NATs, np.nan, values * 10e5).astype(dtype)
+            if values.dtype.kind in 'if':
+                if getattr(dtype, 'tz', None):
+                    import pandas as pd
+
+                    # Using pandas to convert from milliseconds
+                    # timezone-aware, to UTC nanoseconds, to datetime64.
+                    converted = (
+                        pd.Series(pd.to_datetime(values, unit="ms"))
+                        .dt.tz_localize(dtype.tz)
+                    )
+                else:
+                    # Timestamps converted from milliseconds to nanoseconds,
+                    # to datetime.
+                    converted = (values * 1e6).astype(dtype)
         elif dtype.kind == 'O':
             if (all(isinstance(ov, dt.date) for ov in old_values) and
                 not all(isinstance(iv, dt.date) for iv in values)):
@@ -1317,17 +1391,19 @@ class ReactiveData(SyncableData):
         super(ReactiveData, self)._process_events(events)
 
 
+class ReactiveMetaBase(ParameterizedMetaclass):
 
-class ReactiveHTMLMetaclass(ParameterizedMetaclass):
+    _loaded_extensions: ClassVar[set[str]] = set()
+
+    _name_counter: ClassVar[Counter] = Counter()
+
+
+class ReactiveHTMLMetaclass(ReactiveMetaBase):
     """
     Parses the ReactiveHTML._template of the class and initializes
     variables, callbacks and the data model to sync the parameters and
     HTML attributes.
     """
-
-    _loaded_extensions: ClassVar[set[str]] = set()
-
-    _name_counter: ClassVar[Counter] = Counter()
 
     _script_regex: ClassVar[str] = r"script\([\"|'](.*)[\"|']\)"
 
@@ -1425,13 +1501,64 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
         # Create model with unique name
         ReactiveHTMLMetaclass._name_counter[name] += 1
         model_name = f'{name}{ReactiveHTMLMetaclass._name_counter[name]}'
+
         mcs._data_model = construct_data_model(
             mcs, name=model_name, ignore=ignored, types=types
         )
 
 
+class ReactiveCustomBase(Reactive):
 
-class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
+    _extension_name: ClassVar[Optional[str]] = None
+
+    __css__: ClassVar[Optional[list[str]]] = None
+    __javascript__: ClassVar[Optional[list[str]]] = None
+    __javascript_modules__: ClassVar[Optional[list[str]]] = None
+
+    @classmethod
+    def _loaded(cls) -> bool:
+        """
+        Whether the component has been loaded.
+        """
+        return (
+            cls._extension_name is None or
+            (cls._extension_name in ReactiveMetaBase._loaded_extensions and
+             (state._extensions is None or (cls._extension_name in state._extensions)))
+        )
+
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'stylesheets' in params:
+            css = getattr(self, '__css__', []) or []
+            if state.rel_path:
+                css = [
+                    ss if ss.startswith('http') else f'{state.rel_path}/{ss}'
+                    for ss in css
+                ]
+            props['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + props['stylesheets']
+        return props
+
+    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
+        if not msg:
+            return
+        old = self._changing.get(root.ref['id'], [])
+        self._changing[root.ref['id']] = [
+            attr for attr, value in msg.items()
+            if not model.lookup(attr).property.matches(getattr(model, attr), value)
+        ]
+        try:
+            model.update(**msg)
+        finally:
+            if old:
+                self._changing[root.ref['id']] = old
+            else:
+                del self._changing[root.ref['id']]
+
+
+
+class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
     """
     The ReactiveHTML class enables you to create custom Panel components using HTML, CSS and/ or
     Javascript and without the complexities of Javascript build tools.
@@ -1572,8 +1699,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _dom_events: ClassVar[Mapping[str, list[str]]] = {}
 
-    _extension_name: ClassVar[Optional[str]] = None
-
     _template: ClassVar[str] = ""
 
     _scripts: ClassVar[Mapping[str, str | list[str]]] = {}
@@ -1582,14 +1707,11 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
     )
 
-    __css__: ClassVar[Optional[list[str]]] = None
-    __javascript__: ClassVar[Optional[list[str]]] = None
-    __javascript_modules__: ClassVar[Optional[list[str]]] = None
-
     __abstract = True
 
     def __init__(self, **params):
         from .pane import panel
+        cls = type(self)
         for children_param in self._parser.children.values():
             mode = self._child_config.get(children_param, 'model')
             if children_param not in params or mode != 'model':
@@ -1610,22 +1732,27 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     children[key] = panel(pane)
                 params[children_param] = children
             else:
-                params[children_param] = panel(child_value)
+                params[children_param] = children = panel(child_value)
+            child_param = cls.param[children_param]
+            try:
+                if children_param not in self._param__private.explicit_no_refs:
+                    children = resolve_value(children)
+                if not ((isinstance(child_param, Children) and isinstance(children, list)) or
+                        (isinstance(child_param, Child))):
+                    child_param._validate(children)
+            except Exception as e:
+                raise RuntimeError(
+                    f"{cls.__name__}._template declares {children_param!r} "
+                    "parameter as a child, however the parameter is of type "
+                    f"{type(child_param).__name__}. Either ensure that the parameter "
+                    "can accept a Panel component, use literal template using the "
+                    "Jinja2 templating syntax (i.e. {{ <param> }}) or declare the "
+                    "child as a literal in the _child_config."
+                ) from e
         super().__init__(**params)
         self._attrs = {}
         self._panes = {}
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
-
-    @classmethod
-    def _loaded(cls) -> bool:
-        """
-        Whether the component has been loaded.
-        """
-        return (
-            cls._extension_name is None or
-            (cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions and
-             (state._extensions is None or (cls._extension_name in state._extensions)))
-        )
 
     def _cleanup(self, root: Model | None = None) -> None:
         for _child, panes in self._panes.items():
@@ -1781,8 +1908,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return self._process_children(doc, root, model, comm, new_models)
 
     def _get_template(self) -> tuple[str, list[str], Mapping[str, list[tuple[str, list[str], str]]]]:
-        import jinja2
-
         # Replace loop variables with indexed child parameter e.g.:
         #   {% for obj in objects %}
         #     ${obj}
@@ -1795,11 +1920,11 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         for parent_var, obj in self._parser.loop_map.items():
             for var in self._parser.loop_var_map[parent_var]:
                 template_string = template_string.replace(
-                    '${%s}' % var, '${%s[{{ loop.index0 }}]}' % obj)
+                    '${%s}' % var, '${%s[{{ loop.index0 }}]}' % obj)  # noqa: UP031
 
         # Add index to templated loop node ids
         for dom_node, _ in self._parser.looped:
-            replacement = 'id="%s-{{ loop.index0 }}"' % dom_node
+            replacement = 'id="%s-{{ loop.index0 }}"' % dom_node  # noqa: UP031
             if f'id="{dom_node}"' in template_string:
                 template_string = template_string.replace(
                     f'id="{dom_node}"', replacement)
@@ -1853,7 +1978,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 for i, _ in enumerate(getattr(self, child_name)):
                     html = html.replace('${%s[%d]}' % (child_name, i), '')
             else:
-                html = html.replace('${%s}' % child_name, '')
+                html = html.replace(f'${{{child_name}}}', '')
         return html, parser.nodes, p_attrs
 
     @property
@@ -1906,18 +2031,21 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 f'\n\npn.extension(\'{self._extension_name}\')\n'
             )
         if self._extension_name:
-            ReactiveHTMLMetaclass._loaded_extensions.add(self._extension_name)
+            ReactiveMetaBase._loaded_extensions.add(self._extension_name)
 
         if not root:
             root = model
 
         ref = root.ref['id']
         data_model: DataModel = model.data # type: ignore
+        for v in data_model.properties_with_values():
+            if isinstance(v, DataModel):
+                v.tags.append(f"__ref:{ref}")
         self._patch_datamodel_ref(data_model.properties_with_values(), ref)
         model.update(children=self._get_children(doc, root, model, comm))
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
         self._link_props(data_model, self._linked_properties, doc, root, comm)
-        self._models[ref] = (model, parent)
+        self._models[root.ref['id']] = (model, parent)
         return model
 
     def _process_event(self, event: 'Event') -> None:
@@ -1944,23 +2072,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             cb(event)
 
     def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
-        if not msg:
-            return
-        ref = root.ref['id']
-        old = self._changing.get(ref, [])
-        self._changing[ref] = [
-            attr for attr, value in msg.items()
-            if not model.lookup(attr).property.matches(getattr(model, attr), value)
-        ]
-        try:
-            model.update(**msg)
-        finally:
-            if old:
-                self._changing[ref] = old
-            else:
-                del self._changing[ref]
+        super()._set_on_model(msg, root, model)
         if isinstance(model, DataModel):
-            self._patch_datamodel_ref(model.properties_with_values(), ref)
+            self._patch_datamodel_ref(model.properties_with_values(), root.ref['id'])
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],

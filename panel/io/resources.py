@@ -13,12 +13,14 @@ import os
 import pathlib
 import re
 import textwrap
+import uuid
 
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, TypedDict
 
+import bokeh.embed.wrappers
 import param
 
 from bokeh.embed.bundle import (
@@ -144,6 +146,16 @@ JS_URLS = {
 }
 
 extension_dirs['panel'] = str(DIST_DIR)
+
+bokeh.embed.wrappers._ONLOAD = """\
+(function() {
+  const fn = function() {
+%(code)s
+  };
+  if (document.readyState != "loading") fn();
+else document.addEventListener("DOMContentLoaded", fn, {once: true});
+})();\
+"""
 
 mimetypes.add_type("application/javascript", ".js")
 
@@ -291,6 +303,8 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     if not stylesheet.startswith('http') and attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet)):
         if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
             stylesheet = component_resource_path(cls, attribute, stylesheet)
+            if config.autoreload and '?' not in stylesheet:
+                stylesheet += f'?v={uuid.uuid4().hex}'
         else:
             stylesheet = custom_path.read_text(encoding='utf-8')
     return stylesheet
@@ -325,10 +339,15 @@ def global_css(name):
 
 def bundled_files(model, file_type='javascript'):
     name = model.__name__.lower()
+    raw_files = getattr(model, f"__{file_type}_raw__", [])
+    for cls in model.__mro__[1:]:
+        cls_files = getattr(cls, f"__{file_type}_raw__", [])
+        if raw_files is cls_files:
+            name = cls.__name__.lower()
     bdir = BUNDLE_DIR / name
     shared = list((JS_URLS if file_type == 'javascript' else CSS_URLS).values())
     files = []
-    for url in getattr(model, f"__{file_type}_raw__", []):
+    for url in raw_files:
         if url.startswith(CDN_DIST):
             filepath = url.replace(f'{CDN_DIST}bundled/', '')
         elif url.startswith(config.npm_cdn):
@@ -616,8 +635,8 @@ class Resources(BkResources):
         """
         Adds resources for ReactiveHTML components.
         """
-        from ..reactive import ReactiveHTML
-        for model in param.concrete_descendents(ReactiveHTML).values():
+        from ..reactive import ReactiveCustomBase
+        for model in param.concrete_descendents(ReactiveCustomBase).values():
             if not (getattr(model, resource_type, None) and model._loaded()):
                 continue
             for resource in getattr(model, resource_type, []):
@@ -728,7 +747,9 @@ class Resources(BkResources):
 
         # Add loading spinner
         if config.global_loading_spinner:
-            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
+            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8').replace(
+                '../assets', self.dist_dir
+            )
             raw.extend([loading_base, loading_css(
                 config.loading_spinner, config.loading_color, config.loading_max_height
             )])
@@ -768,12 +789,15 @@ class Resources(BkResources):
     @property
     def js_modules(self):
         from ..config import config
-        from ..reactive import ReactiveHTML
+        from ..reactive import ReactiveCustomBase
 
         modules = list(config.js_modules.values())
         for model in Model.model_class_reverse_map.values():
-            if hasattr(model, '__javascript_modules__'):
-                modules.extend(model.__javascript_modules__)
+            if not hasattr(model, '__javascript_modules__'):
+                continue
+            for module in model.__javascript_modules__:
+                if module not in modules:
+                    modules.append(module)
 
         self.extra_resources(modules, '__javascript_modules__')
         if config.design:
@@ -785,7 +809,7 @@ class Resources(BkResources):
                 if res not in modules
             ]
 
-        for model in param.concrete_descendents(ReactiveHTML).values():
+        for model in param.concrete_descendents(ReactiveCustomBase).values():
             if not (getattr(model, '__javascript_modules__', None) and model._loaded()):
                 continue
             for js_module in model.__javascript_modules__:

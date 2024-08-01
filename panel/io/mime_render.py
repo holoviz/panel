@@ -17,8 +17,6 @@ import ast
 import base64
 import copy
 import io
-import pathlib
-import pkgutil
 import sys
 import traceback
 
@@ -31,18 +29,7 @@ from typing import Any
 # Import API
 #---------------------------------------------------------------------
 
-def _stdlibs():
-    if sys.version_info[:2] >= (3, 10):
-        return sys.stdlib_module_names
-    env_dir = str(pathlib.Path(sys.executable).parent.parent)
-    modules = list(sys.builtin_module_names)
-    for m in pkgutil.iter_modules():
-        mpath = getattr(m.module_finder, 'path', '')
-        if mpath.startswith(env_dir) and 'site-packages' not in mpath:
-            modules.append(m.name)
-    return modules
-
-_STDLIBS = _stdlibs()
+_STDLIBS = sys.stdlib_module_names
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
     'transformers_js': 'transformers-js-py',
@@ -177,7 +164,7 @@ def exec_with_return(
             exec(compile(init_ast, "<ast>", "exec"), global_context)
             if not last_ast.body:
                 out = None
-            elif type(last_ast.body[0]) == ast.Expr:
+            elif type(last_ast.body[0]) is ast.Expr:
                 out = eval(compile(_convert_expr(last_ast.body[0]), "<ast>", "eval"), global_context)
             else:
                 exec(compile(last_ast, "<ast>", "exec"), global_context)
@@ -219,7 +206,7 @@ def render_svg(value, meta, mime):
 
 def render_image(value, meta, mime):
     data = f"data:{mime};charset=utf-8;base64,{value}"
-    attrs = " ".join(['{k}="{v}"' for k, v in meta.items()])
+    attrs = " ".join([f'{k}="{v}"' for k, v in meta.items()])
     return f'<img src="{data}" {attrs}</img>', 'text/html'
 
 def render_javascript(value, meta, mime):

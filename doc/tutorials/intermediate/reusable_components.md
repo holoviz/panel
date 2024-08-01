@@ -251,9 +251,13 @@ We should now be able to write reusable `Parameterized` and `Viewer` classes tha
 
 ## Resources
 
+### Reference Guide
+
+- [`Viewer`](../../reference/custom_components/Viewer.md)
+
 ### How-To
 
-- [Combine Existing Components](../../how_to/custom_components/custom_viewer.ipynb)
+- [Combine Existing Components](../../how_to/custom_components/custom_viewer.md)
   - [Plot Viewer](../../how_to/custom_components/examples/plot_viewer.md)
   - [Table Viewer](../../how_to/custom_components/examples/table_viewer.md)
 - [Generate UI from Parameters](../../how_to/param/index.md)

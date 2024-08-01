@@ -101,17 +101,22 @@ class RerenderError(RuntimeError):
 
 T = TypeVar('T', bound='PaneBase')
 
-class PaneBase(Reactive):
+
+class PaneBase(Layoutable):
     """
-    PaneBase is the abstract baseclass for all atomic displayable units
-    in the Panel library. We call any child class of `PaneBase` a `Pane`.
+    PaneBase represents an abstract baseclass which can be used as a
+    mix-in class to define a component that mirrors the Pane API.
+    This means that this component will participate in the automatic
+    resolution of the appropriate pane type when Panel is asked to
+    render an object of unknown type.
 
-    Panes defines an extensible interface for wrapping arbitrary
-    objects and transforming them into Bokeh models.
-
-    Panes are reactive in the sense that when the object they are
-    wrapping is replaced or modified the `bokeh.model.Model` that
-    is rendered should reflect these changes.
+    The resolution of the appropriate pane type can be implemented
+    using the ``applies`` method and the ``priority`` class attribute.
+    The applies method should either return a boolean value indicating
+    whether the pane can render the supplied object. If it can the
+    priority determines which of the panes that apply will be selected.
+    If the priority is None then the ``applies`` method must return
+    a priority value.
     """
 
     default_layout = param.ClassSelector(default=Row, class_=(Panel),
@@ -137,27 +142,18 @@ class PaneBase(Reactive):
     # Whether applies requires full set of keywords
     _applies_kw: ClassVar[bool] = False
 
+    _skip_layoutable = ('css_classes', 'margin', 'name')
+
     # Whether the Pane layout can be safely unpacked
     _unpack: ClassVar[bool] = True
-
-    # Declares whether Pane supports updates to the Bokeh model
-    _updates: ClassVar[bool] = False
-
-    # Mapping from parameter name to bokeh model property name
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'default_layout': None, 'loading': None
-    }
-
-    # List of parameters that trigger a rerender of the Bokeh model
-    _rerender_params: ClassVar[list[str]] = ['object']
-
-    _skip_layoutable = ('css_classes', 'margin', 'name')
 
     __abstract = True
 
     def __init__(self, object=None, **params):
         self._object_changing = False
         super().__init__(object=object, **params)
+        if not hasattr(self, '_internal_callbacks'):
+            self._internal_callbacks = []
         applies = self.applies(self.object, **(params if self._applies_kw else {}))
         if (isinstance(applies, bool) and not applies) and self.object is not None:
             self._type_error(self.object)
@@ -167,10 +163,9 @@ class PaneBase(Reactive):
             k not in self._skip_layoutable
         }
         self.layout = self.default_layout(self, **kwargs)
-        self._internal_callbacks.extend([
-            self.param.watch(self._sync_layoutable, list(Layoutable.param)),
-            self.param.watch(self._update_pane, self._rerender_params)
-        ])
+        self._internal_callbacks.append(
+            self.param.watch(self._sync_layoutable, list(Layoutable.param))
+        )
         self._sync_layoutable()
 
     def _validate_ref(self, pname, value):
@@ -223,6 +218,100 @@ class PaneBase(Reactive):
         """
         return self.layout[index]
 
+    @classmethod
+    def applies(cls, obj: Any) -> float | bool | None:
+        """
+        Returns boolean or float indicating whether the Pane
+        can render the object.
+
+        If the priority of the pane is set to
+        `None`, this method may also be used to define a float priority
+        depending on the object being rendered.
+        """
+        return None
+
+    @classmethod
+    def get_pane_type(cls, obj: Any, **kwargs) -> type['PaneBase']:
+        """
+        Returns the applicable Pane type given an object by resolving
+        the precedence of all types whose applies method declares that
+        the object is supported.
+
+        Arguments
+        ---------
+        obj (object): The object type to return a Pane type for
+
+        Returns
+        -------
+        The applicable Pane type with the highest precedence.
+        """
+        if isinstance(obj, Viewable):
+            return type(obj)
+        descendents = []
+        for p in param.concrete_descendents(PaneBase).values():
+            if p.priority is None:
+                applies = True
+                try:
+                    priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
+                except Exception:
+                    priority = False
+            else:
+                applies = None
+                priority = p.priority
+            if isinstance(priority, bool) and priority:
+                raise ValueError('If a Pane declares no priority '
+                                 'the applies method should return a '
+                                 'priority value specific to the '
+                                 f'object type or False, but the {p.__name__} pane '
+                                 'declares no priority.')
+            elif priority is None or priority is False:
+                continue
+            descendents.append((priority, applies, p))
+        pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
+        for _, applies, pane_type in pane_types:
+            if applies is None:
+                try:
+                    applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
+                except Exception:
+                    applies = False
+            if not applies:
+                continue
+            return pane_type
+        raise TypeError(f'{type(obj).__name__} type could not be rendered.')
+
+
+class Pane(PaneBase, Reactive):
+    """
+    Pane is the abstract baseclass for all atomic displayable units
+    in the Panel library.
+
+    Panes defines an extensible interface for wrapping arbitrary
+    objects and transforming them into renderable components.
+
+    Panes are reactive in the sense that when the object they are
+    wrapping is replaced or modified the UI will reflect the updated
+    object.
+    """
+
+    # Declares whether Pane supports updates to the Bokeh model
+    _updates: ClassVar[bool] = False
+
+    # Mapping from parameter name to bokeh model property name
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'default_layout': None, 'loading': None
+    }
+
+    # List of parameters that trigger a rerender of the Bokeh model
+    _rerender_params: ClassVar[list[str]] = ['object']
+
+    __abstract = True
+
+    def __init__(self, object=None, **params):
+        super().__init__(object=object, **params)
+        self._internal_callbacks.append(
+            self.param.watch(self._update_pane, self._rerender_params)
+        )
+
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
@@ -259,6 +348,22 @@ class PaneBase(Reactive):
             return
 
         new_model = self._get_model(doc, root, parent, comm)
+
+        # Ensure we also update any fake root referencing the object
+        from ..io import state
+        ref = root.ref['id']
+        fake_view = fake_ref = fake_root = None
+        if ref in state._views:
+            view = state._views[ref][0]
+            for fake_ref in state._fake_roots:
+                if fake_ref not in state._views:
+                    continue
+                fake_view, fake_root = state._views[fake_ref][:2]
+        if fake_ref in self._models:
+            self._models[fake_ref] = (new_model, self._models[fake_ref][1])
+        if hasattr(self, '_plots') and fake_ref in self._plots:
+            self._plots[fake_ref] = self._plots[ref]
+
         try:
             if isinstance(parent, _BkGridBox):
                 indexes = [
@@ -308,10 +413,11 @@ class PaneBase(Reactive):
                 )
             ))
 
-        from ..io import state
-        ref = root.ref['id']
-        if ref in state._views:
-            state._views[ref][0]._preprocess(root)
+        # If there is a fake root we run pre-processors on it
+        if fake_view is not None and view in fake_view:
+            fake_view._preprocess(fake_root, self)
+        else:
+            view._preprocess(root, self)
 
     def _update_pane(self, *events) -> None:
         for ref, (_, parent) in self._models.items():
@@ -355,18 +461,6 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
-
-    @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        """
-        Returns boolean or float indicating whether the Pane
-        can render the object.
-
-        If the priority of the pane is set to
-        `None`, this method may also be used to define a float priority
-        depending on the object being rendered.
-        """
-        return None
 
     def clone(self: T, object: Optional[Any] = None, **params) -> T:
         """
@@ -422,57 +516,8 @@ class PaneBase(Reactive):
         state._views[ref] = (root_view, root, doc, comm)
         return root
 
-    @classmethod
-    def get_pane_type(cls, obj: Any, **kwargs) -> type['PaneBase']:
-        """
-        Returns the applicable Pane type given an object by resolving
-        the precedence of all types whose applies method declares that
-        the object is supported.
 
-        Arguments
-        ---------
-        obj (object): The object type to return a Pane type for
-
-        Returns
-        -------
-        The applicable Pane type with the highest precedence.
-        """
-        if isinstance(obj, Viewable):
-            return type(obj)
-        descendents = []
-        for p in param.concrete_descendents(PaneBase).values():
-            if p.priority is None:
-                applies = True
-                try:
-                    priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
-                except Exception:
-                    priority = False
-            else:
-                applies = None
-                priority = p.priority
-            if isinstance(priority, bool) and priority:
-                raise ValueError('If a Pane declares no priority '
-                                 'the applies method should return a '
-                                 'priority value specific to the '
-                                 'object type or False, but the %s pane '
-                                 'declares no priority.' % p.__name__)
-            elif priority is None or priority is False:
-                continue
-            descendents.append((priority, applies, p))
-        pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
-        for _, applies, pane_type in pane_types:
-            if applies is None:
-                try:
-                    applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
-                except Exception:
-                    applies = False
-            if not applies:
-                continue
-            return pane_type
-        raise TypeError('%s type could not be rendered.' % type(obj).__name__)
-
-
-class ModelPane(PaneBase):
+class ModelPane(Pane):
     """
     ModelPane provides a baseclass that allows quickly wrapping a
     Bokeh model and translating parameters defined on the class
@@ -524,7 +569,7 @@ class ModelPane(PaneBase):
         return super()._process_param_change(params)
 
 
-class ReplacementPane(PaneBase):
+class ReplacementPane(Pane):
     """
     ReplacementPane provides a baseclass for dynamic components that
     may have to dynamically update or switch out their contents, e.g.

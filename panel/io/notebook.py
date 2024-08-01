@@ -428,6 +428,9 @@ def load_notebook(
         else:
             settings.resources.unset_value()
 
+    CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text(encoding='utf-8')
+    shim = '<script type="esms-options">{"shimMode": true}</script>'
+    publish_display_data(data={'text/html': f'{shim}<style>{CSS}</style>'})
     publish_display_data({
         'application/javascript': bokeh_js,
         LOAD_MIME: bokeh_js,
@@ -435,10 +438,8 @@ def load_notebook(
     bokeh.io.notebook.curstate().output_notebook()
 
     # Publish comm manager
-    CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text(encoding='utf-8')
     JS = '\n'.join([PYVIZ_PROXY, _JupyterCommManager.js_manager, nb_mime_js])
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
-    publish_display_data(data={'text/html': f'<style>{CSS}</style>'})
 
 
 def show_server(panel: Any, notebook_url: str, port: int = 0) -> 'Server':

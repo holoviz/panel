@@ -59,7 +59,7 @@ def test_widgets_are_in_reference_gallery():
 @ref_available
 def test_panes_are_in_reference_gallery():
     exceptions = {
-        "PaneBase", "YT", "RGGPlot", "Interactive", "ICO", "Image",
+        "PaneBase", "Pane", "YT", "RGGPlot", "Interactive", "ICO", "Image",
         "IPyLeaflet", "ParamFunction", "ParamMethod", "ParamRef"
     }
     docs = {f.with_suffix("").name for f in (REF_PATH / "panes").iterdir()}

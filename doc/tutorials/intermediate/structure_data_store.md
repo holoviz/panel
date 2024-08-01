@@ -159,7 +159,7 @@ class Indicators(View):
         return pn.FlexBox(
             pn.indicators.Number(
                 value=self.data_store.total_capacity / 1e6,
-                name="Total Capacity (TW)",
+                name="Total Capacity (GW)",
                 format="{value:,.2f}",
                 **style
             ),

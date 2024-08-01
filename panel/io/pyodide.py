@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import hashlib
 import io
 import json
 import os
-import pathlib
 import sys
 import uuid
 
@@ -29,9 +27,6 @@ from bokeh.events import DocumentReady
 from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
-from bokeh.util.sampledata import (
-    __file__ as _bk_util_dir, _download_file, external_data_dir, splitext,
-)
 from js import JSON, XMLHttpRequest
 
 from ..config import config
@@ -53,10 +48,9 @@ try:
         if _IN_PYSCRIPT_WORKER:
             from pyscript import window
             js.window = window
-        _IN_WORKER = True
     except Exception:
         _IN_PYSCRIPT_WORKER = False
-        _IN_WORKER = False
+    _IN_WORKER = False
 except Exception:
     try:
         # Initial version of PyScript Next Worker support did not patch js.document
@@ -65,9 +59,10 @@ except Exception:
             from pyscript import document, window
             js.document = document
             js.window = window
+        _IN_WORKER = False
     except Exception:
         _IN_PYSCRIPT_WORKER = False
-    _IN_WORKER = True
+        _IN_WORKER = True
 
 # Ensure we don't try to load MPL WASM backend in worker
 if _IN_WORKER:
@@ -348,7 +343,8 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
             return
         json_patch, buffer_map = _process_document_events(doc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
-        dispatch_fn(json_patch, pyodide.ffi.to_js(buffer_map), msg_id)
+        buffers = js.Map.new(pyodide.ffi.to_js(buffer_map))
+        dispatch_fn(json_patch, buffers, msg_id)
 
     doc.on_change(pysync)
     doc.unhold()
@@ -384,33 +380,6 @@ def _get_pyscript_target():
         return sys.stdout._out # type: ignore
     elif not _IN_WORKER:
         raise ValueError("Could not determine target node to write to.")
-
-def _download_sampledata(progress: bool = False) -> None:
-    """
-    Download bokeh sampledata
-    """
-    data_dir = external_data_dir(create=True)
-    s3 = 'https://sampledata.bokeh.org'
-    with open(pathlib.Path(_bk_util_dir).parent / "sampledata.json") as f:
-        files = json.load(f)
-    for filename, md5 in files:
-        real_name, ext = splitext(filename)
-        if ext == '.zip':
-            if not splitext(real_name)[1]:
-                real_name += ".csv"
-        else:
-            real_name += ext
-        real_path = data_dir / real_name
-        if real_path.exists():
-            with open(real_path, "rb") as file:
-                data = file.read()
-            local_md5 = hashlib.md5(data).hexdigest()
-            if local_md5 == md5:
-                continue
-        _download_file(s3, filename, data_dir, progress=progress)
-
-bokeh.sampledata.download = _download_sampledata
-bokeh.util.sampledata.download = _download_sampledata
 
 #---------------------------------------------------------------------
 # Public API

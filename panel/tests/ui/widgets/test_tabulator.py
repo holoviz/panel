@@ -2247,7 +2247,7 @@ def test_tabulator_patching_no_event(page, df_mixed):
 
 def color_false(val):
     color = 'red' if not val else 'black'
-    return 'color: %s' % color
+    return f'color: {color}'
 
 def highlight_max(s):
     is_max = s == s.max()
@@ -2264,7 +2264,7 @@ def test_tabulator_styling_init(page, df_mixed):
     df_styled = (
         df_mixed.style
         .apply(highlight_max, subset=['int'])
-        .applymap(color_false, subset=['bool'])
+        .map(color_false, subset=['bool'])
     )
     widget = Tabulator(df_styled)
 
@@ -2399,10 +2399,12 @@ def test_tabulator_sorters_set_after_init(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1)
+
     widget.sorters = [{'field': 'int', 'dir': 'desc'}]
 
     sheader = page.locator('[aria-sort="descending"]:visible')
-    expect(sheader).to_have_count(1)
+    wait_until(lambda: expect(sheader).to_have_count(1), page)
     assert sheader.get_attribute('tabulator-field') == 'int'
 
     expected_df_sorted = df_mixed.sort_values('int', ascending=False)
@@ -2873,7 +2875,7 @@ def test_tabulator_edit_event_integrations(page, sorter, python_filter, header_f
         expected_current_view = expected_current_view.query(f'{python_filter_col} == @python_filter_val')
     if header_filter == 'header_filter':
         expected_current_view = expected_current_view.query(f'{header_filter_col} == @header_filter_val')
-    assert widget.current_view.equals(expected_current_view)
+    pd.testing.assert_frame_equal(widget.current_view, expected_current_view)
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
@@ -2950,7 +2952,6 @@ def test_tabulator_click_event_selection_integrations(page, sorter, python_filte
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
 def test_tabulator_selection_sorters_on_init(page, df_mixed):
     widget = Tabulator(df_mixed, sorters=[{'field': 'int', 'dir': 'desc'}])
 
@@ -3019,6 +3020,23 @@ def test_tabulator_selection_header_filter_changed(page):
     expected_selected = df.iloc[selection, :]
     assert widget.selected_dataframe.equals(expected_selected)
 
+def test_tabulator_sorter_not_reversed_after_init(page):
+    df = pd.DataFrame({
+        'col1': [1, 2, 3, 4],
+        'col2': [1, 4, 3, 2],
+    })
+
+    sorters = [
+        {'field': 'col1', 'dir': 'desc'},
+        {'field': 'col2', 'dir': 'asc'}
+    ]
+    table = Tabulator(df, sorters=sorters)
+
+    serve_component(page, table)
+
+    expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1)
+    page.wait_for_timeout(300)
+    assert table.sorters == sorters
 
 def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
     widths = 100

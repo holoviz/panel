@@ -122,7 +122,7 @@ def tranquilizer_rest_provider(files, endpoint):
     """
     app = build_tranquilize_application(files)
     tr = WSGIContainer(app)
-    return [(r"^/%s/.*" % endpoint, web.FallbackHandler, dict(fallback=tr))]
+    return [(rf"^/{endpoint}/.*", web.FallbackHandler, dict(fallback=tr))]
 
 
 def param_rest_provider(files, endpoint):
@@ -169,7 +169,7 @@ def param_rest_provider(files, endpoint):
 
     if endpoint and not endpoint.endswith('/'):
         endpoint += '/'
-    return [((r"^/%s.*" % endpoint if endpoint else r"^.*"), ParamHandler, dict(root=endpoint))]
+    return [((rf"^/{endpoint}.*" if endpoint else r"^.*"), ParamHandler, dict(root=endpoint))]
 
 
 REST_PROVIDERS = {

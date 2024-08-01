@@ -50,11 +50,11 @@ from .layout import (
     Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
 )
 from .pane import DataFrame as DataFramePane
-from .pane.base import PaneBase, ReplacementPane
+from .pane.base import Pane, ReplacementPane
 from .reactive import Reactive
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
-    param_name, recursive_parameterized,
+    param_name, recursive_parameterized, to_async_gen,
 )
 from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
@@ -63,7 +63,7 @@ from .widgets import (
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
     FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
     LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
-    TextInput, Toggle, Widget,
+    TextInput, Toggle, Widget, WidgetBase,
 )
 from .widgets.button import _ButtonBase
 
@@ -127,10 +127,27 @@ def set_values(*parameterizeds, **param_values):
             parameterized.param.update(**old_values)
 
 
-class Param(PaneBase):
+class Param(Pane):
     """
-    Param panes render a Parameterized class to a set of widgets which
-    are linked to the parameter values on the class.
+    Param panes render a Parameterized class into a set of interactive widgets
+    that are dynamically linked to the parameter values of the class.
+
+    Reference: https://panel.holoviz.org/reference/panes/Param.html
+
+    Example:
+
+    >>> import param
+    >>> import panel as pn
+    >>> pn.extension()
+
+    >>> class App(param.Parameterized):
+    >>>     some_text = param.String(default="Hello")
+    >>>     some_float = param.Number(default=1, bounds=(0, 10), step=0.1)
+    >>>     some_boolean = param.Boolean(default=True)
+
+    >>> app = App()
+
+    >>> pn.Param(app, parameters=["some_text", "some_float"], show_name=False).servable()
     """
 
     display_threshold = param.Number(default=0, precedence=-10, doc="""
@@ -270,8 +287,7 @@ class Param(PaneBase):
             self.layout = self._expand_layout = layout(self._widget_box, **kwargs)
         else:
             raise ValueError('expand_layout expected to be a panel.layout.Panel'
-                             'type or instance, found %s type.' %
-                             type(layout).__name__)
+                             f'type or instance, found {type(layout).__name__} type.')
         self.param.watch(self._update_widgets, [
             'object', 'parameters', 'name', 'display_threshold', 'expand_button',
             'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name',
@@ -294,7 +310,7 @@ class Param(PaneBase):
                 params.append(f'{p}={abbreviated_repr(v)}')
             except RuntimeError:
                 params.append('{}={}'.format(p, '...'))
-        obj = 'None' if self.object is None else '%s' % type(self.object).__name__
+        obj = 'None' if self.object is None else f'{type(self.object).__name__}'
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
@@ -359,7 +375,7 @@ class Param(PaneBase):
 
     def _link_subobjects(self):
         for pname, widget in self._widgets.items():
-            widgets = [widget] if isinstance(widget, Widget) else widget
+            widgets = [widget] if isinstance(widget, WidgetBase) else widget
             if not any(is_parameterized(getattr(w, 'value', None)) or
                        any(is_parameterized(o) for o in getattr(w, 'options', []))
                        for w in widgets):
@@ -452,7 +468,7 @@ class Param(PaneBase):
 
         value = getattr(self.object, p_name)
         allow_None = p_obj.allow_None or False
-        if isinstance(widget_class, type) and issubclass(widget_class, Widget):
+        if isinstance(widget_class, type) and issubclass(widget_class, WidgetBase):
             allow_None &= widget_class.param.value.allow_None
         if value is not None or allow_None:
             kw['value'] = value
@@ -510,7 +526,7 @@ class Param(PaneBase):
         if isinstance(widget_class, type) and issubclass(widget_class, Button):
             kwargs.pop('value', None)
 
-        if isinstance(widget_class, Widget):
+        if isinstance(widget_class, WidgetBase):
             widget = widget_class
         else:
             widget = widget_class(**kwargs)
@@ -888,19 +904,11 @@ class ParamRef(ReplacementPane):
                         param.DEBUG, 'Skip event was raised, skipping update.'
                     )
                     return
+            if isinstance(new_object, Generator):
+                new_object = to_async_gen(new_object)
             if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
-            elif isinstance(new_object, Generator):
-                append_mode = self.generator_mode == 'append'
-                if append_mode:
-                    self._inner_layout[:] = []
-                for new_obj in new_object:
-                    if append_mode:
-                        self._inner_layout.append(new_obj)
-                        self._pane = self._inner_layout[-1]
-                    else:
-                        self._update_inner(new_obj)
             else:
                 self._update_inner(new_object)
         finally:
@@ -1105,7 +1113,7 @@ class ParamFunction(ParamRef):
         return eval_function_with_deps(ref)
 
 
-class ReactiveExpr(PaneBase):
+class ReactiveExpr(Pane):
     """
     ReactiveExpr generates a UI for param.rx objects by rendering the
     widgets and outputs.
@@ -1314,7 +1322,7 @@ class JSONInit(param.Parameterized):
                 with open(fullpath(fname), 'r') as f:
                     spec = json.load(f)
             except Exception:
-                warnobj.warning('Could not load JSON file %r' % spec)
+                warnobj.warning(f'Could not load JSON file {spec!r}')
         else:
             spec = json.loads(env_var)
 

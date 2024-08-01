@@ -77,11 +77,6 @@ pixi install
 ```
 
 The first time you run it, it will create a `pixi.lock` file with information for all available environments. This command will take a minute or so to run.
-When this is finished, it is possible to run the following command to download the data Panel tests and examples depend upon.
-
-```bash
-pixi run download-data
-```
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
@@ -133,7 +128,7 @@ Unit tests can be run with the `test-unit` task:
 pixi run test-unit
 ```
 
-The task is available in the following environments: `test-39`, `test-310`, `test-311`, `test-312`, and `test-core`. Where the first ones have the same environments except for different Python versions, and `test-core` only has a core set of dependencies.
+The task is available in the following environments: `test-310`, `test-311`, `test-312`, and `test-core`. Where the first ones have the same environments except for different Python versions, and `test-core` only has a core set of dependencies.
 
 If you haven't set the environment flag in the command, a menu will help you select which one of the environments to use.
 

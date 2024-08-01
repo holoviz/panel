@@ -144,7 +144,8 @@ class FileDownload(IconMixin):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks'
+        'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks',
+        'value': None
     }
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
@@ -211,7 +212,7 @@ class FileDownload(IconMixin):
         if isinstance(fileobj, (str, Path)):
             fileobj = Path(fileobj)
             if not fileobj.exists():
-                raise FileNotFoundError('File "%s" not found.' % fileobj)
+                raise FileNotFoundError(f'File "{fileobj}" not found.')
             with open(fileobj, 'rb') as f:
                 b64 = b64encode(f.read()).decode("utf-8")
             if filename is None:
@@ -225,8 +226,7 @@ class FileDownload(IconMixin):
                 raise ValueError('Must provide filename if file-like '
                                  'object is provided.')
         else:
-            raise ValueError('Cannot transfer unknown object of type %s' %
-                             type(fileobj).__name__)
+            raise ValueError(f'Cannot transfer unknown object of type {type(fileobj).__name__}')
 
         ext = filename.split('.')[-1]
         stype, mtype = None, None

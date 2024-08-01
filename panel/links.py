@@ -17,7 +17,7 @@ from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 
 from .io.datamodel import create_linked_datamodel
 from .io.loading import LOADING_INDICATOR_CSS_CLASS
-from .models import ReactiveHTML
+from .models import ReactiveESM, ReactiveHTML
 from .reactive import Reactive
 from .util.warnings import warn
 from .viewable import Viewable
@@ -77,7 +77,7 @@ def assert_target_syncable(
         elif p not in target.param and p not in list(target._rename.values()):
             matches = difflib.get_close_matches(p, list(target.param))
             if matches:
-                matches_repr = ' Similar parameters include: %r' % matches
+                matches_repr = f' Similar parameters include: {matches!r}'
             else:
                 matches_repr = ''
             raise ValueError(
@@ -146,7 +146,7 @@ class Callback(param.Parameterized):
            a JS code snippet to execute.
         """
         if source is None:
-            raise ValueError('%s must define a source' % type(self).__name__)
+            raise ValueError(f'{type(self).__name__} must define a source')
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
         if not args:
@@ -289,7 +289,7 @@ class Link(Callback):
 
     def __init__(self, source: 'Reactive', target: Optional['JSLinkTarget'] = None, **params):
         if self._requires_target and target is None:
-            raise ValueError('%s must define a target.' % type(self).__name__)
+            raise ValueError(f'{type(self).__name__} must define a target.')
         # Source is stored as a weakref to allow it to be garbage collected
         self._target = None if target is None else weakref.ref(target)
         super().__init__(source, **params)
@@ -475,11 +475,11 @@ class CallbackGenerator:
                         references[k] = v
 
         # Handle links with ReactiveHTML DataModel
-        if isinstance(src_model, ReactiveHTML):
+        if isinstance(src_model, (ReactiveESM, ReactiveHTML)):
             if src_spec[1] in src_model.data.properties(): # type: ignore
                 references['source'] = src_model = src_model.data # type: ignore
 
-        if isinstance(tgt_model, ReactiveHTML):
+        if isinstance(tgt_model, (ReactiveESM, ReactiveHTML)):
             if tgt_spec[1] in tgt_model.data.properties(): # type: ignore
                 references['target'] = tgt_model = tgt_model.data # type: ignore
 
@@ -709,8 +709,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
                 setattr(tgt_model, tgt_spec, value)
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
-                             '%s and no custom code was specified.' %
-                             type(self.target).__name__)
+                             f'{type(self.target).__name__} and no custom code was specified.')
 
     def _process_references(self, references: dict[str, str]) -> None:
         """

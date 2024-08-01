@@ -45,7 +45,7 @@ class ChatReactionIcons(CompositeWidget):
         A key-value pair of reaction values and their corresponding tabler icon names
         found on https://tabler-icons.io.""")
 
-    value = param.List(doc="The active reactions.")
+    value = param.List(default=[], doc="The active reactions.")
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_reaction_icons.css"]
 

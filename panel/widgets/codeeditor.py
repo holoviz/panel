@@ -49,7 +49,7 @@ class CodeEditor(Widget):
     theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
                                  doc="Theme of the editor")
 
-    value = param.String(doc="State of the current code in the editor")
+    value = param.String(default="", doc="State of the current code in the editor")
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "name": None}
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import concurrent.futures
 import dataclasses
 import json
@@ -42,10 +43,11 @@ WORKER_HANDLER_TEMPLATE = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.25.0'
-PYSCRIPT_VERSION = '2024.3.2'
-PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
-BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+PYODIDE_VERSION = 'v0.26.2'
+PYSCRIPT_VERSION = '2024.8.1'
+WHL_PATH = DIST_DIR / 'wheels'
+PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
+BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
@@ -55,6 +57,7 @@ PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylsheet" href="{CDN_DIST}css/pyscript.cs
 PYSCRIPT_JS = f'<script type="module" src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
 PYODIDE_PYC_JS = f'<script src="{PYODIDE_PYC_URL}"></script>'
+LOCAL_PREFIX = './'
 
 ICON_DIR = DIST_DIR / 'images'
 PWA_IMAGES = [
@@ -66,6 +69,8 @@ PWA_IMAGES = [
     ICON_DIR / 'apple-touch-icon.png',
     ICON_DIR / 'index_background.png'
 ]
+
+MINIMUM_VERSIONS = {}
 
 Runtimes = Literal['pyodide', 'pyscript', 'pyodide-worker', 'pyscript-worker']
 
@@ -185,7 +190,7 @@ def build_pwa_manifest(files, title=None, **kwargs):
 
 
 def collect_python_requirements(
-    main_app: str | os.PathLike,
+    app: str,
     requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
     panel_version: Literal['auto', 'local'] | str = 'auto',
     http_patch: bool = True,
@@ -195,17 +200,16 @@ def collect_python_requirements(
 
     Arguments
     ---------
-    filename: str | Path | IO
+    app: str | os.PathLike | IO,
         The filename of the Panel/Bokeh application to convert.
     requirements: List[str]
         The list of requirements to include (in addition to Panel).
-    panel_version: 'auto' | str
+    panel_version: Literal['auto', 'local'] | str
         The panel release version to use in the exported HTML.
     http_patch: bool
         Whether to patch the HTTP request stack with the pyodide-http library
         to allow urllib3 and requests to work.
     """
-
     # Environment
     if panel_version == 'local':
         panel_req = './' + str(PANEL_LOCAL_WHL.as_posix()).split('/')[-1]
@@ -222,9 +226,13 @@ def collect_python_requirements(
 
     requirements_root = os.getcwd()
     if requirements == 'auto':
-        with open(main_app, 'r') as mainfile:
-            source = mainfile.read()
-            requirements = find_requirements(source)
+        if hasattr(app, 'read'):
+            source = app.read()
+        else:
+            path = pathlib.Path(app)
+            app = build_single_handler_application(str(path.absolute()))
+            source = app._handlers[0]._runner.source
+        requirements = find_requirements(source)
     elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
         requirements_root = os.path.dirname(requirements)
         requirements = (
@@ -292,6 +300,8 @@ def script_to_html(
     css_resources: Literal['auto'] | list[str] | None = 'auto',
     runtime: Runtimes = 'pyodide',
     prerender: bool = True,
+    panel_version: Literal['auto', 'local'] | str = 'auto',
+    local_prefix: str = LOCAL_PREFIX,
     manifest: str | None = None,
     inline: bool = False,
     compiled: bool = True
@@ -316,12 +326,15 @@ def script_to_html(
         The runtime to use for running Python in the browser.
     prerender: bool
         Whether to pre-render the components so the page loads.
+    panel_version: Literal['auto', 'local'] | str
+        The panel release version to use in the exported HTML.
+    local_prefix: str
+        Prefix for the path to serve local wheel files from.
     inline: bool
         Whether to inline resources.
     compiled: bool
         Whether to use pre-compiled pyodide bundles.
     """
-
     # Run script
     if hasattr(filename, 'read'):
         handler = CodeHandler(source=filename.read(), filename='convert.py')
@@ -359,15 +372,15 @@ def script_to_html(
         elif not css_resources:
             css_resources = []
         pyconfig = json.dumps({
-                'packages': requirements,
-                'plugins': ['!error'],
-                'files': {app_resources: './*'} if app_resources else {},
+            'packages': requirements,
+            'plugins': ['!error'],
+            'files': {app_resources: './*'} if app_resources else {},
         })
         if 'worker' in runtime:
             plot_script = f'<script type="py" async worker config=\'{pyconfig}\' src="{app_name}.py"></script>'
             web_worker = code
         else:
-            plot_script = f'<py-script config=\'{pyconfig}\'>{code}</py-script>'
+            plot_script = f'<script type=\'py\' config=\'{pyconfig}\'>{code}</script>'
     else:
         if css_resources == 'auto':
             css_resources = []
@@ -425,7 +438,13 @@ def script_to_html(
     if template in (BASE_TEMPLATE, FILE):
         # Add loading.css if not served from Panel template
         if inline:
-            loading_base = (DIST_DIR / 'css' / 'loading.css').read_text(encoding='utf-8')
+            svg_name = f'{config.loading_spinner}_spinner.svg'
+            svg_b64 = base64.b64encode((DIST_DIR / 'assets' / svg_name).read_bytes()).decode('utf-8')
+            loading_base = (
+                DIST_DIR / "css" / "loading.css"
+            ).read_text(encoding='utf-8').replace(
+                f'../assets/{svg_name}', f'data:image/svg+xml;base64,{svg_b64}'
+            )
             loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
         else:
             loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
@@ -483,6 +502,7 @@ def convert_app(
     prerender: bool = True,
     manifest: str | None = None,
     panel_version: Literal['auto', 'local'] | str = 'auto',
+    local_prefix: str = LOCAL_PREFIX,
     http_patch: bool = True,
     inline: bool = False,
     compiled: bool = False,
@@ -496,6 +516,7 @@ def convert_app(
     app_folder = os.path.dirname(app)
     app_name = '.'.join(os.path.basename(app).split('.')[:-1])
 
+    # Obtain source
     parsed_requirements = collect_python_requirements(
         app, requirements, panel_version=panel_version, http_patch=http_patch
     )
@@ -541,10 +562,16 @@ def convert_app(
     try:
         with set_resource_mode('inline' if inline else 'cdn'):
             html, worker = script_to_html(
-                app, requirements=parsed_requirements_rewritten,
-                app_resources=app_resources_packfile, runtime=runtime,
-                prerender=prerender, manifest=manifest,
-                inline=inline, compiled=compiled
+                app,
+                requirements=parsed_requirements_rewritten,
+                app_resources=app_resources_packfile,
+                runtime=runtime,
+                prerender=prerender,
+                manifest=manifest,
+                panel_version=panel_version,
+                inline=inline,
+                compiled=compiled,
+                local_prefix=local_prefix
             )
     except KeyboardInterrupt:
         return
@@ -616,6 +643,7 @@ def convert_apps(
     pwa_config: dict[Any, Any] = {},
     max_workers: int = 4,
     panel_version: Literal['auto', 'local'] | str = 'auto',
+    local_prefix: str = LOCAL_PREFIX,
     http_patch: bool = True,
     inline: bool = False,
     compiled: bool = False,
@@ -653,8 +681,10 @@ def convert_apps(
           - theme_color: The theme color of the application
     max_workers: int
         The maximum number of parallel workers
-    panel_version: 'auto' | 'local'] | str
-        The panel version to include.
+    panel_version: Literal['auto' | 'local'] | str
+'       The panel version to include.
+    local_prefix: str
+        Prefix for the path to serve local wheel files from.
     http_patch: bool
         Whether to patch the HTTP request stack with the pyodide-http library
         to allow urllib3 and requests to work.
@@ -694,7 +724,8 @@ def convert_apps(
         'http_patch': http_patch,
         'inline': inline,
         'verbose': verbose,
-        'compiled': compiled
+        'compiled': compiled,
+        'local_prefix': local_prefix
     }
 
     if state._is_pyodide:

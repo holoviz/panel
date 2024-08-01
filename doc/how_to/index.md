@@ -2,7 +2,6 @@
 
 The Panel How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work. They assume that you've completed the Getting Started material and therefore already have some knowledge of how Panel works. There is no order to the guides, other than any potential prerequisites listed at the top of a page. Jump to the topic that is relevant to you now.
 
-
 ## Develop Efficiently
 
 ::::{grid} 1 2 2 3
@@ -23,7 +22,6 @@ How to effectively develop apps in a Python or Markdown file.
 :::
 
 ::::
-
 
 ## Build apps
 
@@ -67,7 +65,6 @@ How to use a Template to customize the look and feel of a deployed Panel app.
 
 ::::
 
-
 ## Use specialized UIs and APIs
 
 ::::{grid} 1 2 2 3
@@ -103,7 +100,6 @@ How to link the parameters of Panel components in Python and Javascript.
 
 ::::
 
-
 ## Manage session tasks
 
 ::::{grid} 1 2 2 3
@@ -125,6 +121,19 @@ How to access and manipulate state related to the user session, HTTP request and
 
 ::::
 
+## Extending Panel
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`code-square;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Components
+:link: custom_components/index
+:link-type: doc
+
+How to create custom components including widgets, layouts and panes using pure-Python, JS or React.
+:::
+
+::::
 
 ## Test and debug
 
@@ -153,7 +162,6 @@ How to configure the logging level and format
 :::
 
 ::::
-
 
 ## Prepare to share
 
@@ -250,6 +258,19 @@ How to run Panel applications entirely in the browser using WebAssembly (Wasm), 
 How to migrate existing Streamlit applications to Panel.
 :::
 
+:::{grid-item-card} Migrate from AnyWidget
+:link: migrate/anywidget/index
+:link-type: doc
+
+```{image} https://assets.holoviz.org/panel/background/comparisons/anywidget_logo.png
+:width: 125px
+:align: center
+:name: AnyWidget
+```
+
+How to convert AnyWidget widgets to Panel widgets.
+:::
+
 ::::
 
 ```{toctree}
@@ -261,6 +282,7 @@ prepare_to_develop
 build_apps
 use_specialized_uis
 manage_session_tasks
+extending_panel
 test_and_debug
 prepare_to_share
 share_your_work

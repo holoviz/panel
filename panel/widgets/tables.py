@@ -28,7 +28,7 @@ from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
-    BOKEH_JS_NAT, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
+    clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
 from ..util.warnings import warn
@@ -247,7 +247,7 @@ class BaseTable(ReactiveData, Widget):
 
             title = self.titles.get(col, str(col))
             if col in indexes and len(indexes) > 1 and self.hierarchical:
-                title = 'Index: %s' % ' | '.join(indexes)
+                title = 'Index: {}'.format(' | '.join(indexes))
             elif col in self.indexes and col.startswith('level_'):
                 title = ''
             column = TableColumn(field=str(col), title=title,
@@ -369,6 +369,9 @@ class BaseTable(ReactiveData, Widget):
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
         ascending = [s['dir'] == 'asc' for s in self.sorters]
 
+        # Making a copy of the DataFrame because it could be a view of the original
+        # dataframe. There could be a better place to do this.
+        df = df.copy()
         # Temporarily add _index_ column because Tabulator uses internal _index
         # as additional sorter to break ties
         df['_index_'] = np.arange(len(df)).astype(str)
@@ -398,9 +401,7 @@ class BaseTable(ReactiveData, Widget):
 
         # Revert temporary changes to DataFrames
         if rename:
-            df.index.name = None
             df_sorted.index.name = None
-        df.drop(columns=['_index_'], inplace=True)
         df_sorted.drop(columns=['_index_'], inplace=True)
         return df_sorted
 
@@ -712,7 +713,12 @@ class BaseTable(ReactiveData, Widget):
             if reset_index:
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
-            combined = pd.concat([self.value, stream_value])
+            if self.value.empty:
+                combined = pd.DataFrame(
+                    stream_value, columns=self.value.columns
+                ).astype(self.value.dtypes)
+            else:
+                combined = pd.concat([self.value, stream_value])
             if rollover is not None:
                 combined = combined.iloc[-rollover:]
             with param.discard_events(self):
@@ -847,7 +853,7 @@ class BaseTable(ReactiveData, Widget):
                     if isinstance(value, pd.Timestamp):
                         value = datetime_as_utctimestamp(value)
                     elif value is pd.NaT:
-                        value = BOKEH_JS_NAT
+                        value = np.nan
                     values.append((patch_ind, value))
                 patches[k] = values
             self._patch(patches)
@@ -873,7 +879,7 @@ class BaseTable(ReactiveData, Widget):
         """
         if not self.selection:
             return self.current_view.iloc[:0]
-        return self.current_view.iloc[self.selection]
+        return self._processed.iloc[self.selection]
 
 
 class DataFrame(BaseTable):
@@ -1191,6 +1197,7 @@ class Tabulator(BaseTable):
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
+        self.param.watch(self._clear_selection_remote_pagination, 'value')
         if click_handler:
             self.on_click(click_handler)
         if edit_handler:
@@ -1484,10 +1491,15 @@ class Tabulator(BaseTable):
     def _update_children(self, *events):
         cleanup, reuse = set(), set()
         page_events = ('page', 'page_size', 'pagination')
+        old_panels = self._child_panels
         for event in events:
             if event.name == 'expanded' and len(events) == 1:
-                cleanup = set(event.old) - set(event.new)
-                reuse = set(event.old) & set(event.new)
+                if self.embed_content:
+                    cleanup = set()
+                    reuse = set(old_panels)
+                else:
+                    cleanup = set(event.old) - set(event.new)
+                    reuse = set(event.old) & set(event.new)
             elif (
               (event.name == 'value' and self._indexes_changed(event.old, event.new)) or
               (event.name in page_events and not self._updating) or
@@ -1495,7 +1507,6 @@ class Tabulator(BaseTable):
             ):
                 self.expanded = []
                 return
-        old_panels = self._child_panels
         self._child_panels = child_panels = self._get_children(
             {i: old_panels[i] for i in reuse}
         )
@@ -1591,6 +1602,10 @@ class Tabulator(BaseTable):
         self.param.page.bounds = (1, max_page)
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'max_page': max_page}, model, ref)
+
+    def _clear_selection_remote_pagination(self, event):
+        if not self._updating and self.selection and event.new is not event.old and self.pagination == 'remote':
+            self.selection = []
 
     def _update_selected(self, *events: param.parameterized.Event, indices=None):
         kwargs = {}

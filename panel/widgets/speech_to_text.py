@@ -382,7 +382,7 @@ class SpeechToText(Widget):
     results = param.List(constant=True, doc="""
         The `results` as a list of Dictionaries.""")
 
-    value = param.String(constant=True, label="Last Result", doc="""
+    value = param.String(default="", constant=True, label="Last Result", doc="""
         The transcipt of the highest confidence RecognitionAlternative
         of the last RecognitionResult. Please note we strip the
         transcript for leading spaces.""")

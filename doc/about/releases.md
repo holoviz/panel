@@ -2,13 +2,66 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.4.5
+
+Date: 2024-07-25
+
+This release addresses includes a wide range of bug fixes and some minor enhancements primarily aimed at performance. Many thanks to @CodeRambling as a returning contributor, and the core developer team including @Hoxbro, @MarcSkovMadsen, @maximlt and @philippjfr for contributing to this release.
+
+### Enhancements
+
+- Ensure `Design` is applied globally when using global templates ([#6992](https://github.com/holoviz/panel/pull/6992))
+- Do not re-render all children when expanding Tabulator row ([#7008](https://github.com/holoviz/panel/pull/7008))
+- Allow providing `DataFrame` as part of vega(-lite) spec ([#6979](https://github.com/holoviz/panel/pull/6979))
+
+### Bug fixes
+
+- Clear selection if value change from pagination=remote ([#6008](https://github.com/holoviz/panel/pull/6008), [#6968](https://github.com/holoviz/panel/pull/6968))
+- Ensure user cookie can be unencoded ([#6937](https://github.com/holoviz/panel/pull/6937))
+- Do not trigger ScrollButton event unless clicked ([#6938](https://github.com/holoviz/panel/pull/6938))
+- Do not error on autoreload shutdown ([#6940](https://github.com/holoviz/panel/pull/6940))
+- Ensure hooks such as plot linking are applied across roots in a template ([#6975](https://github.com/holoviz/panel/pull/6975))
+- Ensure `Feed` maintains scroll position ([#6984](https://github.com/holoviz/panel/pull/6984))
+- Ensure correct Document is set after liveness session cleanup ([#6988](https://github.com/holoviz/panel/pull/6988))
+- Fix issue detecting PyScript worker ([#6998](https://github.com/holoviz/panel/pull/6998))
+- Fix `FileDownload` icon alignment ([#6981](https://github.com/holoviz/panel/pull/6981))
+- Ensure redraw does not error out if `Tabulator` is undefined ([#6930](https://github.com/holoviz/panel/pull/6930))
+- Guard auth against user being removed ([#6908](https://github.com/holoviz/panel/pull/6908))
+
+### Documentation
+
+- Add crossfiltering dashboard tutorial ([#6630](https://github.com/holoviz/panel/pull/6630))
+- Add server video stream tutorial ([#6727](https://github.com/holoviz/panel/pull/6727))
+- Improve `Param` pane docstring ([#6989](https://github.com/holoviz/panel/pull/6989))
+- Fix streamz reference notebook ([#6980](https://github.com/holoviz/panel/pull/6980))
+- Document that `Image` pane is a wrapper around PNG, JPEG, PDF etc. panes ([#7004](https://github.com/holoviz/panel/pull/7004))
+
+## Version 1.4.4
+
+Date: 2024-05-31
+
+This release primarily addresses a critical regression in notebook comm channel handling introduced in 1.4.3 and includes a few minor fixes for Tabulator and documentation related issues. Many thanks to @justinwiley for his first contribution to Panel, @twobitunicorn as a returning contributor and the core contributors @maximlt and @philippjfr for their continued work.
+
+### Bug fixes
+
+- Fix notebook CommManager extraction of buffers ([#6880](https://github.com/holoviz/panel/pull/6880))
+- Fix issue when editing timezone-aware datetime column `Tabulator` ([#6879](https://github.com/holoviz/panel/pull/6879))
+- Ensure `Tabulator` does not rebuild children when using `embed_content` with `row_content` ([#6881](https://github.com/holoviz/panel/pull/6881))
+- Ensure `ParamRef`, `ParamFunction` and `ParamMethod` resolve synchronous generators asynchronously ([#6885](https://github.com/holoviz/panel/pull/6885))
+- Ensure periodic callback cleanup does not error on session warmup ([#6886](https://github.com/holoviz/panel/pull/6886))
+
+### Documentation
+
+- Update OAuth documentation to correctly reference auth_code provider ([#6875](https://github.com/holoviz/panel/pull/6875))
+- Fix `CheckBoxGroup` `value` type annotation in reference docs ([#6877](https://github.com/holoviz/panel/pull/6877))
+
 ## Version 1.4.3
 
-Date: 2024-05-21
+Date: 2024-05-23
 
-This patch release is likely the last in the 1.4.x series. The most important fixes in this release are fixes to ensure keyboard shortcuts do not get triggered inside Panel components for for recent versions of JupyterLab, fixes for OAuth token refreshes, and various documentation fixes. The release also includes a small number of enhancements, including improved UX for the `FileSelector`. Many thanks to the many contributors to this release including @jrycw, @Coderambling, @cdeil, and the maintainers @Hoxbro, @MarcSkovMadsen, @ahuang11, @maximlt and @philippjfr.
+This patch release is likely the last in the 1.4.x series. The most important fixes in this release are fixes to ensure keyboard shortcuts do not get triggered inside Panel components for for recent versions of JupyterLab, fixes for OAuth token refreshes, and various documentation fixes. The release also includes a small number of enhancements, including improved UX for the `FileSelector`. Many thanks to the many contributors to this release including @jrycw, @Coderambling, @cdeil, @twobitunicorn, and the maintainers @Hoxbro, @MarcSkovMadsen, @ahuang11, @maximlt and @philippjfr.
 
-## Enhancements
+### Enhancements
 
 - Add CSS on mouse interaction with `Card` ([#6636](https://github.com/holoviz/panel/pull/6636))
 - Make `ChatMessage.reaction_icons` reactive ([#6807](https://github.com/holoviz/panel/pull/6807))
@@ -37,6 +90,7 @@ This patch release is likely the last in the 1.4.x series. The most important fi
 - Add redirects for old documentation pages ([#6833](https://github.com/holoviz/panel/pull/6833))
 - Remove Google Analytics ([#6836](https://github.com/holoviz/panel/pull/6836))
 - Various documentation fixes ([#6829](https://github.com/holoviz/panel/pull/6829))
+- Fix link in gallery index ([#6858](https://github.com/holoviz/panel/pull/6858))
 
 ## Version 1.4.2
 

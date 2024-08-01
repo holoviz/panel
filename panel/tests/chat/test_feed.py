@@ -5,7 +5,9 @@ import pytest
 
 from panel.chat.feed import ChatFeed
 from panel.chat.icon import ChatReactionIcons
-from panel.chat.message import ChatMessage
+from panel.chat.message import DEFAULT_AVATARS, ChatMessage
+from panel.chat.step import ChatStep
+from panel.chat.utils import avatar_lookup
 from panel.layout import Column, Row
 from panel.pane.image import Image
 from panel.pane.markup import HTML
@@ -187,6 +189,113 @@ class TestChatFeed:
         wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1] is new_entry
         assert chat_feed.objects[1].object == "New message"
+
+    def test_add_step(self, chat_feed):
+        # new
+        with chat_feed.add_step("Object", title="Title") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Title"
+            assert step.objects[0].object == "Object"
+
+        assert len(chat_feed) == 1
+        message = chat_feed.objects[0]
+        assert isinstance(message, ChatMessage)
+
+        steps = message.object
+        assert isinstance(steps, Column)
+
+        assert len(steps) == 1
+        assert isinstance(steps[0], ChatStep)
+
+        # existing
+        with chat_feed.add_step("New Object", title="New Title") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "New Title"
+            assert step.objects[0].object == "New Object"
+        assert len(steps) == 2
+        assert isinstance(steps[0], ChatStep)
+        assert isinstance(steps[1], ChatStep)
+
+        # actual component
+        with chat_feed.add_step("Newest Object", title="Newest Title") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Newest Title"
+            assert step.objects[0].object == "Newest Object"
+        assert len(steps) == 3
+        assert isinstance(steps[0], ChatStep)
+        assert isinstance(steps[1], ChatStep)
+        assert isinstance(steps[2], ChatStep)
+
+    def test_add_step_new_user(self, chat_feed):
+        with chat_feed.add_step("Object", title="Title", user="A") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Title"
+            assert step.objects[0].object == "Object"
+
+        with chat_feed.add_step("Object 2", title="Title 2", user="B") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Title 2"
+            assert step.objects[0].object == "Object 2"
+
+        assert len(chat_feed) == 2
+        message1 = chat_feed.objects[0]
+        assert isinstance(message1, ChatMessage)
+        assert message1.user == "A"
+        steps1 = message1.object
+        assert isinstance(steps1, Column)
+        assert len(steps1) == 1
+        assert isinstance(steps1[0], ChatStep)
+        assert len(steps1[0].objects) == 1
+        assert steps1[0].objects[0].object == "Object"
+
+        message2 = chat_feed.objects[1]
+        assert isinstance(message2, ChatMessage)
+        assert message2.user == "B"
+        steps2 = message2.object
+        assert isinstance(steps2, Column)
+        assert len(steps2) == 1
+        assert isinstance(steps2[0], ChatStep)
+        assert len(steps2[0].objects) == 1
+        assert steps2[0].objects[0].object == "Object 2"
+
+    def test_add_step_explict_not_append(self, chat_feed):
+        with chat_feed.add_step("Object", title="Title") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Title"
+            assert step.objects[0].object == "Object"
+
+        with chat_feed.add_step("Object 2", title="Title 2", append=False) as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Title 2"
+            assert step.objects[0].object == "Object 2"
+
+        assert len(chat_feed) == 2
+        message1 = chat_feed.objects[0]
+        assert isinstance(message1, ChatMessage)
+        assert message1.user == "User"
+        steps1 = message1.object
+        assert isinstance(steps1, Column)
+        assert len(steps1) == 1
+        assert isinstance(steps1[0], ChatStep)
+        assert len(steps1[0].objects) == 1
+        assert steps1[0].objects[0].object == "Object"
+
+        message2 = chat_feed.objects[1]
+        assert isinstance(message2, ChatMessage)
+        assert message2.user == "User"
+        steps2 = message2.object
+        assert isinstance(steps2, Column)
+        assert len(steps2) == 1
+        assert isinstance(steps2[0], ChatStep)
+        assert len(steps2[0].objects) == 1
+        assert steps2[0].objects[0].object == "Object 2"
+
+    def test_add_step_inherits_callback_exception(self, chat_feed):
+        chat_feed.callback_exception = "verbose"
+        with chat_feed.add_step("Object", title="Title") as step:
+            assert step.callback_exception == "verbose"
+            raise ValueError("Testing")
+        assert "Traceback" in step.objects[0].object
 
     def test_stream_with_user_avatar(self, chat_feed):
         user = "Bob"
@@ -376,7 +485,7 @@ class TestChatFeed:
         assert chat_feed.objects[0].user == "System"
         assert chat_feed.objects[0].avatar == "👨"
 
-    def test_default_avatars_superseded_by_callback_avatar(self, chat_feed):
+    def test_default_avatars_lookup(self, chat_feed):
         def callback(contents, user, instance):
             yield "Message back"
 
@@ -385,7 +494,24 @@ class TestChatFeed:
         chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].user == "System"
-        assert chat_feed.objects[1].avatar == ChatMessage()._avatar_lookup("System")
+        assert chat_feed.objects[1].avatar == avatar_lookup(
+            "System",
+            None,
+            {},
+            default_avatars=DEFAULT_AVATARS
+        )
+
+    def test_default_avatars_superseded_by_callback_avatar(self, chat_feed):
+        def callback(contents, user, instance):
+            yield "Message back"
+
+        chat_feed.callback = callback
+        chat_feed.callback_user = "System"
+        chat_feed.callback_avatar = "S"
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].user == "System"
+        assert chat_feed.objects[1].avatar == "S"
 
     def test_default_avatars_message_params(self, chat_feed):
         chat_feed.message_params["default_avatars"] = {"test1": "1"}
@@ -396,6 +522,17 @@ class TestChatFeed:
 
     def test_no_recursion_error(self, chat_feed):
         chat_feed.send("Some time ago, there was a recursion error like this")
+
+    @pytest.mark.parametrize("callback_avatar", [None, "👨", Image("https://panel.holoviz.org/_static/logo_horizontal.png")])
+    def test_callback_avatar(self, chat_feed, callback_avatar):
+        def callback(contents, user, instance):
+            yield "Message back"
+
+        chat_feed.callback_avatar = callback_avatar
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
 
     @pytest.mark.asyncio
     async def test_chained_response(self, chat_feed):
@@ -592,6 +729,20 @@ class TestChatFeedCallback:
         assert chat_feed.objects[1].object == "Message"
         assert not chat_feed.objects[-1].show_activity_dot
 
+    @pytest.mark.parametrize("key", ["value", "object"])
+    def test_generator_dict(self, chat_feed, key):
+        def echo(contents, user, instance):
+            message = ""
+            for char in contents:
+                message += char
+                yield {key: message}
+
+        chat_feed.callback = echo
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "Message"
+        assert chat_feed.objects[-1].object == "Message"
+
     @pytest.mark.asyncio
     async def test_async_generator(self, chat_feed):
         async def async_gen(contents):
@@ -610,6 +761,25 @@ class TestChatFeedCallback:
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Message"
         assert not chat_feed.objects[-1].show_activity_dot
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("key", ["value", "object"])
+    async def test_async_generator_dict(self, chat_feed, key):
+        async def async_gen(contents):
+            for char in contents:
+                yield char
+
+        async def echo(contents, user, instance):
+            message = ""
+            async for char in async_gen(contents):
+                message += char
+                yield {key: message}
+
+        chat_feed.callback = echo
+        chat_feed.send("Message", respond=True)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "Message"
+        assert chat_feed.objects[-1].object == "Message"
 
     def test_placeholder_text_params(self, chat_feed):
         def echo(contents, user, instance):
@@ -844,6 +1014,127 @@ class TestChatFeedCallback:
         assert feed.objects[-1].object == "helloooo"
         assert chat_feed._placeholder not in chat_feed._chat_log
 
+    def test_callback_one_argument(self, chat_feed):
+        def callback(contents):
+            return contents
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "Message"
+
+    def test_callback_positional_argument(self, chat_feed):
+        def callback(*args):
+            return f"{args[1]}: {args[0]}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_mix_positional_argument(self, chat_feed):
+        def callback(contents, *args):
+            return f"{args[0]}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_keyword_argument(self, chat_feed):
+        def callback(**kwargs):
+            assert "instance" in kwargs
+            return f"{kwargs['user']}: {kwargs['contents']}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_mix_keyword_argument(self, chat_feed):
+        def callback(contents, **kwargs):
+            return f"{kwargs['user']}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_mix_positional_keyword_argument(self, chat_feed):
+        def callback(*args, **kwargs):
+            assert not kwargs
+            return f"{args[1]}: {args[0]}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_two_arguments(self, chat_feed):
+        def callback(contents, user):
+            return f"{user}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_two_arguments_with_keyword(self, chat_feed):
+        def callback(contents, user=None):
+            return f"{user}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_three_arguments_with_keyword(self, chat_feed):
+        def callback(contents, user=None, instance=None):
+            return f"{user}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_two_arguments_yield(self, chat_feed):
+        def callback(contents, user):
+            yield f"{user}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_two_arguments_async_yield(self, chat_feed):
+        async def callback(contents, user):
+            yield f"{user}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_as_method(self, chat_feed):
+        class Test:
+            def callback(self, contents, user):
+                return f"{user}: {contents}"
+
+        chat_feed.callback = Test().callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_as_class_method(self, chat_feed):
+        class Test:
+            @classmethod
+            def callback(cls, contents, user):
+                return f"{user}: {contents}"
+
+        chat_feed.callback = Test.callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeForTransformers:
@@ -986,6 +1277,25 @@ class TestChatFeedSerializeForTransformers:
             {"role": "user", "content": "Hello there!"},
             {"role": "assistant", "content": "Hi User!"}
         ]
+
+    def test_serialize_limit(self):
+        chat_feed = ChatFeed()
+        chat_feed.send("I'm a user", user="user")
+        chat_feed.send("I'm the assistant", user="assistant")
+        chat_feed.send("I'm a bot", user="bot")
+        assert chat_feed.serialize(limit=1) == [
+            {"role": "assistant", "content": "I'm a bot"},
+        ]
+
+    def test_serialize_class(self, chat_feed):
+        class Test():
+
+            def __repr__(self):
+                return "Test()"
+
+        chat_feed.send(Test())
+        assert chat_feed.serialize() == [{"role": "user", "content": "Test()"}]
+
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeBase:
