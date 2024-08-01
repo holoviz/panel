@@ -66,9 +66,15 @@ representative at an online or offline event.
 
 ## 👩‍⚖️ Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-coc@holoviz.org.
+Instances of abusive, harassing, or otherwise unacceptable behavior
+may be reported to the community leaders responsible for enforcement
+at coc@holoviz.org, which is monitored by the [CoC
+subcommittee](https://panel.holoviz.org/about/people.html#CoC-Subcommittee)
+or a report can be made using the NumFOCUS Code of Conduct report
+form.  If community leaders cannot come to a resolution about
+enforcement, reports will be escalated to the NumFocus Code of Conduct
+committee (conduct@numfocus.org).
+
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
