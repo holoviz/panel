@@ -179,7 +179,7 @@ class ChatMessage(Pane):
     header_objects = param.List(doc="""
         A list of objects to display in the row of the header of the message.""")
 
-    max_width = param.Integer(default=1200, bounds=(0, None))
+    max_width = param.Integer(default=1200, bounds=(0, None), allow_None=True)
 
     object = param.Parameter(allow_refs=False, doc="""
         The message contents. Can be any Python object that panel can display.""")
@@ -342,7 +342,7 @@ class ChatMessage(Pane):
         """
         Serialize the message object to a string.
         """
-        return self.serialize()
+        return str(self.serialize())
 
     @property
     def _synced_params(self) -> list[str]:
@@ -632,6 +632,11 @@ class ChatMessage(Pane):
                 updates["user"] = user
             if avatar:
                 updates["avatar"] = avatar
+            if "value" in updates and "object" in updates:
+                raise ValueError(
+                    "Cannot set both 'value' and 'object' in the update dict."
+                )
+            updates["object"] = updates.pop("value", updates.get("object"))
         elif isinstance(value, ChatMessage):
             if user is not None or avatar is not None:
                 raise ValueError(

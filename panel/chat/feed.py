@@ -25,7 +25,7 @@ from ..io.resources import CDN_DIST
 from ..layout import Column, Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
-from ..pane.image import SVG
+from ..pane.image import SVG, ImageBase
 from ..pane.markup import Markdown
 from ..util import to_async_gen
 from ..viewable import Children
@@ -106,6 +106,12 @@ class ChatFeed(ListPanel):
 
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the message provided by the callback.""")
+
+    callback_avatar = param.ClassSelector(class_=(str, BytesIO, bytes, ImageBase), doc="""
+        The default avatar to use for the entry provided by the callback.
+        Takes precedence over `ChatMessage.default_avatars` if set; else, if None,
+        defaults to the avatar set in `ChatMessage.default_avatars` if matching key exists.
+        Otherwise defaults to the first character of the `callback_user`.""")
 
     card_params = param.Dict(default={}, doc="""
         Params to pass to Card, like `header`, `header_background`, `header_color`, etc.""")
@@ -393,10 +399,10 @@ class ChatFeed(ListPanel):
             raise StopCallback("Callback was stopped.")
 
         user = self.callback_user
-        avatar = None
+        avatar = self.callback_avatar
         if isinstance(value, dict):
             user = value.get("user", user)
-            avatar = value.get("avatar")
+            avatar = value.get("avatar", avatar)
 
         if message is not None:
             # ChatMessage is already created; updating existing ChatMessage
@@ -699,6 +705,7 @@ class ChatFeed(ListPanel):
         append: bool = True,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
+        steps_column: Column | None = None,
         **step_params
     ) -> ChatStep:
         """
@@ -717,6 +724,9 @@ class ChatFeed(ListPanel):
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message's avatar if provided.
             Will default to the avatar parameter. Only applicable if steps is "new".
+        steps_column : Column | None
+            An existing Column of steps to stream to, if None is provided
+            it will default to the last Column of steps or create a new one.
         step_params : dict
             Parameters to pass to the ChatStep.
         """
@@ -733,8 +743,9 @@ class ChatFeed(ListPanel):
                 )
                 for obj in step
             ]
+            if "context_exception" not in step_params:
+                step_params["context_exception"] = self.callback_exception
             step = ChatStep(**step_params)
-        steps_column = None
         if append:
             last = self._chat_log[-1] if self._chat_log else None
             if last is not None and isinstance(last.object, Column) and (
@@ -752,6 +763,7 @@ class ChatFeed(ListPanel):
             self.stream(steps_column, user=user, avatar=avatar)
         else:
             steps_column.append(step)
+            self._chat_log.scroll_to_latest()
         return step
 
     def respond(self):
@@ -885,6 +897,7 @@ class ChatFeed(ListPanel):
         filter_by: Callable | None = None,
         format: Literal["transformers"] = "transformers",
         custom_serializer: Callable | None = None,
+        limit: int | None = None,
         **serialize_kwargs
     ):
         """
@@ -905,6 +918,8 @@ class ChatFeed(ListPanel):
             A custom function to format the ChatMessage's object. The function must
             accept one positional argument, the ChatMessage object, and return a string.
             If not provided, uses the serialize method on ChatMessage.
+        limit : int
+            The number of messages to serialize at most, starting from the last message.
         **serialize_kwargs
             Additional keyword arguments to use for the specified format.
 
@@ -928,8 +943,11 @@ class ChatFeed(ListPanel):
         else:
             exclude_users = [user.lower() for user in exclude_users]
 
+        objects = self._chat_log.objects
+        if limit is not None:
+            objects = objects[-limit:]
         messages = [
-            message for message in self._chat_log.objects
+            message for message in objects
             if message.user.lower() not in exclude_users
             and message is not self._placeholder
         ]

@@ -2,7 +2,7 @@
 
 `Viewer` simplifies the creation of custom Panel components using Python and Panel components only.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
@@ -58,7 +58,7 @@ None. The `Viewer` class does not have any special attributes. It is a simple `p
 
 You can style the component by styling the component(s) returned by `__panel__` using their `styles` or `stylesheets` attributes.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
@@ -119,7 +119,7 @@ You can display Panel components (`Viewable`s) by defining a `Child` parameter.
 
 Let's start with the simplest example:
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Child
@@ -144,25 +144,25 @@ The `_object` is a workaround to enable the `_layout` to replace the `object` co
 
 Let's replace the `object` with a `Button`:
 
-```pyodide
+```{pyodide}
 single_child.object = pn.widgets.Button(name="Click me")
 ```
 
 Let's change it back
 
-```pyodide
+```{pyodide}
 single_child.object = pn.pane.Markdown("A **Markdown** pane!")
 ```
 
 If you provide a non-`Viewable` child it will automatically be converted to a `Viewable` by `pn.panel`:
 
-```pyodide
+```{pyodide}
 SingleChild(object="A **Markdown** pane!").servable()
 ```
 
 If you want to allow a certain type of Panel components only, you can specify the specific type in the `class_` argument.
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Child
@@ -184,7 +184,7 @@ SingleChild(object=pn.pane.Markdown("A **Markdown** pane!")).servable()
 
 The `class_` argument also supports a tuple of types:
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Child
@@ -208,7 +208,7 @@ SingleChild(object=pn.pane.Markdown("A **Markdown** pane!")).servable()
 
 You can also display a `List` of `Viewable` objects using the `Children` parameter type:
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Children

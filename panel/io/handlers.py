@@ -239,7 +239,7 @@ def autoreload_handle_exception(handler, module, e):
         alert_type='danger', margin=5, sizing_mode='stretch_width'
     ).servable()
 
-def run_app(handler, module, doc, post_run=None):
+def run_app(handler, module, doc, post_run=None, allow_empty=False):
     try:
         old_doc = curdoc()
     except RuntimeError:
@@ -266,9 +266,25 @@ def run_app(handler, module, doc, post_run=None):
             with patch_curdoc(doc):
                 with profile_ctx(config.profiler) as sessions:
                     with record_modules(handler=handler):
-                        handler._runner.run(module, post_check)
-                        if post_run:
-                            post_run()
+                        runner = handler._runner
+                        if runner.error:
+                            from ..pane import Alert
+                            Alert(
+                                f'<b>{runner.error}</b>\n<pre style="overflow-y: auto">{runner.error_detail}</pre>',
+                                alert_type='danger', margin=5, sizing_mode='stretch_width'
+                            ).servable()
+                        else:
+                            handler._runner.run(module, post_check)
+                            if post_run:
+                                post_run()
+                if not doc.roots and not allow_empty and config.autoreload:
+                    from ..pane import Alert
+                    Alert(
+                        ('<b>Application did not publish any contents</b>\n\n<span>'
+                        'Ensure you have marked items as servable or added models to '
+                        'the bokeh document manually.'),
+                        alert_type='danger', margin=5, sizing_mode='stretch_width'
+                    ).servable()
     finally:
         if config.profiler:
             try:
@@ -422,6 +438,13 @@ class PanelCodeHandler(CodeHandler):
         for f in PanelCodeHandler._io_functions:
             self._loggers[f] = self._make_io_logger(f)
 
+    def url_path(self) -> str | None:
+        if self.failed and not config.autoreload:
+            return None
+
+        # TODO should fix invalid URL characters
+        return '/' + os.path.splitext(os.path.basename(self._runner.path))[0]
+
     def modify_document(self, doc: 'Document'):
         if config.autoreload:
             path = self._runner.path
@@ -433,14 +456,15 @@ class PanelCodeHandler(CodeHandler):
 
         # If no module was returned it means the code runner has some permanent
         # unfixable problem, e.g. the configured source code has a syntax error
-        if module is None:
+        if module is None and not config.autoreload:
             return
 
         # One reason modules are stored is to prevent the module from being gc'd
         # before the document is. A symptom of a gc'd module is that its globals
         # become None. Additionally stored modules are used to provide correct
         # paths to custom models resolver.
-        doc.modules.add(module)
+        if module is not None:
+            doc.modules.add(module)
 
         run_app(self, module, doc)
 
@@ -649,14 +673,15 @@ class NotebookHandler(PanelCodeHandler):
 
         # If no module was returned it means the code runner has some permanent
         # unfixable problem, e.g. the configured source code has a syntax error
-        if module is None:
+        if module is None and not config.autoreload:
             return
 
         # One reason modules are stored is to prevent the module from being gc'd
         # before the document is. A symptom of a gc'd module is that its globals
         # become None. Additionally stored modules are used to provide correct
         # paths to custom models resolver.
-        doc.modules.add(module)
+        if module is not None:
+            doc.modules.add(module)
 
         def post_run():
             if not (doc.roots or doc in state._templates or self._runner.error):
@@ -665,7 +690,7 @@ class NotebookHandler(PanelCodeHandler):
 
         with _patch_ipython_display():
             with set_env_vars(MPLBACKEND='agg'):
-                run_app(self, module, doc, post_run)
+                run_app(self, module, doc, post_run, allow_empty=True)
 
     def _update_position_metadata(self, event):
         """

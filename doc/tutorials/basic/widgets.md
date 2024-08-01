@@ -10,11 +10,11 @@ You can explore the full array of available widgets and their detailed reference
 
 :::{note}
 Widgets typically utilize the `value` parameter to capture user input.
-Some widgets, such as the [`Button`](../../reference/widgets/Button.ipynb), even allow you to register callback functions that trigger actions upon interaction.
+Some widgets, such as the [`Button`](../../reference/widgets/Button.md), even allow you to register callback functions that trigger actions upon interaction.
 
-For more complex scenarios, widgets like the [`Tabulator`](../../reference/widgets/Tabulator.ipynb) offer versatile input capabilities.
+For more complex scenarios, widgets like the [`Tabulator`](../../reference/widgets/Tabulator.md) offer versatile input capabilities.
 
-In some cases, Panes can accept user input too. For example, the [`ECharts`](../../reference/panes/ECharts.ipynb), [`Plotly`](../../reference/panes/Plotly.ipynb), and [`Vega`](../../reference/panes/Vega.ipynb) (Altair) panes can accept user inputs.
+In some cases, Panes can accept user input too. For example, the [`ECharts`](../../reference/panes/ECharts.md), [`Plotly`](../../reference/panes/Plotly.md), and [`Vega`](../../reference/panes/Vega.md) (Altair) panes can accept user inputs.
 
 :::
 
@@ -45,7 +45,7 @@ With features like icons, button types, and descriptions, buttons provide both f
 The `.servable()` method is used to include the component in the app served by `panel serve app.py --autoreload`. This is not necessary for displaying the component in a notebook.
 :::
 
-For a deeper understanding of the `Button` widget and its capabilities, refer to its detailed [reference guide](../../reference/widgets/Button.ipynb).
+For a deeper understanding of the `Button` widget and its capabilities, refer to its detailed [reference guide](../../reference/widgets/Button.md).
 
 ### Accept Text Input
 
@@ -67,7 +67,7 @@ pn.widgets.TextInput(
 
 Hover over the input field to see its description as a tooltip. Try enabling the input by changing `disabled=True` to `disabled=False`. You'll also notice how the `max_length` parameter limits input length.
 
-To delve into the details of the `TextInput` widget, check out its [reference guide](../../reference/widgets/TextInput.ipynb).
+To delve into the details of the `TextInput` widget, check out its [reference guide](../../reference/widgets/TextInput.md).
 
 ### Selecting from a List
 

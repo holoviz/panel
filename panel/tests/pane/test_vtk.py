@@ -410,8 +410,6 @@ def test_vtkvol_serialization_coherence(document, comm):
     assert np.all(data_decoded==data_matrix)
     assert vd_id == vd_c == vd_f
 
-
-
     p_c_ds = VTKVolume(data_matrix_c, origin=origin, spacing=spacing, max_data_size=0.1)
     p_f_ds = VTKVolume(data_matrix_f, origin=origin, spacing=spacing, max_data_size=0.1)
     p_id_ds = VTKVolume(image_data, max_data_size=0.1)

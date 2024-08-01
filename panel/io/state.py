@@ -1102,6 +1102,8 @@ class _state(param.Parameterized):
         elif self.curdoc is None and self._template:
             return self._template
         template = config.template(theme=config.theme)
+        if not config.design:
+            config.design = template.design
         if self.curdoc is None:
             self._template = template
         else:

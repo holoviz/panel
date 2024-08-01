@@ -6,6 +6,40 @@
 
 - `PasswordInput` and `TextAreaInput` no longer inherit directly from `TextInput` ([#6593](https://github.com/holoviz/panel/pull/6593))
 
+## Version 1.4.5
+
+Date: 2024-07-25
+
+This release addresses includes a wide range of bug fixes and some minor enhancements primarily aimed at performance. Many thanks to @CodeRambling as a returning contributor, and the core developer team including @Hoxbro, @MarcSkovMadsen, @maximlt and @philippjfr for contributing to this release.
+
+### Enhancements
+
+- Ensure `Design` is applied globally when using global templates ([#6992](https://github.com/holoviz/panel/pull/6992))
+- Do not re-render all children when expanding Tabulator row ([#7008](https://github.com/holoviz/panel/pull/7008))
+- Allow providing `DataFrame` as part of vega(-lite) spec ([#6979](https://github.com/holoviz/panel/pull/6979))
+
+### Bug fixes
+
+- Clear selection if value change from pagination=remote ([#6008](https://github.com/holoviz/panel/pull/6008), [#6968](https://github.com/holoviz/panel/pull/6968))
+- Ensure user cookie can be unencoded ([#6937](https://github.com/holoviz/panel/pull/6937))
+- Do not trigger ScrollButton event unless clicked ([#6938](https://github.com/holoviz/panel/pull/6938))
+- Do not error on autoreload shutdown ([#6940](https://github.com/holoviz/panel/pull/6940))
+- Ensure hooks such as plot linking are applied across roots in a template ([#6975](https://github.com/holoviz/panel/pull/6975))
+- Ensure `Feed` maintains scroll position ([#6984](https://github.com/holoviz/panel/pull/6984))
+- Ensure correct Document is set after liveness session cleanup ([#6988](https://github.com/holoviz/panel/pull/6988))
+- Fix issue detecting PyScript worker ([#6998](https://github.com/holoviz/panel/pull/6998))
+- Fix `FileDownload` icon alignment ([#6981](https://github.com/holoviz/panel/pull/6981))
+- Ensure redraw does not error out if `Tabulator` is undefined ([#6930](https://github.com/holoviz/panel/pull/6930))
+- Guard auth against user being removed ([#6908](https://github.com/holoviz/panel/pull/6908))
+
+### Documentation
+
+- Add crossfiltering dashboard tutorial ([#6630](https://github.com/holoviz/panel/pull/6630))
+- Add server video stream tutorial ([#6727](https://github.com/holoviz/panel/pull/6727))
+- Improve `Param` pane docstring ([#6989](https://github.com/holoviz/panel/pull/6989))
+- Fix streamz reference notebook ([#6980](https://github.com/holoviz/panel/pull/6980))
+- Document that `Image` pane is a wrapper around PNG, JPEG, PDF etc. panes ([#7004](https://github.com/holoviz/panel/pull/7004))
+
 ## Version 1.4.4
 
 Date: 2024-05-31
