@@ -145,7 +145,7 @@ def http_serve():
         yield write
     finally:
         httpd.shutdown()
-        test_file.cleanup()
+        temp_dir.cleanup()
 
 
 def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
