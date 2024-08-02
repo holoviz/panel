@@ -122,7 +122,7 @@ export class CardView extends ColumnView {
   _toggle_button(e: MouseEvent): void {
     for (const path of e.composedPath()) {
       if (path instanceof HTMLInputElement ) {
-	return
+        return
       }
     }
     this.model.collapsed = !this.model.collapsed
