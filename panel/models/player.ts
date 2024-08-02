@@ -82,8 +82,8 @@ export class PlayerView extends WidgetView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {name, value_location, direction, value, loop_policy, disabled, show_loop_controls} = this.model.properties
-    this.on_change(name, () => this.update_title())
+    const {title, value_location, direction, value, loop_policy, disabled, show_loop_controls} = this.model.properties
+    this.on_change(title, () => this.update_title())
     this.on_change(value_location, () => this.set_value_location())
     this.on_change(direction, () => this.set_direction())
     this.on_change(value, () => this.render())
