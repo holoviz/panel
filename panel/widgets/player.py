@@ -19,6 +19,10 @@ if TYPE_CHECKING:
 
 class PlayerBase(Widget):
 
+
+    #value_location = param.String(default="", allow_None=True, doc="""
+    #    Name to display above the widget""")
+
     direction = param.Integer(default=0, doc="""
         Current play direction of the Player (-1: playing in reverse,
         0: paused, 1: playing)""")
@@ -38,6 +42,10 @@ class PlayerBase(Widget):
         Number of frames to step forward and back by on each event.""")
 
     height = param.Integer(default=80)
+
+    value_location = param.String(default="top_center", allow_None=True, doc="""
+        Location to display the value of the slider
+        ("top_left" "top_center", "top_right")""")
 
     width = param.Integer(default=510, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -76,7 +84,7 @@ class Player(PlayerBase):
 
     :Example:
 
-    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop')
+    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop', value_location = 'top_center')
     """
 
     start = param.Integer(default=0, doc="Lower bound on the slider value")
@@ -130,7 +138,8 @@ class DiscretePlayer(PlayerBase, SelectBase):
     >>> DiscretePlayer(
     ...     name='Discrete Player',
     ...     options=[2, 4, 8, 16, 32, 64, 128], value=32,
-    ...     loop_policy='loop'
+    ...     loop_policy='loop',
+    ...     value_location = 'top_center'
     ... )
     """
 
