@@ -1243,7 +1243,7 @@ export class DataTabulatorView extends HTMLBoxView {
         const end_idx = rows.indexOf(row._row)
         const reverse = start_idx > end_idx
         const [start, end] = reverse ? [end_idx+1, start_idx+1] : [start_idx, end_idx]
-        indices = rows.slice(start, end).map((r) => r.data._index)
+        indices = rows.slice(start, end).map((r: any) => r.data._index)
         if (reverse) { indices = indices.reverse() }
       }
     }
