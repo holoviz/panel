@@ -782,7 +782,10 @@ class VTKVolume(AbstractVTK):
         if any([d_f > 1 for d_f in dowsnscale_factor]):
             try:
                 import scipy.ndimage as nd
-                sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
+                if hasattr(nd, "zoom"):
+                    sub_array = nd.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
+                else:  # Slated for removal in 2.0
+                    sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
             except ImportError:
                 sub_array = array[::int(np.ceil(dowsnscale_factor[0])),
                                   ::int(np.ceil(dowsnscale_factor[1])),

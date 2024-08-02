@@ -603,6 +603,31 @@ export class DataTabulatorView extends HTMLBoxView {
     this.setStyles()
 
     if (this.model.pagination) {
+      if (this.model.page_size == null) {
+        const table = this.shadow_el.querySelector(".tabulator-table")
+        const holder = this.shadow_el.querySelector(".tabulator-tableholder")
+        if (table != null && holder != null) {
+          const table_height = holder.clientHeight
+          let height = 0
+          let page_size = null
+          const heights = []
+          for (let i = 0; i<table.children.length; i++) {
+            const row_height = table.children[i].clientHeight
+            heights.push(row_height)
+            height += row_height
+            if (height > table_height) {
+              page_size = i
+              break
+            }
+          }
+          if (height < table_height) {
+            page_size = table.children.length
+            const remaining = table_height - height
+            page_size += Math.floor(remaining / Math.min(...heights))
+          }
+          this.model.page_size = page_size
+        }
+      }
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
     }
@@ -665,7 +690,7 @@ export class DataTabulatorView extends HTMLBoxView {
       layout: this.getLayout(),
       pagination: this.model.pagination != null,
       paginationMode: this.model.pagination,
-      paginationSize: this.model.page_size,
+      paginationSize: this.model.page_size || 20,
       paginationInitialPage: 1,
       groupBy: this.groupBy,
       rowFormatter: (row: any) => this._render_row(row),
@@ -1351,7 +1376,7 @@ export namespace DataTabulator {
     layout: p.Property<typeof TableLayout["__type__"]>
     max_page: p.Property<number>
     page: p.Property<number>
-    page_size: p.Property<number>
+    page_size: p.Property<number | null>
     pagination: p.Property<string | null>
     select_mode: p.Property<any>
     selectable_rows: p.Property<number[] | null>
@@ -1397,7 +1422,7 @@ export class DataTabulator extends HTMLBox {
       max_page:       [ Float,                   0 ],
       pagination:     [ Nullable(Str),      null ],
       page:           [ Float,                   0 ],
-      page_size:      [ Float,                   0 ],
+      page_size:      [ Nullable(Float),       null ],
       select_mode:    [ Any,                   true ],
       selectable_rows: [ Nullable(List(Float)), null ],
       source:         [ Ref(ColumnDataSource)       ],

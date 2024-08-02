@@ -179,7 +179,7 @@ class TestChatMessage:
         columns = message._composite.objects
         timestamp_pane = columns[1][2][0]
         assert isinstance(timestamp_pane, HTML)
-        dt_str = datetime.datetime.utcnow().strftime("%H:%M")
+        dt_str = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="US/Pacific")

@@ -2264,7 +2264,7 @@ def test_tabulator_styling_init(page, df_mixed):
     df_styled = (
         df_mixed.style
         .apply(highlight_max, subset=['int'])
-        .applymap(color_false, subset=['bool'])
+        .map(color_false, subset=['bool'])
     )
     widget = Tabulator(df_styled)
 
@@ -2404,7 +2404,7 @@ def test_tabulator_sorters_set_after_init(page, df_mixed):
     widget.sorters = [{'field': 'int', 'dir': 'desc'}]
 
     sheader = page.locator('[aria-sort="descending"]:visible')
-    expect(sheader).to_have_count(1)
+    wait_until(lambda: expect(sheader).to_have_count(1), page)
     assert sheader.get_attribute('tabulator-field') == 'int'
 
     expected_df_sorted = df_mixed.sort_values('int', ascending=False)
@@ -2875,7 +2875,7 @@ def test_tabulator_edit_event_integrations(page, sorter, python_filter, header_f
         expected_current_view = expected_current_view.query(f'{python_filter_col} == @python_filter_val')
     if header_filter == 'header_filter':
         expected_current_view = expected_current_view.query(f'{header_filter_col} == @header_filter_val')
-    assert widget.current_view.equals(expected_current_view)
+    pd.testing.assert_frame_equal(widget.current_view, expected_current_view)
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
@@ -2952,7 +2952,6 @@ def test_tabulator_click_event_selection_integrations(page, sorter, python_filte
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
 def test_tabulator_selection_sorters_on_init(page, df_mixed):
     widget = Tabulator(df_mixed, sorters=[{'field': 'int', 'dir': 'desc'}])
 
@@ -3387,6 +3386,29 @@ def test_tabulator_update_hidden_columns(page):
         (title.bounding_box()['x'] == cell.bounding_box()['x']) and
         (title.bounding_box()['width'] == cell.bounding_box()['width'])
     ), page)
+
+
+def test_tabulator_remote_pagination_auto_page_size_grow(page, df_mixed):
+    nrows, ncols = df_mixed.shape
+    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=1, height=200)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    wait_until(lambda: widget.page_size == 4, page)
+
+
+def test_tabulator_remote_pagination_auto_page_size_shrink(page, df_mixed):
+    nrows, ncols = df_mixed.shape
+    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=10, height=150)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    wait_until(lambda: widget.page_size == 3, page)
+
 
 
 class Test_RemotePagination:

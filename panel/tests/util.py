@@ -442,8 +442,7 @@ def http_serve_directory(directory=".", port=0):
         with httpd:
             httpd.serve_forever()
 
-    thread = Thread(target=serve_forever, args=(httpd, ))
-    thread.setDaemon(True)
+    thread = Thread(target=serve_forever, args=(httpd, ), daemon=True)
     thread.start()
 
     return httpd, address
