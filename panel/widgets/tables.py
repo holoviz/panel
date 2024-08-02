@@ -1028,6 +1028,29 @@ class DataFrame(BaseTable):
             g.aggregators = self._get_aggregators(index)
 
 
+class _ListValidateWithCallable(param.List):
+
+    __slots__ = ['callable']
+
+    def __init__(self, **params):
+        self.callable = params.pop("callable", None)
+        super().__init__(**params)
+
+    def _validate(self, val):
+        super()._validate(val)
+        self._validate_callable(val)
+
+    def _validate_callable(self, val):
+        if self.callable is not None:
+            selectable = self.callable()
+            if selectable and val:
+                if set(val) - set(selectable):
+                    raise ValueError(
+                        "Values in 'selection' must not have values "
+                        "which are not available with 'selectable_rows'."
+                  )
+
+
 class Tabulator(BaseTable):
     """
     The `Tabulator` widget wraps the [Tabulator js](http://tabulator.info/)
@@ -1108,6 +1131,10 @@ class Tabulator(BaseTable):
 
     row_height = param.Integer(default=30, doc="""
         The height of each table row.""")
+
+    selection = _ListValidateWithCallable(default=[], doc="""
+        The currently selected rows of the table. It validates
+        its values against 'selectable_rows' if used.""")
 
     selectable = param.ClassSelector(
         default=True, class_=(bool, str, int), doc="""
@@ -1207,6 +1234,7 @@ class Tabulator(BaseTable):
             self.on_edit(edit_handler)
         if style is not None:
             self.style._todo = style._todo
+        self.param.selection.callable = self._get_selectable
 
     @param.depends('value', watch=True, on_init=True)
     def _apply_max_size(self):
