@@ -24,22 +24,9 @@ from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
-from panel.widgets import Select, Tabulator
+from panel.widgets import Select, Tabulator, TextInput
 
 pytestmark = pytest.mark.ui
-
-
-@pytest.fixture
-def df_mixed():
-    df = pd.DataFrame({
-        'int': [1, 2, 3, 4],
-        'float': [3.14, 6.28, 9.42, -2.45],
-        'str': ['A', 'B', 'C', 'D'],
-        'bool': [True, True, True, False],
-        'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
-        'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
-    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
-    return df
 
 
 @pytest.fixture(scope='session')
@@ -2967,7 +2954,6 @@ def test_tabulator_selection_sorters_on_init(page, df_mixed):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.xfail(reason='https://github.com/holoviz/panel/issues/3664')
 def test_tabulator_selection_header_filter_unchanged(page):
     df = pd.DataFrame({
         'col1': list('XYYYYY'),
@@ -3409,6 +3395,54 @@ def test_tabulator_remote_pagination_auto_page_size_shrink(page, df_mixed):
 
     wait_until(lambda: widget.page_size == 3, page)
 
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_selection_indices_on_remote_paginated_and_filtered_data(page, df_strings, pagination):
+    tbl = Tabulator(
+        df_strings,
+        disabled=True,
+        pagination=pagination,
+        page_size=6,
+    )
+
+    descr_filter = TextInput(name='descr', value='cut')
+
+    def contains_filter(df, pattern=None):
+        if not pattern:
+            return df
+        return df[df.descr.str.contains(pattern, case=False)]
+
+    filter_fn = param.bind(contains_filter, pattern=descr_filter)
+    tbl.add_filter(filter_fn)
+
+    serve_component(page, tbl)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    row = page.locator('.tabulator-row').nth(1)
+    row.click()
+
+    wait_until(lambda: tbl.selection == [7], page)
+
+    tbl.page_size = 2
+
+    page.locator('.tabulator-row').nth(0).click()
+
+    wait_until(lambda: tbl.selection == [3], page)
+
+    if pagination:
+        page.locator('.tabulator-pages > .tabulator-page').nth(1).click()
+        expect(page.locator('.tabulator-row')).to_have_count(1)
+        page.locator('.tabulator-row').nth(0).click()
+    else:
+        expect(page.locator('.tabulator-row')).to_have_count(3)
+        page.locator('.tabulator-row').nth(2).click()
+
+    wait_until(lambda: tbl.selection == [8], page)
+
+    descr_filter.value = ''
+
+    wait_until(lambda: tbl.selection == [8], page)
 
 
 class Test_RemotePagination:
