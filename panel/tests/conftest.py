@@ -3,6 +3,7 @@ A module containing testing utilities and fixtures.
 """
 import asyncio
 import atexit
+import datetime as dt
 import os
 import pathlib
 import re
@@ -493,3 +494,37 @@ def exception_handler_accumulator():
         yield exceptions
     finally:
         config.exception_handler = old_eh
+
+
+@pytest.fixture
+def df_mixed():
+    df = pd.DataFrame({
+        'int': [1, 2, 3, 4],
+        'float': [3.14, 6.28, 9.42, -2.45],
+        'str': ['A', 'B', 'C', 'D'],
+        'bool': [True, True, True, False],
+        'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
+        'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
+    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+    return df
+
+@pytest.fixture
+def df_strings():
+    descr = [
+        'Under the Weather',
+        'Top Drawer',
+        'Happy as a Clam',
+        'Cut To The Chase',
+        'Knock Your Socks Off',
+        'A Cold Day in Hell',
+        'All Greek To Me',
+        'A Cut Above',
+        'Cut The Mustard',
+        'Up In Arms',
+        'Playing For Keeps',
+        'Fit as a Fiddle',
+    ]
+
+    code = [f'{i:02d}' for i in range(len(descr))]
+
+    return pd.DataFrame(dict(code=code, descr=descr))

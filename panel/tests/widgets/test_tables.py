@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
+import param
 import pytest
 
 from bokeh.models.widgets.tables import (
@@ -34,6 +35,7 @@ def makeMixedDataFrame():
         "D": pd.bdate_range("1/1/2009", periods=5),
     }
     return pd.DataFrame(data)
+
 
 
 def test_dataframe_widget(dataframe, document, comm):
@@ -395,6 +397,8 @@ def test_tabulator_selected_and_filtered_dataframe(document, comm):
 
     table.add_filter('foo3', 'C')
 
+    assert table.selection == list(range(5))
+
     pd.testing.assert_frame_equal(table.selected_dataframe, df[df["C"] == "foo3"])
 
     table.remove_filter('foo3')
@@ -403,7 +407,46 @@ def test_tabulator_selected_and_filtered_dataframe(document, comm):
 
     table.add_filter('foo3', 'C')
 
-    assert table.selection == [0]
+    assert table.selection == [0, 1, 2]
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_selection_indices_on_remote_paginated_and_filtered_data(document, comm, df_strings, pagination):
+    tbl = Tabulator(
+        df_strings,
+        pagination=pagination,
+        page_size=6,
+        show_index=False,
+        height=300,
+        width=400
+    )
+
+    descr_filter = TextInput(name='descr')
+
+    def contains_filter(df, pattern=None):
+        if not pattern:
+            return df
+        return df[df.descr.str.contains(pattern, case=False)]
+
+    filter_fn = param.bind(contains_filter, pattern=descr_filter)
+    tbl.add_filter(filter_fn)
+
+    model = tbl.get_root(document, comm)
+
+    descr_filter.value = 'cut'
+
+    pd.testing.assert_frame_equal(
+        tbl.current_view, df_strings[df_strings.descr.str.contains('cut', case=False)]
+    )
+
+    model.source.selected.indices = [0, 2]
+
+    assert tbl.selection == [3, 8]
+
+    model.page_size = 2
+    model.source.selected.indices = [1]
+
+    assert tbl.selection == [7]
 
 
 def test_tabulator_config_defaults(document, comm):
