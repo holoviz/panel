@@ -297,12 +297,6 @@ class BaseTable(ReactiveData, Widget):
     def _update_cds(self, *events: param.parameterized.Event):
         self._processed, data = self._get_data()
         self._update_index_mapping()
-        # If there is a selection we have to filter it
-        if self.selection:
-            indexes = list(self._processed.index)
-            self.selection = [
-                sel for sel in self.selection if self.value.index[sel] in indexes
-            ]
         self._data = {k: _convert_datetime_array_ignore_list(v) for k, v in data.items()}
         msg = {'data': self._data}
         for ref, (m, _) in self._models.items():

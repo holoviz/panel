@@ -397,7 +397,7 @@ def test_tabulator_selected_and_filtered_dataframe(document, comm):
 
     table.add_filter('foo3', 'C')
 
-    assert table.selection == [2]
+    assert table.selection == list(range(5))
 
     pd.testing.assert_frame_equal(table.selected_dataframe, df[df["C"] == "foo3"])
 
@@ -407,7 +407,7 @@ def test_tabulator_selected_and_filtered_dataframe(document, comm):
 
     table.add_filter('foo3', 'C')
 
-    assert table.selection == [2]
+    assert table.selection == [0, 1, 2]
 
 
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
