@@ -1,6 +1,6 @@
 import { Enum } from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
-import { div, span } from "@bokehjs/core/dom"
+import { div, empty, span } from "@bokehjs/core/dom"
 import { Widget, WidgetView } from "@bokehjs/models/widgets/widget"
 import { to_string } from "@bokehjs/core/util/pretty"
 
@@ -69,7 +69,7 @@ export class PlayerView extends WidgetView {
   declare model: Player
 
   protected buttonEl: HTMLDivElement
-  protected titleEl: HTMLLabelElement
+  protected titleEl: HTMLDivElement
   protected groupEl: HTMLDivElement
   protected sliderEl: HTMLInputElement
   protected loop_state: HTMLFormElement
@@ -82,8 +82,8 @@ export class PlayerView extends WidgetView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const { title, value_location, direction, value, loop_policy, disabled, show_loop_controls } = this.model.properties
-    this.on_change(title, () => this.update_title())
+    const { title, value_location, direction, value, loop_policy, disabled, show_loop_controls, show_value } = this.model.properties
+    this.on_change(title, () => this.update_title_and_value())
     this.on_change(value_location, () => this.set_value_location())
     this.on_change(direction, () => this.set_direction())
     this.on_change(value, () => this.render())
@@ -96,7 +96,7 @@ export class PlayerView extends WidgetView {
         this.groupEl.removeChild(this.loop_state)
       }
     })
-    this.connect(this.model.properties.show_value.change, () => this.update_title())
+    this.on_change(show_value, () => this.update_title_and_value())
 
   }
 
@@ -135,10 +135,11 @@ export class PlayerView extends WidgetView {
     this.groupEl.style.flexDirection = "column"
 
     // Display Value
-    this.titleEl = document.createElement("label");
-    this.update_title()
-    this.titleEl.style.cssText = "padding: 0 5px 0 5px; user-select:none;"
+    this.titleEl = div()
+    this.titleEl.setAttribute("class", "pn-player-title")
+    this.update_title_and_value()
     this.set_value_location()
+    this.titleEl.style.cssText = "padding: 0 5px 0 5px; user-select:none;"
 
     // Slider
     this.sliderEl = document.createElement("input")
@@ -287,7 +288,7 @@ export class PlayerView extends WidgetView {
 
   set_frame(frame: number, throttled: boolean = true): void {
     this.model.value = frame
-    this.set_display_value()
+    this.update_title_and_value()
     if (throttled) {
       this.model.value_throttled = frame
     }
@@ -307,7 +308,7 @@ export class PlayerView extends WidgetView {
     return "once"
   }
 
-  update_title(): void {
+  update_title_and_value(): void {
     empty(this.titleEl)
 
     const hide_header = this.model.title == null || (this.model.title.length == 0 && !this.model.show_value)
@@ -515,7 +516,7 @@ export class Player extends Widget {
       loop_policy: [LoopPolicy, "once"],
       title: [Str, ""],
       value: [Int, 0],
-      value_location: [Str, "top_center"],
+      value_location: [Str, "top_left"],
       value_throttled: [Int, 0],
       show_loop_controls: [Bool, true],
       show_value: [Bool, true]
