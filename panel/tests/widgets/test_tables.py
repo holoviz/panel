@@ -238,6 +238,15 @@ def test_none_table(document, comm):
     assert model.source.data == {}
 
 
+def test_tabulator_selection_resets():
+    df = makeMixedDataFrame()
+    table = Tabulator(df, selection=list(range(len(df))))
+
+    for i in reversed(range(len(df))):
+        table.value = df.iloc[:i]
+        assert table.selection == list(range(i))
+
+
 def test_tabulator_selected_dataframe():
     df = makeMixedDataFrame()
     table = Tabulator(df, selection=[0, 2])

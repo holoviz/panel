@@ -312,6 +312,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _updating_page: boolean = false
   _updating_sort: boolean = false
   _selection_updating: boolean = false
+  _last_selected_row: any = null
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0
   _lastHorizontalScrollbarLeftPosition: number = 0
@@ -1233,44 +1234,22 @@ export class DataTabulatorView extends HTMLBoxView {
     const selected = this.model.source.selected
     const index: number = row._row.data._index
 
-    if (this.model.pagination === "remote") {
-      const includes = this.model.source.selected.indices.indexOf(index) == -1
-      const flush = !(e.ctrlKey || e.metaKey || e.shiftKey)
-      if (e.shiftKey && selected.indices.length) {
-        const start = selected.indices[selected.indices.length-1]
-        if (index>start) {
-          for (let i = start; i<=index; i++) {
-            indices.push(i)
-          }
-        } else {
-          for (let i = start; i>=index; i--) {
-            indices.push(i)
-          }
-        }
-      } else {
-        indices.push(index)
-      }
-      this._selection_updating = true
-      this.model.trigger_event(new SelectionEvent(indices, includes, flush))
-      this._selection_updating = false
-      return
-    }
-
     if (e.ctrlKey || e.metaKey) {
-      indices = [...this.model.source.selected.indices]
-    } else if (e.shiftKey && selected.indices.length) {
-      const start = selected.indices[selected.indices.length-1]
-      if (index>start) {
-        for (let i = start; i<index; i++) {
-          indices.push(i)
-        }
-      } else {
-        for (let i = start; i>index; i--) {
-          indices.push(i)
-        }
+      indices = [...selected.indices]
+    } else if (e.shiftKey && this._last_selected_row) {
+      const rows = row._row.parent.getDisplayRows()
+      const start_idx = rows.indexOf(this._last_selected_row)
+      if (start_idx !== -1) {
+	const end_idx = rows.indexOf(row._row)
+	const reverse = start_idx > end_idx
+	const [start, end] = reverse ? [end_idx+1, start_idx+1] : [start_idx, end_idx]
+	indices = rows.slice(start, end).map((r) => r.data._index)
+	if (reverse) { indices = indices.reverse() }
       }
     }
-    if (indices.indexOf(index) < 0) {
+    const flush = !(e.ctrlKey || e.metaKey || e.shiftKey)
+    const includes = indices.includes(index)
+    if (!includes) {
       indices.push(index)
     } else {
       indices.splice(indices.indexOf(index), 1)
@@ -1281,11 +1260,18 @@ export class DataTabulatorView extends HTMLBoxView {
         indices.shift()
       }
     }
+    const remote = this.model.pagination === "remote"
     const filtered = this._filter_selected(indices)
-    this.tabulator.deselectRow()
-    this.tabulator.selectRow(filtered)
+    if (!remote) {
+      this.tabulator.deselectRow()
+      this.tabulator.selectRow(filtered)
+    }
+    this._last_selected_row = row._row
     this._selection_updating = true
-    selected.indices = filtered
+    if (!remote) {
+      selected.indices = filtered
+    }
+    this.model.trigger_event(new SelectionEvent(indices, !includes, flush))
     this._selection_updating = false
   }
 

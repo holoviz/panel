@@ -3411,6 +3411,42 @@ def test_tabulator_remote_pagination_auto_page_size_shrink(page, df_mixed):
 
 
 
+@pytest.mark.parametrize('pagination', ['remote', 'local', None])
+def test_range_selection_on_sorted_data_downward(page, pagination):
+    df = pd.DataFrame({'a': [1, 3, 2, 4, 5, 6, 7, 8, 9], 'b': [6, 5, 6, 7, 7, 7, 7, 7, 7]})
+    table = Tabulator(df, disabled=True, pagination=pagination)
+
+    serve_component(page, table)
+
+    page.locator('.tabulator-col-title-holder').nth(2).click()
+
+    page.locator('.tabulator-row').nth(0).click()
+
+    page.keyboard.down('Shift')
+
+    page.locator('.tabulator-row').nth(1).click()
+
+    wait_until(lambda: table.selection == [0, 2], page)
+
+
+@pytest.mark.parametrize('pagination', ['remote', 'local', None])
+def test_range_selection_on_sorted_data_upward(page, pagination):
+    df = pd.DataFrame({'a': [1, 3, 2, 4, 5, 6, 7, 8, 9], 'b': [6, 5, 6, 7, 7, 7, 7, 7, 7]})
+    table = Tabulator(df, disabled=True, pagination=pagination, page_size=3)
+
+    serve_component(page, table)
+
+    page.locator('.tabulator-col-title-holder').nth(2).click()
+
+    page.locator('.tabulator-row').nth(1).click()
+
+    page.keyboard.down('Shift')
+
+    page.locator('.tabulator-row').nth(0).click()
+
+    wait_until(lambda: table.selection == [2, 0], page)
+
+
 class Test_RemotePagination:
 
     @pytest.fixture(autouse=True)
@@ -3430,6 +3466,7 @@ class Test_RemotePagination:
             ui_count = len(expected)
 
         expect(page.locator('.tabulator-selected')).to_have_count(ui_count)
+
         wait_until(lambda: self.widget.selection == expected, page)
 
     @contextmanager
