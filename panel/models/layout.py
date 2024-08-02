@@ -8,6 +8,7 @@ __all__ = (
     "Card",
     "HTMLBox",
     "Column",
+    "Modal",
 )
 
 
@@ -71,3 +72,8 @@ class Card(Column):
     hide_header = Bool(False, help="Whether to hide the Card header")
 
     tag = String("tag", help="CSS class to use for the Card as a whole.")
+
+
+class Modal(Column):
+    is_open = Bool(False, help="Whether or not the modal is open.")
+    show_close_button = Bool(True, help="Whether to show a close button in the modal")
