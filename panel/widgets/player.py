@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, ClassVar, Mapping
 import param
 
 from ..config import config
+from ..io.resources import CDN_DIST
 from ..models.widgets import Player as _BkPlayer
 from ..util import indexOf, isIn
 from .base import Widget
@@ -18,10 +19,6 @@ if TYPE_CHECKING:
 
 
 class PlayerBase(Widget):
-
-
-    #value_location = param.String(default="", allow_None=True, doc="""
-    #    Name to display above the widget""")
 
     direction = param.Integer(default=0, doc="""
         Current play direction of the Player (-1: playing in reverse,
@@ -38,6 +35,9 @@ class PlayerBase(Widget):
     show_loop_controls = param.Boolean(default=True, doc="""
         Whether the loop controls radio buttons are shown""")
 
+    show_value = param.Boolean(default=True, doc="""
+        Whether to show the widget value""")
+
     step = param.Integer(default=1, doc="""
         Number of frames to step forward and back by on each event.""")
 
@@ -51,9 +51,11 @@ class PlayerBase(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     _widget_type: ClassVar[type[Model]] = _BkPlayer
+
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/player.css"]
 
     __abstract = True
 
@@ -149,7 +151,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value_throttled = param.Parameter(constant=True, doc="Current player value")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': None}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'value_throttled': None}
 

@@ -31,7 +31,9 @@ class Player(Widget):
     """
     The Player widget provides controls to play through a number of frames.
     """
-    #name = String("", help="""Name to display above the widget""")
+    title = Nullable(String, default="", help="""
+    The slider's label (supports :ref:`math text <ug_styling_mathtext>`).
+    """)
 
     start = Int(0, help="Lower bound of the Player slider")
 
@@ -56,6 +58,9 @@ class Player(Widget):
 
     show_loop_controls = Bool(True, help="""Whether the loop controls
         radio buttons are shown""")
+
+    show_value = Bool(True, help="""
+        Whether to show the widget value""")
 
     width = Override(default=400)
 
