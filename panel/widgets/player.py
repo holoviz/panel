@@ -9,7 +9,9 @@ import param
 
 from ..config import config
 from ..io.resources import CDN_DIST
-from ..models.widgets import Player as _BkPlayer
+from ..models.widgets import (
+    DiscretePlayer as _BkDiscretePlayer, Player as _BkPlayer,
+)
 from ..util import indexOf, isIn
 from .base import Widget
 from .select import SelectBase
@@ -43,10 +45,10 @@ class PlayerBase(Widget):
 
     height = param.Integer(default=80)
 
-    value_location = param.ObjectSelector(
-        objects=["top_left", "top_center", "top_right"], doc="""
+    value_align = param.ObjectSelector(
+        objects=["start", "center", "end"], doc="""
         Location to display the value of the slider
-        ("top_left", "top_center", "top_right")""")
+        ("start", "center", "end")""")
 
     width = param.Integer(default=510, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -87,7 +89,7 @@ class Player(PlayerBase):
 
     :Example:
 
-    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop', value_location='top_center')
+    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop', value_align='top_center')
     """
 
     start = param.Integer(default=0, doc="Lower bound on the slider value")
@@ -142,7 +144,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
     ...     name='Discrete Player',
     ...     options=[2, 4, 8, 16, 32, 64, 128], value=32,
     ...     loop_policy='loop',
-    ...     value_location='top_left'
+    ...     value_align='start'
     ... )
     """
 
@@ -152,9 +154,11 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value_throttled = param.Parameter(constant=True, doc="Current player value")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'value_throttled': None}
+
+    _widget_type: ClassVar[type[Model]] = _BkDiscretePlayer
 
     def _process_param_change(self, msg):
         values = self.values

@@ -43,8 +43,8 @@ class Player(Widget):
 
     value_throttled = Int(0, help="Current throttled value of the player app")
 
-    value_location = String("top_left", help="""Location to display
-        the value of the slider ("top_left" "top_center", "top_right")""")
+    value_align = String("start", help="""Location to display
+        the value of the slider ("start" "center", "end")""")
 
     step = Int(1, help="Number of steps to advance the player by.")
 
@@ -65,6 +65,12 @@ class Player(Widget):
     width = Override(default=400)
 
     height = Override(default=250)
+
+
+class DiscretePlayer(Player):
+
+    options = List(Any, help="""
+        List of discrete options.""")
 
 
 class SingleSelect(InputWidget):

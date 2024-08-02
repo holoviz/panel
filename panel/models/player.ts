@@ -82,9 +82,9 @@ export class PlayerView extends WidgetView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const { title, value_location, direction, value, loop_policy, disabled, show_loop_controls, show_value } = this.model.properties
+    const { title, value_align, direction, value, loop_policy, disabled, show_loop_controls, show_value } = this.model.properties
     this.on_change(title, () => this.update_title_and_value())
-    this.on_change(value_location, () => this.set_value_location())
+    this.on_change(value_align, () => this.set_value_align())
     this.on_change(direction, () => this.set_direction())
     this.on_change(value, () => this.render())
     this.on_change(loop_policy, () => this.set_loop_state(this.model.loop_policy))
@@ -138,7 +138,7 @@ export class PlayerView extends WidgetView {
     this.titleEl = div()
     this.titleEl.setAttribute("class", "pn-player-title")
     this.update_title_and_value()
-    this.set_value_location()
+    this.set_value_align()
     this.titleEl.style.cssText = "padding: 0 5px 0 5px; user-select:none;"
 
     // Slider
@@ -326,7 +326,7 @@ export class PlayerView extends WidgetView {
       }
 
       if (this.model.show_value) {
-        this.titleEl.appendChild(span({ class: "pn-player-value" }, to_string(this.model.value)))
+        this.append_value_to_title_el()
       }
     }
     else {
@@ -334,15 +334,19 @@ export class PlayerView extends WidgetView {
     }
   }
 
-  set_value_location(): void {
-    switch (this.model.value_location) {
-      case "top_left":
+  append_value_to_title_el(): void {
+    this.titleEl.appendChild(span({ class: "pn-player-value" }, to_string(this.model.value)))
+  }
+
+  set_value_align(): void {
+    switch (this.model.value_align) {
+      case "start":
         this.titleEl.style.textAlign = "left"
         break
-      case "top_center":
+      case "center":
         this.titleEl.style.textAlign = "center"
         break
-      case "top_right":
+      case "end":
         this.titleEl.style.textAlign = "right"
         break
     }
@@ -485,7 +489,7 @@ export namespace Player {
     loop_policy: p.Property<typeof LoopPolicy["__type__"]>
     title: p.Property<string>
     value: p.Property<any>
-    value_location: p.Property<string>
+    value_align: p.Property<string>
     value_throttled: p.Property<any>
     show_loop_controls: p.Property<boolean>
     show_value: p.Property<boolean>
@@ -516,7 +520,7 @@ export class Player extends Widget {
       loop_policy: [LoopPolicy, "once"],
       title: [Str, ""],
       value: [Int, 0],
-      value_location: [Str, "top_left"],
+      value_align: [Str, "start"],
       value_throttled: [Int, 0],
       show_loop_controls: [Bool, true],
       show_value: [Bool, true]
