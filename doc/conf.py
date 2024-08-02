@@ -235,7 +235,7 @@ def _get_pyodide_version():
         return PYODIDE_VERSION[1:]
     raise NotImplementedError(F"{PYODIDE_VERSION=} is not valid")
 
-from panel.models.tabulator import TABULATOR_VERSION
+# from panel.models.tabulator import TABULATOR_VERSION
 
 def update_versions(app, docname, source):
     # Inspired by: https://stackoverflow.com/questions/8821511
