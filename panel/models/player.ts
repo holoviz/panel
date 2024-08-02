@@ -76,6 +76,8 @@ export class PlayerView extends WidgetView {
   protected _toogle_pause: CallableFunction
   protected _toggle_play: CallableFunction
   protected _changing: boolean = false
+  protected slowerButton: HTMLButtonElement;
+  protected fasterButton: HTMLButtonElement;
 
   override connect_signals(): void {
     super.connect_signals()
@@ -152,57 +154,68 @@ export class PlayerView extends WidgetView {
     const button_style = "text-align: center; min-width: 40px; flex-grow: 2; margin: 2px"
 
     const slower = document.createElement("button")
+    slower.classList.add("slower")
     slower.style.cssText = button_style_small
     slower.innerHTML = SVG_STRINGS.slower
     slower.onclick = () => this.slower()
+    this.slowerButton = slower;
     button_div.appendChild(slower)
 
     const first = document.createElement("button")
+    first.classList.add("first")
     first.style.cssText = button_style
     first.innerHTML = SVG_STRINGS.first
     first.onclick = () => this.first_frame()
     button_div.appendChild(first)
 
     const previous = document.createElement("button")
+    previous.classList.add("previous")
     previous.style.cssText = button_style
     previous.innerHTML = SVG_STRINGS.previous
     previous.onclick = () => this.previous_frame()
     button_div.appendChild(previous)
 
     const reverse = document.createElement("button")
+    reverse.classList.add("reverse")
     reverse.style.cssText = button_style
     reverse.innerHTML = SVG_STRINGS.reverse
     reverse.onclick = () => this.reverse_animation()
     button_div.appendChild(reverse)
 
     const pause = document.createElement("button")
+    pause.classList.add("pause")
     pause.style.cssText = button_style
     pause.innerHTML = SVG_STRINGS.pause
     pause.onclick = () => this.pause_animation()
     button_div.appendChild(pause)
 
     const play = document.createElement("button")
+    play.classList.add("play")
     play.style.cssText = button_style
     play.innerHTML = SVG_STRINGS.play
     play.onclick = () => this.play_animation()
     button_div.appendChild(play)
 
     const next = document.createElement("button")
+    next.classList.add("next")
     next.style.cssText = button_style
     next.innerHTML = SVG_STRINGS.next
     next.onclick = () => this.next_frame()
     button_div.appendChild(next)
 
     const last = document.createElement("button")
+    last.classList.add("last")
     last.style.cssText = button_style
     last.innerHTML = SVG_STRINGS.last
     last.onclick = () => this.last_frame()
     button_div.appendChild(last)
 
     const faster = document.createElement("button")
+    faster.classList.add("faster")
     faster.style.cssText = button_style_small
     faster.innerHTML = SVG_STRINGS.faster
     faster.onclick = () => this.faster()
+    this.fasterButton = faster;
     button_div.appendChild(faster)
 
     // toggle
@@ -320,21 +333,32 @@ export class PlayerView extends WidgetView {
     this.set_frame(this.model.end)
   }
 
+  updateSpeedButton(button: HTMLButtonElement, interval: number, originalSVG: string): void {
+    button.innerHTML = `${interval}ms`;
+    button.style.fontSize = '8px';
+    setTimeout(() => {
+      button.innerHTML = originalSVG;
+      button.style.fontSize = '';
+    }, 1000); // Show for 1 second
+  }
+
   slower(): void {
-    this.model.interval = Math.round(this.model.interval / 0.7)
+    this.model.interval = Math.round(this.model.interval / 0.7);
+    this.updateSpeedButton(this.slowerButton, this.model.interval, SVG_STRINGS.slower);
     if (this.model.direction > 0) {
-      this.play_animation()
+      this.play_animation();
     } else if (this.model.direction < 0) {
-      this.reverse_animation()
+      this.reverse_animation();
     }
   }
 
   faster(): void {
-    this.model.interval = Math.round(this.model.interval * 0.7)
+    this.model.interval = Math.round(this.model.interval * 0.7);
+    this.updateSpeedButton(this.fasterButton, this.model.interval, SVG_STRINGS.faster);
     if (this.model.direction > 0) {
-      this.play_animation()
+      this.play_animation();
     } else if (this.model.direction < 0) {
-      this.reverse_animation()
+      this.reverse_animation();
     }
   }
 
