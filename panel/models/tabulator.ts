@@ -786,7 +786,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _expand_render(cell: any): string {
     const index = cell._cell.row.data._index
     const icon = this.model.expanded.indexOf(index) < 0 ? "►" : "▼"
-    return `<i>${icon}</i>`
+    return icon
   }
 
   _update_expand(cell: any): void {
@@ -1240,11 +1240,11 @@ export class DataTabulatorView extends HTMLBoxView {
       const rows = row._row.parent.getDisplayRows()
       const start_idx = rows.indexOf(this._last_selected_row)
       if (start_idx !== -1) {
-	const end_idx = rows.indexOf(row._row)
-	const reverse = start_idx > end_idx
-	const [start, end] = reverse ? [end_idx+1, start_idx+1] : [start_idx, end_idx]
-	indices = rows.slice(start, end).map((r) => r.data._index)
-	if (reverse) { indices = indices.reverse() }
+        const end_idx = rows.indexOf(row._row)
+        const reverse = start_idx > end_idx
+        const [start, end] = reverse ? [end_idx+1, start_idx+1] : [start_idx, end_idx]
+        indices = rows.slice(start, end).map((r) => r.data._index)
+        if (reverse) { indices = indices.reverse() }
       }
     }
     const flush = !(e.ctrlKey || e.metaKey || e.shiftKey)
