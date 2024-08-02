@@ -1,8 +1,8 @@
-import { Enum } from "@bokehjs/core/kinds"
+import {Enum} from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
-import { div, empty, span } from "@bokehjs/core/dom"
-import { Widget, WidgetView } from "@bokehjs/models/widgets/widget"
-import { to_string } from "@bokehjs/core/util/pretty"
+import {div, empty, span} from "@bokehjs/core/dom"
+import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
+import {to_string} from "@bokehjs/core/util/pretty"
 
 const SVG_STRINGS = {
   slower: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-minus" width="24" \
@@ -82,7 +82,7 @@ export class PlayerView extends WidgetView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const { title, value_align, direction, value, loop_policy, disabled, show_loop_controls, show_value } = this.model.properties
+    const {title, value_align, direction, value, loop_policy, disabled, show_loop_controls, show_value} = this.model.properties
     this.on_change(title, () => this.update_title_and_value())
     this.on_change(value_align, () => this.set_value_align())
     this.on_change(direction, () => this.set_direction())
@@ -315,8 +315,8 @@ export class PlayerView extends WidgetView {
     this.titleEl.style.display = hide_header ? "none" : ""
 
     if (!hide_header) {
-      this.titleEl.style.visibility = "visible";
-      const { title } = this.model
+      this.titleEl.style.visibility = "visible"
+      const {title} = this.model
       if (title != null && title.length > 0) {
         if (this.contains_tex_string(title)) {
           this.titleEl.innerHTML = `${this.process_tex(title)}: `
@@ -328,14 +328,13 @@ export class PlayerView extends WidgetView {
       if (this.model.show_value) {
         this.append_value_to_title_el()
       }
-    }
-    else {
+    } else {
       this.titleEl.style.visibility = "hidden"
     }
   }
 
   append_value_to_title_el(): void {
-    this.titleEl.appendChild(span({ class: "pn-player-value" }, to_string(this.model.value)))
+    this.titleEl.appendChild(span({class: "pn-player-value"}, to_string(this.model.value)))
   }
 
   set_value_align(): void {
@@ -511,7 +510,7 @@ export class Player extends Widget {
   static {
     this.prototype.default_view = PlayerView
 
-    this.define<Player.Props>(({ Bool, Int, Str }) => ({
+    this.define<Player.Props>(({Bool, Int, Str}) => ({
       direction: [Int, 0],
       interval: [Int, 500],
       start: [Int, 0],
@@ -523,9 +522,9 @@ export class Player extends Widget {
       value_align: [Str, "start"],
       value_throttled: [Int, 0],
       show_loop_controls: [Bool, true],
-      show_value: [Bool, true]
+      show_value: [Bool, true],
     }))
 
-    this.override<Player.Props>({ width: 400 })
+    this.override<Player.Props>({width: 400})
   }
 }
