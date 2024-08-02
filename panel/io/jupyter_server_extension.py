@@ -115,7 +115,7 @@ import sys
 os.environ['BOKEH_RESOURCES'] = 'server'
 app = r'{{ path }}'
 os.chdir(str(pathlib.Path(app).parent))
-sys.path = [os.getcwd()] + sys.path[1:]
+sys.path = [os.getcwd()] + sys.path
 
 from panel.io.jupyter_executor import PanelExecutor
 executor = PanelExecutor(app, '{{ token }}', '{{ root_url }}')
