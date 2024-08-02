@@ -7,7 +7,7 @@ export class DiscretePlayerView extends PlayerView {
   declare model: DiscretePlayer
 
   override append_value_to_title_el(): void {
-    var label = this.model.options[this.model.value]
+    let label = this.model.options[this.model.value]
     if (typeof label !== "string") {
       label = to_string(label)
     }
