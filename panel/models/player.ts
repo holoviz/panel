@@ -1,8 +1,8 @@
-import {Enum} from "@bokehjs/core/kinds"
+import { Enum } from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
-import {div} from "@bokehjs/core/dom"
-import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
-import {to_string} from "@bokehjs/core/util/pretty"
+import { div, span } from "@bokehjs/core/dom"
+import { Widget, WidgetView } from "@bokehjs/models/widgets/widget"
+import { to_string } from "@bokehjs/core/util/pretty"
 
 const SVG_STRINGS = {
   slower: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-minus" width="24" \
@@ -82,7 +82,7 @@ export class PlayerView extends WidgetView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {title, value_location, direction, value, loop_policy, disabled, show_loop_controls} = this.model.properties
+    const { title, value_location, direction, value, loop_policy, disabled, show_loop_controls } = this.model.properties
     this.on_change(title, () => this.update_title())
     this.on_change(value_location, () => this.set_value_location())
     this.on_change(direction, () => this.set_direction())
@@ -135,7 +135,7 @@ export class PlayerView extends WidgetView {
     this.groupEl.style.flexDirection = "column"
 
     // Display Value
-    this.titleEl = document.createElement('label');
+    this.titleEl = document.createElement("label");
     this.update_title()
     this.titleEl.style.cssText = "padding: 0 5px 0 5px; user-select:none;"
     this.set_value_location()
@@ -314,8 +314,8 @@ export class PlayerView extends WidgetView {
     this.titleEl.style.display = hide_header ? "none" : ""
 
     if (!hide_header) {
-      this.titleEl.style.visibility = 'visible';
-      const {title} = this.model
+      this.titleEl.style.visibility = "visible";
+      const { title } = this.model
       if (title != null && title.length > 0) {
         if (this.contains_tex_string(title)) {
           this.titleEl.innerHTML = `${this.process_tex(title)}: `
@@ -325,26 +325,25 @@ export class PlayerView extends WidgetView {
       }
 
       if (this.model.show_value) {
-
-        this.titleEl.appendChild(span({class: 'pn-player-value'}, to_string(this.model.value)))
+        this.titleEl.appendChild(span({ class: "pn-player-value" }, to_string(this.model.value)))
       }
     }
-    else{
-      this.titleEl.style.visibility = 'hidden';
+    else {
+      this.titleEl.style.visibility = "hidden"
     }
   }
 
   set_value_location(): void {
-    switch (this.model.value_location){
-      case 'top_left':
-        this.titleEl.style.textAlign = "left";
-        break;
-      case 'top_center':
-        this.titleEl.style.textAlign = "center";
-        break;
-      case 'top_right':
-        this.titleEl.style.textAlign = "right";
-        break;
+    switch (this.model.value_location) {
+      case "top_left":
+        this.titleEl.style.textAlign = "left"
+        break
+      case "top_center":
+        this.titleEl.style.textAlign = "center"
+        break
+      case "top_right":
+        this.titleEl.style.textAlign = "right"
+        break
     }
   }
 
@@ -485,7 +484,7 @@ export namespace Player {
     loop_policy: p.Property<typeof LoopPolicy["__type__"]>
     title: p.Property<string>
     value: p.Property<any>
-    value_location: p.Property <string>
+    value_location: p.Property<string>
     value_throttled: p.Property<any>
     show_loop_controls: p.Property<boolean>
     show_value: p.Property<boolean>
@@ -514,7 +513,7 @@ export class Player extends Widget {
       end: [Int, 10],
       step: [Int, 1],
       loop_policy: [LoopPolicy, "once"],
-      title: [Str,""],
+      title: [Str, ""],
       value: [Int, 0],
       value_location: [Str, "top_center"],
       value_throttled: [Int, 0],
