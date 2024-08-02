@@ -791,7 +791,7 @@ def test_tabulator_styling(document, comm):
     def high_red(value):
         return 'color: red' if value > 2 else 'color: black'
 
-    table.style.applymap(high_red, subset=['A'])
+    table.style.map(high_red, subset=['A'])
 
     model = table.get_root(document, comm)
 
@@ -819,25 +819,29 @@ def test_tabulator_empty_table(document, comm):
 
 def test_tabulator_sorters_unnamed_index(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))
+    assert df.columns.dtype == np.int64
     table = Tabulator(df)
 
     table.sorters = [{'field': 'index', 'sorter': 'number', 'dir': 'desc'}]
+    res = table.current_view
+    exp = df.sort_index(ascending=False)
+    exp.columns = exp.columns.astype(object)
 
-    pd.testing.assert_frame_equal(
-        table.current_view,
-        df.sort_index(ascending=False)
-    )
+    pd.testing.assert_frame_equal(res, exp)
+    assert df.columns.dtype == np.int64
 
 def test_tabulator_sorters_int_name_column(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))
+    assert df.columns.dtype == np.int64
     table = Tabulator(df)
 
     table.sorters = [{'field': '0', 'dir': 'desc'}]
+    res = table.current_view
+    exp = df.sort_values([0], ascending=False)
+    exp.columns = exp.columns.astype(object)
 
-    pd.testing.assert_frame_equal(
-        table.current_view,
-        df.sort_values([0], ascending=False)
-    )
+    pd.testing.assert_frame_equal(res, exp)
+    assert df.columns.dtype == np.int64
 
 
 def test_tabulator_stream_series(document, comm):
@@ -2284,3 +2288,15 @@ def test_bokeh_formatter_column_with_no_textalign_but_text_align_set(document, c
 
     model = table.get_root(document, comm)
     assert model.configuration['columns'][1]['hozAlign'] == 'center'
+
+
+def test_selection_cleared_remote_pagination_new_values(document, comm):
+    df = pd.DataFrame(range(200))
+    table = Tabulator(df, page_size=50, pagination="remote", selectable="checkbox")
+    table.selection = [1, 2, 3]
+
+    table.value = df
+    assert table.selection == [1, 2, 3]
+
+    table.value = df.copy()
+    assert table.selection == []

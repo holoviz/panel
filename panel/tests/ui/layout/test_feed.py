@@ -50,6 +50,24 @@ def test_feed_view_latest(page):
 
     wait_until(lambda: int(page.locator('pre').last.inner_text()) > 0.9 * ITEMS, page)
 
+def test_feed_view_scroll_to_latest(page):
+    feed = Feed(*list(range(ITEMS)), height=250)
+    serve_component(page, feed)
+
+    feed_el = page.locator(".bk-panel-models-feed-Feed")
+
+    bbox = feed_el.bounding_box()
+    assert bbox["height"] == 250
+
+    expect(feed_el).to_have_class("bk-panel-models-feed-Feed scroll-vertical")
+
+    # Assert scroll is not at 0 (view_latest)
+    wait_until(lambda: feed_el.evaluate('(el) => el.scrollTop') == 0, page)
+
+    feed.scroll_to_latest()
+
+    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) > 0.9 * ITEMS, page)
+
 def test_feed_view_scroll_button(page):
     feed = Feed(*list(range(ITEMS)), height=250, scroll_button_threshold=50)
     serve_component(page, feed)

@@ -13,7 +13,7 @@ BK_CHANNEL=$(python -c "
 import bokeh
 from packaging.version import Version
 
-if Version(bokeh.__version__).is_devrelease:
+if Version(bokeh.__version__).is_prerelease:
     print('bokeh/label/dev')
 else:
     print('bokeh')

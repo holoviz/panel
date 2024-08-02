@@ -12,7 +12,6 @@ import socket
 import tempfile
 import time
 import unittest
-import warnings
 
 from contextlib import contextmanager
 from subprocess import PIPE, Popen
@@ -43,9 +42,7 @@ JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
 
 try:
-    with warnings.catch_warnings():
-        warnings.filterwarnings("error", category=DeprecationWarning)
-        asyncio.get_event_loop()
+    asyncio.get_event_loop()
 except (RuntimeError, DeprecationWarning):
     asyncio.set_event_loop(asyncio.new_event_loop())
 
@@ -402,6 +399,7 @@ def server_cleanup():
 def cache_cleanup():
     state.clear_caches()
     Design._resolve_modifiers.cache_clear()
+    state._stylesheets.clear()
 
 @pytest.fixture
 def autoreload():
@@ -418,6 +416,15 @@ def autoreload():
 @pytest.fixture
 def py_file():
     tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
+    try:
+        yield tf
+    finally:
+        tf.close()
+        os.unlink(tf.name)
+
+@pytest.fixture
+def js_file():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False)
     try:
         yield tf
     finally:

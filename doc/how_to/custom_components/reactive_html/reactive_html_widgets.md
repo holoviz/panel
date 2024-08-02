@@ -10,14 +10,17 @@ This example we will show you to create an `ImageButton`.
 import panel as pn
 import param
 
-from panel.reactive import ReactiveHTML
+from panel.custom import ReactiveHTML, WidgetBase
 
 pn.extension()
 
-class ImageButton(ReactiveHTML):
+class ImageButton(ReactiveHTML, WidgetBase):
 
     clicks = param.Integer(default=0)
+
     image = param.String()
+
+    value = param.Event()
 
     _template = """\
 <button id="button" class="pn-container center-content" onclick="${script('click')}">
@@ -45,12 +48,16 @@ class ImageButton(ReactiveHTML):
 
     _scripts = {'click': 'data.clicks += 1'}
 
+    @param.depends('clicks', watch=True)
+    def _on__click(self):
+        self.param.trigger('value')
+
 button = ImageButton(
     image="https://raw.githubusercontent.com/holoviz/holoviz/25ac96dbc09f789612eb8e03a5deb36c5cd74393/examples/assets/panel.png",
     styles={"border": "2px solid lightgray"},
     width=400, height=200
 )
-pn.Column(button, button.param.clicks,).servable()
+pn.Column(button, button.param.clicks).servable()
 ```
 
 If you don't want the *button* styling, you can change the `<button>` tag to a `<div>` tag.
@@ -65,46 +72,45 @@ This can for example be used to make a technical drawing interactive.
 import panel as pn
 import param
 
-from panel.reactive import ReactiveHTML
+from panel.custom import ReactiveHTML, WidgetBase
 
 pn.extension()
 
-class SVGInput(ReactiveHTML):
-    value = param.String()
+class SVGInput(ReactiveHTML, WidgetBase):
+    value = param.String(default="")
 
     clicks = param.Integer()
     click = param.String()
     hover = param.String()
 
-    _child_config={"value": "literal"}
+    _child_config = {"value": "literal"}
 
     _template = """\
-<div id="container" class="pn-container"
-    onclick="${script('click_handler')}" onmouseover="${script('mouseover_handler')}"
->
-{{ value }}
-</div>
-"""
+    <div id="container" class="pn-container"
+      onclick="${script('click_handler')}" onmouseover="${script('mouseover_handler')}"
+    >
+      {{ value }}
+    </div>
+    """
 
     _stylesheets = ["""
-.pn-container {height: 100%;width: 100%;position:relative;}
-.pn-container svg {position: relative;height:100%;width:100%}
-"""]
+      .pn-container { height: 100%; width: 100%; position:relative;}
+      .pn-container svg {position: relative; height:100%; width:100%}
+    """]
 
     _scripts = {
-        'click_handler': """
-const name = state.event.target.getAttribute("data-name")
-if (name!=null){
-    data.click = name
-    data.clicks += 1
-}
-""",
-        'mouseover_handler': """
-console.log("mouseover")
-const name = state.event.target.getAttribute("data-name")
-data.hover = name || ""
-"""
-}
+        "click_handler": """
+          const name = state.event.target.getAttribute("data-name")
+          if (name != null) {
+            data.click = name
+            data.clicks += 1
+          }
+        """,
+        "mouseover_handler": """
+          const name = state.event.target.getAttribute("data-name")
+          data.hover = name || ""
+        """
+    }
 
 SVG = """
 <svg viewBox="0 35 300 300">
@@ -116,10 +122,11 @@ SVG = """
 """
 
 button = SVGInput(
-    value = SVG,
+    value=SVG,
     styles={"border": "2px solid lightgray"},
     height=400, sizing_mode="stretch_width", max_width=1000
 )
+
 pn.Column(button, button.param.clicks, button.param.click, button.param.hover).servable()
 ```
 
@@ -139,13 +146,15 @@ Lets see how to create a basic `Select` widget.
 import panel as pn
 import param
 
+from panel.custom import ReactiveHTML, WidgetBase
+
 pn.extension()
 
-class Select(pn.reactive.ReactiveHTML):
+class Select(ReactiveHTML, WidgetBase):
 
     options = param.List(doc="Options to choose from.")
 
-    value = param.String(doc="Current selected option")
+    value = param.String(default="", doc="Current selected option")
 
     _template = """
     <select id="select_el" class="pn-container style" value="${value}">
@@ -156,9 +165,9 @@ class Select(pn.reactive.ReactiveHTML):
     """
 
     stylesheets=["""
-.pn-container {height: 100%;width: 100%;position:relative;}
-.style {border: 2px dashed lightgray;border-radius:20px}
-"""]
+      .pn-container {height: 100%;width: 100%;position:relative;}
+      .style {border: 2px dashed lightgray;border-radius:20px}
+    """]
 
     _dom_events = {'select_el': ['change']}
 
@@ -192,11 +201,13 @@ configurable line width, color and the ability to clear and save the resulting d
 import panel as pn
 import param
 
+from panel.custom import ReactiveHTML, WidgetBase
+
 pn.extension()
 
 
-class Canvas(pn.reactive.ReactiveHTML):
-    value = param.String()
+class Canvas(ReactiveHTML, WidgetBase):
+    value = param.String(default="")
 
     color = param.Color(default="#000000")
     line_width = param.Number(default=1, bounds=(0.1, 10))
@@ -224,39 +235,38 @@ class Canvas(pn.reactive.ReactiveHTML):
           state.ctx.lineTo(event.offsetX, event.offsetY)
           state.ctx.stroke()""",
         "end": "delete state.start",
-        "save": """
-          data.value = canvas_el.toDataURL()
-          data.save=false""",
+        "save": "data.value = canvas_el.toDataURL()",
         "clear": """
           state.ctx.clearRect(0, 0, canvas_el.width, canvas_el.height)
           data.value = ""
-          data.clear=false""",
+        """,
         "line_width": "state.ctx.lineWidth = data.line_width",
         "color": "state.ctx.strokeStyle = data.color",
     }
 
 canvas = Canvas(width=300, height=300,)
 
-@pn.depends(canvas.param.value)
 def png_element(value):
     if not value:
        return "<p style='padding:10px;'>Click <em>Save</em> to show the image here.<p>"
     return f"<img src='{value}'></img>"
 
 png_view = pn.pane.HTML(
-    png_element, width=canvas.width, height=canvas.height+2, margin=(0, 10),
+    pn.bind(png_element, canvas),
+	width=canvas.width,
+	height=canvas.height+2,
+	margin=(0, 10),
     styles={"border": "1px solid black"},
 )
 
 pn.Column(
     "# Drag on the left canvas to draw\n To export the drawing to a `png` image click *Save*.",
     pn.Row(
-        pn.Column(
-          pn.widgets.ColorPicker.from_param(canvas.param.color, sizing_mode="stretch_width"),
-          pn.widgets.FloatSlider.from_param(canvas.param.line_width, sizing_mode="stretch_width"),
-          pn.widgets.Button.from_param(canvas.param.save, sizing_mode="stretch_width"),
-          pn.widgets.Button.from_param(canvas.param.clear, sizing_mode="stretch_width"),
-        ),
+        pn.Param(
+		    canvas.param,
+			parameters=['color', 'line_width', 'save', 'clear'],
+			show_name=False
+		),
         canvas,
         png_view,
     ),

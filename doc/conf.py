@@ -45,7 +45,7 @@ html_favicon = "_static/icons/favicon.ico"
 
 current_release = panel.__version__  # Current release version variable
 
-announcement_text = f"Panel {current_release} has just been released! Check out the <a href='https://panel.holoviz.org/about/releases.html#version-1-4-0'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>."
+announcement_text = f"Panel {current_release} has just been released! Check out the <a href='https://panel.holoviz.org/about/releases.html'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>."
 
 
 html_theme_options = {
@@ -117,12 +117,14 @@ nbsite_gallery_conf = {
     'galleries': {
         'reference': {
             'title': 'Component Gallery',
+            'extensions': ['*.ipynb', '*.py', '*.md'],
             'sections': [
                 'panes',
                 'widgets',
                 'layouts',
                 # 3 most important by expected usage. Rest alphabetically
                 'chat',
+                'custom_components',
                 'global',
                 'indicators',
                 'templates',

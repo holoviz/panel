@@ -197,6 +197,8 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
         id: install
+      - name: Build pyodide wheels
+        run: pixi run -e test-ui "python ./scripts/build_pyodide_wheels.py"
       - name: Launch JupyterLab
         shell: pixi run -e test-ui bash -el {0}
         run: |

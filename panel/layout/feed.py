@@ -6,8 +6,7 @@ from typing import (
 
 import param
 
-from ..models import Feed as PnFeed
-from ..models.feed import ScrollButtonClick
+from ..models.feed import Feed as PnFeed, ScrollButtonClick, ScrollLatestEvent
 from ..util import edit_readonly
 from .base import Column
 
@@ -78,6 +77,7 @@ class Feed(Column):
 
         super().__init__(*objects, **params)
         self._last_synced = None
+        self.param.watch(self._trigger_view_latest, 'objects')
 
     @param.depends("visible_range", "load_buffer", watch=True)
     def _trigger_get_objects(self):
@@ -98,6 +98,12 @@ class Feed(Column):
         )
         if top_trigger or bottom_trigger or invalid_trigger:
             self.param.trigger("objects")
+
+    def _trigger_view_latest(self, event):
+        if (event.type == 'triggered' or not self.view_latest or
+            not event.new or event.new[-1] in event.old):
+            return
+        self.scroll_to_latest()
 
     @property
     def _synced_range(self):
@@ -149,12 +155,9 @@ class Feed(Column):
         self, model: Model, old_objects: list[Viewable], doc: Document,
         root: Model, comm: Optional[Comm] = None
     ):
-        from ..pane.base import RerenderError, panel
+        from ..pane.base import RerenderError
         new_models, old_models = [], []
         self._last_synced = self._synced_range
-
-        for i, pane in enumerate(self.objects):
-            self.objects[i] = panel(pane)
 
         for obj in old_objects:
             if obj not in self.objects:
@@ -178,7 +181,7 @@ class Feed(Column):
             new_models.append(child)
         return new_models, old_models
 
-    def _process_event(self, event: ScrollButtonClick) -> None:
+    def _process_event(self, event: ScrollButtonClick | None = None) -> None:
         """
         Process a scroll button click event.
         """
@@ -195,8 +198,17 @@ class Feed(Column):
         n_visible = self.visible_range[-1] - self.visible_range[0]
         with edit_readonly(self):
             # plus one to center on the last object
-            self.visible_range = (max(n - n_visible + 1, 0), n)
+            self.visible_range = (min(max(n - n_visible + 1, 0), n), n)
 
         with param.discard_events(self):
             # reset the buffers and loaded objects
             self.load_buffer = load_buffer
+
+    def scroll_to_latest(self):
+        """
+        Scrolls the Feed to the latest entry.
+        """
+        rerender = self._last_synced and self._last_synced[-1] < len(self.objects)
+        if rerender:
+            self._process_event()
+        self._send_event(ScrollLatestEvent, rerender=rerender)

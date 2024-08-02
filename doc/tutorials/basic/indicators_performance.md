@@ -17,8 +17,8 @@ Visually explore a dataset of US Windturbines.
 
 In this tutorial, we'll explore various indicators offered by Panel to showcase the performance metrics:
 
-- **Current Performance**: Utilize the [`Number`](../../reference/indicators/Number.ipynb) indicator to display the current performance.
-- **Trending Performance**: Employ the [`Trend`](../../reference/indicators/Trend.ipynb) indicator to showcase the trending performance over time.
+- **Current Performance**: Utilize the [`Number`](../../reference/indicators/Number.md) indicator to display the current performance.
+- **Trending Performance**: Employ the [`Trend`](../../reference/indicators/Trend.md) indicator to showcase the trending performance over time.
 
 For a comprehensive list of indicators and their detailed reference guides, you can always refer to the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) in the [Component Gallery](../../reference/index.md).
 
@@ -73,7 +73,7 @@ pn.indicators.Trend(
 
 Experiment by adjusting the `height` parameter from `300` to `500`.
 
-For more detailed insights into the `Trend` indicator, take a moment to explore its [reference guide](../../reference/indicators/Trend.ipynb). Trust us, it's worth it!
+For more detailed insights into the `Trend` indicator, take a moment to explore its [reference guide](../../reference/indicators/Trend.md). Trust us, it's worth it!
 
 ## Explore the Indicators
 
@@ -85,7 +85,7 @@ Click [this link](https://panel.holoviz.org/reference/index.html#indicators) to 
 
 In this tutorial, we have explored using Panel's versatile indicators by creating a visualization of the performance metrics of wind turbines. We:
 
-- Leveraged the [`Number`](../../reference/indicators/Number.ipynb) indicator to display current performance.
-- Utilized the [`Trend`](../../reference/indicators/Trend.ipynb) indicator to showcase trending performance over time.
+- Leveraged the [`Number`](../../reference/indicators/Number.md) indicator to display current performance.
+- Utilized the [`Trend`](../../reference/indicators/Trend.md) indicator to showcase trending performance over time.
 
 Remember, there's a collection of indicators waiting for you to explore in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md). Keep experimenting and uncovering new insights! 🚀

@@ -1,21 +1,34 @@
 import {Column, ColumnView} from "./column"
+import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import type * as p from "@bokehjs/core/properties"
+import type {Attrs} from "@bokehjs/core/types"
 import {build_views} from "@bokehjs/core/build_views"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
-import {ModelEvent} from "@bokehjs/core/bokeh_events"
-import type {EventCallback} from "@bokehjs/model"
+import {ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
 
-export class ScrollButtonClick extends ModelEvent {
-  static {
-    this.prototype.event_name = "scroll_button_click"
+@server_event("scroll_latest_event")
+export class ScrollLatestEvent extends ModelEvent {
+  constructor(readonly model: Feed, readonly rerender: boolean) {
+    super()
+    this.origin = model
+    this.rerender = rerender
+  }
+
+  protected override get event_values(): Attrs {
+    return {model: this.origin, rerender: this.rerender}
+  }
+
+  static override from_values(values: object) {
+    const {model, rerender} = values as {model: Feed, rerender: boolean}
+    return new ScrollLatestEvent(model, rerender)
   }
 }
 
 export class FeedView extends ColumnView {
   declare model: Feed
-
   _intersection_observer: IntersectionObserver
   _last_visible: UIElementView | null
+  _rendered: boolean = false
   _sync: boolean
 
   override initialize(): void {
@@ -53,6 +66,16 @@ export class FeedView extends ColumnView {
     })
   }
 
+  override connect_signals(): void {
+    super.connect_signals()
+    this.model.on_event(ScrollLatestEvent, (event: ScrollLatestEvent) => {
+      this.scroll_to_latest()
+      if (event.rerender) {
+        this._rendered = false
+      }
+    })
+  }
+
   get node_map(): any {
     const nodes = new Map()
     for (const view of this.child_views) {
@@ -62,10 +85,19 @@ export class FeedView extends ColumnView {
   }
 
   override async update_children(): Promise<void> {
+    const last = this._last_visible
+    const scroll_top = this.el.scrollTop
+    const before_offset = last?.el.offsetTop || 0
     this._sync = false
     await super.update_children()
     this._sync = true
-    this._last_visible?.el.scrollIntoView(true)
+    requestAnimationFrame(() => {
+      const after_offset = last?.el.offsetTop || 0
+      const offset = (after_offset-before_offset)
+      if (offset > 0) {
+        this.el.scrollTo({top: scroll_top + offset, behavior: "instant"})
+      }
+    })
   }
 
   override async build_child_views(): Promise<UIElementView[]> {
@@ -89,21 +121,25 @@ export class FeedView extends ColumnView {
     return created
   }
 
-  override scroll_to_latest(emit_event: boolean = true): void {
-    if (emit_event) {
-      this.model.trigger_event(new ScrollButtonClick())
-    }
-    super.scroll_to_latest()
+  override render(): void {
+    this._rendered = false
+    super.render()
   }
 
-  override trigger_auto_scroll(): void {
-    const limit = this.model.auto_scroll_limit
-    const within_limit = this.distance_from_latest <= limit
-    if (limit == 0 || !within_limit) {
-      return
-    }
+  override trigger_auto_scroll(): void {}
 
-    this.scroll_to_latest(false)
+  override after_render(): void {
+    BkColumnView.prototype.after_render.call(this)
+    requestAnimationFrame(() => {
+      if (this.model.scroll_position) {
+        this.scroll_to_position()
+      }
+      if (this.model.view_latest && !this._rendered) {
+        this.scroll_to_latest()
+      }
+      this.toggle_scroll_button()
+      this._rendered = true
+    })
   }
 }
 
@@ -131,9 +167,5 @@ export class Feed extends Column {
     this.define<Feed.Props>(({List, Str}) => ({
       visible_children: [List(Str), []],
     }))
-  }
-
-  on_click(callback: EventCallback<ScrollButtonClick>): void {
-    this.on_event(ScrollButtonClick, callback)
   }
 }

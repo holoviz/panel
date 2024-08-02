@@ -868,7 +868,7 @@ class _state(param.Parameterized):
                         yield new.timestamp()
                 elif callable(at):
                     while True:
-                        new = at(dt.datetime.utcnow())
+                        new = at(dt.datetime.now(dt.timezone.utc).replace(tzinfo=None))
                         if new is None:
                             raise StopIteration
                         yield new.replace(tzinfo=dt.timezone.utc).astimezone().timestamp()
@@ -1102,6 +1102,8 @@ class _state(param.Parameterized):
         elif self.curdoc is None and self._template:
             return self._template
         template = config.template(theme=config.theme)
+        if not config.design:
+            config.design = template.design
         if self.curdoc is None:
             self._template = template
         else:

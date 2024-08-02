@@ -1,6 +1,6 @@
 # Build Animation
 
-In this tutorial, we will create a *bar chart race* using the [Altair](https://altair-viz.github.io) plotting library and the [`Player`](../../reference/widgets/Player.ipynb) widget.
+In this tutorial, we will create a *bar chart race* using the [Altair](https://altair-viz.github.io) plotting library and the [`Player`](../../reference/widgets/Player.md) widget.
 
 <video muted controls loop poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png" style="max-height: 400px; max-width: 100%;">
     <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race.mp4" type="video/mp4">
@@ -217,7 +217,7 @@ def pause_player_at_max_year(value):
 pn.bind(pause_player_at_max_year, year, watch=True)
 ```
 
-Let's make it interactive! We introduce a [`Player`](../../reference/widgets/Player.ipynb) widget to loop continuously through the years.
+Let's make it interactive! We introduce a [`Player`](../../reference/widgets/Player.md) widget to loop continuously through the years.
 
 ---
 
@@ -286,4 +286,4 @@ It should resemble
 
 ## Recap
 
-In this tutorial, we built a *bar chart race* using the [Altair](https://altair-viz.github.io) plotting library and the [`Player`](../../reference/widgets/Player.ipynb) widget.
+In this tutorial, we built a *bar chart race* using the [Altair](https://altair-viz.github.io) plotting library and the [`Player`](../../reference/widgets/Player.md) widget.

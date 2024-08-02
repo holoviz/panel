@@ -17,6 +17,7 @@ import os
 import sys
 import threading
 import traceback
+import typing
 import uuid
 
 from typing import (
@@ -29,6 +30,8 @@ from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
 from bokeh.resources import Resources
 from jinja2 import Template
+from param import Undefined
+from param.parameterized import instance_descriptor
 from pyviz_comms import Comm  # type: ignore
 
 from ._param import Align, Aspect, Margin
@@ -299,7 +302,6 @@ class Layoutable(param.Parameterized):
         super().__init__(**params)
 
 
-
 class ServableMixin:
     """
     Mixin to define methods shared by objects which can served.
@@ -382,6 +384,9 @@ class ServableMixin:
                 assert template is not None
                 if template.title == template.param.title.default and title:
                     template.title = title
+                for obj in self.select():
+                    if not obj.design:
+                        obj.design = template.design
                 if area == 'main':
                     template.main.append(self)
                 elif area == 'sidebar':
@@ -1068,6 +1073,144 @@ class Viewer(param.Parameterized):
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         return self._create_view()._repr_mimebundle_(include, exclude)
+
+
+class Child(param.ClassSelector):
+    """
+    A Parameter type that holds a single `Viewable` object.
+
+    Given a non-`Viewable` object it will automatically promote it to a `Viewable`
+    by calling the `pn.panel` utility.
+    """
+
+    @typing.overload
+    def __init__(
+        self,
+        default=None, *, is_instance=True, allow_None=False, doc=None,
+        label=None, precedence=None, instantiate=True, constant=False,
+        readonly=False, pickle_default_value=True, per_instance=True,
+        allow_refs=False, nested_refs=False
+    ):
+        ...
+
+    def __init__(self, /, default=Undefined, class_=Viewable, **params):
+        if isinstance(class_, type) and not issubclass(class_, Viewable):
+            raise TypeError(
+                f"Child.class_ must be an instance of Viewable, not {type(class_)}."
+            )
+        elif isinstance(class_, tuple) and not all(issubclass(it, Viewable) for it in class_):
+            invalid = ' or '.join([str(type(it)) for it in class_ if issubclass(it, Viewable)])
+            raise TypeError(
+                f"Child.class_ must be an instance of Viewable, not {invalid}."
+            )
+        super().__init__(default=self._transform_value(default), class_=class_, **params)
+
+    def _transform_value(self, val):
+        if not isinstance(val, Viewable) and val not in (None, Undefined):
+            from .pane import panel
+            val = panel(val)
+        return val
+
+    @instance_descriptor
+    def __set__(self, obj, val):
+        super().__set__(obj, self._transform_value(val))
+
+
+class Children(param.List):
+    """
+    A Parameter type that defines a list of ``Viewable`` objects. Given
+    a non-Viewable object it will automatically promote it to a ``Viewable``
+    by calling the ``panel`` utility.
+    """
+
+    def __init__(
+        self, /, default=Undefined, instantiate=Undefined, bounds=Undefined,
+        item_type=Viewable, **params
+    ):
+        if isinstance(item_type, type) and not issubclass(item_type, Viewable):
+            raise TypeError(
+                f"Children.item_type must be an instance of Viewable, not {type(item_type)}."
+            )
+        elif isinstance(item_type, tuple) and not all(issubclass(it, Viewable) for it in item_type):
+            invalid = ' or '.join([str(type(it)) for it in item_type if issubclass(it, Viewable)])
+            raise TypeError(
+                f"Children.item_type must be an instance of Viewable, not {invalid}."
+            )
+        elif 'item_type' in params:
+            raise ValueError("Children does not support item_type, use item_type instead.")
+        super().__init__(
+            default=self._transform_value(default), instantiate=instantiate,
+            item_type=item_type, **params
+        )
+
+    def _transform_value(self, val):
+        if isinstance(val, list) and val:
+            from .pane import panel
+            val[:] = [
+                v if isinstance(v, Viewable) else panel(v)
+                for v in val
+            ]
+        return val
+
+    @instance_descriptor
+    def __set__(self, obj, val):
+        super().__set__(obj, self._transform_value(val))
+
+
+class ChildDict(param.Dict):
+
+    def __init__(
+        self, /, default=Undefined, instantiate=Undefined, **params
+    ):
+        default = self._transform_value(default)
+        super().__init__(
+            default=default, instantiate=instantiate, **params
+        )
+
+    def _transform_value(self, val):
+        if isinstance(val, dict) and val:
+            from .pane import panel
+            val.update({
+                k: v if isinstance(v, Viewable) else panel(v)
+                for k, v in val.items()
+            })
+        return val
+
+    @instance_descriptor
+    def __set__(self, obj, val):
+        super().__set__(obj, self._transform_value(val))
+
+
+
+def is_viewable_param(parameter: param.Parameter) -> bool:
+    """
+    Detects whether the Parameter uniquely identifies a Viewable
+    type.
+
+    Arguments
+    ---------
+    parameter: param.Parameter
+
+    Returns
+    -------
+    Whether the Parameter specieis a Parameter type
+    """
+    p = parameter
+    if (
+        isinstance(p, (Child, Children)) or
+        (isinstance(p, param.ClassSelector) and p.class_ and (
+            (isinstance(p.class_, tuple) and
+             all(issubclass(cls, Viewable) for cls in p.class_)) or
+            issubclass(p.class_, Viewable)
+        )) or
+        (isinstance(p, param.List) and p.item_type and (
+            (isinstance(p.item_type, tuple) and
+             all(issubclass(cls, Viewable) for cls in p.item_type)) or
+            issubclass(p.item_type, Viewable)
+        ))
+    ):
+        return True
+    return False
 
 
 __all__ = (

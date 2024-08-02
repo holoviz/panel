@@ -369,6 +369,9 @@ class BaseTable(ReactiveData, Widget):
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
         ascending = [s['dir'] == 'asc' for s in self.sorters]
 
+        # Making a copy of the DataFrame because it could be a view of the original
+        # dataframe. There could be a better place to do this.
+        df = df.copy()
         # Temporarily add _index_ column because Tabulator uses internal _index
         # as additional sorter to break ties
         df['_index_'] = np.arange(len(df)).astype(str)
@@ -398,9 +401,7 @@ class BaseTable(ReactiveData, Widget):
 
         # Revert temporary changes to DataFrames
         if rename:
-            df.index.name = None
             df_sorted.index.name = None
-        df.drop(columns=['_index_'], inplace=True)
         df_sorted.drop(columns=['_index_'], inplace=True)
         return df_sorted
 
@@ -712,7 +713,12 @@ class BaseTable(ReactiveData, Widget):
             if reset_index:
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
-            combined = pd.concat([self.value, stream_value])
+            if self.value.empty:
+                combined = pd.DataFrame(
+                    stream_value, columns=self.value.columns
+                ).astype(self.value.dtypes)
+            else:
+                combined = pd.concat([self.value, stream_value])
             if rollover is not None:
                 combined = combined.iloc[-rollover:]
             with param.discard_events(self):
@@ -873,7 +879,7 @@ class BaseTable(ReactiveData, Widget):
         """
         if not self.selection:
             return self.current_view.iloc[:0]
-        return self.current_view.iloc[self.selection]
+        return self._processed.iloc[self.selection]
 
 
 class DataFrame(BaseTable):
@@ -1084,13 +1090,16 @@ class Tabulator(BaseTable):
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
         'fit_columns'])
 
+    initial_page_size = param.Integer(default=20, bounds=(1, None), doc="""
+        Initial page size if page_size is None and therefore automatically set.""")
+
     pagination = param.ObjectSelector(default=None, allow_None=True,
                                       objects=['local', 'remote'])
 
     page = param.Integer(default=1, doc="""
         Currently selected page (indexed starting at 1), if pagination is enabled.""")
 
-    page_size = param.Integer(default=20, bounds=(1, None), doc="""
+    page_size = param.Integer(default=None, bounds=(1, None), doc="""
         Number of rows to render per page, if pagination is enabled.""")
 
     row_content = param.Callable(doc="""
@@ -1162,7 +1171,7 @@ class Tabulator(BaseTable):
         'selection': None, 'row_content': None, 'row_height': None,
         'text_align': None, 'embed_content': None, 'header_align': None,
         'header_filters': None, 'styles': 'cell_styles',
-        'title_formatters': None, 'sortable': None
+        'title_formatters': None, 'sortable': None, 'initial_page_size': None
     }
 
     # Determines the maximum size limits beyond which (local, remote)
@@ -1191,6 +1200,7 @@ class Tabulator(BaseTable):
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
+        self.param.watch(self._clear_selection_remote_pagination, 'value')
         if click_handler:
             self.on_click(click_handler)
         if edit_handler:
@@ -1254,7 +1264,7 @@ class Tabulator(BaseTable):
 
         event_col = self._renamed_cols.get(event.column, event.column)
         if self.pagination == 'remote':
-            nrows = self.page_size
+            nrows = self.page_size or self.initial_page_size
             event.row = event.row+(self.page-1)*nrows
 
         idx = self._index_mapping.get(event.row, event.row)
@@ -1342,7 +1352,7 @@ class Tabulator(BaseTable):
         import pandas as pd
         df = self._filter_dataframe(self.value)
         df = self._sort_df(df)
-        nrows = self.page_size
+        nrows = self.page_size or self.initial_page_size
         start = (self.page-1)*nrows
 
         page_df = df.iloc[start: start+nrows]
@@ -1382,8 +1392,9 @@ class Tabulator(BaseTable):
             return {}
         offset = 1 + len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
         if self.pagination == 'remote':
-            start = (self.page-1)*self.page_size
-            end = start + self.page_size
+            page_size = self.page_size or self.initial_page_size
+            start = (self.page - 1) * page_size
+            end = start + page_size
 
         # Map column indexes in the data to indexes after frozen_columns are applied
         column_mapper = {}
@@ -1427,7 +1438,7 @@ class Tabulator(BaseTable):
             return None
         df = self._processed
         if self.pagination == 'remote':
-            nrows = self.page_size
+            nrows = self.page_size or self.initial_page_size
             start = (self.page-1)*nrows
             df = df.iloc[start:(start+nrows)]
         return self.selectable_rows(df)
@@ -1444,7 +1455,7 @@ class Tabulator(BaseTable):
         from ..pane import panel
         df = self._processed
         if self.pagination == 'remote':
-            nrows = self.page_size
+            nrows = self.page_size or self.initial_page_size
             start = (self.page-1)*nrows
             df = df.iloc[start:(start+nrows)]
         children = {}
@@ -1517,7 +1528,7 @@ class Tabulator(BaseTable):
     def _stream(self, stream, rollover=None, follow=True):
         if self.pagination == 'remote':
             length = self._length
-            nrows = self.page_size
+            nrows = self.page_size or self.initial_page_size
             max_page = max(length//nrows + bool(length%nrows), 1)
             if self.page != max_page:
                 return
@@ -1531,7 +1542,7 @@ class Tabulator(BaseTable):
             self._apply_update([], {'follow': follow}, model, ref)
         if follow and self.pagination:
             length = self._length
-            nrows = self.page_size
+            nrows = self.page_size or self.initial_page_size
             self.page = max(length//nrows + bool(length%nrows), 1)
         super().stream(stream_value, rollover, reset_index)
         if follow and self.pagination:
@@ -1544,8 +1555,8 @@ class Tabulator(BaseTable):
             self._update_cds()
             return
         if self.pagination == 'remote':
-            nrows = self.page_size
-            start = (self.page-1)*nrows
+            nrows = self.page_size or self.initial_page_size
+            start = (self.page - 1) * nrows
             end = start+nrows
             filtered = {}
             for c, values in patch.items():
@@ -1590,11 +1601,15 @@ class Tabulator(BaseTable):
 
     def _update_max_page(self):
         length = self._length
-        nrows = self.page_size
+        nrows = self.page_size or self.initial_page_size
         max_page = max(length//nrows + bool(length%nrows), 1)
         self.param.page.bounds = (1, max_page)
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'max_page': max_page}, model, ref)
+
+    def _clear_selection_remote_pagination(self, event):
+        if not self._updating and self.selection and event.new is not event.old and self.pagination == 'remote':
+            self.selection = []
 
     def _update_selected(self, *events: param.parameterized.Event, indices=None):
         kwargs = {}
@@ -1610,8 +1625,8 @@ class Tabulator(BaseTable):
                     indices.append((ind, iloc))
                 except KeyError:
                     continue
-            nrows = self.page_size
-            start = (self.page-1)*nrows
+            nrows = self.page_size or self.initial_page_size
+            start = (self.page - 1) * nrows
             end = start+nrows
             p_range = self._processed.index[start:end]
             kwargs['indices'] = [iloc - start for ind, iloc in indices
@@ -1627,8 +1642,8 @@ class Tabulator(BaseTable):
             with pd.option_context('mode.chained_assignment', None):
                 self._processed[column] = array
             return
-        nrows = self.page_size
-        start = (self.page-1)*nrows
+        nrows = self.page_size or self.initial_page_size
+        start = (self.page - 1) * nrows
         end = start+nrows
         index = self._processed.iloc[start:end].index.values
         self.value.loc[index, column] = array
@@ -1648,7 +1663,7 @@ class Tabulator(BaseTable):
             ilocs = [] if indices.flush else self.selection.copy()
             indices = indices.indices
 
-        nrows = self.page_size
+        nrows = self.page_size or self.initial_page_size
         start = (self.page-1)*nrows
         index = self._processed.iloc[[start+ind for ind in indices]].index
         for v in index.values:
@@ -1673,7 +1688,8 @@ class Tabulator(BaseTable):
         properties['indexes'] = self.indexes
         if self.pagination:
             length = self._length
-            properties['max_page'] = max(length//self.page_size + bool(length%self.page_size), 1)
+            page_size = self.page_size or self.initial_page_size
+            properties['max_page'] = max(length//page_size + bool(length % page_size), 1)
         if isinstance(self.selectable, str) and self.selectable.startswith('checkbox'):
             properties['select_mode'] = 'checkbox'
         else:
@@ -1715,7 +1731,7 @@ class Tabulator(BaseTable):
         model.children = self._get_model_children(
             child_panels, doc, root, parent, comm
         )
-        self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
+        self._link_props(model, ['page', 'sorters', 'expanded', 'filters', 'page_size'], doc, root, comm)
         self._register_events('cell-click', 'table-edit', 'selection-change', model=model, doc=doc, comm=comm)
         return model
 

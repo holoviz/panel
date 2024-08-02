@@ -14,6 +14,8 @@ To get started with Pyodide simply follow their [Getting started guide](https://
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/pyodide/v{{PYODIDE_VERSION}}/full/pyodide.js"></script>
 
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-{{BOKEH_VERSION}}.js"></script>
@@ -44,7 +46,7 @@ To get started with Pyodide simply follow their [Getting started guide](https://
               return f'Amplitude is: {new}'
 
           pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
-	    `);
+      `);
       }
       main();
     </script>
@@ -64,44 +66,30 @@ const bk_whl = "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/boke
 const pn_whl = "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"
 await micropip.install(bk_whl, pn_whl)
 ```
+
 :::
 
 ### PyScript
 
-PyScript makes it even easier to manage your dependencies, with a `<py-config>` HTML tag. Simply include `panel` in the list of dependencies and PyScript will install it automatically:
-
-```html
-<py-config>
-packages = [
-  "panel",
-  ...
-]
-</py-config>
-```
-
-Once installed you will be able to `import panel` in your `<py-script>` tag. Again, make sure you also load Bokeh.js and Panel.js:
+A basic, single file pyscript example looks like
 
 ```html
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-{{BOKEH_VERSION}}.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{BOKEH_VERSION}}.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-{{BOKEH_VERSION}}.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@holoviz/panel@{{PANEL_VERSION}}/dist/panel.min.js"></script>
 
-    <link rel="stylesheet" href="https://pyscript.net/releases/{{PYSCRIPT_VERSION}}/pyscript.css" />
-    <script defer src="https://pyscript.net/releases/{{PYSCRIPT_VERSION}}/pyscript.js"></script>
+    <link rel="stylesheet" href="https://pyscript.net/releases/{{PYSCRIPT_VERSION}}/core.css">
+    <script type="module" src="https://pyscript.net/releases/{{PYSCRIPT_VERSION}}/core.js"></script>
   </head>
   <body>
-    <py-config>
-       packages = [
-          "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl",
-          "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"
-       ]
-    </py-config>
     <div id="simple_app"></div>
-    <py-script>
+    <script type="py" config='{"packages": ["https://cdn.holoviz.org/panel/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl", "https://cdn.holoviz.org/panel/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"]}'>
       import panel as pn
 
       pn.extension(sizing_mode="stretch_width")
@@ -112,12 +100,14 @@ Once installed you will be able to `import panel` in your `<py-script>` tag. Aga
          return f'Amplitude is: {new}'
 
       pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
-    </py-script>
+    </script>
   </body>
 </html>
 ```
 
-The app should look identical to the one above but show a loading spinner while Pyodide is initializing.
+The app should look identical to the one above.
+
+The [PyScript](https://docs.pyscript.net) documentation recommends you put your configuration and python code into separate files. You can find such examples in the [PyScript Examples Gallery](https://pyscript.com/@examples?q=panel).
 
 ## Rendering Panel components in Pyodide or Pyscript
 
