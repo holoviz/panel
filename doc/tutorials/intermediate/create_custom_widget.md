@@ -109,7 +109,7 @@ class FeatureInput(pn.widgets.CompositeWidget):
         return widget
 ```
 
-A key design decision in this implementation is to use the parameter state to manage the widget's internal state and update the layout. This makes the flow easier to reason about.
+A key design decision in this implementation is to use the parameter state to manage the widget's internal state and update the layout. The alternative would be to keep the state in the `MultiChoice` and `FloatInput` widgets. This makes the flow easier to reason about.
 
 ## Creating the Application
 
