@@ -34,7 +34,7 @@ CounterButton().servable()
 
 `ReactComponent` bears similarities to [`AnyWidget`](https://anywidget.dev/) and [`IpyReact`](https://github.com/widgetti/ipyreact), but `ReactComponent` is specifically optimized for use with Panel and React.
 
-If you are looking to create custom components using Python and Panel component only, check out [`Viewer`](Viewer.md) and [`CompositeWidget`](CompositeWidget.md).
+If you are looking to create custom components using Python and Panel, use [`CompositeWidget`](CompositeWidget.md) to create custom widgets and [`Viewer`](Viewer.md) for all other types of components.
 
 :::
 
