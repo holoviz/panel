@@ -1968,7 +1968,6 @@ def test_tabulator_header_filters_default(page, df_mixed, cols):
         ([0, 1], 'input[type="number"]'),
         (np.array([0, 1], dtype=np.uint64), 'input[type="number"]'),
         ([0.1, 1.1], 'input[type="number"]'),
-        # ([True, False], 'input[type="checkbox"]'),  # Pandas cannot have boolean indexes apparently
     ),
 )
 def test_tabulator_header_filters_default_index(page, index, expected_selector):
@@ -3506,6 +3505,8 @@ def test_range_selection_on_sorted_data_downward(page, pagination):
 
     page.locator('.tabulator-col-title-holder').nth(2).click()
 
+    page.wait_for_timeout(100)
+
     page.locator('.tabulator-row').nth(0).click()
 
     page.keyboard.down('Shift')
@@ -3523,6 +3524,8 @@ def test_range_selection_on_sorted_data_upward(page, pagination):
     serve_component(page, table)
 
     page.locator('.tabulator-col-title-holder').nth(2).click()
+
+    page.wait_for_timeout(100)
 
     page.locator('.tabulator-row').nth(1).click()
 

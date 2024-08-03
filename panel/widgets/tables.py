@@ -116,7 +116,10 @@ class BaseTable(ReactiveData, Widget):
         self._index_mapping = {}
         self._edited_indexes = []
         super().__init__(value=value, **params)
-        self.param.watch(self._setup_on_change, ['editors', 'formatters'])
+        self._internal_callbacks.extend([
+            self.param.watch(self._setup_on_change, ['editors', 'formatters']),
+            self.param._watch(self._reset_selection, ['value'], precedence=-1)
+        ])
         self.param.trigger('editors')
         self.param.trigger('formatters')
 
@@ -128,6 +131,32 @@ class BaseTable(ReactiveData, Widget):
         self._renamed_cols = {
             str(col) if str(col) != col else col: col for col in self._get_fields()
         }
+
+    def _reset_selection(self, event):
+        if event.type == 'triggered' and self._updating:
+            return
+        if self._indexes_changed(event.old, event.new):
+            selection = []
+            for sel in self.selection:
+                idx = event.old.index[sel]
+                try:
+                    new = event.new.index.get_loc(idx)
+                    selection.append(new)
+                except KeyError:
+                    pass
+            self.selection = selection
+
+    def _indexes_changed(self, old, new):
+        """
+        Comparator that checks whether DataFrame indexes have changed.
+
+        If indexes and length are unchanged we assume we do not
+        have to reset various settings including expanded rows,
+        scroll position, pagination etc.
+        """
+        if type(old) != type(new) or isinstance(new, dict) or len(old) != len(new):
+            return True
+        return (old.index != new.index).any()
 
     @property
     def _length(self):
@@ -1494,20 +1523,6 @@ class Tabulator(BaseTable):
             model.margin = (0, 0, 0, 0)
             models[i] = model
         return models
-
-    def _indexes_changed(self, old, new):
-        """
-        Comparator that checks whether DataFrame indexes have changed.
-
-        If indexes and length are unchanged we assume we do not
-        have to reset various settings including expanded rows,
-        scroll position, pagination etc.
-        """
-        if type(old) != type(new) or isinstance(new, dict):
-            return True
-        elif len(old) != len(new):
-            return False
-        return (old.index != new.index).any()
 
     def _update_children(self, *events):
         cleanup, reuse = set(), set()
