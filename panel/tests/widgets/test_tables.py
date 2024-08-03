@@ -37,7 +37,6 @@ def makeMixedDataFrame():
     return pd.DataFrame(data)
 
 
-
 def test_dataframe_widget(dataframe, document, comm):
 
     table = DataFrame(dataframe)
@@ -238,6 +237,27 @@ def test_none_table(document, comm):
     model = table.get_root(document, comm)
 
     assert model.source.data == {}
+
+
+def test_tabulator_none_value(document, comm):
+    table = Tabulator(value=None)
+    assert table.indexes == []
+
+    model = table.get_root(document, comm)
+
+    assert model.source.data == {}
+    assert model.columns == []
+
+
+def test_tabulator_update_none_value(document, comm, df_mixed):
+    table = Tabulator(value=df_mixed)
+
+    model = table.get_root(document, comm)
+
+    table.value = None
+
+    assert model.source.data == {}
+    assert model.columns == []
 
 
 def test_tabulator_selection_resets():
