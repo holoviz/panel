@@ -1275,7 +1275,8 @@ class Tabulator(BaseTable):
 
     def _process_event(self, event) -> None:
         if event.event_name == 'selection-change':
-            self._update_selection(event)
+            if self.pagination == 'remote':
+                self._update_selection(event)
             return
 
         event_col = self._renamed_cols.get(event.column, event.column)
