@@ -136,10 +136,10 @@ export class PlayerView extends WidgetView {
 
     // Display Value
     this.titleEl = div()
-    this.titleEl.setAttribute("class", "pn-player-title")
+    this.titleEl.classList.add("pn-player-title")
+    this.titleEl.style.padding = "0 5px 0 5px"
     this.update_title_and_value()
     this.set_value_align()
-    this.titleEl.style.cssText = "padding: 0 5px 0 5px; user-select:none;"
 
     // Slider
     this.sliderEl = document.createElement("input")
@@ -319,9 +319,15 @@ export class PlayerView extends WidgetView {
       const {title} = this.model
       if (title != null && title.length > 0) {
         if (this.contains_tex_string(title)) {
-          this.titleEl.innerHTML = `${this.process_tex(title)}: `
+          this.titleEl.innerHTML = `${this.process_tex(title)}`
+          if (this.model.show_value) {
+            this.titleEl.innerHTML += ": "
+          }
         } else {
-          this.titleEl.textContent = `${title}: `
+          this.titleEl.textContent = `${title}`
+          if (this.model.show_value) {
+            this.titleEl.textContent += ": "
+          }
         }
       }
 
@@ -347,6 +353,7 @@ export class PlayerView extends WidgetView {
         break
       case "end":
         this.titleEl.style.textAlign = "right"
+        console.log(this.titleEl)
         break
     }
   }
