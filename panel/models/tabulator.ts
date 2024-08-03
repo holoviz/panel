@@ -1249,7 +1249,10 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     const flush = !(e.ctrlKey || e.metaKey || e.shiftKey)
     const includes = indices.includes(index)
-    if (!includes) {
+    const remote = this.model.pagination === "remote"
+
+    // Toggle the index on or off (if remote we let Python do the toggling)
+    if (!includes || remote) {
       indices.push(index)
     } else {
       indices.splice(indices.indexOf(index), 1)
@@ -1260,7 +1263,6 @@ export class DataTabulatorView extends HTMLBoxView {
         indices.shift()
       }
     }
-    const remote = this.model.pagination === "remote"
     const filtered = this._filter_selected(indices)
     if (!remote) {
       this.tabulator.deselectRow()
