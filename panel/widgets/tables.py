@@ -172,7 +172,7 @@ class BaseTable(ReactiveData, Widget):
 
     def _get_fields(self) -> list[str]:
         indexes = self.indexes
-        col_names = list(self.value.columns)
+        col_names = [] if self.value is None else list(self.value.columns)
         if not self.hierarchical or len(indexes) == 1:
             col_names = indexes + col_names
         else:
