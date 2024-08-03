@@ -76,8 +76,8 @@ export class PlayerView extends WidgetView {
   protected _toogle_pause: CallableFunction
   protected _toggle_play: CallableFunction
   protected _changing: boolean = false
-  protected slowerButton: HTMLButtonElement;
-  protected fasterButton: HTMLButtonElement;
+  protected slowerButton: HTMLButtonElement
+  protected fasterButton: HTMLButtonElement
 
   override connect_signals(): void {
     super.connect_signals()
@@ -158,7 +158,7 @@ export class PlayerView extends WidgetView {
     slower.style.cssText = button_style_small
     slower.innerHTML = SVG_STRINGS.slower
     slower.onclick = () => this.slower()
-    this.slowerButton = slower;
+    this.slowerButton = slower
     button_div.appendChild(slower)
 
     const first = document.createElement("button")
@@ -215,7 +215,7 @@ export class PlayerView extends WidgetView {
     faster.style.cssText = button_style_small
     faster.innerHTML = SVG_STRINGS.faster
     faster.onclick = () => this.faster()
-    this.fasterButton = faster;
+    this.fasterButton = faster
     button_div.appendChild(faster)
 
     // toggle
@@ -334,31 +334,31 @@ export class PlayerView extends WidgetView {
   }
 
   updateSpeedButton(button: HTMLButtonElement, interval: number, originalSVG: string): void {
-    button.innerHTML = `${interval}ms`;
-    button.style.fontSize = '8px';
+    button.innerHTML = `${interval}ms`
+    button.style.fontSize = "8px"
     setTimeout(() => {
-      button.innerHTML = originalSVG;
-      button.style.fontSize = '';
-    }, 1000); // Show for 1 second
+      button.innerHTML = originalSVG
+      button.style.fontSize = ""
+    }, 1000) // Show for 1 second
   }
 
   slower(): void {
-    this.model.interval = Math.round(this.model.interval / 0.7);
-    this.updateSpeedButton(this.slowerButton, this.model.interval, SVG_STRINGS.slower);
+    this.model.interval = Math.round(this.model.interval / 0.7)
+    this.updateSpeedButton(this.slowerButton, this.model.interval, SVG_STRINGS.slower)
     if (this.model.direction > 0) {
-      this.play_animation();
+      this.play_animation()
     } else if (this.model.direction < 0) {
-      this.reverse_animation();
+      this.reverse_animation()
     }
   }
 
   faster(): void {
-    this.model.interval = Math.round(this.model.interval * 0.7);
-    this.updateSpeedButton(this.fasterButton, this.model.interval, SVG_STRINGS.faster);
+    this.model.interval = Math.round(this.model.interval * 0.7)
+    this.updateSpeedButton(this.fasterButton, this.model.interval, SVG_STRINGS.faster)
     if (this.model.direction > 0) {
-      this.play_animation();
+      this.play_animation()
     } else if (this.model.direction < 0) {
-      this.reverse_animation();
+      this.reverse_animation()
     }
   }
 
