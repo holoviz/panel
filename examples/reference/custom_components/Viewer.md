@@ -36,6 +36,8 @@ CounterButton().servable()
 
 :::{note}
 
+If you are looking to create a custom widget by using Python, check out [`CompositeWidget`](CompositeWidget.md).
+
 If you are looking to create new components using JavaScript, check out [`JSComponent`](JSComponent.md), [`ReactComponent`](ReactComponent.md), or [`AnyWidgetComponent`](AnyWidgetComponent.md) instead.
 
 :::
