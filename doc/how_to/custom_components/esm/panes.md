@@ -6,6 +6,10 @@ In this guide we will show you how to efficiently implement custom panes using `
 
 This example will show you the basics of creating a [ChartJS](https://www.chartjs.org/docs/latest/) pane.
 
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+
 ```{pyodide}
 import panel as pn
 import param
@@ -75,6 +79,97 @@ pn.Column(chart_type, chart).servable()
 ```
 
 Note the use of the `model.on('after_render', ...)` to postpone the rendering of the chart to after the rendering of the element. Dealing with layout issues like this sometimes requires a bit of iteration. If you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
+
+:::
+
+::: {tab-item} `ReactComponent`
+
+```{pyodide}
+import panel as pn
+import param
+from panel.custom import ReactComponent
+
+
+class ChartReactComponent(ReactComponent):
+    object = param.Dict()
+
+    _esm = """
+import { Chart } from 'https://esm.sh/chart.js/auto';
+
+const useEffect = React.useEffect;
+const useRef = React.useRef;
+
+export function render({ model }){
+  const canvasRef = useRef(null);
+  let chart = useRef(null);
+
+  const createChart = () => {
+    if (chart.current) {
+      chart.current.destroy();
+    }
+    chart.current = new Chart(canvasRef.current.getContext('2d'), model.object);
+  };
+
+  const removeChart = () => {
+    if (chart.current) {
+      chart.current.destroy();
+      chart.current = null;
+    }
+  };
+
+  useEffect(() => {
+    createChart();
+    model.on('object', createChart);
+    model.on('remove', removeChart);
+
+    // Cleanup function to remove chart when component unmounts
+    return () => {
+      removeChart();
+      model.off('object', createChart);
+      model.off('remove', removeChart);
+    };
+  }, [model]);
+
+  return <canvas ref={canvasRef}></canvas>;
+};
+
+
+"""
+
+
+def data(chart_type="line"):
+    return {
+        "type": chart_type,
+        "data": {
+            "labels": ["January", "February", "March", "April", "May", "June", "July"],
+            "datasets": [
+                {
+                    "label": "Data",
+                    "backgroundColor": "rgb(255, 99, 132)",
+                    "borderColor": "rgb(255, 99, 132)",
+                    "data": [0, 10, 5, 2, 20, 30, 45],
+                }
+            ],
+        },
+        "options": {
+            "responsive": True,
+            "maintainAspectRatio": False,
+        },
+    }
+
+
+chart_type = pn.widgets.RadioBoxGroup(
+    name="Chart Type", options=["bar", "line"], inline=True
+)
+chart = ChartReactComponent(
+    object=pn.bind(data, chart_type), height=400, sizing_mode="stretch_width"
+)
+pn.Column(chart_type, chart).servable()
+```
+
+:::
+
+::::
 
 ## Creating a Cytoscape Pane
 
