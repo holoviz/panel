@@ -130,7 +130,7 @@ export function render({ model }){
     };
   }, [model]);
 
-  return <canvas ref={canvasRef}></canvas>;
+  return <canvas ref={canvasRef} height={model.height}></canvas>;
 };
 
 
@@ -162,7 +162,7 @@ chart_type = pn.widgets.RadioBoxGroup(
     name="Chart Type", options=["bar", "line"], inline=True
 )
 chart = ChartReactComponent(
-    object=pn.bind(data, chart_type), height=400, sizing_mode="stretch_width"
+    object=pn.bind(data, chart_type), height=600, sizing_mode="stretch_width"
 )
 pn.Column(chart_type, chart).servable()
 ```
