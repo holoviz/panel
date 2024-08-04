@@ -80,6 +80,10 @@ Note the use of the `model.on('after_render', ...)` to postpone the rendering of
 
 This example will show you how to build a more advanced [CytoscapeJS](https://js.cytoscape.org/) pane.
 
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+
 ```{pyodide}
 import param
 import panel as pn
@@ -87,7 +91,7 @@ import panel as pn
 from panel.custom import JSComponent
 
 
-class Cytoscape(JSComponent):
+class CytoscapeJS(JSComponent):
 
     object = param.List()
 
@@ -169,7 +173,7 @@ elements = [
     {"data": {"id": "B", "label": "B"}},
     {"data": {"id": "A-B", "source": "A", "target": "B"}},
 ]
-graph = Cytoscape(
+graph = CytoscapeJS(
     object=elements,
     sizing_mode="stretch_width",
     height=600,
@@ -193,3 +197,115 @@ pn.Row(
     graph,
 ).servable()
 ```
+
+:::
+
+:::{tab-item} `ReactComponent`
+
+```{pyodide}
+import param
+import panel as pn
+
+from panel.custom import ReactComponent
+
+
+class CytoscapeReact(ReactComponent):
+
+    object = param.List()
+
+    layout = param.Selector(
+        default="cose",
+        objects=[
+            "breadthfirst",
+            "circle",
+            "concentric",
+            "cose",
+            "grid",
+            "preset",
+            "random",
+        ],
+    )
+    style = param.String("", doc="Use to set the styles of the nodes/edges")
+
+    zoom = param.Number(1, bounds=(1, 100))
+    pan = param.Dict({"x": 0, "y": 0})
+
+    data = param.List(doc="Use to send node's data/attributes to Cytoscape")
+
+    selected_nodes = param.List()
+    selected_edges = param.List()
+
+    _esm = """
+import CytoscapeComponent from 'https://esm.sh/react-cytoscapejs';
+
+export function render({ model }) {
+    function configure(cy){
+        cy.on('select unselect', function (evt) {
+            model.selected_nodes = cy.elements('node:selected').map(el => el.id())
+            model.selected_edges = cy.elements('edge:selected').map(el => el.id())
+        });
+
+        model.on('object', () => {cy.json({elements: model.object});cy.resize().fit()})
+        model.on('layout', () => {cy.layout({name: model.layout}).run()})
+        model.on('zoom', () => {cy.zoom(model.zoom)})
+        model.on('pan', () => {cy.pan(model.pan)})
+        model.on('style', () => {cy.style().resetToDefault().append(model.style).update()})
+
+        window.addEventListener('resize', function(event){
+            cy.center();
+            cy.resize().fit();
+        });
+
+    }
+
+    return (
+        <CytoscapeComponent
+            elements={model.object}
+            layout={ { 'name': model.layout} }
+            zoom={model.zoom}
+            pan={model.pan}
+            stylesheet={model.style}
+
+            style={{ width: '100%', height: model.height, position: 'relative' }}
+            cy={configure}
+        />
+    );
+}
+"""
+
+pn.extension(sizing_mode="stretch_width")
+
+elements = [
+    {"data": {"id": "A", "label": "A"}},
+    {"data": {"id": "B", "label": "B"}},
+    {"data": {"id": "A-B", "source": "A", "target": "B"}},
+]
+graph = CytoscapeReact(
+    object=elements,
+    sizing_mode="stretch_width",
+    height=600,
+    styles={"border": "1px solid black"},
+)
+pn.Row(
+    pn.Param(
+        graph,
+        parameters=[
+            "object",
+            "zoom",
+            "pan",
+            "layout",
+            "style",
+            "selected_nodes",
+            "selected_edges",
+            "height",
+        ],
+        sizing_mode="fixed",
+        width=300,
+    ),
+    graph,
+).servable()
+```
+
+:::
+
+::::
