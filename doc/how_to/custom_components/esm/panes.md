@@ -169,6 +169,82 @@ pn.Column(chart_type, chart).servable()
 
 :::
 
+::: {tab-item} `AnyWidgetComponent`
+
+```{pyodide}
+import panel as pn
+import param
+from panel.custom import AnyWidgetComponent
+
+
+class AnyWidgetComponent(AnyWidgetComponent):
+    object = param.Dict()
+
+    _esm = """
+import { Chart } from "https://esm.sh/chart.js/auto"
+
+let chart = null;
+
+function createChart(canvasEl, model) {
+    removeChart();
+    chart = new Chart(canvasEl.getContext('2d'), model.get('object'));
+}
+
+function removeChart() {
+    if (chart) {
+        chart.destroy();
+    }
+}
+
+function render({ model, el }) {
+    const canvasEl = document.createElement('canvas');
+    el.appendChild(canvasEl);
+
+    createChart(canvasEl, model)
+
+    const updateChart = () => createChart(canvasEl, model);
+    model.on('change:object', updateChart);
+    model.on('change:remove', removeChart);
+
+
+}
+export default { render };
+"""
+
+def data(chart_type="line"):
+    return {
+        "type": chart_type,
+        "data": {
+            "labels": ["January", "February", "March", "April", "May", "June", "July"],
+            "datasets": [
+                {
+                    "label": "Data",
+                    "backgroundColor": "rgb(255, 99, 132)",
+                    "borderColor": "rgb(255, 99, 132)",
+                    "data": [0, 10, 5, 2, 20, 30, 45],
+                }
+            ],
+        },
+        "options": {
+            "responsive": True,
+            "maintainAspectRatio": False,
+        },
+    }
+
+
+chart_type = pn.widgets.RadioBoxGroup(
+    name="Chart Type", options=["bar", "line"], inline=True
+)
+chart = AnyWidgetComponent(
+    object=pn.bind(data, chart_type), height=400, sizing_mode="stretch_width"
+)
+pn.Column(chart_type, chart).servable()
+```
+
+Note that we have to append the `canvasEl` to the `el` before we create the chart. Dealing with layout issues like this sometimes requires a bit of iteration. If you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
+
+:::
+
 ::::
 
 ## Creating a Cytoscape Pane
