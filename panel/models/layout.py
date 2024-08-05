@@ -1,3 +1,5 @@
+from typing import Any
+
 from bokeh.core.properties import (
     Bool, Int, List, Nullable, String,
 )
@@ -10,6 +12,7 @@ __all__ = (
     "HTMLBox",
     "Column",
     "Modal",
+    "ModalDialogEvent",
 )
 
 
@@ -99,3 +102,9 @@ class Modal(Column):
 class ModalDialogEvent(ModelEvent):
     event_name = 'modal-dialog-event'
 
+    def __init__(self, model: ModelEvent, open: bool):
+        self.open = open
+        super().__init__(model=model)
+
+    def event_values(self) -> dict[str, Any]:
+        return dict(super().event_values(), open=self.open)

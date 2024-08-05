@@ -4,24 +4,34 @@ import {div, button} from "@bokehjs/core/dom"
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import type {Attrs} from "@bokehjs/core/types"
 
+//type A11yDialogView = {
+//  addSignalListener(event: unknown, listener: unknown): void
+//  finalize(): void
+//  on(event: string, listener: () => void): void
+//  new
+//}
+//
+//type A11yDialog = (container: HTMLElement, embed_data: unknown, config: unknown) => Promise<{view: A11yDialogView}>
+//declare const A11yDialog: A11yDialog
 
 @server_event("modal-dialog-event")
 export class ModalDialogEvent extends ModelEvent {
-  constructor() {
+  open: boolean
+
+  constructor(open: boolean) {
     super()
-    //this.open = open
+    this.open = open
   }
 
   protected override get event_values(): Attrs {
-    return {} // open: this.open}
+    return {open: this.open}
   }
 
-  static override from_values() {
-    return new ModalDialogEvent()
-
+  static override from_values(values: object) {
+    const {open} = values as {open: boolean}
+    return new ModalDialogEvent(open)
   }
 }
-
 
 export class ModalView extends BkColumnView {
   declare model: Modal
@@ -36,7 +46,11 @@ export class ModalView extends BkColumnView {
     this.on_change([children], this.update)
     this.on_change([show_close_button], this.update_close_button)
     this.model.on_event(ModalDialogEvent, (event) => {
-      this.modal.show()
+      if (event.open) {
+        this.modal.show()
+      } else {
+        this.modal.hide()
+      }
     })
   }
 

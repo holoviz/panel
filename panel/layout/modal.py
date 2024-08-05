@@ -27,11 +27,8 @@ class Modal(ListPanel):
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/models/modal.css"]
     _rename: ClassVar[Mapping[str, str | None]] = {}
 
-    def __init__(self, *objects, **params):
-        super().__init__(*objects, **params)
-
     def open(self):
-        self._send_event(ModalDialogEvent)
+        self._send_event(ModalDialogEvent, open=True)
 
-    # def close(self):
-    #     self._send_event(ModalDialogEvent, open=False)
+    def close(self):
+        self._send_event(ModalDialogEvent, open=False)
