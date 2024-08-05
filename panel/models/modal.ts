@@ -8,37 +8,15 @@ export class ModalView extends BkColumnView {
   modal: any
   dialog: any
   content: any
-
-  override initialize(): void {
-    super.initialize()
-  }
+  close_button: any
 
   override connect_signals(): void {
     super.connect_signals()
-    const {} = this.model.properties
-    this.on_change([], () => { this.update() })
+    const {children, show_close_button} = this.model.properties
+    this.on_change([children], this.update)
+    this.on_change([show_close_button], this.update_close_button)
   }
 
-  //        "render": """
-  //        fast_el = document.getElementById("body-design-provider")
-  //        if (fast_el!==null){
-  //          fast_el.append(pnx_dialog_style)
-  //          fast_el.append(pnx_dialog)
-  //        }
-  //        self.show_close_button()
-  //        self.init_modal()
-  //        """,
-  //        "init_modal": """
-  //state.modal = new A11yDialog(pnx_dialog)
-  //state.modal.on('show', function (element, event) {data.is_open=true})
-  //state.modal.on('hide', function (element, event) {data.is_open=false})
-  //if (data.is_open==true){state.modal.show()}
-  //""",
-  //        "is_open": """\
-  //if (data.is_open==true){state.modal.show();view.invalidate_layout()} else {state.modal.hide()}""",
-  //        "show_close_button": """
-  //if (data.show_close_button){pnx_dialog_close.style.display = " block"}else{pnx_dialog_close.style.display = "none"}
-  //""",
   override render(): void {
     super.render()
     const container = div({style: {display: "contents"}})
@@ -56,7 +34,7 @@ export class ModalView extends BkColumnView {
       class: "dialog-content",
       role: "document",
     } as any)
-    const dialog_close = button({
+    this.close_button = button({
       content: "Close",
       id: "pnx_dialog_close",
       "data-a11y-dialog-hide": "",
@@ -70,7 +48,7 @@ export class ModalView extends BkColumnView {
     container.append(this.dialog)
     this.dialog.append(dialog_overlay)
     this.dialog.append(this.content)
-    this.content.append(dialog_close)
+    this.content.append(this.close_button)
     this.shadow_el.append(container)
 
     this.modal = new (window as any).A11yDialog(this.dialog)
@@ -88,6 +66,15 @@ export class ModalView extends BkColumnView {
     } as any)
     test.innerText = "Hello world2"
     this.content.append(test)
+    this.update_close_button()
+  }
+
+  update_close_button(): void {
+    if (this.model.show_close_button) {
+      this.close_button.style.display = "block"
+    } else {
+      this.close_button.style.display = "none"
+    }
   }
 }
 
