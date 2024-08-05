@@ -334,30 +334,30 @@ export class PlayerView extends WidgetView {
   }
 
   updateSpeedButton(button: HTMLButtonElement, interval: number, originalSVG: string): void {
-    const fps = 1000 / interval;
-    button.innerHTML = `${fps.toFixed(1)}<br>fps`;
+    const fps = 1000 / interval
+    button.innerHTML = `${fps.toFixed(1)}<br>fps`
     setTimeout(() => {
-      button.innerHTML = originalSVG;
-    }, 1500); // Show for 1.5 seconds
+      button.innerHTML = originalSVG
+    }, 1500) // Show for 1.5 seconds
   }
 
   slower(): void {
-    this.model.interval = Math.round(this.model.interval / 0.7);
-    this.updateSpeedButton(this.slowerButton, this.model.interval, SVG_STRINGS.slower);
+    this.model.interval = Math.round(this.model.interval / 0.7)
+    this.updateSpeedButton(this.slowerButton, this.model.interval, SVG_STRINGS.slower)
     if (this.model.direction > 0) {
-      this.play_animation();
+      this.play_animation()
     } else if (this.model.direction < 0) {
-      this.reverse_animation();
+      this.reverse_animation()
     }
   }
 
   faster(): void {
-    this.model.interval = Math.round(this.model.interval * 0.7);
-    this.updateSpeedButton(this.fasterButton, this.model.interval, SVG_STRINGS.faster);
+    this.model.interval = Math.round(this.model.interval * 0.7)
+    this.updateSpeedButton(this.fasterButton, this.model.interval, SVG_STRINGS.faster)
     if (this.model.direction > 0) {
-      this.play_animation();
+      this.play_animation()
     } else if (this.model.direction < 0) {
-      this.reverse_animation();
+      this.reverse_animation()
     }
   }
 
