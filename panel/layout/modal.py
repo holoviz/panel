@@ -18,13 +18,14 @@ class Modal(ListPanel):
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    is_open = param.Boolean(default=False, doc="Whether the modal is open.")
+    is_open = param.Boolean(default=False, readonly=True, doc="Whether the modal is open.")
 
     show_close_button = param.Boolean(default=True, doc="Whether to show a close button in the modal.")
 
     _bokeh_model: ClassVar[type[Model]] = BkModal
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/models/modal.css"]
+
     _rename: ClassVar[Mapping[str, str | None]] = {}
 
     def open(self):
@@ -32,3 +33,8 @@ class Modal(ListPanel):
 
     def close(self):
         self._send_event(ModalDialogEvent, open=False)
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        msg.pop("is_open", None)
+        return msg

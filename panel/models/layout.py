@@ -1,7 +1,7 @@
 from typing import Any
 
 from bokeh.core.properties import (
-    Bool, Int, List, Nullable, String,
+    Bool, Int, List, Nullable, Readonly, String,
 )
 from bokeh.events import ModelEvent
 from bokeh.models import Column as BkColumn
@@ -95,7 +95,7 @@ class Modal(Column):
         'exports': {}
     }
 
-    is_open = Bool(False, help="Whether or not the modal is open.")
+    is_open = Readonly(Bool, default=False, help="Whether or not the modal is open.")
     show_close_button = Bool(True, help="Whether to show a close button in the modal")
 
 

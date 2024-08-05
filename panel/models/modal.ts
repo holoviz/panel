@@ -133,7 +133,7 @@ export class Modal extends BkColumn {
   static {
     this.prototype.default_view = ModalView
     this.define<Modal.Props>(({Bool}) => ({
-      is_open: [Bool, false],  // TODO: read-only
+      is_open: [Bool, false],
       show_close_button: [Bool, true],
     }))
   }
