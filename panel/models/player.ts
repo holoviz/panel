@@ -94,7 +94,7 @@ export class PlayerView extends WidgetView {
 
   update_css(): void {
     const button_style_small = `text-align: center; flex-grow: 1; margin: 2px; transform: scale(${this.model.scale_buttons}); max-width: 50px;`
-    const button_style = `text-align: center; flex-grow: 2; margin: 2px; transform: scale(${this.model.scale_buttons}); max-width: 50px;`;
+    const button_style = `text-align: center; flex-grow: 2; margin: 2px; transform: scale(${this.model.scale_buttons}); max-width: 50px;`
 
     const buttons = {
       slower: this.slower,
@@ -105,40 +105,38 @@ export class PlayerView extends WidgetView {
       play: this.play,
       next: this.next,
       last: this.last,
-      faster: this.faster
-    };
+      faster: this.faster,
+    }
 
     for (const [name, button] of Object.entries(buttons)) {
       if (button) {
         if (this.model.visible_buttons.includes(name)) {
-          button.style.display = ''; // Reset to default display
-          if (name === 'slower' || name === 'faster') {
-            button.style.cssText += button_style_small;
+          button.style.display = "" // Reset to default display
+          if (name === "slower" || name === "faster") {
+            button.style.cssText += button_style_small
           } else {
-            button.style.cssText += button_style;
+            button.style.cssText += button_style
           }
         } else {
-          button.style.display = 'none'; // Hide the button completely
+          button.style.display = "none" // Hide the button completely
         }
       }
     }
-
 
     for (const el of this.loop_state.children) {
       if (el.tagName.toLowerCase() == "input") {
         const anyEl = el as any
         if (this.model.visible_loop_options.includes(anyEl.value)) {
-          anyEl.style.display = ''
+          anyEl.style.display = ""
         } else {
-          anyEl.style.display = 'none'
+          anyEl.style.display = "none"
         }
-      }
-      else if (el.tagName.toLowerCase() == "label") {
+      } else if (el.tagName.toLowerCase() == "label") {
         const anyEl = el as any
         if (this.model.visible_loop_options.includes(anyEl.innerHTML.toLowerCase())) {
-          anyEl.style.display = ''
+          anyEl.style.display = ""
         } else {
-          anyEl.style.display = 'none'
+          anyEl.style.display = "none"
         }
       }
     }
@@ -577,8 +575,8 @@ export class Player extends Widget {
       show_value: [Bool, true],
       button_scale: [Float, 1],
       scale_buttons: [Float, 1],
-      visible_buttons: [List(Str), ['slower', 'first', 'previous', 'reverse', 'pause', 'play', 'next', 'last', 'faster']],
-      visible_loop_options: [List(Str), ['once', 'loop', 'reflect']]
+      visible_buttons: [List(Str), ["slower", "first", "previous", "reverse", "pause", "play", "next", "last", "faster"]],
+      visible_loop_options: [List(Str), ["once", "loop", "reflect"]],
     }))
 
     this.override<Player.Props>({width: 400})
