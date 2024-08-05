@@ -22,7 +22,7 @@ from bokeh.models.widgets import (
     DatePicker as _BkDatePicker, DateRangePicker as _BkDateRangePicker,
     Div as _BkDiv, FileInput as _BkFileInput, NumericInput as _BkNumericInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
-    Switch as _BkSwitch, TimePicker as _BkTimePicker,
+    Switch as _BkSwitch,
 )
 from bokeh.models.widgets.inputs import ClearInput
 from pyviz_comms import JupyterComm
@@ -31,7 +31,7 @@ from ..config import config
 from ..layout import Column, Panel
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
-    TextInput as _BkTextInput,
+    TextInput as _BkTextInput, TimePicker as _BkTimePicker,
 )
 from ..util import lazy_load, param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
