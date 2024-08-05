@@ -6,9 +6,8 @@ export class ModalView extends BkColumnView {
   declare model: Modal
 
   modal: any
-  dialog: any
-  content: any
-  close_button: any
+  close_button: HTMLButtonElement
+  modal_children: HTMLElement
 
   override connect_signals(): void {
     super.connect_signals()
@@ -20,7 +19,7 @@ export class ModalView extends BkColumnView {
   override render(): void {
     super.render()
     const container = div({style: {display: "contents"}})
-    this.dialog = div({
+    const dialog = div({
       id: "pnx_dialog",
       class: "dialog-container bk-root",
       "aria-hidden": "true",
@@ -29,7 +28,7 @@ export class ModalView extends BkColumnView {
       class: "dialog-overlay",
       "data-a11y-dialog-hide": "",
     } as any)
-    this.content = div({
+    const content = div({
       id: "pnx_dialog_content",
       class: "dialog-content",
       role: "document",
@@ -40,32 +39,29 @@ export class ModalView extends BkColumnView {
       "data-a11y-dialog-hide": "",
       class: "pnx-dialog-close",
       ariaLabel: "Close this dialog window",
-      style: {
-        backgroundColor: "red",
-      },
     } as any)
+    this.modal_children = div({id: "pnx_modal_object"})
 
-    container.append(this.dialog)
-    this.dialog.append(dialog_overlay)
-    this.dialog.append(this.content)
-    this.content.append(this.close_button)
+    container.append(dialog)
+    dialog.append(dialog_overlay)
+    dialog.append(content)
+    content.append(this.close_button)
+    content.append(this.modal_children)
     this.shadow_el.append(container)
 
-    this.modal = new (window as any).A11yDialog(this.dialog)
+    this.modal = new (window as any).A11yDialog(dialog)
     this.update()
-    this.modal.on("show", (_element: any, _event: any) => { this.model.is_open = true })
-    this.modal.on("hide", (_element: any, _event: any) => { this.model.is_open = true })
+    this.modal.on("show", () => { this.model.is_open = true })
+    this.modal.on("hide", () => { this.model.is_open = true })
     this.modal.show()
   }
 
   update(): void {
-    const test = div({
-      id: "pnx_modal_object",
-      class: "dialog-content",
-      role: "document",
-    } as any)
-    test.innerText = "Hello world2"
-    this.content.append(test)
+    // TODO: clear old children
+    for (const child of this.children()) {
+      // FIXME: remove any and look into better method
+      this.modal_children.append((child as any).el)
+    }
     this.update_close_button()
   }
 
@@ -100,7 +96,7 @@ export class Modal extends BkColumn {
   static {
     this.prototype.default_view = ModalView
     this.define<Modal.Props>(({Bool}) => ({
-      is_open: [Bool, false],
+      is_open: [Bool, false],  // TODO: read-only
       show_close_button: [Bool, true],
     }))
   }
