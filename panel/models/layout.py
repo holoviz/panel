@@ -75,5 +75,21 @@ class Card(Column):
 
 
 class Modal(Column):
+    __css__ = []
+
+    __javascript__ = [
+        "https://cdn.jsdelivr.net/npm/a11y-dialog@7/dist/a11y-dialog.min.js"
+    ]
+
+    __js_skip__ = {
+        # 'modal': __javascript__[:1],
+    }
+    __js_require__ = {
+        'paths': {
+            'modal': "https://cdn.jsdelivr.net/npm/a11y-dialog@7/dist/a11y-dialog.min",
+        },
+        'exports': {}
+    }
+
     is_open = Bool(False, help="Whether or not the modal is open.")
     show_close_button = Bool(True, help="Whether to show a close button in the modal")
