@@ -46,33 +46,35 @@ export class ModalView extends BkColumnView {
     this.on_change([children], this.update)
     this.on_change([show_close_button], this.update_close_button)
     this.model.on_event(ModalDialogEvent, (event) => {
-      if (event.open) {
-        this.modal.show()
-      } else {
-        this.modal.hide()
-      }
+      event.open ? this.modal.show() : this.modal.hide()
     })
   }
 
   override render(): void {
     super.render()
+    this.create_modal()
+  }
+
+  create_modal(): void {
     const container = div({style: {display: "contents"}})
     const dialog = div({
       id: "pnx_dialog",
       class: "dialog-container bk-root",
       "aria-hidden": "true",
     } as any)
-    const dialog_overlay = div({
-      class: "dialog-overlay",
-      "data-a11y-dialog-hide": "",
-    } as any)
+
+    const dialog_overlay = div({class: "dialog-overlay"})
+    if (this.model.background_close) {
+      dialog_overlay.setAttribute("data-a11y-dialog-hide", "")
+    }
+
+    // TODO: Add width and height here
     const content = div({
       id: "pnx_dialog_content",
       class: "dialog-content",
       role: "document",
     } as any)
     this.close_button = button({
-      content: "Close",
       id: "pnx_dialog_close",
       "data-a11y-dialog-hide": "",
       class: "pnx-dialog-close",
@@ -117,6 +119,7 @@ export namespace Modal {
   export type Props = BkColumn.Props & {
     is_open: p.Property<boolean>
     show_close_button: p.Property<boolean>
+    background_close: p.Property<boolean>
   }
 }
 
@@ -135,6 +138,7 @@ export class Modal extends BkColumn {
     this.define<Modal.Props>(({Bool}) => ({
       is_open: [Bool, false],
       show_close_button: [Bool, true],
+      background_close: [Bool, true],
     }))
   }
 }

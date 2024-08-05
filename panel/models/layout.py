@@ -96,7 +96,8 @@ class Modal(Column):
     }
 
     is_open = Readonly(Bool, default=False, help="Whether or not the modal is open.")
-    show_close_button = Bool(True, help="Whether to show a close button in the modal")
+    show_close_button = Bool(True, help="Whether to show a close button in the modal.")
+    background_close = Bool(True, help="Whether to enable closing the modal when clicking the background.")
 
 
 class ModalDialogEvent(ModelEvent):

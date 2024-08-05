@@ -22,6 +22,8 @@ class Modal(ListPanel):
 
     show_close_button = param.Boolean(default=True, doc="Whether to show a close button in the modal.")
 
+    background_close = param.Boolean(default=True, doc="Whether to enable closing the modal when clicking the background.")
+
     _bokeh_model: ClassVar[type[Model]] = BkModal
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/models/modal.css"]
