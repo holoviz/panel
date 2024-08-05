@@ -1,12 +1,13 @@
 import type * as p from "@bokehjs/core/properties"
 import {Column as BkColumn, ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
-import {div} from "@bokehjs/core/dom"
+import {div, button} from "@bokehjs/core/dom"
 
 export class ModalView extends BkColumnView {
   declare model: Modal
 
   modal: any
   dialog: any
+  content: any
 
   override initialize(): void {
     super.initialize()
@@ -40,67 +41,54 @@ export class ModalView extends BkColumnView {
   //""",
   override render(): void {
     super.render()
-    //<div id="pnx_dialog" class="dialog-container bk-root" aria-hidden="true">
-    //<div class="dialog-overlay" data-a11y-dialog-hide></div>
-    //  <div id="pnx_dialog_content" class="dialog-content" role="document">
-    //    <button id="pnx_dialog_close" data-a11y-dialog-hide class="pnx-dialog-close" aria-label="Close this dialog window">
-    //      <svg class="svg-icon" viewBox="0 0 20 20">
-    //        <path
-    //          fill="currentcolor"
-    //          d="M15.898,4.045c-0.271-0.272-0.713-0.272-0.986,0l-4.71,4.711L5.493,4.045c-0.272-0.272-0.714-0.272-0.986,0s-0.272,0.714,0,0.986l4.709,4.711l-4.71,4.711c-0.272,0.271-0.272,0.713,0,0.986c0.136,0.136,0.314,0.203,0.492,0.203c0.179,0,0.357-0.067,0.493-0.203l4.711-4.711l4.71,4.711c0.137,0.136,0.314,0.203,0.494,0.203c0.178,0,0.355-0.067,0.492-0.203c0.273-0.273,0.273-0.715,0-0.986l-4.711-4.711l4.711-4.711C16.172,4.759,16.172,4.317,15.898,4.045z"
-    //        ></path>
-    //      </svg>
-    //    </button>
-    //    {% for object in objects %}
-    //      <div id="pnx_modal_object">${object}</div>
-    //    {% endfor %}
-    //  </div>
-    //</div>
     const container = div({style: {display: "contents"}})
     this.dialog = div({
       id: "pnx_dialog",
       class: "dialog-container bk-root",
-      role: "dialog",
       "aria-hidden": "true",
-      "aria-modal": "true",
-      tabindex: "-1",
     } as any)
     const dialog_overlay = div({
       class: "dialog-overlay",
       "data-a11y-dialog-hide": "",
     } as any)
-    const dialog_content = div({
+    this.content = div({
       id: "pnx_dialog_content",
       class: "dialog-content",
       role: "document",
-      //"data-a11y-dialog-hide": "true",
     } as any)
-    const dialog_close = div({
+    const dialog_close = button({
+      content: "Close",
       id: "pnx_dialog_close",
       "data-a11y-dialog-hide": "",
       class: "pnx-dialog-close",
       ariaLabel: "Close this dialog window",
+      style: {
+        backgroundColor: "red",
+      },
     } as any)
 
     container.append(this.dialog)
     this.dialog.append(dialog_overlay)
-    this.dialog.append(dialog_content)
-    dialog_content.append(dialog_close)
+    this.dialog.append(this.content)
+    this.content.append(dialog_close)
     this.shadow_el.append(container)
 
+    this.modal = new (window as any).A11yDialog(this.dialog)
+    this.update()
+    this.modal.on("show", (_element: any, _event: any) => { this.model.is_open = true })
+    this.modal.on("hide", (_element: any, _event: any) => { this.model.is_open = true })
+    this.modal.show()
+  }
+
+  update(): void {
     const test = div({
       id: "pnx_modal_object",
       class: "dialog-content",
       role: "document",
     } as any)
-    test.innerText = "Hello world"
-    dialog_content.append(test)
-
-    this.modal = new (window as any).A11yDialog(this.dialog)
-    this.modal.show()
+    test.innerText = "Hello world2"
+    this.content.append(test)
   }
-
-  update(): void { }
 }
 
 export namespace Modal {
