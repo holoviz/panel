@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
+from panel.io.resources import CDN_DIST
+
 from ..config import config
 from ..models.widgets import Player as _BkPlayer
 from ..util import indexOf, isIn
@@ -46,6 +48,8 @@ class PlayerBase(Widget):
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
     _widget_type: ClassVar[type[Model]] = _BkPlayer
+
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/player.css"]
 
     __abstract = True
 

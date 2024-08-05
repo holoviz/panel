@@ -150,8 +150,8 @@ export class PlayerView extends WidgetView {
     this.buttonEl = button_div
     button_div.style.cssText = "margin: 0 auto; display: flex; padding: 5px; align-items: stretch; width: 100%;"
 
-    const button_style_small = "text-align: center; min-width: 20px; flex-grow: 1; margin: 2px"
-    const button_style = "text-align: center; min-width: 40px; flex-grow: 2; margin: 2px"
+    const button_style_small = "text-align: center; min-width: 50px; flex-grow: 1; margin: 2px"
+    const button_style = "text-align: center; min-width: 50px; flex-grow: 2; margin: 2px"
 
     const slower = document.createElement("button")
     slower.classList.add("slower")
@@ -334,31 +334,30 @@ export class PlayerView extends WidgetView {
   }
 
   updateSpeedButton(button: HTMLButtonElement, interval: number, originalSVG: string): void {
-    button.innerHTML = `${interval}ms`
-    button.style.fontSize = "8px"
+    const fps = 1000 / interval;
+    button.innerHTML = `${fps.toFixed(1)}<br>fps`;
     setTimeout(() => {
-      button.innerHTML = originalSVG
-      button.style.fontSize = ""
-    }, 1000) // Show for 1 second
+      button.innerHTML = originalSVG;
+    }, 1500); // Show for 1.5 seconds
   }
 
   slower(): void {
-    this.model.interval = Math.round(this.model.interval / 0.7)
-    this.updateSpeedButton(this.slowerButton, this.model.interval, SVG_STRINGS.slower)
+    this.model.interval = Math.round(this.model.interval / 0.7);
+    this.updateSpeedButton(this.slowerButton, this.model.interval, SVG_STRINGS.slower);
     if (this.model.direction > 0) {
-      this.play_animation()
+      this.play_animation();
     } else if (this.model.direction < 0) {
-      this.reverse_animation()
+      this.reverse_animation();
     }
   }
 
   faster(): void {
-    this.model.interval = Math.round(this.model.interval * 0.7)
-    this.updateSpeedButton(this.fasterButton, this.model.interval, SVG_STRINGS.faster)
+    this.model.interval = Math.round(this.model.interval * 0.7);
+    this.updateSpeedButton(this.fasterButton, this.model.interval, SVG_STRINGS.faster);
     if (this.model.direction > 0) {
-      this.play_animation()
+      this.play_animation();
     } else if (this.model.direction < 0) {
-      this.reverse_animation()
+      this.reverse_animation();
     }
   }
 
