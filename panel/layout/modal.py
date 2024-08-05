@@ -6,6 +6,7 @@ import param
 
 from ..io.resources import CDN_DIST
 from ..models import Modal as BkModal
+from ..models.layout import ModalDialogEvent
 from .base import ListPanel
 
 if TYPE_CHECKING:
@@ -28,3 +29,9 @@ class Modal(ListPanel):
 
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
+
+    def open(self):
+        self._send_event(ModalDialogEvent)
+
+    # def close(self):
+    #     self._send_event(ModalDialogEvent, open=False)

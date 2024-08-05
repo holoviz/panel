@@ -1,6 +1,7 @@
 from bokeh.core.properties import (
     Bool, Int, List, Nullable, String,
 )
+from bokeh.events import ModelEvent
 from bokeh.models import Column as BkColumn
 from bokeh.models.layouts import LayoutDOM
 
@@ -93,3 +94,8 @@ class Modal(Column):
 
     is_open = Bool(False, help="Whether or not the modal is open.")
     show_close_button = Bool(True, help="Whether to show a close button in the modal")
+
+
+class ModalDialogEvent(ModelEvent):
+    event_name = 'modal-dialog-event'
+
