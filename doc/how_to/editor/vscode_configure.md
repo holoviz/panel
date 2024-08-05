@@ -1,43 +1,45 @@
 # Configure VS Code
 
-This guide addresses how to configure VS Code for an efficient Panel development workflow.
+This guide explains how to configure VS Code for an efficient Panel development workflow.
 
-We assume you have
+We assume you have:
 
-- a basic understanding of [working with Python in VS Code](https://code.visualstudio.com/docs/python/python-tutorial).
-- installed the VS Code [Python extension](https://github.com/Microsoft/vscode-python)
+- A basic understanding of [working with Python in VS Code](https://code.visualstudio.com/docs/python/python-tutorial).
+- Installed the VS Code [Python extension](https://github.com/Microsoft/vscode-python).
 
 ---
 
 ## Debugging
 
-To learn how to use the *integrated debugger* in general check out [the official guide](https://code.visualstudio.com/docs/editor/debugging).
+To learn how to use the *integrated debugger* in general, check out [the official guide](https://code.visualstudio.com/docs/editor/debugging).
 
-To configure the integrated debugger for Panel, you will need to add a debugging configuration like the below.
+To enable debugging applications with `panel serve`, you can add a `"panel serve"` debugging configuration like the one below to your VS Code debugging configuration file.
 
-```bash
+```json
 {
     "version": "0.2.0",
     "configurations": [
         {
             "name": "panel serve",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "-m",
             "args": [
                 "panel",
                 "serve",
                 "${relativeFile}",
+                "--index",
+                "${fileBasenameNoExtension}",
                 "--show"
             ],
             "console": "integratedTerminal",
             "justMyCode": true
-        },
+        }
     ]
 }
 ```
 
-In use it looks like
+When used, it looks like this:
 
 ![Integrated Debugging of a Panel app in VS Code](../../_static/images/vscode-integrated-debugging.png)
 
