@@ -17,6 +17,9 @@ import unittest.mock
 import weakref
 
 from contextlib import contextmanager
+from typing import (
+    Any, Callable, Literal, ParamSpec, TypeVar, overload,
+)
 
 import param
 
@@ -305,11 +308,46 @@ def compute_hash(func, hash_funcs, args, kwargs):
         _HASH_MAP[key] = hash_value
     return hash_value
 
+P = ParamSpec("P")
+R = TypeVar("R")
+T = TypeVar("T")
+
+@overload
+def cache(
+    func: Literal[None] = ...,
+    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = ...,
+    max_items: int | None = ...,
+    policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
+    ttl: float | None = ...,
+    to_disk: bool = ...,
+    cache_path: str = ...,
+    per_session: bool = ...,
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    ...
+
+@overload
+def cache(
+    func: Callable[P, R],
+    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = ...,
+    max_items: int | None = ...,
+    policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
+    ttl: float | None = ...,
+    to_disk: bool = ...,
+    cache_path: str = ...,
+    per_session: bool = ...,
+) -> Callable[P, R]:
+    ...
 
 def cache(
-    func=None, hash_funcs=None, max_items=None, policy='LRU',
-    ttl=None, to_disk=False, cache_path='./cache', per_session=False
-):
+    func: Callable[P, R] | None = None,
+    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = None,
+    max_items: int | None = None,
+    policy: Literal['FIFO', 'LRU', 'LFU'] = 'LRU',
+    ttl: float | None = None,
+    to_disk: bool = False,
+    cache_path: str = './cache',
+    per_session: bool = False
+) -> Callable[P, R] | Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Memoizes functions for a user session. Can be used as function annotation or just directly.
 
@@ -414,7 +452,7 @@ def cache(
 
     if iscoroutinefunction(func):
         @functools.wraps(func)
-        async def wrapped_func(*args, **kwargs):
+        async def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> R:
             func_cache, hash_value, time = hash_func(*args, **kwargs)
             if hash_value in func_cache:
                 with lock:
@@ -427,7 +465,7 @@ def cache(
             return ret
     else:
         @functools.wraps(func)
-        def wrapped_func(*args, **kwargs):
+        def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> R:
             func_cache, hash_value, time = hash_func(*args, **kwargs)
             if hash_value in func_cache:
                 with lock:
