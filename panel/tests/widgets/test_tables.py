@@ -2255,6 +2255,32 @@ def test_tabulator_styling_empty_dataframe(document, comm):
         }
     }
 
+def test_tabulator_style_multi_index_dataframe(document, comm):
+    # See https://github.com/holoviz/panel/issues/6151
+    arrays = [['A', 'A', 'B', 'B'], [1, 2, 1, 2]]
+    index = pd.MultiIndex.from_arrays(arrays, names=('Letters', 'Numbers'))
+    df = pd.DataFrame({
+        'Values': [1, 2, 3, 4],
+        'X': [10, 20, 30, 40],
+        'Y': [100, 200, 300, 400],
+        'Z': [1000, 2000, 3000, 4000]
+    }, index=index)
+
+    def color_func(vals):
+        return ["background-color: #ff0000;" for v in vals]
+
+    tabulator = Tabulator(df, width=500, height=300)
+    tabulator.style.apply(color_func, subset = ['X'])
+
+    model = tabulator.get_root(document, comm)
+
+    assert model.cell_styles['data'] == {
+        0: {4: [('background-color', '#ff0000')]},
+        1: {4: [('background-color', '#ff0000')]},
+        2: {4: [('background-color', '#ff0000')]},
+        3: {4: [('background-color', '#ff0000')]}
+    }
+
 
 @mpl_available
 def test_tabulator_style_background_gradient_with_frozen_columns(document, comm):
