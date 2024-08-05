@@ -78,8 +78,8 @@ class PlayerBase(Widget):
     __abstract = True
 
     def __init__(self, **params):
-        if params.get("loop_policy", "once") not in params["visible_loop_options"]:
-            if loop_options := params.get("visible_loop_options", []):
+        if loop_options := params.get("visible_loop_options", []):
+            if params.get("loop_policy", "once") not in loop_options:
                 params["loop_policy"] = loop_options[0]
         if 'value' in params and 'value_throttled' in self.param:
             params['value_throttled'] = params['value']
