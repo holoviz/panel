@@ -17,7 +17,7 @@ def test_player_faster_click_shows_ms(page):
     faster_element.click()
 
     wait_until(lambda: player.interval == 350)
-    assert faster_element.inner_text() == "350ms"
+    assert faster_element.inner_text() == "2.9\nfps"
 
     wait_until(lambda: faster_element.inner_text() == "")
 
@@ -30,6 +30,6 @@ def test_player_slower_click_shows_ms(page):
     slower_element.click()
 
     wait_until(lambda: player.interval == 714)
-    assert slower_element.inner_text() == "714ms"
+    assert slower_element.inner_text() == "1.4\nfps"
 
     wait_until(lambda: slower_element.inner_text() == "")
