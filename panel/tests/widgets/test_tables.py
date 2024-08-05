@@ -1312,6 +1312,14 @@ def test_tabulator_patch_with_filters(document, comm):
                 table.value[col].values, expected_df[col]
             )
 
+    table.filters = []
+
+    for col, values in model.source.data.items():
+        expected = expected_df[col]
+        if col == 'D':
+            expected = expected.astype(np.int64) / 10e5
+        np.testing.assert_array_equal(values, expected)
+
 def test_tabulator_patch_with_sorters(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, sorters=[{'field': 'A', 'sorter': 'number', 'dir': 'desc'}])
