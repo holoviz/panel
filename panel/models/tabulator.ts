@@ -1214,7 +1214,7 @@ export class DataTabulatorView extends HTMLBoxView {
     if (!(horizontal || vertical)) {
       return
     }
-    const opts = {behavior: "instant"}
+    const opts: ScrollToOptions = {behavior: "instant"}
     if (vertical) {
       opts.top = this._lastVerticalScrollbarTopPosition
     }
