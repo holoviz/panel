@@ -1029,7 +1029,6 @@ def test_tabulator_frozen_rows(page):
     assert Y_bb == page.locator('text="Y"').bounding_box()
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3669')
 def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1049,8 +1048,7 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     # Catch a potential rescroll
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    # This fails
-    assert bb == page.locator('text="tomodify"').bounding_box()
+    wait_until(lambda: bb == page.locator('text="tomodify"').bounding_box(), page)
 
 
 @pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3249')
@@ -1113,12 +1111,7 @@ def test_tabulator_patch_no_height_resize(page):
 
 
 @pytest.mark.parametrize(
-    'pagination',
-    (
-        pytest.param('local', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3553')),
-        pytest.param('remote', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3553')),
-        None,
-    )
+    'pagination', ('local', 'remote', None)
 )
 def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, pagination):
     widths = 100
