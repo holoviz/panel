@@ -16,6 +16,7 @@ test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core", "test-unit-task"]
+test-type = ["py311", "type"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
@@ -143,6 +144,22 @@ _install-ui = 'playwright install chromium'
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10'
 depends_on = ["_install-ui"]
+
+# =============================================
+# ================== TYPES ====================
+# =============================================
+[feature.type.dependencies]
+mypy = "*"
+pandas-stubs = "*"
+types-bleach = "*"
+types-croniter = "*"
+types-Markdown = "*"
+types-psutil = "*"
+types-requests = "*"
+types-tqdm = "*"
+
+[feature.type.tasks]
+type = 'mypy panel'
 
 # =============================================
 # =================== DOCS ====================
