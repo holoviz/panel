@@ -60,3 +60,15 @@ th[halign='left'] {
 th[halign='center'] {
   text-align: center;
 }
+
+.panel-df.start-align td {
+  text-align: left;
+}
+
+.panel-df.center-align td {
+  text-align: center;
+}
+
+.panel-df.end-align td {
+  text-align: right;
+}
