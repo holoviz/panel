@@ -159,7 +159,7 @@ types-requests = "*"
 types-tqdm = "*"
 
 [feature.type.tasks]
-type = 'mypy panel'
+test-type = 'mypy panel'
 
 # =============================================
 # =================== DOCS ====================
