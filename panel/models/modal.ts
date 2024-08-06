@@ -4,15 +4,14 @@ import {div, button} from "@bokehjs/core/dom"
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import type {Attrs} from "@bokehjs/core/types"
 
-//type A11yDialogView = {
-//  addSignalListener(event: unknown, listener: unknown): void
-//  finalize(): void
-//  on(event: string, listener: () => void): void
-//  new
-//}
-//
-//type A11yDialog = (container: HTMLElement, embed_data: unknown, config: unknown) => Promise<{view: A11yDialogView}>
-//declare const A11yDialog: A11yDialog
+type A11yDialogView = {
+  on(event: string, listener: () => void): void
+  show(): void
+  hide(): void
+}
+
+type A11yDialog = (container: HTMLElement) => Promise<{view: A11yDialogView}>
+declare const A11yDialog: A11yDialog
 
 @server_event("modal-dialog-event")
 export class ModalDialogEvent extends ModelEvent {
@@ -36,7 +35,7 @@ export class ModalDialogEvent extends ModelEvent {
 export class ModalView extends BkColumnView {
   declare model: Modal
 
-  modal: any
+  modal: A11yDialogView
   close_button: HTMLButtonElement
   modal_children: HTMLElement
 
