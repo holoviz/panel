@@ -3,6 +3,7 @@ import {Column as BkColumn, ColumnView as BkColumnView} from "@bokehjs/models/la
 import {div, button} from "@bokehjs/core/dom"
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import type {Attrs} from "@bokehjs/core/types"
+import {UIElementView} from "@bokehjs/models/ui/ui_element"
 
 type A11yDialogView = {
   on(event: string, listener: () => void): void
@@ -41,8 +42,7 @@ export class ModalView extends BkColumnView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const {children, show_close_button} = this.model.properties
-    this.on_change([children], this.update)
+    const {show_close_button} = this.model.properties
     this.on_change([show_close_button], this.update_close_button)
     this.model.on_event(ModalDialogEvent, (event) => {
       event.open ? this.modal.show() : this.modal.hide()
@@ -50,8 +50,42 @@ export class ModalView extends BkColumnView {
   }
 
   override render(): void {
-    super.render()
+    UIElementView.prototype.render.call(this)
+    this.class_list.add(...this.css_classes())
     this.create_modal()
+
+    for (const child_view of this.child_views) {
+      this.modal_children.appendChild(child_view.el)
+      child_view.render()
+      child_view.after_render()
+    }
+  }
+
+  override async update_children(): Promise<void> {
+    const created = await this.build_child_views()
+    const created_children = new Set(created)
+
+    // First remove and then either reattach existing elements or render and
+    // attach new elements, so that the order of children is consistent, while
+    // avoiding expensive re-rendering of existing views.
+    for (const child_view of this.child_views) {
+      child_view.el.remove()
+    }
+
+    for (const child_view of this.child_views) {
+      const is_new = created_children.has(child_view)
+
+      const target = child_view.rendering_target() ?? this.shadow_el
+      if (is_new) {
+        child_view.render_to(target)
+      } else {
+        target.append(child_view.el)
+      }
+    }
+    this.r_after_render()
+
+    this._update_children()
+    this.invalidate_layout()
   }
 
   create_modal(): void {
@@ -89,18 +123,9 @@ export class ModalView extends BkColumnView {
     this.shadow_el.append(container)
 
     this.modal = new (window as any).A11yDialog(dialog)
-    this.update()
+    this.update_close_button()
     this.modal.on("show", () => { this.model.is_open = true })
     this.modal.on("hide", () => { this.model.is_open = false })
-  }
-
-  update(): void {
-    // TODO: clear old children
-    for (const child of this.children()) {
-      // FIXME: remove any and look into better method
-      this.modal_children.append((child as any).el)
-    }
-    this.update_close_button()
   }
 
   update_close_button(): void {
