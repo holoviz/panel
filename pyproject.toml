@@ -94,6 +94,7 @@ mypy = [
     "types-psutil",
     "types-requests",
     "types-tqdm",
+    "typing-extensions",
 ]
 
 [project.scripts]
@@ -219,7 +220,6 @@ filterwarnings = [
 ]
 
 [tool.mypy]
-python_version = "3.10"
 namespace_packages = true
 explicit_package_bases = true
 mypy_path = ""
