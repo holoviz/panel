@@ -259,7 +259,7 @@ jobs:
           pixi run -e ${{ matrix.environment }} test-unit
 
   type_test_suite:
-    name: lint:${{ matrix.environment }}:${{ matrix.os }}
+    name: type:${{ matrix.environment }}:${{ matrix.os }}
     needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
