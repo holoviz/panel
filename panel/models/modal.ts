@@ -4,6 +4,7 @@ import {div, button} from "@bokehjs/core/dom"
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import type {Attrs} from "@bokehjs/core/types"
 import {UIElementView} from "@bokehjs/models/ui/ui_element"
+import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 
 const SVG = `
 <svg class="svg-icon" viewBox="0 0 20 20">
@@ -62,37 +63,14 @@ export class ModalView extends BkColumnView {
     this.create_modal()
 
     for (const child_view of this.child_views) {
-      this.modal_children.appendChild(child_view.el)
+      this.modal_children.append(child_view.el)
       child_view.render()
       child_view.after_render()
     }
   }
 
   override async update_children(): Promise<void> {
-    const created = await this.build_child_views()
-    const created_children = new Set(created)
-
-    // First remove and then either reattach existing elements or render and
-    // attach new elements, so that the order of children is consistent, while
-    // avoiding expensive re-rendering of existing views.
-    for (const child_view of this.child_views) {
-      child_view.el.remove()
-    }
-
-    for (const child_view of this.child_views) {
-      const is_new = created_children.has(child_view)
-
-      const target = child_view.rendering_target() ?? this.shadow_el
-      if (is_new) {
-        child_view.render_to(target)
-      } else {
-        target.append(child_view.el)
-      }
-    }
-    this.r_after_render()
-
-    this._update_children()
-    this.invalidate_layout()
+    await LayoutDOMView.prototype.update_children.call(this)
   }
 
   create_modal(): void {
