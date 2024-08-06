@@ -275,4 +275,4 @@ jobs:
           environments: ${{ matrix.environment }}
       - name: Test Type
         run: |
-          pixi run -e ${{ matrix.environment }} type || echo "Failed"
+          pixi run -e ${{ matrix.environment }} test-type || echo "Failed"
