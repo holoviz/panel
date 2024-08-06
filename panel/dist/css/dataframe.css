@@ -48,3 +48,15 @@ table.panel-df {
   overflow: auto;
   padding-right: 1px;
 }
+
+th[halign='left'] {
+  text-align: left;
+}
+
+th[halign='left'] {
+  text-align: right;
+}
+
+th[halign='center'] {
+  text-align: center;
+}
