@@ -338,7 +338,7 @@ export class PlayerView extends WidgetView {
     button.innerHTML = `${fps.toFixed(1)}<br>fps`
     setTimeout(() => {
       button.innerHTML = originalSVG
-    }, 1500) // Show for 1.5 seconds
+    }, this.model.preview_duration) // Show for 1.5 seconds
   }
 
   slower(): void {
@@ -454,6 +454,7 @@ export namespace Player {
     loop_policy: p.Property<typeof LoopPolicy["__type__"]>
     value: p.Property<any>
     value_throttled: p.Property<any>
+    preview_duration: p.Property<number>
     show_loop_controls: p.Property<boolean>
   }
 }
@@ -482,6 +483,7 @@ export class Player extends Widget {
       loop_policy: [LoopPolicy, "once"],
       value: [Int, 0],
       value_throttled: [Int, 0],
+      preview_duration: [Int, 1500],
       show_loop_controls: [Bool, true],
     }))
 
