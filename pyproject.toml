@@ -85,6 +85,16 @@ tests = [
     'pytest-rerunfailures',
     'pytest-xdist',
 ]
+mypy = [
+    "mypy",
+    "pandas-stubs",
+    "types-bleach",
+    "types-croniter",
+    "types-Markdown",
+    "types-psutil",
+    "types-requests",
+    "types-tqdm",
+]
 
 [project.scripts]
 panel = "panel.command:main"
@@ -207,3 +217,52 @@ filterwarnings = [
     "ignore:unclosed file <_io.TextIOWrapper name='(/dev/null|nul)' mode='w':ResourceWarning", # OK
     "ignore:Deprecated in traitlets 4.1, use the instance .metadata dictionary directly", # OK (ipywidgets internal)
 ]
+
+[tool.mypy]
+python_version = "3.10"
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = ""
+exclude = []
+
+[[tool.mypy.overrides]]
+module = [
+    "altair.*",
+    "bokeh_django.*",
+    "bokeh.*",
+    "diskcache.*",
+    "flask.*",
+    "fsspec.*",
+    "holoviews.*",
+    "ipympl.*",
+    "ipywidgets_bokeh",
+    "ipywidgets.*",
+    "js.*",
+    "jupyter_bokeh.*",
+    "magic.*",
+    "matplotlib.*",
+    "mdit_py_emoji.*",
+    "memray.*",
+    "myst_parser.*",
+    "nbconvert.*",
+    "nbformat.*",
+    "param.*",
+    "plotly.*",
+    "pydeck.*",
+    "pyecharts.*",
+    "pyinstrument.*",
+    "pyodide_http.*",
+    "pyodide.*",
+    "pyviz_comms.*",
+    "reacton.*",
+    "rpy2.*",
+    "scipy.*",
+    "setuptools_scm.*",
+    "snakeviz.*",
+    "streamz.*",
+    "textual.*",
+    "tranquilizer.*",
+    "vtk.*",
+
+]
+ignore_missing_imports = true
