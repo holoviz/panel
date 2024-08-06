@@ -263,6 +263,5 @@ module = [
     "textual.*",
     "tranquilizer.*",
     "vtk.*",
-
 ]
 ignore_missing_imports = true
