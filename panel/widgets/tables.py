@@ -1609,7 +1609,7 @@ class Tabulator(BaseTable):
     def _update_cds(self, *events):
         if any(event.name == 'filters' for event in events):
             self._edited_indexes = []
-        page_events = ('page', 'page_size', 'sorters', 'filters')
+        page_events = ('page', 'page_size', 'sorters')
         if self._updating:
             return
         elif events and all(e.name in page_events[:-1] for e in events) and self.pagination == 'local':
