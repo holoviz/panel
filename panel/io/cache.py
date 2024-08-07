@@ -18,21 +18,8 @@ import weakref
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Callable, Hashable, Literal, ParamSpec, Protocol,
-    TypeVar, overload,
+    Any, Callable, Hashable, Literal, ParamSpec, Protocol, TypeVar, overload,
 )
-
-if TYPE_CHECKING:
-    P = ParamSpec("P")
-    R = TypeVar("R")
-    T = TypeVar("T")
-    CallableT = TypeVar("CallableT", bound=Callable)
-
-    class CachedFunc(Protocol[CallableT]):
-        def clear(self, func_hashes: list[str | None]) -> None:
-            pass
-
-        __call__: CallableT
 
 import param
 
@@ -43,6 +30,16 @@ from .state import state
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+_CallableT = TypeVar("_CallableT", bound=Callable)
+
+class _CachedFunc(Protocol[_CallableT]):
+    def clear(self, func_hashes: list[str | None]) -> None:
+        pass
+
+    __call__: _CallableT
 
 _CYCLE_PLACEHOLDER = b"panel-93KZ39Q-floatingdangeroushomechose-CYCLE"
 
@@ -331,12 +328,12 @@ def cache(
     to_disk: bool = ...,
     cache_path: str | os.PathLike = ...,
     per_session: bool = ...,
-) -> Callable[[Callable[P, R]], CachedFunc[Callable[P, R]]]:
+) -> Callable[[Callable[_P, _R]], _CachedFunc[Callable[_P, _R]]]:
     ...
 
 @overload
 def cache(
-    func: Callable[P, R],
+    func: Callable[_P, _R],
     hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = ...,
     max_items: int | None = ...,
     policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
@@ -344,11 +341,11 @@ def cache(
     to_disk: bool = ...,
     cache_path: str | os.PathLike = ...,
     per_session: bool = ...,
-) -> CachedFunc[Callable[P, R]]:
+) -> _CachedFunc[Callable[_P, _R]]:
     ...
 
 def cache(
-    func: Callable[P, R] | None = None,
+    func: Callable[_P, _R] | None = None,
     hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = None,
     max_items: int | None = None,
     policy: Literal['FIFO', 'LRU', 'LFU'] = 'LRU',
@@ -356,7 +353,7 @@ def cache(
     to_disk: bool = False,
     cache_path: str | os.PathLike = './cache',
     per_session: bool = False
-) -> CachedFunc[Callable[P, R]] | Callable[[Callable[P, R]], CachedFunc[Callable[P, R]]]:
+) -> _CachedFunc[Callable[_P, _R]] | Callable[[Callable[_P, _R]], _CachedFunc[Callable[_P, _R]]]:
     """
     Memoizes functions for a user session. Can be used as function annotation or just directly.
 
@@ -395,7 +392,7 @@ def cache(
 
     hash_funcs = hash_funcs or {}
     if func is None:
-        def decorator(func: Callable[P, R]) -> CachedFunc[Callable[P, R]]:
+        def decorator(func: Callable[_P, _R]) -> _CachedFunc[Callable[_P, _R]]:
             return cache(
                 func=func,
                 hash_funcs=hash_funcs,
@@ -463,7 +460,7 @@ def cache(
 
     if iscoroutinefunction(func):
         @functools.wraps(func)
-        async def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> R:
+        async def wrapped_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
             func_cache, hash_value, time = hash_func(*args, **kwargs)
             if hash_value in func_cache:
                 with lock:
@@ -476,7 +473,7 @@ def cache(
             return ret
     else:
         @functools.wraps(func)
-        def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> R:
+        def wrapped_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
             func_cache, hash_value, time = hash_func(*args, **kwargs)
             if hash_value in func_cache:
                 with lock:
