@@ -330,13 +330,17 @@ class Syncable(Renderable):
         ref = root.ref['id']
         self._changing[ref] = attrs = []
         for attr, value in dict(msg).items():
-            # Do not apply model change that is in flight
             if attr in self._in_process__events and value is self._in_process__events[attr]:
+                # Do not apply change that originated directly from
+                # the frontend since this may cause boomerang if a
+                # new property value is already in-flight
                 del self._in_process__events[attr]
                 del msg[attr]
                 continue
             elif attr in self._events:
-                del msg[attr]
+                # Do not override a property value that was just changed
+                # on the frontend
+                del self._events[attr]
                 continue
 
             # Bokeh raises UnsetValueError if the value is Undefined.
