@@ -15,8 +15,9 @@ from ..config import config
 from ..util import escape
 from .state import state
 
-P = ParamSpec("P")
-R = TypeVar("R")
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
 ProfilingEngine = Literal["pyinstrument", "snakeviz", "memray"]
 
 
@@ -237,7 +238,7 @@ def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[list[Profi
         os.remove(tmp_file)
 
 
-def profile(name: str, engine: ProfilingEngine = 'pyinstrument') -> Callable[[Callable[P, R]], Callable[P, R]]:
+def profile(name: str, engine: ProfilingEngine = 'pyinstrument') -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """
     A decorator which may be added to any function to record profiling
     output.
@@ -251,9 +252,9 @@ def profile(name: str, engine: ProfilingEngine = 'pyinstrument') -> Callable[[Ca
     """
     if not isinstance(name, str):
         raise ValueError("Profiler must be given a name.")
-    def wrapper(func: Callable[P, R]) -> Callable[P, R]:
+    def wrapper(func: Callable[_P, _R]) -> Callable[_P, _R]:
         @wraps(func)
-        def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
+        def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
             if state.curdoc and state.curdoc in state._launching:
                 return func(*args, **kwargs)
             with profile_ctx(engine) as sessions:
