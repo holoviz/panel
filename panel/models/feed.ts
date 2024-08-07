@@ -30,6 +30,8 @@ export class FeedView extends ColumnView {
   _last_visible: UIElementView | null
   _rendered: boolean = false
   _sync: boolean
+  _reference: number | null = null
+  _reference_view: UIElementView | null = null
 
   override initialize(): void {
     super.initialize()
@@ -87,17 +89,65 @@ export class FeedView extends ColumnView {
   override async update_children(): Promise<void> {
     const last = this._last_visible
     const scroll_top = this.el.scrollTop
-    const before_offset = last?.el.offsetTop || 0
+    this._reference_view = last
+    this._reference = last?.el.offsetTop || 0
     this._sync = false
-    await super.update_children()
-    this._sync = true
-    requestAnimationFrame(() => {
-      const after_offset = last?.el.offsetTop || 0
-      const offset = (after_offset-before_offset)
-      if (offset > 0) {
-        this.el.scrollTo({top: scroll_top + offset, behavior: "instant"})
+    console.log('?')
+    const created = await this.build_child_views()
+    const created_children = new Set(created)
+    const createdLength = created.length;
+    const views_length = this.child_views.length;
+
+    // Check whether we simply have to prepend or append items
+    // instead of removing and reordering them
+    const is_prepended = created.every((view, index) => view === this.child_views[index]);
+    const is_appended = created.every((view, index) => view === this.child_views[views_length - createdLength + index]);
+    const reorder = !(is_prepended || is_appended)
+    if (reorder) {
+      // First remove and then either reattach existing elements or render and
+      // attach new elements, so that the order of children is consistent, while
+      // avoiding expensive re-rendering of existing views.
+      for (const child_view of this.child_views) {
+	child_view.el.remove()
       }
-    })
+    }
+    const prepend: Element[] = []
+    for (const child_view of this.child_views) {
+      const is_new = created_children.has(child_view)
+      const target = this.shadow_el
+      if (reorder) {
+	if (is_new) {
+	  child_view.render_to(target)
+	} else {
+	  target.append(child_view.el)
+	}
+      } else {
+	if (is_new) {
+	  child_view.render()
+	  if (is_appended) {
+	    target.append(child_view.el)
+	  } else if (is_prepended) {
+	    prepend.push(child_view.el)
+	  }
+	}
+      }
+    }
+    if (is_prepended) {
+      this.shadow_el.prepend(...prepend)
+    }
+    this.r_after_render()
+    this._update_children()
+    this.invalidate_layout()
+    this._sync = true
+
+    // Ensure we adjust the scroll position in case we prepended items
+    if (is_prepended) {
+      requestAnimationFrame(() => {
+	const after_offset = this._reference_view?.el.offsetTop || 0
+	const offset = (after_offset-(this._reference || 0))
+	this.el.scrollTo({top: scroll_top + offset, behavior: "smooth"})
+      })
+    }
   }
 
   override async build_child_views(): Promise<UIElementView[]> {
