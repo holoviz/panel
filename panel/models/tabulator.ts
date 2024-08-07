@@ -1034,15 +1034,15 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   // Update table
-  setData(): void {
+  setData(): Promise<void> {
     if (this._initializing || this._building || !this.tabulator.initialized) {
-      return
+      return Promise.resolve(undefined)
     }
     const data = this.getData()
     if (this.model.pagination != null) {
-      this.tabulator.rowManager.setData(data, true, false)
+      return this.tabulator.rowManager.setData(data, true, false)
     } else {
-      this.tabulator.setData(data)
+      return this.tabulator.setData(data)
     }
   }
 
@@ -1050,9 +1050,20 @@ export class DataTabulatorView extends HTMLBoxView {
     const rows = this.tabulator.rowManager.getRows()
     const last_row = rows[rows.length-1]
     const start = ((last_row?.data._index) || 0)
-    this.setData()
-    if (this.model.follow && last_row) {
-      this.tabulator.scrollToRow(start, "top", false)
+    this._updating_page = true
+    const promise = this.setData()
+    if (this.model.follow) {
+      promise.then(() => {
+        if (this.model.pagination) {
+          this.tabulator.setPage(Math.ceil(this.tabulator.rowManager.getDataCount() / (this.model.page_size || 20)))
+        }
+        if (last_row) {
+          this.tabulator.scrollToRow(start, "top", false)
+        }
+        this._updating_page = false
+      })
+    } else {
+      this._updating_page = true
     }
   }
 
@@ -1099,7 +1110,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   updatePage(pageno: number): void {
-    if (this.model.pagination === "local" && this.model.page !== pageno) {
+    if (this.model.pagination === "local" && this.model.page !== pageno && !this._updating_page) {
       this._updating_page = true
       this.model.page = pageno
       this._updating_page = false

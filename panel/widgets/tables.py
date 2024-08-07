@@ -1565,8 +1565,10 @@ class Tabulator(BaseTable):
             length = self._length
             nrows = self.page_size or self.initial_page_size
             max_page = max(length//nrows + bool(length%nrows), 1)
-            if self.page != max_page:
+            if self.page != max_page and not follow:
                 return
+            self._processed, _ = self._get_data()
+            return
         super()._stream(stream, rollover)
         self._update_style()
         self._update_selectable()
@@ -1575,13 +1577,13 @@ class Tabulator(BaseTable):
     def stream(self, stream_value, rollover=None, reset_index=True, follow=True):
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'follow': follow}, model, ref)
+        super().stream(stream_value, rollover, reset_index)
+        if follow and self.pagination:
+            self._update_max_page()
         if follow and self.pagination:
             length = self._length
             nrows = self.page_size or self.initial_page_size
             self.page = max(length//nrows + bool(length%nrows), 1)
-        super().stream(stream_value, rollover, reset_index)
-        if follow and self.pagination:
-            self._update_max_page()
 
     @updating
     def _patch(self, patch):
