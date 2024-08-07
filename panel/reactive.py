@@ -331,7 +331,11 @@ class Syncable(Renderable):
         self._changing[ref] = attrs = []
         for attr, value in dict(msg).items():
             # Do not apply model change that is in flight
-            if attr in self._events or (attr in self._in_process__events and value is self._in_process__events[attr]):
+            if attr in self._in_process__events and value is self._in_process__events[attr]:
+                del self._in_process__events[attr]
+                del msg[attr]
+                continue
+            elif attr in self._events:
                 del msg[attr]
                 continue
 
