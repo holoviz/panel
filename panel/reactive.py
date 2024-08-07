@@ -138,6 +138,9 @@ class Syncable(Renderable):
         # A dictionary of bokeh property changes being processed
         self._changing = {}
 
+        # A dictionary of parameter changes being processed
+        self._in_process__events = {}
+
         # Whether the component is watching the stylesheets
         self._watching_stylesheets = False
 
@@ -326,7 +329,12 @@ class Syncable(Renderable):
     ) -> None:
         ref = root.ref['id']
         self._changing[ref] = attrs = []
-        for attr, value in msg.items():
+        for attr, value in dict(msg).items():
+            # Do not apply model change that is in flight
+            if attr in self._events or (attr in self._in_process__events and value is self._in_process__events[attr]):
+                del msg[attr]
+                continue
+
             # Bokeh raises UnsetValueError if the value is Undefined.
             try:
                 model_val = getattr(model, attr)
@@ -335,10 +343,6 @@ class Syncable(Renderable):
                 continue
             if not model.lookup(attr).property.matches(model_val, value):
                 attrs.append(attr)
-
-            # Do not apply model change that is in flight
-            if attr in self._events:
-                del self._events[attr]
 
         try:
             model.update(**msg)
@@ -416,7 +420,8 @@ class Syncable(Renderable):
         if any(e for e in events if e not in self._busy__ignore):
             with edit_readonly(state):
                 state._busy_counter += 1
-        params = self._process_property_change(dict(events))
+        self._in_process__events = events = dict(events)
+        params = self._process_property_change(events)
         try:
             with edit_readonly(self):
                 self_params = {k: v for k, v in params.items() if '.' not in k}
