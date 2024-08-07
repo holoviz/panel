@@ -157,6 +157,7 @@ types-Markdown = "*"
 types-psutil = "*"
 types-requests = "*"
 types-tqdm = "*"
+typing-extensions = "*"
 
 [feature.type.tasks]
 test-type = 'mypy panel'
