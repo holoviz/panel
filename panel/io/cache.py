@@ -18,14 +18,21 @@ import weakref
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Callable, Hashable, Literal, ParamSpec, TypeVar,
-    overload,
+    TYPE_CHECKING, Any, Callable, Hashable, Literal, ParamSpec, Protocol,
+    TypeVar, overload,
 )
 
 if TYPE_CHECKING:
     P = ParamSpec("P")
     R = TypeVar("R")
     T = TypeVar("T")
+    CallableT = TypeVar("CallableT", bound=Callable)
+
+    class CachedFunc(Protocol[CallableT]):
+        def clear(self, func_hashes: list[str | None]) -> None:
+            pass
+
+        __call__: CallableT
 
 import param
 
@@ -324,7 +331,7 @@ def cache(
     to_disk: bool = ...,
     cache_path: str | os.PathLike = ...,
     per_session: bool = ...,
-) -> Callable[[Callable[P, R]], Callable[P, R]]:
+) -> Callable[[Callable[P, R]], CachedFunc[Callable[P, R]]]:
     ...
 
 @overload
@@ -337,7 +344,7 @@ def cache(
     to_disk: bool = ...,
     cache_path: str | os.PathLike = ...,
     per_session: bool = ...,
-) -> Callable[P, R]:
+) -> CachedFunc[Callable[P, R]]:
     ...
 
 def cache(
@@ -349,7 +356,7 @@ def cache(
     to_disk: bool = False,
     cache_path: str | os.PathLike = './cache',
     per_session: bool = False
-) -> Callable[P, R] | Callable[[Callable[P, R]], Callable[P, R]]:
+) -> CachedFunc[Callable[P, R]] | Callable[[Callable[P, R]], CachedFunc[Callable[P, R]]]:
     """
     Memoizes functions for a user session. Can be used as function annotation or just directly.
 
@@ -388,7 +395,7 @@ def cache(
 
     hash_funcs = hash_funcs or {}
     if func is None:
-        def decorator(func: Callable[P, R]) -> Callable[P, R]:
+        def decorator(func: Callable[P, R]) -> CachedFunc[Callable[P, R]]:
             return cache(
                 func=func,
                 hash_funcs=hash_funcs,
