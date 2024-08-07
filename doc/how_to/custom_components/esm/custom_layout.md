@@ -228,6 +228,84 @@ radio_button_group.servable()
 
 ::::
 
+## Layout Two Objects
+
+```python
+import panel as pn
+
+from panel.custom import Child, JSComponent
+
+CSS = """
+.split {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+}
+
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+.gutter.gutter-horizontal {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+    cursor: col-resize;
+}
+"""
+
+
+class Split(JSComponent):
+
+    left = Child()
+    right = Child()
+
+    _esm = """
+    import Split from 'https://esm.sh/split.js@1.6.5'
+
+    export function render({ model }) {
+      let splitDiv = document.createElement('div');
+      splitDiv.className = 'split';
+
+      let split0 = document.createElement('div');
+      split0.append(model.get_child("left"))
+      splitDiv.appendChild(split0);
+
+      let split1 = document.createElement('div');
+      split1.append(model.get_child("right"))
+      splitDiv.appendChild(split1);
+
+      Split([split0, split1])
+
+      return splitDiv
+    }"""
+
+    _stylesheets = [CSS]
+
+
+pn.extension("codeeditor")
+
+Split(
+    left=pn.widgets.CodeEditor(
+        value="Left!",
+        sizing_mode="stretch_both",
+        margin=0,
+        theme="monokai",
+        language="python",
+    ),
+    right=pn.widgets.CodeEditor(
+        value="right",
+        sizing_mode="stretch_both",
+        margin=0,
+        theme="monokai",
+        language="python",
+    ),
+    height=500,
+    sizing_mode="stretch_width",
+).servable()
+```
+
 ## Layout a List of Objects
 
 A Panel `Column` or `Row` works as a list of objects. It is *list-like*. In this section will show you how to create your own *list-like* layout using Panels `NamedListLike` class.
