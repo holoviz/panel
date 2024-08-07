@@ -427,7 +427,7 @@ class Syncable(Renderable):
         if any(e for e in events if e not in self._busy__ignore):
             with edit_readonly(state):
                 state._busy_counter += 1
-        self._in_process__events = events = dict(events)
+        self._in_process__events.update(events)
         params = self._process_property_change(events)
         try:
             with edit_readonly(self):
@@ -454,7 +454,7 @@ class Syncable(Renderable):
             log.exception(f'Callback failed for object named {self.name!r} {msg_end}')
             raise
         finally:
-            self._in_process_events = {}
+            self._in_process__events.clear()
             self._log('finished processing events %s', events)
             if any(e for e in events if e not in self._busy__ignore):
                 with edit_readonly(state):
