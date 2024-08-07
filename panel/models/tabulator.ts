@@ -1055,7 +1055,7 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this.model.follow) {
       promise.then(() => {
         if (this.model.pagination) {
-          this.tabulator.setPage(Math.ceil(this.tabulator.rowManager.getDataCount() / (this.model.page_size || 20) ))
+          this.tabulator.setPage(Math.ceil(this.tabulator.rowManager.getDataCount() / (this.model.page_size || 20)))
         }
         if (last_row) {
           this.tabulator.scrollToRow(start, "top", false)
