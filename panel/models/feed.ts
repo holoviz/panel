@@ -108,7 +108,7 @@ export class FeedView extends ColumnView {
       // attach new elements, so that the order of children is consistent, while
       // avoiding expensive re-rendering of existing views.
       for (const child_view of this.child_views) {
-	child_view.el.remove()
+        child_view.el.remove()
       }
     }
     const prepend: Element[] = []
@@ -116,20 +116,20 @@ export class FeedView extends ColumnView {
       const is_new = created_children.has(child_view)
       const target = this.shadow_el
       if (reorder) {
-	if (is_new) {
-	  child_view.render_to(target)
-	} else {
-	  target.append(child_view.el)
-	}
+        if (is_new) {
+          child_view.render_to(target)
+        } else {
+          target.append(child_view.el)
+        }
       } else {
-	if (is_new) {
-	  child_view.render()
-	  if (is_appended) {
-	    target.append(child_view.el)
-	  } else if (is_prepended) {
-	    prepend.push(child_view.el)
-	  }
-	}
+        if (is_new) {
+          child_view.render()
+          if (is_appended) {
+            target.append(child_view.el)
+          } else if (is_prepended) {
+            prepend.push(child_view.el)
+          }
+        }
       }
     }
     if (is_prepended) {
@@ -143,9 +143,9 @@ export class FeedView extends ColumnView {
     // Ensure we adjust the scroll position in case we prepended items
     if (is_prepended) {
       requestAnimationFrame(() => {
-	const after_offset = this._reference_view?.el.offsetTop || 0
-	const offset = (after_offset-(this._reference || 0))
-	this.el.scrollTo({top: scroll_top + offset, behavior: "smooth"})
+        const after_offset = this._reference_view?.el.offsetTop || 0
+        const offset = (after_offset-(this._reference || 0))
+        this.el.scrollTo({top: scroll_top + offset, behavior: "smooth"})
       })
     }
   }
