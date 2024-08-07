@@ -18,7 +18,8 @@ import weakref
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Callable, Literal, ParamSpec, TypeVar, overload,
+    TYPE_CHECKING, Any, Callable, Hashable, Literal, ParamSpec, TypeVar,
+    overload,
 )
 
 if TYPE_CHECKING:
@@ -40,7 +41,7 @@ _CYCLE_PLACEHOLDER = b"panel-93KZ39Q-floatingdangeroushomechose-CYCLE"
 
 _FFI_TYPE_NAMES = ("_cffi_backend.FFI", "builtins.CompiledFFI",)
 
-_HASH_MAP = {}
+_HASH_MAP: dict[Hashable, str] = {}
 
 _HASH_STACKS = weakref.WeakKeyDictionary()
 
