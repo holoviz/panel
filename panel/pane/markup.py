@@ -176,6 +176,10 @@ class DataFrame(HTML):
         Set to False for a DataFrame with a hierarchical index to
         print every multi-index key at each row.""")
 
+    text_align = param.Selector(default=None, objects=[
+        'start', 'end', 'center'], doc="""
+         Alignment of non-header cells.""")
+
     _object = param.Parameter(default=None, doc="""Hidden parameter.""")
 
     _dask_params: ClassVar[list[str]] = ['max_rows']
@@ -185,7 +189,7 @@ class DataFrame(HTML):
         'col_space', 'decimal', 'escape', 'float_format', 'formatters',
         'header', 'index', 'index_names', 'justify', 'max_rows',
         'max_cols', 'na_rep', 'render_links', 'show_dimensions',
-        'sparsify', 'sizing_mode'
+        'sparsify', 'text_align', 'sizing_mode'
     ]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
@@ -244,14 +248,18 @@ class DataFrame(HTML):
 
         module = getattr(obj, '__module__', '')
         if hasattr(obj, 'to_html'):
+            classes = list(self.classes)
+            if self.text_align:
+                classes.append(f'{self.text_align}-align')
             if 'dask' in module:
                 html = obj.to_html(max_rows=self.max_rows).replace('border="1"', '')
             elif 'style' in module:
-                classes = ' '.join(self.classes)
+                classes = ' '.join(classes)
                 html = obj.to_html(table_attributes=f'class="{classes}"')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
-                          if p not in HTMLBasePane.param and p != '_object'}
+                          if p not in HTMLBasePane.param and p not in ('_object', 'text_align')}
+                kwargs['classes'] = classes
                 html = obj.to_html(**kwargs)
         else:
             html = ''
