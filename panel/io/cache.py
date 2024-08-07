@@ -17,22 +17,6 @@ import unittest.mock
 import weakref
 
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING, Any, Callable, Hashable, Literal, ParamSpec, Protocol,
-    TypeVar, overload,
-)
-
-if TYPE_CHECKING:
-    P = ParamSpec("P")
-    R = TypeVar("R")
-    T = TypeVar("T")
-    CallableT = TypeVar("CallableT", bound=Callable)
-
-    class CachedFunc(Protocol[CallableT]):
-        def clear(self, func_hashes: list[str | None]) -> None:
-            pass
-
-        __call__: CallableT
 
 import param
 
@@ -48,7 +32,7 @@ _CYCLE_PLACEHOLDER = b"panel-93KZ39Q-floatingdangeroushomechose-CYCLE"
 
 _FFI_TYPE_NAMES = ("_cffi_backend.FFI", "builtins.CompiledFFI",)
 
-_HASH_MAP: dict[Hashable, str] = {}
+_HASH_MAP = {}
 
 _HASH_STACKS = weakref.WeakKeyDictionary()
 
@@ -321,42 +305,11 @@ def compute_hash(func, hash_funcs, args, kwargs):
         _HASH_MAP[key] = hash_value
     return hash_value
 
-@overload
-def cache(
-    func: Literal[None] = ...,
-    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = ...,
-    max_items: int | None = ...,
-    policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
-    ttl: float | None = ...,
-    to_disk: bool = ...,
-    cache_path: str | os.PathLike = ...,
-    per_session: bool = ...,
-) -> Callable[[Callable[P, R]], CachedFunc[Callable[P, R]]]:
-    ...
-
-@overload
-def cache(
-    func: Callable[P, R],
-    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = ...,
-    max_items: int | None = ...,
-    policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
-    ttl: float | None = ...,
-    to_disk: bool = ...,
-    cache_path: str | os.PathLike = ...,
-    per_session: bool = ...,
-) -> CachedFunc[Callable[P, R]]:
-    ...
 
 def cache(
-    func: Callable[P, R] | None = None,
-    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = None,
-    max_items: int | None = None,
-    policy: Literal['FIFO', 'LRU', 'LFU'] = 'LRU',
-    ttl: float | None = None,
-    to_disk: bool = False,
-    cache_path: str | os.PathLike = './cache',
-    per_session: bool = False
-) -> CachedFunc[Callable[P, R]] | Callable[[Callable[P, R]], CachedFunc[Callable[P, R]]]:
+    func=None, hash_funcs=None, max_items=None, policy='LRU',
+    ttl=None, to_disk=False, cache_path='./cache', per_session=False
+):
     """
     Memoizes functions for a user session. Can be used as function annotation or just directly.
 
@@ -383,7 +336,7 @@ def cache(
         the cache should not expire. The default is None.
     to_disk: bool
         Whether to cache to disk using diskcache.
-    cache_path: str
+    cache_dir: str
         Directory to cache to on disk.
     per_session: bool
         Whether to cache data only for the current session.
@@ -395,17 +348,15 @@ def cache(
 
     hash_funcs = hash_funcs or {}
     if func is None:
-        def decorator(func: Callable[P, R]) -> CachedFunc[Callable[P, R]]:
-            return cache(
-                func=func,
-                hash_funcs=hash_funcs,
-                max_items=max_items,
-                ttl=ttl,
-                to_disk=to_disk,
-                cache_path=cache_path,
-                per_session=per_session,
-            )
-        return decorator
+        return lambda f: cache(
+            func=f,
+            hash_funcs=hash_funcs,
+            max_items=max_items,
+            ttl=ttl,
+            to_disk=to_disk,
+            cache_path=cache_path,
+            per_session=per_session,
+        )
     func_hashes = [None] # noqa
 
     lock = threading.RLock()
@@ -463,7 +414,7 @@ def cache(
 
     if iscoroutinefunction(func):
         @functools.wraps(func)
-        async def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> R:
+        async def wrapped_func(*args, **kwargs):
             func_cache, hash_value, time = hash_func(*args, **kwargs)
             if hash_value in func_cache:
                 with lock:
@@ -476,7 +427,7 @@ def cache(
             return ret
     else:
         @functools.wraps(func)
-        def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> R:
+        def wrapped_func(*args, **kwargs):
             func_cache, hash_value, time = hash_func(*args, **kwargs)
             if hash_value in func_cache:
                 with lock:
@@ -501,7 +452,7 @@ def cache(
             cache = state._memoize_cache.get(func_hash, {})
         cache.clear()
 
-    wrapped_func.clear = clear  # type: ignore[attr-defined]
+    wrapped_func.clear = clear
 
     if per_session and state.curdoc and state.curdoc.session_context:
         def server_clear(session_context, clear=clear):
