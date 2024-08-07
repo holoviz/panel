@@ -18,8 +18,13 @@ import weakref
 
 from contextlib import contextmanager
 from typing import (
-    Any, Callable, Literal, ParamSpec, TypeVar, overload,
+    TYPE_CHECKING, Any, Callable, Literal, ParamSpec, TypeVar, overload,
 )
+
+if TYPE_CHECKING:
+    P = ParamSpec("P")
+    R = TypeVar("R")
+    T = TypeVar("T")
 
 import param
 
@@ -307,10 +312,6 @@ def compute_hash(func, hash_funcs, args, kwargs):
     if _INDETERMINATE not in key:
         _HASH_MAP[key] = hash_value
     return hash_value
-
-P = ParamSpec("P")
-R = TypeVar("R")
-T = TypeVar("T")
 
 @overload
 def cache(
