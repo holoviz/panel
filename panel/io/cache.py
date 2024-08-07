@@ -387,15 +387,17 @@ def cache(
 
     hash_funcs = hash_funcs or {}
     if func is None:
-        return lambda f: cache(
-            func=f,
-            hash_funcs=hash_funcs,
-            max_items=max_items,
-            ttl=ttl,
-            to_disk=to_disk,
-            cache_path=cache_path,
-            per_session=per_session,
-        )
+        def decorator(func: Callable[P, R]) -> Callable[P, R]:
+            return cache(
+                func=func,
+                hash_funcs=hash_funcs,
+                max_items=max_items,
+                ttl=ttl,
+                to_disk=to_disk,
+                cache_path=cache_path,
+                per_session=per_session,
+            )
+        return decorator
     func_hashes = [None] # noqa
 
     lock = threading.RLock()
