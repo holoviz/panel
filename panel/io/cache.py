@@ -1,6 +1,8 @@
 """
 Implements memoization for functions with arbitrary arguments
 """
+from __future__ import annotations
+
 import datetime as dt
 import functools
 import hashlib
@@ -18,7 +20,8 @@ import weakref
 
 from contextlib import contextmanager
 from typing import (
-    Any, Callable, Hashable, Literal, ParamSpec, Protocol, TypeVar, overload,
+    TYPE_CHECKING, Any, Callable, Hashable, Literal, ParamSpec, Protocol,
+    TypeVar, overload,
 )
 
 import param
@@ -31,15 +34,16 @@ from .state import state
 # Private API
 #---------------------------------------------------------------------
 
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
-_CallableT = TypeVar("_CallableT", bound=Callable)
+if TYPE_CHECKING:
+    _P = ParamSpec("_P")
+    _R = TypeVar("_R")
+    _CallableT = TypeVar("_CallableT", bound=Callable)
 
-class _CachedFunc(Protocol[_CallableT]):
-    def clear(self, func_hashes: list[str | None]) -> None:
-        pass
+    class _CachedFunc(Protocol[_CallableT]):
+        def clear(self, func_hashes: list[str | None]) -> None:
+            pass
 
-    __call__: _CallableT
+        __call__: _CallableT
 
 _CYCLE_PLACEHOLDER = b"panel-93KZ39Q-floatingdangeroushomechose-CYCLE"
 
