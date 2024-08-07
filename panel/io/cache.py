@@ -494,7 +494,7 @@ def cache(
             cache = state._memoize_cache.get(func_hash, {})
         cache.clear()
 
-    wrapped_func.clear = clear
+    wrapped_func.clear = clear  # type: ignore[attr-defined]
 
     if per_session and state.curdoc and state.curdoc.session_context:
         def server_clear(session_context, clear=clear):
