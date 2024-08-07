@@ -7,10 +7,18 @@ import uuid
 from contextlib import contextmanager
 from cProfile import Profile
 from functools import wraps
+from typing import (
+    Callable, Iterator, Literal, ParamSpec, TypeVar,
+)
 
 from ..config import config
 from ..util import escape
 from .state import state
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+ProfilingEngine = Literal["pyinstrument", "snakeviz", "memray"]
 
 
 def render_pyinstrument(sessions, timeline=False, show_all=False):
@@ -183,7 +191,7 @@ def profiling_tabs(state, allow=None, deny=[]):
 
 
 @contextmanager
-def profile_ctx(engine='pyinstrument'):
+def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[list[Profile | bytes]]:
     """
     A context manager which profiles the body of the with statement
     with the supplied profiling engine and returns the profiling object
@@ -217,7 +225,7 @@ def profile_ctx(engine='pyinstrument'):
         tracker.__enter__()
     elif engine is None:
         pass
-    sessions = []
+    sessions: list[Profile | bytes] = []
     yield sessions
     if engine == 'pyinstrument':
         sessions.append(prof.stop())
@@ -230,7 +238,7 @@ def profile_ctx(engine='pyinstrument'):
         os.remove(tmp_file)
 
 
-def profile(name, engine='pyinstrument'):
+def profile(name: str, engine: ProfilingEngine = 'pyinstrument') -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """
     A decorator which may be added to any function to record profiling
     output.
@@ -244,9 +252,9 @@ def profile(name, engine='pyinstrument'):
     """
     if not isinstance(name, str):
         raise ValueError("Profiler must be given a name.")
-    def wrapper(func):
+    def wrapper(func: Callable[_P, _R]) -> Callable[_P, _R]:
         @wraps(func)
-        def wrapped(*args, **kwargs):
+        def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
             if state.curdoc and state.curdoc in state._launching:
                 return func(*args, **kwargs)
             with profile_ctx(engine) as sessions:
