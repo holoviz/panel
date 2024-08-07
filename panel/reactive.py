@@ -334,7 +334,6 @@ class Syncable(Renderable):
                 # Do not apply change that originated directly from
                 # the frontend since this may cause boomerang if a
                 # new property value is already in-flight
-                del self._in_process__events[attr]
                 del msg[attr]
                 continue
             elif attr in self._events:
@@ -455,6 +454,7 @@ class Syncable(Renderable):
             log.exception(f'Callback failed for object named {self.name!r} {msg_end}')
             raise
         finally:
+            self._in_process_events = {}
             self._log('finished processing events %s', events)
             if any(e for e in events if e not in self._busy__ignore):
                 with edit_readonly(state):
