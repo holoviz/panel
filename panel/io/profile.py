@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import os
 import re
@@ -8,15 +10,16 @@ from contextlib import contextmanager
 from cProfile import Profile
 from functools import wraps
 from typing import (
-    Callable, Iterator, Literal, ParamSpec, TypeVar,
+    TYPE_CHECKING, Callable, Iterator, Literal, ParamSpec, TypeVar,
 )
 
 from ..config import config
 from ..util import escape
 from .state import state
 
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
+if TYPE_CHECKING:
+    _P = ParamSpec("_P")
+    _R = TypeVar("_R")
 
 ProfilingEngine = Literal["pyinstrument", "snakeviz", "memray"]
 
