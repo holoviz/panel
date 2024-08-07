@@ -374,7 +374,7 @@ def cache(
         the cache should not expire. The default is None.
     to_disk: bool
         Whether to cache to disk using diskcache.
-    cache_dir: str
+    cache_path: str
         Directory to cache to on disk.
     per_session: bool
         Whether to cache data only for the current session.
