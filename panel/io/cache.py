@@ -320,7 +320,7 @@ def cache(
     policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
     ttl: float | None = ...,
     to_disk: bool = ...,
-    cache_path: str = ...,
+    cache_path: str | os.PathLike = ...,
     per_session: bool = ...,
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     ...
@@ -333,7 +333,7 @@ def cache(
     policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
     ttl: float | None = ...,
     to_disk: bool = ...,
-    cache_path: str = ...,
+    cache_path: str | os.PathLike = ...,
     per_session: bool = ...,
 ) -> Callable[P, R]:
     ...
@@ -345,7 +345,7 @@ def cache(
     policy: Literal['FIFO', 'LRU', 'LFU'] = 'LRU',
     ttl: float | None = None,
     to_disk: bool = False,
-    cache_path: str = './cache',
+    cache_path: str | os.PathLike = './cache',
     per_session: bool = False
 ) -> Callable[P, R] | Callable[[Callable[P, R]], Callable[P, R]]:
     """
