@@ -1554,15 +1554,13 @@ class Tabulator(BaseTable):
         return models
 
     def _update_children(self, *events):
-        page_events = ('page', 'page_size', 'pagination')
         for event in events:
-            if (
-              (event.name == 'value' and self._indexes_changed(event.old, event.new)) or
-              (event.name in page_events and not self._updating) or
-              (self.pagination == 'remote' and event.name == 'sorters')
-            ):
+            if event.name == 'value' and self._indexes_changed(event.old, event.new):
                 self.expanded = []
+                self._indexed_children.clear()
                 return
+            elif event.name == 'row_content':
+                self._indexed_children.clear()
         self._child_panels, removed, expanded = self._get_children()
         for ref, (m, _) in self._models.items():
             root, doc, comm = state._views[ref][1:]
