@@ -365,7 +365,7 @@ export class DataTabulatorView extends HTMLBoxView {
       for (const row of this.tabulator.rowManager.getRows()) {
         if (row.cells.length > 0) {
           const index = row.data._index
-          const icon = this.model.expanded.indexOf(index) < 0 ? "►" : "▼"
+          const icon = this.model.expanded.includes(index) ? "▼" : "►"
           row.cells[1].element.innerText = icon
         }
       }
@@ -741,10 +741,17 @@ export class DataTabulatorView extends HTMLBoxView {
       const new_children = await this.build_child_views()
       resolve(new_children)
     }).then((new_children) => {
-      for (const r of this.model.expanded) {
-        const row = this.tabulator.getRow(r)
+      const rows = this.tabulator.getRows()
+      const lookup = new Map()
+      for (const row of rows) {
         const index = row._row?.data._index
-        if (this.model.children.get(index) == null) {
+        if (index != null) {
+          lookup.set(index, row)
+        }
+      }
+      for (const index of this.model.expanded) {
+        const row = lookup.get(index))
+        if (!this.model.children.has(index)) {
           continue
         }
         const model = this.model.children.get(index)
@@ -798,10 +805,10 @@ export class DataTabulatorView extends HTMLBoxView {
   _update_expand(cell: any): void {
     const index = cell._cell.row.data._index
     const expanded = [...this.model.expanded]
-    const exp_index = expanded.indexOf(index)
-    if (exp_index < 0) {
+    if (!expanded.includes(index)) {
       expanded.push(index)
     } else {
+      const exp_index = expanded.indexOf(index)
       const removed = expanded.splice(exp_index, 1)[0]
       const model = this.model.children.get(removed)
       if (model != null) {
@@ -812,7 +819,7 @@ export class DataTabulatorView extends HTMLBoxView {
       }
     }
     this.model.expanded = expanded
-    if (expanded.indexOf(index) < 0) {
+    if (!expanded.includes(index)) {
       return
     }
     let ready = true

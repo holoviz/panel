@@ -1302,6 +1302,11 @@ class Tabulator(BaseTable):
             p._cleanup(root)
         super()._cleanup(root)
 
+    def _process_events(self, events: dict[str, Any]) -> None:
+        if 'expanded' in events:
+            self._update_expanded(events.pop('expanded'))
+        return super()._process_events(events)
+
     def _process_event(self, event) -> None:
         if event.event_name == 'selection-change':
             if self.pagination == 'remote':
@@ -1508,12 +1513,18 @@ class Tabulator(BaseTable):
             start = (self.page-1)*nrows
             df = df.iloc[start:(start+nrows)]
         children = {}
-        for i in (range(len(df)) if self.embed_content else self.expanded):
-            if i in old:
-                children[i] = old[i]
-            else:
+        expanded = []
+        if self.embed_content:
+            for i in range(len(df)):
+                expanded.append(i)
                 children[i] = panel(self.row_content(df.iloc[i]))
-        return children
+        else:
+            for i in self.expanded:
+                idx = self.value.index[i]
+                loc = df.index.get_loc(idx)
+                expanded.append(loc)
+                children[loc] = panel(self.row_content(self.value.iloc[i]))
+        return children, expanded
 
     def _get_model_children(self, panels, doc, root, parent, comm=None):
         ref = root.ref['id']
@@ -1546,7 +1557,7 @@ class Tabulator(BaseTable):
             ):
                 self.expanded = []
                 return
-        self._child_panels = child_panels = self._get_children(
+        self._child_panels, _ = (child_panels, expanded) = self._get_children(
             {i: old_panels[i] for i in reuse}
         )
         for ref, (m, _) in self._models.items():
@@ -1556,7 +1567,7 @@ class Tabulator(BaseTable):
             children = self._get_model_children(
                 child_panels, doc, root, m, comm
             )
-            msg = {'children': children}
+            msg = {'expanded': expanded, 'children': children}
             self._apply_update([], msg, m, ref)
 
     @updating
@@ -1689,32 +1700,39 @@ class Tabulator(BaseTable):
         with pd.option_context('mode.chained_assignment', None):
             self._processed.loc[index, column] = array
 
-    def _update_selection(self, indices: list[int] | SelectionEvent):
-        if isinstance(indices, list):
-            selected = True
-            ilocs = []
-        else:  # SelectionEvent
-            selected = indices.selected
-            ilocs = [] if indices.flush else self.selection.copy()
-            indices = indices.indices
-
+    def _map_indexes(self, indexes, existing=[], add=True):
         if self.pagination == 'remote':
             nrows = self.page_size or self.initial_page_size
             start = (self.page-1)*nrows
         else:
             start = 0
-        index = self._processed.iloc[[start+ind for ind in indices]].index
+        ilocs = list(existing)
+        index = self._processed.iloc[[start+ind for ind in indexes]].index
         for v in index.values:
             try:
                 iloc = self.value.index.get_loc(v)
                 self._validate_iloc(v, iloc)
             except KeyError:
                 continue
-            if selected:
+            if add:
                 ilocs.append(iloc)
             elif iloc in ilocs:
                 ilocs.remove(iloc)
-        ilocs = list(dict.fromkeys(ilocs))
+        return list(dict.fromkeys(ilocs))
+
+    def _update_expanded(self, expanded):
+        self.expanded = self._map_indexes(expanded)
+
+    def _update_selection(self, indices: list[int] | SelectionEvent):
+        if isinstance(indices, list):
+            selected = True
+            ilocs = []
+        else:
+            selected = indices.selected
+            ilocs = [] if indices.flush else self.selection.copy()
+            indices = indices.indices
+
+        ilocs = self._map_indexes(indices, ilocs, add=selected)
         if isinstance(self.selectable, int) and not isinstance(self.selectable, bool):
             ilocs = ilocs[len(ilocs) - self.selectable:]
         self.selection = ilocs
@@ -1765,7 +1783,8 @@ class Tabulator(BaseTable):
         )
         model = super()._get_model(doc, root, parent, comm)
         root = root or model
-        self._child_panels = child_panels = self._get_children()
+        self._child_panels, _ = child_panels, expanded = self._get_children()
+        model.expanded = expanded
         model.children = self._get_model_children(
             child_panels, doc, root, parent, comm
         )
