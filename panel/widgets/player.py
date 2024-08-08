@@ -8,7 +8,10 @@ from typing import TYPE_CHECKING, ClassVar, Mapping
 import param
 
 from ..config import config
-from ..models.widgets import Player as _BkPlayer
+from ..io.resources import CDN_DIST
+from ..models.widgets import (
+    DiscretePlayer as _BkDiscretePlayer, Player as _BkPlayer,
+)
 from ..util import indexOf, isIn
 from .base import Widget
 from .select import SelectBase
@@ -34,18 +37,28 @@ class PlayerBase(Widget):
     show_loop_controls = param.Boolean(default=True, doc="""
         Whether the loop controls radio buttons are shown""")
 
+    show_value = param.Boolean(default=False, doc="""
+        Whether to show the widget value""")
+
     step = param.Integer(default=1, doc="""
         Number of frames to step forward and back by on each event.""")
 
     height = param.Integer(default=80)
 
+    value_align = param.ObjectSelector(
+        objects=["start", "center", "end"], doc="""
+        Location to display the value of the slider
+        ("start", "center", "end")""")
+
     width = param.Integer(default=510, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     _widget_type: ClassVar[type[Model]] = _BkPlayer
+
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/player.css"]
 
     __abstract = True
 
@@ -76,7 +89,7 @@ class Player(PlayerBase):
 
     :Example:
 
-    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop')
+    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop', value_align='top_center')
     """
 
     start = param.Integer(default=0, doc="Lower bound on the slider value")
@@ -130,7 +143,8 @@ class DiscretePlayer(PlayerBase, SelectBase):
     >>> DiscretePlayer(
     ...     name='Discrete Player',
     ...     options=[2, 4, 8, 16, 32, 64, 128], value=32,
-    ...     loop_policy='loop'
+    ...     loop_policy='loop',
+    ...     value_align='start'
     ... )
     """
 
@@ -140,9 +154,11 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value_throttled = param.Parameter(constant=True, doc="Current player value")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'value_throttled': None}
+
+    _widget_type: ClassVar[type[Model]] = _BkDiscretePlayer
 
     def _process_param_change(self, msg):
         values = self.values

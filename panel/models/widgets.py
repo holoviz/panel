@@ -31,6 +31,9 @@ class Player(Widget):
     """
     The Player widget provides controls to play through a number of frames.
     """
+    title = Nullable(String, default="", help="""
+    The slider's label (supports :ref:`math text <ug_styling_mathtext>`).
+    """)
 
     start = Int(0, help="Lower bound of the Player slider")
 
@@ -39,6 +42,9 @@ class Player(Widget):
     value = Int(0, help="Current value of the player app")
 
     value_throttled = Int(0, help="Current throttled value of the player app")
+
+    value_align = String("start", help="""Location to display
+        the value of the slider ("start" "center", "end")""")
 
     step = Int(1, help="Number of steps to advance the player by.")
 
@@ -53,9 +59,18 @@ class Player(Widget):
     show_loop_controls = Bool(True, help="""Whether the loop controls
         radio buttons are shown""")
 
+    show_value = Bool(True, help="""
+        Whether to show the widget value""")
+
     width = Override(default=400)
 
     height = Override(default=250)
+
+
+class DiscretePlayer(Player):
+
+    options = List(Any, help="""
+        List of discrete options.""")
 
 
 class SingleSelect(InputWidget):
