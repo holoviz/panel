@@ -92,16 +92,15 @@ export class FeedView extends ColumnView {
     this._reference_view = last
     this._reference = last?.el.offsetTop || 0
     this._sync = false
-    console.log('?')
     const created = await this.build_child_views()
     const created_children = new Set(created)
-    const createdLength = created.length;
-    const views_length = this.child_views.length;
+    const createdLength = created.length
+    const views_length = this.child_views.length
 
     // Check whether we simply have to prepend or append items
     // instead of removing and reordering them
-    const is_prepended = created.every((view, index) => view === this.child_views[index]);
-    const is_appended = created.every((view, index) => view === this.child_views[views_length - createdLength + index]);
+    const is_prepended = created.every((view, index) => view === this.child_views[index])
+    const is_appended = created.every((view, index) => view === this.child_views[views_length - createdLength + index])
     const reorder = !(is_prepended || is_appended)
     if (reorder) {
       // First remove and then either reattach existing elements or render and
