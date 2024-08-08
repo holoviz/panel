@@ -1505,7 +1505,7 @@ class Tabulator(BaseTable):
 
     def _get_children(self, old={}):
         if self.row_content is None or self.value is None:
-            return {}
+            return {}, []
         from ..pane import panel
         df = self._processed
         if self.pagination == 'remote':
