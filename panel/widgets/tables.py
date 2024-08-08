@@ -1531,7 +1531,10 @@ class Tabulator(BaseTable):
                     child = self._indexed_children[idx]
                 else:
                     child = panel(self.row_content(self.value.iloc[i]))
-                loc = df.index.get_loc(idx)
+                try:
+                    loc = df.index.get_loc(idx)
+                except KeyError:
+                    continue
                 expanded.append(loc)
                 indexed_children[idx] = children[loc] = child
         removed = [
