@@ -750,7 +750,7 @@ export class DataTabulatorView extends HTMLBoxView {
         }
       }
       for (const index of this.model.expanded) {
-        const row = lookup.get(index))
+        const row = lookup.get(index)
         if (!this.model.children.has(index)) {
           continue
         }
