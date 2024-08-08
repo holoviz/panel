@@ -1237,6 +1237,7 @@ class Tabulator(BaseTable):
         self.style = None
         self._computed_styler = None
         self._child_panels = {}
+        self._indexed_children = {}
         self._explicit_pagination = 'pagination' in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
@@ -1301,6 +1302,11 @@ class Tabulator(BaseTable):
         for p in self._child_panels.values():
             p._cleanup(root)
         super()._cleanup(root)
+
+    def _process_events(self, events: dict[str, Any]) -> None:
+        if 'expanded' in events:
+            self._update_expanded(events.pop('expanded'))
+        return super()._process_events(events)
 
     def _process_event(self, event) -> None:
         if event.event_name == 'selection-change':
@@ -1498,27 +1504,50 @@ class Tabulator(BaseTable):
         for ref, (m, _) in self._models.items():
             self._apply_update([], msg, m, ref)
 
-    def _get_children(self, old={}):
+    def _get_children(self):
         if self.row_content is None or self.value is None:
-            return {}
+            return {}, [], []
         from ..pane import panel
         df = self._processed
         if self.pagination == 'remote':
             nrows = self.page_size or self.initial_page_size
             start = (self.page-1)*nrows
             df = df.iloc[start:(start+nrows)]
-        children = {}
-        for i in (range(len(df)) if self.embed_content else self.expanded):
-            if i in old:
-                children[i] = old[i]
-            else:
-                children[i] = panel(self.row_content(df.iloc[i]))
-        return children
+        indexed_children, children = {}, {}
+        expanded = []
+        if self.embed_content:
+            for i in range(len(df)):
+                expanded.append(i)
+                idx = df.index[i]
+                if idx in self._indexed_children:
+                    child = self._indexed_children[idx]
+                else:
+                    child = panel(self.row_content(df.iloc[i]))
+                indexed_children[idx] = children[i] = child
+        else:
+            for i in self.expanded:
+                idx = self.value.index[i]
+                if idx in self._indexed_children:
+                    child = self._indexed_children[idx]
+                else:
+                    child = panel(self.row_content(self.value.iloc[i]))
+                try:
+                    loc = df.index.get_loc(idx)
+                except KeyError:
+                    continue
+                expanded.append(loc)
+                indexed_children[idx] = children[loc] = child
+        removed = [
+            child for idx, child in self._indexed_children.items()
+            if idx not in indexed_children
+        ]
+        self._indexed_children = indexed_children
+        return children, removed, expanded
 
-    def _get_model_children(self, panels, doc, root, parent, comm=None):
+    def _get_model_children(self, doc, root, parent, comm=None):
         ref = root.ref['id']
         models = {}
-        for i, p in panels.items():
+        for i, p in self._child_panels.items():
             if ref in p._models:
                 model = p._models[ref][0]
             else:
@@ -1528,35 +1557,20 @@ class Tabulator(BaseTable):
         return models
 
     def _update_children(self, *events):
-        cleanup, reuse = set(), set()
-        page_events = ('page', 'page_size', 'pagination')
-        old_panels = self._child_panels
         for event in events:
-            if event.name == 'expanded' and len(events) == 1:
-                if self.embed_content:
-                    cleanup = set()
-                    reuse = set(old_panels)
-                else:
-                    cleanup = set(event.old) - set(event.new)
-                    reuse = set(event.old) & set(event.new)
-            elif (
-              (event.name == 'value' and self._indexes_changed(event.old, event.new)) or
-              (event.name in page_events and not self._updating) or
-              (self.pagination == 'remote' and event.name == 'sorters')
-            ):
+            if event.name == 'value' and self._indexes_changed(event.old, event.new):
                 self.expanded = []
+                self._indexed_children.clear()
                 return
-        self._child_panels = child_panels = self._get_children(
-            {i: old_panels[i] for i in reuse}
-        )
+            elif event.name == 'row_content':
+                self._indexed_children.clear()
+        self._child_panels, removed, expanded = self._get_children()
         for ref, (m, _) in self._models.items():
             root, doc, comm = state._views[ref][1:]
-            for idx in cleanup:
-                old_panels[idx]._cleanup(root)
-            children = self._get_model_children(
-                child_panels, doc, root, m, comm
-            )
-            msg = {'children': children}
+            for child_panel in removed:
+                child_panel._cleanup(root)
+            children = self._get_model_children(doc, root, m, comm)
+            msg = {'expanded': expanded, 'children': children}
             self._apply_update([], msg, m, ref)
 
     @updating
@@ -1689,32 +1703,39 @@ class Tabulator(BaseTable):
         with pd.option_context('mode.chained_assignment', None):
             self._processed.loc[index, column] = array
 
-    def _update_selection(self, indices: list[int] | SelectionEvent):
-        if isinstance(indices, list):
-            selected = True
-            ilocs = []
-        else:  # SelectionEvent
-            selected = indices.selected
-            ilocs = [] if indices.flush else self.selection.copy()
-            indices = indices.indices
-
+    def _map_indexes(self, indexes, existing=[], add=True):
         if self.pagination == 'remote':
             nrows = self.page_size or self.initial_page_size
             start = (self.page-1)*nrows
         else:
             start = 0
-        index = self._processed.iloc[[start+ind for ind in indices]].index
+        ilocs = list(existing)
+        index = self._processed.iloc[[start+ind for ind in indexes]].index
         for v in index.values:
             try:
                 iloc = self.value.index.get_loc(v)
                 self._validate_iloc(v, iloc)
             except KeyError:
                 continue
-            if selected:
+            if add:
                 ilocs.append(iloc)
             elif iloc in ilocs:
                 ilocs.remove(iloc)
-        ilocs = list(dict.fromkeys(ilocs))
+        return list(dict.fromkeys(ilocs))
+
+    def _update_expanded(self, expanded):
+        self.expanded = self._map_indexes(expanded)
+
+    def _update_selection(self, indices: list[int] | SelectionEvent):
+        if isinstance(indices, list):
+            selected = True
+            ilocs = []
+        else:
+            selected = indices.selected
+            ilocs = [] if indices.flush else self.selection.copy()
+            indices = indices.indices
+
+        ilocs = self._map_indexes(indices, ilocs, add=selected)
         if isinstance(self.selectable, int) and not isinstance(self.selectable, bool):
             ilocs = ilocs[len(ilocs) - self.selectable:]
         self.selection = ilocs
@@ -1765,10 +1786,9 @@ class Tabulator(BaseTable):
         )
         model = super()._get_model(doc, root, parent, comm)
         root = root or model
-        self._child_panels = child_panels = self._get_children()
-        model.children = self._get_model_children(
-            child_panels, doc, root, parent, comm
-        )
+        self._child_panels, removed, expanded = self._get_children()
+        model.expanded = expanded
+        model.children = self._get_model_children(doc, root, parent, comm)
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters', 'page_size'], doc, root, comm)
         self._register_events('cell-click', 'table-edit', 'selection-change', model=model, doc=doc, comm=comm)
         return model
