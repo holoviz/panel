@@ -14,7 +14,7 @@ If you're eager to roll up your sleeves and build this app alongside us, we reco
 Initially, the code block outputs on this website offer limited interactivity, indicated by the <font color="darkgoldenrod">golden</font> border to the left of the output below. By clicking the play button (<svg class="pyodide-run-icon" style="width:32px;height:25px" viewBox="0 0 24 24"> <path stroke="none" fill="#28a745" d="M8,5.14V19.14L19,12.14L8,5.14Z"></path> </svg>), you can activate full interactivity, marked by a <font color="green">green</font> left-border.
 :::
 
-## Fetching the Data
+## Configuring the Application
 
 First, let's import the necessary dependencies and define some variables:
 
@@ -36,6 +36,8 @@ Next, we'll import the Panel JavaScript dependencies using `pn.extension(...)`. 
 ```{pyodide}
 pn.extension(design="material", sizing_mode="stretch_width")
 ```
+
+## Fetching the Data
 
 Now, let's load the [UCI ML dataset](http://archive.ics.uci.edu/dataset/357/occupancy+detection) that measured the environment in a meeting room. We'll speed up our application by caching (`@pn.cache`) the data across users:
 
@@ -121,7 +123,7 @@ pn.template.MaterialTemplate(
 
 Save the notebook with the name `app.ipynb`.
 
-Finally, we'll serve the app with:
+Finally, we'll serve the app by running the command below in a terminal:
 
 ```bash
 panel serve app.ipynb --autoreload
