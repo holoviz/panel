@@ -46,6 +46,9 @@ class BrowserInfo(Syncable):
     webdriver = param.Boolean(default=None, doc="""
         Indicates whether the user agent is controlled by automation.""")
 
+    webgl = param.Boolean(default=None, doc="""
+        Indicates whether the browser has WebGL support.""")
+
     # Mapping from parameter name to bokeh model property name
     _rename: ClassVar[Mapping[str, str | None]] = {"name": None}
 
