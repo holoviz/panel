@@ -186,45 +186,55 @@ export class PlayerView extends WidgetView {
     button_div.style.cssText = "margin: 0 auto; display: flex; padding: 5px; align-items: stretch; justify-content: center; width: 100%;"
 
     this.slower = document.createElement("button")
+    this.slower.classList.add("slower")
     this.slower.innerHTML = SVG_STRINGS.slower
     this.slower.onclick = () => this.slower_speed()
     button_div.appendChild(this.slower)
 
     this.first = document.createElement("button")
+    this.first.classList.add("first")
     this.first.innerHTML = SVG_STRINGS.first
     this.first.onclick = () => this.first_frame()
     button_div.appendChild(this.first)
 
     this.previous = document.createElement("button")
+    this.previous.classList.add("previous")
     this.previous.innerHTML = SVG_STRINGS.previous
     this.previous.onclick = () => this.previous_frame()
     button_div.appendChild(this.previous)
 
     this.reverse = document.createElement("button")
+    this.reverse.classList.add("reverse")
     this.reverse.innerHTML = SVG_STRINGS.reverse
     this.reverse.onclick = () => this.reverse_animation()
     button_div.appendChild(this.reverse)
 
     this.pause = document.createElement("button")
+    this.pause.classList.add("pause")
     this.pause.innerHTML = SVG_STRINGS.pause
     this.pause.onclick = () => this.pause_animation()
     button_div.appendChild(this.pause)
 
     this.play = document.createElement("button")
+    this.play.classList.add("play")
     this.play.innerHTML = SVG_STRINGS.play
     this.play.onclick = () => this.play_animation()
     button_div.appendChild(this.play)
+
     this.next = document.createElement("button")
+    this.next.classList.add("next")
     this.next.innerHTML = SVG_STRINGS.next
     this.next.onclick = () => this.next_frame()
     button_div.appendChild(this.next)
 
     this.last = document.createElement("button")
+    this.last.classList.add("last")
     this.last.innerHTML = SVG_STRINGS.last
     this.last.onclick = () => this.last_frame()
     button_div.appendChild(this.last)
 
     this.faster = document.createElement("button")
+    this.faster.classList.add("faster")
     this.faster.innerHTML = SVG_STRINGS.faster
     this.faster.onclick = () => this.faster_speed()
     button_div.appendChild(this.faster)
@@ -248,26 +258,32 @@ export class PlayerView extends WidgetView {
     this.loop_state.style.cssText = "margin: 0 auto; display: table"
 
     const once = document.createElement("input")
+    once.classList.add("once")
     once.type = "radio"
     once.value = "once"
     once.name = "state"
     const once_label = document.createElement("label")
     once_label.innerHTML = "Once"
+    once_label.classList.add("once-label")
     once_label.style.cssText = "padding: 0 10px 0 5px; user-select:none;"
 
     const loop = document.createElement("input")
+    loop.classList.add("loop")
     loop.setAttribute("type", "radio")
     loop.setAttribute("value", "loop")
     loop.setAttribute("name", "state")
     const loop_label = document.createElement("label")
+    loop_label.classList.add("loop-label")
     loop_label.innerHTML = "Loop"
     loop_label.style.cssText = "padding: 0 10px 0 5px; user-select:none;"
 
     const reflect = document.createElement("input")
+    reflect.classList.add("reflect")
     reflect.setAttribute("type", "radio")
     reflect.setAttribute("value", "reflect")
     reflect.setAttribute("name", "state")
     const reflect_label = document.createElement("label")
+    loop_label.classList.add("reflect-label")
     reflect_label.innerHTML = "Reflect"
     reflect_label.style.cssText = "padding: 0 10px 0 5px; user-select:none;"
 

@@ -59,7 +59,7 @@ class PlayerBase(Widget):
       or scale mode this will merely be used as a suggestion.""")
 
     scale_buttons = param.Number(default=1, doc="""
-        Percentage to scale the size of the buttons by.""")
+        The scaling factor to resize the buttons.""")
 
     visible_buttons = param.List(default=[
         'slower', 'first', 'previous', 'reverse', 'pause', 'play', 'next', 'last', 'faster'
