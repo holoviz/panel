@@ -1849,8 +1849,11 @@ class Tabulator(BaseTable):
                 )
                 del filter_params['values']
                 filter_params['valuesLookup'] = True
-        if filter_type == 'list' and not filter_params:
-            filter_params = {'valuesLookup': True}
+        if filter_type == 'list':
+            if not filter_params:
+                filter_params = {'valuesLookup': True}
+            if filter_func is None:
+                filter_func = 'in'
         fspec['headerFilter'] = filter_type
         if filter_params:
             fspec['headerFilterParams'] = filter_params
