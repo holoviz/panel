@@ -310,6 +310,44 @@ def test_tabulator_multi_index_remote_pagination(document, comm):
     assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3']))
 
 
+def test_tabulator_multi_index_columns(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_index = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create a DataFrame with this MultiIndex as columns
+    df = pd.DataFrame(np.random.randn(4, 6), columns=multi_index)
+
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index', 'sorter': 'number'},
+        {'title': 'A', 'columns': [
+            {'title': 'one', 'columns': [
+                {'field': 'A_one_X', 'sorter': 'number'},
+                {'field': 'A_one_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'two', 'columns': [
+                {'field': 'A_two_X', 'sorter': 'number'}
+            ]},
+        ]},
+        {'title': 'B', 'columns': [
+            {'title': 'two', 'columns': [
+                {'field': 'B_two_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'three', 'columns': [
+                {'field': 'B_three_X', 'sorter': 'number'},
+                {'field': 'B_three_Y', 'sorter': 'number'}
+            ]},
+        ]}
+    ]
+
+
 def test_tabulator_expanded_content(document, comm):
     df = makeMixedDataFrame()
 
