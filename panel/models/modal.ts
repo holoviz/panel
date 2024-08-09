@@ -142,7 +142,7 @@ export class Modal extends BkColumn {
     super(attrs)
   }
 
-  static override __module__ = "panel.models.layout"
+  static override __module__ = "panel.models.modal"
   static {
     this.prototype.default_view = ModalView
     this.define<Modal.Props>(({Bool}) => ({

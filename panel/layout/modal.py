@@ -1,19 +1,24 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, ClassVar, Mapping, Optional,
+)
 
 import param
 
 from ..io.resources import CDN_DIST
-from ..models import Modal as BkModal
 from ..models.layout import ModalDialogEvent
+from ..util import lazy_load
 from .base import ListPanel
 
 if TYPE_CHECKING:
+    from bokeh.document import Document
     from bokeh.model import Model
+    from pyviz_comms import Comm, JupyterComm
 
 
 class Modal(ListPanel):
+
     height = param.Integer(default=None, bounds=(0, None))
 
     width = param.Integer(default=None, bounds=(0, None))
@@ -24,11 +29,18 @@ class Modal(ListPanel):
 
     background_close = param.Boolean(default=True, doc="Whether to enable closing the modal when clicking the background.")
 
-    _bokeh_model: ClassVar[type[Model]] = BkModal
-
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/models/modal.css"]
 
     _rename: ClassVar[Mapping[str, str | None]] = {}
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        self._bokeh_model = lazy_load(
+            'panel.models.modal', 'Modal', isinstance(comm, JupyterComm), root
+        )
+        return super()._get_model(doc, root, parent, comm)
 
     def open(self):
         self._send_event(ModalDialogEvent, open=True)
