@@ -503,3 +503,15 @@ async def to_async_gen(sync_gen):
         if value is done:
             break
         yield value
+
+
+def unique_iterator(seq):
+    """
+    Returns an iterator containing all non-duplicate elements
+    in the input sequence.
+    """
+    seen = set()
+    for item in seq:
+        if item not in seen:
+            seen.add(item)
+            yield item

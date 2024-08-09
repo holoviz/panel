@@ -11,6 +11,7 @@ from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, TypeVar,
 )
 
+import numpy as np
 import param  # type: ignore
 
 from bokeh.models import ImportedStyleSheet, Tooltip
@@ -20,6 +21,7 @@ from param.parameterized import register_reference_transform
 from .._param import Margin
 from ..layout.base import Row
 from ..reactive import Reactive
+from ..util import unique_iterator
 from ..viewable import Layoutable, Viewable
 
 if TYPE_CHECKING:
@@ -67,6 +69,33 @@ class WidgetBase(param.Parameterized):
             display_threshold=-math.inf
         )
         return layout[0]
+
+    @classmethod
+    def _infer_params(cls, values, **params):
+        if 'name' not in params and hasattr(values, 'name'):
+            params['name'] = values.name
+        if 'start' in cls.param and 'start' not in params:
+            params['start'] = np.nanmin(values)
+        if 'end' in cls.param and 'end' not in params:
+            params['end'] = np.nanmax(values)
+        if 'options' in cls.param and 'options' not in params:
+            params['options'] = list(unique_iterator(values))
+        return params
+
+    @classmethod
+    def from_values(cls, values, **params):
+        """
+        Creates an instance of this Widget where the parameters are
+        inferred from the data.
+
+        Arguments
+        ---------
+        values: Iterable
+            The values to infer the parameters from.
+        params: dict
+            Additional parameters to pass to the widget.
+        """
+        return cls(**cls._infer_params(values, **params))
 
     @property
     def rx(self):
