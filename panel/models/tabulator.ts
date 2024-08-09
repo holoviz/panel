@@ -307,7 +307,7 @@ function find_column(group: any, field: string): any {
     for (const col of group.columns) {
       const found = find_column(col, field)
       if (found) {
-	return found
+        return found
       }
     }
   } else {
@@ -873,7 +873,7 @@ export class DataTabulatorView extends HTMLBoxView {
     columns.push({field: "_index", frozen: true, visible: false})
     if (config_columns != null) {
       for (const column of config_columns) {
-	const new_column = clone_column(column)
+        const new_column = clone_column(column)
         if (column.formatter === "expand") {
           const expand = {
             hozAlign: "center",
@@ -901,7 +901,7 @@ export class DataTabulatorView extends HTMLBoxView {
       let tab_column: any = null
       if (config_columns != null) {
         for (const col of columns) {
-	  tab_column = find_column(col, column.field)
+          tab_column = find_column(col, column.field)
           if (tab_column != null) {
             break
           }
