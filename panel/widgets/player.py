@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
-from panel.io.resources import CDN_DIST
-
 from ..config import config
 from ..io.resources import CDN_DIST
 from ..models.widgets import (
