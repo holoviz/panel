@@ -420,7 +420,7 @@ class Pane(PaneBase, Reactive):
             view._preprocess(root, self)
 
     def _update_pane(self, *events) -> None:
-        for ref, (_, parent) in self._models.items():
+        for ref, (_, parent) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
