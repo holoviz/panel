@@ -36,10 +36,10 @@ def is_sympy_expr(obj: Any) -> bool:
 class LaTeX(ModelPane):
     r"""
     The `LaTeX` pane allows rendering LaTeX equations. It uses either
-    `MathJax` or `KaTeX` depending on the defined renderer.
+    `KaTeX` or `MathJax` depending on the defined renderer.
 
     By default it will use the renderer loaded in the extension
-    (e.g. `pn.extension('katex')`), defaulting to `KaTeX`.
+    (e.g. `pn.extension('katex')`), defaulting to `KaTeX` if both are loaded.
 
     Reference: https://panel.holoviz.org/reference/panes/LaTeX.html
 
@@ -54,7 +54,7 @@ class LaTeX(ModelPane):
 
     renderer = param.ObjectSelector(default=None, allow_None=True,
                                     objects=['katex', 'mathjax'], doc="""
-        The JS renderer used to render the LaTeX expression.""")
+        The JS renderer used to render the LaTeX expression. Defaults to katex.""")
 
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None
