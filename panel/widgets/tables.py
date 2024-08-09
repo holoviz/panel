@@ -129,7 +129,7 @@ class BaseTable(ReactiveData, Widget):
             self._renamed_cols.clear()
             return
         self._renamed_cols = {
-            str(col) if str(col) != col else col: col for col in self._get_fields()
+            ('_'.join(col) if isinstance(col, tuple) else str(col)) if str(col) != col else col: col for col in self._get_fields()
         }
 
     def _reset_selection(self, event):
@@ -274,12 +274,14 @@ class BaseTable(ReactiveData, Widget):
             else:
                 col_kwargs['width'] = 0
 
-            title = self.titles.get(col, str(col))
+            col_name = '_'.join(col) if isinstance(col, tuple) else col
+            title = self.titles.get(col, str(col_name))
             if col in indexes and len(indexes) > 1 and self.hierarchical:
                 title = 'Index: {}'.format(' | '.join(indexes))
             elif col in self.indexes and col.startswith('level_'):
                 title = ''
-            column = TableColumn(field=str(col), title=title,
+
+            column = TableColumn(field=str(col_name), title=title,
                                  editor=editor, formatter=formatter,
                                  **col_kwargs)
             columns.append(column)
@@ -1903,6 +1905,7 @@ class Tabulator(BaseTable):
         }
         for i, column in enumerate(ordered_columns):
             field = column.field
+            index = self._renamed_cols[field]
             matching_groups = [
                 group for group, group_cols in grouping.items()
                 if field in group_cols
@@ -1934,14 +1937,13 @@ class Tabulator(BaseTable):
                 title_formatter = dict(title_formatter)
                 col_dict['titleFormatter'] = title_formatter.pop('type')
                 col_dict['titleFormatterParams'] = title_formatter
-            col_name = self._renamed_cols[field]
             if field in self.indexes:
                 if len(self.indexes) == 1:
                     dtype = self.value.index.dtype
                 else:
                     dtype = self.value.index.get_level_values(self.indexes.index(field)).dtype
             else:
-                dtype = self.value.dtypes[col_name]
+                dtype = self.value.dtypes[index]
             if dtype.kind == 'M':
                 col_dict['sorter'] = 'timestamp'
             elif dtype.kind in 'iuf':
@@ -1971,7 +1973,27 @@ class Tabulator(BaseTable):
             if isinstance(self.widths, dict) and isinstance(self.widths.get(field), str):
                 col_dict['width'] = self.widths[field]
             col_dict.update(self._get_filter_spec(column))
-            if matching_groups:
+
+            if isinstance(index, tuple):
+                if columns:
+                    children = columns
+                    last = children[-1]
+                    for group in index[:-1]:
+                        if 'title' in last and last['title'] == group:
+                            new = False
+                            children = last['columns']
+                        else:
+                            new = True
+                            children.append({
+                                'columns': [],
+                                'title': group,
+                            })
+                        last = children[-1]
+                        if new:
+                            children = last['columns']
+                    children.append(col_dict)
+                    column.title = index[-1]
+            elif matching_groups:
                 group = matching_groups[0]
                 if group in groups:
                     groups[group]['columns'].append(col_dict)

@@ -302,6 +302,30 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
   return input
 }
 
+function find_column(group: any, field: string): any {
+  if (group.columns != null) {
+    for (const col of group.columns) {
+      const found = find_column(col, field)
+      if (found) {
+	return found
+      }
+    }
+  } else {
+    return group.field === field ? group : null
+  }
+}
+
+function clone_column(group: any): any {
+  if (group.columns == null) {
+    return {...group}
+  }
+  const group_columns = []
+  for (const col of group.columns) {
+    group_columns.push(clone_column(col))
+  }
+  return {...group, columns: group_columns}
+}
+
 export class DataTabulatorView extends HTMLBoxView {
   declare model: DataTabulator
 
@@ -849,13 +873,8 @@ export class DataTabulatorView extends HTMLBoxView {
     columns.push({field: "_index", frozen: true, visible: false})
     if (config_columns != null) {
       for (const column of config_columns) {
-        if (column.columns != null) {
-          const group_columns = []
-          for (const col of column.columns) {
-            group_columns.push({...col})
-          }
-          columns.push({...column, columns: group_columns})
-        } else if (column.formatter === "expand") {
+	const new_column = clone_column(column)
+        if (column.formatter === "expand") {
           const expand = {
             hozAlign: "center",
             cellClick: (_: any, cell: any) => {
@@ -869,7 +888,6 @@ export class DataTabulatorView extends HTMLBoxView {
           }
           columns.push(expand)
         } else {
-          const new_column = {...column}
           if (new_column.formatter === "rowSelection") {
             new_column.cellClick = (_: any, cell: any) => {
               cell.getRow().toggleSelect()
@@ -883,18 +901,8 @@ export class DataTabulatorView extends HTMLBoxView {
       let tab_column: any = null
       if (config_columns != null) {
         for (const col of columns) {
-          if (col.columns != null) {
-            for (const c of col.columns) {
-              if (column.field === c.field) {
-                tab_column = c
-                break
-              }
-            }
-            if (tab_column != null) {
-              break
-            }
-          } else if (column.field === col.field) {
-            tab_column = col
+	  tab_column = find_column(col, column.field)
+          if (tab_column != null) {
             break
           }
         }
