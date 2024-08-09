@@ -374,7 +374,7 @@ class Example(JSComponent):
     child = Child(class_=pn.pane.Markdown)
 
     _esm = """
-    export function render({ children }) {
+    export function render({ model }) {
       const button = document.createElement("button");
       button.append(model.get_child("child"))
       return button
@@ -395,7 +395,7 @@ class Example(JSComponent):
     child = Child(class_=(pn.pane.Markdown, pn.pane.HTML))
 
     _esm = """
-    export function render({ children }) {
+    export function render({ model }) {
       const button = document.createElement("button");
       button.append(model.get_child("child"))
       return button
