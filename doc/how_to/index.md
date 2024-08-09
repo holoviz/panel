@@ -98,6 +98,13 @@ How to use Parameterized classes with Panel to generate UIs without writing GUI 
 How to link the parameters of Panel components in Python and Javascript.
 :::
 
+:::{grid-item-card} {octicon}`paper-airplane;2.5em;sd-mr-1 sd-animate-grow50` Interact with ipywidgets and pydantic models
+:link: dataclass/index
+:link-type: doc
+
+How to interact with ipywidgets and pydantic models via familiar APIs like watch, bind, depends, and rx.
+:::
+
 ::::
 
 ## Manage session tasks

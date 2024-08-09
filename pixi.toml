@@ -117,6 +117,7 @@ numba = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+pydantic = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
@@ -172,6 +173,7 @@ PANEL_IPYWIDGET = "1"
 [feature.doc.dependencies]
 lxml = "*"
 nbsite = ">=0.8.4"
+pydantic = "*"
 selenium = "*"
 
 [feature.doc.tasks]
