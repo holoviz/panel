@@ -31,7 +31,9 @@ from ..models import (
     CustomMultiSelect as _BkMultiSelect, CustomSelect,
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
-from ..util import PARAM_NAME_PATTERN, indexOf, isIn
+from ..util import (
+    PARAM_NAME_PATTERN, edit_readonly, indexOf, isIn,
+)
 from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
@@ -77,11 +79,17 @@ class SingleSelectBase(SelectBase):
 
     value = param.Parameter(default=None)
 
+    value_label = param.String(allow_None=True, readonly=True)
+
     _allows_values: ClassVar[bool] = True
 
     _allows_none: ClassVar[bool] = False
 
     _supports_embed: ClassVar[bool] = True
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'value_label': None,
+    }
 
     __abstract = True
 
@@ -90,6 +98,16 @@ class SingleSelectBase(SelectBase):
         values = self.values
         if self.value is None and None not in values and values and not self._allows_none:
             self.value = values[0]
+
+    @param.depends('value', watch=True, on_init=True)
+    def _update_value_label(self):
+        try:
+            idx = indexOf(self.value, self.values)
+            label = self.labels[idx]
+        except ValueError:
+            label = None
+        with edit_readonly(self):
+            self.value_label = label
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
