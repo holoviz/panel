@@ -7,6 +7,9 @@ from bokeh.events import ModelEvent
 from bokeh.models import Column as BkColumn
 from bokeh.models.layouts import LayoutDOM
 
+from ..io.resources import bundled_files
+from ..util import classproperty
+
 __all__ = (
     "Card",
     "HTMLBox",
@@ -79,20 +82,26 @@ class Card(Column):
 
 
 class Modal(Column):
-    __css__ = []
 
-    __javascript__ = [
+    __javascript_raw__ = [
         "https://cdn.jsdelivr.net/npm/a11y-dialog@7/dist/a11y-dialog.min.js"
     ]
 
-    __js_skip__ = {
-        # 'modal': __javascript__[:1],
-    }
+    @classproperty
+    def __javascript__(cls):
+        return bundled_files(cls)
+
+    @classproperty
+    def __js_skip__(cls):
+        return {'A11yDialog': cls.__javascript__[:1]}
+
     __js_require__ = {
         'paths': {
-            'modal': "https://cdn.jsdelivr.net/npm/a11y-dialog@7/dist/a11y-dialog.min",
+            'a11y-dialog': "https://cdn.jsdelivr.net/npm/a11y-dialog@7/dist/a11y-dialog.min",
         },
-        'exports': {}
+        'exports': {
+            'A11yDialog': 'a11y-dialog',
+        }
     }
 
     is_open = Readonly(Bool, default=False, help="Whether or not the modal is open.")
