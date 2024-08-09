@@ -20,3 +20,15 @@ def test_discrete_player(document, comm):
 
     discrete_player.value = 100
     assert widget.value == 3
+
+
+def test_player_loop_policy_not_in_loop_options(document, comm):
+    player = DiscretePlayer(name='Player', loop_policy='once', visible_loop_options=['loop', 'reflect'])
+    assert player.loop_policy == 'loop'
+    assert player.visible_loop_options == ['loop', 'reflect']
+
+
+def test_player_loop_policy_with_no_loop_options(document, comm):
+    player = DiscretePlayer(name='Player', loop_policy='loop', visible_loop_options=[])
+    assert player.loop_policy == 'loop'
+    assert player.visible_loop_options == []
