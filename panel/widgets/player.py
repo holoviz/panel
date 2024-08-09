@@ -34,6 +34,10 @@ class PlayerBase(Widget):
         default='once', objects=['once', 'loop', 'reflect'], doc="""
         Policy used when player hits last frame""")
 
+    preview_duration = param.Integer(default=1500, bounds=(0, None), doc="""
+        Duration (in milliseconds) for showing the current FPS when clicking
+        the slower/faster buttons, before reverting to the icon.""")
+
     show_loop_controls = param.Boolean(default=True, doc="""
         Whether the loop controls radio buttons are shown""")
 
