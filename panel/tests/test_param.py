@@ -574,7 +574,7 @@ def test_param_throttled(document, comm):
     assert mb.value != 3
     assert test.b == 3
 
-    test_pane._widgets['b']._process_events({'value': 4})
+    mb.value = 4
     assert test.b == 3
     assert mb.value == 4
 
@@ -616,7 +616,7 @@ def test_param_onkeyup(document, comm):
     assert mb.value != '3'
     assert test.b == '3'
 
-    test_pane._widgets['b']._process_events({'value': '4'})
+    mb.value = '4'
     assert test.b == '3'
     assert mb.value == '4'
 
@@ -873,7 +873,7 @@ def test_set_widgets_throttled(document, comm):
     assert number.value != 3
     assert test.a == 3
 
-    pane._widgets['a']._process_events({'value': 4})
+    number.value = 4
     assert test.a == 3
     assert number.value == 4
 

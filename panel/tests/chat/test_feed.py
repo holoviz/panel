@@ -40,6 +40,12 @@ class TestChatFeed:
         assert message.object == "Instructions"
         assert message.user == "Help"
 
+    def test_init_with_loading(self):
+        chat_feed = ChatFeed(loading=True)
+        assert chat_feed._placeholder in chat_feed._chat_log
+        chat_feed.loading = False
+        assert chat_feed._placeholder not in chat_feed._chat_log
+
     def test_update_header(self):
         chat_feed = ChatFeed(header="1")
         assert chat_feed._card.header == "1"
@@ -1135,6 +1141,17 @@ class TestChatFeedCallback:
         chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
+
+    def test_persist_placeholder_while_loading(self, chat_feed):
+        def callback(contents):
+            assert chat_feed._placeholder in chat_feed._chat_log
+            return "hey testing"
+
+        chat_feed.loading = True
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        assert chat_feed._placeholder in chat_feed._chat_log
+
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeForTransformers:
