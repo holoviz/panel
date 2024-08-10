@@ -310,6 +310,44 @@ def test_tabulator_multi_index_remote_pagination(document, comm):
     assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3']))
 
 
+def test_tabulator_multi_index_columns(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_index = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create a DataFrame with this MultiIndex as columns
+    df = pd.DataFrame(np.random.randn(4, 6), columns=multi_index)
+
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index', 'sorter': 'number'},
+        {'title': 'A', 'columns': [
+            {'title': 'one', 'columns': [
+                {'field': 'A_one_X', 'sorter': 'number'},
+                {'field': 'A_one_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'two', 'columns': [
+                {'field': 'A_two_X', 'sorter': 'number'}
+            ]},
+        ]},
+        {'title': 'B', 'columns': [
+            {'title': 'two', 'columns': [
+                {'field': 'B_two_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'three', 'columns': [
+                {'field': 'B_three_X', 'sorter': 'number'},
+                {'field': 'B_three_Y', 'sorter': 'number'}
+            ]},
+        ]}
+    ]
+
+
 def test_tabulator_expanded_content(document, comm):
     df = makeMixedDataFrame()
 
@@ -337,6 +375,99 @@ def test_tabulator_expanded_content(document, comm):
     assert 2 in model.children
     row2 = model.children[2]
     assert row2.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+
+def test_tabulator_remote_paginated_expanded_content(document, comm):
+    df = makeMixedDataFrame()
+
+    table = Tabulator(
+        df, expanded=[0, 4], row_content=lambda r: r.A, pagination='remote', page_size=3
+    )
+
+    model = table.get_root(document, comm)
+
+    assert len(model.children) == 1
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
+
+    table.page = 2
+
+    assert len(model.children) == 1
+    assert 1 in model.children
+    row1 = model.children[1]
+    assert row1.text == "&lt;pre&gt;4.0&lt;/pre&gt;"
+
+
+def test_tabulator_remote_sorted_paginated_expanded_content(document, comm):
+    df = makeMixedDataFrame()
+
+    table = Tabulator(
+        df, expanded=[0, 1], row_content=lambda r: r.A, pagination='remote', page_size=2,
+        sorters = [{'field': 'A', 'sorter': 'number', 'dir': 'desc'}], page=3
+    )
+
+    model = table.get_root(document, comm)
+
+    assert len(model.children) == 1
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
+
+    table.page = 2
+
+    assert len(model.children) == 1
+    assert 1 in model.children
+    row1 = model.children[1]
+    assert row1.text == "&lt;pre&gt;1.0&lt;/pre&gt;"
+
+    table.expanded = [0, 1, 2]
+
+    assert len(model.children) == 2
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_tabulator_filtered_expanded_content(document, comm, pagination):
+    df = makeMixedDataFrame()
+
+    table = Tabulator(
+        df,
+        expanded=[0, 1, 2, 3],
+        filters=[{'field': 'B', 'sorter': 'number', 'type': '=', 'value': '1.0'}],
+        pagination=pagination,
+        row_content=lambda r: r.A,
+    )
+
+    model = table.get_root(document, comm)
+
+    assert len(model.children) == 2
+
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;1.0&lt;/pre&gt;"
+
+    assert 1 in model.children
+    row1 = model.children[1]
+    assert row1.text == "&lt;pre&gt;3.0&lt;/pre&gt;"
+
+    model.expanded = [0]
+    assert table.expanded == [1]
+
+    table.filters = [{'field': 'B', 'sorter': 'number', 'type': '=', 'value': '0'}]
+
+    assert not model.expanded
+    assert table.expanded == [1]
+
+    table.expanded = [0, 1]
+
+    assert len(model.children) == 1
+
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
 
 
 def test_tabulator_index_column(document, comm):
@@ -911,7 +1042,6 @@ def test_tabulator_empty_table(document, comm):
     table.stream(value_df, follow=True)
 
     assert table.value.shape == value_df.shape
-
 
 def test_tabulator_sorters_unnamed_index(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))

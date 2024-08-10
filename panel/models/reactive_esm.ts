@@ -154,6 +154,7 @@ export class ReactiveESMView extends HTMLBoxView {
     ["after_resize", []],
     ["remove", []],
   ])
+  _parent_map: Map<string, ParentNode> = new Map()
   _rendered: boolean = false
 
   override initialize(): void {
@@ -291,7 +292,8 @@ Promise.resolve(output).then((out) => {
       cb()
     }
     this.render_children()
-    this.model_proxy.on(this.accessed_children, () => this.render_esm())
+    const rerender = this.accessed_children.filter((child) => !this._parent_map.has(child))
+    this.model_proxy.on(rerender, () => this.render_esm())
     this._rendered = true
   }
 
@@ -300,6 +302,7 @@ Promise.resolve(output).then((out) => {
       return
     }
     this.accessed_properties = []
+    this._parent_map.clear()
     for (const lf of this._lifecycle_handlers.keys()) {
       (this._lifecycle_handlers.get(lf) || []).splice(0)
     }
@@ -316,15 +319,30 @@ Promise.resolve(output).then((out) => {
     for (const child of this.model.children) {
       const child_model = this.model.data[child]
       const children = isArray(child_model) ? child_model : [child_model]
+      const nodes = []
       for (const subchild of children) {
         const view = this._child_views.get(subchild)
         if (!view) {
           continue
         }
         const parent = view.el.parentNode
+        nodes.push(parent)
         if (parent) {
           view.render()
           view.after_render()
+        }
+      }
+      if ((new Set(nodes)).size === 1 && nodes[0] != null) {
+        const parent = nodes[0]
+        let in_sequence = true
+        for (let i=0; i<nodes.length; i++) {
+          if (parent.children[i] !== this._child_views.get(children[i])?.el) {
+            in_sequence = false
+            break
+          }
+        }
+        if (in_sequence && parent) {
+          this._parent_map.set(child, parent)
         }
       }
     }
@@ -374,7 +392,16 @@ Promise.resolve(output).then((out) => {
       const child = this._lookup_child(child_view)
       if (!child) {
         continue
-      } else if (new_views.has(child)) {
+      }
+
+      if (this._parent_map.has(child)) {
+        const parent = this._parent_map.get(child)
+        child_view.render()
+        // @ts-ignore
+        parent.append(child_view.el)
+      }
+
+      if (new_views.has(child)) {
         new_views.get(child).push(child_view)
       } else {
         new_views.set(child, [child_view])
@@ -388,7 +415,6 @@ Promise.resolve(output).then((out) => {
         callback(new_children)
       }
     }
-
     this._update_children()
     this.invalidate_layout()
   }

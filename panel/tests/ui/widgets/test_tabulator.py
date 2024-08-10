@@ -2116,7 +2116,6 @@ def test_tabulator_streaming_default(page):
 
     height_start = page.locator('.pnx-tabulator.tabulator').bounding_box()['height']
 
-
     def stream_data():
         widget.stream(df)  # follow is True by default
 
@@ -2129,6 +2128,24 @@ def test_tabulator_streaming_default(page):
     assert widget.current_view.equals(widget.value)
 
     assert page.locator('.pnx-tabulator.tabulator').bounding_box()['height'] > height_start
+
+
+@pytest.mark.parametrize('pagination', ['remote', 'local'])
+def test_tabulator_streaming_follow_pagination(page, pagination):
+    df = pd.DataFrame(np.random.random((3, 2)), columns=['A', 'B'])
+    widget = Tabulator(df, pagination=pagination, page_size=3)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-row')).to_have_count(len(df))
+
+    widget.stream(df)
+
+    expect(page.locator('.tabulator-page.active')).to_have_text('2')
+
+    widget.stream(df)
+
+    expect(page.locator('.tabulator-page.active')).to_have_text('3')
 
 
 def test_tabulator_streaming_no_follow(page):
