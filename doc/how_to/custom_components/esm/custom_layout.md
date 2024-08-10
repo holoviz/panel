@@ -1,236 +1,18 @@
 # Create Custom Layouts
 
-In this guide we will show you how to build custom, reusable layouts using `Viewer`, `JSComponent` or `ReactComponent`.
+In this guide we will show you how to build custom, reusable layouts using [`JSComponent`](../../reference/panes/JSComponent.md) or [`ReactComponent`](../../reference/panes/ReactComponent.md).
 
-## Layout a single Panel Component
+Please note that you currently cannot create layouts using the [`AnyWidgetComponent`](../../reference/panes/AnyWidgetComponent.md) because the underlying [`AnyWidget`](https://anywidget.dev/) API does not support this.
 
-You can layout a single `object` as follows.
+## Layout two objects
+
+This example will show you how to create a *split* layout containing two objects. We will be using the [Split.js](https://split.js.org/) library.
 
 ::::{tab-set}
-
-:::{tab-item} `Viewer`
-
-```{pyodide}
-import panel as pn
-from panel.custom import Child
-from panel.viewable import Viewer, Layoutable
-
-pn.extension()
-
-
-class SingleObjectLayout(Viewer, Layoutable):
-    object = Child(allow_refs=False)
-
-    def __init__(self, **params):
-        super().__init__(**params)
-
-        header = """
-# Temperature
-## A Measurement from the Sensor
-        """
-
-        layoutable_params = {name: self.param[name] for name in Layoutable.param}
-        self._layout = pn.Column(
-            pn.pane.Markdown(header, height=100, sizing_mode="stretch_width"),
-            self._object,
-            **layoutable_params,
-        )
-
-    def __panel__(self):
-        return self._layout
-
-    @pn.depends("object")
-    def _object(self):
-        return self.object
-
-
-dial = pn.widgets.Dial(
-    name="°C",
-    value=37,
-    format="{value}",
-    colors=[(0.40, "green"), (1, "red")],
-    bounds=(0, 100),
-)
-py_layout = SingleObjectLayout(
-    object=dial,
-    name="Temperature",
-    styles={"border": "2px solid lightgray"},
-    sizing_mode="stretch_width",
-)
-py_layout.servable()
-```
-
-:::
 
 :::{tab-item} `JSComponent`
 
 ```{pyodide}
-import panel as pn
-from panel.custom import JSComponent, Child
-
-pn.extension()
-
-class SingleObjectLayout(JSComponent):
-    object = Child(allow_refs=False)
-
-    _esm = """
-export function render({ model }) {
-    const containerID = `id-${crypto.randomUUID()}`;;
-    const div = document.createElement("div");
-    div.innerHTML = `
-    <div>
-        <h1>Temperature</h1>
-        <h2>A measurement from the sensor</h2>
-        <div id="${containerID}">...</div>
-    </div>`;
-    const container = div.querySelector(`#${containerID}`);
-    container.appendChild(model.get_child("object"))
-    return div;
-}
-"""
-
-dial = pn.widgets.Dial(
-    name="°C",
-    value=37,
-    format="{value}",
-    colors=[(0.40, "green"), (1, "red")],
-    bounds=(0, 100),
-)
-js_layout = SingleObjectLayout(
-    object=dial,
-    name="Temperature",
-    styles={"border": "2px solid lightgray"},
-    sizing_mode="stretch_width",
-)
-js_layout.servable()
-```
-
-:::
-
-:::{tab-item} `ReactComponent`
-
-```{pyodide}
-import panel as pn
-
-from panel.custom import Child, ReactComponent
-
-pn.extension()
-
-class SingleObjectLayout(ReactComponent):
-    object = Child(allow_refs=False)
-
-    _esm = """
-export function render({ model }) {
-    return (
-        <div>
-            <h1>Temperature</h1>
-            <h2>A measurement from the sensor</h2>
-            <div>
-                {model.get_child("object")}
-            </div>
-        </div>
-    );
-}
-"""
-
-dial = pn.widgets.Dial(
-    name="°C",
-    value=37,
-    format="{value}",
-    colors=[(0.40, "green"), (1, "red")],
-    bounds=(0, 100),
-)
-react_layout = SingleObjectLayout(
-    object=dial,
-    name="Temperature",
-    styles={"border": "2px solid lightgray"},
-    sizing_mode="stretch_width",
-)
-react_layout.servable()
-```
-
-:::
-
-::::
-
-Lets verify the layout will automatically update when the `object` is changed.
-
-::::{tab-set}
-
-:::{tab-item} `Viewer`
-
-```{pyodide}
-html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
-radio_button_group = pn.widgets.RadioButtonGroup(
-    options=["Dial", "Markdown"],
-    value="Dial",
-    name="Select the object to display",
-    button_type="success", button_style="outline"
-)
-
-@pn.depends(radio_button_group, watch=True)
-def update(value):
-    if value == "Dial":
-        py_layout.object = dial
-    else:
-        py_layout.object = html
-
-radio_button_group.servable()
-```
-
-:::
-
-:::{tab-item} `JSComponent`
-
-```{pyodide}
-html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
-radio_button_group = pn.widgets.RadioButtonGroup(
-    options=["Dial", "Markdown"],
-    value="Dial",
-    name="Select the object to display",
-    button_type="success", button_style="outline"
-)
-
-@pn.depends(radio_button_group, watch=True)
-def update(value):
-    if value == "Dial":
-        js_layout.object = dial
-    else:
-        js_layout.object = html
-
-radio_button_group.servable()
-```
-
-:::
-
-:::{tab-item} `ReactComponent`
-
-```{pyodide}
-html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
-radio_button_group = pn.widgets.RadioButtonGroup(
-    options=["Dial", "Markdown"],
-    value="Dial",
-    name="Select the object to display",
-    button_type="success", button_style="outline"
-)
-
-@pn.depends(radio_button_group, watch=True)
-def update(value):
-    if value == "Dial":
-        react_layout.object = dial
-    else:
-        react_layout.object = html
-
-radio_button_group.servable()
-```
-
-:::
-
-::::
-
-## Layout Two Objects
-
-```python
 import panel as pn
 
 from panel.custom import Child, JSComponent
@@ -256,7 +38,7 @@ CSS = """
 """
 
 
-class Split(JSComponent):
+class SplitJS(JSComponent):
 
     left = Child()
     right = Child()
@@ -264,20 +46,20 @@ class Split(JSComponent):
     _esm = """
     import Split from 'https://esm.sh/split.js@1.6.5'
 
+    const splitDiv = document.createElement('div');
+    splitDiv.className = 'split';
+
+    const split0 = document.createElement('div');
+    splitDiv.appendChild(split0);
+
+    let split1 = document.createElement('div');
+    splitDiv.appendChild(split1);
+
+    Split([split0, split1])
+
     export function render({ model }) {
-      let splitDiv = document.createElement('div');
-      splitDiv.className = 'split';
-
-      let split0 = document.createElement('div');
-      split0.append(model.get_child("left"))
-      splitDiv.appendChild(split0);
-
-      let split1 = document.createElement('div');
-      split1.append(model.get_child("right"))
-      splitDiv.appendChild(split1);
-
-      Split([split0, split1])
-
+        split0.append(model.get_child("left"))
+        split1.append(model.get_child("right"))
       return splitDiv
     }"""
 
@@ -286,7 +68,7 @@ class Split(JSComponent):
 
 pn.extension("codeeditor")
 
-Split(
+split_js = SplitJS(
     left=pn.widgets.CodeEditor(
         value="Left!",
         sizing_mode="stretch_both",
@@ -303,8 +85,143 @@ Split(
     ),
     height=500,
     sizing_mode="stretch_width",
-).servable()
+)
+split_js.servable()
 ```
+
+:::
+
+:::{tab-item} `ReactComponent`
+
+```{pyodide}
+import panel as pn
+
+from panel.custom import Child, ReactComponent
+
+CSS = """
+.split {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+}
+
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+.gutter.gutter-horizontal {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+    cursor: col-resize;
+}
+"""
+
+
+class SplitReact(ReactComponent):
+
+    left = Child()
+    right = Child()
+
+    _esm = """
+    import Split from 'https://esm.sh/react-split@2.0.14'
+
+    export function render({ model }) {
+        return (
+            <Split className="split">
+                <div>{model.get_child("left")}</div>
+                <div>{model.get_child("right")}</div>
+            </Split>
+        )
+    }
+    """
+
+    _stylesheets = [CSS]
+
+
+pn.extension("codeeditor")
+
+split_react = SplitReact(
+    left=pn.widgets.CodeEditor(
+        value="Left!",
+        sizing_mode="stretch_both",
+        margin=0,
+        theme="monokai",
+        language="python",
+    ),
+    right=pn.widgets.CodeEditor(
+        value="right",
+        sizing_mode="stretch_both",
+        margin=0,
+        theme="monokai",
+        language="python",
+    ),
+    height=500,
+    sizing_mode="stretch_width",
+)
+split_react.servable()
+```
+
+:::
+
+::::
+
+Lets verify the layout will automatically update when the `object` is changed.
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+
+```{pyodide}
+split_js.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
+```
+
+:::
+
+:::{tab-item} `ReactComponent`
+
+```{pyodide}
+split_react.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
+```
+
+:::
+
+Lets change it back:
+
+::::
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+
+```{pyodide}
+split_js.right=pn.widgets.CodeEditor(
+    value="right",
+    sizing_mode="stretch_both",
+    margin=0,
+    theme="monokai",
+    language="python",
+)
+```
+
+:::
+
+:::{tab-item} `ReactComponent`
+
+```{pyodide}
+split_react.right=pn.widgets.CodeEditor(
+    value="right",
+    sizing_mode="stretch_both",
+    margin=0,
+    theme="monokai",
+    language="python",
+)
+```
+
+:::
+
+::::
 
 ## Layout a List of Objects
 
