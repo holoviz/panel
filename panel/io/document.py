@@ -23,7 +23,7 @@ from bokeh.core.serialization import Serializable
 from bokeh.document.document import Document
 from bokeh.document.events import (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
-    DocumentChangedEvent, ModelChangedEvent,
+    DocumentChangedEvent, MessageSentEvent, ModelChangedEvent,
 )
 from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 DISPATCH_EVENTS = (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
-    ModelChangedEvent
+    ModelChangedEvent, MessageSentEvent
 )
 GC_DEBOUNCE = 5
 _WRITE_LOCK = None
