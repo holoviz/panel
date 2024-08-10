@@ -291,11 +291,7 @@ class JSChildren(JSComponent):
     }"""
 
 
-class JSChildrenNoReturn(JSComponent):
-
-    children = Children()
-
-    render_count = param.Integer(default=0)
+class JSChildrenNoReturn(JSChildren):
 
     _esm = """
     export function render({ model, view }) {
@@ -339,7 +335,7 @@ def test_children(page, component):
 
     page.wait_for_timeout(400)
 
-    assert example.render_count == (1 if component is JSChildren else 2)
+    assert example.render_count == (3 if issubclass(component, JSChildren) else 2)
 
 
 @pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
