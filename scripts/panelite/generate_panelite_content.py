@@ -1,7 +1,6 @@
 """
 Helper script to convert and copy example notebooks into JupyterLite build.
 """
-import hashlib
 import json
 import os
 import pathlib
