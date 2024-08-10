@@ -11,6 +11,7 @@ from panel.custom import (
     AnyWidgetComponent, Child, Children, JSComponent, ReactComponent,
 )
 from panel.layout import Row
+from panel.pane import Markdown
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
@@ -235,10 +236,13 @@ class JSChild(JSComponent):
 
     child = Child()
 
+    render_count = param.Integer(default=0)
+
     _esm = """
     export function render({ model }) {
       const button = document.createElement('button')
       button.appendChild(model.get_child('child'))
+      model.render_count += 1
       return button
     }"""
 
@@ -247,8 +251,11 @@ class ReactChild(ReactComponent):
 
     child = Child()
 
+    render_count = param.Integer(default=0)
+
     _esm = """
     export function render({ model }) {
+      model.render_count += 1
       return <button>{model.get_child('child')}</button>
     }"""
 
@@ -265,16 +272,21 @@ def test_child(page, component):
 
     expect(page.locator('button')).to_have_text('A different Markdown pane!')
 
+    wait_until(lambda: example.render_count == 1, page)
+
 
 class JSChildren(JSComponent):
 
     children = Children()
+
+    render_count = param.Integer(default=0)
 
     _esm = """
     export function render({ model }) {
       const div = document.createElement('div')
       div.id = "container"
       div.append(...model.get_child('children'))
+      model.render_count += 1
       return div
     }"""
 
@@ -283,8 +295,11 @@ class ReactChildren(ReactComponent):
 
     children = Children()
 
+    render_count = param.Integer(default=0)
+
     _esm = """
     export function render({ model }) {
+      model.render_count += 1
       return <div id="container">{model.get_child("children")}</div>
     }"""
 
@@ -305,6 +320,37 @@ def test_children(page, component):
 
     expect(page.locator('.foo').nth(0)).to_have_text('1')
     expect(page.locator('.foo').nth(1)).to_have_text('2')
+
+    page.wait_for_timeout(400)
+
+    assert example.render_count == (1 if component is JSChildren else 2)
+
+
+@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
+def test_children_append_without_rerender(page, component):
+    child = JSChild(child=Markdown(
+        'A Markdown pane!', css_classes=['first']
+    ))
+    example = component(children=[child])
+
+    serve_component(page, example)
+
+    expect(page.locator('.first')).to_have_text('A Markdown pane!')
+
+    wait_until(lambda: child.render_count == 1, page)
+
+    example.children = example.children+[Markdown(
+        'A different Markdown pane!', css_classes=['second']
+    )]
+
+    expect(page.locator('.second')).to_have_text('A different Markdown pane!')
+
+    page.wait_for_timeout(400)
+
+    assert child.render_count == 1
+    assert example.render_count == 2
+
+
 
 JS_CODE_BEFORE = """
 export function render() {
