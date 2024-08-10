@@ -65,7 +65,6 @@ The version number of the package depends on [`git tags`](https://git-scm.com/bo
 ```bash
 git remote add upstream https://github.com/holoviz/panel.git
 git fetch --tags upstream
-git push --tags
 ```
 
 ## Start developing
@@ -78,7 +77,19 @@ pixi install
 
 The first time you run it, it will create a `pixi.lock` file with information for all available environments. This command will take a minute or so to run.
 
-All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
+All available tasks can be found by running
+
+```bash
+pixi task list
+```
+
+To list the pixi environments you have installed:
+
+```bash
+ls .pixi/envs/
+```
+
+The following sections will give a brief introduction to the most common tasks.
 
 ### Editable install
 
@@ -132,6 +143,21 @@ The task is available in the following environments: `test-310`, `test-311`, `te
 
 If you haven't set the environment flag in the command, a menu will help you select which one of the environments to use.
 
+Here's an example how you can pick a Python version and run some tests passing some pytest options through a pixi task:
+
+```bash
+$ pixi run -e test-312 test-unit panel/tests/widgets/test_button.py -v --dist no -n 0
+✨ Pixi task (test-unit in test-312): pytest panel/tests -n logical --dist loadgroup panel/tests/widgets/test_button.py -v --dist no -n 0
+```
+
+If you prefer you can also run `pytest` directly not using the pixi task:
+
+```bash
+pixi run -e test-312 pytest panel/tests/widgets/test_button.py
+```
+
+So the full power of pytest to select tests and configure the test run and reporting is available to you.
+
 ### Example tests
 
 Panel's documentation consists mainly of Jupyter Notebooks. The example tests execute all the notebooks and fail if an error is raised. Example tests are possible thanks to [nbval](https://nbval.readthedocs.io/) and can be found in the `examples/` folder.
@@ -161,11 +187,17 @@ The documentation can be built with the command:
 pixi run docs-build
 ```
 
+To open the generated HTML docs:
+
+```bash
+open builtdocs/index.html
+```
+
 As Panel uses notebooks for much of the documentation, this will take significant time to run (around an hour).
 
 A development version of Panel can be found [here](https://holoviz-dev.github.io/panel/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
-To be able to run cells interactively you need `pyodide` server, this can be ran with:
+To be able to run cells interactively you need `pyodide` server, this can be run with:
 
 ```bash
 pixi run docs-server
