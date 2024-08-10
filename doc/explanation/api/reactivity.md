@@ -46,7 +46,7 @@ def submit_form(event):
 
 user.param.watch(update_preview, 'value')
 age.param.watch(update_preview, 'value')
-submit.onclick(submit_form)
+submit.on_click(submit_form)
 
 pn.Row(widgets, md)
 ```
