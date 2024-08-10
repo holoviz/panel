@@ -229,59 +229,6 @@ A Panel `Column` or `Row` works as a list of objects. It is *list-like*. In this
 
 ::::{tab-set}
 
-:::{tab-item} `Viewer`
-
-```{pyodide}
-import panel as pn
-from panel.viewable import Viewer, Layoutable
-from panel.custom import Children
-from panel.layout.base import NamedListLike
-
-pn.extension()
-
-
-class ListLikeLayout(NamedListLike, Layoutable, Viewer):
-    objects = Children()
-
-    def __init__(self, *args, **params):
-        super().__init__(*args, **params)
-
-        layoutable_params = {name: self.param[name] for name in Layoutable.param}
-        self._layout = pn.Column(
-            **layoutable_params,
-        )
-        self._objects()
-
-    def __panel__(self):
-        return self._layout
-
-    @pn.depends("objects", watch=True)
-    def _objects(self):
-        objects = []
-        for object in self.objects:
-            objects.append(object)
-            objects.append(
-                pn.pane.HTML(
-                    styles={"width": "calc(100% - 15px)", "border-top": "3px dotted #bbb"},
-                    height=10,
-                )
-            )
-
-        self._layout[:] = objects
-
-
-ListLikeLayout(
-    "I love beat boxing",
-    "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
-    "Yes I do!",
-    styles={"border": "2px solid lightgray"},
-).servable()
-```
-
-You must list `NamedListLike, Layoutable, Viewer` in exactly that order when you define the class! Other combinations might not work.
-
-:::
-
 :::{tab-item} `JSComponent`
 
 ```{pyodide}
@@ -290,42 +237,68 @@ import param
 from panel.custom import JSComponent
 from panel.layout.base import NamedListLike
 
-pn.extension()
+CSS = """
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+.gutter.gutter-vertical {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
+    cursor: row-resize;
+}
+"""
 
 
-class ListLikeLayout(NamedListLike, JSComponent):
+class GridJS(NamedListLike, JSComponent):
     objects = param.List()
 
     _esm = """
-    export function render({ model }) {
-      const div = document.createElement('div')
-      let objects = model.get_child("objects")
+    import Split from 'https://esm.sh/split.js@1.6.5'
+
+    export function render({ model}) {
+      const objects = model.get_child("objects")
+
+      const splitDiv = document.createElement('div');
+      splitDiv.className = 'split';
+      splitDiv.style.height = `calc(100% - ${(objects.length - 1) * 10}px)`;
+
+      let splits = [];
 
       objects.forEach((object, index) => {
-        div.appendChild(object);
+        const split = document.createElement('div');
+        splits.push(split)
 
-        // If it's not the last object, add a divider
-        if (index < objects.length - 1) {
-            const divider = document.createElement("div");
-            divider.className = "divider";
-            div.appendChild(divider);
-        }
-        });
-      return div
+        splitDiv.appendChild(split);
+        split.appendChild(object);
+      })
+
+      Split(splits, {direction: 'vertical'})
+
+      return splitDiv
     }"""
 
-    _stylesheets = [
-        """
-.divider {border-top: 3px dotted #bbb};
-"""
-    ]
+    _stylesheets = [CSS]
 
 
-ListLikeLayout(
-    "I love beat boxing",
-    "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
-    "Yes I do!",
+pn.extension("codeeditor")
+
+grid_js = GridJS(
+    pn.widgets.CodeEditor(
+        value="I love beat boxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
+    ),
+    pn.panel(
+        "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
+        sizing_mode="stretch_width",
+        height=100,
+    ),
+    pn.widgets.CodeEditor(
+        value="Yes I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
+    ),
     styles={"border": "2px solid lightgray"},
+    height=800,
+    width=500,
+    sizing_mode="fixed",
 ).servable()
 ```
 
@@ -338,32 +311,66 @@ way around `JSComponent, NamedListLike` will not work.
 
 ```{pyodide}
 import panel as pn
+import param
+from panel.custom import ReactComponent
+from panel.layout.base import NamedListLike
 
-from panel.custom import Children, ReactComponent
+CSS = """
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+.gutter.gutter-vertical {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
+    cursor: row-resize;
+}
+"""
 
-class Example(ReactComponent):
 
-    objects = Children()
+class GridReact(NamedListLike, ReactComponent):
+    objects = param.List()
 
     _esm = """
-    export function render({ model }) {
-        let objects = model.get_child("objects")
-        return (
-            <div>
-                {objects.map((object, index) => (
-                    <React.Fragment key={index}>
-                        {object}
-                        {index < objects.length - 1 && <div className="divider"></div>}
-                    </React.Fragment>
-                ))}
-            </div>
-        );
+    import Split from 'https://esm.sh/react-split@2.0.14'
+
+    export function render({ model}) {
+      const objects = model.get_child("objects")
+      console.log(objects)
+      const calculatedHeight = `calc( 100% - ${(objects.length - 1) * 10}px )`;
+
+      return (
+        <Split
+            className="split"
+            direction="vertical"
+            style={{ height: model.height }}
+        >{...objects}</Split>
+    )
     }"""
 
+    _stylesheets = [CSS]
 
-Example(
-    objects=[pn.panel("A **Markdown** pane!"), pn.widgets.Button(name="Click me!"), {"text": "I'm shown as a JSON Pane"}]
-).servable()
+
+pn.extension("codeeditor")
+
+grid_react = GridReact(
+    pn.widgets.CodeEditor(
+        value="I love beat boxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
+    ),
+    pn.panel(
+        "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
+        sizing_mode="stretch_width",
+        height=100,
+    ),
+    pn.widgets.CodeEditor(
+        value="Yes I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
+    ),
+    styles={"border": "2px solid lightgray"},
+    height=800,
+    width=500,
+    sizing_mode="fixed",
+)
+grid_react.servable()
 ```
 
 :::
@@ -374,4 +381,58 @@ Example(
 You must list `ListLike, ReactComponent` in exactly that order when you define the class! The other way around `ReactComponent, ListLike` will not work.
 :::
 
-You can now use `[...]` indexing and the `.append`, `.insert`, `pop`, ... methods that you would expect.
+You can now use `[...]` indexing and the `.append`, `.insert`, `pop`, ... methods that you would expect:
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+
+```{pyodide}
+grid_js.append(
+    pn.widgets.CodeEditor(
+        value="Another one bites the dust\n" * 10,
+        theme="monokai",
+        sizing_mode="stretch_both",
+    )
+)
+```
+
+:::
+
+:::{tab-item} `ReactComponent`
+
+```{pyodide}
+grid_react.append(
+    pn.widgets.CodeEditor(
+        value="Another one bites the dust\n" * 10,
+        theme="monokai",
+        sizing_mode="stretch_both",
+    )
+)
+```
+
+:::
+
+::::
+
+Lets remove it again:
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+
+```{pyodide}
+grid_js.pop(-1)
+```
+
+:::
+
+:::{tab-item} `ReactComponent`
+
+```{pyodide}
+grid_react.pop(-1)
+```
+
+:::
+
+::::
