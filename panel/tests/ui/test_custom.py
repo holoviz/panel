@@ -291,6 +291,22 @@ class JSChildren(JSComponent):
     }"""
 
 
+class JSChildrenNoReturn(JSComponent):
+
+    children = Children()
+
+    render_count = param.Integer(default=0)
+
+    _esm = """
+    export function render({ model, view }) {
+      const div = document.createElement('div')
+      div.id = "container"
+      div.append(...model.get_child('children'))
+      view.container.replaceChildren(div)
+      model.render_count += 1
+    }"""
+
+
 class ReactChildren(ReactComponent):
 
     children = Children()
@@ -304,7 +320,7 @@ class ReactChildren(ReactComponent):
     }"""
 
 
-@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
+@pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children(page, component):
     example = component(children=['A Markdown pane!'])
 
@@ -326,7 +342,7 @@ def test_children(page, component):
     assert example.render_count == (1 if component is JSChildren else 2)
 
 
-@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
+@pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children_append_without_rerender(page, component):
     child = JSChild(child=Markdown(
         'A Markdown pane!', css_classes=['first']

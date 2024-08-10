@@ -326,7 +326,7 @@ Promise.resolve(output).then((out) => {
         const parent = view.el.parentNode
         if (parent && !this._child_rendered.has(view)) {
           view.render()
-	  this._child_rendered.set(view, true)
+          this._child_rendered.set(view, true)
         }
       }
     }
@@ -391,7 +391,7 @@ Promise.resolve(output).then((out) => {
 
     for (const view of this._child_rendered.keys()) {
       if (!all_views.includes(view)) {
-	this._child_rendered.delete(view)
+        this._child_rendered.delete(view)
       }
     }
 
