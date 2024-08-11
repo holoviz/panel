@@ -1,10 +1,10 @@
 # Create Custom Layouts
 
-In this guide we will show you how to build custom, reusable layouts using [`JSComponent`](../../reference/panes/JSComponent.md) or [`ReactComponent`](../../reference/panes/ReactComponent.md).
+In this guide, we will demonstrate how to build custom, reusable layouts using [`JSComponent`](../../reference/panes/JSComponent.md) or [`ReactComponent`](../../reference/panes/ReactComponent.md).
 
-Please note that you currently cannot create layouts using the [`AnyWidgetComponent`](../../reference/panes/AnyWidgetComponent.md) because the underlying [`AnyWidget`](https://anywidget.dev/) API does not support this.
+Please note that it is currently not possible to create layouts using the [`AnyWidgetComponent`](../../reference/panes/AnyWidgetComponent.md), as the underlying [`AnyWidget`](https://anywidget.dev/) API does not support this.
 
-## Layout two objects
+## Layout Two Objects
 
 This example will show you how to create a *split* layout containing two objects. We will be using the [Split.js](https://split.js.org/) library.
 
@@ -77,7 +77,7 @@ split_js = SplitJS(
         language="python",
     ),
     right=pn.widgets.CodeEditor(
-        value="right",
+        value="Right",
         sizing_mode="stretch_both",
         margin=0,
         theme="monokai",
@@ -151,7 +151,7 @@ split_react = SplitReact(
         language="python",
     ),
     right=pn.widgets.CodeEditor(
-        value="right",
+        value="Right",
         sizing_mode="stretch_both",
         margin=0,
         theme="monokai",
@@ -167,7 +167,7 @@ split_react.servable()
 
 ::::
 
-Lets verify the layout will automatically update when the `object` is changed.
+Let's verify that the layout will automatically update when the `object` is changed.
 
 ::::{tab-set}
 
@@ -187,9 +187,9 @@ split_react.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `Cod
 
 :::
 
-Lets change it back:
-
 ::::
+
+Now, let's change it back:
 
 ::::{tab-set}
 
@@ -197,7 +197,7 @@ Lets change it back:
 
 ```{pyodide}
 split_js.right=pn.widgets.CodeEditor(
-    value="right",
+    value="Right",
     sizing_mode="stretch_both",
     margin=0,
     theme="monokai",
@@ -211,7 +211,7 @@ split_js.right=pn.widgets.CodeEditor(
 
 ```{pyodide}
 split_react.right=pn.widgets.CodeEditor(
-    value="right",
+    value="Right",
     sizing_mode="stretch_both",
     margin=0,
     theme="monokai",
@@ -225,7 +225,7 @@ split_react.right=pn.widgets.CodeEditor(
 
 ## Layout a List of Objects
 
-A Panel `Column` or `Row` works as a list of objects. It is *list-like*. In this section will show you how to create your own *list-like* layout using Panels `NamedListLike` class.
+A Panel `Column` or `Row` works as a list of objects. It is *list-like*. In this section, we will show you how to create your own *list-like* layout using Panel's `NamedListLike` class.
 
 ::::{tab-set}
 
@@ -285,7 +285,7 @@ pn.extension("codeeditor")
 
 grid_js = GridJS(
     pn.widgets.CodeEditor(
-        value="I love beat boxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
+        value="I love beatboxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
     ),
     pn.panel(
         "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
@@ -293,7 +293,7 @@ grid_js = GridJS(
         height=100,
     ),
     pn.widgets.CodeEditor(
-        value="Yes I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
+        value="Yes, I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
     ),
     styles={"border": "2px solid lightgray"},
     height=800,
@@ -302,8 +302,7 @@ grid_js = GridJS(
 ).servable()
 ```
 
-You must list `NamedListLike, JSComponent` in exactly that order when you define the class! The other
-way around `JSComponent, NamedListLike` will not work.
+You must list `NamedListLike, JSComponent` in exactly that order when you define the class! Reversing the order to `JSComponent, NamedListLike` will not work.
 
 :::
 
@@ -323,7 +322,9 @@ CSS = """
 }
 .gutter.gutter-vertical {
     background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
-    cursor: row-resize;
+
+
+ cursor: row-resize;
 }
 """
 
@@ -355,7 +356,7 @@ pn.extension("codeeditor")
 
 grid_react = GridReact(
     pn.widgets.CodeEditor(
-        value="I love beat boxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
+        value="I love beatboxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
     ),
     pn.panel(
         "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
@@ -363,7 +364,7 @@ grid_react = GridReact(
         height=100,
     ),
     pn.widgets.CodeEditor(
-        value="Yes I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
+        value="Yes, I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
     ),
     styles={"border": "2px solid lightgray"},
     height=800,
@@ -378,10 +379,10 @@ grid_react.servable()
 ::::
 
 :::{note}
-You must list `ListLike, ReactComponent` in exactly that order when you define the class! The other way around `ReactComponent, ListLike` will not work.
+You must list `NamedListLike, ReactComponent` in exactly that order when you define the class! Reversing the order to `ReactComponent, NamedListLike` will not work.
 :::
 
-You can now use `[...]` indexing and the `.append`, `.insert`, `pop`, ... methods that you would expect:
+You can now use `[...]` indexing and methods like `.append`, `.insert`, `pop`, etc., as you would expect:
 
 ::::{tab-set}
 
@@ -415,7 +416,7 @@ grid_react.append(
 
 ::::
 
-Lets remove it again:
+Let's remove it again:
 
 ::::{tab-set}
 
