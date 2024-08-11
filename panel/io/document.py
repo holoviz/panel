@@ -48,16 +48,9 @@ DISPATCH_EVENTS = (
     ModelChangedEvent, MessageSentEvent
 )
 GC_DEBOUNCE = 5
-_WRITE_LOCK = None
 _WRITE_FUTURES = weakref.WeakKeyDictionary()
 _WRITE_MSGS = weakref.WeakKeyDictionary()
 _WRITE_BLOCK = weakref.WeakKeyDictionary()
-
-def WRITE_LOCK():
-    global _WRITE_LOCK
-    if _WRITE_LOCK is None:
-        _WRITE_LOCK = asyncio.Lock()
-    return _WRITE_LOCK
 
 _panel_last_cleanup = None
 _write_tasks = []
@@ -148,15 +141,14 @@ async def _run_write_futures(doc):
     Ensure that all write_message calls are awaited and handled.
     """
     from tornado.websocket import WebSocketClosedError
-    async with WRITE_LOCK():
-        futures = _WRITE_FUTURES.pop(doc, [])
-        for future in futures:
-            try:
-                await future
-            except WebSocketClosedError:
-                logger.warning("Failed sending message as connection was closed")
-            except Exception as e:
-                logger.warning(f"Failed sending message due to following error: {e}")
+    futures = _WRITE_FUTURES.pop(doc, [])
+    for future in futures:
+        try:
+            await future
+        except WebSocketClosedError:
+            logger.warning("Failed sending message as connection was closed")
+        except Exception as e:
+            logger.warning(f"Failed sending message due to following error: {e}")
 
 def _dispatch_write_task(doc, func, *args, **kwargs):
     """
@@ -433,12 +425,13 @@ def unlocked() -> Iterator:
             else:
                 futures += dispatch_django(conn, dispatch_events)
 
-        if curdoc in _WRITE_FUTURES:
-            _WRITE_FUTURES[curdoc] += futures
-        else:
-            _WRITE_FUTURES[curdoc] = futures
 
         if futures:
+            if curdoc in _WRITE_FUTURES:
+                _WRITE_FUTURES[curdoc] += futures
+            else:
+                _WRITE_FUTURES[curdoc] = futures
+
             if state._unblocked(curdoc):
                 _dispatch_write_task(curdoc, _run_write_futures, curdoc)
             else:
