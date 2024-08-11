@@ -291,7 +291,7 @@ class Syncable(Renderable):
         """
 
     def _update_manual(self, *events: param.parameterized.Event) -> None:
-        for ref, (model, parent) in self._models.items():
+        for ref, (model, parent) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
@@ -927,7 +927,7 @@ class Reactive(Syncable, Viewable):
             Event(model=model, **event_kwargs)
 
         """
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
             event = Event(model=model, **event_kwargs)
@@ -1029,7 +1029,7 @@ class SyncableData(Reactive):
         self._processed, self._data = self._get_data()
         msg = {'data': self._data}
         named_events = {event.name: event for event in events}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update(named_events, msg, m.source, ref)
 
     @updating
@@ -1039,7 +1039,7 @@ class SyncableData(Reactive):
         indices = self.selection if indices is None else indices
         msg = {'indices': indices}
         named_events = {event.name: event for event in events}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update(named_events, msg, m.source.selected, ref)
 
     def _apply_stream(self, ref: str, model: Model, stream: 'DataDict', rollover: Optional[int]) -> None:
@@ -1052,7 +1052,7 @@ class SyncableData(Reactive):
     @updating
     def _stream(self, stream: 'DataDict', rollover: Optional[int] = None) -> None:
         self._processed, _ = self._get_data()
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
@@ -1074,7 +1074,7 @@ class SyncableData(Reactive):
 
     @updating
     def _patch(self, patch: 'Patches') -> None:
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
@@ -2176,7 +2176,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                              f"nodes include: {self._parser.nodes}.")
         self._event_callbacks[node][event].append(callback)
         events = self._get_events()
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update({}, {'events': events}, model, ref)
 
 __all__ = (
