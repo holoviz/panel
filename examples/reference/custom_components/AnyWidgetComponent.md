@@ -2,18 +2,16 @@
 
 Panel's `AnyWidgetComponent` class simplifies the creation of custom Panel components using the [`AnyWidget`](https://anywidget.dev/) JavaScript API.
 
-```{pyodide}
-import panel as pn
-import param
+This allows the Panel and Jupyter communities to collaborate and share JavaScript code for widgets.
 
+```{pyodide}
+import param
+import panel as pn
 from panel.custom import AnyWidgetComponent
 
 pn.extension()
 
-class CounterButton(AnyWidgetComponent):
-
-    value = param.Integer()
-
+class CounterWidget(AnyWidgetComponent):
     _esm = """
     function render({ model, el }) {
       let count = () => model.get("value");
@@ -30,24 +28,24 @@ class CounterButton(AnyWidgetComponent):
     }
     export default { render };
     """
+    value = param.Integer()
 
-CounterButton().servable()
+CounterWidget().servable()
 ```
 
 :::{note}
-Panel's `AnyWidgetComponent` supports using the [`AnyWidget`](https://anywidget.dev/) API on the JavaScript side and the [`param`](https://param.holoviz.org/) parameters API on the Python side.
 
-If you are looking to create custom components using Python and Panel component only, check out [`Viewer`](Viewer.md).
+The `AnyWidget` API currently does not support creating layouts of existing Panel components. In other words, you can use it to create widgets and panes but not layouts.
 
 :::
 
 ## API
 
-### AnyWidgetComponent Attributes
+### `AnyWidgetComponent` Attributes
 
 - **`_esm`** (str | PurePath): This attribute accepts either a string or a path that points to an [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules). The ECMAScript module should export a `default` object or function that returns an object. The object should contain a `render` function and optionally an `initialize` function. In a development environment such as a notebook or when using `--autoreload`, the module will automatically reload upon saving changes.
 - **`_importmap`** (dict | None): This optional dictionary defines an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap), allowing you to customize how module specifiers are resolved.
-- **`_stylesheets`** (optional list of strings): This optional attribute accepts a list of CSS strings or paths to CSS files. It supports automatic reloading in development environments.
+- **`_stylesheets`** (list[str] | list[PurePath]): This optional attribute accepts a list of CSS strings or paths to CSS files. It supports automatic reloading in development environments. It works similarly to the `AnyWidget` `_css` attribute.
 
 :::note
 
@@ -60,9 +58,9 @@ You may specify a path to a file as a string instead of a PurePath. The path sho
 The `_esm` `default` object must contain a `render` function. It accepts the following parameters:
 
 - **`model`**: Represents the parameters of the component and provides methods to `.get` values, `.set` values, and `.save_changes`.
-- **`el`**: The parent HTML element to append HTML elements to.
+- **`el`**: The parent HTML element to which HTML elements are appended.
 
-For more detail, see [`AnyWidget`](https://anywidget.dev/).
+For more details, see [`AnyWidget`](https://anywidget.dev/).
 
 ## Usage
 
@@ -71,17 +69,14 @@ For more detail, see [`AnyWidget`](https://anywidget.dev/).
 Include CSS within the `_stylesheets` attribute to style the component. The CSS is injected directly into the component's HTML.
 
 ```{pyodide}
-import panel as pn
 import param
+import panel as pn
 
 from panel.custom import AnyWidgetComponent
 
 pn.extension()
 
-class StyledCounterButton(AnyWidgetComponent):
-
-    value = param.Integer()
-
+class CounterWidget(AnyWidgetComponent):
     _esm = """
     function render({ model, el }) {
       let count = () => model.get("value");
@@ -98,24 +93,24 @@ class StyledCounterButton(AnyWidgetComponent):
     }
     export default { render };
     """
-
     _stylesheets = [
         """
-        button {
-            background: #0072B5;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        button:hover {
-            background: #4099da;
-        }
+        button { color: white; font-size: 1.75rem; background-color: #ea580c; padding: 0.5rem 1rem; border: none; border-radius: 0.25rem; }
+        button:hover { background-color: #9a3412; }
         """
     ]
+    value = param.Integer()
 
-StyledCounterButton().servable()
+CounterWidget().servable()
 ```
+
+:::{note}
+
+The `AnyWidget` will automatically add the CSS class `counter-widget` to the `el`.
+
+The `AnyWidgetComponent` does not add this class, but you can do it yourself via `el.classList.add("counter-widget");`.
+
+:::
 
 ## Dependency Imports
 
@@ -245,7 +240,7 @@ Serve the app with `panel serve counter_button.py --autoreload`.
 
 You can now edit the JavaScript or CSS file, and the changes will be automatically reloaded.
 
-- Try changing the `innerHTML` from `count is ${value()}` to `COUNT IS ${value()}` and observe the update. Note you must update `innerHTML` in two places.
+- Try changing the `innerHTML` from `count is ${value()}` to `COUNT IS ${value()}` and observe the update. Note that you must update `innerHTML` in two places.
 - Try changing the background color from `#0072B5` to `#008080`.
 
 ## React
