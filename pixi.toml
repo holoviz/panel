@@ -116,7 +116,7 @@ ipywidgets_bokeh = "*"
 numba = "*"
 reacton = "*"
 scipy = "*"
-textual = "*"
+textual = "<0.76" # Temporary fix
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
