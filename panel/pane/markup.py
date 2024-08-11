@@ -16,21 +16,15 @@ import param  # type: ignore
 
 from ..io.resources import CDN_DIST
 from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
-from ..util import HTML_SANITIZER, escape
+from ..util import HTML_SANITIZER, escape, prefix_length
 from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm  # type: ignore
-def prefix_length(a: str, b: str) -> int:
-    if a.startswith(b):
-        return len(b)
-    # Find the maximum prefix length using slicing
-    for i in range(len(b)):
-        if not a.startswith(b[:i + 1]):
-            return i
-    return len(b)
+
+
 class HTMLBasePane(ModelPane):
     """
     Baseclass for Panes which render HTML inside a Bokeh Div.
@@ -63,7 +57,6 @@ class HTMLBasePane(ModelPane):
                 model._property_values['text'] = model.text[:start]+patch
                 del props['text']
         model.update(**props)
-
 
 
 class HTML(HTMLBasePane):

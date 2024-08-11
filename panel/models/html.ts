@@ -58,11 +58,12 @@ export function run_scripts(node: Element): void {
   }
 }
 
-function throttle(func, limit) {
-  let lastFunc;
-  let lastRan;
+function throttle(func: Function, limit: number): any {
+  let lastFunc: number;
+  let lastRan: number;
 
-  return function(...args) {
+  return function(...args: any) {
+    // @ts-ignore
     const context = this;
 
     if (!lastRan) {
@@ -92,6 +93,7 @@ export class HTMLView extends PanelMarkupView {
 
     const {text, visible, events} = this.model.properties
     this.on_change(text, () => {
+      this._buffer = null
       const html = this.process_tex()
       this.set_html(html)
     })
@@ -114,7 +116,6 @@ export class HTMLView extends PanelMarkupView {
     }, 10)
     this.model.on_event(HTMLStreamEvent, (event: HTMLStreamEvent) => {
       const beginning = this._buffer == null ? this.model.text : this._buffer
-      console.log(event.patch, event.start)
       this._buffer = beginning.slice(0, event.start)+event.patch
       set_text()
     })

@@ -503,3 +503,12 @@ async def to_async_gen(sync_gen):
         if value is done:
             break
         yield value
+
+
+def prefix_length(a: str, b: str) -> int:
+    if a.startswith(b):
+        return len(b)
+    for i in range(len(b)):
+        if not a.startswith(b[:i + 1]):
+            return i
+    return len(b)
