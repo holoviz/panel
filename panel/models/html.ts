@@ -59,8 +59,8 @@ export function run_scripts(node: Element): void {
 }
 
 function throttle(func: Function, limit: number): any {
-  let lastFunc: number;
-  let lastRan: number;
+  let lastFunc: number
+  let lastRan: number
 
   return function(...args: any) {
     // @ts-ignore
