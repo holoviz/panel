@@ -32,13 +32,13 @@ class HTMLBasePane(ModelPane):
     the supported options like style and sizing_mode.
     """
 
-    stream = param.Boolean(default=True, doc="""
+    enable_streaming = param.Boolean(default=False, doc="""
         Whether to enable streaming of text snippets. This is useful
-        when updating a string step by step.""")
+        when updating a string step by step, e.g. in a chat message.""")
 
     _bokeh_model: ClassVar[Model] = _BkHTML
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text', 'stream': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text', 'enable_streaming': None}
 
     _updates: ClassVar[bool] = True
 
@@ -46,7 +46,7 @@ class HTMLBasePane(ModelPane):
 
     def _update(self, ref: str, model: Model) -> None:
         props = self._get_properties(model.document)
-        if self.stream and 'text' in props:
+        if self.enable_streaming and 'text' in props:
             text = props['text']
             start = prefix_length(model.text, text)
             model.run_scripts = False

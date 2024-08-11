@@ -91,7 +91,7 @@ def test_markdown_pane_visible_toggle(page):
 
 
 def test_markdown_pane_stream(page):
-    md = Markdown('Empty', stream=True)
+    md = Markdown('Empty', enable_streaming=True)
 
     serve_component(page, md)
 
