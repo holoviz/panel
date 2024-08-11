@@ -64,22 +64,22 @@ function throttle(func: Function, limit: number): any {
 
   return function(...args: any) {
     // @ts-ignore
-    const context = this;
+    const context = this
 
     if (!lastRan) {
-      func.apply(context, args);
-      lastRan = Date.now();
+      func.apply(context, args)
+      lastRan = Date.now()
     } else {
-      clearTimeout(lastFunc);
+      clearTimeout(lastFunc)
 
       lastFunc = setTimeout(function() {
         if ((Date.now() - lastRan) >= limit) {
-          func.apply(context, args);
-          lastRan = Date.now();
+          func.apply(context, args)
+          lastRan = Date.now()
         }
-      }, limit - (Date.now() - lastRan));
+      }, limit - (Date.now() - lastRan))
     }
-  };
+  }
 }
 
 export class HTMLView extends PanelMarkupView {
