@@ -48,14 +48,12 @@ class HTMLBasePane(ModelPane):
         props = self._get_properties(model.document)
         if self.enable_streaming and 'text' in props:
             text = props['text']
-            start = prefix_length(model.text, text)
+            start = prefix_length(text, model.text)
             model.run_scripts = False
-            n = len(text)
-            if n > len(model.text):
-                patch = text[start:]
-                self._send_event(HTMLStreamEvent, patch=patch, start=start)
-                model._property_values['text'] = model.text[:start]+patch
-                del props['text']
+            patch = text[start:]
+            self._send_event(HTMLStreamEvent, patch=patch, start=start)
+            model._property_values['text'] = model.text[:start]+patch
+            del props['text']
         model.update(**props)
 
 

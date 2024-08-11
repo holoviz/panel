@@ -506,9 +506,18 @@ async def to_async_gen(sync_gen):
 
 
 def prefix_length(a: str, b: str) -> int:
+    """
+    Searches for the length of overlap in the starting
+    characters of string b in a. Uses binary search
+    if b is not already a prefix of a.
+    """
     if a.startswith(b):
         return len(b)
-    for i in range(len(b)):
-        if not a.startswith(b[:i + 1]):
-            return i
-    return len(b)
+    left, right = 0, min(len(a), len(b))
+    while left < right:
+        mid = (left + right + 1) // 2
+        if a.startswith(b[:mid]):
+            left = mid
+        else:
+            right = mid - 1
+    return left
