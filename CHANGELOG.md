@@ -2,6 +2,59 @@
 
 ## Version 1.5.0
 
+### Features
+
+- Allow building custom ESM based JS and React components ([#5593](https://github.com/holoviz/panel/pull/5593))
+- Add `Placeholder` pane ([#6790](https://github.com/holoviz/panel/pull/6790))
+- Add `FileDropper` widget ([#6826](https://github.com/holoviz/panel/pull/6826))
+- Add `ChatStep` component to show/hide intermediate steps ([#6617](https://github.com/holoviz/panel/pull/6617))
+
+### Enhancements
+
+- Allow callbacks after append and stream ([#6805](https://github.com/holoviz/panel/pull/6805))
+- Enable directory uploads with FileInput ([#6808](https://github.com/holoviz/panel/pull/6808))
+- Make autoreload robust to syntax errors and empty apps ([#7028](https://github.com/holoviz/panel/pull/7028))
+- Add support for automatically determining optimal Tabulator page_size ([#6978](https://github.com/holoviz/panel/pull/6978))
+- Various typing improvements ([#7081](https://github.com/holoviz/panel/pull/7081), [#7092](https://github.com/holoviz/panel/pull/7092), [#7094](https://github.com/holoviz/panel/pull/7094), [#7132](https://github.com/holoviz/panel/pull/7132))
+- Display value for player ([#7060](https://github.com/holoviz/panel/pull/7060))
+- Optimize rendering and scrolling behavior of Feed ([#7101](https://github.com/holoviz/panel/pull/7101))
+- Implement support for multi-index columns in Tabulator ([#7108](https://github.com/holoviz/panel/pull/7108))
+- Add placeholder while loading to ChatFeed ([#7042](https://github.com/holoviz/panel/pull/7042))
+- Allow streaming chunks to HTML panes ([#7125](https://github.com/holoviz/panel/pull/7125))
+
+### Bug fixes
+
+- Ensure `Gauge` is responsively sized ([#7034](https://github.com/holoviz/panel/pull/7034))
+- Ensure `Tabulator` `sorters` are correctly synced ([#7036](https://github.com/holoviz/panel/pull/7036))
+- Ensure `Tabulator` `selection` is consistent across paginated, sorted and filtered states ([#7058](https://github.com/holoviz/panel/pull/7058))
+- Do not propagate clicks on input elements in `Card` header ([#7057](https://github.com/holoviz/panel/pull/7057))
+- Ensure `Tabulator` range selection applies to current view ([#7063](https://github.com/holoviz/panel/pull/7063))
+- Ensure `Tabulator.selection` is updated when indexes change ([#7066](https://github.com/holoviz/panel/pull/7066))
+- Ensure `Tabulator` can be updated with None value ([#7067](https://github.com/holoviz/panel/pull/7067))
+- Fix issues with PYTHONPATH in Jupyter Preview ([#7059](https://github.com/holoviz/panel/pull/7059))
+- Ensure `Tabulator` styling is correctly applied on multi-index ([#7075](https://github.com/holoviz/panel/pull/7075))
+- Fix various scrolling related Tabulator issues ([#7076](https://github.com/holoviz/panel/pull/7076))
+- Ensure `Tabulator` data is updated after filters are changed ([#7074](https://github.com/holoviz/panel/pull/7074))
+- Allow controlling `DataFrame` pane header and cell alignment ([#7082](https://github.com/holoviz/panel/pull/7082))
+- Highlight active page in `Tabulator` using Fast Design ([#7085](https://github.com/holoviz/panel/pull/7085))
+- Ensure follow behavior works when streaming to paginated `Tabulator` ([#7084](https://github.com/holoviz/panel/pull/7084))
+- Avoid events boomeranging from frontend ([#7093](https://github.com/holoviz/panel/pull/7093))
+- Correctly map `Tabulator` expanded indexes when paginated, filtered and sorted ([#7103](https://github.com/holoviz/panel/pull/7103))
+- Ensure custom `HoloViews` backends do not error out ([#7114](https://github.com/holoviz/panel/pull/7114))
+- Ensure events are always dispatched sequentially ([#7128](https://github.com/holoviz/panel/pull/7128))
+
+### Compatibility and Updates
+
+- Update to Bokeh 3.5
+- Update `Tabulator` to 6.2.1 ([#6840](https://github.com/holoviz/panel/pull/6840))
+- Update to latest Pyscript (2024.08.01) and Pyodide (0.26.2) ([#7016](https://github.com/holoviz/panel/pull/7016))
+- Add compatibility for latest Textual ([#7130](https://github.com/holoviz/panel/pull/7130))
+
+### Documentation
+
+- Update Tabulator.ipynb to show correct version number of Tabulator ([#7053](https://github.com/holoviz/panel/pull/7053))
+- Update jupyterlite version ([#7129](https://github.com/holoviz/panel/pull/7129))
+
 ### Deprecation and API Warnings
 
 - `PasswordInput` and `TextAreaInput` no longer inherit directly from `TextInput` ([#6593](https://github.com/holoviz/panel/pull/6593))
