@@ -206,7 +206,7 @@ class Plotly(ModelPane):
             msg['relayout'] = relayout_data
         if restyle_data:
             msg['restyle'] = {'data': restyle_data, 'traces': trace_indexes}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
 
     def _update_from_figure(self, event, *args, **kwargs):

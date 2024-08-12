@@ -385,6 +385,9 @@ class HoloViews(Pane):
                 'width': None,
                 'height': None
             }
+        else:
+            params = {}
+
         self._syncing_props = True
         try:
             self.param.update({k: v for k, v in params.items() if k not in self._overrides})
