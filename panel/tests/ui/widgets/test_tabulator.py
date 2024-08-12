@@ -2162,9 +2162,12 @@ def test_tabulator_streaming_no_follow(page):
     serve_component(page, widget)
 
     expect(page.locator('.tabulator-row')).to_have_count(len(df))
-    assert page.locator('text="-1"').count() == 2
+    expect(page.locator('text="-1"')).to_have_count(2)
 
     height_start = page.locator('.pnx-tabulator.tabulator').bounding_box()['height']
+
+    scroll_top = page.locator('.pnx-tabulator.tabulator').evaluate("(el) => el.scrollTop")
+    assert scroll_top == 0
 
     recs = []
     nrows2 = 5
@@ -2182,12 +2185,10 @@ def test_tabulator_streaming_no_follow(page):
     # Explicit wait to make sure the periodic callback has completed
     page.wait_for_timeout(500)
 
-    expect(page.locator('text="-1"')).to_have_count(2)
-    # As we're not in follow mode the last row isn't visible
-    # and seems to be out of reach to the selector. How visibility
-    # is used here seems brittle though, may need to be revisited.
-    expect(page.locator(f'text="{val[0]}"')).to_have_count(0)
+    scroll_top = page.locator('.pnx-tabulator.tabulator').evaluate("(el) => el.scrollTop")
+    assert scroll_top == 0
 
+    # Assert the data matches what we expect
     assert len(widget.value) == nrows1 + repetitions * nrows2
     assert widget.current_view.equals(widget.value)
 
