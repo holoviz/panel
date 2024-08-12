@@ -17,4 +17,4 @@ jupyter lite build
 
 cp -r node_modules/pyodide/ ../../lite/dist/pyodide
 mv pyodide-lock.json ../../lite/dist/pyodide/pyodide-lock.json
-mv ../../dist/* ../../lite/dist/pyodide/
+mv ../../dist/* ../../lite/dist/pyodide
