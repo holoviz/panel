@@ -32,7 +32,7 @@ linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
 mdit-py-plugins = "*"
-numpy = "<2.0" # Temporary pin until panel release with support for bokeh 3.5.0 is available
+numpy = "*"
 packaging = "*"
 pandas = ">=1.2"
 param = ">=2.1.0,<3.0"
