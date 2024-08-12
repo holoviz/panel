@@ -2,15 +2,6 @@
 
 set -euxo pipefail
 
-PACKAGE="panel"
-
-# python -m build -w .
-# VERSION=$(python -c "import $PACKAGE; print($PACKAGE._version.__version__)")
-# export VERSION
-
-# TODO: Make this a pixi feature/environment
-rm -rf lite
-mkdir lite
 python ./scripts/build_pyodide_wheels.py dist
 python ./scripts/panelite/generate_panelite_content.py
 
