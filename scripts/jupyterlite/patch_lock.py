@@ -36,16 +36,12 @@ for p in data["packages"].values():
 whl_files = glob("../../dist/*.whl")
 for whl_file in whl_files:
     name, version, *_ = parse_wheel_filename(os.path.basename(whl_file))
-    print(name, version)
 
     package = data["packages"][name]
     package["version"] = str(version)
     package["file_name"] = os.path.basename(whl_file)
     package["sha256"] = calculate_sha256(whl_file)
     package["imports"] = [name]
-
-# data["packages"]["hvplot"]["depends"].extend(["fastparquet"])
-# data["packages"]["holoviews"]["depends"].extend(["pyparsing"])
 
 
 with open(path, "w") as f:
