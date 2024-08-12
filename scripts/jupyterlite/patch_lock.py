@@ -3,6 +3,7 @@ import json
 import os.path
 
 from glob import glob
+from urllib.parse import urljoin
 
 from packaging.utils import parse_wheel_filename
 
@@ -29,7 +30,7 @@ with open(path) as f:
 
 for p in data["packages"].values():
     if not p["file_name"].startswith("http"):
-        p["file_name"] = os.path.join(url, p["file_name"])
+        p["file_name"] = urljoin(url, p["file_name"])
 
 
 # Special handling of holonote
