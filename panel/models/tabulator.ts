@@ -601,8 +601,8 @@ export class DataTabulatorView extends HTMLBoxView {
         this.tabulator.rowManager.renderEmptyScroll()
       }
       if (this.model.pagination != null) {
-	// Ensure that after filtering the page is updated
-	this.updatePage(this.tabulator.getPage())
+        // Ensure that after filtering the page is updated
+        this.updatePage(this.tabulator.getPage())
       }
     })
     this.tabulator.on("pageLoaded", (pageno: number) => {
@@ -782,8 +782,8 @@ export class DataTabulatorView extends HTMLBoxView {
         const row = lookup.get(index)
         const model = this.model.children.get(index)
         const view = model == null ? null : this._child_views.get(model)
-	if (view != null) {
-	  const render = (new_children as UIElementView[]).includes(view)
+        if (view != null) {
+          const render = (new_children as UIElementView[]).includes(view)
           this._render_row(row, false, render)
         }
       }
