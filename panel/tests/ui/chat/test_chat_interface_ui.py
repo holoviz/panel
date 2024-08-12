@@ -2,8 +2,10 @@ import pytest
 
 pytest.importorskip("playwright")
 
+from playwright.sync_api import expect
+
 from panel.chat import ChatInterface
-from panel.tests.util import serve_component, wait_until
+from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
@@ -13,9 +15,8 @@ def test_chat_interface_help(page):
         help_text="This is a test help text"
     )
     serve_component(page, chat_interface)
-    message = page.locator("p")
-    message_text = message.inner_text()
-    wait_until(lambda: message_text == "This is a test help text", page)
+
+    expect(page.locator("p")).to_have_text("This is a test help text")
 
 
 def test_chat_interface_custom_js(page):
@@ -38,7 +39,7 @@ def test_chat_interface_custom_js(page):
         page.locator("button", has_text="help").click()
         msg = msg_info.value
 
-    wait_until(lambda: msg.args[0].json_value() == "Typed: 'Hello'", page)
+    assert msg.args[0].json_value() == "Typed: 'Hello'"
 
 
 def test_chat_interface_custom_js_string(page):
@@ -58,4 +59,4 @@ def test_chat_interface_custom_js_string(page):
         page.locator("button", has_text="help").click()
         msg = msg_info.value
 
-    wait_until(lambda: msg.args[0].json_value() == "Clicked", page)
+    assert msg.args[0].json_value() == "Clicked"

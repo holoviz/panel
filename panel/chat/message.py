@@ -487,7 +487,7 @@ class ChatMessage(Pane):
                 pass
         else:
             if isinstance(old, Markdown) and isinstance(value, str):
-                self._set_params(old, object=value)
+                self._set_params(old, enable_streaming=True, object=value)
                 return old
             object_panel = _panel(value)
 

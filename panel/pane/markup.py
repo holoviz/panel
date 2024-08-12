@@ -15,14 +15,15 @@ from typing import (
 import param  # type: ignore
 
 from ..io.resources import CDN_DIST
-from ..models import HTML as _BkHTML, JSON as _BkJSON
-from ..util import HTML_SANITIZER, escape
+from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
+from ..util import HTML_SANITIZER, escape, prefix_length
 from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm  # type: ignore
+
 
 class HTMLBasePane(ModelPane):
     """
@@ -31,13 +32,29 @@ class HTMLBasePane(ModelPane):
     the supported options like style and sizing_mode.
     """
 
+    enable_streaming = param.Boolean(default=False, doc="""
+        Whether to enable streaming of text snippets. This is useful
+        when updating a string step by step, e.g. in a chat message.""")
+
     _bokeh_model: ClassVar[Model] = _BkHTML
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text', 'enable_streaming': None}
 
     _updates: ClassVar[bool] = True
 
     __abstract = True
+
+    def _update(self, ref: str, model: Model) -> None:
+        props = self._get_properties(model.document)
+        if self.enable_streaming and 'text' in props:
+            text = props['text']
+            start = prefix_length(text, model.text)
+            model.run_scripts = False
+            patch = text[start:]
+            self._send_event(HTMLStreamEvent, patch=patch, start=start)
+            model._property_values['text'] = model.text[:start]+patch
+            del props['text']
+        model.update(**props)
 
 
 class HTML(HTMLBasePane):
@@ -71,7 +88,7 @@ class HTML(HTMLBasePane):
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'sanitize_html': None, 'sanitize_hook': None
+        'sanitize_html': None, 'sanitize_hook': None, 'stream': None
     }
 
     _rerender_params: ClassVar[list[str]] = [
