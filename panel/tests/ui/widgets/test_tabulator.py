@@ -1129,6 +1129,8 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
 
     serve_component(page, widget)
 
+    page.wait_for_timeout(100)
+
     header = page.locator(f'text="{col_name}"')
     # Scroll to the right
     header.scroll_into_view_if_needed()
