@@ -1211,7 +1211,7 @@ class Tabulator(BaseTable):
 
     _manual_params: ClassVar[list[str]] = BaseTable._manual_params + _config_params
 
-    _priority_changes: ClassVar[list[str]] = ['data']
+    _priority_changes: ClassVar[list[str]] = ['data', 'filters']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
@@ -1559,6 +1559,8 @@ class Tabulator(BaseTable):
         return models
 
     def _update_children(self, *events):
+        if all(e.name in ('page', 'page_size', 'pagination', 'sorters') for e in events) and self.pagination != 'remote':
+            return
         for event in events:
             if event.name == 'value' and self._indexes_changed(event.old, event.new):
                 self.expanded = []
@@ -1630,7 +1632,7 @@ class Tabulator(BaseTable):
         page_events = ('page', 'page_size', 'sorters')
         if self._updating:
             return
-        elif events and all(e.name in page_events[:-1] for e in events) and self.pagination == 'local':
+        elif events and all(e.name in page_events for e in events) and self.pagination == 'local':
             return
         elif events and all(e.name in page_events for e in events) and not self.pagination:
             self._processed, _ = self._get_data()
