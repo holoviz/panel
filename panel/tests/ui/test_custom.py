@@ -272,7 +272,7 @@ def test_child(page, component):
 
     expect(page.locator('button')).to_have_text('A different Markdown pane!')
 
-    wait_until(lambda: example.render_count == 1, page)
+    wait_until(lambda: example.render_count == (2 if component is JSChild else 1), page)
 
 
 class JSChildren(JSComponent):

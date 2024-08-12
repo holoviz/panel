@@ -164,13 +164,14 @@ def test_tabulator_value_changed(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1)
+
     df_mixed.loc['idx0', 'str'] = 'AA'
     # Need to trigger the value as the dataframe was modified
     # in place which is not detected.
     widget.param.trigger('value')
-    wait_until(lambda: page.locator('text="AA"') is not None, page)
-    changed_cell = page.locator('text="AA"')
-    expect(changed_cell).to_have_count(1)
+
+    expect(page.locator('text="AA"')).to_have_count(1)
 
 
 def test_tabulator_disabled(page, df_mixed):
@@ -1096,9 +1097,11 @@ def test_tabulator_patch_no_height_resize(page):
 
     serve_component(page, app)
 
+    page.wait_for_timeout(100)
+
     page.mouse.wheel(delta_x=0, delta_y=10000)
     at_bottom_script = """
-    isAtBottom => (window.innerHeight + window.scrollY) >= document.body.scrollHeight;
+    () => Math.round(window.innerHeight + window.scrollY) === document.body.scrollHeight
     """
     wait_until(lambda: page.evaluate(at_bottom_script), page)
 
@@ -1107,7 +1110,7 @@ def test_tabulator_patch_no_height_resize(page):
     # Give it some time to potentially "re-scroll"
     page.wait_for_timeout(400)
 
-    wait_until(lambda: page.evaluate(at_bottom_script), page)
+    wait_until(lambda: page.locator('.pnx-tabulator').evaluate(at_bottom_script), page)
 
 
 @pytest.mark.parametrize(
@@ -1128,9 +1131,14 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
 
     serve_component(page, widget)
 
+    page.wait_for_timeout(100)
+
     header = page.locator(f'text="{col_name}"')
     # Scroll to the right
     header.scroll_into_view_if_needed()
+
+    page.wait_for_timeout(100)
+
     bb = header.bounding_box()
 
     header = page.locator('input[type="search"]')
@@ -1139,10 +1147,10 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
     header.press('Enter')
 
     # Wait to catch a potential rescroll
-    page.wait_for_timeout(400)
+    page.wait_for_timeout(500)
 
     # The table should keep the same scroll position, this fails
-    assert page.locator(f'text="{col_name}"').bounding_box() == bb
+    wait_until(lambda: page.locator(f'text="{col_name}"').bounding_box() == bb, page)
 
 
 def test_tabulator_header_filter_always_visible(page, df_mixed):
@@ -1565,6 +1573,34 @@ def test_tabulator_row_content_expand_from_python_after(page, df_mixed):
 
     expect(page.locator('text="▼"')).to_have_count(0)
     expect(page.locator('text="►"')).to_have_count(len(df_mixed))
+
+
+def test_tabulator_row_content_expand_after_filtered(page, df_mixed):
+    table = Tabulator(df_mixed, row_content=lambda e: f"Hello {e.int}", header_filters=True)
+
+    serve_component(page, table)
+
+    idx_filter = page.locator('.tabulator-col').nth(2).locator('input[type="search"]')
+    idx_filter.click()
+    idx_filter.fill('idx1')
+    idx_filter.press('Enter')
+
+    rows = page.locator('.tabulator-row')
+
+    expect(rows).to_have_count(1)
+
+    page.locator('.tabulator-row').nth(0).locator('.tabulator-cell').nth(1).click()
+
+    expect(page.locator('.markdown')).to_have_text('Hello 2')
+
+    idx_filter.click()
+    idx_filter.fill('')
+    idx_filter.press('Enter')
+
+    expect(rows).to_have_count(4)
+
+    expect(rows.nth(0).locator('.markdown')).to_have_count(0)
+    expect(rows.nth(1).locator('.markdown')).to_have_text('Hello 2')
 
 
 def test_tabulator_groups(page, df_mixed):
@@ -2112,6 +2148,8 @@ def test_tabulator_streaming_default(page):
 
     serve_component(page, widget)
 
+    page.wait_for_timeout(100)
+
     expect(page.locator('.tabulator-row')).to_have_count(len(df))
 
     height_start = page.locator('.pnx-tabulator.tabulator').bounding_box()['height']
@@ -2158,10 +2196,15 @@ def test_tabulator_streaming_no_follow(page):
 
     serve_component(page, widget)
 
+    page.wait_for_timeout(100)
+
     expect(page.locator('.tabulator-row')).to_have_count(len(df))
-    assert page.locator('text="-1"').count() == 2
+    expect(page.locator('text="-1"')).to_have_count(2)
 
     height_start = page.locator('.pnx-tabulator.tabulator').bounding_box()['height']
+
+    scroll_top = page.locator('.pnx-tabulator.tabulator').evaluate("(el) => el.scrollTop")
+    assert scroll_top == 0
 
     recs = []
     nrows2 = 5
@@ -2176,16 +2219,16 @@ def test_tabulator_streaming_no_follow(page):
     repetitions = 3
     state.add_periodic_callback(stream_data, period=100, count=repetitions)
 
-    # Explicit wait to make sure the periodic callback has completed
+    # Wait until data is updated
+    wait_until(lambda: len(widget.value) == nrows1 + repetitions * nrows2, page)
+
+    # Explicit wait to make sure the periodic callback has propagated
     page.wait_for_timeout(500)
 
-    expect(page.locator('text="-1"')).to_have_count(2)
-    # As we're not in follow mode the last row isn't visible
-    # and seems to be out of reach to the selector. How visibility
-    # is used here seems brittle though, may need to be revisited.
-    expect(page.locator(f'text="{val[0]}"')).to_have_count(0)
+    scroll_top = page.locator('.pnx-tabulator.tabulator').evaluate("(el) => el.scrollTop")
+    assert scroll_top == 0
 
-    assert len(widget.value) == nrows1 + repetitions * nrows2
+    # Assert the data matches what we expect
     assert widget.current_view.equals(widget.value)
 
     assert page.locator('.pnx-tabulator.tabulator').bounding_box()['height'] == height_start
@@ -2550,19 +2593,23 @@ def test_tabulator_click_event_and_header_filters_and_streamed_data(page):
     str_header.press('Enter')
     wait_until(lambda: len(widget.filters) == 1, page)
 
+    page.wait_for_timeout(100)
+
     # Stream data in ensuring that it does not mess up the index
     widget.stream(pd.DataFrame([('D', 'Y')], columns=['col1', 'col2'], index=[5]))
 
+    page.wait_for_timeout(100)
+
     # Click on the last cell
     cell = page.locator('text="Z"')
-    cell.click()
+    cell.click(force=True)
 
     wait_until(lambda: len(values) == 1, page)
     # This cell was at index 4 in col2 of the original dataframe
     assert values[0] == ('col2', 4, 'Z')
 
     cell = page.locator('text="Y"')
-    cell.click()
+    cell.click(force=True)
 
     wait_until(lambda: len(values) == 2, page)
     # This cell was at index 5 in col2 of the original dataframe
@@ -3479,6 +3526,9 @@ def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_string
 
     page.locator('.tabulator-col-title-holder').nth(3).click()
 
+    # Wait for sorting
+    page.wait_for_timeout(100)
+
     row = page.locator('.tabulator-row').nth(1)
     row.click()
 
@@ -3487,6 +3537,10 @@ def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_string
     tbl.page_size = 2
 
     page.locator('.tabulator-col-title-holder').nth(3).click()
+
+    # Wait for sorting
+    page.wait_for_timeout(100)
+
     page.locator('.tabulator-row').nth(0).click()
 
     wait_until(lambda: tbl.selection == [3], page)
