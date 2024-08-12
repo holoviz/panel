@@ -206,7 +206,7 @@ jobs:
           (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
       - name: Build JupyterLite
         shell: pixi run -e test-ui bash -el {0}
-        run: pixi run build-lite
+        run: pixi run lite-build
       - name: Wait for JupyterLab
         uses: ifaxity/wait-on-action@v1.2.1
         with:
