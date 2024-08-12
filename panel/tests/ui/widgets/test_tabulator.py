@@ -1131,6 +1131,9 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
     header = page.locator(f'text="{col_name}"')
     # Scroll to the right
     header.scroll_into_view_if_needed()
+
+    page.wait_for_timeout(100)
+
     bb = header.bounding_box()
 
     header = page.locator('input[type="search"]')
@@ -1139,10 +1142,10 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
     header.press('Enter')
 
     # Wait to catch a potential rescroll
-    page.wait_for_timeout(400)
+    page.wait_for_timeout(500)
 
     # The table should keep the same scroll position, this fails
-    assert page.locator(f'text="{col_name}"').bounding_box() == bb
+    wait_until(lambda: page.locator(f'text="{col_name}"').bounding_box() == bb, page)
 
 
 def test_tabulator_header_filter_always_visible(page, df_mixed):
@@ -3479,6 +3482,9 @@ def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_string
 
     page.locator('.tabulator-col-title-holder').nth(3).click()
 
+    # Wait for sorting
+    page.wait_for_timeout(100)
+
     row = page.locator('.tabulator-row').nth(1)
     row.click()
 
@@ -3487,6 +3493,10 @@ def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_string
     tbl.page_size = 2
 
     page.locator('.tabulator-col-title-holder').nth(3).click()
+
+    # Wait for sorting
+    page.wait_for_timeout(100)
+
     page.locator('.tabulator-row').nth(0).click()
 
     wait_until(lambda: tbl.selection == [3], page)
