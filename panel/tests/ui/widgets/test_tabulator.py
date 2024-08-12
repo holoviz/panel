@@ -2196,6 +2196,8 @@ def test_tabulator_streaming_no_follow(page):
 
     serve_component(page, widget)
 
+    page.wait_for_timeout(100)
+
     expect(page.locator('.tabulator-row')).to_have_count(len(df))
     expect(page.locator('text="-1"')).to_have_count(2)
 
