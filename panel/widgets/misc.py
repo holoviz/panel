@@ -61,7 +61,7 @@ class VideoStream(Widget):
         Triggers a snapshot of the current VideoStream state to sync
         the widget value.
         """
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             m.snapshot = not m.snapshot
             (self, root, doc, comm) = state._views[ref]
             if comm and 'embedded' not in root.tags:
