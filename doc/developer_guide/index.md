@@ -146,11 +146,11 @@ If you haven't set the environment flag in the command, a menu will help you sel
 Here's an example how you can pick a Python version and run some tests passing some pytest options through a pixi task:
 
 ```bash
-$ pixi run -e test-312 test-unit panel/tests/widgets/test_button.py -v --dist no -n 0
-✨ Pixi task (test-unit in test-312): pytest panel/tests -n logical --dist loadgroup panel/tests/widgets/test_button.py -v --dist no -n 0
+$ pixi run -e test-312 --verbose
+✨ Pixi task (test-unit in test-312): pytest panel/tests -n logical --dist loadgroup --verbose
 ```
 
-If you prefer you can also run `pytest` directly not using the pixi task:
+For more complicated options, you can run `pytest` directly, not using the pixi task:
 
 ```bash
 pixi run -e test-312 pytest panel/tests/widgets/test_button.py
