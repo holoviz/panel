@@ -1,15 +1,11 @@
 import pathlib
 
-import pytest
-
 from bokeh.models import ImportedStyleSheet
 
 from panel.io.resources import CDN_DIST
 from panel.theme.base import BOKEH_DARK, Design, Inherit
 from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
-
-pytestmark = pytest.mark.flaky(reruns=5, reruns_delay=10)
 
 
 class DesignTest(Design):
