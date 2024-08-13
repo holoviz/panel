@@ -82,12 +82,28 @@ def test_markdown_pane_visible_toggle(page):
 
     serve_component(page, md)
 
-    assert page.locator(".markdown").locator("div").text_content() == 'Initial\n'
-    assert not page.locator(".markdown").locator("div").is_visible()
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
+    expect(page.locator(".markdown").locator("div")).not_to_be_visible()
 
     md.visible = True
 
-    wait_until(lambda: page.locator(".markdown").locator("div").is_visible(), page)
+    expect(page.locator(".markdown").locator("div")).to_be_visible()
+
+
+def test_markdown_pane_stream(page):
+    md = Markdown('Empty', enable_streaming=True)
+
+    serve_component(page, md)
+
+    expect(page.locator('.markdown')).to_have_text('Empty')
+
+    md.object = ''
+    for i in range(1000):
+        md.object += str(i)
+
+    assert md.object == ''.join(map(str, range(1000)))
+    expect(page.locator('.markdown')).to_have_text(md.object)
+
 
 def test_html_model_no_stylesheet(page):
     # regression test for https://github.com/holoviz/holoviews/issues/5963

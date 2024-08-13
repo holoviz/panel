@@ -7,4 +7,4 @@ coverage:
         threshold: 0.5%
 
 comment:
-  require_changes: yes
+  require_changes: true
