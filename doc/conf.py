@@ -169,8 +169,9 @@ def get_requirements():
 
 nbsite_pyodide_conf = {
     'PYODIDE_URL': f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js',
+    'preamble': '<script type="esms-options">{"shimMode": true}</script>',
     'requirements': [bokeh_req, panel_req, 'pyodide-http'],
-    'requires': get_requirements()
+    'requires': get_requirements(),
 }
 
 templates_path += [
