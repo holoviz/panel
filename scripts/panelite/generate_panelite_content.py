@@ -17,7 +17,7 @@ PANEL_BASE = HERE.parent.parent
 EXAMPLES_DIR = PANEL_BASE / 'examples'
 LITE_FILES = PANEL_BASE / 'lite' / 'files'
 DOC_DIR = PANEL_BASE / 'doc'
-BASE_DEPENDENCIES = ['panel', 'pyodide-http']
+BASE_DEPENDENCIES = []
 MINIMUM_VERSIONS = {}
 
 INLINE_DIRECTIVE = re.compile('\{.*\}`.*`\s*')

@@ -116,6 +116,7 @@ include = ["panel"]
 
 [tool.hatch.build.targets.sdist]
 include = ["panel", "scripts", "examples"]
+exclude = ["scripts/jupyterlite"]
 
 [tool.hatch.build.targets.sdist.force-include]
 "panel/dist" = "panel/dist"
