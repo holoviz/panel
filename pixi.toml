@@ -142,7 +142,7 @@ packaging = "*"
 _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
-cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 5 --reruns-delay 20'
+cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10'
 depends_on = ["_install-ui"]
 
 # =============================================
