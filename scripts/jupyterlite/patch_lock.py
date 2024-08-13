@@ -32,7 +32,6 @@ for p in data["packages"].values():
         p["file_name"] = f'{url}/{p["file_name"]}'
 
 
-# Special handling of holonote
 whl_files = glob("../../dist/*.whl")
 for whl_file in whl_files:
     name, version, *_ = parse_wheel_filename(os.path.basename(whl_file))
