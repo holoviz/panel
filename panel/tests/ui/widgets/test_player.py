@@ -95,7 +95,7 @@ def test_player_visible_buttons(page):
     assert not page.is_visible(".faster")
 
     player.visible_buttons = ["first"]
-    wait_until(lambda: page.is_visible(".first"))
+    expect(page.locator(".first")).to_be_visible()
     assert not page.is_visible(".play")
     assert not page.is_visible(".pause")
 
@@ -109,7 +109,7 @@ def test_player_visible_loop_options(page):
     assert not page.is_visible(".reflect")
 
     player.visible_loop_options = ["reflect"]
-    wait_until(lambda: page.is_visible(".reflect"))
+    expect(page.locator(".reflect")).to_be_visible()
     assert not page.is_visible(".loop")
     assert not page.is_visible(".once")
 
