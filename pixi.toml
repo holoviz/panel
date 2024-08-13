@@ -23,18 +23,20 @@ lint = ["py311", "lint"]
 lite = ["py311", "lite"]
 
 [dependencies]
+nodejs = ">=18"
+nomkl = "*"
+pip = "*"
+# Required
 bleach = "*"
 bokeh = ">=3.5.0,<3.6.0"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
 mdit-py-plugins = "*"
-nodejs = ">=18"
-numpy = "<2.0" # Temporary pin until panel release with support for bokeh 3.5.0 is available
+numpy = "*"
 packaging = "*"
 pandas = ">=1.2"
 param = ">=2.1.0,<3.0"
-pip = "*"
 pyviz_comms = ">=2.0.0"
 requests = "*"
 tqdm = ">=4.48.0"
