@@ -70,6 +70,15 @@ class Player(Widget):
 
     height = Override(default=250)
 
+    scale_buttons = Float(1, help="Percentage to scale the size of the buttons by")
+
+    visible_buttons = List(String, default=[
+        'slower', 'first', 'previous', 'reverse', 'pause', 'play', 'next', 'last', 'faster'
+    ], help="The buttons to display on the player.")
+
+    visible_loop_options = List(String, default=[
+        'once', 'loop', 'reflect'
+    ], help="The loop options to display on the player.")
 
 class DiscretePlayer(Player):
 
