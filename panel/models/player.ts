@@ -37,8 +37,6 @@ export class PlayerView extends WidgetView {
   protected _toogle_pause: CallableFunction
   protected _toggle_play: CallableFunction
   protected _changing: boolean = false
-  protected slowerButton: HTMLButtonElement
-  protected fasterButton: HTMLButtonElement
 
   protected slower: HTMLButtonElement
   protected first: HTMLButtonElement
@@ -421,7 +419,7 @@ export class PlayerView extends WidgetView {
 
   slower_speed(): void {
     this.model.interval = Math.round(this.model.interval / 0.7)
-    this.updateSpeedButton(this.slowerButton, this.model.interval, SVG_STRINGS.slower)
+    this.updateSpeedButton(this.slower, this.model.interval, SVG_STRINGS.slower)
     if (this.model.direction > 0) {
       this.play_animation()
     } else if (this.model.direction < 0) {
@@ -431,7 +429,7 @@ export class PlayerView extends WidgetView {
 
   faster_speed(): void {
     this.model.interval = Math.round(this.model.interval * 0.7)
-    this.updateSpeedButton(this.fasterButton, this.model.interval, SVG_STRINGS.faster)
+    this.updateSpeedButton(this.faster, this.model.interval, SVG_STRINGS.faster)
     if (this.model.direction > 0) {
       this.play_animation()
     } else if (this.model.direction < 0) {
