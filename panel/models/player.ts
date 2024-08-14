@@ -5,56 +5,15 @@ import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
 import {to_string} from "@bokehjs/core/util/pretty"
 
 const SVG_STRINGS = {
-  slower: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-minus" width="12" \
- height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"\
-  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
-   fill="none"/><path d="M5 12l14 0" /></svg>',
-  first: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-track-prev-filled" \
- width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
-  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/>\
-   <path d="M20.341 4.247l-8 7a1 1 0 0 0 0 1.506l8 7c.647 .565 1.659 .106 1.659 -.753v-14c0 -.86 \
-    -1.012 -1.318 -1.659 -.753z" stroke-width="0" fill="currentColor" /><path d="M9.341 4.247l-8 7a1 \
-     1 0 0 0 0 1.506l8 7c.647 .565 1.659 .106 1.659 -.753v-14c0 -.86 -1.012 -1.318 -1.659 -.753z" \
-      stroke-width="0" fill="currentColor" /></svg>',
-  previous: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-skip-back-filled" \
- width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
-  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/> \
-   <path d="M19.496 4.136l-12 7a1 1 0 0 0 0 1.728l12 7a1 1 0 0 0 1.504 -.864v-14a1 1 0 0 0 -1.504 -.864z" \
-    stroke-width="0" fill="currentColor" /><path d="M4 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 1 -1.993 \
-     .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" stroke-width="0" fill="currentColor" /></svg>',
-  reverse: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-play-filled"\
- width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"\
-  stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);"><path stroke="none"\
-   d="M0 0h24v24H0z" fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13\
-    -8a1 1 0 0 0 -1.524 .852z" stroke-width="0" fill="currentColor" /></svg>',
-  pause: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-pause-filled" \
- width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
-  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
-   fill="none"/><path d="M9 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 \
-    0 0 -2 -2z" stroke-width="0" fill="currentColor" /><path d="M17 4h-2a2 2 0 0 0 -2 2v12a2 \
-     2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" stroke-width="0" fill="currentColor" /></svg>',
-  play: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-play-filled" \
- width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
-  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
-   fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 \
-    1 0 0 0 -1.524 .852z" stroke-width="0" fill="currentColor" /></svg>',
-  next: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-skip-forward-filled" \
- width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
-  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/> \
-  <path d="M3 5v14a1 1 0 0 0 1.504 .864l12 -7a1 1 0 0 0 0 -1.728l-12 -7a1 1 0 0 0 -1.504 .864z" \
-   stroke-width="0" fill="currentColor" /><path d="M20 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 \
-    1 -1.993 .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" stroke-width="0" fill="currentColor" /></svg>',
-  last: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-track-next-filled" \
- width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
-  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
-   fill="none"/><path d="M2 5v14c0 .86 1.012 1.318 1.659 .753l8 -7a1 1 0 0 0 0 -1.506l-8 \
-   -7c-.647 -.565 -1.659 -.106 -1.659 .753z" stroke-width="0" fill="currentColor" /><path \
-    d="M13 5v14c0 .86 1.012 1.318 1.659 .753l8 -7a1 1 0 0 0 0 -1.506l-8 -7c-.647 -.565 -1.659 \
-     -.106 -1.659 .753z" stroke-width="0" fill="currentColor" /></svg>',
-  faster: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" \
- width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
-  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
-   fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>',
+  slower: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-minus" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>',
+  first: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-track-prev-filled" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20.341 4.247l-8 7a1 1 0 0 0 0 1.506l8 7c.647 .565 1.659 .106 1.659 -.753v-14c0 -.86 -1.012 -1.318 -1.659 -.753z" stroke-width="0" fill="currentColor" /><path d="M9.341 4.247l-8 7a1 1 0 0 0 0 1.506l8 7c.647 .565 1.659 .106 1.659 -.753v-14c0 -.86 -1.012 -1.318 -1.659 -.753z" stroke-width="0" fill="currentColor" /></svg>',
+  previous: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-skip-back-filled" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19.496 4.136l-12 7a1 1 0 0 0 0 1.728l12 7a1 1 0 0 0 1.504 -.864v-14a1 1 0 0 0 -1.504 -.864z" stroke-width="0" fill="currentColor" /><path d="M4 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 1 -1.993 .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" stroke-width="0" fill="currentColor" /></svg>',
+  reverse: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-play-filled" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" stroke-width="0" fill="currentColor" /></svg>',
+  pause: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-pause-filled" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" stroke-width="0" fill="currentColor" /><path d="M17 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" stroke-width="0" fill="currentColor" /></svg>',
+  play: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-play-filled" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" stroke-width="0" fill="currentColor" /></svg>',
+  next: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-skip-forward-filled" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5v14a1 1 0 0 0 1.504 .864l12 -7a1 1 0 0 0 0 -1.728l-12 -7a1 1 0 0 0 -1.504 .864z" stroke-width="0" fill="currentColor" /><path d="M20 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 1 -1.993 .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" stroke-width="0" fill="currentColor" /></svg>',
+  last: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-track-next-filled" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M2 5v14c0 .86 1.012 1.318 1.659 .753l8 -7a1 1 0 0 0 0 -1.506l-8 -7c-.647 -.565 -1.659 -.106 -1.659 .753z" stroke-width="0" fill="currentColor" /><path d="M13 5v14c0 .86 1.012 1.318 1.659 .753l8 -7a1 1 0 0 0 0 -1.506l-8 -7c-.647 -.565 -1.659 -.106 -1.659 .753z" stroke-width="0" fill="currentColor" /></svg>',
+  faster: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>',
 }
 
 function press(btn_list: HTMLButtonElement[]): void {
@@ -81,10 +40,20 @@ export class PlayerView extends WidgetView {
   protected slowerButton: HTMLButtonElement
   protected fasterButton: HTMLButtonElement
 
+  protected slower: HTMLButtonElement
+  protected first: HTMLButtonElement
+  protected previous: HTMLButtonElement
+  protected reverse: HTMLButtonElement
+  protected pause: HTMLButtonElement
+  protected play: HTMLButtonElement
+  protected next: HTMLButtonElement
+  protected last: HTMLButtonElement
+  protected faster: HTMLButtonElement
+
   override connect_signals(): void {
     super.connect_signals()
 
-    const {title, value_align, direction, value, loop_policy, disabled, show_loop_controls, show_value} = this.model.properties
+    const {title, value_align, direction, value, loop_policy, disabled, show_loop_controls, show_value, scale_buttons, visible_buttons} = this.model.properties
     this.on_change(title, () => this.update_title_and_value())
     this.on_change(value_align, () => this.set_value_align())
     this.on_change(direction, () => this.set_direction())
@@ -99,7 +68,9 @@ export class PlayerView extends WidgetView {
       }
     })
     this.on_change(show_value, () => this.update_title_and_value())
-
+    this.on_change(scale_buttons, () => this.update_css())
+    this.on_change(visible_buttons, () => this.update_css())
+    this.on_change(this.model.properties.visible_loop_options, () => this.update_css())
   }
 
   toggle_disable() {
@@ -119,6 +90,58 @@ export class PlayerView extends WidgetView {
 
   get_height(): number {
     return 250
+  }
+
+  update_css(): void {
+    const button_style_small = `text-align: center; flex-grow: 1; margin: 2px; transform: scale(${this.model.scale_buttons}); max-width: 50px;`
+    const button_style = `text-align: center; flex-grow: 2; margin: 2px; transform: scale(${this.model.scale_buttons}); max-width: 50px;`;
+
+    const buttons = {
+      slower: this.slower,
+      first: this.first,
+      previous: this.previous,
+      reverse: this.reverse,
+      pause: this.pause,
+      play: this.play,
+      next: this.next,
+      last: this.last,
+      faster: this.faster
+    };
+
+    for (const [name, button] of Object.entries(buttons)) {
+      if (button) {
+        if (this.model.visible_buttons.includes(name)) {
+          button.style.display = ''; // Reset to default display
+          if (name === 'slower' || name === 'faster') {
+            button.style.cssText += button_style_small;
+          } else {
+            button.style.cssText += button_style;
+          }
+        } else {
+          button.style.display = 'none'; // Hide the button completely
+        }
+      }
+    }
+
+
+    for (const el of this.loop_state.children) {
+      if (el.tagName.toLowerCase() == "input") {
+        const anyEl = el as any
+        if (this.model.visible_loop_options.includes(anyEl.value)) {
+          anyEl.style.display = ''
+        } else {
+          anyEl.style.display = 'none'
+        }
+      }
+      else if (el.tagName.toLowerCase() == "label") {
+        const anyEl = el as any
+        if (this.model.visible_loop_options.includes(anyEl.innerHTML.toLowerCase())) {
+          anyEl.style.display = ''
+        } else {
+          anyEl.style.display = 'none'
+        }
+      }
+    }
   }
 
   override render(): void {
@@ -162,86 +185,62 @@ export class PlayerView extends WidgetView {
     this.buttonEl = button_div
     button_div.style.cssText = "margin: 0 auto; display: flex; padding: 5px; align-items: stretch; justify-content: center; width: 100%;"
 
-    const button_style_small = `text-align: center; flex-grow: 1; margin: 2px; transform: scale(${this.model.button_scale})`
-    const button_style = `text-align: center; flex-grow: 2; margin: 2px; transform: scale(${this.model.button_scale})`;
+    this.slower = document.createElement("button")
+    this.slower.innerHTML = SVG_STRINGS.slower
+    this.slower.onclick = () => this.slower_speed()
+    button_div.appendChild(this.slower)
 
-    const slower = document.createElement("button")
-    slower.classList.add("slower")
-    slower.style.cssText = button_style_small
-    slower.innerHTML = SVG_STRINGS.slower
-    slower.onclick = () => this.slower()
-    this.slowerButton = slower
-    button_div.appendChild(slower)
+    this.first = document.createElement("button")
+    this.first.innerHTML = SVG_STRINGS.first
+    this.first.onclick = () => this.first_frame()
+    button_div.appendChild(this.first)
 
-    const first = document.createElement("button")
-    first.classList.add("first")
-    first.style.cssText = button_style
-    first.innerHTML = SVG_STRINGS.first
-    first.onclick = () => this.first_frame()
-    button_div.appendChild(first)
+    this.previous = document.createElement("button")
+    this.previous.innerHTML = SVG_STRINGS.previous
+    this.previous.onclick = () => this.previous_frame()
+    button_div.appendChild(this.previous)
 
-    const previous = document.createElement("button")
-    previous.classList.add("previous")
-    previous.style.cssText = button_style
-    previous.innerHTML = SVG_STRINGS.previous
-    previous.onclick = () => this.previous_frame()
-    button_div.appendChild(previous)
+    this.reverse = document.createElement("button")
+    this.reverse.innerHTML = SVG_STRINGS.reverse
+    this.reverse.onclick = () => this.reverse_animation()
+    button_div.appendChild(this.reverse)
 
-    const reverse = document.createElement("button")
-    reverse.classList.add("reverse")
-    reverse.style.cssText = button_style
-    reverse.innerHTML = SVG_STRINGS.reverse
-    reverse.onclick = () => this.reverse_animation()
-    button_div.appendChild(reverse)
+    this.pause = document.createElement("button")
+    this.pause.innerHTML = SVG_STRINGS.pause
+    this.pause.onclick = () => this.pause_animation()
+    button_div.appendChild(this.pause)
 
-    const pause = document.createElement("button")
-    pause.classList.add("pause")
-    pause.style.cssText = button_style
-    pause.innerHTML = SVG_STRINGS.pause
-    pause.onclick = () => this.pause_animation()
-    button_div.appendChild(pause)
+    this.play = document.createElement("button")
+    this.play.innerHTML = SVG_STRINGS.play
+    this.play.onclick = () => this.play_animation()
+    button_div.appendChild(this.play)
+    this.next = document.createElement("button")
+    this.next.innerHTML = SVG_STRINGS.next
+    this.next.onclick = () => this.next_frame()
+    button_div.appendChild(this.next)
 
-    const play = document.createElement("button")
-    play.classList.add("play")
-    play.style.cssText = button_style
-    play.innerHTML = SVG_STRINGS.play
-    play.onclick = () => this.play_animation()
-    button_div.appendChild(play)
+    this.last = document.createElement("button")
+    this.last.innerHTML = SVG_STRINGS.last
+    this.last.onclick = () => this.last_frame()
+    button_div.appendChild(this.last)
 
-    const next = document.createElement("button")
-    next.classList.add("next")
-    next.style.cssText = button_style
-    next.innerHTML = SVG_STRINGS.next
-    next.onclick = () => this.next_frame()
-    button_div.appendChild(next)
-
-    const last = document.createElement("button")
-    last.classList.add("last")
-    last.style.cssText = button_style
-    last.innerHTML = SVG_STRINGS.last
-    last.onclick = () => this.last_frame()
-    button_div.appendChild(last)
-
-    const faster = document.createElement("button")
-    faster.classList.add("faster")
-    faster.style.cssText = button_style_small
-    faster.innerHTML = SVG_STRINGS.faster
-    faster.onclick = () => this.faster()
-    this.fasterButton = faster
-    button_div.appendChild(faster)
+    this.faster = document.createElement("button")
+    this.faster.innerHTML = SVG_STRINGS.faster
+    this.faster.onclick = () => this.faster_speed()
+    button_div.appendChild(this.faster)
 
     // toggle
     this._toggle_reverse = () => {
-      unpress([pause, play])
-      press([reverse])
+      unpress([this.pause, this.play])
+      press([this.reverse])
     }
     this._toogle_pause = () => {
-      unpress([reverse, play])
-      press([pause])
+      unpress([this.reverse, this.play])
+      press([this.pause])
     }
     this._toggle_play = () => {
-      unpress([reverse, pause])
-      press([play])
+      unpress([this.reverse, this.pause])
+      press([this.play])
     }
 
     // Loop control
@@ -296,6 +295,7 @@ export class PlayerView extends WidgetView {
     }
 
     this.toggle_disable()
+    this.update_css()
     this.shadow_el.appendChild(this.groupEl)
   }
 
@@ -405,7 +405,7 @@ export class PlayerView extends WidgetView {
     }, this.model.preview_duration) // Show for 1.5 seconds
   }
 
-  slower(): void {
+  slower_speed(): void {
     this.model.interval = Math.round(this.model.interval / 0.7)
     this.updateSpeedButton(this.slowerButton, this.model.interval, SVG_STRINGS.slower)
     if (this.model.direction > 0) {
@@ -415,7 +415,7 @@ export class PlayerView extends WidgetView {
     }
   }
 
-  faster(): void {
+  faster_speed(): void {
     this.model.interval = Math.round(this.model.interval * 0.7)
     this.updateSpeedButton(this.fasterButton, this.model.interval, SVG_STRINGS.faster)
     if (this.model.direction > 0) {
@@ -524,6 +524,9 @@ export namespace Player {
     show_loop_controls: p.Property<boolean>
     show_value: p.Property<boolean>
     button_scale: p.Property<number>
+    scale_buttons: p.Property<number>
+    visible_buttons: p.Property<string[]>
+    visible_loop_options: p.Property<string[]>
   }
 }
 
@@ -542,7 +545,7 @@ export class Player extends Widget {
   static {
     this.prototype.default_view = PlayerView
 
-    this.define<Player.Props>(({Bool, Int, Str, Float}) => ({
+    this.define<Player.Props>(({Bool, Int, Float, List, Str}) => ({
       direction: [Int, 0],
       interval: [Int, 500],
       start: [Int, 0],
@@ -556,7 +559,10 @@ export class Player extends Widget {
       preview_duration: [Int, 1500],
       show_loop_controls: [Bool, true],
       show_value: [Bool, true],
-      button_scale: [Float, 1]
+      button_scale: [Float, 1],
+      scale_buttons: [Float, 1],
+      visible_buttons: [List(Str), ['slower', 'first', 'previous', 'reverse', 'pause', 'play', 'next', 'last', 'faster']],
+      visible_loop_options: [List(Str), ['once', 'loop', 'reflect']]
     }))
 
     this.override<Player.Props>({width: 400})

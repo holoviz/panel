@@ -58,10 +58,18 @@ class PlayerBase(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    button_scale = param.Number(default=1, doc="""
+    scale_buttons = param.Number(default=1, doc="""
         Percentage to scale the size of the buttons by.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    visible_buttons = param.List(default=[
+        'slower', 'first', 'previous', 'reverse', 'pause', 'play', 'next', 'last', 'faster'
+    ], doc="""The buttons to display on the player.""")
+
+    visible_loop_options = param.List(default=[
+        'once', 'loop', 'reflect'
+    ], doc="The loop options to display on the player.")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': "title"}
 
     _widget_type: ClassVar[type[Model]] = _BkPlayer
 
@@ -70,6 +78,9 @@ class PlayerBase(Widget):
     __abstract = True
 
     def __init__(self, **params):
+        if params.get("loop_policy", "once") not in params["visible_loop_options"]:
+            if loop_options := params.get("visible_loop_options", []):
+                params["loop_policy"] = loop_options[0]
         if 'value' in params and 'value_throttled' in self.param:
             params['value_throttled'] = params['value']
         super().__init__(**params)
