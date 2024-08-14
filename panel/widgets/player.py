@@ -58,6 +58,9 @@ class PlayerBase(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    button_scale = param.Number(default=1, doc="""
+        Percentage to scale the size of the buttons by.""")
+
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     _widget_type: ClassVar[type[Model]] = _BkPlayer

@@ -5,54 +5,54 @@ import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
 import {to_string} from "@bokehjs/core/util/pretty"
 
 const SVG_STRINGS = {
-  slower: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-minus" width="24" \
- height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"\
+  slower: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-minus" width="12" \
+ height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"\
   stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
    fill="none"/><path d="M5 12l14 0" /></svg>',
   first: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-track-prev-filled" \
- width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+ width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
   stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/>\
    <path d="M20.341 4.247l-8 7a1 1 0 0 0 0 1.506l8 7c.647 .565 1.659 .106 1.659 -.753v-14c0 -.86 \
     -1.012 -1.318 -1.659 -.753z" stroke-width="0" fill="currentColor" /><path d="M9.341 4.247l-8 7a1 \
      1 0 0 0 0 1.506l8 7c.647 .565 1.659 .106 1.659 -.753v-14c0 -.86 -1.012 -1.318 -1.659 -.753z" \
       stroke-width="0" fill="currentColor" /></svg>',
   previous: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-skip-back-filled" \
- width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+ width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
   stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/> \
    <path d="M19.496 4.136l-12 7a1 1 0 0 0 0 1.728l12 7a1 1 0 0 0 1.504 -.864v-14a1 1 0 0 0 -1.504 -.864z" \
     stroke-width="0" fill="currentColor" /><path d="M4 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 1 -1.993 \
      .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" stroke-width="0" fill="currentColor" /></svg>',
   reverse: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-play-filled"\
- width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"\
+ width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"\
   stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);"><path stroke="none"\
    d="M0 0h24v24H0z" fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13\
     -8a1 1 0 0 0 -1.524 .852z" stroke-width="0" fill="currentColor" /></svg>',
   pause: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-pause-filled" \
- width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+ width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
   stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
    fill="none"/><path d="M9 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 \
     0 0 -2 -2z" stroke-width="0" fill="currentColor" /><path d="M17 4h-2a2 2 0 0 0 -2 2v12a2 \
      2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" stroke-width="0" fill="currentColor" /></svg>',
   play: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-play-filled" \
- width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+ width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
   stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
    fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 \
     1 0 0 0 -1.524 .852z" stroke-width="0" fill="currentColor" /></svg>',
   next: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-skip-forward-filled" \
- width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+ width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
   stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/> \
   <path d="M3 5v14a1 1 0 0 0 1.504 .864l12 -7a1 1 0 0 0 0 -1.728l-12 -7a1 1 0 0 0 -1.504 .864z" \
    stroke-width="0" fill="currentColor" /><path d="M20 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 \
     1 -1.993 .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" stroke-width="0" fill="currentColor" /></svg>',
   last: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-track-next-filled" \
- width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+ width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
   stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
    fill="none"/><path d="M2 5v14c0 .86 1.012 1.318 1.659 .753l8 -7a1 1 0 0 0 0 -1.506l-8 \
    -7c-.647 -.565 -1.659 -.106 -1.659 .753z" stroke-width="0" fill="currentColor" /><path \
     d="M13 5v14c0 .86 1.012 1.318 1.659 .753l8 -7a1 1 0 0 0 0 -1.506l-8 -7c-.647 -.565 -1.659 \
      -.106 -1.659 .753z" stroke-width="0" fill="currentColor" /></svg>',
   faster: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" \
- width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+ width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
   stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
    fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>',
 }
@@ -160,10 +160,10 @@ export class PlayerView extends WidgetView {
     // Buttons
     const button_div = div() as any
     this.buttonEl = button_div
-    button_div.style.cssText = "margin: 0 auto; display: flex; padding: 5px; align-items: stretch; width: 100%;"
+    button_div.style.cssText = "margin: 0 auto; display: flex; padding: 5px; align-items: stretch; justify-content: center; width: 100%;"
 
-    const button_style_small = "text-align: center; min-width: 50px; flex-grow: 1; margin: 2px"
-    const button_style = "text-align: center; min-width: 50px; flex-grow: 2; margin: 2px"
+    const button_style_small = `text-align: center; flex-grow: 1; margin: 2px; transform: scale(${this.model.button_scale})`
+    const button_style = `text-align: center; flex-grow: 2; margin: 2px; transform: scale(${this.model.button_scale})`;
 
     const slower = document.createElement("button")
     slower.classList.add("slower")
@@ -523,6 +523,7 @@ export namespace Player {
     preview_duration: p.Property<number>
     show_loop_controls: p.Property<boolean>
     show_value: p.Property<boolean>
+    button_scale: p.Property<number>
   }
 }
 
@@ -541,7 +542,7 @@ export class Player extends Widget {
   static {
     this.prototype.default_view = PlayerView
 
-    this.define<Player.Props>(({Bool, Int, Str}) => ({
+    this.define<Player.Props>(({Bool, Int, Str, Float}) => ({
       direction: [Int, 0],
       interval: [Int, 500],
       start: [Int, 0],
@@ -555,6 +556,7 @@ export class Player extends Widget {
       preview_duration: [Int, 1500],
       show_loop_controls: [Bool, true],
       show_value: [Bool, true],
+      button_scale: [Float, 1]
     }))
 
     this.override<Player.Props>({width: 400})
