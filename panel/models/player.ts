@@ -78,6 +78,8 @@ export class PlayerView extends WidgetView {
   protected _toogle_pause: CallableFunction
   protected _toggle_play: CallableFunction
   protected _changing: boolean = false
+  protected slowerButton: HTMLButtonElement
+  protected fasterButton: HTMLButtonElement
 
   override connect_signals(): void {
     super.connect_signals()
@@ -160,61 +162,72 @@ export class PlayerView extends WidgetView {
     this.buttonEl = button_div
     button_div.style.cssText = "margin: 0 auto; display: flex; padding: 5px; align-items: stretch; width: 100%;"
 
-    const button_style_small = "text-align: center; min-width: 20px; flex-grow: 1; margin: 2px"
-    const button_style = "text-align: center; min-width: 40px; flex-grow: 2; margin: 2px"
+    const button_style_small = "text-align: center; min-width: 50px; flex-grow: 1; margin: 2px"
+    const button_style = "text-align: center; min-width: 50px; flex-grow: 2; margin: 2px"
 
     const slower = document.createElement("button")
+    slower.classList.add("slower")
     slower.style.cssText = button_style_small
     slower.innerHTML = SVG_STRINGS.slower
     slower.onclick = () => this.slower()
+    this.slowerButton = slower
     button_div.appendChild(slower)
 
     const first = document.createElement("button")
+    first.classList.add("first")
     first.style.cssText = button_style
     first.innerHTML = SVG_STRINGS.first
     first.onclick = () => this.first_frame()
     button_div.appendChild(first)
 
     const previous = document.createElement("button")
+    previous.classList.add("previous")
     previous.style.cssText = button_style
     previous.innerHTML = SVG_STRINGS.previous
     previous.onclick = () => this.previous_frame()
     button_div.appendChild(previous)
 
     const reverse = document.createElement("button")
+    reverse.classList.add("reverse")
     reverse.style.cssText = button_style
     reverse.innerHTML = SVG_STRINGS.reverse
     reverse.onclick = () => this.reverse_animation()
     button_div.appendChild(reverse)
 
     const pause = document.createElement("button")
+    pause.classList.add("pause")
     pause.style.cssText = button_style
     pause.innerHTML = SVG_STRINGS.pause
     pause.onclick = () => this.pause_animation()
     button_div.appendChild(pause)
 
     const play = document.createElement("button")
+    play.classList.add("play")
     play.style.cssText = button_style
     play.innerHTML = SVG_STRINGS.play
     play.onclick = () => this.play_animation()
     button_div.appendChild(play)
 
     const next = document.createElement("button")
+    next.classList.add("next")
     next.style.cssText = button_style
     next.innerHTML = SVG_STRINGS.next
     next.onclick = () => this.next_frame()
     button_div.appendChild(next)
 
     const last = document.createElement("button")
+    last.classList.add("last")
     last.style.cssText = button_style
     last.innerHTML = SVG_STRINGS.last
     last.onclick = () => this.last_frame()
     button_div.appendChild(last)
 
     const faster = document.createElement("button")
+    faster.classList.add("faster")
     faster.style.cssText = button_style_small
     faster.innerHTML = SVG_STRINGS.faster
     faster.onclick = () => this.faster()
+    this.fasterButton = faster
     button_div.appendChild(faster)
 
     // toggle
@@ -384,8 +397,17 @@ export class PlayerView extends WidgetView {
     this.set_frame(this.model.end)
   }
 
+  updateSpeedButton(button: HTMLButtonElement, interval: number, originalSVG: string): void {
+    const fps = 1000 / interval
+    button.innerHTML = `${fps.toFixed(1)}<br>fps`
+    setTimeout(() => {
+      button.innerHTML = originalSVG
+    }, this.model.preview_duration) // Show for 1.5 seconds
+  }
+
   slower(): void {
     this.model.interval = Math.round(this.model.interval / 0.7)
+    this.updateSpeedButton(this.slowerButton, this.model.interval, SVG_STRINGS.slower)
     if (this.model.direction > 0) {
       this.play_animation()
     } else if (this.model.direction < 0) {
@@ -395,6 +417,7 @@ export class PlayerView extends WidgetView {
 
   faster(): void {
     this.model.interval = Math.round(this.model.interval * 0.7)
+    this.updateSpeedButton(this.fasterButton, this.model.interval, SVG_STRINGS.faster)
     if (this.model.direction > 0) {
       this.play_animation()
     } else if (this.model.direction < 0) {
@@ -497,6 +520,7 @@ export namespace Player {
     value: p.Property<any>
     value_align: p.Property<string>
     value_throttled: p.Property<any>
+    preview_duration: p.Property<number>
     show_loop_controls: p.Property<boolean>
     show_value: p.Property<boolean>
   }
@@ -528,6 +552,7 @@ export class Player extends Widget {
       value: [Int, 0],
       value_align: [Str, "start"],
       value_throttled: [Int, 0],
+      preview_duration: [Int, 1500],
       show_loop_controls: [Bool, true],
       show_value: [Bool, true],
     }))

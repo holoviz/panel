@@ -59,6 +59,10 @@ class Player(Widget):
     show_loop_controls = Bool(True, help="""Whether the loop controls
         radio buttons are shown""")
 
+    preview_duration = Int(1500, help="""
+        Duration (in milliseconds) for showing the current FPS when clicking
+        the slower/faster buttons, before reverting to the icon.""")
+
     show_value = Bool(True, help="""
         Whether to show the widget value""")
 
