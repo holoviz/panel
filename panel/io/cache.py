@@ -15,7 +15,6 @@ import sys
 import threading
 import time
 import unittest.mock
-import weakref
 
 from contextlib import contextmanager
 from typing import (
@@ -50,7 +49,7 @@ _FFI_TYPE_NAMES = ("_cffi_backend.FFI", "builtins.CompiledFFI",)
 
 _HASH_MAP: dict[Hashable, str] = {}
 
-_HASH_STACKS = weakref.WeakKeyDictionary()
+# _HASH_STACKS = weakref.WeakKeyDictionary()
 
 _INDETERMINATE = type('INDETERMINATE', (object,), {})()
 
@@ -187,7 +186,7 @@ _hash_funcs = {
 }
 
 for name in _FFI_TYPE_NAMES:
-    _hash_funcs[name] = b'0'
+    _hash_funcs[name] = lambda obj: b'0'
 
 def _find_hash_func(obj):
     fqn_type = _get_fqn(obj)

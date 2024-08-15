@@ -194,7 +194,7 @@ def profiling_tabs(state, allow=None, deny=[]):
 
 
 @contextmanager
-def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[list[Profile | bytes]]:
+def profile_ctx(engine: ProfilingEngine | None = 'pyinstrument') -> Iterator[list[Profile | bytes]]:
     """
     A context manager which profiles the body of the with statement
     with the supplied profiling engine and returns the profiling object
