@@ -1,7 +1,6 @@
 import type * as p from "@bokehjs/core/properties"
 import {HTMLView, HTML} from "./html"
 
-
 export class MySTView extends HTMLView {
   declare model: MyST
 
