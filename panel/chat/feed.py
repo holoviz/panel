@@ -843,22 +843,23 @@ class ChatFeed(ListPanel):
             Additional parameters to pass to the submit button.
         """
         async def _prepare_prompt(*_) -> None:
-            button_params = button_params or {}
-            if "name" not in button_params:
-                button_params["name"] = "Submit"
-            submit_button = Button(**button_params)
+            input_button_params = button_params or {}
+            if "name" not in input_button_params:
+                input_button_params["name"] = "Submit"
+            submit_button = Button(**input_button_params)
+
             form = WidgetBox(component, submit_button)
             if "user" not in send_kwargs:
                 send_kwargs["user"] = "Assistant"
             self.send(form, respond=False, **send_kwargs)
 
-            for _ in range(timeout):
+            for _ in range(timeout * 2):  # sleeping for 0.5 seconds
                 is_fulfilled = predicate(component) if predicate else True
                 submit_button.disabled = not is_fulfilled
                 if submit_button.clicks > 0:
                     form.disabled = True
                     return callback(component, self)
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.5)
             else:
                 self.send("Prompt timed out.", user="Prompt", respond=False)
 
