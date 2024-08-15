@@ -1313,6 +1313,17 @@ class TestChatFeedSerializeForTransformers:
         chat_feed.send(Test())
         assert chat_feed.serialize() == [{"role": "user", "content": "Test()"}]
 
+    def test_serialize_kwargs(self, chat_feed):
+        chat_feed.send("Hello")
+        chat_feed.add_step("Hello", "World")
+        assert chat_feed.serialize(
+            prefix_with_container_label=False,
+            prefix_with_viewable_label=False
+        ) == [
+            {'role': 'user', 'content': 'Hello'},
+            {'role': 'user', 'content': '((Hello))'}
+        ]
+
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeBase:
