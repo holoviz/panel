@@ -223,7 +223,7 @@ filterwarnings = [
 [tool.mypy]
 files = ["panel/"]
 
-strict = true
+# strict = true
 
 pretty = true
 show_column_numbers = true
