@@ -4,9 +4,16 @@ import {HTMLView, HTML} from "./html"
 export class MySTView extends HTMLView {
   declare model: MyST
 
+  override set_html(html: string | null): void {
+    super.set_html(html)
+    for (const el of this.container.querySelectorAll("pre code")) {
+      (window as any).hljs.highlightElement(el)
+    }
+  }
+
   override process_tex(): string {
-    const myst = new (window as any).mystjs.MyST()
-    const text = myst.render(this.model.text)
+    const parsed = (window as any).mystparser.mystParse(this.model.text)
+    const text = (window as any).myst2html.mystToHtml(parsed)
     if (this.model.disable_math || !this.contains_tex(text)) {
       return text
     }

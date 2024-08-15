@@ -182,7 +182,7 @@ calls it with the rendered model.
       console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
       element.textContent = `
       import ${name} from "${url}"
-      window.${name} = ${name}
+      window.${name.replace('* as ', '')} = ${name.replace('* as ', '')}
       window._bokeh_on_load()
       `
       document.head.appendChild(element);

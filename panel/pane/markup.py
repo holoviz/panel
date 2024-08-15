@@ -365,7 +365,7 @@ class Markdown(HTMLBasePane):
         Additional markdown-it-py plugins to use.""")
 
     renderer = param.Selector(default='markdown-it', objects=[
-        'markdown-it', 'myst', 'markdown', 'myst-client'], doc="""
+        'markdown-it', 'myst', 'markdown', 'mystjs'], doc="""
         Markdown renderer implementation.""")
 
     renderer_options = param.Dict(default={}, nested_refs=True, doc="""
