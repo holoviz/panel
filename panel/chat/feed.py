@@ -938,7 +938,8 @@ class ChatFeed(ListPanel):
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
         default_role: str | None = "assistant",
-        custom_serializer: Callable = None
+        custom_serializer: Callable | None = None,
+        **serialize_kwargs
     ) -> list[dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
@@ -978,7 +979,7 @@ class ChatFeed(ListPanel):
                         f"it returned a {type(content)} type"
                     )
             else:
-                content = str(message)
+                content = message.serialize(**serialize_kwargs)
 
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages
