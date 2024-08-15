@@ -206,6 +206,7 @@ class TestChatFeed:
         assert len(chat_feed) == 1
         message = chat_feed.objects[0]
         assert isinstance(message, ChatMessage)
+        assert message.user == "Assistant"
 
         steps = message.object
         assert isinstance(steps, Column)
@@ -278,7 +279,7 @@ class TestChatFeed:
         assert len(chat_feed) == 2
         message1 = chat_feed.objects[0]
         assert isinstance(message1, ChatMessage)
-        assert message1.user == "User"
+        assert message1.user == "Assistant"
         steps1 = message1.object
         assert isinstance(steps1, Column)
         assert len(steps1) == 1
@@ -288,7 +289,7 @@ class TestChatFeed:
 
         message2 = chat_feed.objects[1]
         assert isinstance(message2, ChatMessage)
-        assert message2.user == "User"
+        assert message2.user == "Assistant"
         steps2 = message2.object
         assert isinstance(steps2, Column)
         assert len(steps2) == 1
