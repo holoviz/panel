@@ -221,12 +221,36 @@ filterwarnings = [
 ]
 
 [tool.mypy]
+files = ["panel/"]
+
+strict = true
+
+pretty = true
+show_column_numbers = true
+show_error_codes = true
+show_error_context = true
+
+disallow_any_unimported = true
+implicit_reexport = true
 namespace_packages = true
-explicit_package_bases = true
-mypy_path = ""
-exclude = []
+warn_return_any = false
+warn_unreachable = true
 
 [[tool.mypy.overrides]]
+ignore_errors = true
+module = [
+    "panel.*",
+]
+
+[[tool.mypy.overrides]]
+ignore_errors = false
+module = [
+    "panel.io.cache",
+    "panel.io.profile",
+]
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
 module = [
     "altair.*",
     "bokeh_django.*",
@@ -271,4 +295,3 @@ module = [
     "tranquilizer.*",
     "vtk.*",
 ]
-ignore_missing_imports = true
