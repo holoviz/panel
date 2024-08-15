@@ -365,7 +365,7 @@ class Markdown(HTMLBasePane):
         Additional markdown-it-py plugins to use.""")
 
     renderer = param.Selector(default='markdown-it', objects=[
-        'markdown-it', 'myst', 'markdown'], doc="""
+        'markdown-it', 'myst', 'markdown', 'myst-client'], doc="""
         Markdown renderer implementation.""")
 
     renderer_options = param.Dict(default={}, nested_refs=True, doc="""
@@ -453,6 +453,8 @@ class Markdown(HTMLBasePane):
         return parser
 
     def _transform_object(self, obj: Any) -> dict[str, Any]:
+        if self.renderer == 'mystjs':
+            return dict(object=obj)
         import markdown
         if obj is None:
             obj = ''
@@ -486,25 +488,18 @@ class Markdown(HTMLBasePane):
             params['css_classes'] = ['markdown'] + params['css_classes']
         return super()._process_param_change(params)
 
-
-class MyST(HTMLBasePane):
-    """
-    The `MyST` pane renders MyST flavored Markdown client side, unlike
-    the `Markdown` pane which renders Markdown -> HTML serverside.
-    """
-
     def _get_model(
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
-            'panel.models.myst', 'MyST', isinstance(comm, JupyterComm), root
-        )
+        if self.renderer == 'mystjs':
+            self._bokeh_model = lazy_load(
+                'panel.models.myst', 'MyST', isinstance(comm, JupyterComm), root
+            )
+        else:
+            self._bokeh_model = _BkHTML
         model = super()._get_model(doc, root, parent, comm)
         return model
-
-    def _transform_object(self, obj: Any) -> dict[str, Any]:
-        return dict(object=obj)
 
 
 class JSON(HTMLBasePane):
