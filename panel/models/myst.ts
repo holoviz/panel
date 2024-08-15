@@ -1,6 +1,4 @@
 import type * as p from "@bokehjs/core/properties"
-import type {Dict} from "@bokehjs/core/types"
-import {Markup} from "@bokehjs/models/widgets/markup"
 import {HTMLView, HTML} from "./html"
 
 
@@ -8,7 +6,7 @@ export class MySTView extends HTMLView {
   declare model: MyST
 
   override process_tex(): string {
-    const myst = new (window as any).mystjs.MyST();
+    const myst = new (window as any).mystjs.MyST()
     const text = myst.render(this.model.text)
     if (this.model.disable_math || !this.contains_tex(text)) {
       return text
@@ -35,11 +33,7 @@ export class MySTView extends HTMLView {
 
 export namespace MyST {
   export type Attrs = p.AttrsOf<Props>
-
-  export type Props = Markup.Props & {
-    events: p.Property<Dict<string[]>>
-    run_scripts: p.Property<boolean>
-  }
+  export type Props = HTML.Props
 }
 
 export interface MyST extends MyST.Attrs {}
