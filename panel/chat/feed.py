@@ -819,7 +819,7 @@ class ChatFeed(ListPanel):
         callback: Callable,
         predicate: Callable | None = None,
         timeout: int = 120,
-        button_params: dict | None = {},
+        button_params: dict | None = None,
         **send_kwargs
     ) -> None:
         """
@@ -843,6 +843,7 @@ class ChatFeed(ListPanel):
             Additional parameters to pass to the submit button.
         """
         async def _prepare_prompt(*_) -> None:
+            button_params = button_params or {}
             if "name" not in button_params:
                 button_params["name"] = "Submit"
             submit_button = Button(**button_params)
