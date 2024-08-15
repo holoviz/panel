@@ -14,9 +14,13 @@ from typing import (
 
 import param  # type: ignore
 
+from pyviz_comms import JupyterComm
+
 from ..io.resources import CDN_DIST
 from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
-from ..util import HTML_SANITIZER, escape, prefix_length
+from ..util import (
+    HTML_SANITIZER, escape, lazy_load, prefix_length,
+)
 from .base import ModelPane
 
 if TYPE_CHECKING:
@@ -482,6 +486,25 @@ class Markdown(HTMLBasePane):
             params['css_classes'] = ['markdown'] + params['css_classes']
         return super()._process_param_change(params)
 
+
+class MyST(HTMLBasePane):
+    """
+    The `MyST` pane renders MyST flavored Markdown client side, unlike
+    the `Markdown` pane which renders Markdown -> HTML serverside.
+    """
+
+    def _get_model(
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
+        self._bokeh_model = lazy_load(
+            'panel.models.myst', 'MyST', isinstance(comm, JupyterComm), root
+        )
+        model = super()._get_model(doc, root, parent, comm)
+        return model
+
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
+        return dict(object=obj)
 
 
 class JSON(HTMLBasePane):

@@ -40,7 +40,7 @@ from .image import (  # noqa
 )
 from .ipywidget import IPyLeaflet, IPyWidget, Reacton  # noqa
 from .markup import (  # noqa
-    HTML, JSON, DataFrame, Markdown, Str,
+    HTML, JSON, DataFrame, Markdown, MyST, Str,
 )
 from .media import Audio, Video  # noqa
 from .perspective import Perspective  # noqa
@@ -78,6 +78,7 @@ __all__ = (
     "LaTeX",
     "Markdown",
     "Matplotlib",
+    "MyST",
     "Pane",
     "PaneBase",
     "ParamFunction",
