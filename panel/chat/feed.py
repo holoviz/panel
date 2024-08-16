@@ -813,7 +813,7 @@ class ChatFeed(ListPanel):
             self._chat_log.scroll_to_latest()
         return step
 
-    def prompt_input(
+    def prompt_user(
         self,
         component: Widget | ListPanel,
         callback: Callable,
@@ -846,11 +846,15 @@ class ChatFeed(ListPanel):
             input_button_params = button_params or {}
             if "name" not in input_button_params:
                 input_button_params["name"] = "Submit"
+            if "margin" not in input_button_params:
+                input_button_params["margin"] = (5, 10)
+            if "button_type" not in input_button_params:
+                input_button_params["button_type"] = "primary"
             submit_button = Button(**input_button_params)
 
-            form = WidgetBox(component, submit_button)
+            form = WidgetBox(component, submit_button, margin=(5, 10), css_classes=["message"])
             if "user" not in send_kwargs:
-                send_kwargs["user"] = "Assistant"
+                send_kwargs["user"] = "Input"
             self.send(form, respond=False, **send_kwargs)
 
             for _ in range(timeout * 2):  # sleeping for 0.5 seconds
@@ -861,9 +865,9 @@ class ChatFeed(ListPanel):
                     return callback(component, self)
                 await asyncio.sleep(0.5)
             else:
-                self.send("Prompt timed out.", user="Prompt", respond=False)
+                self.send("Prompt timed out.", user="Input", respond=False)
 
-        # a trick to call async functions while keeping prompt_input sync
+        # a trick to call async functions while keeping prompt_user sync
         # since asyncio.run() cannot be called from a running event loop (notebook)
         watcher = self.param.watch(_prepare_prompt, '_prompt_trigger')
         try:

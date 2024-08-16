@@ -50,6 +50,7 @@ ASSISTANT_LOGO = "🤖"
 SYSTEM_LOGO = "⚙️"
 ERROR_LOGO = "❌"
 HELP_LOGO = "❓"
+INPUT_LOGO = "❗"
 GPT_3_LOGO = "{dist_path}assets/logo/gpt-3.svg"
 GPT_4_LOGO = "{dist_path}assets/logo/gpt-4.svg"
 WOLFRAM_LOGO = "{dist_path}assets/logo/wolfram.svg"
@@ -79,6 +80,7 @@ DEFAULT_AVATARS = {
     "exception": ERROR_LOGO,
     "error": ERROR_LOGO,
     "help": HELP_LOGO,
+    "input": INPUT_LOGO,
     # Human
     "adult": "🧑",
     "baby": "👶",
