@@ -7,7 +7,7 @@ from typing import ClassVar
 import param
 
 from ..io.resources import CDN_DIST
-from ..layout import Column
+from ..layout import Column, Panel
 from ..reactive import ReactiveHTML
 from ..widgets.base import CompositeWidget
 from ..widgets.icon import ToggleIcon
@@ -47,6 +47,9 @@ class ChatReactionIcons(CompositeWidget):
 
     value = param.List(default=[], doc="The active reactions.")
 
+    default_layout = param.ClassSelector(
+        default=Column, class_=Panel, is_instance=False)
+
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_reaction_icons.css"]
 
     _composite_type = Column
@@ -69,7 +72,8 @@ class ChatReactionIcons(CompositeWidget):
             icon._reaction = option
             icon.param.watch(self._update_value, "value")
             self._rendered_icons[option] = icon
-        self._composite[:] = list(self._rendered_icons.values())
+        self._composite[:] = [self.default_layout(*list(self._rendered_icons.values()))]
+        self.sizing_mode = None
 
     @param.depends("value", watch=True)
     def _update_icons(self):
