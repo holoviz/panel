@@ -1322,7 +1322,7 @@ class TestChatFeedSerializeForTransformers:
             prefix_with_viewable_label=False
         ) == [
             {'role': 'user', 'content': 'Hello'},
-            {'role': 'user', 'content': '((Hello))'}
+            {'role': 'assistant', 'content': '((Hello))'}
         ]
 
 
