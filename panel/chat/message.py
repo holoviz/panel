@@ -266,15 +266,8 @@ class ChatMessage(Pane):
     def _build_layout(self):
         self._icon_divider = HTML(" | ", width=1, css_classes=["divider"])
 
-        self._timestamp_html = HTML(
-            self.param.timestamp.rx().strftime(self.param.timestamp_format),
-            css_classes=["timestamp"],
-            visible=self.param.show_timestamp,
-        )
-
         self._left_col = left_col = Column(
             self._render_avatar(),
-            self._timestamp_html,
             max_width=60,
             height=100,
             css_classes=["left"],
@@ -329,6 +322,12 @@ class ChatMessage(Pane):
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
 
+        self._timestamp_html = HTML(
+            self.param.timestamp.rx().strftime(self.param.timestamp_format),
+            css_classes=["timestamp"],
+            visible=self.param.show_timestamp,
+        )
+
         icon_row = Row(
             self.chat_copy_icon,
             self._icon_divider,
@@ -344,6 +343,7 @@ class ChatMessage(Pane):
             self._center_row,
             footer_col,
             icon_row,
+            self._timestamp_html,
             css_classes=["right"],
             sizing_mode=None,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),

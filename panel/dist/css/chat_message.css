@@ -7,13 +7,9 @@
   }
 }
 
-:host {
+:host(.chat-message) {
   max-height: none;
-}
-
-.chat-message {
-  display: flex;
-  flex-direction: row;
+  margin-top: 15px;
 }
 
 .avatar {
@@ -80,7 +76,7 @@
       1px;
   font-size: 1.25em;
   min-height: 50px;
-  margin-block: 3px;
+  margin-block: 2px;
   margin-left: 10px; /* Space for avatar */
   background-color: var(--panel-surface-color, #f1f1f1);
   min-width: 0;
@@ -104,7 +100,7 @@
 .timestamp {
   opacity: 0.5;
   transition: opacity 0.1s ease-in-out;
-  align-self: center;
+  margin-block: 0px;
 }
 
 .timestamp:hover {
@@ -118,6 +114,15 @@
 
 .avatar.rotating-placeholder {
   animation: icon-rotation 1.28s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.icons {
+  opacity: 0.5;
+  transition: opacity 0.1s ease-in-out;
+}
+
+.icons:hover {
+  opacity: 1;
 }
 
 @keyframes fadeOut {
