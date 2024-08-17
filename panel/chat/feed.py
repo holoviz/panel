@@ -816,10 +816,12 @@ class ChatFeed(ListPanel):
     def prompt_user(
         self,
         component: Widget | ListPanel,
-        callback: Callable,
+        callback: Callable | None = None,
         predicate: Callable | None = None,
         timeout: int = 120,
+        timeout_message: str = "Timed out",
         button_params: dict | None = None,
+        timeout_button_params: dict | None = None,
         **send_kwargs
     ) -> None:
         """
@@ -839,8 +841,12 @@ class ChatFeed(ListPanel):
             The predicate should accept the component as an argument.
         timeout : int
             The duration in seconds to wait before timing out.
+        timeout_message : str
+            The message to display when the timeout is reached.
         button_params : dict | None
             Additional parameters to pass to the submit button.
+        timeout_button_params : dict | None
+            Additional parameters to pass to the timeout button.
         """
         async def _prepare_prompt(*_) -> None:
             input_button_params = button_params or {}
@@ -850,6 +856,8 @@ class ChatFeed(ListPanel):
                 input_button_params["margin"] = (5, 10)
             if "button_type" not in input_button_params:
                 input_button_params["button_type"] = "primary"
+            if "icon" not in input_button_params:
+                input_button_params["icon"] = "check"
             submit_button = Button(**input_button_params)
 
             form = WidgetBox(component, submit_button, margin=(5, 10), css_classes=["message"])
@@ -857,15 +865,30 @@ class ChatFeed(ListPanel):
                 send_kwargs["user"] = "Input"
             self.send(form, respond=False, **send_kwargs)
 
-            for _ in range(timeout * 2):  # sleeping for 0.5 seconds
+            for _ in range(timeout * 10):  # sleeping for 0.1 seconds
                 is_fulfilled = predicate(component) if predicate else True
                 submit_button.disabled = not is_fulfilled
                 if submit_button.clicks > 0:
-                    form.disabled = True
-                    return callback(component, self)
-                await asyncio.sleep(0.5)
+                    with param.parameterized.batch_call_watchers(self):
+                        submit_button.visible = False
+                        form.disabled = True
+                    if callback is not None:
+                        result = callback(component, self)
+                        if isawaitable(result):
+                            await result
+                    break
+                await asyncio.sleep(0.1)
             else:
-                self.send("Prompt timed out.", user="Input", respond=False)
+                input_timeout_button_params = timeout_button_params or {}
+                if "name" not in input_timeout_button_params:
+                    input_timeout_button_params["name"] = timeout_message
+                if "button_type" not in input_timeout_button_params:
+                    input_timeout_button_params["button_type"] = "light"
+                if "icon" not in input_timeout_button_params:
+                    input_timeout_button_params["icon"] = "x"
+                with param.parameterized.batch_call_watchers(self):
+                    submit_button.param.update(**input_timeout_button_params)
+                    form.disabled = True
 
         # a trick to call async functions while keeping prompt_user sync
         # since asyncio.run() cannot be called from a running event loop (notebook)
