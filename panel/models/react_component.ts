@@ -73,7 +73,8 @@ class Child extends React.Component {
   }
 
   get element() {
-    return this.view.el
+    const view = this.view
+    return view == null ? null : view.el
   }
 
   componentDidMount() {
@@ -89,8 +90,17 @@ class Child extends React.Component {
     })
   }
 
+  append_child(ref) {
+    if (ref != null) {
+       const view = this.view
+       if (view != null) {
+         ref.appendChild(this.element)
+       }
+    }
+  }
+
   render() {
-    return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && ref.appendChild(this.element)})
+    return React.createElement('div', {className: "child-wrapper", ref: (ref) => this.append_child(ref)})
   }
 }
 
