@@ -517,8 +517,12 @@ export class ReactiveESM extends HTMLBox {
   protected _declare_importmap(): void {
     if (this.importmap) {
       const importMap = {...this.importmap}
-      // @ts-ignore
-      importShim.addImportMap(importMap)
+      try {
+        // @ts-ignore
+        importShim.addImportMap(importMap)
+      } catch (e) {
+        console.warn(`Failed to add import map: ${e}`)
+      }
     }
   }
 
@@ -570,6 +574,7 @@ export class ReactiveESM extends HTMLBox {
       // @ts-ignore
       this.compiled_module = importShim(url)
       const mod = await this.compiled_module
+      console.log(mod)
       let initialize
       if (mod.initialize) {
         initialize = mod.initialize
