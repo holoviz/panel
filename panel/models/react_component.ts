@@ -29,17 +29,17 @@ export class ReactComponentView extends ReactiveESMView {
 
   protected override _render_code(): string {
     let render_code = `
-if (rendered && view.model.usesReact) {
-  view._changing = true
-  const root = createRoot(view.container)
-  try {
-    root.render(rendered)
-  } catch(e) {
-    view.render_error(e)
-  }
-  view._changing = false
-  view.after_rendered()
-}`
+  if (rendered && view.model.usesReact) {
+    view._changing = true
+    const root = createRoot(view.container)
+    try {
+      root.render(rendered)
+    } catch(e) {
+      view.render_error(e)
+    }
+    view._changing = false
+    view.after_rendered()
+  }`
     let import_code = `
 import * as React from "react"
 import { createRoot } from "react-dom/client"`
@@ -49,15 +49,15 @@ ${import_code}
 import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
       render_code = `
-if (rendered) {
-  const cache = createCache({
-    key: 'css',
-    prepend: true,
-    container: view.style_cache,
-  })
-  rendered = React.createElement(CacheProvider, {value: cache}, rendered)
-}
-${render_code}`
+  if (rendered) {
+    const cache = createCache({
+      key: 'css',
+      prepend: true,
+      container: view.style_cache,
+    })
+    rendered = React.createElement(CacheProvider, {value: cache}, rendered)
+  }
+  ${render_code}`
     }
     return `
 ${import_code}
@@ -197,10 +197,14 @@ class Component extends React.Component {
   }
 }
 
-const props = {view, model: react_proxy, data: view.model.data, el: view.container}
-let rendered = React.createElement(Component, props)
+function render() {
+  const props = {view, model: react_proxy, data: view.model.data, el: view.container}
+  let rendered = React.createElement(Component, props)
 
-${render_code}`
+  ${render_code}
+}
+
+export default {render}`
   }
 }
 
