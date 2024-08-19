@@ -574,7 +574,6 @@ export class ReactiveESM extends HTMLBox {
       // @ts-ignore
       this.compiled_module = importShim(url)
       const mod = await this.compiled_module
-      console.log(mod)
       let initialize
       if (mod.initialize) {
         initialize = mod.initialize
