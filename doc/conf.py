@@ -124,10 +124,10 @@ nbsite_gallery_conf = {
                 'layouts',
                 # 3 most important by expected usage. Rest alphabetically
                 'chat',
-                'custom_components',
                 'global',
                 'indicators',
                 'templates',
+                'custom_components',
             ],
             'titles': {
                 'Vega': 'Altair & Vega',
@@ -167,9 +167,14 @@ def get_requirements():
         requirements[src] = deps
     return requirements
 
+
+html_js_files = [
+    (None, {'body': '{"shimMode": true}', 'type': 'esms-options'}),
+    f'https://cdn.holoviz.org/panel/{js_version}/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js'
+]
+
 nbsite_pyodide_conf = {
     'PYODIDE_URL': f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js',
-    'preamble': '<script type="esms-options">{"shimMode": true}</script>',
     'requirements': [bokeh_req, panel_req, 'pyodide-http'],
     'requires': get_requirements(),
 }
