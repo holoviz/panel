@@ -520,7 +520,7 @@ export class ReactiveESM extends HTMLBox {
       try {
         // @ts-ignore
         importShim.addImportMap(importMap)
-      } catch(e) {
+      } catch (e) {
         console.warn(`Failed to add import map: ${e}`)
       }
     }
