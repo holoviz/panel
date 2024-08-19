@@ -956,6 +956,11 @@ class _SpinnerBase(_NumericInputBase):
                 msg["value"] = msg["value_throttled"]
         return super()._process_property_change(msg)
 
+    def _process_events(self, events: dict[str, Any]) -> None:
+        if config.throttled and "value" in events:
+            events.pop("value")
+        super()._process_events(events)
+
 
 class IntInput(_SpinnerBase, _IntInputBase):
     """
