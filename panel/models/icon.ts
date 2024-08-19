@@ -90,7 +90,7 @@ export class ClickableIconView extends ControlView {
         visible,
       })
     }
-    let timer: number
+    let timer: ReturnType<typeof setTimeout>;
     this.el.addEventListener("mouseenter", () => {
       timer = setTimeout(() => toggle_tooltip(true), this.model.tooltip_delay)
     })
