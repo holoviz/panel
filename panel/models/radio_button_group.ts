@@ -58,7 +58,7 @@ export class RadioButtonGroupView extends bkRadioButtonGroupView {
         visible,
       })
     }
-    let timer: number
+    let timer: ReturnType<typeof setTimeout>;
     this.el.addEventListener("mouseenter", () => {
       timer = setTimeout(() => toggle(true), this.model.tooltip_delay)
     })
