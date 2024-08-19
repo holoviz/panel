@@ -1,6 +1,6 @@
 {
   "name": "@holoviz/panel",
-  "version": "1.5.0-b.2",
+  "version": "1.5.0-b.4",
   "description": "The powerful data exploration & web app framework for Python.",
   "license": "BSD-3-Clause",
   "repository": {
@@ -8,7 +8,7 @@
     "url": "https://github.com/holoviz/panel.git"
   },
   "dependencies": {
-    "@bokeh/bokehjs": "3.5.0",
+    "@bokeh/bokehjs": "3.5.1",
     "@types/debounce": "^1.2.0",
     "@types/gl-matrix": "^2.4.5",
     "ace-code": "^1.24.1",

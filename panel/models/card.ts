@@ -86,8 +86,7 @@ export class CardView extends ColumnView {
       this.button_el.style.backgroundColor = header_background != null ? header_background : ""
       header.el.style.backgroundColor = header_background != null ? header_background : ""
       this.button_el.appendChild(header.el)
-
-      this.button_el.onclick = () => this._toggle_button()
+      this.button_el.addEventListener("click", (e: MouseEvent) => this._toggle_button(e))
       header_el = this.button_el
     } else {
       header_el = DOM.create_element((header_tag as any), {class: header_css_classes})
@@ -120,7 +119,12 @@ export class CardView extends ColumnView {
     this.invalidate_layout()
   }
 
-  _toggle_button(): void {
+  _toggle_button(e: MouseEvent): void {
+    for (const path of e.composedPath()) {
+      if (path instanceof HTMLInputElement) {
+        return
+      }
+    }
     this.model.collapsed = !this.model.collapsed
   }
 

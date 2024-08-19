@@ -138,6 +138,9 @@ class Syncable(Renderable):
         # A dictionary of bokeh property changes being processed
         self._changing = {}
 
+        # A dictionary of parameter changes being processed
+        self._in_process__events = {}
+
         # Whether the component is watching the stylesheets
         self._watching_stylesheets = False
 
@@ -288,7 +291,7 @@ class Syncable(Renderable):
         """
 
     def _update_manual(self, *events: param.parameterized.Event) -> None:
-        for ref, (model, parent) in self._models.items():
+        for ref, (model, parent) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
@@ -304,21 +307,36 @@ class Syncable(Renderable):
                 else:
                     cb()
 
+    def _scheduled_update_model(
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm],
+        curdoc_events: dict[str, Any]
+    ) -> None:
+        #
+        self._in_process__events[doc] = curdoc_events
+        try:
+            self._update_model(events, msg, root, model, doc, comm)
+        finally:
+            del self._in_process__events[doc]
+
     def _apply_update(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         model: Model, ref: str
-    ) -> None:
+    ) -> bool:
         if ref not in state._views or ref in state._fake_roots:
-            return
+            return True
         viewable, root, doc, comm = state._views[ref]
         if comm or not doc.session_context or state._unblocked(doc):
             with unlocked():
                 self._update_model(events, msg, root, model, doc, comm)
             if comm and 'embedded' not in root.tags:
                 push(doc, comm)
+            return True
         else:
-            cb = partial(self._update_model, events, msg, root, model, doc, comm)
+            curdoc_events = self._in_process__events.pop(doc, {})
+            cb = partial(self._scheduled_update_model, events, msg, root, model, doc, comm, curdoc_events)
             doc.add_next_tick_callback(cb)
+            return False
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
@@ -326,7 +344,20 @@ class Syncable(Renderable):
     ) -> None:
         ref = root.ref['id']
         self._changing[ref] = attrs = []
-        for attr, value in msg.items():
+        curdoc_events = self._in_process__events.get(doc, {})
+        for attr, value in msg.copy().items():
+            if attr in curdoc_events and value is curdoc_events[attr]:
+                # Do not apply change that originated directly from
+                # the frontend since this may cause boomerang if a
+                # new property value is already in-flight
+                del msg[attr]
+                continue
+            elif attr in self._events:
+                # Do not override a property value that was just changed
+                # on the frontend
+                del self._events[attr]
+                continue
+
             # Bokeh raises UnsetValueError if the value is Undefined.
             try:
                 model_val = getattr(model, attr)
@@ -335,10 +366,6 @@ class Syncable(Renderable):
                 continue
             if not model.lookup(attr).property.matches(model_val, value):
                 attrs.append(attr)
-
-            # Do not apply model change that is in flight
-            if attr in self._events:
-                del self._events[attr]
 
         try:
             model.update(**msg)
@@ -405,18 +432,26 @@ class Syncable(Renderable):
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         named_events = {event.name: event for event in events}
+        applied = False
         for ref, (model, _) in self._models.copy().items():
             properties = self._update_properties(*events, doc=model.document)
             if not properties:
                 return
-            self._apply_update(named_events, properties, model, ref)
+            applied &= self._apply_update(named_events, properties, model, ref)
+            if ref not in state._views:
+                continue
+            doc = state._views[ref][2]
+            if applied and doc in self._in_process__events:
+                del self._in_process__events[doc]
 
     def _process_events(self, events: dict[str, Any]) -> None:
         self._log('received events %s', events)
         if any(e for e in events if e not in self._busy__ignore):
             with edit_readonly(state):
                 state._busy_counter += 1
-        params = self._process_property_change(dict(events))
+        if events:
+            self._in_process__events[state.curdoc] = events
+        params = self._process_property_change(events)
         try:
             with edit_readonly(self):
                 self_params = {k: v for k, v in params.items() if '.' not in k}
@@ -892,7 +927,7 @@ class Reactive(Syncable, Viewable):
             Event(model=model, **event_kwargs)
 
         """
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
             event = Event(model=model, **event_kwargs)
@@ -994,7 +1029,7 @@ class SyncableData(Reactive):
         self._processed, self._data = self._get_data()
         msg = {'data': self._data}
         named_events = {event.name: event for event in events}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update(named_events, msg, m.source, ref)
 
     @updating
@@ -1004,7 +1039,7 @@ class SyncableData(Reactive):
         indices = self.selection if indices is None else indices
         msg = {'indices': indices}
         named_events = {event.name: event for event in events}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update(named_events, msg, m.source.selected, ref)
 
     def _apply_stream(self, ref: str, model: Model, stream: 'DataDict', rollover: Optional[int]) -> None:
@@ -1017,7 +1052,7 @@ class SyncableData(Reactive):
     @updating
     def _stream(self, stream: 'DataDict', rollover: Optional[int] = None) -> None:
         self._processed, _ = self._get_data()
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
@@ -1039,7 +1074,7 @@ class SyncableData(Reactive):
 
     @updating
     def _patch(self, patch: 'Patches') -> None:
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
@@ -1275,9 +1310,6 @@ class ReactiveData(SyncableData):
 
     __abstract = True
 
-    def __init__(self, **params):
-        super().__init__(**params)
-
     def _update_selection(self, indices: list[int]) -> None:
         self.selection = indices
 
@@ -1289,21 +1321,14 @@ class ReactiveData(SyncableData):
         if dtype.kind == 'M':
             if values.dtype.kind in 'if':
                 if getattr(dtype, 'tz', None):
-                    # dtype has a timezone
-                    if dtype.tz == dt.timezone.utc:
-                        # Milliseconds to nanoseconds, to datetime64.
-                        converted = (values * 1e6).astype('datetime64[ns]')
-                    else:
-                        import pandas as pd
+                    import pandas as pd
 
-                        # Using pandas to convert from milliseconds
-                        # timezone-aware, to UTC nanoseconds, to datetime64.
-                        converted = (
-                            pd.Series(pd.to_datetime(values, unit="ms"))
-                            .dt.tz_localize(dtype.tz)
-                            .dt.tz_convert('utc')
-                            .dt.tz_localize(None)
-                        )
+                    # Using pandas to convert from milliseconds
+                    # timezone-aware, to UTC nanoseconds, to datetime64.
+                    converted = (
+                        pd.Series(pd.to_datetime(values, unit="ms"))
+                        .dt.tz_localize(dtype.tz)
+                    )
                 else:
                     # Timestamps converted from milliseconds to nanoseconds,
                     # to datetime.
@@ -2151,7 +2176,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                              f"nodes include: {self._parser.nodes}.")
         self._event_callbacks[node][event].append(callback)
         events = self._get_events()
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update({}, {'events': events}, model, ref)
 
 __all__ = (
