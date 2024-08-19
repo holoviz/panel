@@ -376,12 +376,15 @@ def module_cleanup():
     Cleanup Panel extensions after each test.
     """
     from bokeh.core.has_props import _default_resolver
-    to_reset = list(panel_extension._imports.values())
 
+    from panel.reactive import ReactiveMetaBase
+
+    to_reset = list(panel_extension._imports.values())
     _default_resolver._known_models = {
         name: model for name, model in _default_resolver._known_models.items()
         if not any(model.__module__.startswith(tr) for tr in to_reset)
     }
+    ReactiveMetaBase._loaded_extensions = set()
 
 @pytest.fixture(autouse=True)
 def server_cleanup():
