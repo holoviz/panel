@@ -22,33 +22,22 @@ class ChartJSComponent(JSComponent):
     _esm = """
 import { Chart } from "https://esm.sh/chart.js/auto"
 
-let chart = null;
-
-function createChart(canvasEl, model) {
-    removeChart();
-    chart = new Chart(canvasEl.getContext('2d'), model.object);
-}
-
-function removeChart() {
-    if (chart) {
-        chart.destroy();
-    }
-}
-
-export function render({ model }) {
-    const canvasEl = document.createElement('canvas');
-    // The chart will not render before after the layout has been created
-    model.on('after_render', () => createChart(canvasEl, model))
-
-    const updateChart = () => createChart(canvasEl, model);
-    model.on('object', updateChart);
-    model.on('remove', removeChart);
-    return canvasEl;
+export function render({ model, el }) {
+  const canvasEl = document.createElement('canvas')
+  // Add DOM node before creating the chart
+  el.append(canvasEl)
+  const create_chart = () => new Chart(canvasEl.getContext('2d'), model.object)
+  let chart = create_chart()
+  model.on("object", () => {
+     chart.destroy()
+     chart = create_chart()
+   })
+  model.on('remove', () => chart.destroy());
 }
 """
 
 
-def data(chart_type="line"):
+def plot(chart_type="line"):
     return {
         "type": chart_type,
         "data": {
@@ -73,12 +62,12 @@ chart_type = pn.widgets.RadioBoxGroup(
     name="Chart Type", options=["bar", "line"], inline=True
 )
 chart = ChartJSComponent(
-    object=pn.bind(data, chart_type), height=400, sizing_mode="stretch_width"
+    object=pn.bind(plot, chart_type), height=400, sizing_mode="stretch_width"
 )
 pn.Column(chart_type, chart).servable()
 ```
 
-Note the use of the `model.on('after_render', ...)` to postpone the rendering of the chart to after the rendering of the element. Dealing with layout issues like this sometimes requires a bit of iteration. If you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
+Note how we had to add the `canvasEl` to the `el` before we could render the chart. Some libraries will require the element to be attached to the DOM before we could render it. Dealing with layout issues like this sometimes requires a bit of iteration. If you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
 
 :::
 
@@ -87,53 +76,24 @@ Note the use of the `model.on('after_render', ...)` to postpone the rendering of
 ```{pyodide}
 import panel as pn
 import param
+
 from panel.custom import ReactComponent
 
 
 class ChartReactComponent(ReactComponent):
+
     object = param.Dict()
 
     _esm = """
-import { Chart } from 'https://esm.sh/chart.js/auto';
+import { Chart } from 'https://esm.sh/react-chartjs-2@4.3.1';
+import { Chart as ChartJS, registerables } from "https://esm.sh/chart.js@3.9.1";
 
-const useEffect = React.useEffect;
-const useRef = React.useRef;
+ChartJS.register(...registerables);
 
-export function render({ model }){
-  const canvasRef = useRef(null);
-  let chart = useRef(null);
-
-  const createChart = () => {
-    if (chart.current) {
-      chart.current.destroy();
-    }
-    chart.current = new Chart(canvasRef.current.getContext('2d'), model.object);
-  };
-
-  const removeChart = () => {
-    if (chart.current) {
-      chart.current.destroy();
-      chart.current = null;
-    }
-  };
-
-  useEffect(() => {
-    createChart();
-    model.on('object', createChart);
-    model.on('remove', removeChart);
-
-    // Cleanup function to remove chart when component unmounts
-    return () => {
-      removeChart();
-      model.off('object', createChart);
-      model.off('remove', removeChart);
-    };
-  }, [model]);
-
-  return <canvas ref={canvasRef} height={model.height}></canvas>;
+export function render({ model }) {
+  const [plot] = model.useState('object')
+  return <Chart {...plot}></Chart>
 };
-
-
 """
 
 
@@ -183,31 +143,18 @@ class AnyWidgetComponent(AnyWidgetComponent):
     _esm = """
 import { Chart } from "https://esm.sh/chart.js/auto"
 
-let chart = null;
-
-function createChart(canvasEl, model) {
-    removeChart();
-    chart = new Chart(canvasEl.getContext('2d'), model.get('object'));
-}
-
-function removeChart() {
-    if (chart) {
-        chart.destroy();
-    }
-}
-
 function render({ model, el }) {
-    const canvasEl = document.createElement('canvas');
-    el.appendChild(canvasEl);
-
-    createChart(canvasEl, model)
-
-    const updateChart = () => createChart(canvasEl, model);
-    model.on('change:object', updateChart);
-    model.on('change:remove', removeChart);
-
-
+  const canvasEl = document.createElement('canvas')
+  // Add DOM node before creating the chart
+  el.append(canvasEl)
+  const create_chart = () => new Chart(canvasEl.getContext('2d'), model.object)
+  let chart = create_chart()
+  model.on("object", () => {
+     chart.destroy()
+     chart = create_chart()
+   })
 }
+
 export default { render };
 """
 
@@ -241,8 +188,7 @@ chart = AnyWidgetComponent(
 pn.Column(chart_type, chart).servable()
 ```
 
-Note that we have to append the `canvasEl` to the `el` before we create the chart. Dealing with layout issues like this sometimes requires a bit of iteration. If you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
-
+Note, again, that we have to append the `canvasEl` to the `el` before we create the chart.
 :::
 
 ::::
@@ -337,7 +283,7 @@ export function render({ model }) {
 """
 
 
-pn.extension("cytoscape", sizing_mode="stretch_width")
+pn.extension(sizing_mode="stretch_width")
 
 elements = [
     {"data": {"id": "A", "label": "A"}},
@@ -410,37 +356,31 @@ class CytoscapeReact(ReactComponent):
 import CytoscapeComponent from 'https://esm.sh/react-cytoscapejs';
 
 export function render({ model }) {
-    function configure(cy){
-        cy.on('select unselect', function (evt) {
-            model.selected_nodes = cy.elements('node:selected').map(el => el.id())
-            model.selected_edges = cy.elements('edge:selected').map(el => el.id())
-        });
+  function configure(cy){
+    cy.on('select unselect', function (evt) {
+      model.selected_nodes = cy.elements('node:selected').map(el => el.id())
+      model.selected_edges = cy.elements('edge:selected').map(el => el.id())
+    });
+  }
 
-        model.on('object', () => {cy.json({elements: model.object});cy.resize().fit()})
-        model.on('layout', () => {cy.layout({name: model.layout}).run()})
-        model.on('zoom', () => {cy.zoom(model.zoom)})
-        model.on('pan', () => {cy.pan(model.pan)})
-        model.on('style', () => {cy.style().resetToDefault().append(model.style).update()})
 
-        window.addEventListener('resize', function(event){
-            cy.center();
-            cy.resize().fit();
-        });
+  const [layout] = model.useState('layout')
+  const [object] = model.useState('object')
+  const [pan] = model.useState('pan')
+  const [style] = model.useState('style')
+  const [zoom] = model.useState('zoom')
 
-    }
-
-    return (
-        <CytoscapeComponent
-            elements={model.object}
-            layout={ { 'name': model.layout} }
-            zoom={model.zoom}
-            pan={model.pan}
-            stylesheet={model.style}
-
-            style={{ width: '100%', height: model.height, position: 'relative' }}
-            cy={configure}
-        />
-    );
+  return (
+    <CytoscapeComponent
+        elements={object}
+        //layout={ { 'name': layout} }
+        zoom={zoom}
+        pan={pan}
+        stylesheet={style}
+        style={{ width: '100%', height: model.height, position: 'relative' }}
+        cy={configure}
+    />
+  );
 }
 """
 
