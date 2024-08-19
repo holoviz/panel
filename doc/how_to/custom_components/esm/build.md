@@ -68,7 +68,7 @@ class ConfettiButton(JSComponent):
         }
     }
 
-	_esm = 'confetti.js'
+    _esm = 'confetti.js'
 ```
 
 Now that we have separately declared the import we can update the `import` line in the `confetti.js` file:
