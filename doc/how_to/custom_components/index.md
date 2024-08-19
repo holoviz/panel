@@ -132,6 +132,7 @@ Build custom components wrapping Material UI using `ReactComponent`.
 :hidden:
 :maxdepth: 2
 
+esm/build
 esm/callbacks
 esm/custom_widgets
 esm/custom_layout
