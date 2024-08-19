@@ -518,10 +518,10 @@ export class ReactiveESM extends HTMLBox {
     if (this.importmap) {
       const importMap = {...this.importmap}
       try {
-	// @ts-ignore
-	importShim.addImportMap(importMap)
+        // @ts-ignore
+        importShim.addImportMap(importMap)
       } catch(e) {
-	console.warn(`Failed to add import map: ${e}`)
+        console.warn(`Failed to add import map: ${e}`)
       }
     }
   }
