@@ -378,7 +378,6 @@ export class PlayerView extends WidgetView {
         break
       case "end":
         this.titleEl.style.textAlign = "right"
-        console.log(this.titleEl)
         break
     }
   }

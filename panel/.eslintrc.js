@@ -48,6 +48,7 @@ module.exports = {
     "@typescript-eslint/no-unnecessary-type-assertion": ["error"],
     "@typescript-eslint/no-unnecessary-type-constraint": ["error"],
     "@typescript-eslint/switch-exhaustiveness-check": ["error"],
+    "no-console": ["error", { "allow": ["warn", "error"] }],
     "no-self-assign": ["error", {"props": false}],
     "brace-style": ["error", "1tbs", {"allowSingleLine": true}],
     "comma-dangle": ["off"],
