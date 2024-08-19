@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import pytest
 
 from packaging.version import Version
@@ -222,7 +224,7 @@ def test_vega_pane(document, comm, example):
     assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E']))
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
-    point_example = dict(vega_example, mark='point')
+    point_example = dict(deepcopy(vega_example), mark='point')
     point_example['data']['values'][0]['x'] = 'C'
     pane.object = point_example
     point_example = dict(point_example, data={})
