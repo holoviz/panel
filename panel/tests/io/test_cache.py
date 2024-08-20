@@ -253,26 +253,26 @@ def test_per_session_cache_server(port):
 
 @pytest.mark.xdist_group("cache")
 @diskcache_available
-def test_disk_cache():
+def test_disk_cache(tmp_path):
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, to_disk=True)
+    fn = cache(function_with_args, to_disk=True, cache_path=tmp_path)
 
     assert fn(0, 0) == 0
-    assert pathlib.Path('./cache').exists()
-    assert list(pathlib.Path('./cache').glob('*'))
+    assert tmp_path.exists()
+    assert list(tmp_path.glob('*'))
     assert fn(0, 0) == 0
     fn.clear()
     assert fn(0, 0) == 1
 
 @pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_fifo(to_disk):
+def test_cache_fifo(to_disk, tmp_path):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=2, policy='fifo', to_disk=to_disk)
+    fn = cache(function_with_args, max_items=2, policy='fifo', to_disk=to_disk, cache_path=tmp_path)
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 0) == 0
@@ -281,12 +281,12 @@ def test_cache_fifo(to_disk):
 
 @pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_lfu(to_disk):
+def test_cache_lfu(to_disk, tmp_path):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=2, policy='lfu', to_disk=to_disk)
+    fn = cache(function_with_args, max_items=2, policy='lfu', to_disk=to_disk, cache_path=tmp_path)
     assert fn(0, 0) == 0
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
@@ -295,12 +295,12 @@ def test_cache_lfu(to_disk):
 
 @pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_lru(to_disk):
+def test_cache_lru(to_disk, tmp_path):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=3, policy='lru', to_disk=to_disk)
+    fn = cache(function_with_args, max_items=3, policy='lru', to_disk=to_disk, cache_path=tmp_path)
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 2) == 2
@@ -311,12 +311,12 @@ def test_cache_lru(to_disk):
 
 @pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_ttl(to_disk):
+def test_cache_ttl(to_disk, tmp_path):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, ttl=0.1, to_disk=to_disk)
+    fn = cache(function_with_args, ttl=0.1, to_disk=to_disk, cache_path=tmp_path)
     assert fn(0, 0) == 0
     time.sleep(0.2)
     assert fn(0, 0) == 1
