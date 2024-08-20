@@ -890,13 +890,7 @@ class ChatFeed(ListPanel):
                     submit_button.param.update(**input_timeout_button_params)
                     form.disabled = True
 
-        # a trick to call async functions while keeping prompt_user sync
-        # since asyncio.run() cannot be called from a running event loop (notebook)
-        watcher = self.param.watch(_prepare_prompt, '_prompt_trigger')
-        try:
-            self.param.trigger("_prompt_trigger")
-        finally:
-            self.param.unwatch(watcher)
+        param.parameterized.async_executor(_prepare_prompt)
 
     def respond(self):
         """
