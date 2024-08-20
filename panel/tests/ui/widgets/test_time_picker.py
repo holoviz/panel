@@ -38,3 +38,21 @@ def test_time_picker(page):
     wait_until(lambda: time_picker.value == datetime.time(18, 8))
     locator = page.locator("#input")
     assert locator.get_attribute("value") == "18:08:00"
+
+
+@pytest.mark.parametrize("timezone_id", [
+    "America/New_York",
+    "Europe/Berlin",
+    "UTC",
+])
+def test_time_picker_timezone_different(page, timezone_id):
+    context = page.context.browser.new_context(
+        timezone_id=timezone_id,
+    )
+    page = context.new_page()
+
+    time_picker = TimePicker(value="18:08", format="H:i")
+    serve_component(page, time_picker)
+
+    locator = page.locator("#input")
+    assert locator.get_attribute("value") == "18:08:00"
