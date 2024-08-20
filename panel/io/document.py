@@ -261,7 +261,7 @@ def _destroy_document(self, session):
 # Public API
 #---------------------------------------------------------------------
 
-def apply_events(doc, events):
+def retrigger_events(doc, events):
     """
     Applies events that could not be processed previously.
     """
@@ -445,6 +445,12 @@ def unlocked() -> Iterator:
     try:
         yield
     finally:
+        # Whether or not there was an error in the body of context manager
+        # we may have captured some events. We will dispatch these
+        # either by running the write futures, by serializing them
+        # as actual messages and scheduling these messages to be written,
+        # by having bokeh dispatch them on calling unhold or by
+        # scheduling them to be triggered later.
         connections = session._subscribed_connections
         locked = curdoc in _WRITE_MSGS or curdoc in _WRITE_BLOCK
         for conn in connections:
@@ -453,46 +459,47 @@ def unlocked() -> Iterator:
                 locked = True
                 break
 
-        remaining_events, dispatch_events = [], []
-        events = curdoc.callbacks._held_events
+        remaining_events, writeable_events = [], []
+        events = list(curdoc.callbacks._held_events or [])
         curdoc.callbacks._held_events = []
         monkeypatch_events(events)
         for event in events:
             if isinstance(event, DISPATCH_EVENTS) and not locked:
-                dispatch_events.append(event)
+                writeable_events.append(event)
             else:
                 remaining_events.append(event)
 
         try:
-            remaining_events = write_events(curdoc, connections, dispatch_events)
-        except Exception as e:
-            # If we error out during the yield, there won't be any events
-            # captured so we end up simply calling curdoc.unhold() and
-            # raising the exception. If instead we error during event
-            # dispatch we restore the events in the order they were created
-            # and then let the finally section create a protocol message
-            # to dispatch the events, ensuring that the events which were
-            # marked for immediate dispatch are not lost.
-            if events is not None:
-                remaining_events = events
-            raise e
+            remaining_events = write_events(curdoc, connections, writeable_events)
+        except Exception:
+            remaining_events = events
         finally:
             # If for whatever reasons there are still events that couldn't
             # be dispatched we create a protocol message for these immediately
             # and then schedule a task to write the message to the websocket
-            # on the next iteration of the event loop.
-            # Separate serializable and non-serializable events
-            remaining_events = [e for e in events if isinstance(e, Serializable)]
-            if remaining_events:
-                schedule_write_events(curdoc, connections, remaining_events)
-            curdoc.callbacks._held_events += [
-                e for e in events if not isinstance(e, Serializable)
-            ]
+            # on the next iteration of the event loop. This ensures that
+            # the message reflects the event at the time it was generated
+            # potentially avoiding issues serializing subsequent models
+            # which assume the serializer has previously seen them.
+            serializable_events = [e for e in remaining_events if isinstance(e, Serializable)]
+            held_events = [e for e in remaining_events if not isinstance(e, Serializable)]
+            if serializable_events:
+                try:
+                    schedule_write_events(curdoc, connections, serializable_events)
+                except Exception:
+                    # If the serialization fails we let bokeh handle them
+                    held_events = remaining_events
+            curdoc.callbacks._held_events += held_events
+
+            # Last we attempt to let bokeh handle these remaining events
+            # if this also fails we reapply the event at a later point in
+            # time. This should not happen but since network writes
+            # are fickle we handle this case anyway.
             try:
-                events = list(curdoc.callbacks._held_events)
+                retriggered_events = list(curdoc.callbacks._held_events)
                 curdoc.unhold()
             except RuntimeError:
-                curdoc.add_next_tick_callback(partial(apply_events, curdoc, events))
+                curdoc.add_next_tick_callback(partial(retrigger_events, curdoc, retriggered_events))
 
 
 @contextmanager
