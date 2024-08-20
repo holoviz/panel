@@ -957,8 +957,8 @@ class _SpinnerBase(_NumericInputBase):
         return super()._process_property_change(msg)
 
     def _process_events(self, events: dict[str, Any]) -> None:
-        if config.throttled and "value" in events:
-            events.pop("value")
+        if config.throttled:
+            events.pop("value", None)
         super()._process_events(events)
 
 

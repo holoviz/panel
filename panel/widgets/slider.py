@@ -104,8 +104,8 @@ class _SliderBase(Widget):
         return super()._update_model(events, msg, root, model, doc, comm)
 
     def _process_events(self, events: dict[str, Any]) -> None:
-        if config.throttled and "value" in events:
-            events.pop("value")
+        if config.throttled:
+            events.pop("value", None)
         super()._process_events(events)
 
 
@@ -169,7 +169,6 @@ class ContinuousSlider(_SliderBase):
         w_model.js_on_change('value', link)
 
         return (dw, w_model, values, lambda x: x.value, 'value', 'cb_obj.value')
-
 
 
 class FloatSlider(ContinuousSlider):
