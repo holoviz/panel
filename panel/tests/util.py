@@ -295,8 +295,9 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
 
 def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
     port = serve_and_wait(app, port=port, **kwargs)
-    reqs = [requests.get(f"http://localhost:{port}{suffix}") for i in range(n)]
-    return reqs[0] if len(reqs) == 1 else reqs
+    reqs = [r for _ in range(n) if (r := requests.get(f"http://localhost:{port}{suffix}")).ok]
+    assert len(reqs) == n, "Not all requests were successful"
+    return reqs[0] if n == 1 else reqs
 
 
 def wait_for_server(port, prefix=None, timeout=3):
