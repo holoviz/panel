@@ -15,7 +15,7 @@ import weakref
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Any, Callable, Iterator, Optional,
+    TYPE_CHECKING, Any, Callable, Iterator,
 )
 
 from bokeh.application.application import SessionContext
@@ -36,6 +36,8 @@ from .state import curdoc_locked, state
 
 if TYPE_CHECKING:
     from bokeh.core.has_props import HasProps
+    from bokeh.protocol.message import Message
+    from bokeh.server.connection import ServerConnection
 
 logger = logging.getLogger(__name__)
 
@@ -261,32 +263,30 @@ def _destroy_document(self, session):
 # Public API
 #---------------------------------------------------------------------
 
-def retrigger_events(doc, events):
+def retrigger_events(doc: Document, events: list[DocumentChangedEvent]):
     """
     Applies events that could not be processed previously.
     """
     if doc.callbacks.hold_value:
         doc.callbacks._held_events = events + list(doc.callbacks._held_events)
     else:
-        for event in events:
-            doc.callbacks.trigger_on_change(event)
+        _dispatch_events(doc, events)
 
-def write_events(doc, connections, events):
+def write_events(
+    doc: Document,
+    connections: list[ServerConnection],
+    events: list[DocumentChangedEvent]
+):
     from tornado.websocket import WebSocketHandler
 
     futures = []
     for conn in connections:
-        if not events:
-            continue
-        elif isinstance(conn._socket, WebSocketHandler):
+        if isinstance(conn._socket, WebSocketHandler):
             futures += dispatch_tornado(conn, events)
         elif (socket_type:= type(conn._socket)) in extra_socket_handlers:
             futures += extra_socket_handlers[socket_type](conn, events)
         else:
             futures += dispatch_django(conn, events)
-
-    if not futures:
-        return
 
     if doc in _WRITE_FUTURES:
         _WRITE_FUTURES[doc] += futures
@@ -298,7 +298,11 @@ def write_events(doc, connections, events):
     else:
         doc.add_next_tick_callback(partial(_run_write_futures, doc))
 
-def schedule_write_events(doc, connections, events):
+def schedule_write_events(
+    doc: Document,
+    connections: list[ServerConnection],
+    events: list[DocumentChangedEvent]
+):
     # Set up write locks
     _WRITE_BLOCK[doc] = True
     _WRITE_MSGS[doc] = msgs = _WRITE_MSGS.get(doc, {})
@@ -312,7 +316,7 @@ def schedule_write_events(doc, connections, events):
             msgs[conn] = [msg]
     _dispatch_write_task(doc, _dispatch_msgs, doc)
 
-def create_doc_if_none_exists(doc: Optional[Document]) -> Document:
+def create_doc_if_none_exists(doc: Document | None) -> Document:
     curdoc = doc or curdoc_locked()
     if curdoc is None:
         curdoc = Document()
@@ -320,7 +324,7 @@ def create_doc_if_none_exists(doc: Optional[Document]) -> Document:
         curdoc = curdoc._doc
     return curdoc
 
-def init_doc(doc: Optional[Document]) -> Document:
+def init_doc(doc: Document | None) -> Document:
     curdoc = create_doc_if_none_exists(doc)
     if not curdoc.session_context:
         return curdoc
@@ -374,7 +378,11 @@ def with_lock(func: Callable) -> Callable:
     wrapper.lock = True # type: ignore
     return wrapper
 
-def dispatch_tornado(conn, events=None, msg=None):
+def dispatch_tornado(
+    conn: ServerConnection,
+    events: list[DocumentChangedEvent] | None = None,
+    msg: Message | None = None
+):
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
     ws_conn = getattr(socket, 'ws_connection', False)
@@ -396,7 +404,11 @@ def dispatch_tornado(conn, events=None, msg=None):
         ])
     return futures
 
-def dispatch_django(conn, events=None, msg=None):
+def dispatch_django(
+    conn: ServerConnection,
+    events: list[DocumentChangedEvent] | None = None,
+    msg: Message | None = None
+):
     socket = conn._socket
     if msg is None:
         msg = conn.protocol.create('PATCH-DOC', events)
@@ -470,7 +482,8 @@ def unlocked() -> Iterator:
                 remaining_events.append(event)
 
         try:
-            remaining_events = write_events(curdoc, connections, writeable_events)
+            if writeable_events:
+                write_events(curdoc, connections, writeable_events)
         except Exception:
             remaining_events = events
         finally:
