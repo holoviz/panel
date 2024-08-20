@@ -271,6 +271,47 @@ def apply_events(doc, events):
         for event in events:
             doc.callbacks.trigger_on_change(event)
 
+def write_events(doc, connections, events):
+    from tornado.websocket import WebSocketHandler
+
+    futures = []
+    for conn in connections:
+        if not events:
+            continue
+        elif isinstance(conn._socket, WebSocketHandler):
+            futures += dispatch_tornado(conn, events)
+        elif (socket_type:= type(conn._socket)) in extra_socket_handlers:
+            futures += extra_socket_handlers[socket_type](conn, events)
+        else:
+            futures += dispatch_django(conn, events)
+
+    if not futures:
+        return
+
+    if doc in _WRITE_FUTURES:
+        _WRITE_FUTURES[doc] += futures
+    else:
+        _WRITE_FUTURES[doc] = futures
+
+    if state._unblocked(doc):
+        _dispatch_write_task(doc, _run_write_futures, doc)
+    else:
+        doc.add_next_tick_callback(partial(_run_write_futures, doc))
+
+def schedule_write_events(doc, connections, events):
+    # Set up write locks
+    _WRITE_BLOCK[doc] = True
+    _WRITE_MSGS[doc] = msgs = _WRITE_MSGS.get(doc, {})
+    # Create messages for remaining events
+    for conn in connections:
+        # Create a protocol message for any events that cannot be immediately dispatched
+        msg = conn.protocol.create('PATCH-DOC', events)
+        if conn in msgs:
+            msgs[conn].append(msg)
+        else:
+            msgs[conn] = [msg]
+    _dispatch_write_task(doc, _dispatch_msgs, doc)
+
 def create_doc_if_none_exists(doc: Optional[Document]) -> Document:
     curdoc = doc or curdoc_locked()
     if curdoc is None:
@@ -400,14 +441,11 @@ def unlocked() -> Iterator:
         monkeypatch_events(curdoc.callbacks._held_events)
         return
 
-    from tornado.websocket import WebSocketHandler
-    connections = session._subscribed_connections
-
     curdoc.hold()
-    events = None
-    remaining_events, dispatch_events = [], []
     try:
         yield
+    finally:
+        connections = session._subscribed_connections
         locked = curdoc in _WRITE_MSGS or curdoc in _WRITE_BLOCK
         for conn in connections:
             socket = conn._socket
@@ -415,6 +453,7 @@ def unlocked() -> Iterator:
                 locked = True
                 break
 
+        remaining_events, dispatch_events = [], []
         events = curdoc.callbacks._held_events
         curdoc.callbacks._held_events = []
         monkeypatch_events(events)
@@ -424,71 +463,36 @@ def unlocked() -> Iterator:
             else:
                 remaining_events.append(event)
 
-        futures = []
-        for conn in connections:
-            if not dispatch_events:
-                continue
-            elif isinstance(conn._socket, WebSocketHandler):
-                futures += dispatch_tornado(conn, dispatch_events)
-            elif (socket_type:= type(conn._socket)) in extra_socket_handlers:
-                futures += extra_socket_handlers[socket_type](conn, dispatch_events)
-            else:
-                futures += dispatch_django(conn, dispatch_events)
-
-
-        if futures:
-            if curdoc in _WRITE_FUTURES:
-                _WRITE_FUTURES[curdoc] += futures
-            else:
-                _WRITE_FUTURES[curdoc] = futures
-
-            if state._unblocked(curdoc):
-                _dispatch_write_task(curdoc, _run_write_futures, curdoc)
-            else:
-                curdoc.add_next_tick_callback(partial(_run_write_futures, curdoc))
-    except Exception as e:
-        # If we error out during the yield, there won't be any events
-        # captured so we end up simply calling curdoc.unhold() and
-        # raising the exception. If instead we error during event
-        # dispatch we restore the events in the order they were created
-        # and then let the finally section create a protocol message
-        # to dispatch the events, ensuring that the events which were
-        # marked for immediate dispatch are not lost.
-        if events is not None:
-            remaining_events = events
-        raise e
-    finally:
-        # If for whatever reasons there are still events that couldn't
-        # be dispatched we create a protocol message for these immediately
-        # and then schedule a task to write the message to the websocket
-        # on the next iteration of the event loop.
-        if remaining_events:
-            # Separate serializable and non-serializable events
-            leftover_events = [e for e in remaining_events if not isinstance(e, Serializable)]
-            remaining_events = [e for e in remaining_events if isinstance(e, Serializable)]
-
-            # Set up write locks
-            if remaining_events:
-                _WRITE_BLOCK[curdoc] = True
-                _WRITE_MSGS[curdoc] = msgs = _WRITE_MSGS.get(curdoc, {})
-            # Create messages for remaining events
-            for conn in connections:
-                if not remaining_events:
-                    continue
-                # Create a protocol message for any events that cannot be immediately dispatched
-                msg = conn.protocol.create('PATCH-DOC', remaining_events)
-                if conn in msgs:
-                    msgs[conn].append(msg)
-                else:
-                    msgs[conn] = [msg]
-
-            _dispatch_write_task(curdoc, _dispatch_msgs, curdoc)
-            curdoc.callbacks._held_events += leftover_events
         try:
-            events = list(curdoc.callbacks._held_events)
-            curdoc.unhold()
-        except RuntimeError:
-            curdoc.add_next_tick_callback(partial(apply_events, curdoc, events))
+            remaining_events = write_events(curdoc, connections, dispatch_events)
+        except Exception as e:
+            # If we error out during the yield, there won't be any events
+            # captured so we end up simply calling curdoc.unhold() and
+            # raising the exception. If instead we error during event
+            # dispatch we restore the events in the order they were created
+            # and then let the finally section create a protocol message
+            # to dispatch the events, ensuring that the events which were
+            # marked for immediate dispatch are not lost.
+            if events is not None:
+                remaining_events = events
+            raise e
+        finally:
+            # If for whatever reasons there are still events that couldn't
+            # be dispatched we create a protocol message for these immediately
+            # and then schedule a task to write the message to the websocket
+            # on the next iteration of the event loop.
+            # Separate serializable and non-serializable events
+            remaining_events = [e for e in events if isinstance(e, Serializable)]
+            if remaining_events:
+                schedule_write_events(curdoc, connections, remaining_events)
+            curdoc.callbacks._held_events += [
+                e for e in events if not isinstance(e, Serializable)
+            ]
+            try:
+                events = list(curdoc.callbacks._held_events)
+                curdoc.unhold()
+            except RuntimeError:
+                curdoc.add_next_tick_callback(partial(apply_events, curdoc, events))
 
 
 @contextmanager
