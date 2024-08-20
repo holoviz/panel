@@ -16,11 +16,14 @@
 }
 
 :host(.step-header) {
-  width: max-content;
+  width: fit-content;
 }
 
 .step-title {
+  width: calc(100% - 50px);
   font-size: 1.25em;
+  text-align: left;
+  overflow-wrap: break-word;
 }
 
 .step-message {
