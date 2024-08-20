@@ -261,6 +261,16 @@ def _destroy_document(self, session):
 # Public API
 #---------------------------------------------------------------------
 
+def apply_events(doc, events):
+    """
+    Applies events that could not be processed previously.
+    """
+    if doc.callbacks.hold_value:
+        doc.callbacks._held_events = events + list(doc.callbacks._held_events)
+    else:
+        for event in events:
+            doc.callbacks.trigger_on_change(event)
+
 def create_doc_if_none_exists(doc: Optional[Document]) -> Document:
     curdoc = doc or curdoc_locked()
     if curdoc is None:
@@ -474,7 +484,12 @@ def unlocked() -> Iterator:
 
             _dispatch_write_task(curdoc, _dispatch_msgs, curdoc)
             curdoc.callbacks._held_events += leftover_events
-        curdoc.unhold()
+        try:
+            events = list(curdoc.callbacks._held_events)
+            curdoc.unhold()
+        except RuntimeError:
+            curdoc.add_next_tick_callback(partial(apply_events, curdoc, events))
+
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
