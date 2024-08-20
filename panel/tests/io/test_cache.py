@@ -251,7 +251,6 @@ def test_per_session_cache_server(port):
 
     assert list(counts.values()) == [1, 1]
 
-@pytest.mark.xdist_group("cache")
 @diskcache_available
 def test_disk_cache(tmp_path):
     global OFFSET
@@ -265,7 +264,6 @@ def test_disk_cache(tmp_path):
     fn.clear()
     assert fn(0, 0) == 1
 
-@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_fifo(to_disk, tmp_path):
     if to_disk and diskcache is None:
@@ -279,7 +277,6 @@ def test_cache_fifo(to_disk, tmp_path):
     assert fn(0, 2) == 2 # (0, 0) should be evicted
     assert fn(0, 0) == 1
 
-@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_lfu(to_disk, tmp_path):
     if to_disk and diskcache is None:
@@ -293,7 +290,6 @@ def test_cache_lfu(to_disk, tmp_path):
     assert fn(0, 2) == 2 # (0, 1) should be evicted
     assert fn(0, 1) == 2
 
-@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_lru(to_disk, tmp_path):
     if to_disk and diskcache is None:
@@ -309,7 +305,6 @@ def test_cache_lru(to_disk, tmp_path):
     assert fn(0, 0) == 0
     assert fn(0, 1) == 2
 
-@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_ttl(to_disk, tmp_path):
     if to_disk and diskcache is None:
@@ -321,7 +316,6 @@ def test_cache_ttl(to_disk, tmp_path):
     time.sleep(0.2)
     assert fn(0, 0) == 1
 
-@pytest.mark.xdist_group("cache")
 def test_cache_on_undecorated_parameterized_method():
     class Model(param.Parameterized):
         data = param.Parameter(default=1)
