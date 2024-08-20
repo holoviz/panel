@@ -200,7 +200,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     const script_fn = this._script_fns.get(property)
     if (script_fn === undefined) {
       if (!silent) {
-        console.log(`Script '${property}' could not be found.`)
+        console.warn(`Script '${property}' could not be found.`)
       }
       return
     }
@@ -532,7 +532,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       this._changing = true
       this.model.data.setv(serialize_attrs(attrs))
     } catch {
-      console.log("Could not serialize", attrs)
+      console.error("Could not serialize", attrs)
     } finally {
       this._changing = false
     }

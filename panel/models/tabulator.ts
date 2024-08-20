@@ -658,7 +658,7 @@ export class DataTabulatorView extends HTMLBoxView {
             const remaining = table_height - height
             page_size += Math.floor(remaining / Math.min(...heights))
           }
-          this.model.page_size = page_size
+          this.model.page_size = Math.max(page_size || 1, 1)
         }
       }
       this.setMaxPage()

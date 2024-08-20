@@ -801,7 +801,7 @@ class ChatFeed(ListPanel):
             if layout_params:
                 input_layout_params.update(layout_params)
             steps_layout = layout(step, **input_layout_params)
-            self.stream(steps_layout, user=user, avatar=avatar)
+            self.stream(steps_layout, user=user or self.callback_user, avatar=avatar)
         else:
             steps_layout.append(step)
             self._chat_log.scroll_to_latest()
@@ -874,7 +874,8 @@ class ChatFeed(ListPanel):
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
         default_role: str | None = "assistant",
-        custom_serializer: Callable = None
+        custom_serializer: Callable | None = None,
+        **serialize_kwargs
     ) -> list[dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
@@ -914,7 +915,7 @@ class ChatFeed(ListPanel):
                         f"it returned a {type(content)} type"
                     )
             else:
-                content = str(message)
+                content = message.serialize(**serialize_kwargs)
 
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages
