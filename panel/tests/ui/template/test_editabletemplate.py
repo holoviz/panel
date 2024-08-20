@@ -176,7 +176,7 @@ def test_editable_template_drag_item(page):
 
     md2_handle.drag_to(md2_handle, target_position={'x': 0, 'y': -50}, force=True)
 
-    wait_until(lambda: list(tmpl.layout) == [id(md2), id(md1)], page)
+    wait_until((lambda: list(tmpl.layout), lambda: [id(md2), id(md1)]), page)
 
 def test_editable_template_undo_drag_item(page):
     tmpl = EditableTemplate()
