@@ -7,6 +7,7 @@ import datetime as dt
 import os
 import pathlib
 import re
+import resource
 import shutil
 import signal
 import socket
@@ -41,6 +42,9 @@ config.apply_signatures = False
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
+
+soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
 
 try:
     asyncio.get_event_loop()
