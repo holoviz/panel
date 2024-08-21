@@ -24,7 +24,7 @@ def test_code_editor_on_keyup(page):
     page.keyboard.type('print("Hello Panel!")')
 
     expect(page.locator(".ace_content")).to_have_text("print('Hello World!')\nprint(\"Hello Panel!\")", use_inner_text=True)
-    wait_until(lambda: editor.value_input == "print('Hello World!')\nprint(\"Hello Panel!\")")
+    wait_until(lambda: editor.value_input == "print('Hello World!')\nprint(\"Hello Panel!\")", page)
     assert editor.value == "print('Hello World!')\nprint(\"Hello Panel!\")"
 
     # clear the editor
@@ -37,7 +37,8 @@ def test_code_editor_on_keyup(page):
     ace_input.click()
     page.keyboard.type('print("Hello UI!")')
     expect(page.locator(".ace_content")).to_have_text("print(\"Hello UI!\")", use_inner_text=True)
-    assert editor.value == "print(\"Hello UI!\")"
+
+    wait_until(lambda: editor.value == "print(\"Hello UI!\")", page)
 
 
 def test_code_editor_not_on_keyup(page):
@@ -72,13 +73,9 @@ def test_code_editor_not_on_keyup(page):
     expect(page.locator(".ace_content")).to_have_text("print(\"Hello UI!\")", use_inner_text=True)
     assert editor.value == ""
 
-    # If windows: Ctrl+Enter to trigger value else if mac, Command+Enter
-    if sys.platform == "win32":
-        page.keyboard.down("Control")
-        page.keyboard.press("Enter")
-        page.keyboard.up("Control")
-    else:
-        page.keyboard.down("Meta")
-        page.keyboard.press("Enter")
-        page.keyboard.up("Meta")
-    wait_until(lambda: editor.value == "print(\"Hello UI!\")")
+    ctrl_key = 'Meta' if sys.platform == 'darwin' else 'Control'
+    page.keyboard.down(ctrl_key)
+    page.keyboard.press("Enter")
+    page.keyboard.up(ctrl_key)
+
+    wait_until(lambda: editor.value == "print(\"Hello UI!\")", page)
