@@ -807,7 +807,7 @@ class ChatFeed(ListPanel):
             if layout_params:
                 input_layout_params.update(layout_params)
             steps_layout = layout(step, **input_layout_params)
-            self.stream(steps_layout, user=user, avatar=avatar)
+            self.stream(steps_layout, user=user or self.callback_user, avatar=avatar)
         else:
             steps_layout.append(step)
             self._chat_log.scroll_to_latest()
