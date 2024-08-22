@@ -258,7 +258,7 @@ def component_resource_path(component, attr, path):
     component_path = COMPONENT_PATH
     if state.rel_path:
         component_path = f"{state.rel_path}/{component_path}"
-    rel_path = str(resolve_custom_path(component, path, relative=True)).replace(os.path.sep, '/')
+    rel_path = os.fspath(resolve_custom_path(component, path, relative=True)).replace(os.path.sep, '/')
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
@@ -299,7 +299,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     stylesheet: str
         The stylesheet definition
     """
-    stylesheet = str(stylesheet)
+    stylesheet = os.fspath(stylesheet)
     if not stylesheet.startswith('http') and attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet)):
         if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
             stylesheet = component_resource_path(cls, attribute, stylesheet)
