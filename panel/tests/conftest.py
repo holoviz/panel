@@ -412,6 +412,7 @@ def cache_cleanup():
     state._stylesheets.clear()
     state._scheduled.clear()
     state._periodic.clear()
+    Design._cache.clear()
 
 @pytest.fixture
 def autoreload():
