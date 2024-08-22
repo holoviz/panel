@@ -171,9 +171,11 @@ def server_document():
     doc = Document()
     session_context = unittest.mock.Mock()
     doc._session_context = lambda: session_context
-    with set_curdoc(doc):
-        yield doc
-    doc._session_context = None
+    try:
+        with set_curdoc(doc):
+            yield doc
+    finally:
+        doc._session_context = None
 
 @pytest.fixture
 def bokeh_curdoc():
