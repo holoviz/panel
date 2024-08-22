@@ -1,6 +1,7 @@
 import pathlib
 
 from bokeh.models import ImportedStyleSheet
+from bokeh.settings import settings as _settings
 
 from panel.io.resources import CDN_DIST
 from panel.theme.base import BOKEH_DARK, Design, Inherit
@@ -37,8 +38,10 @@ class DesignTest(Design):
     }
 
 
+
 def test_design_params():
     widget = TextInput()
+    assert _settings.resources() == 'cdn'
 
     params, _ = DesignTest().params(widget)
     assert 'stylesheets' in params
@@ -54,6 +57,7 @@ def test_design_params():
 
 def test_design_params_server(server_document):
     widget = TextInput()
+    assert _settings.resources() == 'cdn'
 
     params, _ = DesignTest().params(widget)
     assert 'stylesheets' in params
@@ -84,6 +88,7 @@ def test_design_params_inherited():
     assert params.get('styles') == {'color': 'red'}
 
 def test_design_params_inherited_server(server_document):
+    assert _settings.resources() == 'cdn'
     widget = FloatSlider()
 
     params, _ = DesignTest().params(widget)
@@ -114,6 +119,7 @@ def test_design_params_url_inherited():
     assert s3.url == 'http://example.com/baz.css'
 
 def test_design_apply(document, comm):
+    assert _settings.resources() == 'cdn'
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
 
@@ -133,6 +139,7 @@ def test_design_apply(document, comm):
     assert model.styles == {'color': 'green'}
 
 def test_design_apply_not_isolated(document, comm):
+    assert _settings.resources() == 'cdn'
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
 
@@ -151,6 +158,7 @@ def test_design_apply_not_isolated(document, comm):
     assert model.styles == {'color': 'green'}
 
 def test_design_apply_inherited(document, comm):
+    assert _settings.resources() == 'cdn'
     widget = FloatSlider()
     model = widget.get_root(document, comm=comm)
 
@@ -171,6 +179,7 @@ def test_design_apply_inherited(document, comm):
     assert model.styles == {'color': 'red'}
 
 def test_design_apply_url_inherited(document, comm):
+    assert _settings.resources() == 'cdn'
     widget = IntSlider()
     model = widget.get_root(document, comm=comm)
 
@@ -190,6 +199,7 @@ def test_design_apply_url_inherited(document, comm):
     assert s5.url == 'http://example.com/baz.css'
 
 def test_design_apply_with_dark_theme(document, comm):
+    assert _settings.resources() == 'cdn'
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
     model.document = document
@@ -211,6 +221,7 @@ def test_design_apply_with_dark_theme(document, comm):
     assert document.theme._json == BOKEH_DARK
 
 def test_design_apply_with_dark_theme_not_isolated(document, comm):
+    assert _settings.resources() == 'cdn'
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
     model.document = document
@@ -230,6 +241,7 @@ def test_design_apply_with_dark_theme_not_isolated(document, comm):
     assert document.theme._json == BOKEH_DARK
 
 def test_design_apply_with_dist_url(document, comm):
+    assert _settings.resources() == 'cdn'
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
     model.document = document
@@ -252,6 +264,7 @@ def test_design_apply_with_dist_url(document, comm):
     assert model.styles == {'color': 'green'}
 
 def test_design_apply_shared_stylesheet_models(document, comm):
+    assert _settings.resources() == 'cdn'
     widget1 = TextInput()
     model1 = widget1.get_root(document, comm=comm)
     model1.document = document
