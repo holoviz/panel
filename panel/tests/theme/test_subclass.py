@@ -6,16 +6,16 @@ from panel.viewable import Viewable
 from panel.widgets import TextInput
 
 
+class CustomBootstrap(Bootstrap):
+
+    modifiers = {
+        Viewable: {
+            'stylesheets': [Inherit, 'test.css']
+        }
+    }
+
 def test_subclassed_inheritance():
     widget = TextInput()
-
-    class CustomBootstrap(Bootstrap):
-
-        modifiers = {
-            Viewable: {
-                'stylesheets': [Inherit, 'test.css']
-            }
-        }
 
     params, _ = CustomBootstrap().params(widget)
     assert 'stylesheets' in params
@@ -34,14 +34,6 @@ def test_subclassed_inheritance():
 
 def test_subclassed_inheritance_server(server_document):
     widget = TextInput()
-
-    class CustomBootstrap(Bootstrap):
-
-        modifiers = {
-            Viewable: {
-                'stylesheets': [Inherit, 'test.css']
-            }
-        }
 
     params, _ = CustomBootstrap().params(widget)
     assert 'stylesheets' in params
