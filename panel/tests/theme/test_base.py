@@ -71,9 +71,7 @@ def test_design_params_server(server_document):
 def test_design_params_inherited():
     widget = FloatSlider()
 
-    dt = DesignTest()
-    print(dt.modifiers)  # noqa
-    params, _ = dt.params(widget)
+    params, _ = DesignTest().params(widget)
     assert 'stylesheets' in params
     assert len(params['stylesheets']) == 3
     s1, s2, s3 = params['stylesheets']
@@ -119,11 +117,7 @@ def test_design_apply(document, comm):
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
 
-    dt = DesignTest()
-    print(dt.modifiers)  # noqa
-    dt.apply(widget, model)
-    print(dt.modifiers)  # noqa
-    params, _ = dt.params(widget)
+    DesignTest().apply(widget, model)
 
     assert len(model.stylesheets) == 5
     s1, s2, s3, s4, s5 = model.stylesheets
@@ -200,11 +194,7 @@ def test_design_apply_with_dark_theme(document, comm):
     model = widget.get_root(document, comm=comm)
     model.document = document
 
-    dt = DesignTest(theme='dark').apply(widget, model)
-    print(dt.modifiers)  # noqa
-    dt.apply(widget, model)
-    print(dt.modifiers)  # noqa
-    params, _ = dt.params(widget)
+    DesignTest(theme='dark').apply(widget, model)
 
     assert len(model.stylesheets) == 5
     s1, s2, s3, s4, s5 = model.stylesheets
