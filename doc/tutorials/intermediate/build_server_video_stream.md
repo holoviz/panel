@@ -2,9 +2,12 @@
 
 Welcome to our tutorial on building a **server-side video camera application** using HoloViz Panel! In this fun and engaging guide, we'll walk you through the process of setting up a video stream from a camera connected to a server, not the user's machine. This approach uses Python's threading to handle real-time video processing without freezing the user interface.
 
-Let's dive into the code and see how it all comes together.
+<video muted controls loop poster="../../_static/images/serverside-video.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/serverside-video.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 
-:::{drowdown} Code
+:::{dropdown} Code
 
 `server_video_stream.py`
 
@@ -127,6 +130,8 @@ server_video_stream.servable()
 
 :::
 
+Let's dive into the code and see how it all comes together.
+
 ## Install the Dependencies
 
 To run the application, you'll need several packages:
@@ -143,7 +148,7 @@ You can install these using conda or pip:
 :sync: conda
 
 ``` bash
-conda install -y -c conda-forge opencv panel pillow
+conda install -y -c conda-forge opencv panel pillow watchfiles
 ```
 
 :::
@@ -152,7 +157,7 @@ conda install -y -c conda-forge opencv panel pillow
 :sync: pip
 
 ``` bash
-pip install opencv panel pillow
+pip install opencv-python panel pillow watchfiles
 ```
 
 :::
@@ -341,6 +346,13 @@ Try serving the app with
 ```bash
 panel serve app.py
 ```
+
+It should look like:
+
+<video muted controls loop poster="../../_static/images/serverside-video.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/serverside-video.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 
 ## References
 

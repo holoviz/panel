@@ -155,7 +155,7 @@ class DataTabulator(HTMLBox):
 
     page = Nullable(Int)
 
-    page_size = Int()
+    page_size = Nullable(Int)
 
     max_page = Int()
 

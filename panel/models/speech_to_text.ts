@@ -86,12 +86,10 @@ export class SpeechToTextView extends HTMLBoxView {
       this.model.results = serializeResults(event.results)
     }
     this.recognition.onerror = (event: any) => {
-      console.log("SpeechToText Error")
-      console.log(event)
+      console.error(`SpeechToText Error: ${event}`)
     }
     this.recognition.onnomatch = (event: any) => {
-      console.log("SpeechToText No Match")
-      console.log(event)
+      console.warn(`SpeechToText No Match: ${event}`)
     }
 
     this.recognition.onaudiostart = () => this.model.audio_started = true

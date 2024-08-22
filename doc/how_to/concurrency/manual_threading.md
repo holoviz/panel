@@ -87,7 +87,7 @@ class SessionTaskRunner(pn.viewable.Viewer):
 
     def __panel__(self):
         return pn.Column(
-            f"## TaskRunner {id(self)}",
+            f"## Session TaskRunner {id(self)}",
             pn.pane.Str(self.param.status),
             pn.pane.Str(pn.rx("Last Result: {value}").format(value=self.param.value)),
         )
@@ -117,6 +117,13 @@ button = pn.widgets.Button(name="Add Task", on_click=add_task, button_type="prim
 
 pn.Column(button, task_runner).servable()
 ```
+
+The application should look like:
+
+<video muted controls loop poster="../../_static/images/session-task-runner.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/how_to/concurrency/session-task-runner.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 
 Since processing occurs on a separate thread, the application remains responsive to further user interactions, such as queuing new tasks.
 
@@ -231,7 +238,7 @@ class GlobalTaskRunner(pn.viewable.Viewer):
 
     def __panel__(self):
         return pn.Column(
-            f"## TaskRunner {id(self)}",
+            f"## Global TaskRunner {id(self)}",
             self.param.seconds,
             pn.pane.Str(pn.rx("Last Result: {value}").format(value=self.param.value)),
             pn.pane.Str(
@@ -262,6 +269,13 @@ pn.Column(
     task_runner, result_view,
 ).servable()
 ```
+
+The application should look like:
+
+<video muted controls loop poster="../../_static/images/global-task-runner.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/how_to/concurrency/global-task-runner.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 
 :::{note}
 

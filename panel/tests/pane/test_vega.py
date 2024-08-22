@@ -322,3 +322,7 @@ def test_altair_pane(document, comm):
 
     pane._cleanup(model)
     assert pane._models == {}
+
+def test_vega_can_instantiate_empty_with_sizing_mode(document, comm):
+    pane = Vega(sizing_mode="stretch_width")
+    pane.get_root(document, comm=comm)

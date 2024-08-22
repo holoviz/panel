@@ -180,13 +180,13 @@ def value_as_datetime(value):
     Retrieve the value tuple as a tuple of datetime objects.
     """
     if isinstance(value, numbers.Number):
-        value = datetime.utcfromtimestamp(value / 1000)
+        value = datetime.fromtimestamp(value / 1000, tz=dt.timezone.utc).replace(tzinfo=None)
     return value
 
 
 def value_as_date(value):
     if isinstance(value, numbers.Number):
-        value = datetime.utcfromtimestamp(value / 1000).date()
+        value = datetime.fromtimestamp(value / 1000, tz=dt.timezone.utc).replace(tzinfo=None).date()
     elif isinstance(value, datetime):
         value = value.date()
     return value
@@ -503,3 +503,21 @@ async def to_async_gen(sync_gen):
         if value is done:
             break
         yield value
+
+
+def prefix_length(a: str, b: str) -> int:
+    """
+    Searches for the length of overlap in the starting
+    characters of string b in a. Uses binary search
+    if b is not already a prefix of a.
+    """
+    if a.startswith(b):
+        return len(b)
+    left, right = 0, min(len(a), len(b))
+    while left < right:
+        mid = (left + right + 1) // 2
+        if a.startswith(b[:mid]):
+            left = mid
+        else:
+            right = mid - 1
+    return left
