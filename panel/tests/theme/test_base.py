@@ -7,7 +7,14 @@ from panel.theme.base import BOKEH_DARK, Design, Inherit
 from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
 
-ImportedStyleSheet.__repr__ = lambda self: f"ImportedStyleSheet(url='{getattr(self,'url',None)}')"
+
+def aaaaaaah(self):
+    try:
+        return f"ImportedStyleSheet(url='{getattr(self,'url',None)}')"
+    except Exception:
+        return "ImportedStylesheet"
+
+ImportedStyleSheet.__repr__ = aaaaaaah
 
 
 class DesignTest(Design):
