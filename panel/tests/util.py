@@ -160,12 +160,6 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
 
     timeout_msg = f"wait_until timed out in {timeout} milliseconds"
 
-    if isinstance(fn, tuple):
-        def fn(fn_tuple=fn):
-            res1, res2 = fn_tuple[0](), fn_tuple[1]()
-            assert res1 == res2, f"{res1} != {res2}"
-
-
     while True:
         try:
             result = fn()

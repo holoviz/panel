@@ -77,4 +77,5 @@ def test_code_editor_not_on_keyup(page):
     page.keyboard.down(ctrl_key)
     page.keyboard.press("Enter")
     page.keyboard.up(ctrl_key)
+
     wait_until(lambda: editor.value == "print(\"Hello UI!\")", page)
