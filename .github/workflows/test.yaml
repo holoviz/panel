@@ -145,7 +145,7 @@ jobs:
           opengl: true
       - name: Test unit
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit $COV -vv -l
+          pixi run -e ${{ matrix.environment }} test-unit $COV
       - name: Test subprocess
         if: contains(matrix.os, 'ubuntu')
         run: |
