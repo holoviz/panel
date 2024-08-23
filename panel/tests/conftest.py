@@ -58,6 +58,19 @@ try:
 except (RuntimeError, DeprecationWarning):
     asyncio.set_event_loop(asyncio.new_event_loop())
 
+
+def pytest_assertrepr_compare(config, op, left, right):
+    from _pytest.assertion.util import assertrepr_compare
+
+    import panel as pn
+
+    pytest_output = assertrepr_compare(config, op, left, right)
+    if pytest_output is None:
+        pytest_output = [f"{left!r} {op} {right!r}"]
+
+    return [*pytest_output, f"State: {pn.state!r}", f"Config: {pn.config!r}"]
+
+
 def port_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(1)
