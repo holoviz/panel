@@ -68,8 +68,10 @@ def pytest_assertrepr_compare(config, op, left, right):
     if pytest_output is None:
         pytest_output = [f"{left!r} {op} {right!r}"]
 
-    return [*pytest_output, f"State: {pn.state!r}", f"Config: {pn.config!r}"]
+    return [*pytest_output, f"cwd: {os.getcwd()}", f"State: {pn.state!r}", f"Config: {pn.config!r}"]
 
+
+pytest.register_assert_rewrite("panel.tests.util")
 
 def port_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
