@@ -50,7 +50,7 @@ if os.name != 'nt':
 
 
 for e in os.environ:
-    if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL"):
+    if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", ):
         os.environ.pop(e, None)
 
 try:
