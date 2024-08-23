@@ -48,6 +48,11 @@ if os.name != 'nt':
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
 
+
+for e in os.environ:
+    if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL"):
+        os.environ.pop(e, None)
+
 try:
     asyncio.get_event_loop()
 except (RuntimeError, DeprecationWarning):
@@ -83,7 +88,7 @@ def start_jupyter():
             break
         if time.monotonic() > deadline:
             raise TimeoutError(
-                'jupyter server did not start within {timeout} seconds.'
+                f'jupyter server did not start within {JUPYTER_TIMEOUT} seconds.'
             )
     JUPYTER_PORT = int(line.split(host)[-1][:4])
 
