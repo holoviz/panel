@@ -748,7 +748,7 @@ class Resources(BkResources):
         # Add loading spinner
         if config.global_loading_spinner:
             loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8').replace(
-                '../assets', self.dist_dir
+                '../assets', self.dist_dir + 'assets'
             )
             raw.extend([loading_base, loading_css(
                 config.loading_spinner, config.loading_color, config.loading_max_height
