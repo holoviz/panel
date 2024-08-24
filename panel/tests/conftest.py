@@ -440,6 +440,12 @@ def cache_cleanup():
     state._periodic.clear()
     Design._cache.clear()
 
+@pytest.fixture(autouse=True)
+def assert_curdoc_reset():
+    # state.curdoc should never leak across tests
+    yield
+    assert state.curdoc is None
+
 @pytest.fixture
 def autoreload():
     config.autoreload = True
