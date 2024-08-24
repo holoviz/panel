@@ -300,13 +300,15 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
         The stylesheet definition
     """
     stylesheet = os.fspath(stylesheet)
-    if not stylesheet.startswith('http') and attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet)):
-        if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
-            stylesheet = component_resource_path(cls, attribute, stylesheet)
-            if config.autoreload and '?' not in stylesheet:
-                stylesheet += f'?v={uuid.uuid4().hex}'
-        else:
-            stylesheet = custom_path.read_text(encoding='utf-8')
+    if stylesheet.startswith('http') or not (attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet))):
+        return stylesheet
+    print('>>>', state.curdoc, getattr(state.curdoc, 'session_context', None))  # noqa
+    if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
+        stylesheet = component_resource_path(cls, attribute, stylesheet)
+        if config.autoreload and '?' not in stylesheet:
+            stylesheet += f'?v={uuid.uuid4().hex}'
+    else:
+        stylesheet = custom_path.read_text(encoding='utf-8')
     return stylesheet
 
 def patch_model_css(root, dist_url):
