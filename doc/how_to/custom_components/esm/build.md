@@ -100,7 +100,8 @@ To recap here are the three files that we need:
 
 ::::{tab-set}
 
-:::tab-item package.json
+:::{tab-item} package.json
+
 ```json
 {
   "name": "confetti-button",
@@ -112,6 +113,8 @@ To recap here are the three files that we need:
 :::
 
 :::{tab-item} confetti.py
+
+``` python
 import panel as pn
 
 from panel.custom import JSComponent
@@ -123,9 +126,12 @@ class ConfettiButton(JSComponent):
     _esm = 'confetti.bundled.js'
 
 ConfettiButton().servable()
+```
 :::
 
+
 :::{tab-item} confetti.js
+``` javascript
 import confetti from "canvas-confetti";
 
 export function render() {
