@@ -430,6 +430,7 @@ def server_cleanup():
         _watched_files.clear()
         _modules.clear()
         _local_modules.clear()
+        assert state.curdoc is None
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
@@ -439,12 +440,6 @@ def cache_cleanup():
     state._scheduled.clear()
     state._periodic.clear()
     Design._cache.clear()
-
-@pytest.fixture(autouse=True)
-def assert_curdoc_reset():
-    # state.curdoc should never leak across tests
-    yield
-    assert state.curdoc is None
 
 @pytest.fixture
 def autoreload():
