@@ -308,7 +308,7 @@ export default {render}`
     this.render_children()
     this.model_proxy.on(this.accessed_children, () => { this._stale_children = true })
     if (!this._rendered) {
-      	for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
+      for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
         cb()
       }
     }

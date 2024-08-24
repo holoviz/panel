@@ -25,7 +25,7 @@ export class ReactComponentView extends ReactiveESMView {
       cb()
     }
     if (!this._rendered) {
-      	for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
+      for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
         cb()
       }
     }
