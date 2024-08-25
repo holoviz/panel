@@ -111,13 +111,18 @@ def watched_modules():
     return module_paths, files
 
 async def async_file_watcher(stop_event=None):
+    cancelled = False
     while True:
         module_paths, files = watched_modules()
         async for changes in awatch(*files, stop_event=stop_event):
-            _reload(module_paths, changes)
-            await asyncio.sleep(1)
+            try:
+                _reload(module_paths, changes)
+                await asyncio.sleep(1)
+            except asyncio.CancelledError:
+                cancelled = True
+                break
             break
-        if stop_event.is_set():
+        if stop_event.is_set() or cancelled:
             break
 
 async def setup_autoreload_watcher(stop_event=None):
