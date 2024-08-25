@@ -34,6 +34,10 @@ class PlayerBase(Widget):
         default='once', objects=['once', 'loop', 'reflect'], doc="""
         Policy used when player hits last frame""")
 
+    preview_duration = param.Integer(default=1500, bounds=(0, None), doc="""
+        Duration (in milliseconds) for showing the current FPS when clicking
+        the slower/faster buttons, before reverting to the icon.""")
+
     show_loop_controls = param.Boolean(default=True, doc="""
         Whether the loop controls radio buttons are shown""")
 
@@ -54,7 +58,18 @@ class PlayerBase(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    scale_buttons = param.Number(default=1, doc="""
+        The scaling factor to resize the buttons.""")
+
+    visible_buttons = param.List(default=[
+        'slower', 'first', 'previous', 'reverse', 'pause', 'play', 'next', 'last', 'faster'
+    ], doc="""The buttons to display on the player.""")
+
+    visible_loop_options = param.List(default=[
+        'once', 'loop', 'reflect'
+    ], doc="The loop options to display on the player.")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': "title"}
 
     _widget_type: ClassVar[type[Model]] = _BkPlayer
 
@@ -63,6 +78,9 @@ class PlayerBase(Widget):
     __abstract = True
 
     def __init__(self, **params):
+        if loop_options := params.get("visible_loop_options", []):
+            if params.get("loop_policy", "once") not in loop_options:
+                params["loop_policy"] = loop_options[0]
         if 'value' in params and 'value_throttled' in self.param:
             params['value_throttled'] = params['value']
         super().__init__(**params)

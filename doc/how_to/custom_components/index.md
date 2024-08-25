@@ -60,7 +60,33 @@ ESM Components is our 2nd generation api for custom components while `ReactiveHT
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
+<<<<<<< HEAD
 :::{grid-item-card} {octicon}`columns;2.5em;sd-mr-1 sd-animate-grow50` Layouts
+=======
+
+:::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1 sd-animate-grow50` Building and Bundling ESM components
+:link: esm/build
+:link-type: doc
+
+How to specify and bundle external dependencies for ESM components.
+:::
+
+:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Add callbacks to ESM components
+:link: esm/callbacks
+:link-type: doc
+
+How to add both JS and Python based callbacks to ESM components.
+:::
+
+:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Widgets
+:link: esm/custom_widgets
+:link-type: doc
+
+How to create a custom widget using ESM components
+:::
+
+:::{grid-item-card} {octicon}`columns;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Layouts
+>>>>>>> 6c045a3c782a3c846ac706863e8d93c0053e2e2f
 :link: esm/custom_layout
 :link-type: doc
 
@@ -126,6 +152,7 @@ Build custom components wrapping Material UI using `ReactComponent`.
 :hidden:
 :maxdepth: 2
 
+esm/build
 esm/callbacks
 esm/custom_widgets
 esm/custom_layout

@@ -1308,6 +1308,8 @@ class Tabulator(BaseTable):
     def _process_events(self, events: dict[str, Any]) -> None:
         if 'expanded' in events:
             self._update_expanded(events.pop('expanded'))
+        if events.get('page_size') == 0:  # page_size can't be 0
+            events.pop('page_size')
         return super()._process_events(events)
 
     def _process_event(self, event) -> None:
@@ -1851,8 +1853,11 @@ class Tabulator(BaseTable):
                 )
                 del filter_params['values']
                 filter_params['valuesLookup'] = True
-        if filter_type == 'list' and not filter_params:
-            filter_params = {'valuesLookup': True}
+        if filter_type == 'list':
+            if not filter_params:
+                filter_params = {'valuesLookup': True}
+            if filter_func is None:
+                filter_func = 'in'
         fspec['headerFilter'] = filter_type
         if filter_params:
             fspec['headerFilterParams'] = filter_params

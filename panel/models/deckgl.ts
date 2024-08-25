@@ -20,7 +20,6 @@ function extractClasses() {
     classesDict[cls] = deck[cls]
   }
   const carto = (window as any).CartoLibrary
-  console.log(carto)
   const layers = Object.keys(carto.CARTO_LAYERS).filter(x => x.endsWith("Layer"))
   for (const layer of layers) {
     classesDict[layer] = carto.CARTO_LAYERS[layer]
