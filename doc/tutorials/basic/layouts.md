@@ -1,4 +1,4 @@
-# Layouts Content
+# Layout Content
 
 Welcome to our guide on layouting Python objects, including Panel components! Let's dive into arranging your content in a visually appealing and organized manner.
 
