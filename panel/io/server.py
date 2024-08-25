@@ -1217,7 +1217,6 @@ class StoppableThread(threading.Thread):
 
     def stop(self) -> None:
         """Signal to stop the event loop gracefully."""
-        self.stop_event.set()
         self.io_loop.add_callback(self._graceful_stop)
 
     async def _shutdown(self):
