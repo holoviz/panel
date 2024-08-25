@@ -4,7 +4,7 @@ In this guide we will show you how to add callbacks to your ESM components.
 
 ## Slideshow with Python callback
 
-This example shows you how to create a `SlideShow` component that uses a Python *callback* function to update the `Slideshow` image when its clicked:
+This example shows you how to create a `Slideshow` component that uses a Python *callback* function to update the `Slideshow` image when its clicked:
 
 ```{pyodide}
 import param

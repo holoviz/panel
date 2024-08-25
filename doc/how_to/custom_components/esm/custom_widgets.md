@@ -100,8 +100,8 @@ export function render({ model }) {
     const [image] = model.useState("image");
 
     return (
-    <button onClick={e => setClicks(clicks+1)} class="pn-container center-content">
-        <img src={image} class="image-size" src={ image }/>
+    <button onClick={e => setClicks(clicks+1)} className="pn-container center-content">
+        <img src={image} className="image-size" src={ image }/>
     </button>
     )
 }
@@ -132,7 +132,7 @@ export function render({ model }) {
 button = ImageButton(
     image="https://panel.holoviz.org/_static/logo_stacked.png",
     styles={"border": "2px solid lightgray"},
-    width=400, height=200
+    width=400
 )
 pn.Column(button, button.param.clicks).servable()
 ```
@@ -146,6 +146,7 @@ import panel as pn
 import param
 
 from panel.custom import AnyWidgetComponent
+from panel.widgets import WidgetBase
 
 pn.extension()
 
@@ -214,7 +215,7 @@ pn.Column(button, button.param.clicks).servable()
 
 If you don't want the *button* styling, you can change the `<button>` tag to a `<div>` tag.
 
-The `ImageButton` now works as any other widget. Lets try the `.from_param` method to create a `ImageButton` from a `param` class.
+The `ImageButton` now works as any other widget. Lets try the `.from_param` method to create an `ImageButton` from a `Parameter:
 
 ```{pyodide}
 class MyClass(param.Parameterized):
@@ -229,7 +230,7 @@ class MyClass(param.Parameterized):
             self.clicks += 1
 
 my_instance = MyClass()
-button2 = ImageButton.from_param(my_instance.param.value)
+button2 = ImageButton.from_param(my_instance.param.value, image="https://panel.holoviz.org/_static/logo_stacked.png",)
 pn.Column(button2, my_instance.param.clicks).servable()
 ```
 

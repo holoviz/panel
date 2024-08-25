@@ -4,7 +4,7 @@ In this tutorial we will build a *[Mario](https://mario.nintendo.com/) style but
 
 ![Mario chime button](https://assets.holoviz.org/panel/tutorials/ipymario.gif)
 
-This tutorial draws heavily on the great [`ipymario` tutorial](https://youtu.be/oZhyilx3gqI?si=dFPFiHua4TuuqCpu) by [Trevor Manzt](https://github.com/manzt).
+This tutorial draws heavily on the great [`ipymario` tutorial](https://youtu.be/oZhyilx3gqI?si=dFPFiHua4TuuqCpu) by [Trevor Manz](https://github.com/manzt).
 
 ## Overview
 
