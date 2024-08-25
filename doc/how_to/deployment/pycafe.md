@@ -62,6 +62,8 @@ After updating the file, click **RESTART** and test the app. It should function 
 
 Explore the examples below:
 
+
+- [Greeting App](https://py.cafe/maartenbreddels/panel-interactive-greeting-app ).
 - [Reference Example](https://py.cafe/MarcSkovMadsen/pycafe-reference) from the [GitHub repository](https://github.com/holoviz/panel/#interactive-data-apps).
 - [Basic Dashboard](https://py.cafe/MarcSkovMadsen/basic-dashboard) from the [Basic Dashboard Tutorial](../../tutorials/basic/build_dashboard.md).
 - [VideoStream Interface](https://py.cafe/MarcSkovMadsen/videostream) from the [VideoStream Interface Tutorial](https://panel.holoviz.org/gallery/streaming_videostream.html).
