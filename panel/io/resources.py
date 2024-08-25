@@ -302,7 +302,6 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     stylesheet = os.fspath(stylesheet)
     if stylesheet.startswith('http') or not (attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet))):
         return stylesheet
-    print('>>>', state.curdoc, getattr(state.curdoc, 'session_context', None))  # noqa
     if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
         stylesheet = component_resource_path(cls, attribute, stylesheet)
         if config.autoreload and '?' not in stylesheet:

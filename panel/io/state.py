@@ -769,6 +769,7 @@ class _state(param.Parameterized):
         any other state held by the server.
         """
         self.kill_all_servers()
+        self._curdoc = ContextVar('curdoc', default=None)
         self._indicators.clear()
         self._location = None
         self._locations.clear()

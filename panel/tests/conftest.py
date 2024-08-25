@@ -430,7 +430,6 @@ def server_cleanup():
         _watched_files.clear()
         _modules.clear()
         _local_modules.clear()
-        assert state.curdoc is None
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
