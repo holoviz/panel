@@ -24,8 +24,8 @@ panel
 To minimize load time, we recommend using the minimized `cdn` resources for `panel` and `bokeh` as shown below:
 
 ```bash
-bokeh @ https://cdn.holoviz.org/panel/wheels/panel-1.4.5-py3-none-any.whl
-panel @ https://cdn.holoviz.org/panel/wheels/bokeh-3.4.1-py3-none-any.whl
+bokeh @ https://cdn.holoviz.org/panel/wheels/bokeh-3.4.1-py3-none-any.whl
+panel @ https://cdn.holoviz.org/panel/wheels/panel-1.4.5-py3-none-any.whl
 ```
 
 We also recommend pinning the versions of the remaining dependencies to ensure your app continues to function properly despite future updates.
