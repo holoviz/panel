@@ -103,7 +103,7 @@ class Widget(Reactive, WidgetBase):
 
     __abstract = True
 
-    def __init__(self, **params):
+    def __init__(self, **params: Any):
         if 'name' not in params:
             params['name'] = ''
         if '_supports_embed' in params:

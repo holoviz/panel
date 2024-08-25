@@ -330,7 +330,7 @@ class BaseTable(ReactiveData, Widget):
         self._update_index_mapping()
         self._data = {k: _convert_datetime_array_ignore_list(v) for k, v in data.items()}
         msg = {'data': self._data}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update(events, msg, m.source, ref)
 
     def _process_param_change(self, params):
@@ -1211,7 +1211,7 @@ class Tabulator(BaseTable):
 
     _manual_params: ClassVar[list[str]] = BaseTable._manual_params + _config_params
 
-    _priority_changes: ClassVar[list[str]] = ['data']
+    _priority_changes: ClassVar[list[str]] = ['data', 'filters']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
@@ -1503,7 +1503,7 @@ class Tabulator(BaseTable):
     def _update_style(self, recompute=True):
         styles = self._get_style_data(recompute)
         msg = {'cell_styles': styles}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
 
     def _get_children(self):
@@ -1559,6 +1559,8 @@ class Tabulator(BaseTable):
         return models
 
     def _update_children(self, *events):
+        if all(e.name in ('page', 'page_size', 'pagination', 'sorters') for e in events) and self.pagination != 'remote':
+            return
         for event in events:
             if event.name == 'value' and self._indexes_changed(event.old, event.new):
                 self.expanded = []
@@ -1567,7 +1569,7 @@ class Tabulator(BaseTable):
             elif event.name == 'row_content':
                 self._indexed_children.clear()
         self._child_panels, removed, expanded = self._get_children()
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             root, doc, comm = state._views[ref][1:]
             for child_panel in removed:
                 child_panel._cleanup(root)
@@ -1591,7 +1593,7 @@ class Tabulator(BaseTable):
         self._update_index_mapping()
 
     def stream(self, stream_value, rollover=None, reset_index=True, follow=True):
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update([], {'follow': follow}, model, ref)
         super().stream(stream_value, rollover, reset_index)
         if follow and self.pagination:
@@ -1630,7 +1632,7 @@ class Tabulator(BaseTable):
         page_events = ('page', 'page_size', 'sorters')
         if self._updating:
             return
-        elif events and all(e.name in page_events[:-1] for e in events) and self.pagination == 'local':
+        elif events and all(e.name in page_events for e in events) and self.pagination == 'local':
             return
         elif events and all(e.name in page_events for e in events) and not self.pagination:
             self._processed, _ = self._get_data()
@@ -1649,7 +1651,7 @@ class Tabulator(BaseTable):
 
     def _update_selectable(self):
         selectable = self._get_selectable()
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update([], {'selectable_rows': selectable}, model, ref)
 
     @param.depends('page_size', watch=True)
@@ -1658,7 +1660,7 @@ class Tabulator(BaseTable):
         nrows = self.page_size or self.initial_page_size
         max_page = max(length//nrows + bool(length%nrows), 1)
         self.param.page.bounds = (1, max_page)
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update([], {'max_page': max_page}, model, ref)
 
     def _clear_selection_remote_pagination(self, event):
@@ -2035,7 +2037,7 @@ class Tabulator(BaseTable):
         filename: str
             The filename to save the table as.
         """
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update({}, {'filename': filename}, model, ref)
             self._apply_update({}, {'download': not model.download}, model, ref)
 
