@@ -10,7 +10,7 @@ Visit [PY.CAFE](https://py.cafe/) and either sign in or sign up for an account.
 
 ## 2. Choose the Panel Framework
 
-Select the Panel framework from the available options.
+Select the Panel framework from the available options or use the direct link [PY.CAFE/snippet/panel](https://py.cafe/snippet/panel/v1).
 
 ## 3. Update the `requirements.txt` File
 
@@ -58,10 +58,11 @@ After updating the file, click **RESTART** and test the app. It should function 
 
 <iframe src="https://py.cafe/app/MarcSkovMadsen/pycafe-reference" title="PyCafe Reference Example" frameborder="0" style="width: 100%; height: 500px;"></iframe>
 
+Finally you can click **PUSH** to persist your app and click **SHARE** to share it with the world.
+
 ## Example Gallery
 
 Explore the examples below:
-
 
 - [Greeting App](https://py.cafe/maartenbreddels/panel-interactive-greeting-app ).
 - [Reference Example](https://py.cafe/MarcSkovMadsen/pycafe-reference) from the [GitHub repository](https://github.com/holoviz/panel/#interactive-data-apps).
