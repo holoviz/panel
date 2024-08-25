@@ -146,16 +146,18 @@ export class ReactiveESMView extends HTMLBoxView {
   accessed_children: string[] = []
   compiled_module: any = null
   model_proxy: any
+  render_module: Promise<any> | null = null
   _changing: boolean = false
   _child_callbacks: Map<string, ((new_views: UIElementView[]) => void)[]>
+  _child_rendered: Map<UIElementView, boolean> = new Map()
   _event_handlers: ((event: ESMEvent) => void)[] = []
   _lifecycle_handlers: Map<string, (() => void)[]> =  new Map([
     ["after_render", []],
     ["after_resize", []],
     ["remove", []],
   ])
-  _parent_map: Map<string, ParentNode> = new Map()
   _rendered: boolean = false
+  _stale_children: boolean = false
 
   override initialize(): void {
     super.initialize()
@@ -257,6 +259,7 @@ export class ReactiveESMView extends HTMLBoxView {
     this._apply_visible()
 
     this._child_callbacks = new Map()
+    this._child_rendered.clear()
 
     this._rendered = false
     set_size(this.el, this.model)
@@ -266,6 +269,12 @@ export class ReactiveESMView extends HTMLBoxView {
     if (this.model.compile_error) {
       this.render_error(this.model.compile_error)
     } else {
+      const code = this._render_code()
+      const render_url = URL.createObjectURL(
+        new Blob([code], {type: "text/javascript"}),
+      )
+      // @ts-ignore
+      this.render_module = importShim(render_url)
       this.render_esm()
     }
   }
@@ -274,16 +283,20 @@ export class ReactiveESMView extends HTMLBoxView {
     return `
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
-const output = view.render_fn({
-  view: view, model: view.model_proxy, data: view.model.data, el: view.container
-})
+function render() {
+  const output = view.render_fn({
+    view: view, model: view.model_proxy, data: view.model.data, el: view.container
+  })
 
-Promise.resolve(output).then((out) => {
-  if (out instanceof Element) {
-    view.container.replaceChildren(out)
-  }
-  view.after_rendered()
-})`
+  Promise.resolve(output).then((out) => {
+    if (out instanceof Element) {
+      view.container.replaceChildren(out)
+    }
+    view.after_rendered()
+  })
+}
+
+export default {render}`
   }
 
   after_rendered(): void {
@@ -292,60 +305,39 @@ Promise.resolve(output).then((out) => {
       cb()
     }
     this.render_children()
-    const rerender = this.accessed_children.filter((child) => !this._parent_map.has(child))
-    this.model_proxy.on(rerender, () => this.render_esm())
+    this.model_proxy.on(this.accessed_children, () => { this._stale_children = true })
     this._rendered = true
   }
 
   render_esm(): void {
-    if (this.model.compiled === null) {
+    if (this.model.compiled === null || this.render_module === null) {
       return
     }
     this.accessed_properties = []
-    this._parent_map.clear()
     for (const lf of this._lifecycle_handlers.keys()) {
       (this._lifecycle_handlers.get(lf) || []).splice(0)
     }
     this.model.disconnect_watchers(this)
-    const code = this._render_code()
-    const render_url = URL.createObjectURL(
-      new Blob([code], {type: "text/javascript"}),
-    )
-    // @ts-ignore
-    importShim(render_url)
+    this.render_module.then((mod: any) => mod.default.render())
   }
 
   render_children() {
     for (const child of this.model.children) {
       const child_model = this.model.data[child]
       const children = isArray(child_model) ? child_model : [child_model]
-      const nodes = []
       for (const subchild of children) {
         const view = this._child_views.get(subchild)
         if (!view) {
           continue
         }
         const parent = view.el.parentNode
-        nodes.push(parent)
-        if (parent) {
+        if (parent && !this._child_rendered.has(view)) {
           view.render()
-          view.after_render()
-        }
-      }
-      if ((new Set(nodes)).size === 1 && nodes[0] != null) {
-        const parent = nodes[0]
-        let in_sequence = true
-        for (let i=0; i<nodes.length; i++) {
-          if (parent.children[i] !== this._child_views.get(children[i])?.el) {
-            in_sequence = false
-            break
-          }
-        }
-        if (in_sequence && parent) {
-          this._parent_map.set(child, parent)
+          this._child_rendered.set(view, true)
         }
       }
     }
+    this.r_after_render()
   }
 
   override remove(): void {
@@ -353,6 +345,8 @@ Promise.resolve(output).then((out) => {
     for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
       cb()
     }
+    this._child_callbacks.clear()
+    this._child_rendered.clear()
   }
 
   override after_resize(): void {
@@ -380,7 +374,8 @@ Promise.resolve(output).then((out) => {
   override async update_children(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
-    for (const child_view of this.child_views) {
+    const all_views = this.child_views
+    for (const child_view of all_views) {
       child_view.el.remove()
     }
 
@@ -394,17 +389,16 @@ Promise.resolve(output).then((out) => {
         continue
       }
 
-      if (this._parent_map.has(child)) {
-        const parent = this._parent_map.get(child)
-        child_view.render()
-        // @ts-ignore
-        parent.append(child_view.el)
-      }
-
       if (new_views.has(child)) {
         new_views.get(child).push(child_view)
       } else {
         new_views.set(child, [child_view])
+      }
+    }
+
+    for (const view of this._child_rendered.keys()) {
+      if (!all_views.includes(view)) {
+        this._child_rendered.delete(view)
       }
     }
 
@@ -414,6 +408,10 @@ Promise.resolve(output).then((out) => {
       for (const callback of callbacks) {
         callback(new_children)
       }
+    }
+    if (this._stale_children) {
+      this.render_esm()
+      this._stale_children = false
     }
     this._update_children()
     this.invalidate_layout()
@@ -530,8 +528,12 @@ export class ReactiveESM extends HTMLBox {
   protected _declare_importmap(): void {
     if (this.importmap) {
       const importMap = {...this.importmap}
-      // @ts-ignore
-      importShim.addImportMap(importMap)
+      try {
+        // @ts-ignore
+        importShim.addImportMap(importMap)
+      } catch (e) {
+        console.warn(`Failed to add import map: ${e}`)
+      }
     }
   }
 

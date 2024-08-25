@@ -57,7 +57,7 @@ def get_panelite_nb_paths():
     nbs = list(FILES.glob('*/*/*.ipynb')) + list(FILES.glob('*/*.*'))
     for nb in nbs:
         path = str(nb).replace("\\", "/").split("files/")[-1]
-        if path.endswith(".ipynb") and not ".ipynb_checkpoints" in path:
+        if path.endswith(".ipynb") and ".ipynb_checkpoints" not in path:
             yield path
 PATHS_WITH_NOTHING_TO_TEST = [
     "gallery/demos/attractors.ipynb",
@@ -66,7 +66,7 @@ PATHS_WITH_NOTHING_TO_TEST = [
     "gallery/demos/nyc_taxi.ipynb",
     "gallery/demos/portfolio-optimizer.ipynb",
 ]
-PATHS = list(path for path in get_panelite_nb_paths() if not path in PATHS_WITH_NOTHING_TO_TEST)
+PATHS = list(path for path in get_panelite_nb_paths() if path not in PATHS_WITH_NOTHING_TO_TEST)
 PATHS_WITHOUT_ISSUES = list(path for path in PATHS if path not in NOTEBOOK_ISSUES)
 PATHS_WITH_ISSUES = list(path for path in PATHS if path in NOTEBOOK_ISSUES)
 

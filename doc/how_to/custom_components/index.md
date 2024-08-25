@@ -58,6 +58,14 @@ Build custom components in Javascript using so called ESM components, which allo
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
+
+:::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1 sd-animate-grow50` Building and Bundling ESM components
+:link: esm/build
+:link-type: doc
+
+How to specify and bundle external dependencies for ESM components.
+:::
+
 :::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Add callbacks to ESM components
 :link: esm/callbacks
 :link-type: doc
@@ -124,6 +132,7 @@ Build custom components wrapping Material UI using `ReactComponent`.
 :hidden:
 :maxdepth: 2
 
+esm/build
 esm/callbacks
 esm/custom_widgets
 esm/custom_layout

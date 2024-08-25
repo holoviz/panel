@@ -14,7 +14,6 @@ import pickle
 import sys
 import threading
 import time
-import unittest
 import unittest.mock
 import weakref
 

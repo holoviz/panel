@@ -153,7 +153,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     def _update_esm(self):
         esm = self._render_esm()
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             if esm == model.esm:
                 continue
             self._apply_update({}, {'esm': esm}, model, ref)

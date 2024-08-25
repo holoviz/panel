@@ -19,7 +19,8 @@ class TestChatReactionIcons:
         assert "dislike" in icons._rendered_icons
         assert icons._rendered_icons["dislike"].icon == "thumb-down"
         assert icons._rendered_icons["dislike"].active_icon == ""
-        assert len(icons._composite) == 2
+        assert len(icons._composite) == 1
+        assert len(icons._composite[0]) == 2
 
         icons.options = {"favorite": "heart"}
         assert icons.options == {"favorite": "heart"}
@@ -27,6 +28,7 @@ class TestChatReactionIcons:
         assert icons._rendered_icons["favorite"].icon == "heart"
         assert icons._rendered_icons["favorite"].active_icon == ""
         assert len(icons._composite) == 1
+        assert len(icons._composite[0]) == 1
 
     def test_value(self):
         icons = ChatReactionIcons(

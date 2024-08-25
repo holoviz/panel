@@ -600,8 +600,10 @@ export class DataTabulatorView extends HTMLBoxView {
       if (rows.length === 0) {
         this.tabulator.rowManager.renderEmptyScroll()
       }
-      // Ensure that after filtering the page is updated
-      this.updatePage(this.tabulator.getPage())
+      if (this.model.pagination != null) {
+        // Ensure that after filtering the page is updated
+        this.updatePage(this.tabulator.getPage())
+      }
     })
     this.tabulator.on("pageLoaded", (pageno: number) => {
       this.updatePage(pageno)
@@ -656,7 +658,7 @@ export class DataTabulatorView extends HTMLBoxView {
             const remaining = table_height - height
             page_size += Math.floor(remaining / Math.min(...heights))
           }
-          this.model.page_size = page_size
+          this.model.page_size = Math.max(page_size || 1, 1)
         }
       }
       this.setMaxPage()
@@ -774,14 +776,15 @@ export class DataTabulatorView extends HTMLBoxView {
         }
       }
       for (const index of this.model.expanded) {
-        const row = lookup.get(index)
         if (!this.model.children.has(index)) {
           continue
         }
+        const row = lookup.get(index)
         const model = this.model.children.get(index)
         const view = model == null ? null : this._child_views.get(model)
-        if ((view != null) && (new_children as UIElementView[]).includes(view)) {
-          this._render_row(row, false)
+        if (view != null) {
+          const render = (new_children as UIElementView[]).includes(view)
+          this._render_row(row, false, render)
         }
       }
       this._update_children()
@@ -792,7 +795,7 @@ export class DataTabulatorView extends HTMLBoxView {
     })
   }
 
-  _render_row(row: any, resize: boolean = true): void {
+  _render_row(row: any, resize: boolean = true, render: boolean = true): void {
     const index = row._row?.data._index
     if (!this.model.expanded.includes(index) || this.model.children.get(index) == null) {
       return
@@ -809,7 +812,7 @@ export class DataTabulatorView extends HTMLBoxView {
     const viewEl = div({style: {background_color: bg, margin_left: neg_margin, max_width: "100%", overflow_x: "hidden"}})
     viewEl.appendChild(view.el)
     rowEl.appendChild(viewEl)
-    if (!view.has_finished()) {
+    if (!view.has_finished() && render) {
       view.render()
       view.after_render()
     }

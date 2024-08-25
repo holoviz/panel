@@ -663,7 +663,7 @@ def test_tabulator_header_filters_column_config_list(document, comm):
         {'field': 'index', 'sorter': 'number'},
         {'field': 'A', 'sorter': 'number'},
         {'field': 'B', 'sorter': 'number'},
-        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'in'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
     assert model.configuration['selectable'] == True
@@ -682,8 +682,8 @@ def test_tabulator_header_filters_column_config_select_autocomplete_backwards_co
         {'field': 'index', 'sorter': 'number'},
         {'field': 'A', 'sorter': 'number'},
         {'field': 'B', 'sorter': 'number'},
-        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
-        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'sorter': 'timestamp'},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'in'},
+        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'sorter': 'timestamp', 'headerFilterFunc': 'in'},
     ]
     assert model.configuration['selectable'] == True
 
