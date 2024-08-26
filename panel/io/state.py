@@ -786,6 +786,8 @@ class _state(param.Parameterized):
         self._on_session_created.clear()
         self._on_session_destroyed.clear()
         self._stylesheets.clear()
+        self._scheduled.clear()
+        self._periodic.clear()
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,

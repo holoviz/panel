@@ -59,24 +59,6 @@ except (RuntimeError, DeprecationWarning):
     asyncio.set_event_loop(asyncio.new_event_loop())
 
 
-def pytest_assertrepr_compare(config, op, left, right):
-    from _pytest.assertion import truncate
-    from _pytest.assertion.util import assertrepr_compare
-
-    import panel as pn
-
-    truncate.DEFAULT_MAX_LINES = 9999
-    truncate.DEFAULT_MAX_CHARS = 9999
-
-    pytest_output = assertrepr_compare(config, op, left, right)
-    if pytest_output is None:
-        pytest_output = [f"{left!r} {op} {right!r}"]
-
-    return [*pytest_output, f"cwd: {os.getcwd()}", f"State: {pn.state!r}, {pn.state.__dict__!r}", f"Config: {pn.config!r}, {pn.config.__dict__!r}"]
-
-
-pytest.register_assert_rewrite("panel.tests.util")
-
 def port_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(1)
@@ -435,9 +417,6 @@ def server_cleanup():
 def cache_cleanup():
     state.clear_caches()
     Design._resolve_modifiers.cache_clear()
-    state._stylesheets.clear()
-    state._scheduled.clear()
-    state._periodic.clear()
     Design._cache.clear()
 
 @pytest.fixture

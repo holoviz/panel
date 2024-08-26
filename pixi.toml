@@ -122,7 +122,7 @@ scipy = "*"
 textual = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
-test-unit = 'pytest panel/tests -n logical --dist loadgroup --showlocals'
+test-unit = 'pytest panel/tests -n logical --dist loadgroup'
 test-subprocess = 'pytest panel/tests --subprocess'
 
 [feature.test-example.tasks]
@@ -146,7 +146,7 @@ packaging = "*"
 _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
-cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10 --showlocals'
+cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10'
 depends_on = ["_install-ui"]
 
 # =============================================
