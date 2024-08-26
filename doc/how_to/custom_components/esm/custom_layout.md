@@ -346,7 +346,7 @@ class GridReact(ListLike, ReactComponent):
         <Split
             className="split"
             direction="vertical"
-            style={{ height: model.height }}
+            style={{ height: "100%" }}
         >{...objects}</Split>
       )
     }"""
