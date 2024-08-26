@@ -200,7 +200,7 @@ depends_on = [
 mystmd = "*"
 
 [feature.myst-doc.tasks]
-test-myst = { command = "myst build", cwd = "doc" } 
+test-myst = { command = "myst build", cwd = "doc" }
 
 # =============================================
 # ================== BUILD ====================
