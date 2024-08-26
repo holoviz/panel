@@ -3,59 +3,67 @@ name: jupyterlite
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+a[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+b[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
   workflow_dispatch:
     inputs:
       target:
-        description: 'Site to build and deploy'
+        description: "Site to build and deploy"
         type: choice
         options:
-        - dev
-        - main
-        - dryrun
+          - dev
+          - main
+          - dryrun
         required: true
         default: dryrun
   schedule:
-    - cron: '0 19 * * SUN'
+    - cron: "0 19 * * SUN"
 
 jobs:
-  deploy_jupyterlite:
-    name: JupyterLite
+  pixi_lock:
+    name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+
+  lite_build:
+    name: Build Jupyterlite
+    needs: [pixi_lock]
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: 0
-      - name: Setup Python
-        uses: actions/setup-python@v4
+          environments: "lite"
+          install: false
+          download-data: false
+      - name: lite build
+        run: pixi run lite-build
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          python-version: '3.10'
-      - name: Set and echo git ref
+          name: jupyterlite
+          path: lite/dist/
+          if-no-files-found: error
+
+  lite_publish:
+    name: Publish Jupyterlite
+    runs-on: ubuntu-latest
+    needs: [lite_build]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: jupyterlite
+          path: lite/dist/
+      - name: Set output
         id: vars
-        run: |
-          echo 'Deploying from ref ${GITHUB_REF#refs/*/}'
-          echo 'tag=${GITHUB_REF#refs/*/}' >> $GITHUB_OUTPUT
-      - name: Install the dependencies
-        run: |
-          python -m pip install -r ./lite/requirements.txt
-      - name: Build pyodide wheels for JupyterLite
-        run: |
-          python ./scripts/build_pyodide_wheels.py lite/pypi
-      - name: Convert content
-        run: |
-          python ./scripts/panelite/generate_panelite_content.py
-      - name: Build the JupyterLite site
-        run: |
-          jupyter lite build --lite-dir lite --output-dir lite/dist
+        run: echo "tag=${{ needs.docs_build.outputs.tag }}" >> $GITHUB_OUTPUT
       - name: Upload dev
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
           (github.event_name == 'workflow_run' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
           external_repository: holoviz-dev/panelite-dev
@@ -65,7 +73,7 @@ jobs:
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
           (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
           external_repository: holoviz-dev/panelite

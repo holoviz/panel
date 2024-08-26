@@ -151,7 +151,7 @@ class ECharts(ModelPane):
         """
         self._py_callbacks[event][query].append(callback)
         event_config = {event: list(queries) for event, queries in self._py_callbacks.items()}
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update({}, {'event_config': event_config}, model, ref)
 
     def js_on_event(self, event: str, callback: str | CustomJS, query: str | None = None, **args):
@@ -176,7 +176,7 @@ class ECharts(ModelPane):
             of the object.
         """
         self._js_callbacks[event].append((query, callback, args))
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             js_events = self._get_js_events(ref)
             self._apply_update({}, {'js_events': js_events}, model, ref)
 

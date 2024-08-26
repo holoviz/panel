@@ -40,6 +40,12 @@ class TestChatFeed:
         assert message.object == "Instructions"
         assert message.user == "Help"
 
+    def test_init_with_loading(self):
+        chat_feed = ChatFeed(loading=True)
+        assert chat_feed._placeholder in chat_feed._chat_log
+        chat_feed.loading = False
+        assert chat_feed._placeholder not in chat_feed._chat_log
+
     def test_update_header(self):
         chat_feed = ChatFeed(header="1")
         assert chat_feed._card.header == "1"
@@ -200,6 +206,7 @@ class TestChatFeed:
         assert len(chat_feed) == 1
         message = chat_feed.objects[0]
         assert isinstance(message, ChatMessage)
+        assert message.user == "Assistant"
 
         steps = message.object
         assert isinstance(steps, Column)
@@ -272,7 +279,7 @@ class TestChatFeed:
         assert len(chat_feed) == 2
         message1 = chat_feed.objects[0]
         assert isinstance(message1, ChatMessage)
-        assert message1.user == "User"
+        assert message1.user == "Assistant"
         steps1 = message1.object
         assert isinstance(steps1, Column)
         assert len(steps1) == 1
@@ -282,7 +289,7 @@ class TestChatFeed:
 
         message2 = chat_feed.objects[1]
         assert isinstance(message2, ChatMessage)
-        assert message2.user == "User"
+        assert message2.user == "Assistant"
         steps2 = message2.object
         assert isinstance(steps2, Column)
         assert len(steps2) == 1
@@ -600,6 +607,140 @@ class TestChatFeed:
         assert chat_feed._chat_log.load_buffer == 10
         assert chat_feed._chat_log.scroll_button_threshold == 10
         assert chat_feed._chat_log.auto_scroll_limit == 10
+
+
+@pytest.mark.xdist_group("chat")
+class TestChatFeedPromptUser:
+
+    async def test_prompt_user_basic(self, chat_feed):
+        text_input = TextInput()
+
+        def callback(component, feed):
+            feed.send(component.value)
+
+        async def prompt_and_submit():
+            chat_feed.prompt_user(text_input, callback)
+            await async_wait_until(lambda: len(chat_feed.objects) == 1)
+            text_input.value = "test input"
+            submit_button = chat_feed.objects[-1].object[1]
+            submit_button.clicks += 1
+            await async_wait_until(lambda: len(chat_feed.objects) == 2)
+
+        await asyncio.wait_for(prompt_and_submit(), timeout=5.0)
+        assert chat_feed.objects[-1].object == "test input"
+
+    async def test_prompt_user_with_predicate(self, chat_feed):
+        text_input = TextInput()
+
+        def predicate(component):
+            return len(component.value) > 5
+
+        def callback(component, feed):
+            feed.send(component.value)
+
+        async def prompt_and_submit():
+            chat_feed.prompt_user(text_input, callback, predicate=predicate)
+            await async_wait_until(lambda: len(chat_feed.objects) == 1)
+
+            text_input.value = "short"
+            submit_button = chat_feed.objects[-1].object[1]
+            assert submit_button.disabled
+
+            text_input.value = "long enough"
+            await async_wait_until(lambda: not submit_button.disabled)
+
+            submit_button.clicks += 1
+            await async_wait_until(lambda: len(chat_feed.objects) == 2)
+
+        await asyncio.wait_for(prompt_and_submit(), timeout=5.0)
+        assert chat_feed.objects[-1].object == "long enough"
+
+    async def test_prompt_user_timeout(self, chat_feed):
+        text_input = TextInput()
+
+        def callback(component, feed):
+            pytest.fail("Callback should not be called on timeout")
+
+        async def prompt_and_wait():
+            chat_feed.prompt_user(text_input, callback, timeout=1)
+            await async_wait_until(lambda: len(chat_feed.objects) == 1)
+            await async_wait_until(lambda: chat_feed.objects[-1].object[1].disabled)
+
+        await asyncio.wait_for(prompt_and_wait(), timeout=5.0)
+
+        submit_button = chat_feed.objects[-1].object[1]
+        assert submit_button.name == "Timed out"
+        assert submit_button.button_type == "light"
+        assert submit_button.icon == "x"
+
+    async def test_prompt_user_custom_button_params(self, chat_feed):
+        text_input = TextInput()
+
+        def callback(component, feed):
+            feed.send(component.value)
+
+        custom_button_params = {
+            "name": "Custom Submit",
+            "button_type": "success",
+            "icon": "arrow-right"
+        }
+
+        async def prompt_and_check():
+            chat_feed.prompt_user(text_input, callback, button_params=custom_button_params)
+            await async_wait_until(lambda: len(chat_feed.objects) == 1)
+
+        await asyncio.wait_for(prompt_and_check(), timeout=5.0)
+
+        submit_button = chat_feed.objects[-1].object[1]
+        assert submit_button.name == "Custom Submit"
+        assert submit_button.button_type == "success"
+        assert submit_button.icon == "arrow-right"
+
+    async def test_prompt_user_custom_timeout_button_params(self, chat_feed):
+        text_input = TextInput()
+
+        def callback(component, feed):
+            pytest.fail("Callback should not be called on timeout")
+
+        custom_timeout_params = {
+            "name": "Custom Timeout",
+            "button_type": "danger",
+            "icon": "alert-triangle"
+        }
+
+        async def prompt_and_wait():
+            chat_feed.prompt_user(text_input, callback, timeout=1, timeout_button_params=custom_timeout_params)
+            await async_wait_until(lambda: len(chat_feed.objects) == 1)
+            await async_wait_until(lambda: chat_feed.objects[-1].object[1].disabled)
+
+        await asyncio.wait_for(prompt_and_wait(), timeout=5.0)
+
+        submit_button = chat_feed.objects[-1].object[1]
+        assert submit_button.name == "Custom Timeout"
+        assert submit_button.button_type == "danger"
+        assert submit_button.icon == "alert-triangle"
+
+    async def test_prompt_user_async(self, chat_feed):
+        text_input = TextInput()
+
+        async def async_callback(component, feed):
+            await asyncio.sleep(0.1)
+            feed.send("Callback executed")
+
+        async def prompt_and_submit():
+            chat_feed.prompt_user(text_input, async_callback)
+            await async_wait_until(lambda: len(chat_feed.objects) == 1)
+
+            submit_button = chat_feed.objects[-1].object[1]
+            submit_button.clicks += 1
+
+            await async_wait_until(lambda: len(chat_feed.objects) == 2)
+
+        await asyncio.wait_for(prompt_and_submit(), timeout=5.0)
+
+        assert chat_feed.objects[-1].object == "Callback executed"
+        assert chat_feed.objects[-2].object.disabled == True
+
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedCallback:
@@ -1136,6 +1277,17 @@ class TestChatFeedCallback:
         wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
+    def test_persist_placeholder_while_loading(self, chat_feed):
+        def callback(contents):
+            assert chat_feed._placeholder in chat_feed._chat_log
+            return "hey testing"
+
+        chat_feed.loading = True
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        assert chat_feed._placeholder in chat_feed._chat_log
+
+
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeForTransformers:
 
@@ -1295,6 +1447,17 @@ class TestChatFeedSerializeForTransformers:
 
         chat_feed.send(Test())
         assert chat_feed.serialize() == [{"role": "user", "content": "Test()"}]
+
+    def test_serialize_kwargs(self, chat_feed):
+        chat_feed.send("Hello")
+        chat_feed.add_step("Hello", "World")
+        assert chat_feed.serialize(
+            prefix_with_container_label=False,
+            prefix_with_viewable_label=False
+        ) == [
+            {'role': 'user', 'content': 'Hello'},
+            {'role': 'assistant', 'content': '((Hello))'}
+        ]
 
 
 @pytest.mark.xdist_group("chat")

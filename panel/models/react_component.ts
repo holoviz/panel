@@ -29,17 +29,17 @@ export class ReactComponentView extends ReactiveESMView {
 
   protected override _render_code(): string {
     let render_code = `
-if (rendered && view.model.usesReact) {
-  view._changing = true
-  const root = createRoot(view.container)
-  try {
-    root.render(rendered)
-  } catch(e) {
-    view.render_error(e)
-  }
-  view._changing = false
-  view.after_rendered()
-}`
+  if (rendered && view.model.usesReact) {
+    view._changing = true
+    const root = createRoot(view.container)
+    try {
+      root.render(rendered)
+    } catch(e) {
+      view.render_error(e)
+    }
+    view._changing = false
+    view.after_rendered()
+  }`
     let import_code = `
 import * as React from "react"
 import { createRoot } from "react-dom/client"`
@@ -49,15 +49,15 @@ ${import_code}
 import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
       render_code = `
-if (rendered) {
-  const cache = createCache({
-    key: 'css',
-    prepend: true,
-    container: view.style_cache,
-  })
-  rendered = React.createElement(CacheProvider, {value: cache}, rendered)
-}
-${render_code}`
+  if (rendered) {
+    const cache = createCache({
+      key: 'css-${this.model.id}',
+      prepend: true,
+      container: view.style_cache,
+    })
+    rendered = React.createElement(CacheProvider, {value: cache}, rendered)
+  }
+  ${render_code}`
     }
     return `
 ${import_code}
@@ -73,7 +73,8 @@ class Child extends React.Component {
   }
 
   get element() {
-    return this.view.el
+    const view = this.view
+    return view == null ? null : view.el
   }
 
   componentDidMount() {
@@ -89,8 +90,17 @@ class Child extends React.Component {
     })
   }
 
+  append_child(ref) {
+    if (ref != null) {
+       const view = this.view
+       if (view != null) {
+         ref.appendChild(this.element)
+       }
+    }
+  }
+
   render() {
-    return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && ref.appendChild(this.element)})
+    return React.createElement('div', {className: "child-wrapper", ref: (ref) => this.append_child(ref)})
   }
 }
 
@@ -187,10 +197,14 @@ class Component extends React.Component {
   }
 }
 
-const props = {view, model: react_proxy, data: view.model.data, el: view.container}
-let rendered = React.createElement(Component, props)
+function render() {
+  const props = {view, model: react_proxy, data: view.model.data, el: view.container}
+  let rendered = React.createElement(Component, props)
 
-${render_code}`
+  ${render_code}
+}
+
+export default {render}`
   }
 }
 
@@ -233,7 +247,8 @@ export class ReactComponent extends ReactiveESM {
       imports: {
         react: `https://esm.sh/react@${react_version}${pkg_suffix}`,
         "react/": `https://esm.sh/react@${react_version}${path_suffix}/`,
-        "react-dom/": `https://esm.sh/react-dom@${react_version}&deps=react@${react_version},react-dom@${react_version}${path_suffix}/`,
+        "react-dom": `https://esm.sh/react-dom@${react_version}?deps=react@${react_version}${pkg_suffix}&external=react`,
+        "react-dom/": `https://esm.sh/react-dom@${react_version}&deps=react@${react_version}${path_suffix}&external=react/`,
         ...imports,
       },
       scopes: scopes || {},
@@ -241,8 +256,9 @@ export class ReactComponent extends ReactiveESM {
     if (this.usesMui) {
       importMap.imports = {
         ...importMap.imports,
-        "@emotion/cache": "https://esm.sh/@emotion/cache",
-        "@emotion/react": `https://esm.sh/@emotion/react?external=react${path_suffix}`,
+        "react-is": `https://esm.sh/react-is@${react_version}&external=react`,
+        "@emotion/cache": `https://esm.sh/@emotion/cache?deps=react@${react_version},react-dom@${react_version}`,
+        "@emotion/react": `https://esm.sh/@emotion/react?deps=react@${react_version},react-dom@${react_version}&external=react${path_suffix},react-is`,
       }
     }
     // @ts-ignore

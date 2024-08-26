@@ -37,6 +37,7 @@ test:
   requires:
     - pip
     - pytest-asyncio
+    - pytest-rerunfailures
     - pytest-xdist
   commands:
     - pip check

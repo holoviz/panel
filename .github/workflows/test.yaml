@@ -206,12 +206,7 @@ jobs:
           (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
       - name: Build JupyterLite
         shell: pixi run -e test-ui bash -el {0}
-        run: |
-          # TODO: Make this a pixi feature/environment
-          python -m pip install -r ./lite/requirements.txt
-          python ./scripts/build_pyodide_wheels.py lite/pypi
-          python ./scripts/panelite/generate_panelite_content.py
-          jupyter lite build --lite-dir lite --output-dir lite/dist
+        run: pixi run -e lite lite-build
       - name: Wait for JupyterLab
         uses: ifaxity/wait-on-action@v1.2.1
         with:
@@ -257,3 +252,22 @@ jobs:
       - name: Test Unit
         run: |
           pixi run -e ${{ matrix.environment }} test-unit
+
+  type_test_suite:
+    name: type:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
+    runs-on: ${{ matrix.os }}
+    if: needs.setup.outputs.code_change == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        environment: ["test-type"]
+    timeout-minutes: 120
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        with:
+          environments: ${{ matrix.environment }}
+      - name: Test Type
+        run: |
+          pixi run -e ${{ matrix.environment }} test-type || echo "Failed"

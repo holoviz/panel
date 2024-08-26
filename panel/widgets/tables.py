@@ -116,7 +116,10 @@ class BaseTable(ReactiveData, Widget):
         self._index_mapping = {}
         self._edited_indexes = []
         super().__init__(value=value, **params)
-        self.param.watch(self._setup_on_change, ['editors', 'formatters'])
+        self._internal_callbacks.extend([
+            self.param.watch(self._setup_on_change, ['editors', 'formatters']),
+            self.param._watch(self._reset_selection, ['value'], precedence=-1)
+        ])
         self.param.trigger('editors')
         self.param.trigger('formatters')
 
@@ -126,8 +129,34 @@ class BaseTable(ReactiveData, Widget):
             self._renamed_cols.clear()
             return
         self._renamed_cols = {
-            str(col) if str(col) != col else col: col for col in self._get_fields()
+            ('_'.join(col) if isinstance(col, tuple) else str(col)) if str(col) != col else col: col for col in self._get_fields()
         }
+
+    def _reset_selection(self, event):
+        if event.type == 'triggered' and self._updating:
+            return
+        if self._indexes_changed(event.old, event.new):
+            selection = []
+            for sel in self.selection:
+                idx = event.old.index[sel]
+                try:
+                    new = event.new.index.get_loc(idx)
+                    selection.append(new)
+                except KeyError:
+                    pass
+            self.selection = selection
+
+    def _indexes_changed(self, old, new):
+        """
+        Comparator that checks whether DataFrame indexes have changed.
+
+        If indexes and length are unchanged we assume we do not
+        have to reset various settings including expanded rows,
+        scroll position, pagination etc.
+        """
+        if type(old) != type(new) or isinstance(new, dict) or len(old) != len(new):
+            return True
+        return (old.index != new.index).any()
 
     @property
     def _length(self):
@@ -143,7 +172,7 @@ class BaseTable(ReactiveData, Widget):
 
     def _get_fields(self) -> list[str]:
         indexes = self.indexes
-        col_names = list(self.value.columns)
+        col_names = [] if self.value is None else list(self.value.columns)
         if not self.hierarchical or len(indexes) == 1:
             col_names = indexes + col_names
         else:
@@ -245,12 +274,14 @@ class BaseTable(ReactiveData, Widget):
             else:
                 col_kwargs['width'] = 0
 
-            title = self.titles.get(col, str(col))
+            col_name = '_'.join(col) if isinstance(col, tuple) else col
+            title = self.titles.get(col, str(col_name))
             if col in indexes and len(indexes) > 1 and self.hierarchical:
                 title = 'Index: {}'.format(' | '.join(indexes))
             elif col in self.indexes and col.startswith('level_'):
                 title = ''
-            column = TableColumn(field=str(col), title=title,
+
+            column = TableColumn(field=str(col_name), title=title,
                                  editor=editor, formatter=formatter,
                                  **col_kwargs)
             columns.append(column)
@@ -295,24 +326,11 @@ class BaseTable(ReactiveData, Widget):
 
     @updating
     def _update_cds(self, *events: param.parameterized.Event):
-        old_processed = self._processed
         self._processed, data = self._get_data()
         self._update_index_mapping()
-        # If there is a selection we have to compute new index
-        if self.selection and old_processed is not None:
-            indexes = list(self._processed.index)
-            selection = []
-            for sel in self.selection:
-                try:
-                    iv = old_processed.index[sel]
-                    idx = indexes.index(iv)
-                    selection.append(idx)
-                except Exception:
-                    continue
-            self.selection = selection
         self._data = {k: _convert_datetime_array_ignore_list(v) for k, v in data.items()}
         msg = {'data': self._data}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update(events, msg, m.source, ref)
 
     def _process_param_change(self, params):
@@ -879,7 +897,8 @@ class BaseTable(ReactiveData, Widget):
         """
         if not self.selection:
             return self.current_view.iloc[:0]
-        return self._processed.iloc[self.selection]
+        df = self.value.iloc[self.selection]
+        return self._filter_dataframe(df)
 
 
 class DataFrame(BaseTable):
@@ -1028,6 +1047,29 @@ class DataFrame(BaseTable):
             g.aggregators = self._get_aggregators(index)
 
 
+class _ListValidateWithCallable(param.List):
+
+    __slots__ = ['callable']
+
+    def __init__(self, **params):
+        self.callable = params.pop("callable", None)
+        super().__init__(**params)
+
+    def _validate(self, val):
+        super()._validate(val)
+        self._validate_callable(val)
+
+    def _validate_callable(self, val):
+        if self.callable is not None:
+            selectable = self.callable()
+            if selectable and val:
+                if set(val) - set(selectable):
+                    raise ValueError(
+                        "Values in 'selection' must not have values "
+                        "which are not available with 'selectable_rows'."
+                  )
+
+
 class Tabulator(BaseTable):
     """
     The `Tabulator` widget wraps the [Tabulator js](http://tabulator.info/)
@@ -1109,6 +1151,10 @@ class Tabulator(BaseTable):
     row_height = param.Integer(default=30, doc="""
         The height of each table row.""")
 
+    selection = _ListValidateWithCallable(default=[], doc="""
+        The currently selected rows of the table. It validates
+        its values against 'selectable_rows' if used.""")
+
     selectable = param.ClassSelector(
         default=True, class_=(bool, str, int), doc="""
         Defines the selection mode of the Tabulator.
@@ -1165,7 +1211,7 @@ class Tabulator(BaseTable):
 
     _manual_params: ClassVar[list[str]] = BaseTable._manual_params + _config_params
 
-    _priority_changes: ClassVar[list[str]] = ['data']
+    _priority_changes: ClassVar[list[str]] = ['data', 'filters']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
@@ -1193,6 +1239,7 @@ class Tabulator(BaseTable):
         self.style = None
         self._computed_styler = None
         self._child_panels = {}
+        self._indexed_children = {}
         self._explicit_pagination = 'pagination' in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
@@ -1207,6 +1254,7 @@ class Tabulator(BaseTable):
             self.on_edit(edit_handler)
         if style is not None:
             self.style._todo = style._todo
+        self.param.selection.callable = self._get_selectable
 
     @param.depends('value', watch=True, on_init=True)
     def _apply_max_size(self):
@@ -1257,9 +1305,17 @@ class Tabulator(BaseTable):
             p._cleanup(root)
         super()._cleanup(root)
 
+    def _process_events(self, events: dict[str, Any]) -> None:
+        if 'expanded' in events:
+            self._update_expanded(events.pop('expanded'))
+        if events.get('page_size') == 0:  # page_size can't be 0
+            events.pop('page_size')
+        return super()._process_events(events)
+
     def _process_event(self, event) -> None:
         if event.event_name == 'selection-change':
-            self._update_selection(event)
+            if self.pagination == 'remote':
+                self._update_selection(event)
             return
 
         event_col = self._renamed_cols.get(event.column, event.column)
@@ -1390,7 +1446,10 @@ class Tabulator(BaseTable):
             styler = self._computed_styler
         if styler is None:
             return {}
-        offset = 1 + len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
+
+        # Compute offsets (not that multi-indexes are reset so don't require an offset)
+        offset = 1 + int(len(self.indexes) == 1)  + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
+
         if self.pagination == 'remote':
             page_size = self.page_size or self.initial_page_size
             start = (self.page - 1) * page_size
@@ -1446,30 +1505,53 @@ class Tabulator(BaseTable):
     def _update_style(self, recompute=True):
         styles = self._get_style_data(recompute)
         msg = {'cell_styles': styles}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
 
-    def _get_children(self, old={}):
+    def _get_children(self):
         if self.row_content is None or self.value is None:
-            return {}
+            return {}, [], []
         from ..pane import panel
         df = self._processed
         if self.pagination == 'remote':
             nrows = self.page_size or self.initial_page_size
             start = (self.page-1)*nrows
             df = df.iloc[start:(start+nrows)]
-        children = {}
-        for i in (range(len(df)) if self.embed_content else self.expanded):
-            if i in old:
-                children[i] = old[i]
-            else:
-                children[i] = panel(self.row_content(df.iloc[i]))
-        return children
+        indexed_children, children = {}, {}
+        expanded = []
+        if self.embed_content:
+            for i in range(len(df)):
+                expanded.append(i)
+                idx = df.index[i]
+                if idx in self._indexed_children:
+                    child = self._indexed_children[idx]
+                else:
+                    child = panel(self.row_content(df.iloc[i]))
+                indexed_children[idx] = children[i] = child
+        else:
+            for i in self.expanded:
+                idx = self.value.index[i]
+                if idx in self._indexed_children:
+                    child = self._indexed_children[idx]
+                else:
+                    child = panel(self.row_content(self.value.iloc[i]))
+                try:
+                    loc = df.index.get_loc(idx)
+                except KeyError:
+                    continue
+                expanded.append(loc)
+                indexed_children[idx] = children[loc] = child
+        removed = [
+            child for idx, child in self._indexed_children.items()
+            if idx not in indexed_children
+        ]
+        self._indexed_children = indexed_children
+        return children, removed, expanded
 
-    def _get_model_children(self, panels, doc, root, parent, comm=None):
+    def _get_model_children(self, doc, root, parent, comm=None):
         ref = root.ref['id']
         models = {}
-        for i, p in panels.items():
+        for i, p in self._child_panels.items():
             if ref in p._models:
                 model = p._models[ref][0]
             else:
@@ -1478,50 +1560,23 @@ class Tabulator(BaseTable):
             models[i] = model
         return models
 
-    def _indexes_changed(self, old, new):
-        """
-        Comparator that checks whether DataFrame indexes have changed.
-
-        If indexes and length are unchanged we assume we do not
-        have to reset various settings including expanded rows,
-        scroll position, pagination etc.
-        """
-        if type(old) != type(new) or isinstance(new, dict):
-            return True
-        elif len(old) != len(new):
-            return False
-        return (old.index != new.index).any()
-
     def _update_children(self, *events):
-        cleanup, reuse = set(), set()
-        page_events = ('page', 'page_size', 'pagination')
-        old_panels = self._child_panels
+        if all(e.name in ('page', 'page_size', 'pagination', 'sorters') for e in events) and self.pagination != 'remote':
+            return
         for event in events:
-            if event.name == 'expanded' and len(events) == 1:
-                if self.embed_content:
-                    cleanup = set()
-                    reuse = set(old_panels)
-                else:
-                    cleanup = set(event.old) - set(event.new)
-                    reuse = set(event.old) & set(event.new)
-            elif (
-              (event.name == 'value' and self._indexes_changed(event.old, event.new)) or
-              (event.name in page_events and not self._updating) or
-              (self.pagination == 'remote' and event.name == 'sorters')
-            ):
+            if event.name == 'value' and self._indexes_changed(event.old, event.new):
                 self.expanded = []
+                self._indexed_children.clear()
                 return
-        self._child_panels = child_panels = self._get_children(
-            {i: old_panels[i] for i in reuse}
-        )
-        for ref, (m, _) in self._models.items():
+            elif event.name == 'row_content':
+                self._indexed_children.clear()
+        self._child_panels, removed, expanded = self._get_children()
+        for ref, (m, _) in self._models.copy().items():
             root, doc, comm = state._views[ref][1:]
-            for idx in cleanup:
-                old_panels[idx]._cleanup(root)
-            children = self._get_model_children(
-                child_panels, doc, root, m, comm
-            )
-            msg = {'children': children}
+            for child_panel in removed:
+                child_panel._cleanup(root)
+            children = self._get_model_children(doc, root, m, comm)
+            msg = {'expanded': expanded, 'children': children}
             self._apply_update([], msg, m, ref)
 
     @updating
@@ -1530,23 +1585,25 @@ class Tabulator(BaseTable):
             length = self._length
             nrows = self.page_size or self.initial_page_size
             max_page = max(length//nrows + bool(length%nrows), 1)
-            if self.page != max_page:
+            if self.page != max_page and not follow:
                 return
+            self._processed, _ = self._get_data()
+            return
         super()._stream(stream, rollover)
         self._update_style()
         self._update_selectable()
         self._update_index_mapping()
 
     def stream(self, stream_value, rollover=None, reset_index=True, follow=True):
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update([], {'follow': follow}, model, ref)
+        super().stream(stream_value, rollover, reset_index)
+        if follow and self.pagination:
+            self._update_max_page()
         if follow and self.pagination:
             length = self._length
             nrows = self.page_size or self.initial_page_size
             self.page = max(length//nrows + bool(length%nrows), 1)
-        super().stream(stream_value, rollover, reset_index)
-        if follow and self.pagination:
-            self._update_max_page()
 
     @updating
     def _patch(self, patch):
@@ -1574,10 +1631,10 @@ class Tabulator(BaseTable):
     def _update_cds(self, *events):
         if any(event.name == 'filters' for event in events):
             self._edited_indexes = []
-        page_events = ('page', 'page_size', 'sorters', 'filters')
+        page_events = ('page', 'page_size', 'sorters')
         if self._updating:
             return
-        elif events and all(e.name in page_events[:-1] for e in events) and self.pagination == 'local':
+        elif events and all(e.name in page_events for e in events) and self.pagination == 'local':
             return
         elif events and all(e.name in page_events for e in events) and not self.pagination:
             self._processed, _ = self._get_data()
@@ -1596,15 +1653,16 @@ class Tabulator(BaseTable):
 
     def _update_selectable(self):
         selectable = self._get_selectable()
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update([], {'selectable_rows': selectable}, model, ref)
 
+    @param.depends('page_size', watch=True)
     def _update_max_page(self):
         length = self._length
         nrows = self.page_size or self.initial_page_size
         max_page = max(length//nrows + bool(length%nrows), 1)
         self.param.page.bounds = (1, max_page)
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update([], {'max_page': max_page}, model, ref)
 
     def _clear_selection_remote_pagination(self, event):
@@ -1651,32 +1709,39 @@ class Tabulator(BaseTable):
         with pd.option_context('mode.chained_assignment', None):
             self._processed.loc[index, column] = array
 
-    def _update_selection(self, indices: list[int] | SelectionEvent):
-        if self.pagination != 'remote':
-            self.selection = indices
-            return
-        if isinstance(indices, list):
-            selected = True
-            ilocs = []
-        else:  # SelectionEvent
-            selected = indices.selected
-            ilocs = [] if indices.flush else self.selection.copy()
-            indices = indices.indices
-
-        nrows = self.page_size or self.initial_page_size
-        start = (self.page-1)*nrows
-        index = self._processed.iloc[[start+ind for ind in indices]].index
+    def _map_indexes(self, indexes, existing=[], add=True):
+        if self.pagination == 'remote':
+            nrows = self.page_size or self.initial_page_size
+            start = (self.page-1)*nrows
+        else:
+            start = 0
+        ilocs = list(existing)
+        index = self._processed.iloc[[start+ind for ind in indexes]].index
         for v in index.values:
             try:
                 iloc = self.value.index.get_loc(v)
                 self._validate_iloc(v, iloc)
             except KeyError:
                 continue
-            if selected:
+            if add:
                 ilocs.append(iloc)
             elif iloc in ilocs:
                 ilocs.remove(iloc)
-        ilocs = list(dict.fromkeys(ilocs))
+        return list(dict.fromkeys(ilocs))
+
+    def _update_expanded(self, expanded):
+        self.expanded = self._map_indexes(expanded)
+
+    def _update_selection(self, indices: list[int] | SelectionEvent):
+        if isinstance(indices, list):
+            selected = True
+            ilocs = []
+        else:
+            selected = indices.selected
+            ilocs = [] if indices.flush else self.selection.copy()
+            indices = indices.indices
+
+        ilocs = self._map_indexes(indices, ilocs, add=selected)
         if isinstance(self.selectable, int) and not isinstance(self.selectable, bool):
             ilocs = ilocs[len(ilocs) - self.selectable:]
         self.selection = ilocs
@@ -1727,10 +1792,9 @@ class Tabulator(BaseTable):
         )
         model = super()._get_model(doc, root, parent, comm)
         root = root or model
-        self._child_panels = child_panels = self._get_children()
-        model.children = self._get_model_children(
-            child_panels, doc, root, parent, comm
-        )
+        self._child_panels, removed, expanded = self._get_children()
+        model.expanded = expanded
+        model.children = self._get_model_children(doc, root, parent, comm)
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters', 'page_size'], doc, root, comm)
         self._register_events('cell-click', 'table-edit', 'selection-change', model=model, doc=doc, comm=comm)
         return model
@@ -1789,8 +1853,11 @@ class Tabulator(BaseTable):
                 )
                 del filter_params['values']
                 filter_params['valuesLookup'] = True
-        if filter_type == 'list' and not filter_params:
-            filter_params = {'valuesLookup': True}
+        if filter_type == 'list':
+            if not filter_params:
+                filter_params = {'valuesLookup': True}
+            if filter_func is None:
+                filter_func = 'in'
         fspec['headerFilter'] = filter_type
         if filter_params:
             fspec['headerFilterParams'] = filter_params
@@ -1845,6 +1912,7 @@ class Tabulator(BaseTable):
         }
         for i, column in enumerate(ordered_columns):
             field = column.field
+            index = self._renamed_cols[field]
             matching_groups = [
                 group for group, group_cols in grouping.items()
                 if field in group_cols
@@ -1876,14 +1944,13 @@ class Tabulator(BaseTable):
                 title_formatter = dict(title_formatter)
                 col_dict['titleFormatter'] = title_formatter.pop('type')
                 col_dict['titleFormatterParams'] = title_formatter
-            col_name = self._renamed_cols[field]
             if field in self.indexes:
                 if len(self.indexes) == 1:
                     dtype = self.value.index.dtype
                 else:
                     dtype = self.value.index.get_level_values(self.indexes.index(field)).dtype
             else:
-                dtype = self.value.dtypes[col_name]
+                dtype = self.value.dtypes[index]
             if dtype.kind == 'M':
                 col_dict['sorter'] = 'timestamp'
             elif dtype.kind in 'iuf':
@@ -1913,7 +1980,27 @@ class Tabulator(BaseTable):
             if isinstance(self.widths, dict) and isinstance(self.widths.get(field), str):
                 col_dict['width'] = self.widths[field]
             col_dict.update(self._get_filter_spec(column))
-            if matching_groups:
+
+            if isinstance(index, tuple):
+                if columns:
+                    children = columns
+                    last = children[-1]
+                    for group in index[:-1]:
+                        if 'title' in last and last['title'] == group:
+                            new = False
+                            children = last['columns']
+                        else:
+                            new = True
+                            children.append({
+                                'columns': [],
+                                'title': group,
+                            })
+                        last = children[-1]
+                        if new:
+                            children = last['columns']
+                    children.append(col_dict)
+                    column.title = index[-1]
+            elif matching_groups:
                 group = matching_groups[0]
                 if group in groups:
                     groups[group]['columns'].append(col_dict)
@@ -1955,7 +2042,7 @@ class Tabulator(BaseTable):
         filename: str
             The filename to save the table as.
         """
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update({}, {'filename': filename}, model, ref)
             self._apply_update({}, {'download': not model.download}, model, ref)
 

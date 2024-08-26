@@ -124,10 +124,10 @@ nbsite_gallery_conf = {
                 'layouts',
                 # 3 most important by expected usage. Rest alphabetically
                 'chat',
-                'custom_components',
                 'global',
                 'indicators',
                 'templates',
+                'custom_components',
             ],
             'titles': {
                 'Vega': 'Altair & Vega',
@@ -167,10 +167,16 @@ def get_requirements():
         requirements[src] = deps
     return requirements
 
+
+html_js_files = [
+    (None, {'body': '{"shimMode": true}', 'type': 'esms-options'}),
+    f'https://cdn.holoviz.org/panel/{js_version}/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js'
+]
+
 nbsite_pyodide_conf = {
     'PYODIDE_URL': f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js',
     'requirements': [bokeh_req, panel_req, 'pyodide-http'],
-    'requires': get_requirements()
+    'requires': get_requirements(),
 }
 
 templates_path += [
@@ -236,12 +242,15 @@ def _get_pyodide_version():
     raise NotImplementedError(F"{PYODIDE_VERSION=} is not valid")
 
 def update_versions(app, docname, source):
+    from panel.models.tabulator import TABULATOR_VERSION
+
     # Inspired by: https://stackoverflow.com/questions/8821511
     version_replace = {
        "{{PANEL_VERSION}}" : PY_VERSION,
        "{{BOKEH_VERSION}}" : BOKEH_VERSION,
        "{{PYSCRIPT_VERSION}}" : PYSCRIPT_VERSION,
        "{{PYODIDE_VERSION}}" : _get_pyodide_version(),
+       "{{TABULATOR_VERSION}}" : TABULATOR_VERSION,
     }
 
     for old, new in version_replace.items():
