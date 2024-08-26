@@ -489,6 +489,39 @@ def test_after_render_lifecycle_hooks(page, component):
     expect(page.locator('h1')).to_have_text("rendered")
 
 
+class JSLifecycleAfterLayout(JSComponent):
+
+    _esm = """
+    export function render({ model }) {
+      const h1 = document.createElement('h1')
+      model.on('after_layout', () => { h1.textContent = 'layouted' })
+      return h1
+    }"""
+
+
+class ReactLifecycleAfterLayout(ReactComponent):
+
+    _esm = """
+    import {useState} from "react"
+
+    export function render({ model }) {
+      const [text, setText] = useState("")
+      model.on('after_layout', () => { setText('layouted') })
+      return <h1>{text}</h1>
+    }"""
+
+
+@pytest.mark.parametrize('component', [JSLifecycleAfterLayout, ReactLifecycleAfterLayout])
+def test_after_layout_lifecycle_hooks(page, component):
+    example = component()
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("layouted")
+
+
 class JSLifecycleAfterResize(JSComponent):
 
     _esm = """
@@ -496,7 +529,7 @@ class JSLifecycleAfterResize(JSComponent):
       const h1 = document.createElement('h1')
       h1.textContent = "0"
       let count = 0
-      model.on('after_resize', () => { count += 1; h1.textContent = `${count}`; })
+      model.on('resize', () => { count += 1; h1.textContent = `${count}`; })
       return h1
     }"""
 
@@ -507,7 +540,7 @@ class ReactLifecycleAfterResize(ReactComponent):
 
     export function render({ model }) {
       const [count, setCount] = useState(0)
-      model.on('after_resize', () => { setCount(count+1); })
+      model.on('resize', () => { setCount(count+1); })
       return <h1>{count}</h1>
     }"""
 
