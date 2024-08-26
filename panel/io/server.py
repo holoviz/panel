@@ -104,6 +104,8 @@ if TYPE_CHECKING:
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 DEFAULT_TITLE = "Panel Application"
 
+_running_tasks = set()
+
 def _origin_url(url: str) -> str:
     if url.startswith("http"):
         url = url.split("//")[1]
@@ -349,6 +351,9 @@ class Server(BokehServer):
             # For the stop event to be processed we have to restart
             # the IOLoop briefly, ensuring an orderly cleanup
             async def stop_autoreload():
+                # Clean up views
+                for (view, model, _, _) in state._views.values():
+                    view._cleanup(model)
                 self._autoreload_stop_event.set()
                 await self._autoreload_task
             try:
@@ -1163,7 +1168,7 @@ def get_server(
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):
-        server.io_loop.add_callback_from_signal(do_stop)
+        server.io_loop.asyncio_loop.add_signal_handler(do_stop)
 
     def do_stop(*args, **kwargs):
         server.io_loop.stop()
