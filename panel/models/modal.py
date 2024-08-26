@@ -1,6 +1,6 @@
 from typing import Any
 
-from bokeh.core.properties import Bool, Readonly
+from bokeh.core.properties import Bool
 from bokeh.events import ModelEvent
 
 from ..io.resources import bundled_files
@@ -36,7 +36,7 @@ class Modal(Column):
         }
     }
 
-    is_open = Readonly(Bool, default=False, help="Whether or not the modal is open.")
+    open = Bool(default=False, help="Whether or not the modal is open.")
     show_close_button = Bool(True, help="Whether to show a close button in the modal.")
     background_close = Bool(True, help="Whether to enable closing the modal when clicking the background.")
 

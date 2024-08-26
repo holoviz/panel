@@ -20,12 +20,11 @@ if TYPE_CHECKING:
 
 
 class Modal(ListPanel):
-
     height = param.Integer(default=None, bounds=(0, None))
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    is_open = param.Boolean(default=False, readonly=True, doc="Whether the modal is open.")
+    open = param.Boolean(default=False, doc="Whether to open the modal.")
 
     show_close_button = param.Boolean(default=True, doc="Whether to show a close button in the modal.")
 
@@ -44,16 +43,20 @@ class Modal(ListPanel):
         )
         return super()._get_model(doc, root, parent, comm)
 
-    def open(self):
+    def show(self):
         self._send_event(ModalDialogEvent, open=True)
 
-    def close(self):
+    def hide(self):
         self._send_event(ModalDialogEvent, open=False)
 
     def toggle(self):
-        self.close() if self.is_open else self.open()
+        self._send_event(ModalDialogEvent, open=not self.open)
+
+    @param.depends("open", watch=True)
+    def _open(self):
+        self._send_event(ModalDialogEvent, open=self.open)
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        msg.pop("is_open", None)
+        msg.pop("open", None)
         return msg

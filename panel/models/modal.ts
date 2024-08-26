@@ -110,8 +110,8 @@ export class ModalView extends BkColumnView {
 
     this.modal = new (window as any).A11yDialog(dialog)
     this.update_close_button()
-    this.modal.on("show", () => { this.model.is_open = true })
-    this.modal.on("hide", () => { this.model.is_open = false })
+    this.modal.on("show", () => { this.model.open = true })
+    this.modal.on("hide", () => { this.model.open = false })
   }
 
   update_close_button(): void {
@@ -127,7 +127,7 @@ export namespace Modal {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = BkColumn.Props & {
-    is_open: p.Property<boolean>
+    open: p.Property<boolean>
     show_close_button: p.Property<boolean>
     background_close: p.Property<boolean>
   }
@@ -146,7 +146,7 @@ export class Modal extends BkColumn {
   static {
     this.prototype.default_view = ModalView
     this.define<Modal.Props>(({Bool}) => ({
-      is_open: [Bool, false],
+      open: [Bool, false],
       show_close_button: [Bool, true],
       background_close: [Bool, true],
     }))
