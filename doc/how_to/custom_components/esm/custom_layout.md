@@ -236,8 +236,10 @@ A Panel `Column` or `Row` works as a list of objects. It is *list-like*. In this
 ```{pyodide}
 import panel as pn
 import param
+
 from panel.custom import JSComponent
-from panel.layout.base import NamedListLike
+
+from panel.layout.base import ListLike
 
 CSS = """
 .gutter {
@@ -252,8 +254,7 @@ CSS = """
 """
 
 
-class GridJS(NamedListLike, JSComponent):
-    objects = param.List()
+class GridJS(ListLike, JSComponent):
 
     _esm = """
     import Split from 'https://esm.sh/split.js@1.6.5'
@@ -304,7 +305,7 @@ grid_js = GridJS(
 ).servable()
 ```
 
-You must list `NamedListLike, JSComponent` in exactly that order when you define the class! Reversing the order to `JSComponent, NamedListLike` will not work.
+You must list `ListLike, JSComponent` in exactly that order when you define the class! Reversing the order to `JSComponent, ListLike` will not work.
 
 :::
 
@@ -313,8 +314,9 @@ You must list `NamedListLike, JSComponent` in exactly that order when you define
 ```{pyodide}
 import panel as pn
 import param
+
 from panel.custom import ReactComponent
-from panel.layout.base import NamedListLike
+from panel.layout.base import ListLike
 
 CSS = """
 .gutter {
@@ -331,15 +333,13 @@ CSS = """
 """
 
 
-class GridReact(NamedListLike, ReactComponent):
-    objects = param.List()
+class GridReact(ListLike, ReactComponent):
 
     _esm = """
     import Split from 'https://esm.sh/react-split@2.0.14'
 
     export function render({ model}) {
       const objects = model.get_child("objects")
-      console.log(objects)
       const calculatedHeight = `calc( 100% - ${(objects.length - 1) * 10}px )`;
 
       return (
@@ -348,7 +348,7 @@ class GridReact(NamedListLike, ReactComponent):
             direction="vertical"
             style={{ height: model.height }}
         >{...objects}</Split>
-    )
+      )
     }"""
 
     _stylesheets = [CSS]
@@ -381,7 +381,7 @@ grid_react.servable()
 ::::
 
 :::{note}
-You must list `NamedListLike, ReactComponent` in exactly that order when you define the class! Reversing the order to `ReactComponent, NamedListLike` will not work.
+You must list `ListLike, ReactComponent` in exactly that order when you define the class! Reversing the order to `ReactComponent, ListLike` will not work.
 :::
 
 You can now use `[...]` indexing and methods like `.append`, `.insert`, `pop`, etc., as you would expect:
