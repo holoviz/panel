@@ -317,7 +317,7 @@ def wait_for_server(port, prefix=None, timeout=3):
 
 @contextlib.contextmanager
 def run_panel_serve(args, cwd=None):
-    cmd = [sys.executable, "-m", "panel", "serve"] + args
+    cmd = [sys.executable, "-m", "panel", "serve", *map(str, args)]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd, close_fds=ON_POSIX)
     try:
         yield p
