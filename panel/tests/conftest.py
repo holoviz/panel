@@ -42,10 +42,22 @@ JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
 
+if os.name != 'nt':
+    import resource
+
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+
+
+for e in os.environ:
+    if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", ):
+        os.environ.pop(e, None)
+
 try:
     asyncio.get_event_loop()
 except (RuntimeError, DeprecationWarning):
     asyncio.set_event_loop(asyncio.new_event_loop())
+
 
 def port_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -77,7 +89,7 @@ def start_jupyter():
             break
         if time.monotonic() > deadline:
             raise TimeoutError(
-                'jupyter server did not start within {timeout} seconds.'
+                f'jupyter server did not start within {JUPYTER_TIMEOUT} seconds.'
             )
     JUPYTER_PORT = int(line.split(host)[-1][:4])
 
@@ -165,9 +177,11 @@ def server_document():
     doc = Document()
     session_context = unittest.mock.Mock()
     doc._session_context = lambda: session_context
-    with set_curdoc(doc):
-        yield doc
-    doc._session_context = None
+    try:
+        with set_curdoc(doc):
+            yield doc
+    finally:
+        doc._session_context = None
 
 @pytest.fixture
 def bokeh_curdoc():
@@ -376,12 +390,15 @@ def module_cleanup():
     Cleanup Panel extensions after each test.
     """
     from bokeh.core.has_props import _default_resolver
-    to_reset = list(panel_extension._imports.values())
 
+    from panel.reactive import ReactiveMetaBase
+
+    to_reset = list(panel_extension._imports.values())
     _default_resolver._known_models = {
         name: model for name, model in _default_resolver._known_models.items()
         if not any(model.__module__.startswith(tr) for tr in to_reset)
     }
+    ReactiveMetaBase._loaded_extensions = set()
 
 @pytest.fixture(autouse=True)
 def server_cleanup():
@@ -400,7 +417,7 @@ def server_cleanup():
 def cache_cleanup():
     state.clear_caches()
     Design._resolve_modifiers.cache_clear()
-    state._stylesheets.clear()
+    Design._cache.clear()
 
 @pytest.fixture
 def autoreload():

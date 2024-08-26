@@ -769,6 +769,7 @@ class _state(param.Parameterized):
         any other state held by the server.
         """
         self.kill_all_servers()
+        self._curdoc = ContextVar('curdoc', default=None)
         self._indicators.clear()
         self._location = None
         self._locations.clear()
@@ -784,6 +785,9 @@ class _state(param.Parameterized):
         self._session_key_funcs.clear()
         self._on_session_created.clear()
         self._on_session_destroyed.clear()
+        self._stylesheets.clear()
+        self._scheduled.clear()
+        self._periodic.clear()
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
