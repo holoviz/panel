@@ -78,7 +78,44 @@ Now that we have separately declared the import we can update the `import` line 
 import confetti from "canvas-confetti";
 ```
 
-This approach cleanly separates the definitions of the libraries and their versions from the actual code. Import maps have a bunch of other features but in most cases the imports section will be all you need.
+This approach cleanly separates the definitions of the libraries and their versions from the actual code. If you are only importing a single library this is generally all you need to do, however once you have multiple inter-connected dependencies you may have to go beyond this.
+
+Let's say for instance you want to import libraries `A`, `B` and `C`. Both `B` and `C` depend on `A`, however because esm.sh rewrites imports you may end up with multiple different versions `A`.
+
+In order to avoid this we can ask `esm.sh` not to rewrite the imports using the `external` query parameter. This tells esm.sh that `A` will be provided externally (i.e. by us), ensuring that libraries `B` and `C` both import the version of `A` we declare:
+
+```
+{
+  "imports": {
+    "A": "https://esm.sh/A@1.0.0",
+    "B": "https://esm.sh/B?external=A",
+    "C": "https://esm.sh/C?external=A",
+  }
+}
+```
+
+To give a real world example that esm.sh itself provides:
+
+```
+{
+  "imports": {
+    "preact": "https://esm.sh/preact@10.7.2",
+    "preact-render-to-string": "https://esm.sh/preact-render-to-string@5.2.0?external=preact"
+  }
+}
+```
+:::{note}
+Import maps supports trailing slash that can not work with URL search params friendly. To fix this issue, esm.sh provides a special format for import URL that allows you to use query params with trailing slash: change the query prefix ? to & and put it after the package version.
+
+```
+{
+  "imports": {
+    "react-dom": "https://esm.sh/react-dom@18.2.0?pin=v135&dev",
+    "react-dom/": "https://esm.sh/react-dom@18.2.0&pin=v135&dev/"
+  }
+}
+```
+:::
 
 ## Bundling
 
