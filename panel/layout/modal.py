@@ -6,15 +6,17 @@ from typing import (
 
 import param
 
+from pyviz_comms import JupyterComm
+
 from ..io.resources import CDN_DIST
-from ..models.layout import ModalDialogEvent
+from ..models.modal import ModalDialogEvent
 from ..util import lazy_load
 from .base import ListPanel
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
-    from pyviz_comms import Comm, JupyterComm
+    from pyviz_comms import Comm
 
 
 class Modal(ListPanel):
@@ -47,6 +49,9 @@ class Modal(ListPanel):
 
     def close(self):
         self._send_event(ModalDialogEvent, open=False)
+
+    def toggle(self):
+        self.close() if self.is_open else self.open()
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
