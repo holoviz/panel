@@ -21,6 +21,7 @@ docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
 lite = ["py311", "lite"]
+myst = ["py312", "myst-doc"]
 
 [dependencies]
 nodejs = ">=18"
@@ -194,6 +195,13 @@ depends_on = [
     '_docs-copy-panel-dist',
     '_docs-pyodide',
 ]
+
+[feature.myst-doc.dependencies]
+mystmd = "*"
+nodejs = ">=18"
+
+[feature.myst-doc.tasks]
+build = 'cd doc; myst build'
 
 # =============================================
 # ================== BUILD ====================

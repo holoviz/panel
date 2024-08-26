@@ -271,3 +271,20 @@ jobs:
       - name: Test Type
         run: |
           pixi run -e ${{ matrix.environment }} test-type || echo "Failed"
+
+  myst_test_suite:
+    name: myst:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        environment: ["myst"]
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        with:
+          environments: ${{ matrix.environment }}
+      - name: Test Type
+        run: |
+          pixi run -e ${{ matrix.environment }} build || echo "Failed"

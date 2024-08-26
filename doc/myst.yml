@@ -1,0 +1,16 @@
+# See docs at: https://mystmd.org/guide/frontmatter
+version: 1
+project:
+  id: aaff1569-a397-4602-b3ff-e1559614f6b7
+  title: Panel Website
+  # description:
+  # keywords: []
+  # authors: []
+  github: https://github.com/holoviz/panel
+  plugins:
+    - _plugins/pyodide.mjs
+site:
+  template: book-theme
+  options:
+    favicon: _static/favicon.png
+    logo: _static/logo_horizontal_light_theme.png
