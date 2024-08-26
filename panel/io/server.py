@@ -104,8 +104,6 @@ if TYPE_CHECKING:
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 DEFAULT_TITLE = "Panel Application"
 
-_running_tasks = set()
-
 def _origin_url(url: str) -> str:
     if url.startswith("http"):
         url = url.split("//")[1]
