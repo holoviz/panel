@@ -371,7 +371,7 @@ class NBSR:
         except Empty:
             return None
 
-def wait_for_port(stdout):
+def wait_for_port(stdout, regex=APP_PATTERN):
     nbsr = NBSR(stdout)
     m = None
     output = []
@@ -381,7 +381,7 @@ def wait_for_port(stdout):
             continue
         out = o.decode('utf-8')
         output.append(out)
-        m = APP_PATTERN.search(out)
+        m = regex.search(out)
         if m is not None:
             break
     if m is None:

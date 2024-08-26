@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 
 import pytest
@@ -103,3 +104,37 @@ def test_serve_markdown():
         r = requests.get(f"http://localhost:{port}/")
         assert r.status_code == 200
         assert '<title>My app</title>' in r.content.decode('utf-8')
+
+
+@linux_only
+@pytest.mark.parametrize("arg", ["--warm", "--autoreload"])
+def test_serve_num_procs(arg):
+    app = "import panel as pn; pn.panel('Hello').servable()"
+    py = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    write_file(app, py.file)
+
+    regex = re.compile(r'Starting Bokeh server with process id: (\d+)')
+    with run_panel_serve(["--port", "0", py.name, "--num-procs", "2", arg]) as p:
+        pid1 = wait_for_port(p.stdout, regex=regex)
+        pid2 = wait_for_port(p.stdout, regex=regex)
+        assert pid1 != pid2
+#
+@linux_only
+def test_serve_num_procs_setup():
+    app = "import panel as pn; pn.panel('Hello').servable()"
+    py = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    write_file(app, py.file)
+
+    setup_app = """\
+import os
+import time
+time.sleep(1)
+print(f"Setup PID {os.getpid()}", flush=True)"""
+    setup_py = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    write_file(setup_app, setup_py.file)
+
+    regex = re.compile(r'Setup PID (\d+)')
+    with run_panel_serve(["--port", "0", py.name, "--num-procs", "2", "--setup", setup_py.name]) as p:
+        pid1 = wait_for_port(p.stdout, regex=regex)
+        pid2 = wait_for_port(p.stdout, regex=regex)
+        assert pid1 != pid2
