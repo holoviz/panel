@@ -9,6 +9,7 @@ project:
   github: https://github.com/holoviz/panel
   plugins:
     - _plugins/pyodide.mjs
+    - _plugins/toctree.mjs
 site:
   template: book-theme
   options:
