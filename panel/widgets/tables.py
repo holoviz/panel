@@ -1308,6 +1308,8 @@ class Tabulator(BaseTable):
     def _process_events(self, events: dict[str, Any]) -> None:
         if 'expanded' in events:
             self._update_expanded(events.pop('expanded'))
+        if events.get('page_size') == 0:  # page_size can't be 0
+            events.pop('page_size')
         return super()._process_events(events)
 
     def _process_event(self, event) -> None:

@@ -22,13 +22,17 @@ import param
 
 from .._param import Margin
 from ..io.resources import CDN_DIST
-from ..layout import Column, Feed, ListPanel
+from ..layout import (
+    Column, Feed, ListPanel, WidgetBox,
+)
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG, ImageBase
 from ..pane.markup import HTML, Markdown
 from ..util import to_async_gen
 from ..viewable import Children
+from ..widgets import Widget
+from ..widgets.button import Button
 from .icon import ChatReactionIcons
 from .message import ChatMessage
 from .step import ChatStep
@@ -197,6 +201,8 @@ class ChatFeed(ListPanel):
 
     _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
         The current state of the callback.""")
+
+    _prompt_trigger = param.Event(doc="Triggers the prompt input.")
 
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
 
@@ -806,6 +812,85 @@ class ChatFeed(ListPanel):
             steps_layout.append(step)
             self._chat_log.scroll_to_latest()
         return step
+
+    def prompt_user(
+        self,
+        component: Widget | ListPanel,
+        callback: Callable | None = None,
+        predicate: Callable | None = None,
+        timeout: int = 120,
+        timeout_message: str = "Timed out",
+        button_params: dict | None = None,
+        timeout_button_params: dict | None = None,
+        **send_kwargs
+    ) -> None:
+        """
+        Prompts the user to interact with a form component.
+
+        Arguments
+        ---------
+        component : Widget | ListPanel
+            The component to prompt the user with.
+        callback : Callable
+            The callback to execute once the user submits the form.
+            The callback should accept two arguments: the component
+            and the ChatFeed instance.
+        predicate : Callable | None
+            A predicate to evaluate the component's state, e.g. widget has value.
+            If provided, the button will be enabled when the predicate returns True.
+            The predicate should accept the component as an argument.
+        timeout : int
+            The duration in seconds to wait before timing out.
+        timeout_message : str
+            The message to display when the timeout is reached.
+        button_params : dict | None
+            Additional parameters to pass to the submit button.
+        timeout_button_params : dict | None
+            Additional parameters to pass to the timeout button.
+        """
+        async def _prepare_prompt(*_) -> None:
+            input_button_params = button_params or {}
+            if "name" not in input_button_params:
+                input_button_params["name"] = "Submit"
+            if "margin" not in input_button_params:
+                input_button_params["margin"] = (5, 10)
+            if "button_type" not in input_button_params:
+                input_button_params["button_type"] = "primary"
+            if "icon" not in input_button_params:
+                input_button_params["icon"] = "check"
+            submit_button = Button(**input_button_params)
+
+            form = WidgetBox(component, submit_button, margin=(5, 10), css_classes=["message"])
+            if "user" not in send_kwargs:
+                send_kwargs["user"] = "Input"
+            self.send(form, respond=False, **send_kwargs)
+
+            for _ in range(timeout * 10):  # sleeping for 0.1 seconds
+                is_fulfilled = predicate(component) if predicate else True
+                submit_button.disabled = not is_fulfilled
+                if submit_button.clicks > 0:
+                    with param.parameterized.batch_call_watchers(self):
+                        submit_button.visible = False
+                        form.disabled = True
+                    if callback is not None:
+                        result = callback(component, self)
+                        if isawaitable(result):
+                            await result
+                    break
+                await asyncio.sleep(0.1)
+            else:
+                input_timeout_button_params = timeout_button_params or {}
+                if "name" not in input_timeout_button_params:
+                    input_timeout_button_params["name"] = timeout_message
+                if "button_type" not in input_timeout_button_params:
+                    input_timeout_button_params["button_type"] = "light"
+                if "icon" not in input_timeout_button_params:
+                    input_timeout_button_params["icon"] = "x"
+                with param.parameterized.batch_call_watchers(self):
+                    submit_button.param.update(**input_timeout_button_params)
+                    form.disabled = True
+
+        param.parameterized.async_executor(_prepare_prompt)
 
     def respond(self):
         """

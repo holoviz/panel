@@ -12,3 +12,14 @@ def test_ace(document, comm):
     # Try changes
     editor._process_events({"value": "Hi there!"})
     assert editor.value == "Hi there!"
+
+
+def test_ace_input(document, comm):
+    editor = CodeEditor(value="", language="python")
+    editor.value = "Hello World!"
+    assert editor.value == "Hello World!"
+    assert editor.value_input == "Hello World!"
+
+    editor.value = ""
+    assert editor.value == ""
+    assert editor.value_input == ""

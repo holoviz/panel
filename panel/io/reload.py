@@ -113,9 +113,12 @@ def watched_modules():
 async def async_file_watcher(stop_event=None):
     while True:
         module_paths, files = watched_modules()
-        async for changes in awatch(*files, stop_event=stop_event):
-            _reload(module_paths, changes)
-            await asyncio.sleep(1)
+        try:
+            async for changes in awatch(*files, stop_event=stop_event):
+                _reload(module_paths, changes)
+                await asyncio.sleep(1)
+                break
+        except asyncio.CancelledError:
             break
         if stop_event.is_set():
             break

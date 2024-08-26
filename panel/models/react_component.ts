@@ -56,7 +56,7 @@ import { CacheProvider } from "@emotion/react"`
       render_code = `
   if (rendered) {
     const cache = createCache({
-      key: 'css',
+      key: 'css-${this.model.id}',
       prepend: true,
       container: view.style_cache,
     })
@@ -183,7 +183,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return React.createElement('div')
     }
-    return React.createElement('div', {}, this.props.children);
+    return React.createElement('div', {className: "error-wrapper"}, this.props.children);
   }
 }
 
@@ -252,7 +252,8 @@ export class ReactComponent extends ReactiveESM {
       imports: {
         react: `https://esm.sh/react@${react_version}${pkg_suffix}`,
         "react/": `https://esm.sh/react@${react_version}${path_suffix}/`,
-        "react-dom/": `https://esm.sh/react-dom@${react_version}&deps=react@${react_version},react-dom@${react_version}${path_suffix}/`,
+        "react-dom": `https://esm.sh/react-dom@${react_version}?deps=react@${react_version}${pkg_suffix}&external=react`,
+        "react-dom/": `https://esm.sh/react-dom@${react_version}&deps=react@${react_version}${path_suffix}&external=react/`,
         ...imports,
       },
       scopes: scopes || {},
@@ -260,8 +261,9 @@ export class ReactComponent extends ReactiveESM {
     if (this.usesMui) {
       importMap.imports = {
         ...importMap.imports,
-        "@emotion/cache": "https://esm.sh/@emotion/cache",
-        "@emotion/react": `https://esm.sh/@emotion/react?external=react${path_suffix}`,
+        "react-is": `https://esm.sh/react-is@${react_version}&external=react`,
+        "@emotion/cache": `https://esm.sh/@emotion/cache?deps=react@${react_version},react-dom@${react_version}`,
+        "@emotion/react": `https://esm.sh/@emotion/react?deps=react@${react_version},react-dom@${react_version}&external=react${path_suffix},react-is`,
       }
     }
     // @ts-ignore
