@@ -47,6 +47,7 @@ from .input import (  # noqa
     DatetimeInput, DatetimePicker, DatetimeRangeInput, DatetimeRangePicker,
     FileDropper, FileInput, FloatInput, IntInput, LiteralInput, NumberInput,
     PasswordInput, Spinner, StaticText, Switch, TextAreaInput, TextInput,
+    TimePicker,
 )
 from .misc import FileDownload, JSONEditor, VideoStream  # noqa
 from .player import DiscretePlayer, Player  # noqa
@@ -136,6 +137,7 @@ __all__ = (
     "TextEditor",
     "TextInput",
     "TextToSpeech",
+    "TimePicker",
     "Toggle",
     "ToggleGroup",
     "ToggleIcon",
