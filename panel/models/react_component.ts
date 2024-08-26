@@ -42,8 +42,6 @@ export class ReactComponentView extends ReactiveESMView {
     } catch(e) {
       view.render_error(e)
     }
-    view._changing = false
-    view.after_rendered()
   }`
     let import_code = `
 import * as React from "react"
@@ -190,6 +188,7 @@ class ErrorBoundary extends React.Component {
 class Component extends React.Component {
 
   componentDidMount() {
+    this.props.view._changing = false
     this.props.view.after_rendered()
   }
 
