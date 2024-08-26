@@ -3,7 +3,7 @@ Vanilla template
 """
 import pathlib
 
-from typing import ClassVar, Dict
+from typing import ClassVar
 
 import param
 
@@ -14,7 +14,8 @@ from ..base import BasicTemplate
 
 class VanillaTemplate(BasicTemplate):
     """
-    VanillaTemplate is built on top of Vanilla web components.
+    The VanillaTemplate is a basic template that depends solely on
+    vanilla HTML and JS, i.e. does not require any specific framework.
     """
 
     design = param.ClassSelector(class_=Design, default=Native,
@@ -23,7 +24,7 @@ class VanillaTemplate(BasicTemplate):
 
     _css = pathlib.Path(__file__).parent / 'vanilla.css'
 
-    _resources: ClassVar[Dict[str, Dict[str, str]]] = {
+    _resources: ClassVar[dict[str, dict[str, str]]] = {
         'css': {
             'lato': "https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext"
         }

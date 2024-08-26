@@ -34,7 +34,7 @@ def create_components(design):
         pn.widgets.FloatSlider(name='Slider', design=design),
         pn.widgets.TextInput(name='TextInput', design=design),
         pn.widgets.Select(
-		    name='Select', options=['Biology', 'Chemistry', 'Physics'], design=design
+            name='Select', options=['Biology', 'Chemistry', 'Physics'], design=design
         ),
         pn.widgets.Button(
             name='Click me!', icon='hand-click', button_type='primary', design=design

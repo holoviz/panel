@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time as dt_time
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +10,7 @@ from panel import config
 from panel.widgets import (
     ArrayInput, Checkbox, DatePicker, DateRangePicker, DatetimeInput,
     DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
-    FloatInput, IntInput, LiteralInput, StaticText, TextInput,
+    FloatInput, IntInput, LiteralInput, StaticText, TextInput, TimePicker,
 )
 
 
@@ -56,6 +56,16 @@ def test_date_picker(document, comm):
 
     date_picker.value = date(2018, 9, 4)
     assert widget.value == '2018-09-04'
+
+
+def test_date_picker_options(document, comm):
+    options = [date(2018, 9, 1), date(2018, 9, 2), date(2018, 9, 3)]
+    datetime_picker = DatePicker(
+        name='DatetimePicker', value=date(2018, 9, 2),
+        options=options
+    )
+    assert datetime_picker.value == date(2018, 9, 2)
+    assert datetime_picker.enabled_dates == options
 
 
 def test_daterange_picker(document, comm):
@@ -130,6 +140,16 @@ def test_datetime_picker(document, comm):
         datetime_picker._process_events({'value': '2018-09-10 00:00:01'})
 
 
+def test_datetime_picker_options(document, comm):
+    options = [datetime(2018, 9, 1), datetime(2018, 9, 2), datetime(2018, 9, 3)]
+    datetime_picker = DatetimePicker(
+        name='DatetimePicker', value=datetime(2018, 9, 2, 1, 5),
+        options=options
+    )
+    assert datetime_picker.value == datetime(2018, 9, 2, 1, 5)
+    assert datetime_picker.enabled_dates == options
+
+
 def test_datetime_range_picker(document, comm):
     datetime_range_picker = DatetimeRangePicker(
         name='DatetimeRangePicker', value=(datetime(2018, 9, 2, 1, 5), datetime(2018, 9, 2, 1, 6)),
@@ -163,6 +183,22 @@ def test_datetime_range_picker(document, comm):
     # Check end value
     with pytest.raises(ValueError):
         datetime_range_picker._process_events({'value': '2018-09-10 00:00:01'})
+
+
+def test_time_picker(document, comm):
+    time_picker = TimePicker(name='Time Picker', value=dt_time(hour=18), format='H:i K')
+    assert time_picker.value == dt_time(hour=18)
+    assert time_picker.format == 'H:i K'
+    assert time_picker.start is None
+    assert time_picker.end is None
+
+
+def test_time_picker_str(document, comm):
+    time_picker = TimePicker(name='Time Picker', value="08:28", start='00:00', end='12:00')
+    assert time_picker.value == "08:28"
+    assert time_picker.format == 'H:i'
+    assert time_picker.start == "00:00"
+    assert time_picker.end == "12:00"
 
 
 def test_file_input(document, comm):
@@ -208,7 +244,6 @@ def test_literal_input(document, comm):
     with pytest.raises(ValueError):
         literal.value = []
 
-
 def test_static_text(document, comm):
 
     text = StaticText(value='ABC', name='Text:')
@@ -223,6 +258,31 @@ def test_static_text(document, comm):
 
     text.value = '<b>Text:</b>: ABC'
     assert widget.text == '<b>Text:</b>: ABC'
+
+def test_static_text_no_sync(document, comm):
+    text = StaticText(value='ABC', name='Text:')
+
+    widget = text.get_root(document, comm=comm)
+
+    widget.text = 'CBA'
+    assert text.value == 'ABC'
+
+def test_static_text_empty(document, comm):
+
+    text = StaticText(name='Text:')
+
+    widget = text.get_root(document, comm=comm)
+
+    assert widget.text == '<b>Text:</b>: '
+
+def test_static_text_repr(document, comm):
+
+    text = StaticText(value=StaticText, name='Text:')
+
+    widget = text.get_root(document, comm=comm)
+
+    assert widget.text == '<b>Text:</b>: &lt;class &#x27;panel.widgets.input.StaticText&#x27;&gt;'
+
 
 
 def test_text_input(document, comm):

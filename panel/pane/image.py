@@ -6,11 +6,12 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import struct
 
 from io import BytesIO
 from pathlib import PurePath
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Tuple,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import param
@@ -22,6 +23,8 @@ from .markup import HTMLBasePane, escape
 if TYPE_CHECKING:
     from bokeh.model import Model
 
+_tasks = set()
+
 class FileBase(HTMLBasePane):
 
     embed = param.Boolean(default=False, doc="""
@@ -29,11 +32,11 @@ class FileBase(HTMLBasePane):
 
     filetype: ClassVar[str]
 
-    _extensions: ClassVar[None | Tuple[str, ...]] = None
+    _extensions: ClassVar[None | tuple[str, ...]] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {'embed': None}
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'embed', 'object', 'styles', 'width', 'height'
     ]
 
@@ -109,7 +112,9 @@ class FileBase(HTMLBasePane):
                 from pyodide.http import pyfetch
                 async def replace_content():
                     self.object = await (await pyfetch(obj)).bytes()
-                asyncio.create_task(replace_content())
+                task = asyncio.create_task(replace_content())
+                _tasks.add(task)
+                task.add_done_callback(_tasks.discard)
         else:
             import requests
             r = requests.request(url=obj, method='GET')
@@ -145,7 +150,7 @@ class ImageBase(FileBase):
         A link URL to make the image clickable and link to some other
         website.""")
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
     ]
 
@@ -197,7 +202,7 @@ class ImageBase(FileBase):
             w, h = '100%', 'auto'
         return w, h
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         if self.embed or (isfile(obj) or not isinstance(obj, (str, PurePath))):
             data = self._data(obj)
         else:
@@ -256,7 +261,7 @@ class Image(ImageBase):
             return sorted(precedences)[-1]
         return False
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         params = {
             k: v for k, v in self.param.values().items()
             if k not in ('name', 'object')
@@ -365,7 +370,7 @@ class JPG(ImageBase):
 
     filetype: ClassVar[str] = 'jpeg'
 
-    _extensions: ClassVar[Tuple[str, ...]] = ('jpeg', 'jpg')
+    _extensions: ClassVar[tuple[str, ...]] = ('jpeg', 'jpg')
 
     @classmethod
     def _imgshape(cls, data):
@@ -411,7 +416,7 @@ class SVG(ImageBase):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'encode': None}
 
-    _rerender_params: ClassVar[List[str]] = ImageBase._rerender_params + ['encode']
+    _rerender_params: ClassVar[list[str]] = ImageBase._rerender_params + ['encode']
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -420,8 +425,8 @@ class SVG(ImageBase):
 
     def _type_error(self, object):
         if isinstance(object, str):
-            raise ValueError("%s pane cannot parse string that is not a filename, "
-                             "URL or a SVG XML contents." % type(self).__name__)
+            raise ValueError(f"{type(self).__name__} pane cannot parse string that is not a filename, "
+                             "URL or a SVG XML contents.")
         super()._type_error(object)
 
     def _data(self, obj):
@@ -432,7 +437,7 @@ class SVG(ImageBase):
     def _imgshape(self, data):
         return (self.width, self.height)
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         width, height = self.width, self.height
         w, h = self._img_dims(width, height)
         if self.embed or (isfile(obj) or (isinstance(obj, str) and obj.lstrip().startswith('<svg'))
@@ -477,9 +482,9 @@ class PDF(FileBase):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'embed': 'embed'}
 
-    _rerender_params: ClassVar[List[str]] = FileBase._rerender_params + ['start_page']
+    _rerender_params: ClassVar[list[str]] = FileBase._rerender_params + ['start_page']
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         if obj is None:
             return dict(object='<embed></embed>')
         elif self.embed or not isurl(obj):
@@ -496,3 +501,50 @@ class PDF(FileBase):
         page = f'#page={self.start_page}' if getattr(self, 'start_page', None) else ''
         html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(text=escape(html))
+
+class WebP(ImageBase):
+    """
+    The `WebP` pane embeds a .webp image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
+
+    Reference: https://panel.holoviz.org/reference/panes/WebP.html
+
+    :Example:
+
+    >>> WebP(
+    ...     'https://assets.holoviz.org/panel/samples/webp_sample.webp',
+    ...     alt_text='A nice tree',
+    ...     link_url='https://en.wikipedia.org/wiki/WebP',
+    ...     width=500,
+    ...     caption='A nice tree'
+    ... )
+    """
+
+    filetype: ClassVar[str] = 'webp'
+
+    _extensions: ClassVar[tuple[str, ...]] = ('webp',)
+
+    @classmethod
+    def _imgshape(cls, data):
+        with BytesIO(data) as b:
+            b.read(12)  # Skip RIFF header
+            chunk_header = b.read(4).decode('utf-8')
+            if chunk_header[:3] != 'VP8':
+                raise ValueError("Invalid WebP file")
+            wptype = chunk_header[3]
+            b.read(4)
+            if wptype == 'X':
+                b.read(4)
+                w = int.from_bytes(b.read(3), 'little') + 1
+                h = int.from_bytes(b.read(3), 'little') + 1
+            elif wptype == 'L':
+                b.read(1)
+                bits = struct.unpack("<I", b.read(4))[0]
+                w = (bits & 0x3FFF) + 1
+                h = ((bits >> 14) & 0x3FFF) + 1
+            elif wptype == ' ':
+                b.read(6)
+                w = int.from_bytes(b.read(2), 'little') + 1
+                h = int.from_bytes(b.read(2), 'little') + 1
+        return int(w), int(h)

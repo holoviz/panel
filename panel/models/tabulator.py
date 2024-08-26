@@ -16,9 +16,9 @@ from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
 
-TABULATOR_VERSION = "5.5.0"
+TABULATOR_VERSION = "6.2.1"
 
-JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.js"
+JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js"
 MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
 
 THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
@@ -155,7 +155,7 @@ class DataTabulator(HTMLBox):
 
     page = Nullable(Int)
 
-    page_size = Int()
+    page_size = Nullable(Int)
 
     max_page = Int()
 

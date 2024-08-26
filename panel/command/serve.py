@@ -3,6 +3,7 @@ Subclasses the bokeh serve commandline handler to extend it in various
 ways.
 """
 
+import argparse
 import ast
 import base64
 import logging
@@ -59,7 +60,7 @@ def parse_vars(items):
     """
     Parse a series of key-value pairs and return a dictionary
     """
-    return dict((parse_var(item) for item in items))
+    return dict(parse_var(item) for item in items)
 
 
 class AdminApplicationContext(ApplicationContext):
@@ -279,10 +280,14 @@ class Serve(_BkServe):
                 applications['/'] = applications[f'/{index}']
         return super().customize_applications(args, applications)
 
-    def warm_applications(self, applications, reuse_sessions):
+    def warm_applications(self, applications, reuse_sessions, error=True):
         from ..io.session import generate_session
         for path, app in applications.items():
-            session = generate_session(app)
+            try:
+                session = generate_session(app)
+            except Exception as e:
+                if error:
+                    raise e
             with set_curdoc(session.document):
                 if config.session_key_func:
                     reuse_sessions = False
@@ -343,9 +348,8 @@ class Serve(_BkServe):
             pattern = REST_PROVIDERS[args.rest_provider](files, args.rest_endpoint)
             patterns.extend(pattern)
         elif args.rest_provider is not None:
-            raise ValueError("rest-provider %r not recognized." % args.rest_provider)
+            raise ValueError(f"rest-provider {args.rest_provider!r} not recognized.")
 
-        config.autoreload = args.autoreload
         config.global_loading_spinner = args.global_loading_spinner
         config.reuse_sessions = args.reuse_sessions
 
@@ -369,9 +373,9 @@ class Serve(_BkServe):
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
             if args.autoreload:
-                with record_modules():
+                with record_modules(list(applications.values())):
                     self.warm_applications(
-                        applications, args.reuse_sessions
+                        applications, args.reuse_sessions, error=False
                     )
             else:
                 self.warm_applications(applications, args.reuse_sessions)
@@ -379,7 +383,7 @@ class Serve(_BkServe):
         if args.liveness:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
-            patterns += [(r"/%s" % args.liveness_endpoint, LivenessHandler, dict(applications=applications))]
+            patterns += [(rf"/{args.liveness_endpoint}", LivenessHandler, dict(applications=applications))]
 
         config.profiler = args.profiler
         if args.admin:
@@ -579,7 +583,7 @@ class Serve(_BkServe):
                     raise ValueError("OAuth encryption key was not a valid base64 "
                                      "string. Generate an encryption key with "
                                      "`panel oauth-secret` and ensure you did not "
-                                     "truncate the returned string.")
+                                     "truncate the returned string.") from None
                 if len(key) != 32:
                     raise ValueError(
                         "OAuth encryption key must be 32 url-safe "
@@ -605,7 +609,7 @@ class Serve(_BkServe):
                         "Using OAuth2 provider with Panel requires the "
                         "cryptography library. Install it with `pip install "
                         "cryptography` or `conda install cryptography`."
-                    )
+                    ) from None
                 state.encryption = Fernet(config.oauth_encryption_key)
 
             kwargs['auth_provider'] = OAuthProvider(
@@ -638,7 +642,10 @@ class Serve(_BkServe):
 
         return kwargs
 
-    def invoke(self, args):
+    def invoke(self, args: argparse.Namespace):
+        # Autoreload must be enabled before the application(s) are executed
+        # to avoid erroring out
+        config.autoreload = args.autoreload
         # Empty layout are valid and the Bokeh warning is silenced as usually
         # not relevant to Panel users.
         silence(EMPTY_LAYOUT, True)

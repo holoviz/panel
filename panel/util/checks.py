@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import importlib.util
 import os
 import sys
 
@@ -122,3 +123,20 @@ def is_number(s: Any) -> bool:
         return True
     except ValueError:
         return False
+
+
+def import_available(module: str):
+    """
+    Checks whether a module can be imported
+
+    Arguments
+    ---------
+    module: str
+
+    Returns
+    -------
+    available: bool
+      Whether the module is available to be imported
+    """
+    spec = importlib.util.find_spec(module)
+    return spec is not None

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Callable, ClassVar, List, Mapping,
+    TYPE_CHECKING, Callable, ClassVar, Mapping,
 )
 
 import param
@@ -37,7 +37,7 @@ class Accordion(NamedListPanel):
     >>> pn.Accordion(some_pane_with_a_name, ("Plot", some_plot))
     """
 
-    active_header_background = param.String(default='#ccc', doc="""
+    active_header_background = param.String(default='#ddd', doc="""
         Color for currently active headers.""")
 
     active = param.List(default=[], doc="""
@@ -78,6 +78,7 @@ class Accordion(NamedListPanel):
 
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
+        self._panels = {}
         self._updating_active = False
         self.param.watch(self._update_active, ['active'])
         self.param.watch(self._update_cards, self._synced_properties)
@@ -104,7 +105,7 @@ class Accordion(NamedListPanel):
             self.objects[i] = pane
 
         for obj in old_objects:
-            if obj not in self.objects:
+            if obj not in self.objects and id(obj) in self._panels:
                 self._panels[id(obj)]._cleanup(root)
                 del self._panels[id(obj)]
 
@@ -217,7 +218,7 @@ class Accordion(NamedListPanel):
 
     def select(
         self, selector: type | Callable[[Viewable], bool] | None = None
-    ) -> List[Viewable]:
+    ) -> list[Viewable]:
         selected = Reactive.select(self, selector)
         if self._panels:
             for card in self._panels.values():

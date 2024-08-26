@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 import {AbstractVTKPlot, AbstractVTKView} from "./vtklayout"
 import type {ColorMapper, VolumeType} from "./util"
@@ -10,105 +10,114 @@ import {
   vtkLutToMapper,
 } from "./util"
 
-
 export class VTKVolumePlotView extends AbstractVTKView {
-  model: VTKVolumePlot
+  declare model: VTKVolumePlot
+
   protected _controllerWidget: any
   protected _vtk_image_data: any
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, () => {
+
+    const {
+      data, colormap, shadow, sampling, edge_gradient, rescale, ambient, diffuse,
+      camera, specular, specular_power, display_volume, display_slices, slice_i,
+      slice_j, slice_k, render_background, interpolation, controller_expanded,
+      nan_opacity,
+    } = this.model.properties
+
+    this.on_change(data, () => {
       this._vtk_image_data = data2VTKImageData(this.model.data as VolumeType)
       this.invalidate_render()
     })
-    this.connect(this.model.properties.colormap.change, () => {
+    this.on_change(colormap, () => {
       this.colormap_selector.value = this.model.colormap
       const event = new Event("change")
       this.colormap_selector.dispatchEvent(event)
     })
-    this.connect(this.model.properties.shadow.change, () => {
+    this.on_change(shadow, () => {
       this.shadow_selector.value = this.model.shadow ? "1" : "0"
       const event = new Event("change")
       this.shadow_selector.dispatchEvent(event)
     })
-    this.connect(this.model.properties.sampling.change, () => {
+    this.on_change(sampling, () => {
       this.sampling_slider.value = this.model.sampling.toFixed(2)
       const event = new Event("input")
       this.sampling_slider.dispatchEvent(event)
     })
-    this.connect(this.model.properties.edge_gradient.change, () => {
+    this.on_change(edge_gradient, () => {
       this.edge_gradient_slider.value = this.model.edge_gradient.toFixed(2)
       const event = new Event("input")
       this.edge_gradient_slider.dispatchEvent(event)
     })
-    this.connect(this.model.properties.rescale.change, () => {
+    this.on_change(rescale, () => {
       this._controllerWidget.setRescaleColorMap(this.model.rescale)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.ambient.change, () => {
+    this.on_change(ambient, () => {
       this.volume.getProperty().setAmbient(this.model.ambient)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.diffuse.change, () => {
+    this.on_change(diffuse, () => {
       this.volume.getProperty().setDiffuse(this.model.diffuse)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.camera.change, () => {
+    this.on_change(camera, () => {
       if (!this._setting_camera) {
-	this._set_camera_state()
-	this._vtk_renwin.getRenderWindow().render()
+        this._set_camera_state()
+        this._vtk_renwin.getRenderWindow().render()
       }
     })
-    this.connect(this.model.properties.specular.change, () => {
+    this.on_change(specular, () => {
       this.volume.getProperty().setSpecular(this.model.specular)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.specular_power.change, () => {
+    this.on_change(specular_power, () => {
       this.volume.getProperty().setSpecularPower(this.model.specular_power)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.display_volume.change, () => {
+    this.on_change(display_volume, () => {
       this._set_volume_visibility(this.model.display_volume)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.display_slices.change, () => {
+    this.on_change(display_slices, () => {
       this._set_slices_visibility(this.model.display_slices)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.slice_i.change, () => {
+    this.on_change(slice_i, () => {
       if (this.image_actor_i !== undefined) {
         this.image_actor_i.getMapper().setISlice(this.model.slice_i)
         this._vtk_renwin.getRenderWindow().render()
       }
     })
-    this.connect(this.model.properties.slice_j.change, () => {
+    this.on_change(slice_j, () => {
       if (this.image_actor_j !== undefined) {
         this.image_actor_j.getMapper().setJSlice(this.model.slice_j)
         this._vtk_renwin.getRenderWindow().render()
       }
     })
-    this.connect(this.model.properties.slice_k.change, () => {
+    this.on_change(slice_k, () => {
       if (this.image_actor_k !== undefined) {
         this.image_actor_k.getMapper().setKSlice(this.model.slice_k)
         this._vtk_renwin.getRenderWindow().render()
       }
     })
-    this.connect(this.model.properties.render_background.change, () => {
+    this.on_change(render_background, () => {
       this._vtk_renwin
         .getRenderer()
         .setBackground(...hexToRGB(this.model.render_background))
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.interpolation.change, () => {
+    this.on_change(interpolation, () => {
       this._set_interpolation(this.model.interpolation)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.controller_expanded.change, () => {
-      if (this._controllerWidget != null)
+    this.on_change(controller_expanded, () => {
+      if (this._controllerWidget != null) {
         this._controllerWidget.setExpanded(this.model.controller_expanded)
+      }
     })
-    this.connect(this.model.properties.nan_opacity.change, () => {
+    this.on_change(nan_opacity, () => {
       const scalar_opacity = this.image_actor_i.getProperty().getScalarOpacity()
       scalar_opacity.get(["nodes"]).nodes[0].y = this.model.nan_opacity
       scalar_opacity.modified()
@@ -116,7 +125,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
     })
   }
 
-  render(): void {
+  override render(): void {
     this._vtk_renwin = null
     this._orientationWidget = null
     this._axes = null
@@ -124,12 +133,13 @@ export class VTKVolumePlotView extends AbstractVTKView {
     this._create_orientation_widget()
     this._set_axes()
     this._vtk_renwin.getRenderer().resetCamera()
-    if (Object.keys(this.model.camera).length)
+    if (Object.keys(this.model.camera).length > 0) {
       this._set_camera_state()
+    }
     this._get_camera_state()
   }
 
-  invalidate_render(): void {
+  override invalidate_render(): void {
     this._vtk_renwin = null
     super.invalidate_render()
   }
@@ -151,7 +161,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
     this._controllerWidget.setupContent(
       this._vtk_renwin.getRenderWindow(),
       this.volume,
-      true
+      true,
     )
     this._controllerWidget.setContainer(this.el)
     this._controllerWidget.setExpanded(this.model.controller_expanded)
@@ -168,8 +178,9 @@ export class VTKVolumePlotView extends AbstractVTKView {
   }
 
   get vtk_image_data(): any {
-    if (!this._vtk_image_data)
+    if (!this._vtk_image_data) {
       this._vtk_image_data = data2VTKImageData(this.model.data as VolumeType)
+    }
     return this._vtk_image_data
   }
   get volume(): any {
@@ -205,48 +216,50 @@ export class VTKVolumePlotView extends AbstractVTKView {
   }
 
   _connect_js_controls(): void {
-    const {el: controller_el} = this._controllerWidget.get('el')
-    if(controller_el !== undefined) {
-      const controller_button = (controller_el as HTMLElement).querySelector('.js-button')
-      controller_button!.addEventListener('click', () => this.model.controller_expanded = this._controllerWidget.getExpanded())
+    const {el: controller_el} = this._controllerWidget.get("el")
+    if (controller_el !== undefined) {
+      const controller_button = (controller_el as HTMLElement).querySelector(".js-button")
+      controller_button!.addEventListener("click", () => this.model.controller_expanded = this._controllerWidget.getExpanded())
     }
     // Colormap selector
     this.colormap_selector.addEventListener("change", () => {
       this.model.colormap = this.colormap_selector.value
     })
-    if (!this.model.colormap) this.model.colormap = this.colormap_selector.value
-    else this.model.properties.colormap.change.emit()
+    if (!this.model.colormap) {
+      this.model.colormap = this.colormap_selector.value
+    } else {
+      this.model.properties.colormap.change.emit()
+    }
 
     // Shadow selector
     this.shadow_selector.addEventListener("change", () => {
       this.model.shadow = !!Number(this.shadow_selector.value)
     })
-    if ((this.model.shadow = !!Number(this.shadow_selector.value)))
+    if ((this.model.shadow = !!Number(this.shadow_selector.value))) {
       this.model.properties.shadow.change.emit()
+    }
 
     // Sampling slider
     this.sampling_slider.addEventListener("input", () => {
       const js_sampling_value = Number(this.sampling_slider.value)
-      if (Math.abs(this.model.sampling - js_sampling_value) >= 5e-3)
+      if (Math.abs(this.model.sampling - js_sampling_value) >= 5e-3) {
         this.model.sampling = js_sampling_value
+      }
     })
-    if (
-      Math.abs(this.model.sampling - Number(this.shadow_selector.value)) >= 5e-3
-    )
+    if (Math.abs(this.model.sampling - Number(this.shadow_selector.value)) >= 5e-3) {
       this.model.properties.sampling.change.emit()
+    }
 
     // Edge Gradient slider
     this.edge_gradient_slider.addEventListener("input", () => {
       const js_edge_gradient_value = Number(this.edge_gradient_slider.value)
-      if (Math.abs(this.model.edge_gradient - js_edge_gradient_value) >= 5e-3)
+      if (Math.abs(this.model.edge_gradient - js_edge_gradient_value) >= 5e-3) {
         this.model.edge_gradient = js_edge_gradient_value
+      }
     })
-    if (
-      Math.abs(
-        this.model.edge_gradient - Number(this.edge_gradient_slider.value)
-      ) >= 5e-3
-    )
+    if (Math.abs(this.model.edge_gradient - Number(this.edge_gradient_slider.value)) >= 5e-3) {
       this.model.properties.edge_gradient.change.emit()
+    }
   }
 
   _plot_slices(): void {
@@ -308,11 +321,11 @@ export class VTKVolumePlotView extends AbstractVTKView {
 
     const lookupTable = vtkns.ColorTransferFunction.newInstance()
     if (this.model.colormap != null) {
-      const preset = vtkns.ColorTransferFunction.vtkColorMaps.getPresetByName(this.model.colormap);
-      lookupTable.applyColorMap(preset);
+      const preset = vtkns.ColorTransferFunction.vtkColorMaps.getPresetByName(this.model.colormap)
+      lookupTable.applyColorMap(preset)
     }
     lookupTable.onModified(
-      () => (this.model.mapper = vtkLutToMapper(lookupTable))
+      () => (this.model.mapper = vtkLutToMapper(lookupTable)),
     )
     const piecewiseFunction = vtkns.PiecewiseFunction.newInstance()
     const sampleDistance =
@@ -321,7 +334,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
         source
           .getSpacing()
           .map((v: number) => v * v)
-          .reduce((a: number, b: number) => a + b, 0)
+          .reduce((a: number, b: number) => a + b, 0),
       )
     mapper.setSampleDistance(sampleDistance)
 
@@ -337,7 +350,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
       .setScalarOpacityUnitDistance(
         0,
         vtkns.BoundingBox.getDiagonalLength(source.getBounds()) /
-          Math.max(...source.getDimensions())
+          Math.max(...source.getDimensions()),
       )
     // - control how we emphasize surface boundaries
     //  => max should be around the average gradient magnitude for the
@@ -416,7 +429,7 @@ export namespace VTKVolumePlot {
 export interface VTKVolumePlot extends VTKVolumePlot.Attrs {}
 
 export class VTKVolumePlot extends AbstractVTKPlot {
-  properties: VTKVolumePlot.Props
+  declare properties: VTKVolumePlot.Props
 
   constructor(attrs?: Partial<VTKVolumePlot.Attrs>) {
     super(attrs)
@@ -433,10 +446,10 @@ export class VTKVolumePlot extends AbstractVTKPlot {
       display_slices:       [ Boolean,         false ],
       display_volume:       [ Boolean,          true ],
       edge_gradient:        [ Number,            0.2 ],
-      interpolation:        [ Interpolation, 'fast_linear'],
+      interpolation:        [ Interpolation, "fast_linear"],
       mapper:               [ Struct({palette: Array(String), low: Number, high: Number}), {palette: [], low: 0, high: 0} ],
       nan_opacity:          [ Number,              1 ],
-      render_background:    [ String,      '#52576e' ],
+      render_background:    [ String,      "#52576e" ],
       rescale:              [ Boolean,         false ],
       sampling:             [ Number,            0.4 ],
       shadow:               [ Boolean,          true ],

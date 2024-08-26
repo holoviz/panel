@@ -4,6 +4,7 @@ Various general utilities used in the panel codebase.
 from __future__ import annotations
 
 import ast
+import asyncio
 import base64
 import datetime as dt
 import json
@@ -23,7 +24,6 @@ from html import escape  # noqa
 from importlib import import_module
 from typing import Any, AnyStr
 
-import bleach
 import bokeh
 import numpy as np
 import param
@@ -43,15 +43,27 @@ from .parameters import (  # noqa
 
 log = logging.getLogger('panel.util')
 
-bokeh_version = Version(bokeh.__version__)
-
-# Bokeh serializes NaT as this value
-# Discussion on why https://github.com/bokeh/bokeh/pull/10449/files#r479988469
-BOKEH_JS_NAT = -9223372036854776.0
+bokeh_version = Version(Version(bokeh.__version__).base_version)
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
-HTML_SANITIZER = bleach.sanitizer.Cleaner(strip=True)
+class LazyHTMLSanitizer:
+    """
+    Wraps bleach.sanitizer.Cleaner lazily importing it on the first
+    call to the clean method.
+    """
+
+    def __init__(self, **kwargs):
+        self._cleaner = None
+        self._kwargs = kwargs
+
+    def clean(self, text):
+        if self._cleaner is None:
+            import bleach
+            self._cleaner = bleach.sanitizer.Cleaner(**self._kwargs)
+        return self._cleaner.clean(text)
+
+HTML_SANITIZER = LazyHTMLSanitizer(strip=True)
 
 
 def hashable(x):
@@ -76,7 +88,7 @@ def indexOf(obj, objs):
                 return i
         except Exception:
             pass
-    raise ValueError('%s not in list' % obj)
+    raise ValueError(f'{obj} not in list')
 
 
 def param_name(name: str) -> str:
@@ -85,8 +97,6 @@ def param_name(name: str) -> str:
     """
     match = re.findall(r'\D+(\d{5,})', name)
     return name[:name.index(match[0])] if match else name
-
-
 
 
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
@@ -170,13 +180,13 @@ def value_as_datetime(value):
     Retrieve the value tuple as a tuple of datetime objects.
     """
     if isinstance(value, numbers.Number):
-        value = datetime.utcfromtimestamp(value / 1000)
+        value = datetime.fromtimestamp(value / 1000, tz=dt.timezone.utc).replace(tzinfo=None)
     return value
 
 
 def value_as_date(value):
     if isinstance(value, numbers.Number):
-        value = datetime.utcfromtimestamp(value / 1000).date()
+        value = datetime.fromtimestamp(value / 1000, tz=dt.timezone.utc).replace(tzinfo=None).date()
     elif isinstance(value, datetime):
         value = value.date()
     return value
@@ -456,13 +466,58 @@ def styler_update(styler, new_df):
                 continue
             op_fn = str(op[0])
             if ('_background_gradient' in op_fn or '_bar' in op_fn) and op[1] in (0, 1):
-                applies = np.array([
-                    new_df[col].dtype.kind in 'uif' for col in new_df.columns
-                ])
-                if len(op[2]) == len(applies):
-                    applies = np.logical_and(applies, op[2])
+                if isinstance(op[2], list):
+                    applies = op[2]
+                else:
+                    applies = np.array([
+                        new_df[col].dtype.kind in 'uif' for col in new_df.columns
+                    ])
+                    if len(op[2]) == len(applies):
+                        applies = np.logical_and(applies, op[2])
                 op = (op[0], op[1], applies)
             ops.append(op)
         todo = tuple(ops)
         todos.append(todo)
     return todos
+
+
+def try_datetime64_to_datetime(value):
+    if isinstance(value, np.datetime64):
+        value = value.astype('datetime64[ms]').astype(datetime)
+    return value
+
+
+async def to_async_gen(sync_gen):
+    done = object()
+
+    def safe_next():
+        # Converts StopIteration to a sentinel value to avoid:
+        # TypeError: StopIteration interacts badly with generators and cannot be raised into a Future
+        try:
+            return next(sync_gen)
+        except StopIteration:
+            return done
+
+    while True:
+        value = await asyncio.to_thread(safe_next)
+        if value is done:
+            break
+        yield value
+
+
+def prefix_length(a: str, b: str) -> int:
+    """
+    Searches for the length of overlap in the starting
+    characters of string b in a. Uses binary search
+    if b is not already a prefix of a.
+    """
+    if a.startswith(b):
+        return len(b)
+    left, right = 0, min(len(a), len(b))
+    while left < right:
+        mid = (left + right + 1) // 2
+        if a.startswith(b[:mid]):
+            left = mid
+        else:
+            right = mid - 1
+    return left

@@ -1,6 +1,5 @@
 #!/bin/bash
 export BOKEH_ALLOW_WS_ORIGIN=*
-export SETUPTOOLS_ENABLE_FEATURES=legacy-editable
 echo '' >> panel/template/base.py
 echo 'BasicTemplate.param.site_url.default="./"' >> panel/template/base.py
 export DISPLAY=:99.0

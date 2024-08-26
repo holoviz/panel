@@ -5,8 +5,6 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
-import gc
-import html
 import importlib
 import inspect
 import logging
@@ -15,30 +13,23 @@ import pathlib
 import signal
 import sys
 import threading
-import traceback
 import uuid
-import weakref
 
-from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
 from html import escape
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union,
+    TYPE_CHECKING, Any, Callable, Mapping, Optional, Union,
 )
 from urllib.parse import urljoin, urlparse
 
 import bokeh
-import bokeh.command.util
 import param
 import tornado
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
-from bokeh.application.handlers.code import (
-    CodeHandler, _monkeypatch_io, patch_curdoc,
-)
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
@@ -48,7 +39,6 @@ from bokeh.embed.bundle import Script
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.io import curdoc
 from bokeh.models import CustomJS
 from bokeh.server.server import Server as BokehServer
 from bokeh.server.urls import per_app_patterns, toplevel_patterns
@@ -73,15 +63,16 @@ from tornado.wsgi import WSGIContainer
 from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
-from .document import init_doc, unlocked, with_lock  # noqa
+from .application import Application, build_single_handler_application
+from .document import (  # noqa
+    _cleanup_doc, init_doc, unlocked, with_lock,
+)
 from .liveness import LivenessHandler
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
-from .markdown import build_single_handler_application
-from .profile import profile_ctx
-from .reload import autoreload_watcher
+from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
     Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
@@ -200,7 +191,7 @@ def _initialize_session_info(session_context: 'BokehSessionContext'):
     state.session_info['total'] += 1
     if history > 0 and len(sessions) >= history:
         old_history = list(sessions.items())
-        sessions = OrderedDict(old_history[-(history-1):])
+        sessions = dict(old_history[-(history-1):])
         state.session_info['sessions'] = sessions
     sessions[session_id] = {
         'launched': dt.datetime.now().timestamp(),
@@ -216,7 +207,6 @@ state._on_session_created_internal.append(_initialize_session_info)
 #---------------------------------------------------------------------
 # Bokeh patches
 #---------------------------------------------------------------------
-
 
 def html_page_for_render_items(
     bundle: Bundle | tuple[str, str], docs_json: dict[ID, DocJson],
@@ -286,7 +276,7 @@ def server_html_page_for_session(
     title: str,
     token: str | None = None,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: Optional[Dict[str, Any]] = None,
+    template_variables: Optional[dict[str, Any]] = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
@@ -335,49 +325,13 @@ def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url
 
     return AUTOLOAD_JS.render(bundle=bundle, elementid=element_id)
 
-def destroy_document(self, session):
-    """
-    Override for Document.destroy() without calling gc.collect directly.
-    The gc.collect() call is scheduled as a task, ensuring that when
-    multiple documents are destroyed in quick succession we do not
-    schedule excessive garbage collection.
-    """
-    if session is not None:
-        self.remove_on_change(session)
-
-    del self._roots
-    del self._theme
-    del self._template
-    self._session_context = None
-
-    self.callbacks.destroy()
-    self.models.destroy()
-    self.modules.destroy()
-
-    # Clear periodic callbacks
-    for cb in state._periodic.get(self, []):
-        cb.stop()
-
-    # Clean up pn.state to avoid tasks getting executed on dead session
-    for attr in dir(state):
-        # _param_watchers is deprecated in Param 2.0 and will raise a warning
-        if not attr.startswith('_') or attr == "_param_watchers":
-            continue
-        state_obj = getattr(state, attr)
-        if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
-            del state_obj[self]
-
-    # Schedule GC
-    at = dt.datetime.now() + dt.timedelta(seconds=5)
-    state.schedule_task('gc.collect', gc.collect, at=at)
-
-    del self.destroy
 
 # Patch Server to attach task factory to asyncio loop and handle Admin server context
 class Server(BokehServer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._autoreload_stop_event = None
         if state._admin_context:
             state._admin_context._loop = self._loop
 
@@ -385,38 +339,27 @@ class Server(BokehServer):
         super().start()
         if state._admin_context:
             self._loop.add_callback(state._admin_context.run_load_hook)
+        if config.autoreload:
+            from .reload import setup_autoreload_watcher
+            self._autoreload_stop_event = stop_event = asyncio.Event()
+            self._autoreload_task = self._loop.asyncio_loop.create_task(setup_autoreload_watcher(stop_event))
 
     def stop(self, wait: bool = True) -> None:
+        if self._autoreload_stop_event:
+            # For the stop event to be processed we have to restart
+            # the IOLoop briefly, ensuring an orderly cleanup
+            async def stop_autoreload():
+                self._autoreload_stop_event.set()
+                await self._autoreload_task
+            try:
+                self._loop.asyncio_loop.run_until_complete(stop_autoreload())
+            except RuntimeError:
+                pass # Ignore if the event loop is still running
         super().stop(wait=wait)
         if state._admin_context:
             state._admin_context.run_unload_hook()
 
 bokeh.server.server.Server = Server
-
-
-# Patch Application to handle session callbacks
-class Application(BkApplication):
-
-    def __init__(self, *args, **kwargs):
-        self._admin = kwargs.pop('admin', None)
-        super().__init__(*args, **kwargs)
-
-    async def on_session_created(self, session_context):
-        with set_curdoc(session_context._document):
-            if self._admin is not None:
-                config._admin = self._admin
-            for cb in state._on_session_created_internal+state._on_session_created:
-                cb(session_context)
-        await super().on_session_created(session_context)
-
-    def initialize_document(self, doc):
-        super().initialize_document(doc)
-        if doc in state._templates and doc not in state._templates[doc]._documents:
-            template = state._templates[doc]
-            with set_curdoc(doc):
-                template.server_doc(title=template.title, location=True, doc=doc)
-
-bokeh.command.util.Application = Application # type: ignore
 
 class SessionPrefixHandler:
 
@@ -462,7 +405,6 @@ class LoginUrlMixin:
         raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
 
 
-# Patch Bokeh DocHandler URL
 class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
 
     @authenticated
@@ -640,7 +582,7 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
         absolute_url = self.get_argument("bokeh-absolute-url", default=None)
 
         if absolute_url:
-            server_url = '{uri.scheme}://{uri.netloc}'.format(uri=urlparse(absolute_url))
+            server_url = f'{urlparse(absolute_url).scheme}://{urlparse(absolute_url).netloc}'
         else:
             server_url = None
 
@@ -673,6 +615,39 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
 toplevel_patterns[0] = (r'/?', RootHandler)
 bokeh.server.tornado.RootHandler = RootHandler
 
+# Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
+def create_static_handler(prefix, key, app):
+    # patch
+    key = '/__patchedroot' if key == '/' else key
+
+    route = prefix
+    route += "/static/(.*)" if key == "/" else key + "/static/(.*)"
+    if app.static_path is not None:
+        return (route, StaticFileHandler, {"path" : app.static_path})
+    return (route, StaticHandler, {})
+
+bokeh.server.tornado.create_static_handler = create_static_handler
+
+#---------------------------------------------------------------------
+# Async patches
+#---------------------------------------------------------------------
+
+# Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
+# support the WindowsProactorEventLoopPolicy so we restore it,
+# unless we detect we are running on jupyter_server.
+if (
+    sys.platform == 'win32' and
+    tornado.version_info >= (6, 1) and
+    type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy and
+    (('jupyter_server' not in sys.modules and
+      'jupyter_client' not in sys.modules) or
+     'pytest' in sys.modules)
+):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+#---------------------------------------------------------------------
+# Public API
+#---------------------------------------------------------------------
 
 class ComponentResourceHandler(StaticFileHandler):
     """
@@ -704,11 +679,11 @@ class ComponentResourceHandler(StaticFileHandler):
         try:
             module = importlib.import_module(mod)
         except ModuleNotFoundError:
-            raise HTTPError(404, 'Module not found')
+            raise HTTPError(404, 'Module not found') from None
         try:
             component = getattr(module, cls)
         except AttributeError:
-            raise HTTPError(404, 'Component not found')
+            raise HTTPError(404, 'Component not found') from None
 
         # May only access resources listed in specific attributes
         if rtype not in self._resource_attrs:
@@ -717,7 +692,7 @@ class ComponentResourceHandler(StaticFileHandler):
         try:
             resources = getattr(component, rtype)
         except AttributeError:
-            raise HTTPError(404, 'Resource type not found')
+            raise HTTPError(404, 'Resource type not found') from None
 
         # Handle template resources
         if rtype == '_resources':
@@ -765,146 +740,6 @@ class ComponentResourceHandler(StaticFileHandler):
             raise HTTPError(403, "%s is not a file", self.path)
         return absolute_path
 
-
-def modify_document(self, doc: 'Document'):
-    from bokeh.io.doc import set_curdoc as bk_set_curdoc
-
-    from ..config import config
-
-    logger.info(LOG_SESSION_LAUNCHING, id(doc))
-
-    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
-
-    if config.autoreload:
-        path = self._runner.path
-        argv = self._runner._argv
-        handler = type(self)(filename=path, argv=argv)
-        self._runner = handler._runner
-
-    module = self._runner.new_module()
-
-    # If no module was returned it means the code runner has some permanent
-    # unfixable problem, e.g. the configured source code has a syntax error
-    if module is None:
-        return
-
-    # One reason modules are stored is to prevent the module
-    # from being gc'd before the document is. A symptom of a
-    # gc'd module is that its globals become None. Additionally
-    # stored modules are used to provide correct paths to
-    # custom models resolver.
-    sys.modules[module.__name__] = module
-    doc.modules._modules.append(module)
-
-    try:
-        old_doc = curdoc()
-    except RuntimeError:
-        old_doc = None
-    bk_set_curdoc(doc)
-
-    if config.autoreload:
-        set_curdoc(doc)
-        state.onload(autoreload_watcher)
-
-    sessions = []
-
-    try:
-        def post_check():
-            newdoc = curdoc()
-            # Do not let curdoc track modules when autoreload is enabled
-            # otherwise it will erroneously complain that there is
-            # a memory leak
-            if config.autoreload:
-                newdoc.modules._modules = []
-
-            # script is supposed to edit the doc not replace it
-            if newdoc is not doc:
-                raise RuntimeError("%s at '%s' replaced the output document" % (self._origin, self._runner.path))
-
-        def handle_exception(handler, e):
-            from bokeh.application.handlers.handler import handle_exception
-
-            from ..pane import Alert
-
-            # Clean up
-            del sys.modules[module.__name__]
-
-            if hasattr(doc, 'modules'):
-                doc.modules._modules.remove(module)
-            else:
-                doc._modules.remove(module)
-            bokeh.application.handlers.code_runner.handle_exception = handle_exception
-            tb = html.escape(traceback.format_exc()).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-
-            # Serve error
-            e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-            Alert(
-                f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
-                alert_type='danger', margin=5, sizing_mode='stretch_width'
-            ).servable()
-
-        if config.autoreload:
-            bokeh.application.handlers.code_runner.handle_exception = handle_exception
-
-        state._launching.append(doc)
-        with _monkeypatch_io(self._loggers):
-            with patch_curdoc(doc):
-                with profile_ctx(config.profiler) as sessions:
-                    self._runner.run(module, post_check)
-
-        def _log_session_destroyed(session_context):
-            logger.info(LOG_SESSION_DESTROYED, id(doc))
-
-        doc.on_session_destroyed(_log_session_destroyed)
-        doc.destroy = partial(destroy_document, doc) # type: ignore
-    finally:
-        state._launching.remove(doc)
-        if config.profiler:
-            try:
-                path = doc.session_context.request.path
-                state._profiles[(path, config.profiler)] += sessions
-                state.param.trigger('_profiles')
-            except Exception:
-                pass
-        if old_doc is not None:
-            bk_set_curdoc(old_doc)
-
-CodeHandler.modify_document = modify_document # type: ignore
-
-# Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
-def create_static_handler(prefix, key, app):
-    # patch
-    key = '/__patchedroot' if key == '/' else key
-
-    route = prefix
-    route += "/static/(.*)" if key == "/" else key + "/static/(.*)"
-    if app.static_path is not None:
-        return (route, StaticFileHandler, {"path" : app.static_path})
-    return (route, StaticHandler, {})
-
-bokeh.server.tornado.create_static_handler = create_static_handler
-
-#---------------------------------------------------------------------
-# Async patches
-#---------------------------------------------------------------------
-
-# Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
-# support the WindowsProactorEventLoopPolicy so we restore it,
-# unless we detect we are running on jupyter_server.
-if (
-    sys.platform == 'win32' and
-    sys.version_info[:3] >= (3, 8, 0) and
-    tornado.version_info >= (6, 1) and
-    type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy and
-    (('jupyter_server' not in sys.modules and
-      'jupyter_client' not in sys.modules) or
-     'pytest' in sys.modules)
-):
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
-#---------------------------------------------------------------------
-# Public API
-#---------------------------------------------------------------------
 
 def serve(
     panels: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
@@ -978,10 +813,15 @@ def serve(
     ))
     if threaded:
         kwargs['loop'] = loop = IOLoop(make_current=False) if loop is None else loop
+        # To ensure that we have correspondence between state._threads and state._servers
+        # we must provide a server_id here
+        if 'server_id' not in kwargs:
+            kwargs['server_id'] = uuid.uuid4().hex
+
         server = StoppableThread(
             target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
         )
-        server_id = kwargs.get('server_id', uuid.uuid4().hex)
+        server_id = kwargs['server_id']
         state._threads[server_id] = server
         server.start()
     else:
@@ -1020,9 +860,9 @@ def get_static_routes(static_dirs):
                              "this is reserved for internal use.")
         path = fullpath(path)
         if not os.path.isdir(path):
-            raise ValueError("Cannot serve non-existent path %s" % path)
+            raise ValueError(f"Cannot serve non-existent path {path}")
         patterns.append(
-            (r"%s/(.*)" % slug, StaticFileHandler, {"path": path})
+            (rf"{slug}/(.*)", StaticFileHandler, {"path": path})
         )
     patterns.append((
         f'/{COMPONENT_PATH}(.*)', ComponentResourceHandler, {}
@@ -1061,6 +901,7 @@ def get_server(
     logout_template: Optional[str] = None,
     session_history: Optional[int] = None,
     liveness: bool | str = False,
+    warm: bool = False,
     **kwargs
 ) -> Server:
     """
@@ -1149,6 +990,9 @@ def get_server(
       Whether to add a liveness endpoint. If a string is provided
       then this will be used as the endpoint, otherwise the endpoint
       will be hosted at /liveness.
+    warm: bool (optional, default=False)
+      Whether to run the applications before serving them to ensure
+      all imports and caches are fully warmed up before serving the app.
     kwargs: dict
       Additional keyword arguments to pass to Server instance.
 
@@ -1174,7 +1018,7 @@ def get_server(
                     raise KeyError(
                         "Keys of the title dictionary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
-                        "title dictionary.")
+                        "title dictionary.") from None
             else:
                 title_ = title
             slug = slug if slug.startswith('/') else '/'+slug
@@ -1203,12 +1047,25 @@ def get_server(
     else:
         if isinstance(panel, pathlib.Path):
             panel = str(panel) # enables serving apps from Paths
-        if (isinstance(panel, str) and panel.endswith(('.py', '.ipynb', '.md'))
+        if isinstance(panel, BkApplication):
+            panel = {'/': app}
+        elif (isinstance(panel, str) and panel.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(panel)):
             apps = {'/': build_single_handler_application(panel)}
         else:
             handler = FunctionHandler(partial(_eval_panel, panel, server_id, title, location, admin))
             apps = {'/': Application(handler, admin=admin)}
+
+    if warm or config.autoreload:
+        for app in apps.values():
+            if config.autoreload:
+                with record_modules(list(apps.values())):
+                    session = generate_session(app)
+            else:
+                session = generate_session(app)
+            with set_curdoc(session.document):
+                state._on_load(None)
+            _cleanup_doc(session.document, destroy=True)
 
     if admin:
         if '/admin' in apps:
@@ -1231,7 +1088,7 @@ def get_server(
 
     if liveness:
         liveness_endpoint = 'liveness' if isinstance(liveness, bool) else liveness
-        extra_patterns += [(r"/%s" % liveness_endpoint, LivenessHandler, dict(applications=apps))]
+        extra_patterns += [(rf"/{liveness_endpoint}", LivenessHandler, dict(applications=apps))]
 
     opts = dict(kwargs)
     if loop:
@@ -1359,4 +1216,15 @@ class StoppableThread(threading.Thread):
                 del self._Thread__target, self._Thread__args, self._Thread__kwargs # type: ignore
 
     def stop(self) -> None:
-        self.io_loop.add_callback(self.io_loop.stop)
+        """Signal to stop the event loop gracefully."""
+        self.io_loop.add_callback(self._graceful_stop)
+
+    async def _shutdown(self):
+        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        self.io_loop.stop()
+
+    def _graceful_stop(self):
+        self.io_loop.add_callback(self._shutdown)

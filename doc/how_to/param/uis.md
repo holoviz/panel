@@ -80,7 +80,7 @@ class Example(BaseClass):
     color                   = param.Color(default='#FFFFFF')
     date                    = param.Date(default=dt.datetime(2017, 1, 1),
                                          bounds=(dt.datetime(2017, 1, 1), dt.datetime(2017, 2, 1)))
-    dataframe               = param.DataFrame(default=pd._testing.makeDataFrame().iloc[:3])
+    dataframe               = param.DataFrame(default=pd.DataFrame({'A': [1, 2, 3]}))
     select_string           = param.ObjectSelector(default="yellow", objects=["red", "yellow", "green"])
     select_fn               = param.ObjectSelector(default=list,objects=[list, set, dict])
     int_list                = param.ListSelector(default=[3, 5], objects=[1, 3, 5, 7, 9], precedence=0.5)

@@ -366,3 +366,14 @@ fast-card {
   --background-color: var(--neutral-layer-floating);
   z-index: 10;
 }
+
+.pn-modal-content {
+  display: block;
+  overflow-x: auto;
+}
+
+textarea.xterm-helper-textarea,
+span.xterm-char-measure-element {
+  pointer-events: none;
+  opacity: 0;
+}

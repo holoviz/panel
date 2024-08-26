@@ -9,21 +9,21 @@ import json
 import textwrap
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import param  # type: ignore
 
 from ..io.resources import CDN_DIST
-from ..models import HTML as _BkHTML, JSON as _BkJSON
-from ..util import HTML_SANITIZER, escape
-from ..util.warnings import deprecated
+from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
+from ..util import HTML_SANITIZER, escape, prefix_length
 from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm  # type: ignore
+
 
 class HTMLBasePane(ModelPane):
     """
@@ -32,20 +32,29 @@ class HTMLBasePane(ModelPane):
     the supported options like style and sizing_mode.
     """
 
+    enable_streaming = param.Boolean(default=False, doc="""
+        Whether to enable streaming of text snippets. This is useful
+        when updating a string step by step, e.g. in a chat message.""")
+
     _bokeh_model: ClassVar[Model] = _BkHTML
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text', 'enable_streaming': None}
 
     _updates: ClassVar[bool] = True
 
     __abstract = True
 
-    def __init__(self, object=None, **params):
-        if "style" in params:
-            # In Bokeh 3 'style' was changed to 'styles'.
-            params["styles"] = params.pop("style")
-            deprecated("1.4", "style",  "styles")
-        super().__init__(object=object, **params)
+    def _update(self, ref: str, model: Model) -> None:
+        props = self._get_properties(model.document)
+        if self.enable_streaming and 'text' in props:
+            text = props['text']
+            start = prefix_length(text, model.text)
+            model.run_scripts = False
+            patch = text[start:]
+            self._send_event(HTMLStreamEvent, patch=patch, start=start)
+            model._property_values['text'] = model.text[:start]+patch
+            del props['text']
+        model.update(**props)
 
 
 class HTML(HTMLBasePane):
@@ -79,10 +88,10 @@ class HTML(HTMLBasePane):
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'sanitize_html': None, 'sanitize_hook': None
+        'sanitize_html': None, 'sanitize_hook': None, 'stream': None
     }
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'object', 'sanitize_html', 'sanitize_hook'
     ]
 
@@ -97,7 +106,7 @@ class HTML(HTMLBasePane):
         else:
             return False
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
@@ -184,23 +193,27 @@ class DataFrame(HTML):
         Set to False for a DataFrame with a hierarchical index to
         print every multi-index key at each row.""")
 
+    text_align = param.Selector(default=None, objects=[
+        'start', 'end', 'center'], doc="""
+         Alignment of non-header cells.""")
+
     _object = param.Parameter(default=None, doc="""Hidden parameter.""")
 
-    _dask_params: ClassVar[List[str]] = ['max_rows']
+    _dask_params: ClassVar[list[str]] = ['max_rows']
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'object', '_object', 'bold_rows', 'border', 'classes',
         'col_space', 'decimal', 'escape', 'float_format', 'formatters',
         'header', 'index', 'index_names', 'justify', 'max_rows',
         'max_cols', 'na_rep', 'render_links', 'show_dimensions',
-        'sparsify', 'sizing_mode'
+        'sparsify', 'text_align', 'sizing_mode'
     ]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         rp: None for rp in _rerender_params[1:-1]
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/dataframe.css'
     ]
 
@@ -246,26 +259,30 @@ class DataFrame(HTML):
             self._stream.destroy()
             self._stream = None
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         if hasattr(obj, 'to_frame'):
             obj = obj.to_frame()
 
         module = getattr(obj, '__module__', '')
         if hasattr(obj, 'to_html'):
+            classes = list(self.classes)
+            if self.text_align:
+                classes.append(f'{self.text_align}-align')
             if 'dask' in module:
                 html = obj.to_html(max_rows=self.max_rows).replace('border="1"', '')
             elif 'style' in module:
-                classes = ' '.join(self.classes)
+                classes = ' '.join(classes)
                 html = obj.to_html(table_attributes=f'class="{classes}"')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
-                          if p not in HTMLBasePane.param and p != '_object'}
+                          if p not in HTMLBasePane.param and p not in ('_object', 'text_align')}
+                kwargs['classes'] = classes
                 html = obj.to_html(**kwargs)
         else:
             html = ''
         return dict(object=escape(html))
 
-    def _init_params(self) -> Dict[str, Any]:
+    def _init_params(self) -> dict[str, Any]:
         params = HTMLBasePane._init_params(self)
 
         if self._stream:
@@ -296,7 +313,7 @@ class Str(HTMLBasePane):
 
     priority: ClassVar[float | bool | None] = 0
 
-    _bokeh_model: ClassVar[Type[Model]] = _BkHTML
+    _bokeh_model: ClassVar[type[Model]] = _BkHTML
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
         'object': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""
@@ -306,7 +323,7 @@ class Str(HTMLBasePane):
     def applies(cls, obj: Any) -> bool:
         return True
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         if obj is None or (isinstance(obj, str) and obj == ''):
             text = '<pre> </pre>'
         else:
@@ -358,7 +375,7 @@ class Markdown(HTMLBasePane):
         'plugins': None, 'renderer': None, 'renderer_options': None
     }
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'object', 'dedent', 'extensions', 'css_classes', 'plugins',
     ]
 
@@ -366,7 +383,7 @@ class Markdown(HTMLBasePane):
         'object': None
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/markdown.css'
     ]
 
@@ -431,7 +448,7 @@ class Markdown(HTMLBasePane):
         parser.options['highlight'] = hilite
         return parser
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         import markdown
         if obj is None:
             obj = ''
@@ -448,9 +465,16 @@ class Markdown(HTMLBasePane):
                 **self.renderer_options
             )
         else:
-            html = self._get_parser(
+            parser = self._get_parser(
                 self.renderer, tuple(self.plugins), **self.renderer_options
-            ).render(obj)
+            )
+            try:
+                html = parser.render(obj)
+            except IndexError:
+                # Likely markdown-it mdurl parser error
+                with parser.reset_rules():
+                    parser.disable('link')
+                    html = parser.render(obj)
         return dict(object=escape(html))
 
     def _process_param_change(self, params):
@@ -494,11 +518,11 @@ class JSON(HTMLBasePane):
         "object": "text", "encoder": None, "style": "styles"
     }
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'object', 'depth', 'encoder', 'hover_preview', 'theme'
     ]
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/json.css'
     ]
 
@@ -516,7 +540,7 @@ class JSON(HTMLBasePane):
         else:
             return None
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         try:
             data = json.loads(obj)
         except Exception:
@@ -524,13 +548,13 @@ class JSON(HTMLBasePane):
         text = json.dumps(data or {}, cls=self.encoder)
         return dict(object=text)
 
-    def _process_property_change(self, properties: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_property_change(self, properties: dict[str, Any]) -> dict[str, Any]:
         properties = super()._process_property_change(properties)
         if 'depth' in properties:
             properties['depth'] = -1 if properties['depth'] is None else properties['depth']
         return properties
 
-    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any] :
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any] :
         params = super()._process_param_change(params)
         if 'depth' in params:
             params['depth'] = None if params['depth'] < 0 else params['depth']

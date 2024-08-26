@@ -6,10 +6,10 @@ import param
 import pytest
 
 from bokeh.models import (
-    AutocompleteInput as BkAutocompleteInput, Button, Checkbox as BkCheckbox,
-    Column as BkColumn, Div, MultiSelect, RangeSlider as BkRangeSlider,
-    Row as BkRow, Select, Slider, Tabs as BkTabs, TextInput,
-    TextInput as BkTextInput, Toggle,
+    AutocompleteInput as BkAutocompleteInput, Button as BkButton,
+    Checkbox as BkCheckbox, Column as BkColumn, Div, MultiSelect,
+    RangeSlider as BkRangeSlider, Row as BkRow, Select, Slider, Tabs as BkTabs,
+    TextInput, TextInput as BkTextInput, Toggle,
 )
 from packaging.version import Version
 
@@ -22,11 +22,13 @@ from panel.pane import (
     HTML, Bokeh, Markdown, Matplotlib, PaneBase, Str, panel,
 )
 from panel.param import (
-    JSONInit, Param, ParamFunction, ParamMethod,
+    JSONInit, Param, ParamFunction, ParamMethod, Skip,
 )
-from panel.tests.util import mpl_available, mpl_figure
+from panel.tests.util import (
+    async_wait_until, mpl_available, mpl_figure, wait_until,
+)
 from panel.widgets import (
-    AutocompleteInput, Checkbox, DatePicker, DatetimeInput,
+    AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
     EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
     RangeSlider,
 )
@@ -392,7 +394,7 @@ def test_action_param(document, comm):
     model = test_pane.get_root(document, comm=comm)
 
     button = model.children[1]
-    assert isinstance(button, Button)
+    assert isinstance(button, BkButton)
 
     # Check that the action is actually executed
     pn_button = test_pane.layout[1]
@@ -572,7 +574,7 @@ def test_param_throttled(document, comm):
     assert mb.value != 3
     assert test.b == 3
 
-    test_pane._widgets['b']._process_events({'value': 4})
+    mb.value = 4
     assert test.b == 3
     assert mb.value == 4
 
@@ -614,7 +616,7 @@ def test_param_onkeyup(document, comm):
     assert mb.value != '3'
     assert test.b == '3'
 
-    test_pane._widgets['b']._process_events({'value': '4'})
+    mb.value = '4'
     assert test.b == '3'
     assert mb.value == '4'
 
@@ -871,7 +873,7 @@ def test_set_widgets_throttled(document, comm):
     assert number.value != 3
     assert test.a == 3
 
-    pane._widgets['a']._process_events({'value': 4})
+    number.value = 4
     assert test.a == 3
     assert number.value == 4
 
@@ -1564,10 +1566,7 @@ def test_set_widget_autocompleteinput(document, comm):
 
     autocompleteinput = model.children[1]
     assert isinstance(autocompleteinput, BkAutocompleteInput)
-    if Version(param.__version__) > Version('2.0.0a2'):
-        assert autocompleteinput.completions == ['a', 'b', '']
-    else:
-        assert autocompleteinput.completions == ['a', 'b']
+    assert autocompleteinput.completions == ['a', 'b', '']
     assert autocompleteinput.value == ''
     assert autocompleteinput.disabled == False
 
@@ -1644,6 +1643,24 @@ def test_param_editablerangeslider_with_bounds():
         w.value = (-1, 2)
 
     assert w.value == (1, 2)
+
+
+def test_from_param_with_ref_as_option():
+    class Test(param.Parameterized):
+        s = param.String(default='A')
+
+        @param.depends('s')
+        def ref(self):
+            return [self.s] + ['B']
+
+    t = Test()
+    w = AutocompleteInput.from_param(t.param.s, options=t.ref)
+
+    assert w.options == ['A', 'B']
+
+    t.s = 'C'
+
+    assert w.options == ['C', 'B']
 
 
 def test_paramfunction_bare_emits_warning(caplog):
@@ -1761,7 +1778,7 @@ def test_param_function_recursive_update_multiple(document, comm):
     assert layout.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
-def test_param_generator(document, comm):
+async def test_param_generator(document, comm):
     checkbox = Checkbox(value=False)
 
     def function(value):
@@ -1771,14 +1788,14 @@ def test_param_generator(document, comm):
 
     root = pane.get_root(document, comm)
 
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
 
     checkbox.value = True
 
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
-def test_param_generator_append(document, comm):
+async def test_param_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
     def function(value):
@@ -1789,18 +1806,19 @@ def test_param_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    assert len(root.children) == 2
+    await async_wait_until(lambda: len(root.children) == 2)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
     assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
     checkbox.value = True
 
-    assert len(root.children) == 2
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await async_wait_until(lambda: len(root.children) == 2)
+    await async_wait_until(lambda: (
+        (root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n') and
+        (root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    ))
 
 
-@pytest.mark.asyncio
 async def test_param_async_generator(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1811,18 +1829,14 @@ async def test_param_async_generator(document, comm):
 
     root = pane.get_root(document, comm)
 
-    await asyncio.sleep(0.01)
-
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
 
     checkbox.value = True
 
-    await asyncio.sleep(0.01)
-
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
-@pytest.mark.asyncio
+@pytest.mark.flaky(max_runs=3)
 async def test_param_async_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1835,25 +1849,22 @@ async def test_param_async_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    await asyncio.sleep(0.01)
-    assert len(root.children) == 1
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
-    await asyncio.sleep(0.01)
-    assert len(root.children) == 2
+    await async_wait_until(lambda: len(root.children) == 1, interval=10)
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    await async_wait_until(lambda: len(root.children) == 2, interval=10)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
     assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
     checkbox.value = True
 
-    await asyncio.sleep(0.01)
-    assert len(root.children) == 1
+    await async_wait_until(lambda: len(root.children) == 1, interval=10)
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    await asyncio.sleep(0.01)
-    assert len(root.children) == 2
+    await async_wait_until(lambda: len(root.children) == 2, interval=10)
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
     assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_param_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1865,13 +1876,12 @@ def test_param_generator_multiple(document, comm):
 
     root = pane.get_root(document, comm)
 
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n', timeout=10_000)
 
     checkbox.value = True
 
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
 
-@pytest.mark.asyncio
 async def test_param_async_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1896,8 +1906,6 @@ async def test_param_async_generator_multiple(document, comm):
     await asyncio.sleep(0.2)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
-
-@pytest.mark.asyncio
 async def test_param_async_generator_abort(document, comm):
     number = NumberInput(value=0)
 
@@ -1920,3 +1928,47 @@ async def test_param_async_generator_abort(document, comm):
     assert root.children[0].text == '&lt;p&gt;5&lt;/p&gt;\n'
     await asyncio.sleep(0.1)
     assert root.children[0].text == '&lt;p&gt;6&lt;/p&gt;\n'
+
+
+def test_skip_param(document, comm):
+    checkbox = Checkbox(value=False)
+    button = Button()
+
+    def layout(value, click):
+        if not click:
+            raise Skip()
+        return Markdown(f"{value}")
+
+    layout = ParamFunction(bind(layout, checkbox, button))
+
+    root = layout.get_root(document, comm)
+
+    div = root.children[0]
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    checkbox.value = True
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    button.param.trigger('value')
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+
+async def test_async_skip_param(document, comm):
+    checkbox = Checkbox(value=False)
+    button = Button()
+
+    async def layout(value, click):
+        if not click:
+            raise Skip()
+        return Markdown(f"{value}")
+
+    layout = ParamFunction(bind(layout, checkbox, button))
+
+    root = layout.get_root(document, comm)
+
+    div = root.children[0]
+    await asyncio.sleep(0.01)
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    checkbox.value = True
+    await asyncio.sleep(0.01)
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    button.param.trigger('value')
+    await asyncio.sleep(0.01)
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'

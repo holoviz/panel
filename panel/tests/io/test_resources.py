@@ -2,18 +2,21 @@ import os
 
 from pathlib import Path
 
+import bokeh
+
 from packaging.version import Version
 
 from panel.config import config, panel_extension as extension
-from panel.io.convert import BOKEH_VERSION
 from panel.io.resources import (
-    CDN_DIST, DIST_DIR, PANEL_DIR, Resources, resolve_custom_path,
-    set_resource_mode,
+    CDN_DIST, DIST_DIR, JS_VERSION, PANEL_DIR, Resources, resolve_custom_path,
+    resolve_stylesheet, set_resource_mode,
 )
 from panel.io.state import set_curdoc
+from panel.models.tabulator import TABULATOR_VERSION
+from panel.theme.native import Native
 from panel.widgets import Button
 
-bokeh_version = Version(BOKEH_VERSION)
+bokeh_version = Version(bokeh.__version__)
 if bokeh_version.is_devrelease or bokeh_version.is_prerelease:
     bk_prefix = 'dev'
 else:
@@ -41,11 +44,11 @@ def test_resources_cdn():
     resources = Resources(mode='cdn', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
-        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{BOKEH_VERSION}.min.js',
-        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-gl-{BOKEH_VERSION}.min.js',
-        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-widgets-{BOKEH_VERSION}.min.js',
-        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-tables-{BOKEH_VERSION}.min.js',
-        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{BOKEH_VERSION}.min.js',
+        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{bokeh_version}.min.js',
+        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-gl-{bokeh_version}.min.js',
+        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-widgets-{bokeh_version}.min.js',
+        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-tables-{bokeh_version}.min.js',
+        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{bokeh_version}.min.js',
     ]
 
 def test_resources_server_absolute():
@@ -82,11 +85,11 @@ def test_resources_model_server(document):
         with set_curdoc(document):
             extension('tabulator')
             assert resources.js_files[:2] == [
-                'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.js',
+                f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
                 'static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
-                'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css'
+                f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_model_cdn(document):
@@ -95,11 +98,11 @@ def test_resources_model_cdn(document):
         with set_curdoc(document):
             extension('tabulator')
             assert resources.js_files[:2] == [
-                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.js',
+                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
                 f'{CDN_DIST}bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
-                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css'
+                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_model_inline(document):
@@ -107,13 +110,14 @@ def test_resources_model_inline(document):
     with set_resource_mode('inline'):
         with set_curdoc(document):
             extension('tabulator')
+            tabulator_jsfile = f'bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+            luxon_jsfile = 'bundled/datatabulator/luxon/build/global/luxon.min.js'
+            tabulator_cssfile = f'bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css'
             assert resources.js_raw[-2:] == [
-                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.js').read_text(encoding='utf-8'),
-                (DIST_DIR / 'bundled/datatabulator/luxon/build/global/luxon.min.js').read_text(encoding='utf-8')
+                (DIST_DIR / tabulator_jsfile).read_text(encoding='utf-8'),
+                (DIST_DIR / luxon_jsfile).read_text(encoding='utf-8'),
             ]
-            assert resources.css_raw == [
-                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css').read_text(encoding='utf-8')
-            ]
+            assert resources.css_raw == [(DIST_DIR / tabulator_cssfile).read_text(encoding='utf-8')]
 
 def test_resources_reactive_html_server(document):
     resources = Resources(mode='server')
@@ -124,8 +128,8 @@ def test_resources_reactive_html_server(document):
                 'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack-all.js'
             ]
             assert resources.css_files == [
-                'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css',
-                'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css'
+                f'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css?v={JS_VERSION}',
+                f'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_reactive_html_cdn(document):
@@ -137,8 +141,8 @@ def test_resources_reactive_html_cdn(document):
                 f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-all.js'
             ]
             assert resources.css_files == [
-                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css',
-                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css'
+                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css?v={JS_VERSION}',
+                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_reactive_html_inline(document):
@@ -180,3 +184,40 @@ def test_resources_design_inline(document):
             assert resources.js_raw[-1:] == [
                 (DIST_DIR / 'bundled/bootstrap5/js/bootstrap.bundle.min.js').read_text(encoding='utf-8')
             ]
+
+def test_resolve_stylesheet_long_css():
+    cls = Native
+    stylesheet="""
+.styled-button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.styled-button:hover {
+    background-color: #45a049;
+}
+"""
+    assert resolve_stylesheet(cls, stylesheet, "_stylesheets")==stylesheet
+
+def test_resources_global_loading_indicator_server():
+    resources = Resources(mode='server')
+    with config.set(global_loading_spinner=True):
+        assert len(resources.css_raw) == 2
+        assert resources.css_raw[0].count('static/extensions/panel/assets') == 5
+
+def test_resources_global_loading_indicator_cdn():
+    resources = Resources(mode='cdn')
+    with config.set(global_loading_spinner=True):
+        assert len(resources.css_raw) == 2
+        assert resources.css_raw[0].count('https://cdn.holoviz.org/panel/') == 5
+        assert resources.css_raw[0].count('/dist/assets/') == 5

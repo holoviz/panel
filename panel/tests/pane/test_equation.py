@@ -2,7 +2,8 @@ from panel.pane import LaTeX
 
 
 def test_latex_pane(document, comm):
-    pane = LaTeX(r"$\frac{p^3}{q}$")
+    # Renderer is needed as if we run test randomly we can get mathjax pane
+    pane = LaTeX(r"$\frac{p^3}{q}$", renderer='katex')
 
     # Create pane
     model = pane.get_root(document, comm=comm)

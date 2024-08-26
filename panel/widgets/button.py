@@ -5,8 +5,7 @@ events or merely toggling between on-off states.
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Dict, List, Mapping,
-    Optional, Type,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
 )
 
 import param
@@ -29,8 +28,8 @@ if TYPE_CHECKING:
     from ..links import JSLinkTarget, Link
 
 
-BUTTON_TYPES: List[str] = ['default', 'primary', 'success', 'warning', 'danger', 'light']
-BUTTON_STYLES: List[str] = ['solid', 'outline']
+BUTTON_TYPES: list[str] = ['default', 'primary', 'success', 'warning', 'danger', 'light']
+BUTTON_STYLES: list[str] = ['solid', 'outline']
 
 class _ButtonBase(Widget):
 
@@ -46,7 +45,7 @@ class _ButtonBase(Widget):
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'button_style': None}
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/button.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
 
     __abstract = True
 
@@ -89,15 +88,11 @@ class IconMixin(Widget):
         return super()._process_param_change(params)
 
 
-class _ClickButton(_ButtonBase, IconMixin):
+class _ClickButton(Widget):
 
     __abstract = True
 
     _event: ClassVar[str] = 'button_click'
-
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'button_style': None,
-    }
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -107,7 +102,7 @@ class _ClickButton(_ButtonBase, IconMixin):
         self._register_events(self._event, model=model, doc=doc, comm=comm)
         return model
 
-    def js_on_click(self, args: Dict[str, Any] = {}, code: str = "") -> Callback:
+    def js_on_click(self, args: dict[str, Any] = {}, code: str = "") -> Callback:
         """
         Allows defining a JS callback to be triggered when the button
         is clicked.
@@ -127,7 +122,7 @@ class _ClickButton(_ButtonBase, IconMixin):
         from ..links import Callback
         return Callback(self, code={'event:'+self._event: code}, args=args)
 
-    def jscallback(self, args: Dict[str, Any] = {}, **callbacks: str) -> Callback:
+    def jscallback(self, args: dict[str, Any] = {}, **callbacks: str) -> Callback:
         """
         Allows defining a Javascript (JS) callback to be triggered when a property
         changes on the source object. The keyword arguments define the
@@ -156,7 +151,7 @@ class _ClickButton(_ButtonBase, IconMixin):
         return Callback(self, code=callbacks, args=args)
 
 
-class Button(_ClickButton, TooltipMixin):
+class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
     """
     The `Button` widget allows triggering events when the button is
     clicked.
@@ -192,7 +187,7 @@ class Button(_ClickButton, TooltipMixin):
         'event:button_click': None, 'value': None,
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkButton
+    _widget_type: ClassVar[type[Model]] = _BkButton
 
     def __init__(self, **params):
         click_handler = params.pop('on_click', None)
@@ -201,12 +196,12 @@ class Button(_ClickButton, TooltipMixin):
             self.on_click(click_handler)
 
     @property
-    def _linkable_params(self) -> List[str]:
+    def _linkable_params(self) -> list[str]:
         return super()._linkable_params + ['value']
 
     def jslink(
-        self, target: JSLinkTarget, code: Optional[Dict[str, str]] = None,
-        args: Optional[Dict[str, Any]] = None, bidirectional: bool = False,
+        self, target: JSLinkTarget, code: Optional[dict[str, str]] = None,
+        args: Optional[dict[str, Any]] = None, bidirectional: bool = False,
         **links: str
     ) -> Link:
         """
@@ -242,7 +237,7 @@ class Button(_ClickButton, TooltipMixin):
         links = {'event:'+self._event if p == 'value' else p: v for p, v in links.items()}
         return super().jslink(target, code, args, bidirectional, **links)
 
-    def _process_event(self, event: param.parameterized.Event) -> None:
+    def _process_event(self, event: ButtonClick) -> None:
         self.param.trigger('value')
         self.clicks += 1
 
@@ -297,14 +292,14 @@ class Toggle(_ButtonBase, IconMixin):
 
     _supports_embed: ClassVar[bool] = True
 
-    _widget_type: ClassVar[Type[Model]] = _BkToggle
+    _widget_type: ClassVar[type[Model]] = _BkToggle
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         return (self, self._models[root.ref['id']][0], [False, True],
                 lambda x: x.active, 'active', 'cb_obj.active')
 
 
-class MenuButton(_ClickButton):
+class MenuButton(_ButtonBase, _ClickButton, IconMixin):
     """
     The `MenuButton` widget allows specifying a list of menu items to
     select from triggering events when the button is clicked.
@@ -334,9 +329,11 @@ class MenuButton(_ClickButton):
 
     _event: ClassVar[str] = 'menu_item_click'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'items': 'menu', 'clicked': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'label', 'items': 'menu', 'clicked': None, 'value': None
+    }
 
-    _widget_type: ClassVar[Type[Model]] = _BkDropdown
+    _widget_type: ClassVar[type[Model]] = _BkDropdown
 
     def __init__(self, **params):
         click_handler = params.pop('on_click', None)
@@ -352,7 +349,7 @@ class MenuButton(_ClickButton):
         self._register_events('button_click', model=model, doc=doc, comm=comm)
         return model
 
-    def _process_event(self, event):
+    def _process_event(self, event: ButtonClick | MenuItemClick):
         if isinstance(event, MenuItemClick):
             item = event.item
         elif isinstance(event, ButtonClick):

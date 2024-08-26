@@ -7,14 +7,7 @@ One more option is to include live Panel examples in your Sphinx documentation u
 In the near future we hope to make this a separate Sphinx extension, until then simply install latest nbsite with `pip` or `conda`:
 
 ::::{tab-set}
-:::{tab-item} Conda
-:sync: conda
 
-``` bash
-conda install -c pyviz nbsite
-```
-
-:::
 :::{tab-item} Pip
 :sync: pip
 
@@ -22,6 +15,15 @@ conda install -c pyviz nbsite
 pip install nbsite
 ```
 :::
+
+:::{tab-item} Conda
+:sync: conda
+
+``` bash
+conda install -c pyviz nbsite
+```
+:::
+
 ::::
 
 add the extension to the Sphinx `conf.py`:

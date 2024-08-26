@@ -10,7 +10,7 @@ from ..config import config
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
-from .resources import CSS_URLS, bundled_files
+from .resources import CSS_URLS, bundled_files, get_dist_path
 from .state import state
 
 if TYPE_CHECKING:
@@ -176,7 +176,9 @@ class NotificationArea(NotificationAreaBase):
 
     @classproperty
     def __css__(cls):
-        return bundled_files(cls, 'css')
+        return bundled_files(cls, 'css') + [
+            f"{get_dist_path()}css/notifications.css"
+        ]
 
     _template = ""
 

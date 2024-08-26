@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import pytest
 
 from packaging.version import Version
@@ -11,6 +13,7 @@ except Exception:
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
 
 import numpy as np
+import pandas as pd
 
 import panel as pn
 
@@ -32,6 +35,18 @@ vega_example = {
                         {'x': 'C', 'y': 6},
                         {'x': 'D', 'y': 7},
                         {'x': 'E', 'y': 2}]},
+    'mark': 'bar',
+    'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
+                 'y': {'type': 'quantitative', 'field': 'y'}},
+    '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
+}
+
+vega_df_example = {
+    'config': {
+        'mark': {'tooltip': None},
+        'view': {'height': 300, 'width': 400}
+    },
+    'data': {'values': pd.DataFrame({'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]})},
     'mark': 'bar',
     'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
                  'y': {'type': 'quantitative', 'field': 'y'}},
@@ -194,8 +209,9 @@ def test_get_vega_pane_type_from_dict():
     assert PaneBase.get_pane_type(vega_example) is Vega
 
 
-def test_vega_pane(document, comm):
-    pane = pn.panel(vega_example)
+@pytest.mark.parametrize('example', [vega_example, vega_df_example])
+def test_vega_pane(document, comm, example):
+    pane = pn.panel(example)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -208,7 +224,7 @@ def test_vega_pane(document, comm):
     assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E']))
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
-    point_example = dict(vega_example, mark='point')
+    point_example = dict(deepcopy(vega_example), mark='point')
     point_example['data']['values'][0]['x'] = 'C'
     pane.object = point_example
     point_example = dict(point_example, data={})
@@ -308,3 +324,7 @@ def test_altair_pane(document, comm):
 
     pane._cleanup(model)
     assert pane._models == {}
+
+def test_vega_can_instantiate_empty_with_sizing_mode(document, comm):
+    pane = Vega(sizing_mode="stretch_width")
+    pane.get_root(document, comm=comm)

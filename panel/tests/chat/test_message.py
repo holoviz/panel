@@ -28,31 +28,59 @@ SVG_FILE = 'https://assets.holoviz.org/panel/samples/svg_sample.svg'
 
 class TestChatMessage:
     def test_layout(self):
-        message = ChatMessage(object="ABC")
+        message = ChatMessage(object="ABC", header_objects=["Header Test", "Header 2"], footer_objects=["Footer Test", "Footer 2"])
         columns = message._composite.objects
         assert len(columns) == 2
 
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert isinstance(avatar_pane, HTML)
         assert avatar_pane.object == "🧑"
 
-        row = columns[1][0]
-        user_pane = row[0]
+        meta_row = columns[1][0]
+        user_pane = meta_row[0]
         assert isinstance(user_pane, HTML)
         assert user_pane.object == "User"
 
-        center_row = columns[1][1]
+        header_row = columns[1][1]
+        assert isinstance(header_row[0], Markdown)
+        assert header_row[0].object == "Header Test"
+        assert isinstance(header_row[1], Markdown)
+        assert header_row[1].object == "Header 2"
+
+        center_row = columns[1][2]
         assert isinstance(center_row, Row)
 
-        object_pane = center_row[0].object()
+        object_pane = center_row[0]
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "ABC"
 
-        icons = center_row[1]
+        icons = columns[1][5][2]
         assert isinstance(icons, ChatReactionIcons)
 
-        timestamp_pane = columns[1][2]
+        footer_col = columns[1][3]
+        assert isinstance(footer_col, Column)
+
+        assert isinstance(footer_col[0], Markdown)
+        assert footer_col[0].object == "Footer Test"
+        assert isinstance(footer_col[1], Markdown)
+        assert footer_col[1].object == "Footer 2"
+
+        timestamp_pane = columns[1][4][0]
         assert isinstance(timestamp_pane, HTML)
+
+    def test_reactions_dynamic(self):
+        message = ChatMessage(reactions=["favorite"])
+        assert message.reaction_icons.value == ["favorite"]
+
+        message.reactions = ["thumbs-up"]
+        assert message.reaction_icons.value == ["thumbs-up"]
+
+    def test_reaction_icons_dynamic(self):
+        message = ChatMessage(reaction_icons={"favorite": "heart"})
+        assert message.reaction_icons.options == {"favorite": "heart"}
+
+        message.reaction_icons = ChatReactionIcons(options={"like": "thumb-up"})
+        assert message._icons_row[-1] == message.reaction_icons
 
     def test_reactions_link(self):
         # on init
@@ -75,20 +103,20 @@ class TestChatMessage:
     def test_update_avatar(self):
         message = ChatMessage(avatar="A")
         columns = message._composite.objects
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert isinstance(avatar_pane, HTML)
         assert avatar_pane.object == "A"
 
         message.avatar = "B"
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert avatar_pane.object == "B"
 
         message.avatar = "❤️"
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert avatar_pane.object == "❤️"
 
         message.avatar = "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert isinstance(avatar_pane, Image)
         assert (
             avatar_pane.object
@@ -96,13 +124,13 @@ class TestChatMessage:
         )
 
         message.show_avatar = False
-        avatar_pane = columns[0][0].object()
-        assert not avatar_pane.visible
+        avatar_layout = columns[0]
+        assert not avatar_layout.visible
 
         message.avatar = SVG(
             "https://tabler-icons.io/static/tabler-icons/icons/user.svg"
         )
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert isinstance(avatar_pane, SVG)
 
     def test_update_user(self):
@@ -123,19 +151,19 @@ class TestChatMessage:
     def test_update_object(self):
         message = ChatMessage(object="Test")
         columns = message._composite.objects
-        object_pane = columns[1][1][0].object()
+        object_pane = columns[1][2][0]
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "Test"
 
         message.object = TextInput(value="Also testing...")
-        object_pane = columns[1][1][0].object()
+        object_pane = columns[1][2][0]
         assert isinstance(object_pane, TextInput)
         assert object_pane.value == "Also testing..."
 
         message.object = _FileInputMessage(
             contents=b"I am a file", file_name="test.txt", mime_type="text/plain"
         )
-        object_pane = columns[1][1][0].object()
+        object_pane = columns[1][2][0]
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "I am a file"
 
@@ -143,45 +171,85 @@ class TestChatMessage:
     def test_update_timestamp(self):
         message = ChatMessage()
         columns = message._composite.objects
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][4][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now().strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="UTC")
         columns = message._composite.objects
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][4][0]
         assert isinstance(timestamp_pane, HTML)
-        dt_str = datetime.datetime.utcnow().strftime("%H:%M")
+        dt_str = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="US/Pacific")
         columns = message._composite.objects
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][4][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now(tz=ZoneInfo("US/Pacific")).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         special_dt = datetime.datetime(2023, 6, 24, 15)
         message.timestamp = special_dt
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][4][0]
         dt_str = special_dt.strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         mm_dd_yyyy = "%b %d, %Y"
         message.timestamp_format = mm_dd_yyyy
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][4][0]
         dt_str = special_dt.strftime(mm_dd_yyyy)
         assert timestamp_pane.object == dt_str
 
         message.show_timestamp = False
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][4][0]
         assert not timestamp_pane.visible
 
     def test_does_not_turn_widget_into_str(self):
         button = Button()
         message = ChatMessage(object=button)
         assert message.object == button
+
+    def test_include_stylesheets_inplace_on_layouts(self):
+        message = ChatMessage(
+            Row(Markdown("Hello", css_classes=["message"]), stylesheets=["row.css"]),
+            stylesheets=["chat.css"]
+        )
+        assert message.stylesheets == ["chat.css"]
+        assert message.object.stylesheets == message._stylesheets + ["chat.css", "row.css"]
+
+        # # nested
+        message = ChatMessage(
+            Row(
+                Row(Markdown("Hello", css_classes=["message"]), stylesheets=["row2.css"]),
+                stylesheets=["row.css"]
+            ),
+            stylesheets=["chat.css"]
+        )
+        assert message.object.stylesheets == ChatMessage._stylesheets + ["chat.css", "row.css"]
+        assert message.object.objects[0].stylesheets == ChatMessage._stylesheets + ["chat.css", "row2.css"]
+
+    def test_include_message_css_class_inplace(self):
+        # markdown
+        message = ChatMessage(object=Markdown("hello"))
+        assert message.object.css_classes == ["message"]
+
+        # custom css class; no message appended
+        message = ChatMessage(object=Markdown("hello", css_classes=["custom"]))
+        assert message.object.css_classes == ["custom"]
+
+        # nested in layout; message appended
+        message = ChatMessage(object=Row(Markdown("hello")))
+        assert message.object.objects[0].css_classes == ["message"]
+
+        # nested in layout as a string; message appended
+        message = ChatMessage(object=Row("hello"))
+        assert message.object.objects[0].css_classes == ["message"]
+
+        # nested in layout with custom css; no message appended
+        message = ChatMessage(object=Row(Markdown("hello", css_classes=["custom"])))
+        assert message.object.objects[0].css_classes == ["custom"]
 
     @mpl_available
     def test_can_display_any_python_object_that_panel_can_display(self):

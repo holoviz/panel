@@ -16,6 +16,7 @@ from functools import partial
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
+from bokeh.util.token import get_token_payload
 from tornado.auth import OAuth2Mixin
 from tornado.httpclient import HTTPError as HTTPClientError, HTTPRequest
 from tornado.web import HTTPError, RequestHandler, decode_signed_value
@@ -198,8 +199,11 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if code:
             params['code'] = code
         if refresh_token:
+            refreshing = True
             params['refresh_token'] = refresh_token
             params['grant_type'] = 'refresh_token'
+        else:
+            refreshing = False
         if client_secret:
             params['client_secret'] = client_secret
         elif username:
@@ -232,13 +236,17 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 return None, None, None
             self._raise_error(response, body, status=401)
 
-        access_token, refresh_token = body['access_token'], body.get('refresh_token')
         expires_in = body.get('expires_in')
         if expires_in:
             expires_in = int(expires_in)
-        if id_token:= body.get('id_token'):
+
+        access_token, refresh_token = body['access_token'], body.get('refresh_token')
+        if refreshing:
+            # When refreshing the tokens we do not need to re-fetch the id_token or user info
+            return None, access_token, refresh_token, expires_in
+        elif id_token:= body.get('id_token'):
             try:
-                user = self._on_auth(id_token, access_token, refresh_token, expires_in)
+                user = OAuthLoginHandler.set_auth_cookies(self, id_token, access_token, refresh_token, expires_in)
             except HTTPError:
                 pass
             else:
@@ -246,23 +254,29 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 return user, access_token, refresh_token, expires_in
 
         user_headers = dict(self._API_BASE_HEADERS)
-        if self._access_token_header:
-            user_url = self._OAUTH_USER_URL
-            user_headers['Authorization'] = self._access_token_header.format(
-                body['access_token']
-            )
-        else:
-            user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
+        if self._OAUTH_USER_URL:
+            if self._access_token_header:
+                user_url = self._OAUTH_USER_URL
+                user_headers['Authorization'] = self._access_token_header.format(
+                    body['access_token']
+                )
+            else:
+                user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
 
-        log.debug("%s requesting OpenID userinfo.", type(self).__name__)
-        try:
-            user_response = await http.fetch(user_url, headers=user_headers)
-            id_token = decode_response_body(user_response)
-        except HTTPClientError:
-            id_token = None
+            log.debug("%s requesting OpenID userinfo.", type(self).__name__)
+            try:
+                user_response = await http.fetch(user_url, headers=user_headers)
+                id_token = decode_response_body(user_response)
+            except HTTPClientError:
+                id_token = None
 
         if not id_token:
-            log.debug("%s could not obtain userinfo or id_token, falling back to decoding access_token.", type(self).__name__)
+            log.debug(
+                "%s could not fetch user information, the token endpoint did not "
+                "return an id_token and no OpenID user info endpoint was provided. "
+                "Attempting to code access_token to resolve user information.",
+                type(self).__name__
+            )
             try:
                 id_token = decode_token(body['access_token'])
             except Exception:
@@ -270,7 +284,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 self._raise_error(response, body, status=401)
 
         log.debug("%s successfully obtained access_token and userinfo.", type(self).__name__)
-        user = self._on_auth(id_token, access_token, refresh_token, expires_in)
+        user = OAuthLoginHandler.set_auth_cookies(self, id_token, access_token, refresh_token, expires_in)
         return user, access_token, refresh_token, expires_in
 
     def get_state_cookie(self):
@@ -330,10 +344,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if config.oauth_redirect_uri:
             redirect_uri = config.oauth_redirect_uri
         else:
-            redirect_uri = "{0}://{1}".format(
-                self.request.protocol,
-                self.request.host
-            )
+            redirect_uri = f"{self.request.protocol}://{self.request.host}"
         params = {
             'redirect_uri': redirect_uri,
             'client_id':    config.oauth_key,
@@ -387,34 +398,41 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             self.set_state_cookie(state)
             await self.get_authenticated_user(**params)
 
-    def _on_auth(self, id_token, access_token, refresh_token=None, expires_in=None):
-        if isinstance(id_token, str):
-            decoded = decode_token(id_token)
+    @staticmethod
+    def set_auth_cookies(handler, id_token, access_token, refresh_token=None, expires_in=None):
+        if id_token:
+            if isinstance(id_token, str):
+                decoded = decode_token(id_token)
+            else:
+                decoded = id_token
+                id_token = base64url_encode(json.dumps(id_token))
+            user_key = config.oauth_jwt_user or handler._USER_KEY
+            if user_key in decoded:
+                user = decoded[user_key]
+            else:
+                log.error("%s token payload did not contain expected %r.",
+                          type(handler).__name__, user_key)
+                raise HTTPError(401, "OAuth token payload missing user information")
+            handler.clear_cookie('is_guest')
+            handler.set_secure_cookie('user', user, expires_days=config.oauth_expiry, httponly=True)
         else:
-            decoded = id_token
-            id_token = base64url_encode(json.dumps(id_token))
-        user_key = config.oauth_jwt_user or self._USER_KEY
-        if user_key in decoded:
-            user = decoded[user_key]
-        else:
-            log.error("%s token payload did not contain expected %r.",
-                      type(self).__name__, user_key)
-            raise HTTPError(401, "OAuth token payload missing user information")
-        self.clear_cookie('is_guest')
-        self.set_secure_cookie('user', user, expires_days=config.oauth_expiry)
+            user = None
+
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
-            id_token = state.encryption.encrypt(id_token.encode('utf-8'))
+            if id_token:
+                id_token = state.encryption.encrypt(id_token.encode('utf-8'))
             if refresh_token:
                 refresh_token = state.encryption.encrypt(refresh_token.encode('utf-8'))
-        self.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry)
-        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
+        handler.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry, httponly=True)
+        if id_token:
+            handler.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry, httponly=True)
         if expires_in:
             now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
-            self.set_secure_cookie('oauth_expiry', str(int(now_ts + expires_in)), expires_days=config.oauth_expiry)
+            handler.set_secure_cookie('oauth_expiry', str(int(now_ts + expires_in)), expires_days=config.oauth_expiry, httponly=True)
         if refresh_token:
-            self.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry)
-        if user in state._oauth_user_overrides:
+            handler.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry, httponly=True)
+        if user and user in state._oauth_user_overrides:
             state._oauth_user_overrides.pop(user, None)
         return user
 
@@ -831,11 +849,11 @@ class BasicLoginHandler(RequestHandler):
             self.clear_cookie("user")
             return
         self.clear_cookie("is_guest")
-        self.set_secure_cookie("user", user, expires_days=config.oauth_expiry)
+        self.set_secure_cookie("user", user, expires_days=config.oauth_expiry, httponly=True)
         id_token = base64url_encode(json.dumps({'user': user}))
         if state.encryption:
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
-        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
+        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry, httponly=True)
 
 
 class LogoutHandler(tornado.web.RequestHandler):
@@ -970,6 +988,20 @@ class OAuthProvider(BasicAuthProvider):
             if not config.oauth_refresh_tokens or user is None:
                 return user
 
+            # Try to obtain user oauth overrides from WS headers
+            # in case the HTTP handler refreshed tokens
+            is_ws = isinstance(handler, WebSocketHandler)
+            if is_ws and 'Sec-Websocket-Protocol' in handler.request.headers:
+                protocol_header = handler.request.headers['Sec-Websocket-Protocol']
+                _, token = protocol_header.split(', ')
+                payload = get_token_payload(token)
+                if 'user_data' in payload:
+                    user_data = payload['user_data']
+                    if state.encryption:
+                        user_data = state.encryption.decrypt(user_data).decode('utf-8')
+                    user_data = json.loads(user_data)
+                    state._oauth_user_overrides[user] = user_data
+
             now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
             expiry = None
             if user in state._oauth_user_overrides:
@@ -986,16 +1018,20 @@ class OAuthProvider(BasicAuthProvider):
                     return
                 access_token = state._decrypt_cookie(access_cookie)
 
+            # Try to get expiry directly from the token since that is
+            # the real source of truth
+            try:
+                access_json = decode_token(access_token)
+                expiry = access_json['exp']
+            except Exception:
+                pass
+
             if expiry is None:
-                try:
-                    access_json = decode_token(access_token)
-                    expiry = access_json['exp']
-                except Exception:
-                    expiry = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
-                    if expiry is None:
-                        # Token does not have content and therefore does not expire
-                        log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
-                        return user
+                expiry = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
+                if expiry is None:
+                    # Token does not have content and therefore does not expire
+                    log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
+                    return user
 
             if user in state._oauth_user_overrides:
                 refresh_token = state._oauth_user_overrides[user]['refresh_token']
@@ -1003,12 +1039,17 @@ class OAuthProvider(BasicAuthProvider):
                 refresh_cookie = handler.get_secure_cookie('refresh_token', max_age_days=config.oauth_expiry)
                 if refresh_cookie:
                     refresh_token = state._decrypt_cookie(refresh_cookie)
-                    self._schedule_refresh(access_json['exp'], user, refresh_token, handler.application, handler.request)
                 else:
                     refresh_token = None
 
-            if expiry > now_ts:
-                log.debug("Fully authenticated and access_token still valid.")
+            if expiry > now_ts and refresh_token:
+                log.debug("Fully authenticated and tokens still valid.")
+                if is_ws:
+                    self._schedule_refresh(expiry, user, refresh_token, handler.application, handler.request)
+                expires_in = expiry - now_ts
+                OAuthLoginHandler.set_auth_cookies(
+                    handler, None, access_token, refresh_token, expires_in
+                )
                 return user
 
             if refresh_token:
@@ -1024,8 +1065,19 @@ class OAuthProvider(BasicAuthProvider):
                 log.debug("%s access_token is expired and refresh_token not available, forcing user to reauthenticate.", type(self).__name__)
                 return
 
-            log.debug("%s refreshing token", type(self).__name__)
-            await self._refresh_access_token(user, refresh_token, handler.application, handler.request)
+            log.debug("access_token has expired, %s using refresh_token to obtain new tokens.", type(self).__name__)
+            access_token, refresh_token, expiry = await self._scheduled_refresh(
+                user, refresh_token, handler.application, handler.request,
+                reschedule=is_ws
+            )
+            # If user not in overrides refresh failed and we need to
+            # fully reauthenticate
+            if user not in state._oauth_user_overrides:
+                return
+            expires_in = expiry - now_ts
+            OAuthLoginHandler.set_auth_cookies(
+                handler, None, access_token, refresh_token, expires_in
+            )
             return user
         return get_user
 
@@ -1056,20 +1108,23 @@ class OAuthProvider(BasicAuthProvider):
         state._active_users[user] -= 1
         if not state._active_users[user]:
             del state._active_users[user]
-            if user in state._oauth_user_overrides:
+            # Don't remove the user override when it is set to None or
+            # is missing, as this means it is being refreshed.
+            if state._oauth_user_overrides.get(user) is not None:
                 del state._oauth_user_overrides[user]
 
     def _schedule_refresh(self, expiry_ts, user, refresh_token, application, request):
         if not state._active_users.get(user):
             return
         now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
-        expiry_seconds = expiry_ts - now_ts - 10
-        log.debug("%s scheduling token refresh in %d seconds", type(self).__name__, expiry_seconds)
+        expiry_seconds = expiry_ts - now_ts - 60
         expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds) # schedule_task is in local TZ
         refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
         if expiry_seconds <= 0:
-            refresh_cb()
+            log.debug("%s token expired unexpectedly, refreshing immediately.", type(self).__name__)
+            state.execute(refresh_cb)
             return
+        log.debug("%s scheduling token refresh in %d seconds", type(self).__name__, expiry_seconds)
         task = f'{user}-refresh-access-tokens'
         try:
             state.cancel_task(task)
@@ -1078,20 +1133,30 @@ class OAuthProvider(BasicAuthProvider):
         finally:
             state.schedule_task(task, refresh_cb, at=expiry_date)
 
-    async def _scheduled_refresh(self, user, refresh_token, application, request):
+    async def _scheduled_refresh(self, user, refresh_token, application, request, reschedule=True):
         await self._refresh_access_token(user, refresh_token, application, request)
+        if user not in state._oauth_user_overrides:
+            return None, None, None
         user_state = state._oauth_user_overrides[user]
         access_token, refresh_token = user_state['access_token'], user_state['refresh_token']
         if user_state['expiry']:
             expiry = user_state['expiry']
         else:
             expiry = decode_token(access_token)['exp']
-        self._schedule_refresh(expiry, user, refresh_token, application, request)
+        if reschedule:
+            self._schedule_refresh(expiry, user, refresh_token, application, request)
+        return access_token, refresh_token, expiry
 
     async def _refresh_access_token(self, user, refresh_token, application, request):
-        log.debug("%s refreshing token", type(self).__name__)
         if user in state._oauth_user_overrides:
-            refresh_token = state._oauth_user_overrides[user]['refresh_token']
+            if not state._oauth_user_overrides[user]:
+                # Token is already being refreshed await it
+                while not state._oauth_user_overrides[user]:
+                    await asyncio.sleep(0.1)
+                return
+            else:
+                refresh_token = state._oauth_user_overrides[user]['refresh_token']
+        log.debug("%s refreshing tokens", type(self).__name__)
         state._oauth_user_overrides[user] = {}
         auth_handler = self.login_handler(application=application, request=request)
         _, access_token, refresh_token, expires_in = await auth_handler._fetch_access_token(
@@ -1100,6 +1165,7 @@ class OAuthProvider(BasicAuthProvider):
             refresh_token=refresh_token
         )
         if access_token:
+            log.debug("%s successfully refreshed access_token", type(self).__name__)
             now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
             state._oauth_user_overrides[user] = {
                 'access_token': access_token,
@@ -1107,6 +1173,7 @@ class OAuthProvider(BasicAuthProvider):
                 'expiry': now_ts+expires_in if expires_in else None
             }
         else:
+            log.debug("%s failed to refresh access_token", type(self).__name__)
             del state._oauth_user_overrides[user]
 
 

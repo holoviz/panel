@@ -126,4 +126,4 @@ def test_texteditor_regression_click_toolbar_cursor_stays_in_place(page):
     editor.press('Enter')
     page.locator('.ql-bold').click()
     editor.press('B')
-    wait_until(lambda: widget.value == '<p>A</p><p>B</p>', page)
+    wait_until(lambda: widget.value == '<p>A</p><p><strong>B</strong></p>', page)

@@ -116,8 +116,7 @@ jupyter_execute
 # this dir contains the whole website and should not be checked in on main
 builtdocs/
 .doit.db
-
-lite/
+lite/files/*/
 .jupyterlite.doit.db
 
 # jetbrains settings
@@ -142,6 +141,7 @@ doc/reference/*
 /panel/dist/*
 !/panel/dist/css
 !/panel/dist/css/*.css
+/panel/dist/css/models/
 .venv2/
 .npm/*
 .local/*
@@ -155,3 +155,11 @@ doc/reference/*
 .jupyter/*
 app_panel.py
 app_streamlit.py
+
+# pixi
+.pixi
+pixi.lock
+panel/_version.py
+.uicoveragerc
+mario_button.*
+counter_button.*

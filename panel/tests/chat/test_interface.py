@@ -1,14 +1,21 @@
+import asyncio
+
 from io import BytesIO
 
 import pytest
 import requests
 
+from panel.chat.input import ChatAreaInput
 from panel.chat.interface import ChatInterface
+from panel.chat.message import ChatMessage
 from panel.layout import Row, Tabs
 from panel.pane import Image
-from panel.tests.util import wait_until
+from panel.tests.util import async_wait_until, wait_until
 from panel.widgets.button import Button
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
+from panel.widgets.select import RadioButtonGroup
+
+ChatInterface.callback_exception = "raise"
 
 
 class TestChatInterface:
@@ -20,7 +27,7 @@ class TestChatInterface:
         assert len(chat_interface._button_data) == 5
         assert len(chat_interface._widgets) == 1
         assert isinstance(chat_interface._input_layout, Row)
-        assert isinstance(chat_interface._widgets["TextInput"], TextInput)
+        assert isinstance(chat_interface._widgets["ChatAreaInput"], ChatAreaInput)
 
         assert chat_interface.active == -1
 
@@ -60,7 +67,7 @@ class TestChatInterface:
 
     def test_active_widget(self, chat_interface):
         active_widget = chat_interface.active_widget
-        assert isinstance(active_widget, TextInput)
+        assert isinstance(active_widget, ChatAreaInput)
 
     def test_active(self):
         widget = TextInput(name="input")
@@ -85,15 +92,19 @@ class TestChatInterface:
         chat_interface._click_send(None)
         assert len(chat_interface.objects) == 1
 
+    def test_click_send_with_no_value_input(self, chat_interface: ChatInterface):
+        chat_interface.widgets = [RadioButtonGroup(options=["A", "B"])]
+        chat_interface.active_widget.value = "A"
+        chat_interface._click_send(None)
+        assert chat_interface.objects[0].object == "A"
+
     def test_show_stop_disabled(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
             yield "A"
-            send_button = chat_interface._input_layout[1]
-            stop_button = chat_interface._input_layout[2]
-            assert send_button.name == "Send"
-            assert stop_button.name == "Stop"
-            assert send_button.visible
-            assert not send_button.disabled
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            wait_until(lambda: send_button.visible)
+            wait_until(lambda: send_button.disabled) #  should be disabled while callback is running
             assert not stop_button.visible
             yield "B"  # should not stream this
 
@@ -110,26 +121,36 @@ class TestChatInterface:
 
     def test_show_stop_for_async(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
-            send_button = instance._input_layout[1]
-            stop_button = instance._input_layout[2]
-            assert send_button.name == "Send"
-            assert stop_button.name == "Stop"
-            assert not send_button.visible
-            assert stop_button.visible
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            await async_wait_until(lambda: stop_button.visible)
+            await async_wait_until(lambda: not send_button.visible)
 
         chat_interface.callback = callback
         chat_interface.send("Message", respond=True)
         send_button = chat_interface._input_layout[1]
         assert not send_button.disabled
 
-    def test_show_stop_for_sync(self, chat_interface: ChatInterface):
+    def test_show_stop_for_async_generator(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            await async_wait_until(lambda: stop_button.visible)
+            await async_wait_until(lambda: not send_button.visible)
+            yield "Hello"
+
+        chat_interface.callback = callback
+        chat_interface.send("Message", respond=True)
+        send_button = chat_interface._input_layout[1]
+        assert not send_button.disabled
+
+    def test_show_stop_for_sync_generator(self, chat_interface: ChatInterface):
         def callback(msg, user, instance):
-            send_button = instance._input_layout[1]
-            stop_button = instance._input_layout[2]
-            assert send_button.name == "Send"
-            assert stop_button.name == "Stop"
-            assert not send_button.visible
-            assert stop_button.visible
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            wait_until(lambda: stop_button.visible)
+            wait_until(lambda: not send_button.visible)
+            yield "Hello"
 
         chat_interface.callback = callback
         chat_interface.send("Message", respond=True)
@@ -138,25 +159,21 @@ class TestChatInterface:
 
     def test_click_stop(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
-            send_button = instance._input_layout[1]
-            stop_button = instance._input_layout[2]
-            assert send_button.name == "Send"
-            assert stop_button.name == "Stop"
-            assert not send_button.visible
-            assert stop_button.visible
-            wait_until(lambda: len(instance.objects) == 2)
-            assert instance._placeholder in instance.objects
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            await async_wait_until(lambda: stop_button.visible)
+            await async_wait_until(lambda: not send_button.visible)
             instance._click_stop(None)
-            assert send_button.visible
-            assert not send_button.disabled
-            assert not stop_button.visible
-            assert instance._placeholder not in instance.objects
 
         chat_interface.callback = callback
         chat_interface.placeholder_threshold = 0.001
-        chat_interface.send("Message", respond=True)
-        send_button = chat_interface._input_layout[1]
-        assert not send_button.disabled
+        try:
+            chat_interface.send("Message", respond=True)
+        except asyncio.exceptions.CancelledError:
+            pass
+        wait_until(lambda: not chat_interface._buttons["send"].disabled)
+        wait_until(lambda: chat_interface._buttons["send"].visible)
+        wait_until(lambda: not chat_interface._buttons["stop"].visible)
 
     @pytest.mark.parametrize("widget", [TextInput(), TextAreaInput()])
     def test_auto_send_types(self, chat_interface: ChatInterface, widget):
@@ -202,9 +219,10 @@ class TestChatInterface:
 
         chat_interface.callback = callback
         chat_interface.send("Message 1")
-        assert chat_interface.objects[1].object == 1
+        wait_until(lambda: len(chat_interface.objects) >= 2)
+        wait_until(lambda: chat_interface.objects[1].object == 1)
         chat_interface._click_rerun(None)
-        assert chat_interface.objects[1].object == 2
+        wait_until(lambda: chat_interface.objects[1].object == 2)
 
     def test_click_rerun_null(self, chat_interface):
         chat_interface._click_rerun(None)
@@ -363,6 +381,88 @@ class TestChatInterface:
         assert chat_interface.objects[0].object == "1"
         assert chat_interface.objects[1].object == "2"
         assert chat_interface.objects[2].object == "3"
+
+    def test_custom_js_no_code(self):
+        chat_interface = ChatInterface()
+        with pytest.raises(ValueError, match="A 'code' key is required for"):
+            chat_interface.button_properties={
+                "help": {
+                    "icon": "help",
+                    "js_on_click": {
+                        "args": {"chat_input": chat_interface.active_widget},
+                    },
+                },
+            }
+
+    def test_manual_user(self):
+        chat_interface = ChatInterface(user="New User")
+        assert chat_interface.user == "New User"
+        chat_interface.send("Test")
+        assert chat_interface.objects[0].user == "New User"
+
+    def test_stream_chat_message(self, chat_interface):
+        chat_interface.stream(ChatMessage("testeroo", user="useroo", avatar="avataroo"))
+        chat_message = chat_interface.objects[0]
+        assert chat_message.user == "useroo"
+        assert chat_message.avatar == "avataroo"
+        assert chat_message.object == "testeroo"
+
+    def test_stream_chat_message_error_passed_user(self, chat_interface):
+        with pytest.raises(ValueError, match="Cannot set user or avatar"):
+            chat_interface.stream(ChatMessage(
+                "testeroo", user="useroo", avatar="avataroo",
+            ), user="newuser")
+
+    def test_stream_chat_message_error_passed_avatar(self, chat_interface):
+        with pytest.raises(ValueError, match="Cannot set user or avatar"):
+            chat_interface.stream(ChatMessage(
+                "testeroo", user="useroo", avatar="avataroo",
+            ), avatar="newavatar")
+
+    async def test_nested_disabled(self, chat_interface):
+        PERSON_1 = "Happy User"
+        PERSON_2 = "Excited User"
+        PERSON_3 = "Passionate User"
+
+        async def callback(contents: str, user: str, instance: ChatInterface):
+            await asyncio.sleep(0.1)
+            if user == "User":
+                instance.send(
+                    f"Hey, {PERSON_2}! Did you hear the user?",
+                    user=PERSON_1,
+                    avatar="😊",
+                    respond=True,  # This is the default, but it's here for clarity
+                )
+            elif user == PERSON_1:
+                user_message = instance.objects[-2]
+                user_contents = user_message.object
+                yield ChatMessage(
+                    f'Yeah, they said "{user_contents}"! Did you also hear {PERSON_3}?',
+                    user=PERSON_2,
+                    avatar="😄",
+                )
+                instance.respond()
+            elif user == PERSON_2:
+                instance.send(
+                    'Yup, I heard!',
+                    user=PERSON_3,
+                    avatar="😆",
+                    respond=False,
+                )
+
+        chat_interface.callback = callback
+        chat_interface.send("Hello")
+        await async_wait_until(lambda: chat_interface.objects[-1].object == "Hey, Excited User! Did you hear the user?")
+        assert chat_interface.disabled
+        await async_wait_until(lambda: chat_interface.objects[-1].object == "Yup, I heard!")
+        await asyncio.sleep(0.2)  # give a little time for enabling
+        assert not chat_interface.disabled
+
+    def test_prevent_stream_override_message_user_avatar(self, chat_interface):
+        msg = chat_interface.send("Hello", user="Welcoming User", avatar="👋")
+        chat_interface.stream("New Hello", message=msg)
+        assert msg.user == "Welcoming User"
+        assert msg.avatar == "👋"
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):

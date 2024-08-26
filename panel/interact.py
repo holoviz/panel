@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import types
 
-from collections import OrderedDict
 from collections.abc import Iterable, Mapping
 from inspect import (
     Parameter, getcallargs, getfullargspec as check_argspec, signature,
@@ -22,10 +21,10 @@ from typing import TYPE_CHECKING, ClassVar
 import param
 
 from .layout import Column, Panel, Row
-from .pane import HTML, PaneBase, panel
+from .pane import HTML, Pane, panel
 from .pane.base import ReplacementPane
 from .viewable import Viewable
-from .widgets import Button, Widget
+from .widgets import Button, WidgetBase
 from .widgets.widget import fixed, widget
 
 if TYPE_CHECKING:
@@ -62,7 +61,7 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
             yield k, v, empty
 
 
-class interactive(PaneBase):
+class interactive(Pane):
 
     default_layout = param.ClassSelector(default=Column, class_=(Panel),
                                          is_instance=False)
@@ -99,7 +98,7 @@ class interactive(PaneBase):
         widgets = self.widgets_from_abbreviations(new_kwargs)
         if self.manual_update:
             widgets.append(('manual', Button(name=self.manual_name)))
-        self._widgets = OrderedDict(widgets)
+        self._widgets = dict(widgets)
         pane = self.object(**self.kwargs)
         if isinstance(pane, Viewable):
             self._pane = pane
@@ -108,9 +107,9 @@ class interactive(PaneBase):
             self._pane = panel(pane, name=self.name)
             self._internal = True
         self._inner_layout = Row(self._pane)
-        widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
+        widgets = [widget for _, widget in widgets if isinstance(widget, WidgetBase)]
         if 'name' in params:
-            widgets.insert(0, HTML('<h2>%s</h2>' % self.name))
+            widgets.insert(0, HTML(f'<h2>{self.name}</h2>'))
         self.widget_box = Column(*widgets)
         self.layout.objects = [self.widget_box, self._inner_layout]
         self._link_widgets()
@@ -202,7 +201,7 @@ class interactive(PaneBase):
         for parameter in sig.parameters.values():
             for name, value, default in _yield_abbreviations_for_parameter(parameter, kwargs):
                 if value is empty:
-                    raise ValueError('cannot find widget or abbreviation for argument: {!r}'.format(name))
+                    raise ValueError(f'cannot find widget or abbreviation for argument: {name!r}')
                 new_kwargs.append((name, value, default))
         return new_kwargs
 
@@ -214,11 +213,11 @@ class interactive(PaneBase):
                 widget_obj = abbrev
             else:
                 widget_obj = widget(abbrev, name=name, default=default)
-            if not (isinstance(widget_obj, Widget) or isinstance(widget_obj, fixed)):
+            if not (isinstance(widget_obj, WidgetBase) or isinstance(widget_obj, fixed)):
                 if widget_obj is None:
                     continue
                 else:
-                    raise TypeError("{!r} is not a ValueWidget".format(widget))
+                    raise TypeError(f"{widget!r} is not a ValueWidget")
             result.append((name, widget_obj))
         return result
 
@@ -233,7 +232,7 @@ class interactive(PaneBase):
         return _InteractFactory(cls, options)
 
 
-class _InteractFactory(object):
+class _InteractFactory:
     """
     Factory for instances of :class:`interactive`.
 
@@ -364,7 +363,7 @@ class _InteractFactory(object):
         opts = dict(self.opts)
         for k in kwds:
             if k not in opts:
-                raise ValueError("invalid option {!r}".format(k))
+                raise ValueError(f"invalid option {k!r}")
             opts[k] = kwds[k]
         return type(self)(self.cls, opts, self.kwargs)
 

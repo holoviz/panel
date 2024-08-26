@@ -5,9 +5,7 @@ from __future__ import annotations
 
 from base64 import b64encode
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Type,
-)
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
@@ -54,7 +52,7 @@ class VideoStream(Widget):
     value = param.String(default='', doc="""
         A base64 representation of the video stream snapshot.""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkVideoStream
+    _widget_type: ClassVar[type[Model]] = _BkVideoStream
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
@@ -63,7 +61,7 @@ class VideoStream(Widget):
         Triggers a snapshot of the current VideoStream state to sync
         the widget value.
         """
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             m.snapshot = not m.snapshot
             (self, root, doc, comm) = state._views[ref]
             if comm and 'embedded' not in root.tags:
@@ -146,12 +144,13 @@ class FileDownload(IconMixin):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks'
+        'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks',
+        'value': None
     }
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/button.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
 
-    _widget_type: ClassVar[Type[Model]] = _BkFileDownload
+    _widget_type: ClassVar[type[Model]] = _BkFileDownload
 
     def __init__(self, file=None, **params):
         self._default_label = 'label' not in params
@@ -198,8 +197,8 @@ class FileDownload(IconMixin):
                     filename = self.filename or self._file_path.name
                 except TypeError:
                     raise ValueError('Must provide filename if file-like '
-                                     'object is provided.')
-                label = '%s %s' % (label, filename)
+                                     'object is provided.') from None
+                label = f'{label} {filename}'
             self.label = label
             self._default_label = True
 
@@ -213,7 +212,7 @@ class FileDownload(IconMixin):
         if isinstance(fileobj, (str, Path)):
             fileobj = Path(fileobj)
             if not fileobj.exists():
-                raise FileNotFoundError('File "%s" not found.' % fileobj)
+                raise FileNotFoundError(f'File "{fileobj}" not found.')
             with open(fileobj, 'rb') as f:
                 b64 = b64encode(f.read()).decode("utf-8")
             if filename is None:
@@ -227,21 +226,21 @@ class FileDownload(IconMixin):
                 raise ValueError('Must provide filename if file-like '
                                  'object is provided.')
         else:
-            raise ValueError('Cannot transfer unknown object of type %s' %
-                             type(fileobj).__name__)
+            raise ValueError(f'Cannot transfer unknown object of type {type(fileobj).__name__}')
 
         ext = filename.split('.')[-1]
-        for mtype, subtypes in self._mime_types.items():
-            stype = None
+        stype, mtype = None, None
+        for mime_type, subtypes in self._mime_types.items():
             if ext in subtypes:
+                mtype = mime_type
                 stype = subtypes[ext]
                 break
         if stype is None:
             mime = 'application/octet-stream'
         else:
-            mime = '{type}/{subtype}'.format(type=mtype, subtype=stype)
+            mime = f'{mtype}/{stype}'
 
-        data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
+        data = f"data:{mime};base64,{b64}"
         self._synced = True
         self.param.update(data=data, filename=filename)
         self._update_label()

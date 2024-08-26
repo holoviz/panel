@@ -86,7 +86,6 @@ def test_abbreviated_repr_dict():
 def test_abbreviated_repr_list():
     assert abbreviated_repr(['some really, really long string']) == "['some really, ...]"
 
-
 def test_abbreviated_repr_ordereddict():
     if sys.version_info >= (3, 12):
         expected = "OrderedDict({'key': 'some ...])"

@@ -6,21 +6,34 @@ from bokeh.core.properties import (
     Any, Bool, Either, Enum, Float, Instance, Int, List, Nullable, Override,
     String, Tuple,
 )
+from bokeh.events import ModelEvent
 from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
     Button as bkButton, CheckboxButtonGroup as bkCheckboxButtonGroup,
-    InputWidget, RadioButtonGroup as bkRadioButtonGroup, Select,
-    TextAreaInput as BkTextAreaInput, Widget,
+    InputWidget, MultiSelect, RadioButtonGroup as bkRadioButtonGroup, Select,
+    TextAreaInput as bkTextAreaInput, TextInput as bkTextInput, Widget,
 )
 
 from .layout import HTMLBox
+
+
+class DoubleClickEvent(ModelEvent):
+
+    event_name = 'dblclick_event'
+
+    def __init__(self, model, option=None):
+        self.option = option
+        super().__init__(model=model)
 
 
 class Player(Widget):
     """
     The Player widget provides controls to play through a number of frames.
     """
+    title = Nullable(String, default="", help="""
+    The slider's label (supports :ref:`math text <ug_styling_mathtext>`).
+    """)
 
     start = Int(0, help="Lower bound of the Player slider")
 
@@ -29,6 +42,9 @@ class Player(Widget):
     value = Int(0, help="Current value of the player app")
 
     value_throttled = Int(0, help="Current throttled value of the player app")
+
+    value_align = String("start", help="""Location to display
+        the value of the slider ("start" "center", "end")""")
 
     step = Int(1, help="Number of steps to advance the player by.")
 
@@ -43,9 +59,31 @@ class Player(Widget):
     show_loop_controls = Bool(True, help="""Whether the loop controls
         radio buttons are shown""")
 
+    preview_duration = Int(1500, help="""
+        Duration (in milliseconds) for showing the current FPS when clicking
+        the slower/faster buttons, before reverting to the icon.""")
+
+    show_value = Bool(True, help="""
+        Whether to show the widget value""")
+
     width = Override(default=400)
 
     height = Override(default=250)
+
+    scale_buttons = Float(1, help="Percentage to scale the size of the buttons by")
+
+    visible_buttons = List(String, default=[
+        'slower', 'first', 'previous', 'reverse', 'pause', 'play', 'next', 'last', 'faster'
+    ], help="The buttons to display on the player.")
+
+    visible_loop_options = List(String, default=[
+        'once', 'loop', 'reflect'
+    ], help="The loop options to display on the player.")
+
+class DiscretePlayer(Player):
+
+    options = List(Any, help="""
+        List of discrete options.""")
 
 
 class SingleSelect(InputWidget):
@@ -110,7 +148,7 @@ class Video(HTMLBox):
     throttle = Int(250, help="""
         The frequency at which the time value is updated in milliseconds.""")
 
-    value = Any(help="Encoded file data")
+    value = String(help="Encoded file data")
 
     volume = Int(help="""The volume of the video player.""")
 
@@ -193,6 +231,11 @@ class CustomSelect(Select):
     size = Int(default=1)
 
 
+class CustomMultiSelect(MultiSelect):
+    """
+    MultiSelect widget which allows capturing double tap events.
+    """
+
 class TooltipIcon(Widget):
     description = Instance(
         Tooltip,
@@ -201,7 +244,7 @@ class TooltipIcon(Widget):
     )
 
 
-class TextAreaInput(BkTextAreaInput):
+class TextAreaInput(bkTextAreaInput):
 
     auto_grow = Bool(
         default=False,
@@ -253,3 +296,19 @@ class RadioButtonGroup(bkRadioButtonGroup):
     Delay (in milliseconds) to display the tooltip after the cursor has
     hovered over the Button, default is 500ms.
     """)
+
+
+class EnterEvent(ModelEvent):
+
+    event_name = 'enter-pressed'
+
+    def __init__(self, model, value_input):
+        self.value_input = value_input
+        super().__init__(model=model)
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(value_input={self.value_input})'
+        )
+
+class TextInput(bkTextInput): ...

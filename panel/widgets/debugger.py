@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import logging
 
-from typing import (
-    ClassVar, Dict, List, Mapping,
-)
+from typing import ClassVar, Mapping
 
 import param
 
@@ -147,12 +145,12 @@ class DebuggerButtons(ReactiveHTML):
         }
         """
 
-    _scripts: ClassVar[Dict[str, str | List[str]]] = {
+    _scripts: ClassVar[dict[str, str | list[str]]] = {
         'click': js_cb,
         'click_clear': "data.clears += 1"
     }
 
-    _dom_events: ClassVar[Dict[str, List[str]]] = {'clear_btn': ['click']}
+    _dom_events: ClassVar[dict[str, list[str]]] = {'clear_btn': ['click']}
 
 
 class Debugger(Card):
@@ -199,7 +197,7 @@ class Debugger(Card):
         logger_names=None
     )
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/debugger.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/debugger.css']
 
     def __init__(self, **params):
         super().__init__(**params)

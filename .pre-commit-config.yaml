@@ -4,7 +4,7 @@
 default_stages: [commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-builtin-literals
       - id: check-case-conflict
@@ -17,32 +17,48 @@ repos:
         exclude: \.min\.js$
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6
+    rev: v0.5.0
     hooks:
       - id: ruff
         files: panel/
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
         name: isort (python)
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: v0.1.13
+    rev: v0.1.15
     hooks:
       - id: clean-notebook
         args: [-i, tags]
-        exclude: '^lite/files'
+        exclude: '^lite/files/.*/'
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
       - id: codespell
         additional_dependencies:
           - tomli
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.3
+  - repo: https://github.com/hoxbro/prettier-pre-commit
+    rev: v3.3.2
     hooks:
       - id: prettier
+        entry: prettier --write --ignore-unknown --no-error-on-unmatched-pattern
         types_or: [css]
+  - repo: https://github.com/shssoichiro/oxipng
+    rev: v8.0.0
+    hooks:
+      - id: oxipng
+        stages: [manual]
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.6.0
+    hooks:
+      - id: eslint
+        args: ['-c', 'panel/.eslintrc.js', 'panel/*.ts', 'panel/models/**/*.ts', '--fix']
+        additional_dependencies:
+          - 'eslint@8.57.0'
+          - '@stylistic/eslint-plugin@1.6.3'
+          - '@typescript-eslint/eslint-plugin@7.2.0'
+          - '@typescript-eslint/parser@7.2.0'
 ci:
   autofix_prs: false
   autoupdate_schedule: quarterly

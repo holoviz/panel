@@ -5,34 +5,37 @@ The message module provides a low-level API for rendering chat messages.
 from __future__ import annotations
 
 import datetime
-import re
 
 from contextlib import ExitStack
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
-from textwrap import indent
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, List, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union,
 )
 from zoneinfo import ZoneInfo
 
 import param
 
-from ..io.resources import CDN_DIST
+from ..io.resources import CDN_DIST, get_dist_path
 from ..io.state import state
 from ..layout import Column, Row
-from ..pane.base import PaneBase, panel as _panel
+from ..pane.base import Pane, ReplacementPane, panel as _panel
 from ..pane.image import (
     PDF, FileBase, Image, ImageBase,
 )
-from ..pane.markup import HTML, DataFrame, HTMLBasePane
+from ..pane.markup import (
+    HTML, DataFrame, HTMLBasePane, Markdown,
+)
 from ..pane.media import Audio, Video
 from ..param import ParamFunction
 from ..viewable import Viewable
 from ..widgets.base import Widget
 from .icon import ChatCopyIcon, ChatReactionIcons
+from .utils import (
+    avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
+)
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -40,15 +43,21 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 Avatar = Union[str, BytesIO, bytes, ImageBase]
-AvatarDict = Dict[str, Avatar]
+AvatarDict = dict[str, Avatar]
 
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
 SYSTEM_LOGO = "⚙️"
 ERROR_LOGO = "❌"
-GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
-GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
-WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
+HELP_LOGO = "❓"
+INPUT_LOGO = "❗"
+GPT_3_LOGO = "{dist_path}assets/logo/gpt-3.svg"
+GPT_4_LOGO = "{dist_path}assets/logo/gpt-4.svg"
+WOLFRAM_LOGO = "{dist_path}assets/logo/wolfram.svg"
+LUMEN_LOGO = "{dist_path}assets/logo/lumen.svg"
+HOLOVIEWS_LOGO = "{dist_path}assets/logo/holoviews.svg"
+HVPLOT_LOGO = "{dist_path}assets/logo/hvplot.svg"
+PANEL_LOGO = "{dist_path}images/icon-vector.svg"
 
 DEFAULT_AVATARS = {
     # User
@@ -70,6 +79,8 @@ DEFAULT_AVATARS = {
     "system": SYSTEM_LOGO,
     "exception": ERROR_LOGO,
     "error": ERROR_LOGO,
+    "help": HELP_LOGO,
+    "input": INPUT_LOGO,
     # Human
     "adult": "🧑",
     "baby": "👶",
@@ -95,6 +106,12 @@ DEFAULT_AVATARS = {
     # Llama
     "llama": "🦙",
     "llama2": "🐪",
+    # Plotting
+    "plot": "📊",
+    "lumen": LUMEN_LOGO,
+    "holoviews": HOLOVIEWS_LOGO,
+    "hvplot": HVPLOT_LOGO,
+    "panel": PANEL_LOGO,
 }
 
 
@@ -118,11 +135,13 @@ class _FileInputMessage:
     mime_type: str
 
 
-class ChatMessage(PaneBase):
+class ChatMessage(Pane):
     """
-    A widget for displaying chat messages with support for various content types.
+    Renders another component as a chat message with an associated user
+    and avatar with support for various content types.
 
     This widget provides a structured view of chat messages, including features like:
+
     - Displaying user avatars, which can be text, emoji, or images.
     - Showing the user's name.
     - Displaying the message timestamp in a customizable format.
@@ -156,7 +175,13 @@ class ChatMessage(PaneBase):
         to use when the user is specified but the avatar is. You can
         modify, but not replace the dictionary.""")
 
-    max_width = param.Integer(default=1200, bounds=(0, None))
+    footer_objects = param.List(doc="""
+        A list of objects to display in the column of the footer of the message.""")
+
+    header_objects = param.List(doc="""
+        A list of objects to display in the row of the header of the message.""")
+
+    max_width = param.Integer(default=1200, bounds=(0, None), allow_None=True)
 
     object = param.Parameter(allow_refs=False, doc="""
         The message contents. Can be any Python object that panel can display.""")
@@ -195,6 +220,9 @@ class ChatMessage(PaneBase):
     show_copy_icon = param.Boolean(default=True, doc="""
         Whether to display the copy icon.""")
 
+    show_activity_dot = param.Boolean(default=False, doc="""
+        Whether to show the activity dot.""")
+
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the object and return a
         Panel object to render the object. If a list is provided, will
@@ -206,16 +234,12 @@ class ChatMessage(PaneBase):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    _object_panel = param.Parameter(doc="The rendered object panel.")
-
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_message.css"]
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
     # Declares whether Pane supports updates to the Bokeh model
     _updates: ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
-        from ..param import ParamMethod  # circular imports
-
         self._exit_stack = ExitStack()
         self.chat_copy_icon = ChatCopyIcon(
             visible=False, width=15, height=15, css_classes=["copy-icon"]
@@ -224,141 +248,123 @@ class ChatMessage(PaneBase):
             tz = params.get("timestamp_tz")
             if tz is not None:
                 tz = ZoneInfo(tz)
-            elif state.browser_info.timezone:
+            elif state.browser_info and state.browser_info.timezone:
                 tz = ZoneInfo(state.browser_info.timezone)
             params["timestamp"] = datetime.datetime.now(tz=tz)
+
         reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
         if isinstance(reaction_icons, dict):
-            params["reaction_icons"] = ChatReactionIcons(
-                options=reaction_icons, width=15, height=15
-            )
+            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons, default_layout=Row)
+        self._internal = True
         super().__init__(object=object, **params)
-        self.reaction_icons.link(self, value="reactions", bidirectional=True)
-        self.reaction_icons.link(
-            self, visible="show_reaction_icons", bidirectional=True
+        self.chat_copy_icon = ChatCopyIcon(
+            visible=False, width=15, height=15, css_classes=["copy-icon"],
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
-        self.param.trigger("reactions", "show_reaction_icons")
         if not self.avatar:
-            self.param.trigger("avatar_lookup")
+            self._update_avatar()
+        self._build_layout()
 
-        self._composite = Row()
-        render_kwargs = {"inplace": True, "stylesheets": self._stylesheets}
-        left_col = Column(
-            ParamMethod(self._render_avatar, **render_kwargs),
+    def _build_layout(self):
+        self._icon_divider = HTML(" | ", width=1, css_classes=["divider"])
+
+        self._left_col = left_col = Column(
+            self._render_avatar(),
             max_width=60,
             height=100,
             css_classes=["left"],
-            stylesheets=self._stylesheets,
             visible=self.param.show_avatar,
             sizing_mode=None,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
-        center_row = Row(
-            ParamMethod(self._render_object, **render_kwargs),
-            self.reaction_icons,
+        self.param.watch(self._update_avatar_pane, "avatar")
+
+        self._object_panel = self._create_panel(self.object)
+        self._update_chat_copy_icon()
+        self._center_row = Row(
+            self._object_panel,
             css_classes=["center"],
-            stylesheets=self._stylesheets,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
         )
-        right_col = Column(
-            Row(
-                HTML(
-                    self.param.user, height=20, css_classes=["name"],
-                    visible=self.param.show_user, stylesheets=self._stylesheets,
-                ),
-                self.chat_copy_icon,
-                stylesheets=self._stylesheets,
-                sizing_mode="stretch_width",
-            ),
-            center_row,
-            HTML(
-                self.param.timestamp.rx().strftime(self.param.timestamp_format),
-                css_classes=["timestamp"],
-                visible=self.param.show_timestamp
-            ),
+        self.param.watch(self._update_object_pane, "object")
+        self.param.watch(self._update_reaction_icons, "reaction_icons")
+
+        self._user_html = HTML(
+            self.param.user, height=20,
+            css_classes=["name"],
+            visible=self.param.show_user,
+        )
+
+        self._activity_dot = HTML(
+            "●",
+            css_classes=["activity-dot"],
+            visible=self.param.show_activity_dot,
+        )
+
+        meta_row = Row(
+            self._user_html,
+            self._activity_dot,
+            sizing_mode="stretch_width",
+            css_classes=["meta"],
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+        )
+
+        header_col = Column(
+            objects=self.param.header_objects.rx(),
+            sizing_mode="stretch_width",
+            css_classes=["header"],
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+        )
+
+        footer_col = Column(
+            objects=self.param.footer_objects.rx(),
+            sizing_mode="stretch_width",
+            css_classes=["footer"],
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+        )
+
+        self._timestamp_html = HTML(
+            self.param.timestamp.rx().strftime(self.param.timestamp_format),
+            css_classes=["timestamp"],
+            visible=self.param.show_timestamp,
+        )
+
+        self._icons_row = Row(
+            self.chat_copy_icon,
+            self._icon_divider,
+            self._render_reaction_icons(),
+            css_classes=["icons"],
+            sizing_mode="stretch_width",
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+        )
+
+        self._right_col = right_col = Column(
+            meta_row,
+            header_col,
+            self._center_row,
+            footer_col,
+            self._timestamp_html,
+            self._icons_row,
             css_classes=["right"],
-            stylesheets=self._stylesheets,
-            sizing_mode=None
+            sizing_mode=None,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
         viewable_params = {
             p: self.param[p] for p in self.param if p in Viewable.param
             if p in Viewable.param and p != 'name'
         }
         viewable_params['stylesheets'] = self._stylesheets + self.param.stylesheets.rx()
-        self._composite.param.update(**viewable_params)
-        self._composite[:] = [left_col, right_col]
-
-    def _get_obj_label(self, obj):
-        """
-        Get the label for the object; defaults to specified object name;
-        if unspecified, defaults to the type name.
-        """
-        label = obj.name
-        type_name = type(obj).__name__
-        # If the name is just type + ID, simply use type
-        # e.g. Column10241 -> Column
-        if label.startswith(type_name) or not label:
-            label = type_name
-        return label
-
-    def _serialize_recursively(
-        self,
-        obj: Any,
-        prefix_with_viewable_label: bool = True,
-        prefix_with_container_label: bool = True
-    ) -> str:
-        """
-        Recursively serialize the object to a string.
-        """
-        if isinstance(obj, Iterable) and not isinstance(obj, str):
-            content = tuple(
-                self._serialize_recursively(
-                    o,
-                    prefix_with_viewable_label=prefix_with_viewable_label,
-                    prefix_with_container_label=prefix_with_container_label
-                ) for o in obj
-            )
-            if prefix_with_container_label:
-                if len(content) == 1:
-                    return f"{self._get_obj_label(obj)}({content[0]})"
-                else:
-                    indented_content = indent(",\n".join(content), prefix=" " * 4)
-                    # outputs like:
-                    # Row(
-                    #   1,
-                    #   "str",
-                    # )
-                    return f"{self._get_obj_label(obj)}(\n{indented_content}\n)"
-            else:
-                # outputs like:
-                # (1, "str")
-                return f"({', '.join(content)})"
-
-        string = obj
-        if hasattr(obj, "value"):
-            string = obj.value
-        elif hasattr(obj, "object"):
-            string = obj.object
-
-        if hasattr(string, "decode") or isinstance(string, BytesIO):
-            self.param.warning(
-                f"Serializing byte-like objects are not supported yet; "
-                f"using the label of the object as a placeholder for {obj}"
-            )
-            return self._get_obj_label(obj)
-
-        if prefix_with_viewable_label and isinstance(obj, Viewable):
-            label = self._get_obj_label(obj)
-            string = f"{label}={string!r}"
-        return string
+        self._composite = Row(left_col, right_col, **viewable_params)
 
     def __str__(self) -> str:
         """
         Serialize the message object to a string.
         """
-        return self.serialize()
+        return str(self.serialize())
 
     @property
-    def _synced_params(self) -> List[str]:
+    def _synced_params(self) -> list[str]:
         return []
 
     def _get_model(
@@ -366,33 +372,14 @@ class ChatMessage(PaneBase):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
+        if not comm:
+            # If not in a notebook environment we potentially need to
+            # replace path to avatar with server URL
+            avatar = model.children[0].children[0]
+            avatar.text = avatar.text.replace(CDN_DIST, get_dist_path())
         ref = (root or model).ref['id']
         self._models[ref] = (model, parent)
         return model
-
-    @staticmethod
-    def _to_alpha_numeric(user: str) -> str:
-        """
-        Convert the user name to an alpha numeric string,
-        removing all non-alphanumeric characters.
-        """
-        return re.sub(r"\W+", "", user).lower()
-
-    def _avatar_lookup(self, user: str) -> Avatar:
-        """
-        Lookup the avatar for the user.
-        """
-        alpha_numeric_key = self._to_alpha_numeric(user)
-        # always use the default first
-        updated_avatars = DEFAULT_AVATARS.copy()
-        # update with the user input
-        updated_avatars.update(self.default_avatars)
-        # correct the keys to be alpha numeric
-        updated_avatars = {
-            self._to_alpha_numeric(key): value for key, value in updated_avatars.items()
-        }
-        # now lookup the avatar
-        return updated_avatars.get(alpha_numeric_key, self.avatar)
 
     def _select_renderer(
         self,
@@ -431,41 +418,66 @@ class ChatMessage(PaneBase):
                 contents = contents.decode("utf-8")
         return contents, renderer
 
-    def _set_default_attrs(self, obj):
+    def _include_stylesheets_inplace(self, obj):
+        if hasattr(obj, "objects"):
+            obj.objects[:] = [
+                self._include_stylesheets_inplace(o) for o in obj.objects
+            ]
+        else:
+            obj = _panel(obj)
+        obj.stylesheets = [
+            stylesheet for stylesheet in self._stylesheets + self.stylesheets
+            if stylesheet not in obj.stylesheets
+        ] + obj.stylesheets
+        return obj
+
+    def _include_message_css_class_inplace(self, obj):
+        if hasattr(obj, "objects"):
+            obj.objects[:] = [
+                self._include_message_css_class_inplace(o)
+                for o in obj.objects
+            ]
+        else:
+            obj = _panel(obj)
+        is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
+        if obj.css_classes or not is_markup:
+            return obj
+        if len(str(obj.object)) > 0:  # only show a background if there is content
+            obj.css_classes = [*(css for css in obj.css_classes if css != "message"), "message"]
+        obj.sizing_mode = None
+        return obj
+
+    def _set_params(self, obj, **params):
         """
         Set the sizing mode and height of the object.
         """
-        if hasattr(obj, "objects"):
-            obj._stylesheets = self._stylesheets
-            for subobj in obj.objects:
-                self._set_default_attrs(subobj)
-            return None
-
+        self._include_stylesheets_inplace(obj)
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if is_markup:
-            if len(str(obj.object)) > 0:  # only show a background if there is content
-                obj.css_classes = [*obj.css_classes, "message"]
-            obj.sizing_mode = None
+            self._include_message_css_class_inplace(obj)
         else:
             if obj.sizing_mode is None and not obj.width:
-                obj.sizing_mode = "stretch_width"
+                params['sizing_mode'] = "stretch_width"
 
             if obj.height is None and not isinstance(obj, ParamFunction):
-                obj.height = 500
-        return obj
+                params['height'] = 500
+        obj.param.update(params)
 
     @staticmethod
     def _is_widget_renderer(renderer):
         return isinstance(renderer, type) and issubclass(renderer, Widget)
 
-    def _create_panel(self, value):
+    def _create_panel(self, value, old=None):
         """
         Create a panel object from the value.
         """
         if isinstance(value, Viewable):
+            self._internal = False
+            self._include_stylesheets_inplace(value)
+            self._include_message_css_class_inplace(value)
             return value
 
-        renderer = _panel
+        renderer = None
         if isinstance(value, _FileInputMessage):
             contents = value.contents
             mime_type = value.mime_type
@@ -480,7 +492,8 @@ class ChatMessage(PaneBase):
                 pass
 
         renderers = self.renderers.copy() or []
-        renderers.append(renderer)
+        if renderer is not None:
+            renderers.append(renderer)
         for renderer in renderers:
             try:
                 if self._is_widget_renderer(renderer):
@@ -492,12 +505,19 @@ class ChatMessage(PaneBase):
             except Exception:
                 pass
         else:
+            if isinstance(old, Markdown) and isinstance(value, str):
+                self._set_params(old, enable_streaming=True, object=value)
+                return old
             object_panel = _panel(value)
 
-        self._set_default_attrs(object_panel)
+        self._set_params(object_panel)
+        if type(old) is type(object_panel) and self._internal:
+            ReplacementPane._recursive_update(old, object_panel)
+            return object_panel
+
+        self._internal = True
         return object_panel
 
-    @param.depends("avatar", "show_avatar")
     def _render_avatar(self) -> HTML | Image:
         """
         Render the avatar pane as some HTML text or Image pane.
@@ -506,35 +526,48 @@ class ChatMessage(PaneBase):
         if not avatar and self.user:
             avatar = self.user[0]
 
-        if isinstance(avatar, ImageBase):
-            avatar_pane = avatar
-            avatar_pane.param.update(width=35, height=35)
-        elif not isinstance(avatar, (BytesIO, bytes)) and len(avatar) == 1:
-            # single character
-            avatar_pane = HTML(avatar)
-        else:
-            try:
-                avatar_pane = Image(avatar, width=35, height=35)
-            except ValueError:
-                # likely an emoji
-                avatar_pane = HTML(avatar)
-        avatar_pane.css_classes = ["avatar", *avatar_pane.css_classes]
-        avatar_pane.visible = self.show_avatar
+        avatar_pane = build_avatar_pane(
+            avatar, css_classes=["avatar"], height=35, width=35
+        )
         return avatar_pane
+
+    def _update_avatar_pane(self, event=None):
+        new_avatar = self._render_avatar()
+        old_type = type(self._left_col[0])
+        new_type = type(new_avatar)
+        if isinstance(event.old, (HTML, ImageBase)) or new_type is not old_type:
+            self._left_col[:] = [new_avatar]
+        else:
+            params = new_avatar.param.values()
+            del params['name']
+            self._left_col[0].param.update(**params)
+
+    def _render_reaction_icons(self):
+        reaction_icons = self.reaction_icons
+        reaction_icons.param.update(
+            width=15,
+            height=15,
+            value=self.param.reactions,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            visible=self.param.show_reaction_icons
+        )
+        reaction_icons.link(self, value="reactions", bidirectional=True)
+        return reaction_icons
+
+    def _update_reaction_icons(self, _):
+        self._icons_row[-1] = self._render_reaction_icons()
 
     def _update(self, ref, old_models):
         """
         Internals will be updated inplace.
         """
 
-    @param.depends("object")
-    def _render_object(self) -> Viewable:
-        """
-        Renders object as a panel object.
-        """
-        # used in ChatFeed to extract its contents
-        self._object_panel = object_panel = self._create_panel(self.object)
-        return object_panel
+    def _update_object_pane(self, event=None):
+        old = self._object_panel
+        self._object_panel = new = self._create_panel(self.object, old=old)
+        if old is not new:
+            self._center_row[0] = new
+        self._update_chat_copy_icon()
 
     @param.depends("avatar_lookup", "user", watch=True)
     def _update_avatar(self):
@@ -549,19 +582,27 @@ class ChatMessage(PaneBase):
         if self.avatar_lookup:
             self.avatar = self.avatar_lookup(self.user)
         else:
-            self.avatar = self._avatar_lookup(self.user)
+            self.avatar = avatar_lookup(
+                self.user,
+                self.avatar,
+                self.default_avatars,
+                DEFAULT_AVATARS,
+            )
 
-    @param.depends("_object_panel", watch=True)
     def _update_chat_copy_icon(self):
         object_panel = self._object_panel
         if isinstance(object_panel, HTMLBasePane):
             object_panel = object_panel.object
+        elif isinstance(object_panel, Widget):
+            object_panel = object_panel.value
         if isinstance(object_panel, str) and self.show_copy_icon:
             self.chat_copy_icon.value = object_panel
             self.chat_copy_icon.visible = True
+            self._icon_divider.visible = True
         else:
             self.chat_copy_icon.value = ""
             self.chat_copy_icon.visible = False
+            self._icon_divider.visible = False
 
     def _cleanup(self, root=None) -> None:
         """
@@ -570,7 +611,7 @@ class ChatMessage(PaneBase):
         self._composite._cleanup(root)
         return super()._cleanup(root)
 
-    def stream(self, token: str):
+    def stream(self, token: str, replace: bool = False):
         """
         Updates the message with the new token traversing the object to
         allow updating nested objects. When traversing a nested Panel
@@ -582,30 +623,10 @@ class ChatMessage(PaneBase):
         ---------
         token: str
           The token to stream to the text pane.
+        replace: bool (default=False)
+            Whether to replace the existing text.
         """
-        i = -1
-        parent_panel = None
-        object_panel = self
-        attr = "object"
-        obj = self.object
-        while not isinstance(obj, str) or isinstance(object_panel, ImageBase):
-            object_panel = obj
-            if hasattr(obj, "objects"):
-                parent_panel = obj
-                attr = "objects"
-                obj = obj.objects[i]
-                i = -1
-            elif hasattr(obj, "object"):
-                attr = "object"
-                obj = obj.object
-            elif hasattr(obj, "value"):
-                attr = "value"
-                obj = obj.value
-            elif parent_panel is not None:
-                obj = parent_panel
-                parent_panel = None
-                i -= 1
-        setattr(object_panel, attr, obj + token)
+        stream_to(obj=self.object, token=token, replace=replace, object_panel=self)
 
     def update(
         self,
@@ -632,6 +653,11 @@ class ChatMessage(PaneBase):
                 updates["user"] = user
             if avatar:
                 updates["avatar"] = avatar
+            if "value" in updates and "object" in updates:
+                raise ValueError(
+                    "Cannot set both 'value' and 'object' in the update dict."
+                )
+            updates["object"] = updates.pop("value", updates.get("object"))
         elif isinstance(value, ChatMessage):
             if user is not None or avatar is not None:
                 raise ValueError(
@@ -643,6 +669,11 @@ class ChatMessage(PaneBase):
             updates["object"] = value
         self.param.update(**updates)
 
+    def select(
+        self, selector: Optional[type | Callable[[Viewable], bool]] = None
+    ) -> list[Viewable]:
+        return super().select(selector) + self._composite.select(selector)
+
     def serialize(
         self,
         prefix_with_viewable_label: bool = True,
@@ -653,8 +684,6 @@ class ChatMessage(PaneBase):
 
         Arguments
         ---------
-        obj : Any
-            The object to format.
         prefix_with_viewable_label : bool
             Whether to include the name of the Viewable, or type
             of the viewable if no name is specified.
@@ -667,7 +696,7 @@ class ChatMessage(PaneBase):
         str
             The serialized string.
         """
-        return self._serialize_recursively(
+        return serialize_recursively(
             self.object,
             prefix_with_viewable_label=prefix_with_viewable_label,
             prefix_with_container_label=prefix_with_container_label,

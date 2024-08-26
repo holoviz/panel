@@ -4,8 +4,8 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
-from panel import Card
-from panel.tests.util import serve_component
+from panel import Card, Row
+from panel.tests.util import serve_component, wait_until
 from panel.widgets import FloatSlider, TextInput
 
 pytestmark = pytest.mark.ui
@@ -37,8 +37,7 @@ def test_card_default(page, card_components):
 
     # icon display in card button in expanded mode
     card_button = page.locator('.card-button')
-    button_name = card_button.inner_text()
-    assert button_name == "\u25bc"
+    expect(card_button.locator('svg')).to_have_class("icon icon-tabler icons-tabler-outline icon-tabler-chevron-down")
 
 
 def test_card_collapsed(page, card_components):
@@ -52,7 +51,7 @@ def test_card_collapsed(page, card_components):
     # collapse the card
     card_button.wait_for()
     card_button.click()
-    assert card_button.inner_text() == "\u25ba"
+    expect(card_button.locator('svg')).to_have_class("icon icon-tabler icons-tabler-outline icon-tabler-chevron-right")
     # only show the card header, other elements are hidden
     expect(card_elements).to_have_count(1)
 
@@ -60,7 +59,7 @@ def test_card_collapsed(page, card_components):
     card_button.wait_for()
     card_button.click()
     expect(card_elements).to_have_count(len(card) + 1)
-    assert card_button.inner_text() == "\u25bc"
+    expect(card_button.locator('svg')).to_have_class("icon icon-tabler icons-tabler-outline icon-tabler-chevron-down")
 
 
 def test_card_not_collapsible(page, card_components):
@@ -102,13 +101,13 @@ def test_card_objects(page, card_components):
     card_header = card_elements.nth(0)
     w2_object = card_elements.nth(1)
     expect(card_header).to_have_class('card-header')
-    expect(w2_object).to_have_class('bk-TextInput class_w2')
+    expect(w2_object).to_have_class('bk-panel-models-widgets-TextInput class_w2')
 
     w3 = TextInput(name='Text:', css_classes=['class_w3'])
     card.append(w3)
 
     expect(card_elements).to_have_count(3)
-    expect(card_elements.nth(2)).to_have_class('bk-TextInput class_w3')
+    expect(card_elements.nth(2)).to_have_class('bk-panel-models-widgets-TextInput class_w3')
 
 
 def test_card_title(page, card_components):
@@ -124,17 +123,6 @@ def test_card_background(page, card_components):
     w1, w2 = card_components
     background = 'rgb(128, 128, 128)'
     card = Card(w1, w2, styles=dict(background=background))
-
-    serve_component(page, card)
-
-    card_widget = page.locator('.card')
-    expect(card_widget).to_have_css('background-color', background)
-
-
-def test_card_background_legacy(page, card_components):
-    w1, w2 = card_components
-    background = 'rgb(128, 128, 128)'
-    card = Card(w1, w2, background=background)
 
     serve_component(page, card)
 
@@ -194,3 +182,22 @@ def test_card_scrollable(page):
     serve_component(page, card)
 
     expect(page.locator('.card')).to_have_class('bk-panel-models-layout-Card card scrollable-vertical')
+
+
+def test_card_widget_not_collapsed(page, card_components):
+    # Fixes https://github.com/holoviz/panel/issues/7045
+    w1, w2 = card_components
+    card = Card(w1, header=Row(w2))
+
+    serve_component(page, card)
+
+    text_input = page.locator('.bk-input[type="text"]')
+    expect(text_input).to_have_count(1)
+
+    text_input.click()
+
+    text_input.press("F")
+    text_input.press("Enter")
+
+    wait_until(lambda: w2.value == 'F', page)
+    assert not card.collapsed

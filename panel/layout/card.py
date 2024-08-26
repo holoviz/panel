@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Type,
+    TYPE_CHECKING, Callable, ClassVar, Mapping,
 )
 
 import param
 
-from ..io.resources import CDN_DIST
 from ..models import Card as BkCard
 from .base import Column, Row
 
@@ -69,15 +68,11 @@ class Card(Column):
         A title to be displayed in the Card header, will be overridden
         by the header if defined.""")
 
-    _bokeh_model: ClassVar[Type[Model]] = BkCard
+    _bokeh_model: ClassVar[type[Model]] = BkCard
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'title': None, 'header': None, 'title_css_classes': None
     }
-
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/card.css'
-    ]
 
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'], sizing_mode='stretch_width')
@@ -88,7 +83,7 @@ class Card(Column):
 
     def select(
         self, selector: type | Callable[[Viewable], bool] | None = None
-    ) -> List[Viewable]:
+    ) -> list[Viewable]:
         return self._header_layout.select(selector) + super().select(selector)
 
     def _cleanup(self, root: Model | None = None) -> None:

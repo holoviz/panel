@@ -98,8 +98,8 @@ class P(param.Parameterized):
 
 The class `B` below is created with 4 *Parameters*:
 
-- `x` is a `Number` *Parameter* that only accepts Python `int` and `float` values.
-- `i` is an `Integer` *Parameter* that only accepts Python `int` values and that must be within the interval `[5, 10]`
+- `t` is a `Number` *Parameter* that only accepts Python `int` and `float` values.
+- `i` is an `Integer` *Parameter* that only accepts Python `int` values and that must be within the interval `[5, 15]`
 - `s` is a `String` *Parameter* that only accepts Python `str` values and is documented with `doc`.
 - `option` is a `Selector` *Parameter* that only accepts one of the values listed in `objects`.
 
@@ -217,7 +217,7 @@ c.s = 'new string'
 
 ## Panel and Param
 
-Panel knows how to map *Parameters* to widgets, and so it can easily generate a set of widgets from *Parameterized* class that control its *Parameters* and trigger any dependent callbacks:
+Panel knows how to map *Parameters* to widgets, and so it can easily generate a set of widgets from a *Parameterized* class that control its *Parameters* and trigger any dependent callbacks:
 
 ```{pyodide}
 class D(param.Parameterized):

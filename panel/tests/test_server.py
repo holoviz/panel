@@ -14,10 +14,8 @@ from bokeh.events import ButtonClick
 
 from panel.config import config
 from panel.io import state
-from panel.io.resources import DIST_DIR
-from panel.io.server import (
-    INDEX_HTML, get_server, serve, set_curdoc,
-)
+from panel.io.resources import DIST_DIR, JS_VERSION
+from panel.io.server import INDEX_HTML, get_server, set_curdoc
 from panel.layout import Row
 from panel.models import HTML as BkHTML
 from panel.models.tabulator import TableEditEvent
@@ -105,7 +103,7 @@ def test_server_template_static_resources_with_prefix_relative_url():
 
     r = serve_and_request({'template': template}, prefix='/prefix', suffix="/prefix/template")
 
-    assert 'href="static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in r.content.decode('utf-8')
+    assert f'href="static/extensions/panel/bundled/bootstraptemplate/bootstrap.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
 
 def test_server_template_static_resources_with_subpath_and_prefix_relative_url():
@@ -113,7 +111,7 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
 
     r = serve_and_request({'/subpath/template': template}, prefix='/prefix', suffix="/prefix/subpath/template")
 
-    assert 'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in r.content.decode('utf-8')
+    assert f'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
 
 def test_server_extensions_on_root():
@@ -155,16 +153,15 @@ def test_server_async_callbacks():
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_async_local_state():
+def test_server_async_local_state(bokeh_curdoc):
     docs = {}
 
     async def task():
-        curdoc = state.curdoc
         await asyncio.sleep(0.5)
-        docs[curdoc] = []
-        for i in range(5):
+        docs[state.curdoc] = []
+        for _ in range(5):
             await asyncio.sleep(0.1)
-            docs[curdoc].append(state.curdoc)
+            docs[state.curdoc].append(state.curdoc)
 
     def app():
         state.execute(task)
@@ -177,18 +174,20 @@ def test_server_async_local_state():
     wait_until(lambda: all([len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()]))
 
 
-def test_server_async_local_state_nested_tasks():
+def test_server_async_local_state_nested_tasks(bokeh_curdoc):
     docs = {}
+    _tasks = set()
 
     async def task(depth=1):
-        curdoc = state.curdoc
         await asyncio.sleep(0.5)
         if depth > 0:
-            asyncio.ensure_future(task(depth-1))
-        docs[curdoc] = []
-        for i in range(10):
+            _task = asyncio.ensure_future(task(depth-1))
+            _tasks.add(_task)
+            _task.add_done_callback(_tasks.discard)
+        docs[state.curdoc] = []
+        for _ in range(10):
             await asyncio.sleep(0.1)
-            docs[curdoc].append(state.curdoc)
+            docs[state.curdoc].append(state.curdoc)
 
     def app():
         state.execute(task)
@@ -282,7 +281,7 @@ def test_server_session_info():
     assert state.session_info['live'] == 0
 
 
-def test_server_periodic_async_callback(threads, port):
+def test_server_periodic_async_callback(threads):
     counts = []
 
     async def cb(count=[0]):
@@ -292,6 +291,9 @@ def test_server_periodic_async_callback(threads, port):
     def app():
         button = Button(name='Click')
         state.add_periodic_callback(cb, 100)
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
         return button
 
     serve_and_request(app)
@@ -380,8 +382,8 @@ def test_server_schedule_at_callable():
         state.cache['at'].append(dt.datetime.now())
 
     scheduled = [
-        dt.datetime.utcnow() + dt.timedelta(seconds=1.57),
-        dt.datetime.utcnow() + dt.timedelta(seconds=1.86)
+        dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=1.57),
+        dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=1.86)
     ]
     siter = iter(scheduled)
 
@@ -497,32 +499,60 @@ def test_serve_can_serve_bokeh_app_from_file():
     assert "/bk-app" in server._tornado.applications
 
 
-def test_server_on_load_after_init(threads, port):
+
+def test_server_on_load_after_init_with_threads(threads):
     loaded = []
 
     def cb():
-        loaded.append(state.loaded)
-
-    def cb2():
-        state.execute(cb, schedule=True)
+        loaded.append((state.curdoc, state.loaded))
 
     def app():
         state.onload(cb)
-        state.onload(cb2)
         # Simulate rendering
         def loaded():
-            state.curdoc
             state._schedule_on_load(state.curdoc, None)
         state.execute(loaded, schedule=True)
         return 'App'
 
     serve_and_request(app)
 
-    # Checks whether onload callback was executed twice once before and once after load
-    wait_until(lambda: loaded == [False, True])
+    wait_until(lambda: len(loaded) == 1)
+
+    doc = loaded[0][0]
+    with set_curdoc(doc):
+        state.onload(cb)
+
+    wait_until(lambda: len(loaded) == 2)
+    assert loaded == [(doc, False), (doc, True)]
 
 
-def test_server_on_load_during_load(threads, port):
+def test_server_on_load_after_init():
+    loaded = []
+
+    def cb():
+        loaded.append((state.curdoc, state.loaded))
+
+    def app():
+        state.onload(cb)
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+        return 'App'
+
+    serve_and_request(app)
+
+    wait_until(lambda: len(loaded) == 1)
+
+    doc = loaded[0][0]
+    with set_curdoc(doc):
+        state.onload(cb)
+
+    wait_until(lambda: len(loaded) == 2)
+    assert loaded == [(doc, False), (doc, True)]
+
+
+def test_server_on_load_during_load(threads):
     loaded = []
 
     def cb():
@@ -536,7 +566,6 @@ def test_server_on_load_during_load(threads, port):
         state.onload(cb2)
         # Simulate rendering
         def loaded():
-            state.curdoc
             state._schedule_on_load(state.curdoc, None)
         state.execute(loaded, schedule=True)
         return 'App'
@@ -547,7 +576,7 @@ def test_server_on_load_during_load(threads, port):
     wait_until(lambda: loaded == [False, False])
 
 
-def test_server_thread_pool_on_load(threads, port):
+def test_server_thread_pool_on_load(threads):
     counts = []
 
     def cb(count=[0]):
@@ -573,7 +602,7 @@ def test_server_thread_pool_on_load(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_execute(threads, port):
+def test_server_thread_pool_execute(threads):
     counts = []
 
     def cb(count=[0]):
@@ -593,7 +622,7 @@ def test_server_thread_pool_execute(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_defer_load(threads, port):
+def test_server_thread_pool_defer_load(threads):
     counts = []
 
     def cb(count=[0]):
@@ -621,7 +650,7 @@ def test_server_thread_pool_defer_load(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_change_event(threads, port):
+def test_server_thread_pool_change_event(threads):
     button = Button(name='Click')
     button2 = Button(name='Click')
 
@@ -649,7 +678,7 @@ def test_server_thread_pool_change_event(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_bokeh_event(threads, port):
+def test_server_thread_pool_bokeh_event(threads):
     import pandas as pd
 
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['A', 'B'])
@@ -677,7 +706,7 @@ def test_server_thread_pool_bokeh_event(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_periodic(threads, port):
+def test_server_thread_pool_periodic(threads):
     counts = []
 
     def cb(count=[0]):
@@ -689,6 +718,9 @@ def test_server_thread_pool_periodic(threads, port):
     def app():
         button = Button(name='Click')
         state.add_periodic_callback(cb, 100)
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
         return button
 
     serve_and_request(app)
@@ -697,7 +729,7 @@ def test_server_thread_pool_periodic(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_onload(threads, port):
+def test_server_thread_pool_onload(threads):
     counts = []
 
     def app(count=[0]):
@@ -723,14 +755,17 @@ def test_server_thread_pool_onload(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_busy(threads, port):
+def test_server_thread_pool_busy(threads):
     button = Button(name='Click')
+    clicks = []
 
     def cb(event):
         time.sleep(0.5)
 
     def simulate_click():
-        button._comm_event(state.curdoc, ButtonClick(model=None))
+        click = ButtonClick(model=None)
+        clicks.append(click)
+        button._comm_event(state.curdoc, click)
 
     button.on_click(cb)
 
@@ -742,10 +777,10 @@ def test_server_thread_pool_busy(threads, port):
 
     serve_and_request(app, suffix="/")
 
-    wait_until(lambda: state._busy_counter == 0 and not state.busy)
+    wait_until(lambda: len(clicks) == 3 and state._busy_counter == 0 and not state.busy)
 
 
-def test_server_async_onload(threads, port):
+def test_server_async_onload(threads):
     counts = []
 
     def app(count=[0]):
@@ -843,7 +878,7 @@ def test_server_component_custom_resources_with_prefix_relative_url(port):
 
     r = serve_and_request({'component': component}, prefix='/prefix', suffix='/prefix/component')
 
-    assert 'href="components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"' in r.content.decode('utf-8')
+    assert f'href="components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
 
 def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(port):
@@ -851,7 +886,7 @@ def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(
 
     r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component')
 
-    assert 'href="../components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"' in r.content.decode('utf-8')
+    assert f'href="../components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
 
 def test_server_component_css_with_prefix_relative_url(port):
@@ -883,7 +918,7 @@ async def async_handler(event=None):
         ('threads', async_handler),
         ('nothreads', async_handler)
 ])
-def test_server_exception_handler_bokeh_event(threads, handler, port, request):
+def test_server_exception_handler_bokeh_event(threads, handler, request):
     request.getfixturevalue(threads)
 
     exceptions = []
@@ -914,7 +949,7 @@ def test_server_exception_handler_bokeh_event(threads, handler, port, request):
         ('threads', async_handler),
         ('nothreads', async_handler)
 ])
-def test_server_exception_handler_async_change_event(threads, handler, port, request):
+def test_server_exception_handler_async_change_event(threads, handler, request):
     request.getfixturevalue(threads)
 
     exceptions = []
@@ -945,7 +980,7 @@ def test_server_exception_handler_async_change_event(threads, handler, port, req
         ('threads', async_handler),
         ('nothreads', async_handler)
 ])
-def test_server_exception_handler_async_onload_event(threads, handler, port, request):
+def test_server_exception_handler_async_onload_event(threads, handler, request):
     request.getfixturevalue(threads)
 
     exceptions = []
@@ -969,7 +1004,7 @@ def test_server_exception_handler_async_onload_event(threads, handler, port, req
     wait_until(lambda: len(exceptions) == 1)
 
 
-def test_server_no_warning_empty_layout(port, caplog):
+def test_server_no_warning_empty_layout(caplog):
 
     bk_logger = logging.getLogger('bokeh')
     old_level = bk_logger.level
@@ -981,11 +1016,8 @@ def test_server_no_warning_empty_layout(port, caplog):
 
         app = Row()
 
-        serve(app, port=port, threaded=True, show=False)
+        serve_and_request(app)
 
-        # Wait for server to start
-        time.sleep(1)
-        requests.get(f"http://localhost:{port}")
         time.sleep(1)
 
         for rec in caplog.records:
@@ -996,7 +1028,7 @@ def test_server_no_warning_empty_layout(port, caplog):
         bk_logger.propagate = old_propagate
 
 
-def test_server_threads_save(threads, port, tmp_path):
+def test_server_threads_save(threads, tmp_path):
     # https://github.com/holoviz/panel/issues/5957
 
     button = Button()

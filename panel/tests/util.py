@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import http.server
 import os
 import platform
 import re
@@ -7,8 +8,8 @@ import subprocess
 import sys
 import time
 import uuid
-import warnings
 
+from functools import partial
 from queue import Empty, Queue
 from threading import Thread
 
@@ -57,7 +58,7 @@ jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyte
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
 ON_POSIX = 'posix' in sys.builtin_module_names
 
-unix_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
+linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
@@ -76,12 +77,6 @@ def mpl_figure():
 def check_layoutable_properties(layoutable, model):
     layoutable.styles = {"background": '#fffff0'}
     assert model.styles["background"] == '#fffff0'
-
-    # Is deprecated, but we still support it for now.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        layoutable.background = '#ffffff'
-    assert model.styles["background"] == '#ffffff'
 
     layoutable.css_classes = ['custom_class']
     if isinstance(layoutable, Alert):
@@ -126,7 +121,7 @@ def check_layoutable_properties(layoutable, model):
 
 def wait_until(fn, page=None, timeout=5000, interval=100):
     """
-    Exercice a test function in a loop until it evaluates to True
+    Exercise a test function in a loop until it evaluates to True
     or times out.
 
     The function can either be a simple lambda that returns True or False:
@@ -170,7 +165,7 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
             result = fn()
         except AssertionError as e:
             if timed_out():
-                raise TimeoutError(timeout_msg) from e
+                raise TimeoutError(f"{timeout_msg}: {e}") from e
         else:
             if result not in (None, True, False):
                 raise ValueError(
@@ -232,7 +227,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
         elapsed_ms = elapsed * 1000
         return elapsed_ms > timeout
 
-    timeout_msg = f"wait_until timed out in {timeout} milliseconds"
+    timeout_msg = f"async_wait_until timed out in {timeout} milliseconds"
 
     while True:
         try:
@@ -245,7 +240,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
         else:
             if result not in (None, True, False):
                 raise ValueError(
-                    "`wait_until` callback must return None, True, or "
+                    "`async_wait_until` callback must return None, True, or "
                     f"False, returned {result!r}"
                 )
             # None is returned when the function has an assert
@@ -277,7 +272,7 @@ def get_ctrl_modifier():
 
 
 def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
-    server_id = uuid.uuid4().hex
+    server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     serve(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
@@ -300,8 +295,9 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
 
 def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
     port = serve_and_wait(app, port=port, **kwargs)
-    reqs = [requests.get(f"http://localhost:{port}{suffix}") for i in range(n)]
-    return reqs[0] if len(reqs) == 1 else reqs
+    reqs = [r for _ in range(n) if (r := requests.get(f"http://localhost:{port}{suffix}")).ok]
+    assert len(reqs) == n, "Not all requests were successful"
+    return reqs[0] if n == 1 else reqs
 
 
 def wait_for_server(port, prefix=None, timeout=3):
@@ -379,7 +375,7 @@ def wait_for_port(stdout):
     nbsr = NBSR(stdout)
     m = None
     output = []
-    for i in range(20):
+    for _ in range(20):
         o = nbsr.readline(0.5)
         if not o:
             continue
@@ -401,3 +397,62 @@ def write_file(content, file_obj):
     file_obj.flush()
     os.fsync(file_obj)
     file_obj.seek(0)
+
+
+def http_serve_directory(directory=".", port=0):
+    """Spawns an http.server.HTTPServer in a separate thread on the given port.
+    The server serves files from the given *directory*. The port listening on
+    will automatically be picked by the operating system to avoid race
+    conditions when trying to bind to an open port that turns out not to be
+    free after all. The hostname is always "localhost".
+
+    Arguments
+    ----------
+    directory : str, optional
+        The directory to server files from. Defaults to the current directory.
+    port : int, optional
+        Port to serve on, defaults to zero which assigns a random port.
+
+    Returns
+    -------
+    http.server.HTTPServer
+        The HTTP server which is serving files from a separate thread.
+        It is not super necessary but you might want to call shutdown() on the
+        returned HTTP server object. This will stop the infinite request loop
+        running in the thread which in turn will then exit. The reason why this
+        is only optional is that the thread in which the server runs is a daemon
+        thread which will be terminated when the main thread ends.
+        By calling shutdown() you'll get a cleaner shutdown because the socket
+        is properly closed.
+    str
+        The address of the server as a string, e.g. "http://localhost:1234".
+    """
+    hostname = "localhost"
+    directory = os.path.abspath(directory)
+    handler = partial(_SimpleRequestHandler, directory=directory)
+    httpd = http.server.HTTPServer((hostname, port), handler, False)
+    # Block only for 0.5 seconds max
+    httpd.timeout = 0.5
+    httpd.server_bind()
+
+    address = "http://%s:%d" % (httpd.server_name, httpd.server_port)
+
+    httpd.server_activate()
+
+    def serve_forever(httpd):
+        with httpd:
+            httpd.serve_forever()
+
+    thread = Thread(target=serve_forever, args=(httpd, ), daemon=True)
+    thread.start()
+
+    return httpd, address
+
+class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
+    """Same as SimpleHTTPRequestHandler with adjusted logging."""
+
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+        self.send_header('Cross-Origin-Embedder-Policy', 'credentialless')
+        http.server.SimpleHTTPRequestHandler.end_headers(self)

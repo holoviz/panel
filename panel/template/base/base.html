@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+<!-- goes in body -->
+{% block preamble %}
+    {% block metadata %}
+    {%- if app_favicon %}
+    <link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">
+    {% endif -%}
+    {%- if manifest %}
+    <link rel="manifest" href="{{ manifest }}">
+    {% endif -%}
+    {%- if meta_name %}
+    <meta name="name" content="{{ meta_name }}">
+    {% endif -%}
+    {%- if meta_description %}
+    <meta name="description" content="{{ meta_description }}">
+    {% endif -%}
+    {%- if meta_keywords %}
+    <meta name="keywords" content="{{ meta_keywords }}">
+    {% endif -%}
+    {%- if meta_author %}
+    <meta name="author" content="{{ meta_author }}">
+    {% endif -%}
+    {%- if meta_refresh %}
+    <meta http-equiv="refresh" content="{{ meta_refresh }}">
+    {% endif -%}
+    {%- if meta_viewport %}
+    <meta name="viewport" content="{{ meta_viewport }}">
+    {% endif -%}
+    {%- if base_url and base_target %}
+    <base href="{{ base_url }}" target="{{ base_target }}">
+    {%- endif %}
+    {%- if manifest %}
+    <link rel="manifest" href="{{ manifest_url }}">
+    {% endif -%}
+    {% endblock %}
+{% endblock %}
+
+{% block postamble %}
+    <!-- Template CSS -->
+    {% for css in template_resources['css'].values() %}
+    <link rel="stylesheet" href="{{ css }}">
+    {% endfor %}
+
+    {% block custom_css %}
+    {% endblock %}
+
+    {% for raw_css in template_resources['raw_css'] %}
+    <style type="text/css">
+    {{ raw_css }}
+    </style>
+    {% endfor %}
+
+    <!-- Template JS -->
+    {% for src in template_resources['js'].values() %}
+    <script src="{{ src }}"></script>
+    {% endfor %}
+    {% for src in template_resources['js_modules'].values() %}
+    <script src="{{ src }}" type="module"></script>
+    {% endfor %}
+
+    {% block custom_js %}
+    {% endblock %}
+{% endblock %}
+
+{% block state_roots %}
+{{ embed(roots.js_area) }}
+{{ embed(roots.actions) }}
+{{ embed(roots.location) }}
+{% if notifications %}
+{{ embed(roots.notifications) }}
+{% endif %}
+{% if browser_info %}
+{{ embed(roots.browser_info) }}
+{% endif %}
+{% endblock %}

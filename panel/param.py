@@ -13,22 +13,36 @@ import sys
 import textwrap
 import types
 
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import defaultdict, namedtuple
 from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Generator, List, Mapping, Optional, Tuple,
-    Type,
+    TYPE_CHECKING, Any, ClassVar, Generator, Mapping, Optional,
 )
 
 import param
 
+try:
+    from param import Skip
+except Exception:
+    class Skip(Exception):
+        """
+        Exception that allows skipping an update for function-level updates.
+        """
 from param.parameterized import (
-    classlist, discard_events, eval_function_with_deps, get_method_owner,
-    iscoroutinefunction,
+    Undefined, classlist, discard_events, eval_function_with_deps,
+    get_method_owner, iscoroutinefunction, resolve_ref, resolve_value,
 )
 from param.reactive import rx
+
+try:
+    from param import Skip
+except Exception:
+    class Skip(RuntimeError):
+        """
+        Exception that allows skipping an update for function-level updates.
+        """
 
 from .config import config
 from .io import state
@@ -36,11 +50,11 @@ from .layout import (
     Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
 )
 from .pane import DataFrame as DataFramePane
-from .pane.base import PaneBase, ReplacementPane
+from .pane.base import Pane, ReplacementPane
 from .reactive import Reactive
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
-    param_name, recursive_parameterized,
+    param_name, recursive_parameterized, to_async_gen,
 )
 from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
@@ -49,7 +63,7 @@ from .widgets import (
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
     FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
     LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
-    TextInput, Toggle, Widget,
+    TextInput, Toggle, Widget, WidgetBase,
 )
 from .widgets.button import _ButtonBase
 
@@ -59,7 +73,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-def SingleFileSelector(pobj: param.Parameter) -> Type[Widget]:
+def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
     """
     Determines whether to use a TextInput or Select widget for FileSelector
     """
@@ -69,7 +83,7 @@ def SingleFileSelector(pobj: param.Parameter) -> Type[Widget]:
         return TextInput
 
 
-def LiteralInputTyped(pobj: param.Parameter) -> Type[Widget]:
+def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     if isinstance(pobj, param.Tuple):
         return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
@@ -81,7 +95,7 @@ def LiteralInputTyped(pobj: param.Parameter) -> Type[Widget]:
     return LiteralInput
 
 
-def DataFrameWidget(pobj: param.DataFrame) -> Type[Widget]:
+def DataFrameWidget(pobj: param.DataFrame) -> type[Widget]:
     if 'panel.models.tabulator' in sys.modules:
         return Tabulator
     else:
@@ -113,10 +127,27 @@ def set_values(*parameterizeds, **param_values):
             parameterized.param.update(**old_values)
 
 
-class Param(PaneBase):
+class Param(Pane):
     """
-    Param panes render a Parameterized class to a set of widgets which
-    are linked to the parameter values on the class.
+    Param panes render a Parameterized class into a set of interactive widgets
+    that are dynamically linked to the parameter values of the class.
+
+    Reference: https://panel.holoviz.org/reference/panes/Param.html
+
+    Example:
+
+    >>> import param
+    >>> import panel as pn
+    >>> pn.extension()
+
+    >>> class App(param.Parameterized):
+    >>>     some_text = param.String(default="Hello")
+    >>>     some_float = param.Number(default=1, bounds=(0, 10), step=0.1)
+    >>>     some_boolean = param.Boolean(default=True)
+
+    >>> app = App()
+
+    >>> pn.Param(app, parameters=["some_text", "some_float"], show_name=False).servable()
     """
 
     display_threshold = param.Number(default=0, precedence=-10, doc="""
@@ -213,11 +244,11 @@ class Param(PaneBase):
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
 
-    _ignored_refs: ClassVar[Tuple[str,...]] = ('object',)
+    _ignored_refs: ClassVar[tuple[str,...]] = ('object',)
 
-    _linkable_properties: ClassVar[Tuple[str,...]] = ()
+    _linkable_properties: ClassVar[tuple[str,...]] = ()
 
-    _rerender_params: ClassVar[List[str]] = []
+    _rerender_params: ClassVar[list[str]] = []
 
     _unpack: ClassVar[bool] = True
 
@@ -256,8 +287,7 @@ class Param(PaneBase):
             self.layout = self._expand_layout = layout(self._widget_box, **kwargs)
         else:
             raise ValueError('expand_layout expected to be a panel.layout.Panel'
-                             'type or instance, found %s type.' %
-                             type(layout).__name__)
+                             f'type or instance, found {type(layout).__name__} type.')
         self.param.watch(self._update_widgets, [
             'object', 'parameters', 'name', 'display_threshold', 'expand_button',
             'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name',
@@ -277,10 +307,10 @@ class Param(PaneBase):
             elif p == 'object' or (p == 'name' and v.startswith((obj_cls, cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
-                params.append('%s=%s' % (p, abbreviated_repr(v)))
+                params.append(f'{p}={abbreviated_repr(v)}')
             except RuntimeError:
-                params.append('%s=%s' % (p, '...'))
-        obj = 'None' if self.object is None else '%s' % type(self.object).__name__
+                params.append('{}={}'.format(p, '...'))
+        obj = 'None' if self.object is None else f'{type(self.object).__name__}'
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
@@ -345,7 +375,7 @@ class Param(PaneBase):
 
     def _link_subobjects(self):
         for pname, widget in self._widgets.items():
-            widgets = [widget] if isinstance(widget, Widget) else widget
+            widgets = [widget] if isinstance(widget, WidgetBase) else widget
             if not any(is_parameterized(getattr(w, 'value', None)) or
                        any(is_parameterized(o) for o in getattr(w, 'options', []))
                        for w in widgets):
@@ -372,11 +402,11 @@ class Param(PaneBase):
                     pane = Param(parameterized, name=parameterized.name,
                                  **kwargs)
                     if isinstance(self._expand_layout, Tabs):
-                        title = self.object.param[pname].label
+                        title = self.object.param[parameter].label
                         pane = (title, pane)
                     self._expand_layout.append(pane)
 
-            def update_pane(change, parameter=pname):
+            def update_pane(change, parameter=pname, toggle=toggle):
                 "Adds or removes subpanel from layout"
                 layout = self._expand_layout
                 existing = [p for p in layout.objects if isinstance(p, Param)
@@ -438,7 +468,7 @@ class Param(PaneBase):
 
         value = getattr(self.object, p_name)
         allow_None = p_obj.allow_None or False
-        if isinstance(widget_class, type) and issubclass(widget_class, Widget):
+        if isinstance(widget_class, type) and issubclass(widget_class, WidgetBase):
             allow_None &= widget_class.param.value.allow_None
         if value is not None or allow_None:
             kw['value'] = value
@@ -496,7 +526,7 @@ class Param(PaneBase):
         if isinstance(widget_class, type) and issubclass(widget_class, Button):
             kwargs.pop('value', None)
 
-        if isinstance(widget_class, Widget):
+        if isinstance(widget_class, WidgetBase):
             widget = widget_class
         else:
             widget = widget_class(**kwargs)
@@ -618,7 +648,7 @@ class Param(PaneBase):
             watchers.append(self.object.param.watch(link, p_name, 'step'))
         watchers.append(self.object.param.watch(link, p_name))
 
-        options = kwargs.get('options', [])
+        options = resolve_value(kwargs.get('options', []), recursive=False)
         if isinstance(options, dict):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
@@ -693,11 +723,11 @@ class Param(PaneBase):
         if self.expand_layout is Tabs:
             widgets = []
         elif self.show_name:
-            widgets = [('_title', StaticText(value='<b>{0}</b>'.format(self.name)))]
+            widgets = [('_title', StaticText(value=f'<b>{self.name}</b>'))]
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]
-        return OrderedDict(widgets)
+        return dict(widgets)
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -761,14 +791,11 @@ class Param(PaneBase):
         return super().select(selector) + self.layout.select(selector)
 
 
-class ParamMethod(ReplacementPane):
+class ParamRef(ReplacementPane):
     """
-    ParamMethod panes wrap methods on parameterized classes and
-    rerenders the plot when any of the method's parameters change. By
-    default ParamMethod will watch all parameters on the class owning
-    the method or can be restricted to certain parameters by annotating
-    the method using the param.depends decorator. The method may
-    return any object which itself can be rendered as a Pane.
+    ParamRef wraps any valid parameter reference and resolves it
+    dynamically, re-rendering the output. If enabled it will attempt
+    to update the previously rendered component inplace.
     """
 
     defer_load = param.Boolean(default=None, doc="""
@@ -786,9 +813,13 @@ class ParamMethod(ReplacementPane):
         Whether to show a loading indicator while the pane is updating.
         Can be set as parameter or by setting panel.config.loading_indicator.""")
 
+    priority: ClassVar[float | bool | None] = 0
+
     def __init__(self, object=None, **params):
         if 'defer_load' not in params:
             params['defer_load'] = config.defer_load
+        if 'loading_indicator' not in params:
+            params['loading_indicator'] = ParamMethod.loading_indicator
         super().__init__(object, **params)
         self._async_task = None
         self._evaled = not (self.lazy or self.defer_load)
@@ -798,30 +829,20 @@ class ParamMethod(ReplacementPane):
             if not self.defer_load:
                 self._replace_pane()
 
-    @param.depends('object', watch=True)
+    @classmethod
+    def applies(cls, obj: Any) -> float | bool | None:
+        return bool(resolve_ref(obj))
+
     def _validate_object(self):
-        dependencies = getattr(self.object, '_dinfo', None)
-        if not dependencies or not dependencies.get('watch'):
-            return
-        fn_type = 'method' if type(self) is ParamMethod else 'function'
-        self.param.warning(
-            f"The {fn_type} supplied for Panel to display was declared "
-            f"with `watch=True`, which will cause the {fn_type} to be "
-            "called twice for any change in a dependent Parameter. "
-            "`watch` should be False when Panel is responsible for "
-            f"displaying the result of the {fn_type} call, while "
-            f"`watch=True` should be reserved for {fn_type}s that work "
-            "via side-effects, e.g. by modifying internal state of a "
-            "class or global state in an application's namespace."
-        )
+        return
 
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
 
     @classmethod
-    def eval(self, function):
-        return eval_function_with_deps(function)
+    def eval(cls, ref):
+        return resolve_value(ref)
 
     async def _eval_async(self, awaitable):
         if self._async_task:
@@ -841,9 +862,20 @@ class ParamMethod(ReplacementPane):
                         self._inner_layout.append(new_obj)
                         self._pane = self._inner_layout[-1]
                     else:
-                        self._update_inner(new_obj)
+                        try:
+                            self._update_inner(new_obj)
+                        except Skip:
+                            pass
             else:
-                self._update_inner(await awaitable)
+                try:
+                    new = await awaitable
+                    if new is Skip or new is Undefined:
+                        raise Skip
+                    self._update_inner(new)
+                except Skip:
+                    self.param.log(
+                        param.DEBUG, 'Skip event was raised, skipping update.'
+                    )
         except Exception as e:
             if not curdoc or (has_context and curdoc.session_context):
                 raise e
@@ -862,20 +894,21 @@ class ParamMethod(ReplacementPane):
             if self.object is None:
                 new_object = Spacer()
             else:
-                new_object = self.eval(self.object)
+                try:
+                    new_object = self.eval(self.object)
+                    if new_object is Skip and new_object is Undefined:
+                        self._inner_layout.loading = False
+                        raise Skip
+                except Skip:
+                    self.param.log(
+                        param.DEBUG, 'Skip event was raised, skipping update.'
+                    )
+                    return
+            if isinstance(new_object, Generator):
+                new_object = to_async_gen(new_object)
             if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
-            elif isinstance(new_object, Generator):
-                append_mode = self.generator_mode == 'append'
-                if append_mode:
-                    self._inner_layout[:] = []
-                for new_obj in new_object:
-                    if append_mode:
-                        self._inner_layout.append(new_obj)
-                        self._pane = self._inner_layout[-1]
-                    else:
-                        self._update_inner(new_obj)
             else:
                 self._update_inner(new_object)
         finally:
@@ -884,7 +917,7 @@ class ParamMethod(ReplacementPane):
     def _update_pane(self, *events):
         callbacks = []
         for watcher in self._internal_callbacks:
-            obj = watcher.inst if watcher.inst is None else watcher.cls
+            obj = watcher.cls if watcher.inst is None else watcher.inst
             if obj is self:
                 callbacks.append(watcher)
                 continue
@@ -892,6 +925,86 @@ class ParamMethod(ReplacementPane):
         self._internal_callbacks = callbacks
         self._link_object_params()
         self._replace_pane()
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        if not self._evaled:
+            deferred = self.defer_load and not state.loaded
+            if deferred:
+                state.onload(
+                    partial(self._replace_pane, force=True),
+                    threaded=bool(state._thread_pool)
+                )
+            self._replace_pane(force=not deferred)
+        return super()._get_model(doc, root, parent, comm)
+
+    def _link_object_params(self):
+        dep_params = resolve_ref(self.object)
+        if callable(self.object) and not (dep_params or self.lazy or self.defer_load or iscoroutinefunction(self.object)):
+            fn = getattr(self.object, '__bound_function__', self.object)
+            fn_name = getattr(fn, '__name__', repr(self.object))
+            self.param.warning(
+                f"The function {fn_name!r} does not have any dependencies "
+                "and will never update. Are you sure you did not intend "
+                "to depend on or bind a parameter or widget to this function? "
+                "If not simply call the function before passing it to Panel. "
+                "Otherwise, when passing a parameter as an argument, "
+                "ensure you pass at least one parameter and reference the "
+                "actual parameter object not the current value, i.e. use "
+                "object.param.parameter not object.parameter."
+            )
+        grouped = defaultdict(list)
+        for dep in dep_params:
+            grouped[id(dep.owner)].append(dep)
+        for group in grouped.values():
+            pobj = group[0].owner
+            watcher = pobj.param.watch(self._replace_pane, [dep.name for dep in group])
+            if isinstance(pobj, Reactive) and self.loading_indicator:
+                props = {dep.name: 'loading' for dep in group
+                         if dep.name in pobj._linkable_params}
+                if props:
+                    pobj.jslink(self._inner_layout, **props)
+            self._internal_callbacks.append(watcher)
+
+
+@param.depends(config.param.defer_load, watch=True)
+def _update_defer_load_default(default_value):
+    ParamRef.param.defer_load.default = default_value
+
+@param.depends(config.param.loading_indicator, watch=True)
+def _update_loading_indicator_default(default_value):
+    ParamRef.param.loading_indicator.default = default_value
+
+
+class ParamMethod(ParamRef):
+    """
+    ParamMethod panes wrap methods on parameterized classes and
+    rerenders the plot when any of the method's parameters change. By
+    default ParamMethod will watch all parameters on the class owning
+    the method or can be restricted to certain parameters by annotating
+    the method using the param.depends decorator. The method may
+    return any object which itself can be rendered as a Pane.
+    """
+
+    priority: ClassVar[float | bool | None] = 0.5
+
+    @param.depends('object', watch=True)
+    def _validate_object(self):
+        dependencies = getattr(self.object, '_dinfo', {})
+        if not dependencies or not dependencies.get('watch'):
+            return
+        self.param.warning(
+            "The method supplied for Panel to display was declared "
+            "with `watch=True`, which will cause the method to be "
+            "called twice for any change in a dependent Parameter. "
+            "`watch` should be False when Panel is responsible for "
+            "displaying the result of the method call, while "
+            "`watch=True` should be reserved for methods that work "
+            "via side-effects, e.g. by modifying internal state of a "
+            "class or global state in an application's namespace."
+        )
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
@@ -924,30 +1037,16 @@ class ParamMethod(ReplacementPane):
                         deps.append(p)
             self._replace_pane()
 
-        for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
-            p = params[0]
+        for _, sub_params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
+            p = sub_params[0]
             pobj = (p.inst or p.cls)
-            ps = [_p.name for _p in params]
+            ps = [_p.name for _p in sub_params]
             if isinstance(pobj, Reactive) and self.loading_indicator:
                 props = {p: 'loading' for p in ps if p in pobj._linkable_params}
                 if props:
                     pobj.jslink(self._inner_layout, **props)
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._internal_callbacks.append(watcher)
-
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        if not self._evaled:
-            deferred = self.defer_load and not state.loaded
-            if deferred:
-                state.onload(
-                    partial(self._replace_pane, force=True),
-                    threaded=bool(state._thread_pool)
-                )
-            self._replace_pane(force=not deferred)
-        return super()._get_model(doc, root, parent, comm)
 
     #----------------------------------------------------------------
     # Public API
@@ -957,15 +1056,12 @@ class ParamMethod(ReplacementPane):
     def applies(cls, obj: Any) -> float | bool | None:
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
-@param.depends(config.param.defer_load, watch=True)
-def _update_defer_load_default(default_value):
-    ParamMethod.param.defer_load.default = default_value
+    @classmethod
+    def eval(cls, ref):
+        return eval_function_with_deps(ref)
 
-@param.depends(config.param.loading_indicator, watch=True)
-def _update_loading_indicator_default(default_value):
-    ParamMethod.param.loading_indicator.default = default_value
 
-class ParamFunction(ParamMethod):
+class ParamFunction(ParamRef):
     """
     ParamFunction panes wrap functions decorated with the param.depends
     decorator and rerenders the output when any of the function's
@@ -978,34 +1074,21 @@ class ParamFunction(ParamMethod):
 
     _applies_kw: ClassVar[bool] = True
 
-    def _link_object_params(self):
-        deps = getattr(self.object, '_dinfo', {})
-        dep_params = list(deps.get('dependencies', [])) + list(deps.get('kw', {}).values())
-        if not dep_params and not self.lazy and not self.defer_load and not iscoroutinefunction(self.object):
-            fn = getattr(self.object, '__bound_function__', self.object)
-            fn_name = getattr(fn, '__name__', repr(self.object))
-            self.param.warning(
-                f"The function {fn_name!r} does not have any dependencies "
-                "and will never update. Are you sure you did not intend "
-                "to depend on or bind a parameter or widget to this function? "
-                "If not simply call the function before passing it to Panel. "
-                "Otherwise, when passing a parameter as an argument, "
-                "ensure you pass at least one parameter and reference the "
-                "actual parameter object not the current value, i.e. use "
-                "object.param.parameter not object.parameter."
-            )
-        grouped = defaultdict(list)
-        for dep in dep_params:
-            grouped[id(dep.owner)].append(dep)
-        for group in grouped.values():
-            pobj = group[0].owner
-            watcher = pobj.param.watch(self._replace_pane, [dep.name for dep in group])
-            if isinstance(pobj, Reactive) and self.loading_indicator:
-                props = {dep.name: 'loading' for dep in group
-                         if dep.name in pobj._linkable_params}
-                if props:
-                    pobj.jslink(self._inner_layout, **props)
-            self._internal_callbacks.append(watcher)
+    @param.depends('object', watch=True)
+    def _validate_object(self):
+        dependencies = getattr(self.object, '_dinfo', {})
+        if not dependencies or not dependencies.get('watch'):
+            return
+        self.param.warning(
+            "The function supplied for Panel to display was declared "
+            "with `watch=True`, which will cause the function to be "
+            "called twice for any change in a dependent Parameter. "
+            "`watch` should be False when Panel is responsible for "
+            "displaying the result of the function call, while "
+            "`watch=True` should be reserved for functions that work "
+            "via side-effects, e.g. by modifying internal state of a "
+            "class or global state in an application's namespace."
+        )
 
     #----------------------------------------------------------------
     # Public API
@@ -1025,8 +1108,12 @@ class ParamFunction(ParamMethod):
             return None
         return False
 
+    @classmethod
+    def eval(self, ref):
+        return eval_function_with_deps(ref)
 
-class ReactiveExpr(PaneBase):
+
+class ReactiveExpr(Pane):
     """
     ReactiveExpr generates a UI for param.rx objects by rendering the
     widgets and outputs.
@@ -1156,6 +1243,12 @@ class ReactiveExpr(PaneBase):
                     widgets.append(w)
         return self.widget_layout(*widgets)
 
+    def _get_model(
+        self, doc: Document, root: Optional['Model'] = None,
+        parent: Optional['Model'] = None, comm: Optional[Comm] = None
+    ) -> 'Model':
+        return self.layout._get_model(doc, root, parent, comm)
+
     def _generate_layout(self):
         panel = ParamFunction(self.object._callback)
         if not self.show_widgets:
@@ -1229,7 +1322,7 @@ class JSONInit(param.Parameterized):
                 with open(fullpath(fname), 'r') as f:
                     spec = json.load(f)
             except Exception:
-                warnobj.warning('Could not load JSON file %r' % spec)
+                warnobj.warning(f'Could not load JSON file {spec!r}')
         else:
             spec = json.loads(env_var)
 
