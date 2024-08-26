@@ -46,20 +46,22 @@ class SplitJS(JSComponent):
     _esm = """
     import Split from 'https://esm.sh/split.js@1.6.5'
 
-    const splitDiv = document.createElement('div');
-    splitDiv.className = 'split';
-
-    const split0 = document.createElement('div');
-    splitDiv.appendChild(split0);
-
-    let split1 = document.createElement('div');
-    splitDiv.appendChild(split1);
-
-    Split([split0, split1])
-
     export function render({ model }) {
-        split0.append(model.get_child("left"))
-        split1.append(model.get_child("right"))
+      const splitDiv = document.createElement('div');
+      splitDiv.className = 'split';
+
+      const split0 = document.createElement('div');
+      splitDiv.appendChild(split0);
+
+      const split1 = document.createElement('div');
+      splitDiv.appendChild(split1);
+
+      const split = Split([split0, split1])
+
+      model.on('remove', () => split.destroy())
+
+      split0.append(model.get_child("left"))
+      split1.append(model.get_child("right"))
       return splitDiv
     }"""
 
@@ -128,12 +130,12 @@ class SplitReact(ReactComponent):
     import Split from 'https://esm.sh/react-split@2.0.14'
 
     export function render({ model }) {
-        return (
-            <Split className="split">
-                <div>{model.get_child("left")}</div>
-                <div>{model.get_child("right")}</div>
-            </Split>
-        )
+      return (
+        <Split className="split">
+          {model.get_child("left")}
+          {model.get_child("right")}
+        </Split>
+      )
     }
     """
 
