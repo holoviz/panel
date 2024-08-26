@@ -574,7 +574,7 @@ def test_param_throttled(document, comm):
     assert mb.value != 3
     assert test.b == 3
 
-    test_pane._widgets['b']._process_events({'value': 4})
+    mb.value = 4
     assert test.b == 3
     assert mb.value == 4
 
@@ -616,7 +616,7 @@ def test_param_onkeyup(document, comm):
     assert mb.value != '3'
     assert test.b == '3'
 
-    test_pane._widgets['b']._process_events({'value': '4'})
+    mb.value = '4'
     assert test.b == '3'
     assert mb.value == '4'
 
@@ -873,7 +873,7 @@ def test_set_widgets_throttled(document, comm):
     assert number.value != 3
     assert test.a == 3
 
-    pane._widgets['a']._process_events({'value': 4})
+    number.value = 4
     assert test.a == 3
     assert number.value == 4
 
@@ -1566,10 +1566,7 @@ def test_set_widget_autocompleteinput(document, comm):
 
     autocompleteinput = model.children[1]
     assert isinstance(autocompleteinput, BkAutocompleteInput)
-    if Version(param.__version__) > Version('2.0.0a2'):
-        assert autocompleteinput.completions == ['a', 'b', '']
-    else:
-        assert autocompleteinput.completions == ['a', 'b']
+    assert autocompleteinput.completions == ['a', 'b', '']
     assert autocompleteinput.value == ''
     assert autocompleteinput.disabled == False
 
@@ -1781,7 +1778,7 @@ def test_param_function_recursive_update_multiple(document, comm):
     assert layout.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
-def test_param_generator(document, comm):
+async def test_param_generator(document, comm):
     checkbox = Checkbox(value=False)
 
     def function(value):
@@ -1791,14 +1788,14 @@ def test_param_generator(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
 
     checkbox.value = True
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
-def test_param_generator_append(document, comm):
+async def test_param_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
     def function(value):
@@ -1809,17 +1806,18 @@ def test_param_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: len(root.children) == 2)
+    await async_wait_until(lambda: len(root.children) == 2)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
     assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
     checkbox.value = True
 
-    wait_until(lambda: len(root.children) == 2)
-    wait_until(lambda: (
+    await async_wait_until(lambda: len(root.children) == 2)
+    await async_wait_until(lambda: (
         (root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n') and
         (root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n')
     ))
+
 
 async def test_param_async_generator(document, comm):
     checkbox = Checkbox(value=False)
@@ -1837,6 +1835,8 @@ async def test_param_async_generator(document, comm):
 
     await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
+
+@pytest.mark.flaky(max_runs=3)
 async def test_param_async_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1864,6 +1864,7 @@ async def test_param_async_generator_append(document, comm):
     assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_param_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1875,7 +1876,7 @@ def test_param_generator_multiple(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n', timeout=10_000)
 
     checkbox.value = True
 

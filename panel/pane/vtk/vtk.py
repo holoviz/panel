@@ -23,7 +23,7 @@ from pyviz_comms import JupyterComm
 
 from ...param import ParamMethod
 from ...util import isfile, lazy_load
-from ..base import PaneBase
+from ..base import Pane
 from ..plot import Bokeh
 from .enums import PRESET_CMAPS
 
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 base64encode = lambda x: base64.b64encode(x).decode('utf-8')
 
 
-class AbstractVTK(PaneBase):
+class AbstractVTK(Pane):
 
     axes = param.Dict(default={}, nested_refs=True, doc="""
         Parameters of the axes to construct in the 3d view.
@@ -782,7 +782,10 @@ class VTKVolume(AbstractVTK):
         if any([d_f > 1 for d_f in dowsnscale_factor]):
             try:
                 import scipy.ndimage as nd
-                sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
+                if hasattr(nd, "zoom"):
+                    sub_array = nd.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
+                else:  # Slated for removal in 2.0
+                    sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
             except ImportError:
                 sub_array = array[::int(np.ceil(dowsnscale_factor[0])),
                                   ::int(np.ceil(dowsnscale_factor[1])),

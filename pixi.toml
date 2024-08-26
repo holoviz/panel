@@ -1,7 +1,11 @@
 [project]
 name = "panel"
-channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]
+channels = ["pyviz/label/dev", "bokeh", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[activation.env]
+MPLBACKEND = "Agg"
+PYTHONIOENCODING = "utf-8"
 
 [tasks]
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
@@ -12,22 +16,27 @@ test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py312", "test-core", "test-unit-task"]
+test-type = ["py311", "type"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
+lite = ["py311", "lite"]
 
 [dependencies]
+nodejs = ">=18"
+nomkl = "*"
+pip = "*"
+# Required
 bleach = "*"
-bokeh = "==3.5.0.dev6"
+bokeh = ">=3.5.0,<3.6.0"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
 mdit-py-plugins = "*"
-nodejs = "*"
+numpy = "*"
 packaging = "*"
 pandas = ">=1.2"
 param = ">=2.1.0,<3.0"
-pip = "*"
 pyviz_comms = ">=2.0.0"
 requests = "*"
 tqdm = ">=4.48.0"
@@ -69,7 +78,7 @@ ipywidgets = "*"
 ipywidgets_bokeh = "*"
 jupyter_bokeh = ">=3.0.7"
 networkx = ">=2.5"
-pydeck = "*"
+pydeck = ">=0.8"
 pyecharts = "*"
 pygraphviz = "*"
 pyinstrument = ">=4.0"
@@ -129,7 +138,9 @@ channels = ["pyviz/label/dev", "bokeh", "microsoft", "conda-forge"]
 [feature.test-ui.dependencies]
 playwright = { version = "*", channel = "microsoft" }
 pytest-playwright = "*"
+pytest-asyncio = "*"
 jupyter_server = "*"
+packaging = "*"
 
 [feature.test-ui.tasks]
 _install-ui = 'playwright install chromium'
@@ -139,11 +150,33 @@ cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup
 depends_on = ["_install-ui"]
 
 # =============================================
+# ================== TYPES ====================
+# =============================================
+[feature.type.dependencies]
+mypy = "*"
+pandas-stubs = "*"
+types-bleach = "*"
+types-croniter = "*"
+types-Markdown = "*"
+types-psutil = "*"
+types-requests = "*"
+types-tqdm = "*"
+typing-extensions = "*"
+
+[feature.type.tasks]
+test-type = 'mypy panel'
+
+# =============================================
 # =================== DOCS ====================
 # =============================================
+[feature.doc.activation.env]
+MOZ_HEADLESS = "1"
+PANEL_IPYWIDGET = "1"
+
 [feature.doc.dependencies]
-nbsite = ">=0.8.4"
 lxml = "*"
+nbsite = ">=0.8.4"
+selenium = "*"
 
 [feature.doc.tasks]
 _docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
@@ -184,3 +217,18 @@ pre-commit = "*"
 [feature.lint.tasks]
 lint = 'pre-commit run --all-files'
 lint-install = 'pre-commit install'
+
+# =============================================
+# =================== LITE ====================
+# =============================================
+[feature.lite.dependencies]
+jupyterlab-myst = "*"
+jupyterlite-core = "*"
+jupyterlite-pyodide-kernel = "*"
+python-build = "*"
+
+[feature.lite.tasks]
+lite-build = "bash scripts/jupyterlite/build.sh"
+# Service worker only work on 127.0.0.1
+# https://jupyterlite.readthedocs.io/en/latest/howto/configure/advanced/service-worker.html#limitations
+lite-server = "python -m http.server --directory ./lite/dist --bind 127.0.0.1"

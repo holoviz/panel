@@ -36,31 +36,36 @@ class TestChatMessage:
         assert isinstance(avatar_pane, HTML)
         assert avatar_pane.object == "🧑"
 
-        header_row = columns[1][0]
-        user_pane = header_row[0]
+        meta_row = columns[1][0]
+        user_pane = meta_row[0]
         assert isinstance(user_pane, HTML)
         assert user_pane.object == "User"
 
-        assert header_row[1] == "Header Test"
-        assert header_row[2] == "Header 2"
+        header_row = columns[1][1]
+        assert isinstance(header_row[0], Markdown)
+        assert header_row[0].object == "Header Test"
+        assert isinstance(header_row[1], Markdown)
+        assert header_row[1].object == "Header 2"
 
-        center_row = columns[1][1]
+        center_row = columns[1][2]
         assert isinstance(center_row, Row)
 
         object_pane = center_row[0]
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "ABC"
 
-        icons = center_row[1]
+        icons = columns[1][5][2]
         assert isinstance(icons, ChatReactionIcons)
 
-        footer_col = columns[1][2]
+        footer_col = columns[1][3]
         assert isinstance(footer_col, Column)
 
-        assert footer_col[0] == "Footer Test"
-        assert footer_col[1] == "Footer 2"
+        assert isinstance(footer_col[0], Markdown)
+        assert footer_col[0].object == "Footer Test"
+        assert isinstance(footer_col[1], Markdown)
+        assert footer_col[1].object == "Footer 2"
 
-        timestamp_pane = footer_col[2]
+        timestamp_pane = columns[1][4][0]
         assert isinstance(timestamp_pane, HTML)
 
     def test_reactions_dynamic(self):
@@ -75,7 +80,7 @@ class TestChatMessage:
         assert message.reaction_icons.options == {"favorite": "heart"}
 
         message.reaction_icons = ChatReactionIcons(options={"like": "thumb-up"})
-        assert message._center_row[1] == message.reaction_icons
+        assert message._icons_row[-1] == message.reaction_icons
 
     def test_reactions_link(self):
         # on init
@@ -146,19 +151,19 @@ class TestChatMessage:
     def test_update_object(self):
         message = ChatMessage(object="Test")
         columns = message._composite.objects
-        object_pane = columns[1][1][0]
+        object_pane = columns[1][2][0]
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "Test"
 
         message.object = TextInput(value="Also testing...")
-        object_pane = columns[1][1][0]
+        object_pane = columns[1][2][0]
         assert isinstance(object_pane, TextInput)
         assert object_pane.value == "Also testing..."
 
         message.object = _FileInputMessage(
             contents=b"I am a file", file_name="test.txt", mime_type="text/plain"
         )
-        object_pane = columns[1][1][0]
+        object_pane = columns[1][2][0]
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "I am a file"
 
@@ -166,39 +171,39 @@ class TestChatMessage:
     def test_update_timestamp(self):
         message = ChatMessage()
         columns = message._composite.objects
-        timestamp_pane = columns[1][2][0]
+        timestamp_pane = columns[1][4][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now().strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="UTC")
         columns = message._composite.objects
-        timestamp_pane = columns[1][2][0]
+        timestamp_pane = columns[1][4][0]
         assert isinstance(timestamp_pane, HTML)
-        dt_str = datetime.datetime.utcnow().strftime("%H:%M")
+        dt_str = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="US/Pacific")
         columns = message._composite.objects
-        timestamp_pane = columns[1][2][0]
+        timestamp_pane = columns[1][4][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now(tz=ZoneInfo("US/Pacific")).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         special_dt = datetime.datetime(2023, 6, 24, 15)
         message.timestamp = special_dt
-        timestamp_pane = columns[1][2][0]
+        timestamp_pane = columns[1][4][0]
         dt_str = special_dt.strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         mm_dd_yyyy = "%b %d, %Y"
         message.timestamp_format = mm_dd_yyyy
-        timestamp_pane = columns[1][2][0]
+        timestamp_pane = columns[1][4][0]
         dt_str = special_dt.strftime(mm_dd_yyyy)
         assert timestamp_pane.object == dt_str
 
         message.show_timestamp = False
-        timestamp_pane = columns[1][2][0]
+        timestamp_pane = columns[1][4][0]
         assert not timestamp_pane.visible
 
     def test_does_not_turn_widget_into_str(self):

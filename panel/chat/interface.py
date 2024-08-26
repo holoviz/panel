@@ -17,7 +17,7 @@ from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
 from ..pane.image import ImageBase
 from ..viewable import Viewable
-from ..widgets.base import Widget
+from ..widgets.base import WidgetBase
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
 from .feed import CallbackState, ChatFeed
@@ -110,7 +110,7 @@ class ChatInterface(ChatFeed):
     user = param.String(default="User", doc="""
         Name of the ChatInterface user.""")
 
-    widgets = param.ClassSelector(class_=(Widget, list), allow_refs=False, doc="""
+    widgets = param.ClassSelector(class_=(WidgetBase, list), allow_refs=False, doc="""
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
 
@@ -251,7 +251,7 @@ class ChatInterface(ChatFeed):
             )
 
         widgets = self.widgets
-        if isinstance(self.widgets, Widget):
+        if isinstance(self.widgets, WidgetBase):
             widgets = [self.widgets]
 
         self._widgets = {}
@@ -539,7 +539,7 @@ class ChatInterface(ChatFeed):
             self._reset_button_data()
 
     @property
-    def active_widget(self) -> Widget:
+    def active_widget(self) -> WidgetBase:
         """
         The currently active widget.
 
@@ -584,7 +584,8 @@ class ChatInterface(ChatFeed):
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
         default_role: str | None = "assistant",
-        custom_serializer: Callable = None
+        custom_serializer: Callable = None,
+        **serialize_kwargs
     ) -> list[dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
@@ -606,6 +607,8 @@ class ChatInterface(ChatFeed):
             A custom function to format the ChatMessage's object. The function must
             accept one positional argument, the ChatMessage object, and return a string.
             If not provided, uses the serialize method on ChatMessage.
+        serialize_kwargs : dict
+            Additional keyword arguments to pass to the serializer.
 
         Returns
         -------
@@ -616,7 +619,8 @@ class ChatInterface(ChatFeed):
                 "user": [self.user],
                 "assistant": [self.callback_user],
             }
-        return super()._serialize_for_transformers(messages, role_names, default_role, custom_serializer)
+        return super()._serialize_for_transformers(
+            messages, role_names, default_role, custom_serializer, **serialize_kwargs)
 
     @param.depends("_callback_state", watch=True)
     async def _update_input_disabled(self):
@@ -644,7 +648,9 @@ class ChatInterface(ChatFeed):
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
+        **message_params
     ) -> ChatMessage | None:
+
         """
         Sends a value and creates a new message in the chat log.
 
@@ -662,6 +668,8 @@ class ChatInterface(ChatFeed):
             Will default to the avatar parameter.
         respond : bool
             Whether to execute the callback.
+        message_params : dict
+            Additional parameters to pass to the ChatMessage.
 
         Returns
         -------
@@ -672,7 +680,7 @@ class ChatInterface(ChatFeed):
                 user = self.user
             if avatar is None:
                 avatar = self.avatar
-        return super().send(value, user=user, avatar=avatar, respond=respond)
+        return super().send(value, user=user, avatar=avatar, respond=respond, **message_params)
 
     def stream(
         self,
@@ -681,6 +689,7 @@ class ChatInterface(ChatFeed):
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
         replace: bool = False,
+        **message_params
     ) -> ChatMessage | None:
         """
         Streams a token and updates the provided message, if provided.
@@ -705,14 +714,16 @@ class ChatInterface(ChatFeed):
             The message to update.
         replace : bool
             Whether to replace the existing text when streaming a string or dict.
+        message_params : dict
+            Additional parameters to pass to the ChatMessage.
 
         Returns
         -------
         The message that was updated.
         """
-        if not isinstance(value, ChatMessage):
+        if not isinstance(value, ChatMessage) and not message:
             # ChatMessage cannot set user or avatar when explicitly streaming
             # so only set to the default when not a ChatMessage
             user = user or self.user
             avatar = avatar or self.avatar
-        return super().stream(value, user=user, avatar=avatar, message=message, replace=replace)
+        return super().stream(value, user=user, avatar=avatar, message=message, replace=replace, **message_params)

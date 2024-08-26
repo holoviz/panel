@@ -1,10 +1,29 @@
-import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs, Dict} from "@bokehjs/core/types"
 import {entries} from "@bokehjs/core/util/object"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 import {serializeEvent} from "./event-to-object"
+
+@server_event("html_stream")
+export class HTMLStreamEvent extends ModelEvent {
+  constructor(readonly model: HTML, readonly patch: string, readonly start: number) {
+    super()
+    this.patch = patch
+    this.start = start
+    this.origin = model
+  }
+
+  protected override get event_values(): Attrs {
+    return {model: this.origin, patch: this.patch, start: this.start}
+  }
+
+  static override from_values(values: object) {
+    const {model, patch, start} = values as {model: HTML, patch: string, start: number}
+    return new HTMLStreamEvent(model, patch, start)
+  }
+}
 
 export class DOMEvent extends ModelEvent {
   constructor(readonly node: string, readonly data: unknown) {
@@ -39,8 +58,33 @@ export function run_scripts(node: Element): void {
   }
 }
 
+function throttle(func: Function, limit: number): any {
+  let lastFunc: number
+  let lastRan: number
+
+  return function(...args: any) {
+    // @ts-ignore
+    const context = this
+
+    if (!lastRan) {
+      func.apply(context, args)
+      lastRan = Date.now()
+    } else {
+      clearTimeout(lastFunc)
+
+      lastFunc = setTimeout(function() {
+        if ((Date.now() - lastRan) >= limit) {
+          func.apply(context, args)
+          lastRan = Date.now()
+        }
+      }, limit - (Date.now() - lastRan))
+    }
+  }
+}
+
 export class HTMLView extends PanelMarkupView {
   declare model: HTML
+  _buffer: string | null = null
 
   protected readonly _event_listeners: Map<string, Map<string, (event: Event) => void>> = new Map()
 
@@ -49,6 +93,7 @@ export class HTMLView extends PanelMarkupView {
 
     const {text, visible, events} = this.model.properties
     this.on_change(text, () => {
+      this._buffer = null
       const html = this.process_tex()
       this.set_html(html)
     })
@@ -60,6 +105,19 @@ export class HTMLView extends PanelMarkupView {
     this.on_change(events, () => {
       this._remove_event_listeners()
       this._setup_event_listeners()
+    })
+
+    const set_text = throttle(() => {
+      const text = this._buffer
+      this._buffer = null
+      this.model.setv({text}, {silent: true})
+      const html = this.process_tex()
+      this.set_html(html)
+    }, 10)
+    this.model.on_event(HTMLStreamEvent, (event: HTMLStreamEvent) => {
+      const beginning = this._buffer == null ? this.model.text : this._buffer
+      this._buffer = beginning.slice(0, event.start)+event.patch
+      set_text()
     })
   }
 

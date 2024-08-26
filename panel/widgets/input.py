@@ -24,6 +24,7 @@ from bokeh.models.widgets import (
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     Switch as _BkSwitch,
 )
+from bokeh.models.widgets.inputs import ClearInput
 from pyviz_comms import JupyterComm
 
 from ..config import config
@@ -32,7 +33,9 @@ from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
     TextInput as _BkTextInput,
 )
-from ..util import lazy_load, param_reprs, try_datetime64_to_datetime
+from ..util import (
+    escape, lazy_load, param_reprs, try_datetime64_to_datetime,
+)
 from .base import CompositeWidget, Widget
 
 if TYPE_CHECKING:
@@ -203,6 +206,20 @@ class FileInput(Widget):
         An HTML string describing the function of this component
         rendered as a tooltip icon.""")
 
+    directory = param.Boolean(default=False, doc="""
+        Whether to allow selection of directories instead of files.
+        The filename will be relative paths to the uploaded directory.
+
+        .. note::
+            When a directory is uploaded it will give add a confirmation pop up.
+            The confirmation pop up cannot be disabled, as this is a security feature
+            in the browser.
+
+        .. note::
+            The `accept` parameter only works with file extension.
+            When using `accept` with `directory`, the number of files
+            reported will be the total amount of files, not the filtered.""")
+
     filename = param.ClassSelector(
         default=None, class_=(str, list), is_instance=True, doc="""
         Name of the uploaded file(s).""")
@@ -246,9 +263,13 @@ class FileInput(Widget):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
             if isinstance(msg['value'], str):
-                msg['value'] = b64decode(msg['value'])
+                msg['value'] = b64decode(msg['value']) if msg['value'] else None
             else:
                 msg['value'] = [b64decode(content) for content in msg['value']]
+        if 'filename' in msg and len(msg['filename']) == 0:
+            msg['filename'] = None
+        if 'mime_type' in msg and len(msg['mime_type']) == 0:
+            msg['mime_type'] = None
         return msg
 
     def save(self, filename):
@@ -284,6 +305,12 @@ class FileInput(Widget):
                     f.write(val)
             else:
                 fn.write(val)
+
+    def clear(self):
+        """
+        Clear the file(s) in the FileInput widget
+        """
+        self._send_event(ClearInput)
 
 
 class FileDropper(Widget):
@@ -356,7 +383,8 @@ class FileDropper(Widget):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         self._widget_type = lazy_load(
-            'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root
+            'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root,
+            ext='filedropper'
         )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('delete_event', 'upload_event', model=model, doc=doc, comm=comm)
@@ -404,7 +432,7 @@ class StaticText(Widget):
     """
 
     value = param.Parameter(default=None, doc="""
-        The current value""")
+        The current value to be displayed.""")
 
     _format: ClassVar[str] = '<b>{title}</b>: {value}'
 
@@ -420,10 +448,22 @@ class StaticText(Widget):
 
     _widget_type: ClassVar[type[Model]] = _BkDiv
 
+    @property
+    def _linked_properties(self) -> tuple[str]:
+        return ()
+
+    def _init_params(self) -> dict[str, Any]:
+        return {
+            k: v for k, v in self.param.values().items()
+            if k in self._synced_params and (v is not None or k == 'value')
+        }
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'text' in msg:
-            text = str(msg.pop('text'))
+            text = msg.pop('text')
+            if not isinstance(text, str):
+                text = escape("" if text is None else str(text))
             partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
                 text = self._format.format(title=self.name, value=text.replace(partial, ''))
@@ -916,6 +956,11 @@ class _SpinnerBase(_NumericInputBase):
             if "value_throttled" in msg:
                 msg["value"] = msg["value_throttled"]
         return super()._process_property_change(msg)
+
+    def _process_events(self, events: dict[str, Any]) -> None:
+        if config.throttled:
+            events.pop("value", None)
+        super()._process_events(events)
 
 
 class IntInput(_SpinnerBase, _IntInputBase):

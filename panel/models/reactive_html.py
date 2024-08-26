@@ -208,7 +208,6 @@ def find_attrs(html):
     return p.attrs
 
 
-
 class DOMEvent(ModelEvent):
 
     event_name = 'dom_event'

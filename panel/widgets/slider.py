@@ -103,6 +103,11 @@ class _SliderBase(Widget):
 
         return super()._update_model(events, msg, root, model, doc, comm)
 
+    def _process_events(self, events: dict[str, Any]) -> None:
+        if config.throttled:
+            events.pop("value", None)
+        super()._process_events(events)
+
 
 class ContinuousSlider(_SliderBase):
 
@@ -532,7 +537,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
 class _RangeSliderBase(_SliderBase):
 
-    value = param.Tuple(length=2, allow_None=False, nested_refs=True, doc="""
+    value = param.Tuple(default=(None, None), length=2, allow_None=False, nested_refs=True, doc="""
         The selected range of the slider. Updated when a handle is dragged.""")
 
     value_start = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")

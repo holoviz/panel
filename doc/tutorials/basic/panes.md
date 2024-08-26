@@ -25,7 +25,7 @@ pn.extension("echarts", "plotly", "vega", "vizzu")
 
 ## Display Strings
 
-The [`Str`](../../reference/panes/Str.ipynb) pane can display any text.
+The [`Str`](../../reference/panes/Str.md) pane can display any text.
 
 Run the code:
 
@@ -47,11 +47,11 @@ We add `.servable()` to the component to add it to the app served by `panel serv
 To learn in detail how a pane like `Str` works, refer to its *reference guide*.
 :::
 
-Click [this link](../../reference/panes/Str.ipynb) to the `Str` *reference guide* and spend a few minutes to familiarize yourself with its organization and content.
+Click [this link](../../reference/panes/Str.md) to the `Str` *reference guide* and spend a few minutes to familiarize yourself with its organization and content.
 
 ## Display Markdown
 
-The [`Markdown`](../../reference/panes/Markdown.ipynb) pane can format and display [*markdown*](https://en.wikipedia.org/wiki/Markdown) strings.
+The [`Markdown`](../../reference/panes/Markdown.md) pane can format and display [*markdown*](https://en.wikipedia.org/wiki/Markdown) strings.
 
 Run the code:
 
@@ -74,11 +74,11 @@ Read more [here](https://en.wikipedia.org/wiki/Wind_turbine).
 It's key for success with Panel to be able to navigate the [Component Gallery](../../reference/index.md) and use the *reference guides*.
 :::
 
-Click [this link](https://panel.holoviz.org/reference/index.html#panes) to the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md). Identify the [Markdown Reference Guide](../../reference/panes/Markdown.ipynb) and open it. You don't have to spend time studying the details right now.
+Click [this link](https://panel.holoviz.org/reference/index.html#panes) to the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md). Identify the [Markdown Reference Guide](../../reference/panes/Markdown.md) and open it. You don't have to spend time studying the details right now.
 
 ### Display Alerts
 
-The [`Alert`](../../reference/panes/Alert.ipynb) pane can format and display [*markdown*](https://en.wikipedia.org/wiki/Markdown) strings inside a nicely styled *Alert* pane.
+The [`Alert`](../../reference/panes/Alert.md) pane can format and display [*markdown*](https://en.wikipedia.org/wiki/Markdown) strings inside a nicely styled *Alert* pane.
 
 Run the code:
 
@@ -247,7 +247,7 @@ In the example, we provide the arguments `dpi`, `format` and `tight` to the Matp
 
 The `Matplotlib` pane can display figures from any framework that produces Matplotlib `Figure` objects like Seaborn, Plotnine and Pandas `.plot`.
 
-We can find more details in the [Matplotlib Reference Guide](../../reference/panes/Matplotlib.ipynb).
+We can find more details in the [Matplotlib Reference Guide](../../reference/panes/Matplotlib.md).
 :::
 
 ::::
@@ -335,7 +335,7 @@ pn.pane.DataFrame(data).servable()
 ```
 
 :::{note}
-If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.ipynb) widget and [Perspective](../../reference/panes/Perspective.ipynb) pane.
+If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.md) widget and [Perspective](../../reference/panes/Perspective.md) pane.
 :::
 
 ## Display any Python object
@@ -362,9 +362,9 @@ In this guide, we have learned to display Python objects with *Panes*:
 
 - *Panes* are available in the `pn.pane` namespace
 - *Panes* take an `object` argument as well as other arguments
-- Display strings with the [`Str`]((../../reference/panes/Str.ipynb)), [`Markdown`]((../../reference/panes/Markdown.ipynb)) and [`Alert`]((../../reference/panes/Alert.ipynb)) panes
-- Display plot figures like [Altair](https://altair-viz.github.io/), [ECharts](https://echarts.apache.org/en/index.html), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/python/) and [Vizzu](https://vizzuhq.com/) with the [`Vega`](../../reference/panes/Vega.ipynb), [`ECharts`](../../reference/panes/ECharts.ipynb), [`HoloViews`](../../reference/panes/HoloViews.ipynb), [`Matplotlib`](../../reference/panes/Matplotlib.ipynb), [`Plotly`](../../reference/panes/Plotly.ipynb) and [`Vizzu`](../../reference/panes/Vizzu.ipynb) *panes*, respectively.
-- Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.ipynb) and [`Perspective`]((../../reference/panes/Perspective.ipynb)) *panes*.
+- Display strings with the [`Str`]((../../reference/panes/Str.md)), [`Markdown`]((../../reference/panes/Markdown.md)) and [`Alert`]((../../reference/panes/Alert.md)) panes
+- Display plot figures like [Altair](https://altair-viz.github.io/), [ECharts](https://echarts.apache.org/en/index.html), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/python/) and [Vizzu](https://vizzuhq.com/) with the [`Vega`](../../reference/panes/Vega.md), [`ECharts`](../../reference/panes/ECharts.md), [`HoloViews`](../../reference/panes/HoloViews.md), [`Matplotlib`](../../reference/panes/Matplotlib.md), [`Plotly`](../../reference/panes/Plotly.md) and [`Vizzu`](../../reference/panes/Vizzu.md) *panes*, respectively.
+- Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.md) and [`Perspective`]((../../reference/panes/Perspective.md)) *panes*.
 - Add JavaScript dependencies via `pn.extension`. For example `pn.extension("vega")` or `pn.extension("plotly")`
 - Discover all *Panes* and their *reference guides* in the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md).
 

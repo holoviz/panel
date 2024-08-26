@@ -164,7 +164,7 @@ def exec_with_return(
             exec(compile(init_ast, "<ast>", "exec"), global_context)
             if not last_ast.body:
                 out = None
-            elif type(last_ast.body[0]) == ast.Expr:
+            elif type(last_ast.body[0]) is ast.Expr:
                 out = eval(compile(_convert_expr(last_ast.body[0]), "<ast>", "eval"), global_context)
             else:
                 exec(compile(last_ast, "<ast>", "exec"), global_context)

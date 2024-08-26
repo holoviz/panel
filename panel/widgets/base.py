@@ -32,7 +32,48 @@ if TYPE_CHECKING:
     T = TypeVar('T')
 
 
-class Widget(Reactive):
+class WidgetBase(param.Parameterized):
+    """
+    WidgetBase provides an abstract baseclass for widget components
+    which can be used to implement a custom widget-like type without
+    implementing the methods associated with a Reactive Panel component,
+    e.g. it may be used as a mix-in to a PyComponent or JSComponent.
+    """
+
+    value = param.Parameter(allow_None=True, doc="""
+        The widget value which the widget type resolves to when used
+        as a reactive param reference.""")
+
+    __abstract = True
+
+    @classmethod
+    def from_param(cls: type[T], parameter: param.Parameter, **params) -> T:
+        """
+        Construct a widget from a Parameter and link the two
+        bi-directionally.
+
+        Parameters
+        ----------
+        parameter: param.Parameter
+          A parameter to create the widget from.
+
+        Returns
+        -------
+        Widget instance linked to the supplied parameter
+        """
+        from ..param import Param
+        layout = Param(
+            parameter, widgets={parameter.name: dict(type=cls, **params)},
+            display_threshold=-math.inf
+        )
+        return layout[0]
+
+    @property
+    def rx(self):
+        return self.param.value.rx
+
+
+class Widget(Reactive, WidgetBase):
     """
     Widgets allow syncing changes in bokeh widget models with the
     parameters on the Widget instance.
@@ -62,7 +103,7 @@ class Widget(Reactive):
 
     __abstract = True
 
-    def __init__(self, **params):
+    def __init__(self, **params: Any):
         if 'name' not in params:
             params['name'] = ''
         if '_supports_embed' in params:
@@ -73,38 +114,12 @@ class Widget(Reactive):
             self._param_pane = None
         super().__init__(**params)
 
-    @classmethod
-    def from_param(cls: type[T], parameter: param.Parameter, **params) -> T:
-        """
-        Construct a widget from a Parameter and link the two
-        bi-directionally.
-
-        Parameters
-        ----------
-        parameter: param.Parameter
-          A parameter to create the widget from.
-
-        Returns
-        -------
-        Widget instance linked to the supplied parameter
-        """
-        from ..param import Param
-        layout = Param(
-            parameter, widgets={parameter.name: dict(type=cls, **params)},
-            display_threshold=-math.inf
-        )
-        return layout[0]
-
     @property
     def _linked_properties(self) -> tuple[str]:
         props = list(super()._linked_properties)
         if 'description' in props:
             props.remove('description')
         return tuple(props)
-
-    @property
-    def rx(self):
-        return self.param.value.rx
 
     def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
         params = super()._process_param_change(params)
@@ -249,6 +264,6 @@ class CompositeWidget(Widget):
 
 
 def _widget_transform(obj):
-    return obj.param.value if isinstance(obj, Widget) else obj
+    return obj.param.value if isinstance(obj, WidgetBase) else obj
 
 register_reference_transform(_widget_transform)

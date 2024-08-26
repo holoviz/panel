@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
+import param
 import pytest
 
 from bokeh.models.widgets.tables import (
@@ -238,6 +239,36 @@ def test_none_table(document, comm):
     assert model.source.data == {}
 
 
+def test_tabulator_none_value(document, comm):
+    table = Tabulator(value=None)
+    assert table.indexes == []
+
+    model = table.get_root(document, comm)
+
+    assert model.source.data == {}
+    assert model.columns == []
+
+
+def test_tabulator_update_none_value(document, comm, df_mixed):
+    table = Tabulator(value=df_mixed)
+
+    model = table.get_root(document, comm)
+
+    table.value = None
+
+    assert model.source.data == {}
+    assert model.columns == []
+
+
+def test_tabulator_selection_resets():
+    df = makeMixedDataFrame()
+    table = Tabulator(df, selection=list(range(len(df))))
+
+    for i in reversed(range(len(df))):
+        table.value = df.iloc[:i]
+        assert table.selection == list(range(i))
+
+
 def test_tabulator_selected_dataframe():
     df = makeMixedDataFrame()
     table = Tabulator(df, selection=[0, 2])
@@ -279,6 +310,44 @@ def test_tabulator_multi_index_remote_pagination(document, comm):
     assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3']))
 
 
+def test_tabulator_multi_index_columns(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_index = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create a DataFrame with this MultiIndex as columns
+    df = pd.DataFrame(np.random.randn(4, 6), columns=multi_index)
+
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index', 'sorter': 'number'},
+        {'title': 'A', 'columns': [
+            {'title': 'one', 'columns': [
+                {'field': 'A_one_X', 'sorter': 'number'},
+                {'field': 'A_one_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'two', 'columns': [
+                {'field': 'A_two_X', 'sorter': 'number'}
+            ]},
+        ]},
+        {'title': 'B', 'columns': [
+            {'title': 'two', 'columns': [
+                {'field': 'B_two_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'three', 'columns': [
+                {'field': 'B_three_X', 'sorter': 'number'},
+                {'field': 'B_three_Y', 'sorter': 'number'}
+            ]},
+        ]}
+    ]
+
+
 def test_tabulator_expanded_content(document, comm):
     df = makeMixedDataFrame()
 
@@ -306,6 +375,99 @@ def test_tabulator_expanded_content(document, comm):
     assert 2 in model.children
     row2 = model.children[2]
     assert row2.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+
+def test_tabulator_remote_paginated_expanded_content(document, comm):
+    df = makeMixedDataFrame()
+
+    table = Tabulator(
+        df, expanded=[0, 4], row_content=lambda r: r.A, pagination='remote', page_size=3
+    )
+
+    model = table.get_root(document, comm)
+
+    assert len(model.children) == 1
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
+
+    table.page = 2
+
+    assert len(model.children) == 1
+    assert 1 in model.children
+    row1 = model.children[1]
+    assert row1.text == "&lt;pre&gt;4.0&lt;/pre&gt;"
+
+
+def test_tabulator_remote_sorted_paginated_expanded_content(document, comm):
+    df = makeMixedDataFrame()
+
+    table = Tabulator(
+        df, expanded=[0, 1], row_content=lambda r: r.A, pagination='remote', page_size=2,
+        sorters = [{'field': 'A', 'sorter': 'number', 'dir': 'desc'}], page=3
+    )
+
+    model = table.get_root(document, comm)
+
+    assert len(model.children) == 1
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
+
+    table.page = 2
+
+    assert len(model.children) == 1
+    assert 1 in model.children
+    row1 = model.children[1]
+    assert row1.text == "&lt;pre&gt;1.0&lt;/pre&gt;"
+
+    table.expanded = [0, 1, 2]
+
+    assert len(model.children) == 2
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_tabulator_filtered_expanded_content(document, comm, pagination):
+    df = makeMixedDataFrame()
+
+    table = Tabulator(
+        df,
+        expanded=[0, 1, 2, 3],
+        filters=[{'field': 'B', 'sorter': 'number', 'type': '=', 'value': '1.0'}],
+        pagination=pagination,
+        row_content=lambda r: r.A,
+    )
+
+    model = table.get_root(document, comm)
+
+    assert len(model.children) == 2
+
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;1.0&lt;/pre&gt;"
+
+    assert 1 in model.children
+    row1 = model.children[1]
+    assert row1.text == "&lt;pre&gt;3.0&lt;/pre&gt;"
+
+    model.expanded = [0]
+    assert table.expanded == [1]
+
+    table.filters = [{'field': 'B', 'sorter': 'number', 'type': '=', 'value': '0'}]
+
+    assert not model.expanded
+    assert table.expanded == [1]
+
+    table.expanded = [0, 1]
+
+    assert len(model.children) == 1
+
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
 
 
 def test_tabulator_index_column(document, comm):
@@ -395,6 +557,8 @@ def test_tabulator_selected_and_filtered_dataframe(document, comm):
 
     table.add_filter('foo3', 'C')
 
+    assert table.selection == list(range(5))
+
     pd.testing.assert_frame_equal(table.selected_dataframe, df[df["C"] == "foo3"])
 
     table.remove_filter('foo3')
@@ -403,7 +567,46 @@ def test_tabulator_selected_and_filtered_dataframe(document, comm):
 
     table.add_filter('foo3', 'C')
 
-    assert table.selection == [0]
+    assert table.selection == [0, 1, 2]
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_selection_indices_on_remote_paginated_and_filtered_data(document, comm, df_strings, pagination):
+    tbl = Tabulator(
+        df_strings,
+        pagination=pagination,
+        page_size=6,
+        show_index=False,
+        height=300,
+        width=400
+    )
+
+    descr_filter = TextInput(name='descr')
+
+    def contains_filter(df, pattern=None):
+        if not pattern:
+            return df
+        return df[df.descr.str.contains(pattern, case=False)]
+
+    filter_fn = param.bind(contains_filter, pattern=descr_filter)
+    tbl.add_filter(filter_fn)
+
+    model = tbl.get_root(document, comm)
+
+    descr_filter.value = 'cut'
+
+    pd.testing.assert_frame_equal(
+        tbl.current_view, df_strings[df_strings.descr.str.contains('cut', case=False)]
+    )
+
+    model.source.selected.indices = [0, 2]
+
+    assert tbl.selection == [3, 8]
+
+    model.page_size = 2
+    model.source.selected.indices = [1]
+
+    assert tbl.selection == [7]
 
 
 def test_tabulator_config_defaults(document, comm):
@@ -460,7 +663,7 @@ def test_tabulator_header_filters_column_config_list(document, comm):
         {'field': 'index', 'sorter': 'number'},
         {'field': 'A', 'sorter': 'number'},
         {'field': 'B', 'sorter': 'number'},
-        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'in'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
     assert model.configuration['selectable'] == True
@@ -479,8 +682,8 @@ def test_tabulator_header_filters_column_config_select_autocomplete_backwards_co
         {'field': 'index', 'sorter': 'number'},
         {'field': 'A', 'sorter': 'number'},
         {'field': 'B', 'sorter': 'number'},
-        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
-        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'sorter': 'timestamp'},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'in'},
+        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'sorter': 'timestamp', 'headerFilterFunc': 'in'},
     ]
     assert model.configuration['selectable'] == True
 
@@ -685,18 +888,42 @@ def test_tabulator_selectable_rows(document, comm):
     assert model.selectable_rows == [3, 4]
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3644')
 def test_tabulator_selectable_rows_nonallowed_selection_error(document, comm):
     df = makeMixedDataFrame()
-    table = Tabulator(df, selectable_rows=lambda df: [1])
+    table = Tabulator(df, selectable_rows=lambda df: [0])
 
     model = table.get_root(document, comm)
+    assert model.selectable_rows == [0]
 
-    assert model.selectable_rows == [1]
+    err_msg = (
+        "Values in 'selection' must not have values "
+        "which are not available with 'selectable_rows'."
+    )
 
-    #
-    with pytest.raises(ValueError):
-        table.selection = [0]
+    # This is available with selectable rows
+    table.selection = []
+    assert table.selection == []
+    table.selection = [0]
+    assert table.selection == [0]
+
+    # This is not and should raise the error
+    with pytest.raises(ValueError, match=err_msg):
+        table.selection = [1]
+    assert table.selection == [0]
+    with pytest.raises(ValueError, match=err_msg):
+        table.selection = [0, 1]
+    assert table.selection == [0]
+
+    # No selectable_rows everything should work
+    table = Tabulator(df)
+    table.selection = []
+    assert table.selection == []
+    table.selection = [0]
+    assert table.selection == [0]
+    table.selection = [1]
+    assert table.selection == [1]
+    table.selection = [0, 1]
+    assert table.selection == [0, 1]
 
 
 def test_tabulator_pagination(document, comm):
@@ -791,7 +1018,7 @@ def test_tabulator_styling(document, comm):
     def high_red(value):
         return 'color: red' if value > 2 else 'color: black'
 
-    table.style.applymap(high_red, subset=['A'])
+    table.style.map(high_red, subset=['A'])
 
     model = table.get_root(document, comm)
 
@@ -816,28 +1043,31 @@ def test_tabulator_empty_table(document, comm):
 
     assert table.value.shape == value_df.shape
 
-
 def test_tabulator_sorters_unnamed_index(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))
+    assert df.columns.dtype == np.int64
     table = Tabulator(df)
 
     table.sorters = [{'field': 'index', 'sorter': 'number', 'dir': 'desc'}]
+    res = table.current_view
+    exp = df.sort_index(ascending=False)
+    exp.columns = exp.columns.astype(object)
 
-    pd.testing.assert_frame_equal(
-        table.current_view,
-        df.sort_index(ascending=False)
-    )
+    pd.testing.assert_frame_equal(res, exp)
+    assert df.columns.dtype == np.int64
 
 def test_tabulator_sorters_int_name_column(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))
+    assert df.columns.dtype == np.int64
     table = Tabulator(df)
 
     table.sorters = [{'field': '0', 'dir': 'desc'}]
+    res = table.current_view
+    exp = df.sort_values([0], ascending=False)
+    exp.columns = exp.columns.astype(object)
 
-    pd.testing.assert_frame_equal(
-        table.current_view,
-        df.sort_values([0], ascending=False)
-    )
+    pd.testing.assert_frame_equal(res, exp)
+    assert df.columns.dtype == np.int64
 
 
 def test_tabulator_stream_series(document, comm):
@@ -1211,6 +1441,14 @@ def test_tabulator_patch_with_filters(document, comm):
             np.testing.assert_array_equal(
                 table.value[col].values, expected_df[col]
             )
+
+    table.filters = []
+
+    for col, values in model.source.data.items():
+        expected = expected_df[col]
+        if col == 'D':
+            expected = expected.astype(np.int64) / 10e5
+        np.testing.assert_array_equal(values, expected)
 
 def test_tabulator_patch_with_sorters(document, comm):
     df = makeMixedDataFrame()
@@ -2147,6 +2385,32 @@ def test_tabulator_styling_empty_dataframe(document, comm):
         }
     }
 
+def test_tabulator_style_multi_index_dataframe(document, comm):
+    # See https://github.com/holoviz/panel/issues/6151
+    arrays = [['A', 'A', 'B', 'B'], [1, 2, 1, 2]]
+    index = pd.MultiIndex.from_arrays(arrays, names=('Letters', 'Numbers'))
+    df = pd.DataFrame({
+        'Values': [1, 2, 3, 4],
+        'X': [10, 20, 30, 40],
+        'Y': [100, 200, 300, 400],
+        'Z': [1000, 2000, 3000, 4000]
+    }, index=index)
+
+    def color_func(vals):
+        return ["background-color: #ff0000;" for v in vals]
+
+    tabulator = Tabulator(df, width=500, height=300)
+    tabulator.style.apply(color_func, subset = ['X'])
+
+    model = tabulator.get_root(document, comm)
+
+    assert model.cell_styles['data'] == {
+        0: {4: [('background-color', '#ff0000')]},
+        1: {4: [('background-color', '#ff0000')]},
+        2: {4: [('background-color', '#ff0000')]},
+        3: {4: [('background-color', '#ff0000')]}
+    }
+
 
 @mpl_available
 def test_tabulator_style_background_gradient_with_frozen_columns(document, comm):
@@ -2284,3 +2548,15 @@ def test_bokeh_formatter_column_with_no_textalign_but_text_align_set(document, c
 
     model = table.get_root(document, comm)
     assert model.configuration['columns'][1]['hozAlign'] == 'center'
+
+
+def test_selection_cleared_remote_pagination_new_values(document, comm):
+    df = pd.DataFrame(range(200))
+    table = Tabulator(df, page_size=50, pagination="remote", selectable="checkbox")
+    table.selection = [1, 2, 3]
+
+    table.value = df
+    assert table.selection == [1, 2, 3]
+
+    table.value = df.copy()
+    assert table.selection == []

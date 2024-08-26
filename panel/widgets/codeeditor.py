@@ -40,6 +40,9 @@ class CodeEditor(Widget):
 
     language = param.String(default='text', doc="Language of the editor")
 
+    on_keyup = param.Boolean(default=True, doc="""
+        Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
+
     print_margin = param.Boolean(default=False, doc="""
         Whether to show the a print margin.""")
 
@@ -49,9 +52,14 @@ class CodeEditor(Widget):
     theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
                                  doc="Theme of the editor")
 
-    value = param.String(doc="State of the current code in the editor")
+    value = param.String(default="", doc="""
+        State of the current code in the editor if `on_keyup`. Otherwise, only upon loss of focus,
+        i.e. clicking outside the editor, or pressing <Ctrl+Enter> or <Cmd+Enter>.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "name": None}
+    value_input = param.String(default="", doc="""
+        State of the current code updated on every key press. Identical to `value` if `on_keyup`.""")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
 
     def __init__(self, **params):
         if 'readonly' in params:
@@ -63,6 +71,10 @@ class CodeEditor(Widget):
             self.param.watch(self._update_disabled, ['disabled', 'readonly'])
         )
         self.jslink(self, readonly='disabled', bidirectional=True)
+
+    @param.depends("value", watch=True)
+    def _update_value_input(self):
+        self.value_input = self.value
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,

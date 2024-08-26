@@ -362,7 +362,10 @@ class Server(BokehServer):
             async def stop_autoreload():
                 self._autoreload_stop_event.set()
                 await self._autoreload_task
-            self._loop.asyncio_loop.run_until_complete(stop_autoreload())
+            try:
+                self._loop.asyncio_loop.run_until_complete(stop_autoreload())
+            except RuntimeError:
+                pass # Ignore if the event loop is still running
         super().stop(wait=wait)
         if state._admin_context:
             state._admin_context.run_unload_hook()
@@ -1224,4 +1227,15 @@ class StoppableThread(threading.Thread):
                 del self._Thread__target, self._Thread__args, self._Thread__kwargs # type: ignore
 
     def stop(self) -> None:
-        self.io_loop.add_callback(self.io_loop.stop)
+        """Signal to stop the event loop gracefully."""
+        self.io_loop.add_callback(self._graceful_stop)
+
+    async def _shutdown(self):
+        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        self.io_loop.stop()
+
+    def _graceful_stop(self):
+        self.io_loop.add_callback(self._shutdown)

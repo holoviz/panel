@@ -10,8 +10,8 @@ import traceback
 
 from enum import Enum
 from inspect import (
-    isasyncgen, isasyncgenfunction, isawaitable, iscoroutinefunction,
-    isgenerator, isgeneratorfunction,
+    getfullargspec, isasyncgen, isasyncgenfunction, isawaitable,
+    iscoroutinefunction, isgenerator, isgeneratorfunction, ismethod,
 )
 from io import BytesIO
 from typing import (
@@ -22,13 +22,20 @@ import param
 
 from .._param import Margin
 from ..io.resources import CDN_DIST
-from ..layout import Feed, ListPanel
+from ..layout import (
+    Column, Feed, ListPanel, WidgetBox,
+)
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
-from ..pane.image import SVG
+from ..pane.image import SVG, ImageBase
+from ..pane.markup import HTML, Markdown
 from ..util import to_async_gen
+from ..viewable import Children
+from ..widgets import Widget
+from ..widgets.button import Button
 from .icon import ChatReactionIcons
 from .message import ChatMessage
+from .step import ChatStep
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -59,9 +66,10 @@ class StopCallback(Exception):
 
 class ChatFeed(ListPanel):
     """
-    A widget to display a list of `ChatMessage` objects and interact with them.
+    A ChatFeed holds a list of `ChatMessage` objects and provides convenient APIs.
+    to interact with them.
 
-    This widget provides methods to:
+    This includes methods to:
     - Send (append) messages to the chat log.
     - Stream tokens to the latest `ChatMessage` in the chat log.
     - Execute callbacks when a user sends a message.
@@ -103,6 +111,12 @@ class ChatFeed(ListPanel):
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the message provided by the callback.""")
 
+    callback_avatar = param.ClassSelector(class_=(str, BytesIO, bytes, ImageBase), doc="""
+        The default avatar to use for the entry provided by the callback.
+        Takes precedence over `ChatMessage.default_avatars` if set; else, if None,
+        defaults to the avatar set in `ChatMessage.default_avatars` if matching key exists.
+        Otherwise defaults to the first character of the `callback_user`.""")
+
     card_params = param.Dict(default={}, doc="""
         Params to pass to Card, like `header`, `header_background`, `header_color`, etc.""")
 
@@ -126,7 +140,7 @@ class ChatFeed(ListPanel):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    objects = param.List(default=[], doc="""
+    objects = Children(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     help_text = param.String(default="", doc="""
@@ -187,6 +201,8 @@ class ChatFeed(ListPanel):
 
     _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
         The current state of the callback.""")
+
+    _prompt_trigger = param.Event(doc="Triggers the prompt input.")
 
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
 
@@ -327,6 +343,13 @@ class ChatFeed(ListPanel):
             **self.placeholder_params
         )
 
+    @param.depends("loading", watch=True, on_init=True)
+    def _show_placeholder(self):
+        if self.loading:
+            self.append(self._placeholder)
+        else:
+            self._replace_placeholder(None)
+
     def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
         """
         Replace the placeholder from the chat log with the message
@@ -338,6 +361,8 @@ class ChatFeed(ListPanel):
                 self.append(message)
 
             try:
+                if self.loading:
+                    return
                 self.remove(self._placeholder)
             except ValueError:
                 pass
@@ -389,10 +414,10 @@ class ChatFeed(ListPanel):
             raise StopCallback("Callback was stopped.")
 
         user = self.callback_user
-        avatar = None
+        avatar = self.callback_avatar
         if isinstance(value, dict):
             user = value.get("user", user)
-            avatar = value.get("avatar")
+            avatar = value.get("avatar", avatar)
 
         if message is not None:
             # ChatMessage is already created; updating existing ChatMessage
@@ -429,7 +454,31 @@ class ChatFeed(ListPanel):
             contents = value.value
         else:
             contents = value
-        return contents, message.user, self
+
+        input_kwargs = {
+            "contents": contents,
+            "user": message.user,
+            "instance": self
+        }
+        input_args = tuple(input_kwargs.values())
+        callback_arg_spec = getfullargspec(self.callback)
+        callback_args = callback_arg_spec.args
+        if ismethod(self.callback):
+            callback_args = callback_args[1:]
+        num_args = len(callback_args)
+        if callback_arg_spec.varargs:
+            return input_args, {}
+        elif callback_arg_spec.varkw:
+            args_keys = list(input_kwargs)[:num_args]
+            for arg_key in args_keys:
+                input_kwargs.pop(arg_key)
+            return input_args[:num_args], input_kwargs
+        elif len(callback_args) <= 3:
+            return input_args[:num_args], {}
+        elif len(callback_args) > 3:
+            raise ValueError("Function should have at most 3 arguments")
+        elif len(callback_args) == 0:
+            raise ValueError("Function should have at least one argument")
 
     async def _serialize_response(self, response: Any) -> ChatMessage | None:
         """
@@ -479,16 +528,16 @@ class ChatFeed(ListPanel):
             await asyncio.sleep(0.1)
 
     async def _handle_callback(self, message, loop: asyncio.BaseEventLoop):
-        callback_args = self._gather_callback_args(message)
+        callback_args, callback_kwargs = self._gather_callback_args(message)
         if iscoroutinefunction(self.callback):
-            response = await self.callback(*callback_args)
+            response = await self.callback(*callback_args, **callback_kwargs)
         elif isasyncgenfunction(self.callback):
-            response = self.callback(*callback_args)
+            response = self.callback(*callback_args, **callback_kwargs)
         elif isgeneratorfunction(self.callback):
-            response = to_async_gen(self.callback(*callback_args))
+            response = to_async_gen(self.callback(*callback_args, **callback_kwargs))
             # printing type(response) -> <class 'async_generator'>
         else:
-            response = await asyncio.to_thread(self.callback, *callback_args)
+            response = await asyncio.to_thread(self.callback, *callback_args, **callback_kwargs)
         await self._serialize_response(response)
         return response
 
@@ -665,6 +714,184 @@ class ChatFeed(ListPanel):
         self.param.trigger("_post_hook_trigger")
         return message
 
+    def add_step(
+        self,
+        step: str | list[str] | ChatStep | None = None,
+        append: bool = True,
+        user: str | None = None,
+        avatar: str | bytes | BytesIO | None = None,
+        steps_layout: Column | Card | None = None,
+        default_layout: Literal["column", "card"] = "card",
+        layout_params: dict | None = None,
+        **step_params
+    ) -> ChatStep:
+        """
+        Adds a ChatStep component either by appending it to an existing
+        ChatMessage or creating a new ChatMessage.
+
+        Arguments
+        ---------
+        step : str | list(str) | ChatStep | None
+            The objects to stream to the step.
+        append : bool
+            Whether to append to existing steps or create new steps.
+        user : str | None
+            The user to stream as; overrides the message's user if provided.
+            Will default to the user parameter. Only applicable if steps is "new".
+        avatar : str | bytes | BytesIO | None
+            The avatar to use; overrides the message's avatar if provided.
+            Will default to the avatar parameter. Only applicable if steps is "new".
+        steps_layout : Column | None
+            An existing layout of steps to stream to, if None is provided
+            it will default to the last Column of steps or create a new one.
+        default_layout : str
+            The default layout to use if steps_layout is None.
+            'column' will create a new Column layout.
+            'card' will create a new Card layout.
+        layout_params : dict | None
+            Additional parameters to pass to the layout.
+        step_params : dict
+            Parameters to pass to the ChatStep.
+        """
+        if not isinstance(step, ChatStep):
+            if step is None:
+                step = []
+            elif not isinstance(step, list):
+                step = [step]
+            if "margin" not in step_params:
+                step_params["margin"] = (5, 1)
+            step_params["objects"] = [
+                (
+                    Markdown(obj, css_classes=["step-message"])
+                    if isinstance(obj, str)
+                    else obj
+                )
+                for obj in step
+            ]
+            if "context_exception" not in step_params:
+                step_params["context_exception"] = self.callback_exception
+            step = ChatStep(**step_params)
+        if append:
+            last = self._chat_log[-1] if self._chat_log else None
+            if last is not None and isinstance(last.object, Column) and (
+                    all(isinstance(o, ChatStep) for o in last.object) or
+                    last.object.css_classes == 'chat-steps'
+            ) and (user is None or last.user == user):
+                steps_layout = last.object
+        if steps_layout is None:
+            layout_params = layout_params or {}
+            input_layout_params = dict(
+                min_width=100,
+                styles={
+                    "margin-inline": "10px",
+                },
+                css_classes=["chat-steps"],
+                stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
+            )
+            if default_layout == "column":
+                layout = Column
+            elif default_layout == "card":
+                layout = Card
+                input_layout_params["header_css_classes"] = ["card-header"]
+                title = layout_params.pop("title", None)
+                input_layout_params["header"] = HTML(
+                    title or "🪜 Steps",
+                    css_classes=["card-title"],
+                    stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
+                )
+            else:
+                raise ValueError(
+                    f"Invalid default_layout {default_layout!r}; "
+                    f"expected 'column' or 'card'."
+                )
+            if layout_params:
+                input_layout_params.update(layout_params)
+            steps_layout = layout(step, **input_layout_params)
+            self.stream(steps_layout, user=user or self.callback_user, avatar=avatar)
+        else:
+            steps_layout.append(step)
+            self._chat_log.scroll_to_latest()
+        return step
+
+    def prompt_user(
+        self,
+        component: Widget | ListPanel,
+        callback: Callable | None = None,
+        predicate: Callable | None = None,
+        timeout: int = 120,
+        timeout_message: str = "Timed out",
+        button_params: dict | None = None,
+        timeout_button_params: dict | None = None,
+        **send_kwargs
+    ) -> None:
+        """
+        Prompts the user to interact with a form component.
+
+        Arguments
+        ---------
+        component : Widget | ListPanel
+            The component to prompt the user with.
+        callback : Callable
+            The callback to execute once the user submits the form.
+            The callback should accept two arguments: the component
+            and the ChatFeed instance.
+        predicate : Callable | None
+            A predicate to evaluate the component's state, e.g. widget has value.
+            If provided, the button will be enabled when the predicate returns True.
+            The predicate should accept the component as an argument.
+        timeout : int
+            The duration in seconds to wait before timing out.
+        timeout_message : str
+            The message to display when the timeout is reached.
+        button_params : dict | None
+            Additional parameters to pass to the submit button.
+        timeout_button_params : dict | None
+            Additional parameters to pass to the timeout button.
+        """
+        async def _prepare_prompt(*_) -> None:
+            input_button_params = button_params or {}
+            if "name" not in input_button_params:
+                input_button_params["name"] = "Submit"
+            if "margin" not in input_button_params:
+                input_button_params["margin"] = (5, 10)
+            if "button_type" not in input_button_params:
+                input_button_params["button_type"] = "primary"
+            if "icon" not in input_button_params:
+                input_button_params["icon"] = "check"
+            submit_button = Button(**input_button_params)
+
+            form = WidgetBox(component, submit_button, margin=(5, 10), css_classes=["message"])
+            if "user" not in send_kwargs:
+                send_kwargs["user"] = "Input"
+            self.send(form, respond=False, **send_kwargs)
+
+            for _ in range(timeout * 10):  # sleeping for 0.1 seconds
+                is_fulfilled = predicate(component) if predicate else True
+                submit_button.disabled = not is_fulfilled
+                if submit_button.clicks > 0:
+                    with param.parameterized.batch_call_watchers(self):
+                        submit_button.visible = False
+                        form.disabled = True
+                    if callback is not None:
+                        result = callback(component, self)
+                        if isawaitable(result):
+                            await result
+                    break
+                await asyncio.sleep(0.1)
+            else:
+                input_timeout_button_params = timeout_button_params or {}
+                if "name" not in input_timeout_button_params:
+                    input_timeout_button_params["name"] = timeout_message
+                if "button_type" not in input_timeout_button_params:
+                    input_timeout_button_params["button_type"] = "light"
+                if "icon" not in input_timeout_button_params:
+                    input_timeout_button_params["icon"] = "x"
+                with param.parameterized.batch_call_watchers(self):
+                    submit_button.param.update(**input_timeout_button_params)
+                    form.disabled = True
+
+        param.parameterized.async_executor(_prepare_prompt)
+
     def respond(self):
         """
         Executes the callback with the latest message in the chat log.
@@ -732,7 +959,8 @@ class ChatFeed(ListPanel):
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
         default_role: str | None = "assistant",
-        custom_serializer: Callable = None
+        custom_serializer: Callable | None = None,
+        **serialize_kwargs
     ) -> list[dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
@@ -772,7 +1000,7 @@ class ChatFeed(ListPanel):
                         f"it returned a {type(content)} type"
                     )
             else:
-                content = str(message)
+                content = message.serialize(**serialize_kwargs)
 
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages
@@ -796,6 +1024,7 @@ class ChatFeed(ListPanel):
         filter_by: Callable | None = None,
         format: Literal["transformers"] = "transformers",
         custom_serializer: Callable | None = None,
+        limit: int | None = None,
         **serialize_kwargs
     ):
         """
@@ -816,6 +1045,8 @@ class ChatFeed(ListPanel):
             A custom function to format the ChatMessage's object. The function must
             accept one positional argument, the ChatMessage object, and return a string.
             If not provided, uses the serialize method on ChatMessage.
+        limit : int
+            The number of messages to serialize at most, starting from the last message.
         **serialize_kwargs
             Additional keyword arguments to use for the specified format.
 
@@ -839,8 +1070,11 @@ class ChatFeed(ListPanel):
         else:
             exclude_users = [user.lower() for user in exclude_users]
 
+        objects = self._chat_log.objects
+        if limit is not None:
+            objects = objects[-limit:]
         messages = [
-            message for message in self._chat_log.objects
+            message for message in objects
             if message.user.lower() not in exclude_users
             and message is not self._placeholder
         ]
