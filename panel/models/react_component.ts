@@ -178,7 +178,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return React.createElement('div')
     }
-    return React.createElement('div', {}, this.props.children);
+    return React.createElement('div', {className: "error-wrapper"}, this.props.children);
   }
 }
 
