@@ -287,4 +287,4 @@ jobs:
           environments: ${{ matrix.environment }}
       - name: Test Type
         run: |
-          pixi run -e ${{ matrix.environment }} build || echo "Failed"
+          pixi run -e ${{ matrix.environment }} test-myst

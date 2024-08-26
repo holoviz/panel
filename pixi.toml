@@ -198,10 +198,9 @@ depends_on = [
 
 [feature.myst-doc.dependencies]
 mystmd = "*"
-nodejs = ">=18"
 
 [feature.myst-doc.tasks]
-build = 'cd doc; myst build'
+test-myst = { command = "myst build", cwd = "doc" } 
 
 # =============================================
 # ================== BUILD ====================

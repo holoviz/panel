@@ -1,6 +1,6 @@
 const pyodideDirective = {
   name: 'pyodide',
-  doc: 'Stub to render Sphinx Pyodide directives ',
+  doc: 'Stub to render Sphinx Pyodide directives',
   arg: { },
   options: {},
   run(data) {
