@@ -491,7 +491,7 @@ export default { render };
 """]
 
 
-pn.extension("cytoscape", sizing_mode="stretch_width")
+pn.extension(sizing_mode="stretch_width")
 
 elements = [
     {"data": {"id": "A", "label": "A"}},

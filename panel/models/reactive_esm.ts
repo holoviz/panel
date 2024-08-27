@@ -609,7 +609,7 @@ export class ReactiveESM extends HTMLBox {
           initialize = mod.initialize
         } else if (mod.default && mod.default.initialize) {
           initialize = mod.default.initialize
-        } else if (typeof mod.default === 'function') {
+        } else if (typeof mod.default === "function") {
           const initialized = mod.default()
           mod = {default: initialized}
           initialize = initialized.initialize
@@ -634,7 +634,7 @@ export class ReactiveESM extends HTMLBox {
     this.prototype.default_view = ReactiveESMView
     this.define<ReactiveESM.Props>(({Any, Array, Bool, String}) => ({
       children:   [ Array(String),       [] ],
-      class_name: [ String,             ''  ],
+      class_name: [ String,              "" ],
       data:       [ Any                     ],
       dev:        [ Bool,             false ],
       esm:        [ String,              "" ],
