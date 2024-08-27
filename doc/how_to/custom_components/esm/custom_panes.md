@@ -71,7 +71,7 @@ Note how we had to add the `canvasEl` to the `el` before we could render the cha
 
 :::
 
-::: {tab-item} `ReactComponent`
+:::{tab-item} `ReactComponent`
 
 ```{pyodide}
 import panel as pn
