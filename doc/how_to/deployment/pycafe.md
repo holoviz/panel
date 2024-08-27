@@ -6,7 +6,7 @@ PY.CAFE is a platform for creating and sharing data apps online, powered by [Pyo
 
 ## 1. Log In
 
-Visit [PY.CAFE](https://py.cafe/) and either sign in or sign up for an account.
+Visit [PY.CAFE](https://py.cafe/) and either sign in or sign up for an account if you want to save your projects to your personal gallery.
 
 ## 2. Choose the Panel Framework
 
@@ -46,7 +46,7 @@ pn.template.FastListTemplate(
 ).servable()
 ```
 
-After updating the file, click **RESTART** and test the app. It should function like the example app below.
+After updating the file, save it, and the app will reload instantly.
 
 <iframe src="https://py.cafe/app/MarcSkovMadsen/pycafe-reference" title="PyCafe Reference Example" frameborder="0" style="width: 100%; height: 500px;"></iframe>
 
