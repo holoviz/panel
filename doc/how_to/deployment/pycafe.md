@@ -54,7 +54,7 @@ pn.template.FastListTemplate(
 ).servable()
 ```
 
-After updating the file, click **RESTART** and test the app. It should function like the example app below.
+After updating the file, save it, and the app will reload instantly.
 
 <iframe src="https://py.cafe/app/MarcSkovMadsen/pycafe-reference" title="PyCafe Reference Example" frameborder="0" style="width: 100%; height: 500px;"></iframe>
 
