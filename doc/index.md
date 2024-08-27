@@ -227,7 +227,6 @@ gallery/index
 api/index
 community
 upgrade
-best_practices
 FAQ
 about/index
 ```

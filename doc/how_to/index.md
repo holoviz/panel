@@ -121,6 +121,38 @@ How to access and manipulate state related to the user session, HTTP request and
 
 ::::
 
+## Apply best practices
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} For dev experience
+:link: best_practices/index
+:link-type: doc
+
+```{image} REPLACEME
+:width: 125px
+:align: center
+:name: Streamlit
+```
+
+How to migrate existing Streamlit applications to Panel.
+:::
+
+:::{grid-item-card} Migrate from AnyWidget
+:link: migrate/anywidget/index
+:link-type: doc
+
+```{image} https://assets.holoviz.org/panel/background/comparisons/anywidget_logo.png
+:width: 125px
+:align: center
+:name: AnyWidget
+```
+
+How to convert AnyWidget widgets to Panel widgets.
+:::
+
+::::
 ## Extending Panel
 
 ::::{grid} 1 2 2 3
