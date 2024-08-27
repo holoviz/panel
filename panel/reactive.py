@@ -317,7 +317,7 @@ class Syncable(Renderable):
         try:
             self._update_model(events, msg, root, model, doc, comm)
         finally:
-            del self._in_process__events[doc]
+            self._in_process__events.pop(doc, None)
 
     def _apply_update(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],

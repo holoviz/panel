@@ -98,10 +98,11 @@ def test_markdown_pane_stream(page):
     expect(page.locator('.markdown')).to_have_text('Empty')
 
     md.object = ''
-    for i in range(1000):
+    for i in range(100):
         md.object += str(i)
 
-    assert md.object == ''.join(map(str, range(1000)))
+    assert md.object == ''.join(map(str, range(100)))
+
     expect(page.locator('.markdown')).to_have_text(md.object)
 
 

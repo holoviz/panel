@@ -138,6 +138,7 @@ channels = ["pyviz/label/dev", "bokeh", "microsoft", "conda-forge"]
 [feature.test-ui.dependencies]
 playwright = { version = "*", channel = "microsoft" }
 pytest-playwright = "*"
+pytest-asyncio = "*"
 jupyter_server = "*"
 packaging = "*"
 
