@@ -371,10 +371,10 @@ class NBSR:
         except Empty:
             return None
 
-def wait_for_port(stdout, regex=APP_PATTERN):
+def wait_for_regex(stdout, regex, count=1):
     nbsr = NBSR(stdout)
     m = None
-    output = []
+    output, found = [], []
     for _ in range(20):
         o = nbsr.readline(0.5)
         if not o:
@@ -383,14 +383,19 @@ def wait_for_port(stdout, regex=APP_PATTERN):
         output.append(out)
         m = regex.search(out)
         if m is not None:
+            found.append(m.group(1))
+        if len(found) == count:
             break
-    if m is None:
+    if len(found) < count:
         output = '\n    '.join(output)
         pytest.fail(
             "No matching log line in process output, following output "
             f"was captured:\n\n   {output}"
         )
-    return int(m.group(1))
+    return found
+
+def wait_for_port(stdout):
+    return int(wait_for_regex(stdout, APP_PATTERN)[0])
 
 def write_file(content, file_obj):
     file_obj.write(content)

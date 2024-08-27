@@ -6,7 +6,7 @@ import pytest
 import requests
 
 from panel.tests.util import (
-    linux_only, run_panel_serve, wait_for_port, write_file,
+    linux_only, run_panel_serve, wait_for_port, wait_for_regex, write_file,
 )
 
 
@@ -114,27 +114,22 @@ def test_serve_num_procs(arg, tmp_path):
     py.write_text(app)
 
     regex = re.compile(r'Starting Bokeh server with process id: (\d+)')
-    with run_panel_serve(["--port", "0", py, "--num-procs", 2, arg]) as p:
-        pid1 = wait_for_port(p.stdout, regex=regex)
-        pid2 = wait_for_port(p.stdout, regex=regex)
+    with run_panel_serve(["--port", "0", py, "--num-procs", 2, arg], cwd=tmp_path) as p:
+        pid1, pid2 = wait_for_regex(p.stdout, regex=regex, count=2)
         assert pid1 != pid2
-#
+
+
 @linux_only
 def test_serve_num_procs_setup(tmp_path):
     app = "import panel as pn; pn.panel('Hello').servable()"
     py = tmp_path / "app.py"
     py.write_text(app)
 
-    setup_app = """\
-import os
-import time
-time.sleep(1)
-print(f"Setup PID {os.getpid()}", flush=True)"""
+    setup_app = 'import os; print(f"Setup PID {os.getpid()}", flush=True)'
     setup_py = tmp_path / "setup.py"
     setup_py.write_text(setup_app)
 
     regex = re.compile(r'Setup PID (\d+)')
-    with run_panel_serve(["--port", "0", py, "--num-procs", 2, "--setup", setup_py]) as p:
-        pid1 = wait_for_port(p.stdout, regex=regex)
-        pid2 = wait_for_port(p.stdout, regex=regex)
+    with run_panel_serve(["--port", "0", py, "--num-procs", 2, "--setup", setup_py], cwd=tmp_path) as p:
+        pid1, pid2 = wait_for_regex(p.stdout, regex=regex, count=2)
         assert pid1 != pid2
