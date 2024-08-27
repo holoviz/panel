@@ -9,7 +9,6 @@ This example we will show you to create an `ImageButton`.
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -74,11 +73,9 @@ button = ImageButton(
 )
 pn.Column(button, button.param.clicks,).servable()
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -136,11 +133,9 @@ button = ImageButton(
 )
 pn.Column(button, button.param.clicks).servable()
 ```
-
 :::
 
 :::{tab-item} `AnyWidgetComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -207,7 +202,6 @@ button = ImageButton(
 
 pn.Column(button, button.param.clicks).servable()
 ```
-
 :::
 
 ::::

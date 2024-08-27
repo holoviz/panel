@@ -9,7 +9,6 @@ This example will show you the basics of creating a [ChartJS](https://www.chartj
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -68,11 +67,9 @@ pn.Column(chart_type, chart).servable()
 ```
 
 Note how we had to add the `canvasEl` to the `el` before we could render the chart. Some libraries will require the element to be attached to the DOM before we could render it. Dealing with layout issues like this sometimes requires a bit of iteration. If you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -126,11 +123,9 @@ chart = ChartReactComponent(
 )
 pn.Column(chart_type, chart).servable()
 ```
-
 :::
 
 ::: {tab-item} `AnyWidgetComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -200,7 +195,6 @@ This example will show you how to build a more advanced [CytoscapeJS](https://js
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 import param
 import panel as pn
@@ -314,11 +308,9 @@ pn.Row(
     graph,
 ).servable()
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 import param
 import panel as pn
@@ -416,11 +408,9 @@ pn.Row(
     graph,
 ).servable()
 ```
-
 :::
 
-::: `AnyWidgetComponent`
-
+:::{tab-item} `AnyWidgetComponent`
 ```{pyodide}
 import param
 import panel as pn
@@ -531,7 +521,6 @@ pn.Row(
     graph,
 ).servable()
 ```
-
 :::
 
 ::::
