@@ -28,7 +28,7 @@ bokeh @ https://cdn.holoviz.org/panel/wheels/bokeh-3.4.1-py3-none-any.whl
 panel @ https://cdn.holoviz.org/panel/wheels/panel-1.4.5-py3-none-any.whl
 ```
 
-We also recommend pinning the versions of the remaining dependencies to ensure your app continues to function properly despite future updates.
+Pinning dependencies is not needed, since PyCafe will store a lockfile with all pinned dependencies for you.
 
 ## 4. Update the `app.py` File
 
