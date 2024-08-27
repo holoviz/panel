@@ -28,6 +28,7 @@ from .pane.base import PaneBase  # noqa
 from .reactive import (  # noqa
     Reactive, ReactiveCustomBase, ReactiveHTML, ReactiveMetaBase,
 )
+from .util import camel_to_kebab
 from .util.checks import import_available
 from .viewable import (  # noqa
     Child, Children, Layoutable, Viewable, is_viewable_param,
@@ -182,6 +183,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             data_params[k] = v
         data_props = self._process_param_change(data_params)
         params.update({
+            'class_name': camel_to_kebab(cls.__name__),
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload or getattr(self, '_debug', False),
             'esm': self._render_esm(),

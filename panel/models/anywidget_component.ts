@@ -104,7 +104,7 @@ export class AnyWidgetComponentView extends ReactComponentView {
   override remove(): void {
     super.remove()
     if (this.destroyer) {
-      this.destroyer({model: this.adapter, el: this.container})
+      this.destroyer.then((d) => d({model: this.adapter, el: this.container}))
     }
   }
 
@@ -112,9 +112,15 @@ export class AnyWidgetComponentView extends ReactComponentView {
     return `
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
-let props = {view, model: view.adapter, data: view.model.data, el: view.container}
+function render() {
+  const out = Promise.resolve(view.render_fn({
+    view, model: view.adapter, data: view.model.data, el: view.container
+  }) || null)
+  view.destroyer = out
+  out.then(() => view.after_rendered())
+}
 
-view.destroyer = view.render_fn(props) || null`
+export default {render}`
   }
 
   override after_rendered(): void {

@@ -183,10 +183,13 @@ export class ReactiveESMView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const {esm, importmap} = this.model.properties
+    const {esm, importmap, class_name} = this.model.properties
     this.on_change([esm, importmap], async () => {
       this.compiled_module = await this.model.compiled_module
       this.invalidate_render()
+    })
+    this.on_change(class_name, () => {
+      this.container.className = this.model.class_name
     })
     const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
     this.on_change(child_props, () => {
@@ -265,6 +268,7 @@ export class ReactiveESMView extends HTMLBoxView {
     this._rendered = false
     set_size(this.el, this.model)
     this.container = div()
+    this.container.className = this.model.class_name
     set_size(this.container, this.model, false)
     this.shadow_el.append(this.container)
     if (this.model.compile_error) {
@@ -450,6 +454,7 @@ export namespace ReactiveESM {
 
   export type Props = HTMLBox.Props & {
     children: p.Property<any>
+    class_name: p.Property<string>
     data: p.Property<any>
     dev: p.Property<boolean>
     esm: p.Property<string>
@@ -588,7 +593,7 @@ export class ReactiveESM extends HTMLBox {
     this.compile_error = null
     const compiled = this.compile()
     if (compiled === null) {
-      this.compiled_module = null
+      this.compiled_module = Promise.resolve(null)
       return
     }
     this.compiled = compiled
@@ -596,27 +601,31 @@ export class ReactiveESM extends HTMLBox {
     const url = URL.createObjectURL(
       new Blob([this.compiled], {type: "text/javascript"}),
     )
-    try {
-      // @ts-ignore
-      this.compiled_module = importShim(url)
-      const mod = await this.compiled_module
-      let initialize
-      if (mod.initialize) {
-        initialize = mod.initialize
-      } else if (mod.default && mod.default.initialize) {
-        initialize = mod.default.initialize
+    // @ts-ignore
+    this.compiled_module = importShim(url).then((mod: any) => {
+      try {
+        let initialize
+        if (mod.initialize) {
+          initialize = mod.initialize
+        } else if (mod.default && mod.default.initialize) {
+          initialize = mod.default.initialize
+        } else if (typeof mod.default === 'function') {
+          const initialized = mod.default()
+          mod = {default: initialized}
+          initialize = initialized.initialize
+        }
+        if (initialize) {
+          this._run_initializer(initialize)
+        }
+        return mod
+      } catch (e: any) {
+        if (this.dev) {
+          this.compile_error = e
+        }
+        console.error(`Could not initialize module due to error: ${e}`)
+        return null
       }
-      if (initialize) {
-        this._run_initializer(initialize)
-      }
-    } catch (e: any) {
-      this.compiled_module = null
-      if (this.dev) {
-        this.compile_error = e
-      } else {
-        throw e
-      }
-    }
+    })
   }
 
   static override __module__ = "panel.models.esm"
@@ -624,11 +633,12 @@ export class ReactiveESM extends HTMLBox {
   static {
     this.prototype.default_view = ReactiveESMView
     this.define<ReactiveESM.Props>(({Any, Array, Bool, String}) => ({
-      children:  [ Array(String),       [] ],
-      data:      [ Any                     ],
-      dev:       [ Bool,             false ],
-      esm:       [ String,              "" ],
-      importmap: [ Any,                 {} ],
+      children:   [ Array(String),       [] ],
+      class_name: [ String,             ''  ],
+      data:       [ Any                     ],
+      dev:        [ Bool,             false ],
+      esm:        [ String,              "" ],
+      importmap:  [ Any,                 {} ],
     }))
   }
 }

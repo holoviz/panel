@@ -1,4 +1,4 @@
-# Create Custom Layouts
+# Create Custom Layouts using ESM Components
 
 In this guide, we will demonstrate how to build custom, reusable layouts using [`JSComponent`](../../reference/panes/JSComponent.md) or [`ReactComponent`](../../reference/panes/ReactComponent.md).
 
