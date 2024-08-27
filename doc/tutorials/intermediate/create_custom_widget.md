@@ -1,36 +1,23 @@
-# Build a Custom FeatureInput Widget
+# Build a Custom FeatureInput Widget in Python
 
-Welcome to the "Build a Custom FeatureInput Widget" tutorial! In this guide, we will walk through the process of creating a custom widget that enables users to select a list of features and set their values. This can be particularly useful, for instance, in forecasting the power production of a wind turbine using advanced machine learning models.
+Welcome to the "Build a Custom FeatureInput Widget" tutorial! In this guide, we will walk through the process of creating a custom widget that enables users to select a list of features and set their values entirely in Python. This can be particularly useful, for instance, in forecasting the power production of a wind turbine using advanced machine learning models.
 
-We will leverage the `CompositeWidget` from HoloViz Panel to construct this custom widget. The `CompositeWidget` allows us to combine multiple Panel components into a more complex and functional widget. In this tutorial, we will combine a `MultiSelect` widget with a dynamic number of `FloatInput` widgets to achieve our goal.
-
-<iframe src="https://panel-org-build-feature-input-widget.hf.space" frameborder="0" style="width: 100%;height:500px"></iframe>
-
-You can find the full code, including requirements and tests, [here](https://huggingface.co/spaces/Panel-Org/build_feature_input_widget/tree/main).
+We will leverage the `PyComponent` class to construct this custom widget. The `PyComponent` allows us to combine multiple Panel components into a more complex and functional widget. In this tutorial, we will combine a `MultiSelect` widget with a dynamic number of `FloatInput` widgets to achieve our goal.
 
 ## Code Overview
 
 Below is the complete implementation of the `FeatureInput` custom widget:
 
-```python
+```{pyodide}
 import panel as pn
 import param
 
-class FeatureInput(pn.widgets.CompositeWidget):
-    """The FeatureInput enables a user to select from a list of features and set their values.
+from panel.widgets.base import WidgetBase
+from panel.custom import PyComponent
 
-    ## Example
-
-    ```python
-    features = {
-        "A": 1.0,
-        "B": 2.0,
-        "C": 3.0,
-        "D": 4.0,
-    }
-    selected_features = ["A", "C"]
-    widget = FeatureInput(features=features, selected_features=selected_features)
-    ```
+class FeatureInput(WidgetBase, PyComponent):
+    """
+	The ```FeatureInput``` enables a user to select from a list of features and set their values.
     """
 
     value = param.Dict(
@@ -38,18 +25,16 @@ class FeatureInput(pn.widgets.CompositeWidget):
     )
 
     features = param.Dict(
-        doc="The names of the available features and their default values",
-        allow_None=False,
+        doc="The names of the available features and their default values"
     )
+
     selected_features = param.ListSelector(
-        doc="The list of selected features", allow_None=False
+        doc="The list of selected features"
     )
 
     _selected_widgets = param.ClassSelector(
         class_=pn.Column, doc="The widgets used to edit the selected features"
     )
-
-    _composite_type = pn.Column
 
     def __init__(self, **params):
         params["value"] = params.get("value", {})
@@ -64,7 +49,10 @@ class FeatureInput(pn.widgets.CompositeWidget):
             self.param.selected_features, sizing_mode="stretch_width"
         )
 
-        self._composite[:] = [selected_features_widget, self._selected_widgets]
+        self._layout = pn.Column(selected_features_widget, self._selected_widgets)
+
+	def __panel__(self):
+        return self._layout
 
     @param.depends("features", watch=True, on_init=True)
     def _reset_selected_features(self):
@@ -159,7 +147,7 @@ You can serve the application with `panel serve name_of_file.py`.
 
 ### Widget Definition
 
-The `FeatureInput` class inherits from `pn.widgets.CompositeWidget`. It defines the following parameters:
+The `FeatureInput` class inherits from `pn.custom.PyComponent` and `pn.widgets.WidgetBase`. It defines the following parameters:
 
 - `value`: A dictionary that stores the selected features and their corresponding values.
 - `features`: A dictionary of available features and their default values.
@@ -168,7 +156,11 @@ The `FeatureInput` class inherits from `pn.widgets.CompositeWidget`. It defines 
 
 ### Initialization
 
-In the `__init__` method, we initialize the widget parameters and create a `MultiChoice` widget for selecting features. We also set up a column to hold the selected feature widgets. Finally we define the `_composite` attribute to hold the sub components of the widget.
+In the `__init__` method, we initialize the widget parameters and create a `MultiChoice` widget for selecting features. We also set up a column to hold the selected feature widgets. Finally we define the `_layoyt` attribute to hold the sub components of the widget.
+
+### `__panel__`
+
+`PyComponent` classes must define a `__panel__` method which tells Panel how the component should be rendered. Here we simply return the `_layout` we created.
 
 ### Parameter Dependencies
 
