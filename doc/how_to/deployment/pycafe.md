@@ -6,7 +6,7 @@ PY.CAFE is a platform for creating and sharing data apps online, powered by [Pyo
 
 ## 1. Log In
 
-Visit [PY.CAFE](https://py.cafe/) and either sign in or sign up for an account.
+Visit [PY.CAFE](https://py.cafe/) and either sign in or sign up for an account if you want to save your projects to your personal gallery.
 
 ## 2. Choose the Panel Framework
 
