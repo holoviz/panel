@@ -1,4 +1,4 @@
-# Create Panes with ReactiveHTML
+# Create Panes using ESM Components
 
 In this guide we will show you how to efficiently implement custom panes using `JSComponent`, `ReactComponent` and `AnyWidgetComponent` to get input from the user.
 
@@ -142,12 +142,13 @@ function render({ model, el }) {
   const canvasEl = document.createElement('canvas')
   // Add DOM node before creating the chart
   el.append(canvasEl)
-  const create_chart = () => new Chart(canvasEl.getContext('2d'), model.object)
+  const create_chart = () => new Chart(canvasEl.getContext('2d'), model.get("object"))
   let chart = create_chart()
   model.on("object", () => {
-     chart.destroy()
-     chart = create_chart()
-   })
+    chart.destroy()
+    chart = create_chart()
+  })
+  return () => chart.destroy()
 }
 
 export default { render };
@@ -490,7 +491,7 @@ export default { render };
 """]
 
 
-pn.extension("cytoscape", sizing_mode="stretch_width")
+pn.extension(sizing_mode="stretch_width")
 
 elements = [
     {"data": {"id": "A", "label": "A"}},

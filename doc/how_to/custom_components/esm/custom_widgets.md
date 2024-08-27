@@ -1,4 +1,4 @@
-# Custom Widgets
+# Create Custom Widgets using ESM Components
 
 In this guide we will show you how to efficiently implement custom widgets using `JSComponent`, `ReactComponent` and `AnyWidgetComponent` to get input from the user.
 
