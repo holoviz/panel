@@ -165,7 +165,7 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
             result = fn()
         except AssertionError as e:
             if timed_out():
-                raise TimeoutError(timeout_msg) from e
+                raise TimeoutError(f"{timeout_msg}: {e}") from e
         else:
             if result not in (None, True, False):
                 raise ValueError(
@@ -295,8 +295,9 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
 
 def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
     port = serve_and_wait(app, port=port, **kwargs)
-    reqs = [requests.get(f"http://localhost:{port}{suffix}") for i in range(n)]
-    return reqs[0] if len(reqs) == 1 else reqs
+    reqs = [r for _ in range(n) if (r := requests.get(f"http://localhost:{port}{suffix}")).ok]
+    assert len(reqs) == n, "Not all requests were successful"
+    return reqs[0] if n == 1 else reqs
 
 
 def wait_for_server(port, prefix=None, timeout=3):
@@ -442,8 +443,7 @@ def http_serve_directory(directory=".", port=0):
         with httpd:
             httpd.serve_forever()
 
-    thread = Thread(target=serve_forever, args=(httpd, ))
-    thread.setDaemon(True)
+    thread = Thread(target=serve_forever, args=(httpd, ), daemon=True)
     thread.start()
 
     return httpd, address

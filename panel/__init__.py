@@ -71,6 +71,7 @@ from .param import Param, ReactiveExpr  # noqa
 from .template import Template  # noqa
 from .widgets import indicators, widget  # noqa
 
+from . import custom  # isort:skip noqa has to be after widgets
 from . import chat  # isort:skip noqa has to be after widgets
 
 __all__ = (
@@ -79,6 +80,7 @@ __all__ = (
     "Card",
     "chat",
     "Column",
+    "custom",
     "Feed",
     "FlexBox",
     "FloatPanel",

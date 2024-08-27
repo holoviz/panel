@@ -22,13 +22,17 @@ import param
 
 from .._param import Margin
 from ..io.resources import CDN_DIST
-from ..layout import Column, Feed, ListPanel
+from ..layout import (
+    Column, Feed, ListPanel, WidgetBox,
+)
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG, ImageBase
-from ..pane.markup import Markdown
+from ..pane.markup import HTML, Markdown
 from ..util import to_async_gen
 from ..viewable import Children
+from ..widgets import Widget
+from ..widgets.button import Button
 from .icon import ChatReactionIcons
 from .message import ChatMessage
 from .step import ChatStep
@@ -198,6 +202,8 @@ class ChatFeed(ListPanel):
     _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
         The current state of the callback.""")
 
+    _prompt_trigger = param.Event(doc="Triggers the prompt input.")
+
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
 
     _post_hook_trigger = param.Event(doc="Triggers the append callback.")
@@ -337,6 +343,13 @@ class ChatFeed(ListPanel):
             **self.placeholder_params
         )
 
+    @param.depends("loading", watch=True, on_init=True)
+    def _show_placeholder(self):
+        if self.loading:
+            self.append(self._placeholder)
+        else:
+            self._replace_placeholder(None)
+
     def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
         """
         Replace the placeholder from the chat log with the message
@@ -348,6 +361,8 @@ class ChatFeed(ListPanel):
                 self.append(message)
 
             try:
+                if self.loading:
+                    return
                 self.remove(self._placeholder)
             except ValueError:
                 pass
@@ -705,7 +720,9 @@ class ChatFeed(ListPanel):
         append: bool = True,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
-        steps_column: Column | None = None,
+        steps_layout: Column | Card | None = None,
+        default_layout: Literal["column", "card"] = "card",
+        layout_params: dict | None = None,
         **step_params
     ) -> ChatStep:
         """
@@ -724,9 +741,15 @@ class ChatFeed(ListPanel):
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message's avatar if provided.
             Will default to the avatar parameter. Only applicable if steps is "new".
-        steps_column : Column | None
-            An existing Column of steps to stream to, if None is provided
+        steps_layout : Column | None
+            An existing layout of steps to stream to, if None is provided
             it will default to the last Column of steps or create a new one.
+        default_layout : str
+            The default layout to use if steps_layout is None.
+            'column' will create a new Column layout.
+            'card' will create a new Card layout.
+        layout_params : dict | None
+            Additional parameters to pass to the layout.
         step_params : dict
             Parameters to pass to the ChatStep.
         """
@@ -735,6 +758,8 @@ class ChatFeed(ListPanel):
                 step = []
             elif not isinstance(step, list):
                 step = [step]
+            if "margin" not in step_params:
+                step_params["margin"] = (5, 1)
             step_params["objects"] = [
                 (
                     Markdown(obj, css_classes=["step-message"])
@@ -752,19 +777,120 @@ class ChatFeed(ListPanel):
                     all(isinstance(o, ChatStep) for o in last.object) or
                     last.object.css_classes == 'chat-steps'
             ) and (user is None or last.user == user):
-                steps_column = last.object
-        if steps_column is None:
-            steps_column = Column(
-                step, css_classes=["chat-steps"], styles={
-                    'max-width': 'calc(100% - 30px)',
-                    'padding-block': '0px'
-                }
+                steps_layout = last.object
+        if steps_layout is None:
+            layout_params = layout_params or {}
+            input_layout_params = dict(
+                min_width=100,
+                styles={
+                    "margin-inline": "10px",
+                },
+                css_classes=["chat-steps"],
+                stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
             )
-            self.stream(steps_column, user=user, avatar=avatar)
+            if default_layout == "column":
+                layout = Column
+            elif default_layout == "card":
+                layout = Card
+                input_layout_params["header_css_classes"] = ["card-header"]
+                title = layout_params.pop("title", None)
+                input_layout_params["header"] = HTML(
+                    title or "🪜 Steps",
+                    css_classes=["card-title"],
+                    stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
+                )
+            else:
+                raise ValueError(
+                    f"Invalid default_layout {default_layout!r}; "
+                    f"expected 'column' or 'card'."
+                )
+            if layout_params:
+                input_layout_params.update(layout_params)
+            steps_layout = layout(step, **input_layout_params)
+            self.stream(steps_layout, user=user or self.callback_user, avatar=avatar)
         else:
-            steps_column.append(step)
+            steps_layout.append(step)
             self._chat_log.scroll_to_latest()
         return step
+
+    def prompt_user(
+        self,
+        component: Widget | ListPanel,
+        callback: Callable | None = None,
+        predicate: Callable | None = None,
+        timeout: int = 120,
+        timeout_message: str = "Timed out",
+        button_params: dict | None = None,
+        timeout_button_params: dict | None = None,
+        **send_kwargs
+    ) -> None:
+        """
+        Prompts the user to interact with a form component.
+
+        Arguments
+        ---------
+        component : Widget | ListPanel
+            The component to prompt the user with.
+        callback : Callable
+            The callback to execute once the user submits the form.
+            The callback should accept two arguments: the component
+            and the ChatFeed instance.
+        predicate : Callable | None
+            A predicate to evaluate the component's state, e.g. widget has value.
+            If provided, the button will be enabled when the predicate returns True.
+            The predicate should accept the component as an argument.
+        timeout : int
+            The duration in seconds to wait before timing out.
+        timeout_message : str
+            The message to display when the timeout is reached.
+        button_params : dict | None
+            Additional parameters to pass to the submit button.
+        timeout_button_params : dict | None
+            Additional parameters to pass to the timeout button.
+        """
+        async def _prepare_prompt(*_) -> None:
+            input_button_params = button_params or {}
+            if "name" not in input_button_params:
+                input_button_params["name"] = "Submit"
+            if "margin" not in input_button_params:
+                input_button_params["margin"] = (5, 10)
+            if "button_type" not in input_button_params:
+                input_button_params["button_type"] = "primary"
+            if "icon" not in input_button_params:
+                input_button_params["icon"] = "check"
+            submit_button = Button(**input_button_params)
+
+            form = WidgetBox(component, submit_button, margin=(5, 10), css_classes=["message"])
+            if "user" not in send_kwargs:
+                send_kwargs["user"] = "Input"
+            self.send(form, respond=False, **send_kwargs)
+
+            for _ in range(timeout * 10):  # sleeping for 0.1 seconds
+                is_fulfilled = predicate(component) if predicate else True
+                submit_button.disabled = not is_fulfilled
+                if submit_button.clicks > 0:
+                    with param.parameterized.batch_call_watchers(self):
+                        submit_button.visible = False
+                        form.disabled = True
+                    if callback is not None:
+                        result = callback(component, self)
+                        if isawaitable(result):
+                            await result
+                    break
+                await asyncio.sleep(0.1)
+            else:
+                input_timeout_button_params = timeout_button_params or {}
+                if "name" not in input_timeout_button_params:
+                    input_timeout_button_params["name"] = timeout_message
+                if "button_type" not in input_timeout_button_params:
+                    input_timeout_button_params["button_type"] = "light"
+                if "icon" not in input_timeout_button_params:
+                    input_timeout_button_params["icon"] = "x"
+                with param.parameterized.batch_call_watchers(self):
+                    submit_button.param.update(**input_timeout_button_params)
+                    form.disabled = True
+
+        param.parameterized.async_executor(_prepare_prompt)
 
     def respond(self):
         """
@@ -833,7 +959,8 @@ class ChatFeed(ListPanel):
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
         default_role: str | None = "assistant",
-        custom_serializer: Callable = None
+        custom_serializer: Callable | None = None,
+        **serialize_kwargs
     ) -> list[dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
@@ -873,7 +1000,7 @@ class ChatFeed(ListPanel):
                         f"it returned a {type(content)} type"
                     )
             else:
-                content = str(message)
+                content = message.serialize(**serialize_kwargs)
 
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages

@@ -153,7 +153,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     def _update_esm(self):
         esm = self._render_esm()
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             if esm == model.esm:
                 continue
             self._apply_update({}, {'esm': esm}, model, ref)
@@ -373,11 +373,13 @@ class ReactComponent(ReactiveESM):
         imports = self._importmap.get('imports', {})
         imports_with_deps = {}
         dev_suffix = '&dev' if config.autoreload else ''
-        suffix = f'deps=react@{self._react_version},react-dom@{self._react_version}&external=react{dev_suffix}'
+        suffix = f'deps=react@{self._react_version},react-dom@{self._react_version}&external=react{dev_suffix},react-dom'
+        if any('@mui' in v for v in imports.values()):
+            suffix += ',react-is,@emotion/react'
         for k, v in imports.items():
             if '?' not in v and 'esm.sh' in v:
                 if v.endswith('/'):
-                    v = f'{v[:-1]}&{suffix}/'
+                    v = f'{v[:-1]}?{suffix}&path=/'
                 else:
                     v = f'{v}?{suffix}'
             imports_with_deps[k] = v

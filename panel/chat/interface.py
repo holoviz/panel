@@ -584,7 +584,8 @@ class ChatInterface(ChatFeed):
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
         default_role: str | None = "assistant",
-        custom_serializer: Callable = None
+        custom_serializer: Callable = None,
+        **serialize_kwargs
     ) -> list[dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
@@ -606,6 +607,8 @@ class ChatInterface(ChatFeed):
             A custom function to format the ChatMessage's object. The function must
             accept one positional argument, the ChatMessage object, and return a string.
             If not provided, uses the serialize method on ChatMessage.
+        serialize_kwargs : dict
+            Additional keyword arguments to pass to the serializer.
 
         Returns
         -------
@@ -616,7 +619,8 @@ class ChatInterface(ChatFeed):
                 "user": [self.user],
                 "assistant": [self.callback_user],
             }
-        return super()._serialize_for_transformers(messages, role_names, default_role, custom_serializer)
+        return super()._serialize_for_transformers(
+            messages, role_names, default_role, custom_serializer, **serialize_kwargs)
 
     @param.depends("_callback_state", watch=True)
     async def _update_input_disabled(self):

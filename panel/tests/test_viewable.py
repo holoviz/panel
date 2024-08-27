@@ -1,6 +1,8 @@
 import param
 import pytest
 
+import panel.custom  # To get the custom Viewable
+
 from panel import config
 from panel.interact import interactive
 from panel.pane import Markdown, Str, panel

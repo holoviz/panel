@@ -382,8 +382,8 @@ def test_server_schedule_at_callable():
         state.cache['at'].append(dt.datetime.now())
 
     scheduled = [
-        dt.datetime.utcnow() + dt.timedelta(seconds=1.57),
-        dt.datetime.utcnow() + dt.timedelta(seconds=1.86)
+        dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=1.57),
+        dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=1.86)
     ]
     siter = iter(scheduled)
 
@@ -757,12 +757,15 @@ def test_server_thread_pool_onload(threads):
 
 def test_server_thread_pool_busy(threads):
     button = Button(name='Click')
+    clicks = []
 
     def cb(event):
         time.sleep(0.5)
 
     def simulate_click():
-        button._comm_event(state.curdoc, ButtonClick(model=None))
+        click = ButtonClick(model=None)
+        clicks.append(click)
+        button._comm_event(state.curdoc, click)
 
     button.on_click(cb)
 
@@ -774,7 +777,7 @@ def test_server_thread_pool_busy(threads):
 
     serve_and_request(app, suffix="/")
 
-    wait_until(lambda: state._busy_counter == 0 and not state.busy)
+    wait_until(lambda: len(clicks) == 3 and state._busy_counter == 0 and not state.busy)
 
 
 def test_server_async_onload(threads):

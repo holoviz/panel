@@ -11,6 +11,8 @@ from panel.custom import (
     AnyWidgetComponent, Child, Children, JSComponent, ReactComponent,
 )
 from panel.layout import Row
+from panel.layout.base import ListLike
+from panel.pane import Markdown
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
@@ -235,10 +237,13 @@ class JSChild(JSComponent):
 
     child = Child()
 
+    render_count = param.Integer(default=0)
+
     _esm = """
     export function render({ model }) {
       const button = document.createElement('button')
       button.appendChild(model.get_child('child'))
+      model.render_count += 1
       return button
     }"""
 
@@ -247,8 +252,11 @@ class ReactChild(ReactComponent):
 
     child = Child()
 
+    render_count = param.Integer(default=0)
+
     _esm = """
     export function render({ model }) {
+      model.render_count += 1
       return <button>{model.get_child('child')}</button>
     }"""
 
@@ -265,46 +273,117 @@ def test_child(page, component):
 
     expect(page.locator('button')).to_have_text('A different Markdown pane!')
 
+    wait_until(lambda: example.render_count == (2 if component is JSChild else 1), page)
 
-class JSChildren(JSComponent):
 
-    children = Children()
+class JSChildren(ListLike, JSComponent):
+
+    objects = Children()
+
+    render_count = param.Integer(default=0)
 
     _esm = """
     export function render({ model }) {
       const div = document.createElement('div')
       div.id = "container"
-      div.append(...model.get_child('children'))
+      div.append(...model.get_child('objects'))
+      model.render_count += 1
       return div
     }"""
 
 
-class ReactChildren(ReactComponent):
-
-    children = Children()
+class JSChildrenNoReturn(JSChildren):
 
     _esm = """
-    export function render({ model }) {
-      return <div id="container">{model.get_child("children")}</div>
+    export function render({ model, view }) {
+      const div = document.createElement('div')
+      div.id = "container"
+      div.append(...model.get_child('objects'))
+      view.container.replaceChildren(div)
+      model.render_count += 1
     }"""
 
 
-@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
+class ReactChildren(ListLike, ReactComponent):
+
+    objects = Children()
+
+    render_count = param.Integer(default=0)
+
+    _esm = """
+    export function render({ model }) {
+      model.render_count += 1
+      return <div id="container">{model.get_child("objects")}</div>
+    }"""
+
+
+@pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children(page, component):
-    example = component(children=['A Markdown pane!'])
+    example = component(objects=['A Markdown pane!'])
 
     serve_component(page, example)
 
     expect(page.locator('#container')).to_have_text('A Markdown pane!')
 
-    example.children = ['A different Markdown pane!']
+    example.objects = ['A different Markdown pane!']
 
     expect(page.locator('#container')).to_have_text('A different Markdown pane!')
 
-    example.children = ['<div class="foo">1</div>', '<div class="foo">2</div>']
+    example.objects = ['<div class="foo">1</div>', '<div class="foo">2</div>']
 
     expect(page.locator('.foo').nth(0)).to_have_text('1')
     expect(page.locator('.foo').nth(1)).to_have_text('2')
+
+    page.wait_for_timeout(400)
+
+    assert example.render_count == (3 if issubclass(component, JSChildren) else 2)
+
+
+@pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
+def test_children_add_and_remove_without_error(page, component):
+    example = component(objects=['A Markdown pane!'])
+
+    msgs, _ = serve_component(page, example)
+
+    expect(page.locator('#container')).to_have_text('A Markdown pane!')
+
+    example.append('A different Markdown pane!')
+    example.pop(-1)
+
+    expect(page.locator('#container')).to_have_text('A Markdown pane!')
+
+    expect(page.locator('.markdown')).to_have_count(1)
+
+    page.wait_for_timeout(500)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+@pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
+def test_children_append_without_rerender(page, component):
+    child = JSChild(child=Markdown(
+        'A Markdown pane!', css_classes=['first']
+    ))
+    example = component(objects=[child])
+
+    serve_component(page, example)
+
+    expect(page.locator('.first')).to_have_text('A Markdown pane!')
+
+    wait_until(lambda: child.render_count == 1, page)
+
+    example.objects = example.objects+[Markdown(
+        'A different Markdown pane!', css_classes=['second']
+    )]
+
+    expect(page.locator('.second')).to_have_text('A different Markdown pane!')
+
+    page.wait_for_timeout(400)
+
+    assert child.render_count == 1
+    assert example.render_count == 2
+
+
 
 JS_CODE_BEFORE = """
 export function render() {
@@ -410,6 +489,39 @@ def test_after_render_lifecycle_hooks(page, component):
     expect(page.locator('h1')).to_have_text("rendered")
 
 
+class JSLifecycleAfterLayout(JSComponent):
+
+    _esm = """
+    export function render({ model }) {
+      const h1 = document.createElement('h1')
+      model.on('after_layout', () => { h1.textContent = 'layouted' })
+      return h1
+    }"""
+
+
+class ReactLifecycleAfterLayout(ReactComponent):
+
+    _esm = """
+    import {useState} from "react"
+
+    export function render({ model }) {
+      const [text, setText] = useState("")
+      model.on('after_layout', () => { setText('layouted') })
+      return <h1>{text}</h1>
+    }"""
+
+
+@pytest.mark.parametrize('component', [JSLifecycleAfterLayout, ReactLifecycleAfterLayout])
+def test_after_layout_lifecycle_hooks(page, component):
+    example = component()
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("layouted")
+
+
 class JSLifecycleAfterResize(JSComponent):
 
     _esm = """
@@ -417,7 +529,7 @@ class JSLifecycleAfterResize(JSComponent):
       const h1 = document.createElement('h1')
       h1.textContent = "0"
       let count = 0
-      model.on('after_resize', () => { count += 1; h1.textContent = `${count}`; })
+      model.on('resize', () => { count += 1; h1.textContent = `${count}`; })
       return h1
     }"""
 
@@ -428,7 +540,7 @@ class ReactLifecycleAfterResize(ReactComponent):
 
     export function render({ model }) {
       const [count, setCount] = useState(0)
-      model.on('after_resize', () => { setCount(count+1); })
+      model.on('resize', () => { setCount(count+1); })
       return <h1>{count}</h1>
     }"""
 
