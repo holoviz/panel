@@ -24,7 +24,7 @@ def test_latex_mathjax_pane(document, comm):
     assert pane._models[model.ref['id']][0] is model
     assert type(model).__name__ == 'MathJax'
     # assert model.text == r"$\frac{p^3}{q}$"
-    assert model.text == r"\(\frac{p^3}{q}\)"
+    assert model.text == r"$$\frac{p^3}{q}$$"
 
     # Cleanup
     pane._cleanup(model)
