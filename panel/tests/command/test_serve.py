@@ -106,7 +106,6 @@ def test_serve_markdown():
         assert '<title>My app</title>' in r.content.decode('utf-8')
 
 
-@linux_only
 @pytest.mark.parametrize("arg", ["--warm", "--autoreload"])
 def test_serve_num_procs(arg, tmp_path):
     app = "import panel as pn; pn.panel('Hello').servable()"
@@ -119,7 +118,6 @@ def test_serve_num_procs(arg, tmp_path):
         assert pid1 != pid2
 
 
-@linux_only
 def test_serve_num_procs_setup(tmp_path):
     app = "import panel as pn; pn.panel('Hello').servable()"
     py = tmp_path / "app.py"
