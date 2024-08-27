@@ -94,7 +94,7 @@ class AnyWidgetAdapter extends AnyWidgetModelAdapter {
 export class AnyWidgetComponentView extends ReactComponentView {
   declare model: AnyWidgetComponent
   adapter: AnyWidgetAdapter
-  destroyer: ((props: any) => void) | null
+  destroyer: Promise<((props: any) => void) | null>
 
   override initialize(): void {
     super.initialize()
@@ -104,7 +104,7 @@ export class AnyWidgetComponentView extends ReactComponentView {
   override remove(): void {
     super.remove()
     if (this.destroyer) {
-      this.destroyer.then((d) => d({model: this.adapter, el: this.container}))
+      this.destroyer.then((d: any) => d({model: this.adapter, el: this.container}))
     }
   }
 
