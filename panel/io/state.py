@@ -7,6 +7,7 @@ import asyncio
 import datetime as dt
 import inspect
 import logging
+import os
 import shutil
 import sys
 import threading
@@ -846,6 +847,7 @@ class _state(param.Parameterized):
           Whether the callback should be run on a thread (requires
           config.nthreads to be set).
         """
+        name = f"{os.getpid()}_{name}"
         if name in self._scheduled:
             if callback is not self._scheduled[name][1]:
                 self.param.warning(
