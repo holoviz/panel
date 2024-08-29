@@ -459,6 +459,7 @@ export namespace ReactiveESM {
     dev: p.Property<boolean>
     esm: p.Property<string>
     importmap: p.Property<any>
+    precompiled: p.Property<boolean>
   }
 }
 
@@ -570,6 +571,9 @@ export class ReactiveESM extends HTMLBox {
   }
 
   compile(): string | null {
+    if (this.precompiled) {
+      return this.esm
+    }
     let compiled
     try {
       compiled = transform(
@@ -639,6 +643,7 @@ export class ReactiveESM extends HTMLBox {
       dev:        [ Bool,             false ],
       esm:        [ String,              "" ],
       importmap:  [ Any,                 {} ],
+      precompiled:[ Bool,             false ],
     }))
   }
 }
