@@ -13,7 +13,6 @@ import os
 import pathlib
 import signal
 import sys
-import threading
 import uuid
 
 from contextlib import contextmanager
@@ -75,6 +74,7 @@ from .resources import (
 )
 from .session import generate_session
 from .state import set_curdoc, state
+from .threads import StoppableThread
 
 logger = logging.getLogger(__name__)
 
@@ -776,7 +776,6 @@ def serve(
     """
     # Empty layout are valid and the Bokeh warning is silenced as usually
     # not relevant to Panel users.
-    silence(EMPTY_LAYOUT, True)
     kwargs = dict(kwargs, **dict(
         port=port, address=address, websocket_origin=websocket_origin,
         loop=loop, show=show, start=start, title=title, verbose=verbose,
@@ -975,6 +974,7 @@ def get_server(
     from ..config import config
     from .rest import REST_PROVIDERS
 
+    silence(EMPTY_LAYOUT, True)
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     kwargs['extra_patterns'] = extra_patterns = list(kwargs.get('extra_patterns', []))
 
@@ -1127,46 +1127,3 @@ def get_server(
                 "process invoking the panel.io.server.serve."
             )
     return server
-
-
-class StoppableThread(threading.Thread):
-    """Thread class with a stop() method."""
-
-    def __init__(self, io_loop: IOLoop, **kwargs):
-        super().__init__(**kwargs)
-        self.io_loop = io_loop
-
-    def run(self) -> None:
-        if hasattr(self, '_target'):
-            target, args, kwargs = self._target, self._args, self._kwargs # type: ignore
-        else:
-            target, args, kwargs = self._Thread__target, self._Thread__args, self._Thread__kwargs # type: ignore
-        if not target:
-            return
-        bokeh_server = None
-        try:
-            bokeh_server = target(*args, **kwargs)
-        finally:
-            if isinstance(bokeh_server, Server):
-                try:
-                    bokeh_server.stop()
-                except Exception:
-                    pass
-            if hasattr(self, '_target'):
-                del self._target, self._args, self._kwargs # type: ignore
-            else:
-                del self._Thread__target, self._Thread__args, self._Thread__kwargs # type: ignore
-
-    def stop(self) -> None:
-        """Signal to stop the event loop gracefully."""
-        self.io_loop.add_callback(self._graceful_stop)
-
-    async def _shutdown(self):
-        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
-        for task in tasks:
-            task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
-        self.io_loop.stop()
-
-    def _graceful_stop(self):
-        self.io_loop.add_callback(self._shutdown)
