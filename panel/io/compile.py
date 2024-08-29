@@ -12,7 +12,9 @@ from ..custom import ReactComponent, ReactiveESM
 from ..util import camel_to_kebab
 
 # Regex pattern to match import statements with URLs starting with https
-_ESM_IMPORT_RE = re.compile(r"import\s+.*?\s+from\s+['\"](https:\/\/[^\/]+\/([^@\/]+)(?:@([\d\.\w-]+))?)['\"]")
+_ESM_IMPORT_RE = re.compile(r'import\s+.*?\s+from\s+["\'](https:\/\/[^\/]+\/([^@\/]+)(?:@([\d\.\w-]+))?[^"\']*)["\']'
+)
+_ESM_IMPORT_SUFFIX = re.compile(r'\/([^?"&\']*)')
 
 # Regex pattern to extract version specifiers from a URL
 _ESM_VERSION_RE = re.compile(r'@(\d+\.\d+\.\d+(-[a-zA-Z]+(\.\d+)?)?)')
@@ -45,7 +47,7 @@ def find_components(path: str | os.PathLike) -> list[type[ReactiveESM]]:
     return components
 
 
-def extract_packages(esm_code: str) -> dict[str, str]:
+def packages_from_code(esm_code: str) -> dict[str, str]:
     """
     Extracts package version definitions from ESM code.
 
@@ -60,11 +62,44 @@ def extract_packages(esm_code: str) -> dict[str, str]:
     """
     packages = {}
     for match in _ESM_IMPORT_RE.findall(esm_code):
-        replace, package_name, version = match
-        packages[package_name] = version
-        esm_code = esm_code.replace(replace, package_name)
+        url, package_name, version = match
+        packages[package_name] = f'^{version}'
+        after_slash_match = _ESM_IMPORT_SUFFIX.search(url.split('@')[-1])
+        if after_slash_match:
+            suffix = after_slash_match.group(1)
+            import_name = f'{package_name}/{suffix}'
+        else:
+            import_name = package_name
+        esm_code = esm_code.replace(url, import_name)
 
     return esm_code, packages
+
+
+def packages_from_importmap(imports: dict[str, str]) -> dict[str, str]:
+    """
+    Extracts package version definitions from an import map.
+
+    Arguments
+    ---------
+    imports : dict[str, str]
+        A dictionary representing the import map, where keys are package names and values are URLs.
+
+    Returns
+    -------
+    dict[str, str]
+        A dictionary where keys are package names and values are their corresponding versions.
+    """
+    dependencies = {}
+    for key, url in imports.items():
+        match = _ESM_VERSION_RE.search(url)
+        if key.endswith('/'):
+            key = key[:-1]
+
+        if match:
+            dependencies[key] = f"^{match.group(1)}"
+        else:
+            dependencies[key] = "latest"
+    return dependencies
 
 
 def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, any]]:
@@ -92,23 +127,11 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, a
             'and cannot be compiled.'
         )
 
-    # Extract dependencies and versions
-    dependencies = {}
-    for key, url in importmap["imports"].items():
-        match = _ESM_VERSION_RE.search(url)
-        if key.endswith('/'):
-            key = key[:-1]
-
-        if match:
-            dependencies[key] = f"^{match.group(1)}"
-        else:
-            dependencies[key] = "latest"
-
+    dependencies = packages_from_importmap(importmap.get('imports', {}))
     esm = component._render_esm(compiled=False)
     if issubclass(component, ReactComponent):
         esm += '\nimport * as React from "react"\nimport { createRoot } from "react-dom/client"\nexport default {render, React, createRoot}'
-
-    js_code, packages = extract_packages(esm)
+    js_code, packages = packages_from_code(esm)
     dependencies.update(packages)
 
     # Create package.json structure
@@ -150,24 +173,22 @@ def compile_component(component: type[ReactiveESM], minify: bool = True):
         try:
             print(f"Running command: {' '.join(install_cmd)}")  # noqa
             result = subprocess.run(install_cmd, check=True, capture_output=True, text=True)
-            print("esbuild output:", result.stdout)  # noqa
+            if result.stdout:
+                print("npm output:", result.stdout)  # noqa
             if result.stderr:
-                print("esbuild errors:", result.stderr)  # noqa
+                print("npm errors:", result.stderr)  # noqa
         except subprocess.CalledProcessError as e:
-            print("An error occurred while running esbuild:")  # noqa
-            print(e.stderr)  # noqa
+            print(f"An error occurred while running npm install: {e.stderr}")  # noqa
 
         minify_arg = ['--minify'] if minify else []
         build_cmd = ['esbuild', index_js_path, '--bundle', '--format=esm', f'--outfile={out}'] + minify_arg
         try:
             print(f"Running command: {' '.join(build_cmd)}")  # noqa
             result = subprocess.run(build_cmd, check=True, capture_output=True, text=True)
-            print("esbuild output:", result.stdout)  # noqa
             if result.stderr:
-                print("esbuild errors:", result.stderr)  # noqa
+                print("esbuild output:", result.stderr)  # noqa
         except subprocess.CalledProcessError as e:
-            print("An error occurred while running esbuild:")  # noqa
-            print(e.stderr)  # noqa
+            print(f"An error occurred while running esbuild: {e.stderr}")  # noqa
 
 
 def compile_module(module: str | os.PathLike, minify: bool = True):
