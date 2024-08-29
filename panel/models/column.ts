@@ -19,15 +19,44 @@ export class ColumnView extends BkColumnView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {children, scroll_position, scroll_button_threshold} = this.model.properties
+    const {children, scroll_position, scroll_index, scroll_button_threshold} = this.model.properties
 
     this.on_change(children, () => this.trigger_auto_scroll())
     this.on_change(scroll_position, () => this.scroll_to_position())
+    this.on_change(scroll_index, () => this.scroll_to_index())
     this.on_change(scroll_button_threshold, () => this.toggle_scroll_button())
   }
 
   get distance_from_latest(): number {
     return this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight
+  }
+
+  scroll_to_index(): void {
+    const index = this.model.scroll_index
+    if (index === null) {
+      return
+    }
+
+    if (index >= this.model.children.length) {
+      console.warn(`Invalid scroll index: ${index}`)
+      return
+    }
+
+    // Get the child view at the specified index
+    const childView = this.child_views[index]
+    if (!childView) {
+      console.warn(`Child view not found for index: ${index}`)
+      return
+    }
+
+    // Get the top position of the child element relative to the column
+    const childEl = childView.el
+    const childRect = childEl.getBoundingClientRect()
+    const columnRect = this.el.getBoundingClientRect()
+    const relativeTop = childRect.top - columnRect.top + this.el.scrollTop
+
+    // Scroll to the child's position
+    this.model.scroll_position = Math.round(relativeTop)
   }
 
   scroll_to_position(): void {
@@ -106,6 +135,7 @@ export namespace Column {
   export type Attrs = p.AttrsOf<Props>
   export type Props = BkColumn.Props & {
     scroll_position: p.Property<number>
+    scroll_index: p.Property<number | null>
     auto_scroll_limit: p.Property<number>
     scroll_button_threshold: p.Property<number>
     view_latest: p.Property<boolean>
@@ -126,8 +156,9 @@ export class Column extends BkColumn {
   static {
     this.prototype.default_view = ColumnView
 
-    this.define<Column.Props>(({Int, Bool}) => ({
+    this.define<Column.Props>(({Int, Bool, Nullable}) => ({
       scroll_position: [Int, 0],
+      scroll_index: [Nullable(Int), null],
       auto_scroll_limit: [Int, 0],
       scroll_button_threshold: [Int, 0],
       view_latest: [Bool, false],

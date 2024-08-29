@@ -25,6 +25,13 @@ class Column(BkColumn):
         0 will scroll to the top."""
     )
 
+    scroll_index = Nullable(
+        Int,
+        help="""
+        Index of the object to scroll to. Setting this value will
+        scroll the Column to the object at the given index."""
+)
+
     auto_scroll_limit = Int(
         default=0,
         help="""
