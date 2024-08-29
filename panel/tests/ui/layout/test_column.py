@@ -236,3 +236,24 @@ def test_column_scroll_position_param_updated(page):
 
     column = page.locator(".bk-panel-models-layout-Column")
     expect(column).to_have_js_property('scrollTop', 175)
+
+
+def test_column_scroll_index(page):
+    col = Column(
+        *list(range(100)),
+        height=300,
+        sizing_mode="fixed",
+        scroll=True,
+    )
+
+    serve_component(page, col)
+
+    page.wait_for_timeout(200)
+
+    column_el = page.locator(".bk-panel-models-layout-Column")
+    expect(column_el).to_have_js_property('scrollTop', 0)
+
+    col.scroll_index = 50
+    expect(column_el).to_have_js_property('scrollTop', 1362)
+
+    assert col.scroll_index is None
