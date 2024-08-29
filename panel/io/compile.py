@@ -145,6 +145,13 @@ def compile_component(component: type[ReactiveESM], minify: bool = True):
     Compiles and bundles the ESM code of a ReactiveESM component and
     writes the compiled JS file to a file adjacent to the module
     the component was defined in.
+
+    Arguments
+    ---------
+    component: type[ReactiveESM]
+        The component to compile.
+    minify: bool
+        Whether to minify the output.
     """
     name = camel_to_kebab(component.__name__)
     ext = 'jsx' if issubclass(component, ReactComponent) else 'js'
@@ -190,5 +197,16 @@ def compile_component(component: type[ReactiveESM], minify: bool = True):
 
 
 def compile_module(module: str | os.PathLike, minify: bool = True):
+    """
+    Compiles and bundles all ESM components in a module and writes the
+    resulting JS file(s) to disk alongside the input module.
+
+    Arguments
+    ---------
+    module: str | os.PathLike
+        Input module where one or more ESM components can be defined.
+    minify: boolean
+        Whether to minify the output.
+    """
     for component in find_components(module):
         compile_component(component, minify=minify)
