@@ -112,7 +112,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     def _compiled_path(cls) -> os.PathLike | None:
         if config.autoreload:
             return None
-        mod_path = pathlib.Path(inspect.getfile(cls)).parent
+        try:
+            mod_path = pathlib.Path(inspect.getfile(cls)).parent
+        except (OSError, TypeError, ValueError):
+            return None
         cls_name = camel_to_kebab(cls.__name__)
         path = mod_path / f'{cls_name}.compiled.js'
         return path if path.is_file() else None
@@ -123,14 +126,14 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             compiled_path = cls._compiled_path
             if compiled_path:
                 return compiled_path
-        if hasattr(cls, '__path__'):
-            mod_path = cls.__path__
-        else:
-            mod_path = pathlib.Path(inspect.getfile(cls)).parent
         esm = cls._esm
         if isinstance(esm, pathlib.PurePath):
             return esm
         try:
+            if hasattr(cls, '__path__'):
+                mod_path = cls.__path__
+            else:
+                mod_path = pathlib.Path(inspect.getfile(cls)).parent
             esm_path = mod_path / esm
             if esm_path.is_file():
                 return esm_path
