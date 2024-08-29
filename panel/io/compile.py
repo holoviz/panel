@@ -11,6 +11,12 @@ from bokeh.application.handlers.code_runner import CodeRunner
 from ..custom import ReactComponent, ReactiveESM
 from ..util import camel_to_kebab
 
+# Regex pattern to match import statements with URLs starting with https
+_ESM_IMPORT_RE = re.compile(r"import\s+.*?\s+from\s+['\"](https:\/\/[^\/]+\/([^@\/]+)(?:@([\d\.\w-]+))?)['\"]")
+
+# Regex pattern to extract version specifiers from a URL
+_ESM_VERSION_RE = re.compile(r'@(\d+\.\d+\.\d+(-[a-zA-Z]+(\.\d+)?)?)')
+
 
 def find_components(path: str | os.PathLike) -> list[type[ReactiveESM]]:
     """
@@ -52,17 +58,9 @@ def extract_packages(esm_code: str) -> dict[str, str]:
     -------
     Dictionary of packages and their versions.
     """
-    # Regex pattern to match import statements with URLs starting with https
-    pattern = r"import\s+.*?\s+from\s+['\"](https:\/\/[^\/]+\/([^@\/]+)(?:@([\d\.\w-]+))?)['\"]"
-
-    # Find all matching import statements
-    matches = re.findall(pattern, esm_code)
-
     packages = {}
-
-    for match in matches:
+    for match in _ESM_IMPORT_RE.findall(esm_code):
         replace, package_name, version = match
-        # Add to dictionary
         packages[package_name] = version
         esm_code = esm_code.replace(replace, package_name)
 
@@ -97,7 +95,7 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, a
     # Extract dependencies and versions
     dependencies = {}
     for key, url in importmap["imports"].items():
-        match = re.search(r'@(\d+\.\d+\.\d+)', url)
+        match = _ESM_VERSION_RE.search(url)
         if key.endswith('/'):
             key = key[:-1]
 
