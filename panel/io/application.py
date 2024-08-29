@@ -6,9 +6,13 @@ from __future__ import annotations
 import json
 import logging
 import os
+import pathlib
 
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from types import FunctionType, MethodType
+from typing import (
+    TYPE_CHECKING, Any, Callable, Mapping,
+)
 
 import bokeh.command.util
 
@@ -17,19 +21,63 @@ from bokeh.application.handlers.directory import DirectoryHandler
 from bokeh.application.handlers.document_lifecycle import (
     DocumentLifecycleHandler,
 )
+from bokeh.application.handlers.function import FunctionHandler
+from bokeh.models import CustomJS
 
 from ..config import config
 from .document import _destroy_document
 from .handlers import MarkdownHandler, NotebookHandler, ScriptHandler
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state
 
 if TYPE_CHECKING:
     from bokeh.application.application import SessionContext
     from bokeh.application.handlers.handler import Handler
+    from bokeh.document.document import Document
 
-log = logging.getLogger('panel.io.application')
+    from ..template.base import BaseTemplate
+    from ..viewable import Viewable, Viewer
+    from .location import Location
 
+    TViewable = Viewable | Viewer | BaseTemplate
+    TViewableFuncOrPath = TViewable | Callable[[], TViewable] | os.PathLike | str
+
+
+logger = logging.getLogger('panel.io.application')
+
+
+def _eval_panel(
+    panel: TViewableFuncOrPath, server_id: str, title: str,
+    location: bool | Location, admin: bool, doc: Document
+):
+    from ..pane import panel as as_panel
+    from ..template import BaseTemplate
+
+    if config.global_loading_spinner:
+        doc.js_on_event(
+            'document_ready', CustomJS(code=f"""
+            const body = document.getElementsByTagName('body')[0]
+            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            """)
+        )
+
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
+
+    # Set up instrumentation for logging sessions
+    logger.info(LOG_SESSION_LAUNCHING, id(doc))
+    def _log_session_destroyed(session_context):
+        logger.info(LOG_SESSION_DESTROYED, id(doc))
+    doc.on_session_destroyed(_log_session_destroyed)
+
+    with set_curdoc(doc):
+        if isinstance(panel, (FunctionType, MethodType)):
+            panel = panel()
+        if isinstance(panel, BaseTemplate):
+            doc = panel._modify_doc(server_id, title, doc, location)
+        else:
+            doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
+        return doc
 
 def _on_session_destroyed(session_context: SessionContext) -> None:
     """
@@ -41,8 +89,10 @@ def _on_session_destroyed(session_context: SessionContext) -> None:
         try:
             callback(session_context)
         except Exception as e:
-            log.warning("DocumentLifecycleHandler on_session_destroyed "
-                        f"callback {callback} failed with following error: {e}")
+            logger.warning(
+                "DocumentLifecycleHandler on_session_destroyed "
+                f"callback {callback} failed with following error: {e}"
+            )
 
 
 class Application(BkApplication):
@@ -73,14 +123,14 @@ class Application(BkApplication):
         super().add(handler)
 
     def initialize_document(self, doc):
-        log.info(LOG_SESSION_LAUNCHING, id(doc))
+        logger.info(LOG_SESSION_LAUNCHING, id(doc))
         super().initialize_document(doc)
         if doc in state._templates and doc not in state._templates[doc]._documents:
             template = state._templates[doc]
             with set_curdoc(doc):
                 template.server_doc(title=template.title, location=True, doc=doc)
         def _log_session_destroyed(session_context):
-            log.info(LOG_SESSION_DESTROYED, id(doc))
+            logger.info(LOG_SESSION_DESTROYED, id(doc))
         doc.destroy = partial(_destroy_document, doc) # type: ignore
         doc.on_event('document_ready', partial(state._schedule_on_load, doc))
         doc.on_session_destroyed(_log_session_destroyed)
@@ -144,3 +194,75 @@ def build_single_handler_application(path, argv=None):
     return application
 
 bokeh.command.util.build_single_handler_application = build_single_handler_application
+
+
+def build_applications(
+    panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
+    title: str | dict[str, str] = None,
+    location: bool | Location = True,
+    admin: bool = False,
+    server_id: str | None = None,
+    custom_handlers: list = None
+) -> dict[str, Application]:
+    """
+    Converts a variety of objects into a dictionary of Applications.
+
+    Arguments
+    ---------
+    panel: Viewable, function or {str: Viewable}
+        A Panel object, a function returning a Panel object or a
+        dictionary mapping from the URL slug to either.
+    title : str or {str: str} (optional, default=None)
+        An HTML title for the application or a dictionary mapping
+        from the URL slug to a customized title.
+    location : boolean or panel.io.location.Location
+        Whether to create a Location component to observe and
+        set the URL location.
+    admin: boolean (default=False)
+        Whether to enable the admin panel
+    server_id: str
+        ID of the server running the application(s)
+    """
+    if not isinstance(panel, dict):
+        panel = {'/': panel}
+
+    apps = {}
+    for slug, app in panel.items():
+        if slug.endswith('/') and not slug == '/':
+            raise ValueError(f"Invalid URL: trailing slash '/' used for {slug!r} not supported.")
+        if isinstance(title, dict):
+            try:
+                title_ = title[slug]
+            except KeyError:
+                raise KeyError(
+                    "Keys of the title dictionary and of the apps "
+                    f"dictionary must match. No {slug} key found in the "
+                    "title dictionary.") from None
+        else:
+            title_ = title
+        slug = slug if slug.startswith('/') else '/'+slug
+
+        # Handle other types of apps using a custom handler
+        for handler in custom_handlers:
+            new_app = handler(slug, app)
+            if app is not None:
+                break
+        else:
+            new_app = app
+        if new_app is not None:
+            app = new_app
+            if app is True:
+                continue
+
+        if isinstance(app, pathlib.Path):
+            app = str(app) # enables serving apps from Paths
+        if (isinstance(app, str) and app.endswith(('.py', '.ipynb', '.md'))
+            and os.path.isfile(app)):
+            apps[slug] = app = build_single_handler_application(app)
+            app._admin = admin
+        elif isinstance(app, BkApplication):
+            apps[slug] = app
+        else:
+            handler = FunctionHandler(partial(_eval_panel, app, server_id, title_, location, admin))
+            apps[slug] = Application(handler, admin=admin)
+    return apps
