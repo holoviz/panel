@@ -250,10 +250,19 @@ def test_column_scroll_index(page):
 
     page.wait_for_timeout(200)
 
+    # start at 0
     column_el = page.locator(".bk-panel-models-layout-Column")
     expect(column_el).to_have_js_property('scrollTop', 0)
 
+    # scroll to 50
     col.scroll_index = 50
     expect(column_el).to_have_js_property('scrollTop', 1362)
-
     assert col.scroll_index is None
+
+    # scroll away using mouse wheel
+    column_el.evaluate('(el) => el.scrollTo({top: 1000})')
+    expect(column_el).to_have_js_property('scrollTop', 1000)
+
+    # scroll to 50 again
+    col.scroll_index = 50
+    expect(column_el).to_have_js_property('scrollTop', 1362)
