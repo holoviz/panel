@@ -133,7 +133,7 @@ def compile_component(component: type[ReactiveESM], minify: bool = True):
         out_path = component.__path__
     else:
         out_path = pathlib.Path(inspect.getfile(component)).parent
-    out = (pathlib.Path(out_path) / f'{name}.compiled.js').absolute()
+    out = (out_path / f'{name}.compiled.js').absolute()
 
     code, package_json = extract_dependencies(component)
 

@@ -205,10 +205,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             data_params[k] = v
         data_props = self._process_param_change(data_params)
         precompiled = self._compiled_path is not None
-        if precompiled:
-            importmap = {}
-        else:
-            importmap = self._process_importmap()
+        importmap = {} if precompiled else self._process_importmap()
         params.update({
             'class_name': camel_to_kebab(cls.__name__),
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
@@ -248,7 +245,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         if not ((config.autoreload or getattr(self, '_debug', False)) and import_available('watchfiles')):
             return
         super()._setup_autoreload()
-        if (self._esm_path(False) and not self._watching_esm):
+        if (self._esm_path(compile=False) and not self._watching_esm):
             self._watching_esm = asyncio.Event()
             state.execute(self._watch_esm)
 
