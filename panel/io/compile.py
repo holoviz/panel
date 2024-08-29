@@ -129,8 +129,6 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, a
 
     dependencies = packages_from_importmap(importmap.get('imports', {}))
     esm = component._render_esm(compiled=False)
-    if issubclass(component, ReactComponent):
-        esm += '\nimport * as React from "react"\nimport { createRoot } from "react-dom/client"\nexport default {render, React, createRoot}'
     js_code, packages = packages_from_code(esm)
     dependencies.update(packages)
 

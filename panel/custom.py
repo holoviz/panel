@@ -99,6 +99,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _esm: ClassVar[str | os.PathLike] = ""
 
+    _exports: ClassVar[str] = ""
+
     _importmap: ClassVar[dict[Literal['imports', 'scopes'], str]] = {}
 
     __abstract = True
@@ -148,6 +150,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         else:
             esm = cls._esm
         esm = textwrap.dedent(esm)
+        esm += textwrap.dedent(cls._exports)
         return esm
 
     def _cleanup(self, root: Model | None) -> None:
@@ -394,6 +397,11 @@ class ReactComponent(ReactiveESM):
     _bokeh_model = _BkReactComponent
 
     _react_version = '18.3.1'
+
+    _exports = """
+    import * as React from "react"
+    import { createRoot } from "react-dom/client"
+    export default {render, React, createRoot}"""
 
     @classmethod
     def _process_importmap(cls):
