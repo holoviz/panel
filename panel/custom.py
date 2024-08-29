@@ -111,7 +111,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     @classproperty
     def _compiled_path(cls) -> os.PathLike | None:
         if config.autoreload:
-            return False
+            return None
         mod_path = pathlib.Path(inspect.getfile(cls)).parent
         cls_name = camel_to_kebab(cls.__name__)
         path = mod_path / f'{cls_name}.compiled.js'

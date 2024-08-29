@@ -637,13 +637,13 @@ export class ReactiveESM extends HTMLBox {
   static {
     this.prototype.default_view = ReactiveESMView
     this.define<ReactiveESM.Props>(({Any, Array, Bool, String}) => ({
-      children:   [ Array(String),       [] ],
-      class_name: [ String,              "" ],
-      data:       [ Any                     ],
-      dev:        [ Bool,             false ],
-      esm:        [ String,              "" ],
-      importmap:  [ Any,                 {} ],
-      precompiled:[ Bool,             false ],
+      children:    [ Array(String),       [] ],
+      class_name:  [ String,              "" ],
+      data:        [ Any                     ],
+      dev:         [ Bool,             false ],
+      esm:         [ String,              "" ],
+      importmap:   [ Any,                 {} ],
+      precompiled: [ Bool,             false ],
     }))
   }
 }
