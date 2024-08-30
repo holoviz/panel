@@ -58,7 +58,7 @@ if _TC:
     from . import (
         layout, links, pane, param, pipeline, template, viewable, widgets,
     )
-    from .interact import interact
+    from ._interact import interact
     from .io import serve, state
     from .io.cache import cache
     from .io.notebook import (  # noqa: F401
@@ -102,7 +102,7 @@ _attrs = {
     "config": "panel.config:config",
     "custom": "panel.custom",
     "indicators": "panel.widgets:indicators",
-    "interact": "panel.interact:interact",
+    "interact": "panel._interact:interact",
     "ipywidget": "panel.io.notebook:ipywidget",
     "layout": "panel.layout",
     "links": "panel.links",

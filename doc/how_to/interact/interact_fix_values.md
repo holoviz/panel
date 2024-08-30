@@ -12,14 +12,14 @@ First, let's declare a simple function.
 
 ```{pyodide}
 import panel as pn
-from panel.interact import fixed
+from panel._interact import fixed
 pn.extension() # for notebook
 
 def f(x, y):
     return x, y
 ```
 
-Now, call `interact` using the `panel.interact.fixed` function to fix one of the values:
+Now, call `interact` using the `panel._interact.fixed` function to fix one of the values:
 
 ```{pyodide}
 pn.interact(f, x=1, y=fixed(10))
