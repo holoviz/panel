@@ -16,12 +16,12 @@ from ..util import camel_to_kebab
 GREEN, RED, RESET = "\033[0;32m", "\033[0;31m", "\033[0m"
 
 # Regex pattern to match import statements with URLs starting with https
-_ESM_IMPORT_RE = re.compile(r'import\s+.*?\s+from\s+["\'](https:\/\/[^\/]+\/([^@\/]+)(?:@([\d\.\w-]+))?[^"\']*)["\']'
-)
+_ESM_IMPORT_RE = re.compile(r'import\s+.*?\s+from\s+["\'](https:\/\/[^\/]+\/([^@\/]+)(?:@([\d\.\w-]+))?[^"\']*)["\']')
 _ESM_IMPORT_SUFFIX = re.compile(r'\/([^?"&\']*)')
 
 # Regex pattern to extract version specifiers from a URL
-_ESM_VERSION_RE = re.compile(r'@(\d+\.\d+\.\d+(-[a-zA-Z]+(\.\d+)?)?)')
+_ESM_URL_RE = re.compile(r'(https:\/\/[^\/]+\/([^@\/]+)(?:@([\d\.\w-]+)))')
+_ESM_IMPORT_ALIAS_RE = re.compile(r'(import\s+(?:\*\s+as\s+\w+|\{[^}]*\}|[\w*\s,]+)\s+from\s+[\'"])(.*?)([\'"])')
 
 
 @contextmanager
@@ -99,16 +99,51 @@ def packages_from_code(esm_code: str) -> dict[str, str]:
         else:
             import_name = package_name
         esm_code = esm_code.replace(url, import_name)
-
     return esm_code, packages
 
 
-def packages_from_importmap(imports: dict[str, str]) -> dict[str, str]:
+def replace_imports(esm_code: str, replacements: dict[str, str]) -> dict[str, str]:
+    """
+    Replaces imports in the code which may be aliases with the actual
+    package names.
+
+    Arguments
+    ---------
+    esm_code: str
+        The ESM code to replace import names in.
+    replacements: dict[str, str]
+        Mapping that defines replacements from aliased import names
+        to actual package names.
+
+    Returns
+    -------
+    modified_code: str
+        The code where imports have been replaced with package names.
+    """
+
+    def replace_match(match):
+        import_part = match.group(1)
+        module_path = match.group(2)
+        quote = match.group(3)
+        for old, new in replacements.items():
+            if module_path.startswith(old):
+                module_path = module_path.replace(old, new, 1)
+                break
+        return f"{import_part}{module_path}{quote}"
+
+    # Use the sub method to replace the matching parts of the import statements
+    modified_code = _ESM_IMPORT_ALIAS_RE.sub(replace_match, esm_code)
+    return modified_code
+
+
+def packages_from_importmap(esm_code: str, imports: dict[str, str]) -> dict[str, str]:
     """
     Extracts package version definitions from an import map.
 
     Arguments
     ---------
+    esm_code: str
+        The ESM code to replace import names in.
     imports : dict[str, str]
         A dictionary representing the import map, where keys are package names and values are URLs.
 
@@ -117,17 +152,19 @@ def packages_from_importmap(imports: dict[str, str]) -> dict[str, str]:
     dict[str, str]
         A dictionary where keys are package names and values are their corresponding versions.
     """
-    dependencies = {}
+    dependencies, replacements = {}, {}
     for key, url in imports.items():
-        match = _ESM_VERSION_RE.search(url)
-        if key.endswith('/'):
-            key = key[:-1]
-
-        if match:
-            dependencies[key] = f"^{match.group(1)}"
-        else:
-            dependencies[key] = "latest"
-    return dependencies
+        match = _ESM_URL_RE.search(url)
+        if not match:
+            raise RuntimeError(
+                f'Could not determine package name from URL: {url!r}.'
+            )
+        pkg_name = match.group(2)
+        version = match.group(3)
+        dependencies[pkg_name] = f"^{version}" if version else "latest"
+        replacements[key] = pkg_name+'/' if key.endswith('/') else pkg_name
+    esm_code = replace_imports(esm_code, replacements)
+    return esm_code, dependencies
 
 
 def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, any]]:
@@ -149,9 +186,9 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, a
         A dictionary of package dependencies and their versions.
     """
     importmap = component._process_importmap()
-    dependencies = packages_from_importmap(importmap.get('imports', {}))
-    esm = component._render_esm(compiled=False)
-    js_code, packages = packages_from_code(esm)
+    esm = component._render_esm(compiled='compiling')
+    esm, dependencies = packages_from_importmap(esm, importmap.get('imports', {}))
+    esm, packages = packages_from_code(esm)
     dependencies.update(packages)
 
     # Create package.json structure
@@ -159,7 +196,7 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, a
         "name": camel_to_kebab(component.__name__),
         "dependencies": dependencies
     }
-    return js_code, package_json
+    return esm, package_json
 
 
 def compile_component(component: type[ReactiveESM], minify: bool = True, verbose: bool = True):
@@ -225,7 +262,7 @@ def compile_component(component: type[ReactiveESM], minify: bool = True, verbose
 
         if minify:
             extra_args.append('--minify')
-        build_cmd = ['esbuild', 'index.js', '--bundle', '--format=esm', f'--outfile={out}'] + extra_args
+        build_cmd = ['esbuild', f'index.{ext}', '--bundle', '--format=esm', f'--outfile={out}'] + extra_args
         try:
             print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
             result = subprocess.run(build_cmd+['--color=true'], check=True, capture_output=True, text=True)

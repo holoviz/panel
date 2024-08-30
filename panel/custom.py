@@ -144,13 +144,14 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return None
 
     @classmethod
-    def _render_esm(cls, compiled: bool = True):
-        if (esm_path:= cls._esm_path(compiled=compiled)):
+    def _render_esm(cls, compiled: bool | Literal['compiling'] = True):
+        if (esm_path:= cls._esm_path(compiled=compiled is True)):
             esm = esm_path.read_text(encoding='utf-8')
         else:
             esm = cls._esm
         esm = textwrap.dedent(esm)
-        esm += textwrap.dedent(cls._exports)
+        if compiled == 'compiling':
+            esm += textwrap.dedent(cls._exports)
         return esm
 
     def _cleanup(self, root: Model | None) -> None:
