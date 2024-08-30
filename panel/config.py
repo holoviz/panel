@@ -460,6 +460,7 @@ class _config(_base_config):
 
     def _template_hook(self, value):
         if isinstance(value, str):
+            import panel.template  # noqa: F401
             return self.param.template.names[value]
         return value
 
