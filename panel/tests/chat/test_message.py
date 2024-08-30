@@ -86,6 +86,9 @@ class TestChatMessage:
         message.reaction_icons = ChatReactionIcons(options={})
         assert not message._icon_divider.visible
 
+        message = ChatMessage("hi", reaction_icons={})
+        assert not message._icon_divider.visible
+
     def test_reactions_link(self):
         # on init
         message = ChatMessage(reactions=["favorite"])

@@ -599,7 +599,7 @@ class ChatMessage(Pane):
         if isinstance(object_panel, str) and self.show_copy_icon:
             self.chat_copy_icon.value = object_panel
             self.chat_copy_icon.visible = True
-            self._icon_divider.visible = True
+            self._icon_divider.visible = len(self.reaction_icons.options) > 0
         else:
             self.chat_copy_icon.value = ""
             self.chat_copy_icon.visible = False
