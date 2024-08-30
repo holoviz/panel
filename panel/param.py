@@ -45,7 +45,7 @@ except Exception:
         """
 
 from .config import config
-from .io import state
+from .io.state import state
 from .layout import (
     Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
 )

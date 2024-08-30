@@ -22,12 +22,10 @@ from pyviz_comms import (
 )
 
 from .__version import __version__
-from .io.logging import panel_log_handler
-from .io.state import state
 
 _LOCAL_DEV_VERSION = (
     any(v in __version__ for v in ('post', 'dirty'))
-    and not state._is_pyodide
+    and '_pyodide' in sys.modules
     and 'PANEL_DOC_BUILD' not in os.environ
 )
 
@@ -333,10 +331,12 @@ class _config(_base_config):
             if p.startswith('_') and p[1:] not in _config._globals:
                 setattr(self, p+'_', None)
         if self.log_level:
+            from .io.logging import panel_log_handler
             panel_log_handler.setLevel(self.log_level)
 
     @param.depends('_nthreads', watch=True, on_init=True)
     def _set_thread_pool(self):
+        from .io.state import state
         if self.nthreads is None:
             if state._thread_pool is not None:
                 state._thread_pool.shutdown(wait=False)
@@ -350,6 +350,7 @@ class _config(_base_config):
     @param.depends('notifications', watch=True)
     def _setup_notifications(self):
         from .io.notifications import NotificationArea
+        from .io.state import state
         from .reactive import ReactiveHTMLMetaclass
         if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
             ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
@@ -418,6 +419,7 @@ class _config(_base_config):
 
     @param.depends('_log_level', watch=True)
     def _update_log_level(self):
+        from .util.logging import panel_log_handler
         panel_log_handler.setLevel(self._log_level)
 
     @param.depends('_admin_log_level', watch=True)
@@ -599,6 +601,7 @@ class _config(_base_config):
 
     @property
     def theme(self):
+        from .io.state import state
         curdoc = state.curdoc
         if curdoc and 'theme' in self._session_config.get(curdoc, {}):
             return self._session_config[curdoc]['theme']
@@ -705,6 +708,7 @@ class panel_extension(_pyviz_extension):
         from bokeh.model import Model
         from bokeh.settings import settings as bk_settings
 
+        from .io.state import state
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
@@ -857,6 +861,8 @@ class panel_extension(_pyviz_extension):
     @staticmethod
     def _display_globals():
         from bokeh.document import Document
+
+        from .io.state import state
         if config.browser_info and state.browser_info:
             doc = Document()
             comm = state._comm_manager.get_server_comm()
@@ -969,6 +975,7 @@ def _cleanup_panel(msg_id):
     """
     A cleanup action which is called when a plot is deleted in the notebook
     """
+    from .io.state import state
     if msg_id not in state._views:
         return
     viewable, model, _, _ = state._views.pop(msg_id)
@@ -979,6 +986,7 @@ def _cleanup_server(server_id):
     """
     A cleanup action which is called when a server is deleted in the notebook
     """
+    from .io.state import state
     if server_id not in state._servers:
         return
     server, viewable, docs = state._servers.pop(server_id)

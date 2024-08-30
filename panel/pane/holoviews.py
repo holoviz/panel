@@ -20,7 +20,7 @@ from packaging.version import Version
 from param.parameterized import register_reference_transform
 from param.reactive import bind
 
-from ..io import state, unlocked
+from ..io import state
 from ..layout import (
     Column, HSpacer, Row, WidgetBox,
 )
@@ -326,6 +326,7 @@ class HoloViews(Pane):
 
         if plot.backend == 'bokeh':
             if plot.comm or state._unblocked(plot.document):
+                from ..io.document import unlocked
                 with unlocked():
                     plot.update(key)
                 if plot.comm and 'embedded' not in plot.root.tags:

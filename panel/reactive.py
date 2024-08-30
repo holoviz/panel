@@ -35,7 +35,6 @@ from param.parameterized import (
     resolve_ref, resolve_value,
 )
 
-from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
 from .io.resources import (
@@ -296,6 +295,7 @@ class Syncable(Renderable):
                 continue
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
+                from .io.document import unlocked
                 with unlocked():
                     self._manual_update(events, model, doc, root, parent, comm)
                 if comm and 'embedded' not in root.tags:
@@ -327,6 +327,7 @@ class Syncable(Renderable):
             return True
         viewable, root, doc, comm = state._views[ref]
         if comm or not doc.session_context or state._unblocked(doc):
+            from .io.document import unlocked
             with unlocked():
                 self._update_model(events, msg, root, model, doc, comm)
             if comm and 'embedded' not in root.tags:
@@ -933,6 +934,7 @@ class Reactive(Syncable, Viewable):
             event = Event(model=model, **event_kwargs)
             _viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc) or not doc.session_context:
+                from .io.document import unlocked
                 with unlocked():
                     doc.callbacks.send_event(event)
                 if comm and 'embedded' not in root.tags:
@@ -1057,6 +1059,7 @@ class SyncableData(Reactive):
                 continue
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
+                from .io.document import unlocked
                 with unlocked():
                     m.source.stream(stream, rollover)
                 if comm and 'embedded' not in root.tags:
@@ -1079,6 +1082,7 @@ class SyncableData(Reactive):
                 continue
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
+                from .io.document import unlocked
                 with unlocked():
                     m.source.patch(patch)
                 if comm and 'embedded' not in root.tags:

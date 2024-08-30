@@ -29,8 +29,6 @@ import param
 
 from pyviz_comms import CommManager as _CommManager
 
-from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
-
 _state_logger = logging.getLogger('panel.state')
 
 if TYPE_CHECKING:
@@ -302,6 +300,7 @@ class _state(param.Parameterized):
         session_info = self.session_info['sessions'].get(session_id, {})
         if session_info.get('rendered') is not None:
             return
+        from .logging import LOG_SESSION_RENDERED
         logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
         self.session_info['live'] += 1
         session_info.update({
@@ -683,6 +682,8 @@ class _state(param.Parameterized):
         """
         args = ()
         if self.curdoc:
+            from .logging import LOG_USER_MSG
+
             args = (id(self.curdoc),)
             msg = LOG_USER_MSG.format(msg=msg)
         getattr(_state_logger, level.lower())(msg, *args)
