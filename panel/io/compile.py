@@ -136,12 +136,6 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, a
         A dictionary of package dependencies and their versions.
     """
     importmap = component._process_importmap()
-    if not importmap:
-        raise ValueError(
-            f'{component.__name__} did not declare an importmap '
-            'and cannot be compiled.'
-        )
-
     dependencies = packages_from_importmap(importmap.get('imports', {}))
     esm = component._render_esm(compiled=False)
     js_code, packages = packages_from_code(esm)
