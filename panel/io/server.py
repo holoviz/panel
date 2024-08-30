@@ -845,7 +845,7 @@ def get_server(
     loop: Optional[IOLoop] = None,
     show: bool = False,
     start: bool = False,
-    title: str | dict[str, str] = None,
+    title: str | dict[str, str] | None = None,
     verbose: bool = False,
     location: bool | Location = True,
     admin: bool = False,
