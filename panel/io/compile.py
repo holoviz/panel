@@ -6,6 +6,8 @@ import re
 import subprocess
 import tempfile
 
+from contextlib import contextmanager
+
 from bokeh.application.handlers.code_runner import CodeRunner
 
 from ..custom import ReactComponent, ReactiveESM
@@ -20,6 +22,17 @@ _ESM_IMPORT_SUFFIX = re.compile(r'\/([^?"&\']*)')
 
 # Regex pattern to extract version specifiers from a URL
 _ESM_VERSION_RE = re.compile(r'@(\d+\.\d+\.\d+(-[a-zA-Z]+(\.\d+)?)?)')
+
+
+@contextmanager
+def change_to_tempdir():
+    original_directory = os.getcwd()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        try:
+            os.chdir(temp_dir)
+            yield temp_dir
+        finally:
+            os.chdir(original_directory)
 
 
 def check_cli_tool(tool_name):
@@ -176,6 +189,8 @@ def compile_component(component: type[ReactiveESM], minify: bool = True, verbose
             'is installed and can be run with `esbuild --version`. You can '
             'install it with conda or with `npm install -g esbuild`.'
         )
+
+    # Get path
     name = camel_to_kebab(component.__name__)
     ext = 'jsx' if issubclass(component, ReactComponent) else 'js'
     if hasattr(component, '__path__'):
@@ -186,16 +201,12 @@ def compile_component(component: type[ReactiveESM], minify: bool = True, verbose
 
     code, package_json = extract_dependencies(component)
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        package_json_path = os.path.join(temp_dir, 'package.json')
-        with open(package_json_path, 'w') as package_json_file:
+    with change_to_tempdir():
+        with open('package.json', 'w') as package_json_file:
             json.dump(package_json, package_json_file, indent=2)
 
-        index_js_path = os.path.join(temp_dir, f'index.{ext}')
-        with open(index_js_path, 'w') as index_js_file:
+        with open(f'index.{ext}', 'w') as index_js_file:
             index_js_file.write(code)
-
-        os.chdir(temp_dir)
 
         extra_args = []
         if verbose:
@@ -214,7 +225,7 @@ def compile_component(component: type[ReactiveESM], minify: bool = True, verbose
 
         if minify:
             extra_args.append('--minify')
-        build_cmd = ['esbuild', index_js_path, '--bundle', '--format=esm', f'--outfile={out}'] + extra_args
+        build_cmd = ['esbuild', 'index.js', '--bundle', '--format=esm', f'--outfile={out}'] + extra_args
         try:
             print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
             result = subprocess.run(build_cmd+['--color=true'], check=True, capture_output=True, text=True)
