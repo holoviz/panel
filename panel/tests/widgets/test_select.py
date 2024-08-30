@@ -300,6 +300,15 @@ def test_nested_select_init_empty(document, comm):
     assert select.options is None
     assert select.levels == []
 
+def test_nested_select_max_depth_empty_first_sublevel(document, comm):
+    select = NestedSelect(options={'foo': ['a', 'b'], 'bar': []})
+
+    assert select._max_depth == 2
+
+def test_nested_select_max_depth_empty_second_sublevel(document, comm):
+    select = NestedSelect(options={'foo': {'0': ['a', 'b'], '1': []}, 'bar': {'0': []}})
+
+    assert select._max_depth == 3
 
 def test_nested_select_init_levels(document, comm):
     options = {
@@ -500,7 +509,7 @@ def test_nested_select_partial_options_set(document, comm):
     select.options = {"Ben": []}
     assert select._widgets[0].value == 'Ben'
     assert select._widgets[0].visible
-    assert select.value == {0: 'Ben'}
+    assert select.value == {0: 'Ben', 1: None}
 
 
 def test_nested_select_partial_value_init(document, comm):

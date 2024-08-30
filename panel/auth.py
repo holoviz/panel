@@ -1026,6 +1026,12 @@ class OAuthProvider(BasicAuthProvider):
             except Exception:
                 pass
 
+            # Try casting expiry to float as it may be stored as bytes
+            try:
+                expiry = float(expiry)
+            except Exception:
+                expiry = None
+
             if expiry is None:
                 expiry = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
                 if expiry is None:

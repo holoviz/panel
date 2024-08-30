@@ -9,6 +9,7 @@ import base64
 import logging
 import os
 import pathlib
+import sys
 
 from glob import glob
 from types import ModuleType
@@ -280,11 +281,11 @@ class Serve(_BkServe):
                 applications['/'] = applications[f'/{index}']
         return super().customize_applications(args, applications)
 
-    def warm_applications(self, applications, reuse_sessions, error=True):
+    def warm_applications(self, applications, reuse_sessions, error=True, initialize_session=True):
         from ..io.session import generate_session
         for path, app in applications.items():
             try:
-                session = generate_session(app)
+                session = generate_session(app, initialize=initialize_session)
             except Exception as e:
                 if error:
                     raise e
@@ -358,27 +359,22 @@ class Serve(_BkServe):
                 watch(f)
 
         if args.setup:
-            setup_path = args.setup
-            with open(setup_path) as f:
-                setup_source = f.read()
-            nodes = ast.parse(setup_source, os.fspath(setup_path))
-            code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
             module_name = 'panel_setup_module'
             module = ModuleType(module_name)
-            module.__dict__['__file__'] = fullpath(setup_path)
-            exec(code, module.__dict__)
+            module.__dict__['__file__'] = fullpath(args.setup)
             state._setup_module = module
 
         if args.warm or args.autoreload:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
+            initialize_session = not (args.num_procs and sys.version_info < (3, 12))
             if args.autoreload:
                 with record_modules(list(applications.values())):
                     self.warm_applications(
-                        applications, args.reuse_sessions, error=False
+                        applications, args.reuse_sessions, error=False, initialize_session=initialize_session
                     )
             else:
-                self.warm_applications(applications, args.reuse_sessions)
+                self.warm_applications(applications, args.reuse_sessions, initialize_session=initialize_session)
 
         if args.liveness:
             argvs = {f: args.args for f in files}

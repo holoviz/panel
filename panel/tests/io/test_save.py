@@ -11,6 +11,7 @@ from panel.config import config
 from panel.io.resources import CDN_DIST
 from panel.models.vega import VegaPlot
 from panel.pane import Alert, Vega
+from panel.template import BootstrapTemplate
 from panel.tests.util import hv_available
 
 vega_example = {
@@ -72,3 +73,21 @@ def test_static_path_in_holoviews_save(tmpdir):
     content = out_file.read_text()
 
     assert 'src="/static/js/bokeh' in content and 'src="static/js/bokeh' not in content
+
+
+def test_save_template():
+    template = BootstrapTemplate(
+        title="Hello World",
+        sidebar=["# Hello Sidebar"],
+        main=['# Hello Main'],
+    )
+
+    sio = StringIO()
+    template.save(sio)
+
+    sio.seek(0)
+    html = sio.read()
+
+    for doc in template._documents:
+        for root in doc.roots:
+            assert f"data-root-id=\"{root.ref['id']}\"" in html
