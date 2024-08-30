@@ -15,7 +15,6 @@ from typing import (
 
 import param
 
-from bokeh.models import Range1d, Spacer as _BkSpacer
 from bokeh.themes.theme import Theme
 from packaging.version import Version
 from param.parameterized import register_reference_transform
@@ -26,7 +25,6 @@ from ..layout import (
     Column, HSpacer, Row, WidgetBox,
 )
 from ..viewable import Layoutable, Viewable
-from ..widgets import Player
 from .base import Pane, RerenderError, panel
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
@@ -420,6 +418,7 @@ class HoloViews(Pane):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
+        from bokeh.models import Spacer as _BkSpacer
         from holoviews.plotting.plot import Plot
         if root is None:
             return self.get_root(doc, comm)
@@ -697,6 +696,7 @@ class HoloViews(Pane):
                 widget.param.name.constant = True
                 widgets.append(widget)
         if widgets_type == 'scrubber':
+            from ..widgets import Player
             widgets = [Player(length=nframes, width=550)]
         return widgets, dim_values
 
@@ -741,6 +741,7 @@ class Interactive(Pane):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
+        from bokeh.models import Spacer as _BkSpacer
         if root is None:
             return self.get_root(doc, comm)
         if self._layout_panel is None:
@@ -854,6 +855,7 @@ def link_axes(root_view, root_model):
     if not panes:
         return
 
+    from bokeh.models import Range1d
     from holoviews.core.options import Store
     from holoviews.core.util import max_range, unique_iterator
     from holoviews.plotting.bokeh.element import ElementPlot

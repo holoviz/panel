@@ -28,7 +28,6 @@ from pyviz_comms import (
 from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
-from .util import param_watchers
 
 _LOCAL_DEV_VERSION = (
     any(v in __version__ for v in ('post', 'dirty'))
@@ -385,6 +384,7 @@ class _config(_base_config):
 
     def __setattr__(self, attr, value):
         from .io.state import state
+        from .util import param_watchers
 
         # _param__private added in Param 2
         if hasattr(self, '_param__private'):
