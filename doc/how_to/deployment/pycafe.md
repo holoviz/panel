@@ -57,7 +57,16 @@ Finally you can click **PUSH** to persist your app and click **SHARE** to share 
 Explore the examples below:
 
 - [Greeting App](https://py.cafe/maartenbreddels/panel-interactive-greeting-app ).
-- [Reference Example](https://py.cafe/MarcSkovMadsen/pycafe-reference) from the [GitHub repository](https://github.com/holoviz/panel/#interactive-data-apps).
-- [Basic Dashboard](https://py.cafe/MarcSkovMadsen/basic-dashboard) from the [Basic Dashboard Tutorial](../../tutorials/basic/build_dashboard.md).
+- [Basic Github App](https://py.cafe/MarcSkovMadsen/pycafe-reference) from the [GitHub repository](https://github.com/holoviz/panel/#interactive-data-apps).
+- [XGBoost Training App](https://py.cafe/MarcSkovMadsen/xgboost-training) from the [Convert Apps to WASM Guide](https://panel.holoviz.org/how_to/wasm/convert.html).
+
+### Basic Tutorials
+
+- [Basic Dashboard](https://py.cafe/MarcSkovMadsen/basic-dashboard) from the [Build a Dashboard Tutorial](../../tutorials/basic/build_dashboard.md).
+- [Basic Report](https://py.cafe/MarcSkovMadsen/basic-report) from the [Build a Report Tutorial](../../tutorials/basic/build_report.md).
+- [Basic Animation](https://py.cafe/MarcSkovMadsen/basic-animation) from the [Build an Animation Tutorial](../../tutorials/basic/build_report.md).
+- [Basic Image Classifier](https://py.cafe/MarcSkovMadsen/basic-image-classifier) from the [Build an Image Classifier Tutorial](../../tutorials/basic/build_image_classifier.md).
+
+### App Gallery
+
 - [VideoStream Interface](https://py.cafe/MarcSkovMadsen/videostream) from the [VideoStream Interface Tutorial](https://panel.holoviz.org/gallery/streaming_videostream.html).
-- [XGBoost Training](https://py.cafe/MarcSkovMadsen/xgboost-training) from the [Converting Panel Applications How-To Guide](https://panel.holoviz.org/how_to/wasm/convert.html).
