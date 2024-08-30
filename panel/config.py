@@ -17,10 +17,6 @@ from weakref import WeakKeyDictionary
 
 import param
 
-from bokeh.core.has_props import _default_resolver
-from bokeh.document import Document
-from bokeh.model import Model
-from bokeh.settings import settings as bk_settings
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
@@ -705,6 +701,10 @@ class panel_extension(_pyviz_extension):
     _comms_detected_before = False
 
     def __call__(self, *args, **params):
+        from bokeh.core.has_props import _default_resolver
+        from bokeh.model import Model
+        from bokeh.settings import settings as bk_settings
+
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
@@ -856,6 +856,7 @@ class panel_extension(_pyviz_extension):
 
     @staticmethod
     def _display_globals():
+        from bokeh.document import Document
         if config.browser_info and state.browser_info:
             doc = Document()
             comm = state._comm_manager.get_server_comm()
