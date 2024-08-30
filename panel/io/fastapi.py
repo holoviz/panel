@@ -48,8 +48,8 @@ def add_applications(
     panel: Viewable, function or {str: Viewable}
         A Panel object, a function returning a Panel object or a
         dictionary mapping from the URL slug to either.
-    server: FastAPI
-        FastAPI server to add Panel application(s) to
+    app: FastAPI
+        FastAPI app to add Panel application(s) to
     title : str or {str: str} (optional, default=None)
         An HTML title for the application or a dictionary mapping
         from the URL slug to a customized title.
