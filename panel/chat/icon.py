@@ -72,7 +72,12 @@ class ChatReactionIcons(CompositeWidget):
             icon._reaction = option
             icon.param.watch(self._update_value, "value")
             self._rendered_icons[option] = icon
-        self._composite[:] = [self.default_layout(*list(self._rendered_icons.values()))]
+        self._composite[:] = [
+            self.default_layout(
+                *list(self._rendered_icons.values()),
+                sizing_mode=None,
+                stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            )]
 
     @param.depends("value", watch=True)
     def _update_icons(self):

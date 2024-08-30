@@ -254,7 +254,7 @@ class ChatMessage(Pane):
 
         reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
         if isinstance(reaction_icons, dict):
-            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons, default_layout=Row)
+            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons, default_layout=Row, sizing_mode=None)
         self._internal = True
         super().__init__(object=object, **params)
         self.chat_copy_icon = ChatCopyIcon(
@@ -294,18 +294,19 @@ class ChatMessage(Pane):
             self.param.user, height=20,
             css_classes=["name"],
             visible=self.param.show_user,
+            sizing_mode=None,
         )
 
         self._activity_dot = HTML(
             "●",
             css_classes=["activity-dot"],
             visible=self.param.show_activity_dot,
+            sizing_mode=None,
         )
 
         meta_row = Row(
             self._user_html,
             self._activity_dot,
-            sizing_mode="stretch_width",
             css_classes=["meta"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
