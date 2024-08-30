@@ -1187,6 +1187,8 @@ class ReactiveExpr(Pane):
 
     @classmethod
     def _find_widgets(cls, op):
+        from .widgets import Widget
+
         widgets = []
         op_args = list(op['args']) + list(op['kwargs'].values())
         op_args = flatten(op_args)
@@ -1233,6 +1235,8 @@ class ReactiveExpr(Pane):
 
     @property
     def widgets(self):
+        from .widgets import Widget
+
         widgets = []
         if self.object is None:
             return []
@@ -1359,10 +1363,11 @@ def link_param_method(root_view, root_model):
     widgets generated from those parameters ensuring that the loading
     indicator is enabled client side.
     """
+    from .widgets import DiscreteSlider, Widget
+
     methods = root_view.select(lambda p: isinstance(p, ParamMethod) and p.loading_indicator)
     widgets = root_view.select(lambda w: isinstance(w, Widget) and getattr(w, '_param_pane', None) is not None)
 
-    from .widgets import DiscreteSlider, Widget
     for widget in widgets:
         for method in methods:
             for cb in method._internal_callbacks:
