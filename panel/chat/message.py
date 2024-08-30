@@ -344,8 +344,8 @@ class ChatMessage(Pane):
             header_col,
             self._center_row,
             footer_col,
-            self._timestamp_html,
             self._icons_row,
+            self._timestamp_html,
             css_classes=["right"],
             sizing_mode=None,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
@@ -556,6 +556,7 @@ class ChatMessage(Pane):
 
     def _update_reaction_icons(self, _):
         self._icons_row[-1] = self._render_reaction_icons()
+        self._icon_divider.visible = len(self.reaction_icons.options) > 0 and self.chat_copy_icon.visible
 
     def _update(self, ref, old_models):
         """
