@@ -62,7 +62,7 @@ def add_applications(
         Additional keyword arguments to pass to the BokehFastAPI application
     """
     apps = build_applications(panel)
-    application = BokehFastAPI(apps, server=server, **kwargs)
+    application = BokehFastAPI(apps, app=app, **kwargs)
 
     @application.app.get(
         f"/{COMPONENT_PATH.rstrip('/')}" + "/{path:path}", include_in_schema=False
