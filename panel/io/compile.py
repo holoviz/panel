@@ -11,6 +11,8 @@ from bokeh.application.handlers.code_runner import CodeRunner
 from ..custom import ReactComponent, ReactiveESM
 from ..util import camel_to_kebab
 
+GREEN, RED, RESET = "\033[0;32m", "\033[0;31m", "\033[0m"
+
 # Regex pattern to match import statements with URLs starting with https
 _ESM_IMPORT_RE = re.compile(r'import\s+.*?\s+from\s+["\'](https:\/\/[^\/]+\/([^@\/]+)(?:@([\d\.\w-]+))?[^"\']*)["\']'
 )
@@ -18,6 +20,19 @@ _ESM_IMPORT_SUFFIX = re.compile(r'\/([^?"&\']*)')
 
 # Regex pattern to extract version specifiers from a URL
 _ESM_VERSION_RE = re.compile(r'@(\d+\.\d+\.\d+(-[a-zA-Z]+(\.\d+)?)?)')
+
+
+def check_cli_tool(tool_name):
+    try:
+        result = subprocess.run([tool_name, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            return True
+        else:
+            return False
+    except FileNotFoundError:
+        return False
+    except Exception:
+        return False
 
 
 def find_components(path: str | os.PathLike) -> list[type[ReactiveESM]]:
@@ -140,7 +155,7 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, a
     return js_code, package_json
 
 
-def compile_component(component: type[ReactiveESM], minify: bool = True):
+def compile_component(component: type[ReactiveESM], minify: bool = True, verbose: bool = True):
     """
     Compiles and bundles the ESM code of a ReactiveESM component and
     writes the compiled JS file to a file adjacent to the module
@@ -152,7 +167,21 @@ def compile_component(component: type[ReactiveESM], minify: bool = True):
         The component to compile.
     minify: bool
         Whether to minify the output.
+    verbose: bool
+        Whether to generate verbose output.
     """
+    if not check_cli_tool('npm'):
+        raise RuntimeError(
+            'Could not find `npm` or it generated an error. Ensure it is '
+            'installed and can be run with `npm --version`. You can get it '
+            'with conda or you favorite package manager or nodejs manager.'
+        )
+    if not check_cli_tool('esbuild'):
+        raise RuntimeError(
+            'Could not find `esbuild` or it generated an error. Ensure it '
+            'is installed and can be run with `esbuild --version`. You can '
+            'install it with conda or with `npm install -g esbuild`.'
+        )
     name = camel_to_kebab(component.__name__)
     ext = 'jsx' if issubclass(component, ReactComponent) else 'js'
     if hasattr(component, '__path__'):
@@ -174,39 +203,30 @@ def compile_component(component: type[ReactiveESM], minify: bool = True):
 
         os.chdir(temp_dir)
 
-        install_cmd = ['npm', 'install']
+        extra_args = []
+        if verbose:
+            extra_args.append('--log-level=debug')
+        install_cmd = ['npm', 'install'] + extra_args
         try:
-            print(f"Running command: {' '.join(install_cmd)}")  # noqa
+            print(f"Running command: {' '.join(install_cmd)}\n")  # noqa
             result = subprocess.run(install_cmd, check=True, capture_output=True, text=True)
             if result.stdout:
-                print("npm output:", result.stdout)  # noqa
+                print(f"npm output:\n{GREEN}{result.stdout}{RESET}")  # noqa
             if result.stderr:
-                print("npm errors:", result.stderr)  # noqa
+                print("npm errors:\n{RED}{result.stderr}{RESET}")  # noqa
         except subprocess.CalledProcessError as e:
-            print(f"An error occurred while running npm install: {e.stderr}")  # noqa
+            print(f"An error occurred while running npm install:\n{RED}{e.stderr}{RESET}")  # noqa
+            return 1
 
-        minify_arg = ['--minify'] if minify else []
-        build_cmd = ['esbuild', index_js_path, '--bundle', '--format=esm', f'--outfile={out}'] + minify_arg
+        if minify:
+            extra_args.append('--minify')
+        build_cmd = ['esbuild', index_js_path, '--bundle', '--format=esm', f'--outfile={out}'] + extra_args
         try:
-            print(f"Running command: {' '.join(build_cmd)}")  # noqa
-            result = subprocess.run(build_cmd, check=True, capture_output=True, text=True)
+            print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
+            result = subprocess.run(build_cmd+['--color=true'], check=True, capture_output=True, text=True)
             if result.stderr:
-                print("esbuild output:", result.stderr)  # noqa
+                print(f"esbuild output:\n{result.stderr}")  # noqa
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while running esbuild: {e.stderr}")  # noqa
-
-
-def compile_module(module: str | os.PathLike, minify: bool = True):
-    """
-    Compiles and bundles all ESM components in a module and writes the
-    resulting JS file(s) to disk alongside the input module.
-
-    Arguments
-    ---------
-    module: str | os.PathLike
-        Input module where one or more ESM components can be defined.
-    minify: boolean
-        Whether to minify the output.
-    """
-    for component in find_components(module):
-        compile_component(component, minify=minify)
+            return 1
+        return 0
