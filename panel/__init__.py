@@ -47,10 +47,11 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from typing import TYPE_CHECKING as _TC
 
-from param import bind, depends, rx
+from param import rx
 
 from .__version import __version__
 from .config import config, panel_extension as extension
+from .depends import bind, depends
 
 if _TC:
     from . import reactive  # noqa: F401
