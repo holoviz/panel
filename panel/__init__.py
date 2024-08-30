@@ -56,7 +56,8 @@ from .depends import bind, depends
 if _TC:
     from . import reactive  # noqa: F401
     from . import (
-        layout, links, pane, param, pipeline, template, viewable, widgets,
+        layout, links, pane, param, pipeline, template, theme, viewable,
+        widgets,
     )
     from ._interact import interact
     from .io import serve, state
@@ -114,6 +115,7 @@ _attrs = {
     "serve": "panel.io.server:serve",
     "state": "panel.io.state:state",
     "template": "panel.template",
+    "theme": "panel.theme",
     "viewable": "panel.viewable",
     "widget": "panel.widgets:widget",
     "widgets": "panel.widgets",
@@ -169,6 +171,7 @@ __all__ = (
     "rx",
     "serve",
     "state",
+    "theme",
     "template",
     "viewable",
     "widgets",
