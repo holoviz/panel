@@ -198,11 +198,11 @@ bokeh.command.util.build_single_handler_application = build_single_handler_appli
 
 def build_applications(
     panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
-    title: str | dict[str, str] = None,
+    title: str | dict[str, str] | None = None,
     location: bool | Location = True,
     admin: bool = False,
     server_id: str | None = None,
-    custom_handlers: list = None
+    custom_handlers: list | None = None
 ) -> dict[str, Application]:
     """
     Converts a variety of objects into a dictionary of Applications.
@@ -228,7 +228,7 @@ def build_applications(
 
     apps = {}
     for slug, app in panel.items():
-        if slug.endswith('/') and not slug == '/':
+        if slug.endswith('/') and slug != '/':
             raise ValueError(f"Invalid URL: trailing slash '/' used for {slug!r} not supported.")
         if isinstance(title, dict):
             try:
@@ -254,7 +254,7 @@ def build_applications(
             if app is True:
                 continue
 
-        if isinstance(app, pathlib.Path):
+        if isinstance(app, os.PathLike):
             app = str(app) # enables serving apps from Paths
         if (isinstance(app, str) and app.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(app)):

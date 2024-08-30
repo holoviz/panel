@@ -35,7 +35,7 @@ extra_socket_handlers[WSHandler] = dispatch_fastapi
 def add_applications(
     panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
     server: FastAPI | None = None,
-    title: str | dict[str, str] = None,
+    title: str | dict[str, str] | None = None,
     location: bool | Location = True,
     admin: bool = False,
     **kwargs
@@ -82,7 +82,7 @@ def get_server(
     panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
     port: int | None = 0,
     start: bool = False,
-    title: str | dict[str, str] = None,
+    title: str | dict[str, str] | None = None,
     location: bool | Location = True,
     admin: bool = False,
     **kwargs

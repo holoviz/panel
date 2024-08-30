@@ -774,8 +774,6 @@ def serve(
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
-    # Empty layout are valid and the Bokeh warning is silenced as usually
-    # not relevant to Panel users.
     kwargs = dict(kwargs, **dict(
         port=port, address=address, websocket_origin=websocket_origin,
         loop=loop, show=show, start=start, title=title, verbose=verbose,
