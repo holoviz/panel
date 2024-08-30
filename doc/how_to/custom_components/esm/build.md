@@ -1,6 +1,6 @@
-# Handling of external resources
+# Include and Bundle external resources
 
-The ESM components make it possible to load external libraries from NPM or GitHub easily using one of two approaches:
+The ESM components make it possible to load external libraries from a CDN, NPM or GitHub using one of two approaches:
 
 1. Directly importing from `esm.sh` or another CDN or by defining a so called importmap.
 2. Bundling the resources using `npm` and `esbuild`.
@@ -84,7 +84,7 @@ Let's say for instance you want to import libraries `A`, `B` and `C`. Both `B` a
 
 In order to avoid this we can ask `esm.sh` not to rewrite the imports using the `external` query parameter. This tells esm.sh that `A` will be provided externally (i.e. by us), ensuring that libraries `B` and `C` both import the version of `A` we declare:
 
-```
+```python
 {
   "imports": {
     "A": "https://esm.sh/A@1.0.0",
@@ -117,19 +117,121 @@ Import maps supports trailing slash that can not work with URL search params fri
 ```
 :::
 
-## Bundling
+## Compile & Bundling
 
-Importing libraries directly from a CDN allows for extremely quick iteration but also means that the users of your components will have to have access to the internet to fetch the required modules. By bundling the component resources you can ship a self-contained module that includes all the dependencies, while also ensuring that you only fetch the parts of the libraries that are actually needed.
+Importing libraries directly from a CDN allows for extremely quick iteration but also means that the users of your components will have to have access to the internet to fetch the required modules. By bundling the component resources you can ship a self-contained and optimized ESM module that includes all the dependencies, while also ensuring that you only fetch the parts of the libraries that are actually needed.
 
-### Tooling
+### Setup
 
-The tooling we recommend to bundle your component resources include `esbuild` and `npm`, both can conveniently be installed with `conda`:
+The compilation and bundling workflow depends on two JavaScript tools: `node.js` (or more specifically the node package manager `npm`) and `esbuild`. The most convenient way to install them is `conda` but you can also set up your own node environment using something like [`asdf`](https://asdf-vm.com/guide/getting-started.html), [`nvm`](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) or [`volta`](https://volta.sh/).
 
+::::{tab-set}
+
+:::{tab-item} `conda`
 ```bash
 conda install esbuild npm
 ```
+:::
 
-### Configuration
+:::{tab-item} Custom Node.js installation
+
+Once you have set up `node.js` you can install `esbuild` globally with:
+
+```bash
+npm install -g esbuild
+```
+
+and confirm the installation with:
+
+```bash
+esbuild --version
+```
+:::
+
+::::
+
+### Automatic Compilation
+
+Panel ships with a CLI tool to automatically compile ESM components from the commandline. This assumes you have `npm` and `esbuild` installed globally. The `panel compile` command can be invoked on the commandline and will compile and bundle all ESM components defined in a module.
+
+As an example let's say you have a `confetti.py` module that looks like this:
+
+```python
+# confetti.py
+import panel as pn
+
+from panel.custom import JSComponent
+
+
+class ConfettiButton(JSComponent):
+
+    _esm = """
+import confetti from "https://esm.sh/canvas-confetti@1.6.0";
+
+export function render() {
+  const button = document.createElement('button')
+  button.addEventListener('click', () => confetti())
+  button.append('Click me!')
+  return button
+}"""
+```
+
+You can compile this component (and any other components defined in the module) with:
+
+```bash
+panel compile confetti.py
+```
+
+This will perform the compilation and bundling in a few steps:
+
+1. Extract the external dependencies from the code and `_importmap` and write them out to a `package.json` file in a temporary directory.
+2. Run `npm install` to fetch the external dependencies.
+3. Run `esbuild index.js --bundle --format=esm --minify` on the ESM code.
+4. Finally write the compiled bundle to a file with the following pattern `<kebab-cased-class-name>.compiled.js` alongside the input module.
+
+If you only want to compile a single class you can specify it by appending it to the module name, separated by a colon:
+
+```bash
+panel compile confetti.py:ConfettiButton
+```
+
+You should see output that looks something like this:
+
+```bash
+panel compile confetti.py
+Running command: npm install
+
+npm output:
+
+added 1 package, and audited 2 packages in 649ms
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+Running command: esbuild /var/folders/7c/ww31pmxj2j18w_mn_qy52gdh0000gq/T/tmp9yhyqo55/index.js --bundle --format=esm --outfile=<module-path>confetti-button.compiled.js --minify
+
+esbuild output:
+
+  .....<module-path>/confetti-button.compiled.js  10.5kb
+
+⚡ Done in 9ms
+```
+
+The compiled JS file will now be loaded automatically as long as it remains alongside the component. If you rename the component you will have to delete and recompile the JS file. If you make changes to the code or `_importmap` you also have to recompile. During development we recommend using `--autoreload`, which ignores the compiled file.
+
+```{caution}
+The `panel compile` CLI tool is still very new and experimental. In our testing it was able to compile and bundle most components but there are bound to be corner cases.
+
+We will continue to improve the tool and eventually allow you to bundle multiple components into a single bundle to allow sharing of resources.
+```
+
+### Manual Compilation
+
+If you have more complex requirements or the automatic compilation fails for whatever reason you can also manually compile the output.
+
+#### Configuration
 
 To run the bundling we will need one additional file, the `package.json`, which, just like the import maps, determines the required packages and their versions. The `package.json` is a complex file with tons of configuration options but all we will need are the [dependencies](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies).
 
