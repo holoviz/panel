@@ -64,7 +64,7 @@ def add_applications(
     apps = build_applications(panel)
     application = BokehFastAPI(apps, server=server, **kwargs)
 
-    @application.server.get(
+    @application.app.get(
         f"/{COMPONENT_PATH.rstrip('/')}" + "/{path:path}", include_in_schema=False
     )
     def get_component_resource(path: str):
@@ -128,7 +128,7 @@ def get_server(
     application = add_applications(
         panel, title=title, location=location, admin=admin, **kwargs
     )
-    config = uvicorn.Config(application.server, port=port, loop=loop)
+    config = uvicorn.Config(application.app, port=port, loop=loop)
     server = uvicorn.Server(config)
 
     state._servers[server_id] = (server, panel, [])
