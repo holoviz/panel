@@ -75,7 +75,7 @@ class ChatReactionIcons(CompositeWidget):
         self._composite[:] = [
             self.default_layout(
                 *list(self._rendered_icons.values()),
-                sizing_mode=None,
+                sizing_mode=self.param.sizing_mode,
                 stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             )]
 
