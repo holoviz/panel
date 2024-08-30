@@ -36,7 +36,7 @@ _LOCAL_DEV_VERSION = (
 #---------------------------------------------------------------------
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
-_config_initialized = False
+_config_uninitialized = True
 
 def validate_config(config, parameter, value):
     """
@@ -432,7 +432,7 @@ class _config(_base_config):
         ensure that even on first access mutable parameters do not
         end up being modified.
         """
-        if not _config_initialized or attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param'):
+        if _config_uninitialized or attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param'):
             return super().__getattribute__(attr)
 
         from .io.state import state
@@ -618,7 +618,7 @@ else:
 _config._parameter_set = set(_params)
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
-_config_initialized = True
+_config_uninitialized = False
 
 class panel_extension(_pyviz_extension):
     """
