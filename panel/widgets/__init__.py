@@ -34,7 +34,7 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from typing import TYPE_CHECKING as _TC
 
-from .widget import widget
+from .widget import widget  # Matching filename and module name
 
 if _TC:
     from .base import CompositeWidget, Widget, WidgetBase

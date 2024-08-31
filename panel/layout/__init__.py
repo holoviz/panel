@@ -30,6 +30,8 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from typing import TYPE_CHECKING as _TC
 
+from .gridstack import GridStack  # ReactiveHTML
+
 if _TC:
     from .accordion import Accordion
     from .base import (
@@ -40,7 +42,6 @@ if _TC:
     from .flex import FlexBox
     from .float import FloatPanel
     from .grid import GridBox, GridSpec
-    from .gridstack import GridStack
     from .spacer import (
         Divider, HSpacer, Spacer, VSpacer,
     )
@@ -57,7 +58,7 @@ _attrs = {
     "FlexBox": "panel.layout.flex:FlexBox",
     "GridBox": "panel.layout.grid:GridBox",
     "GridSpec": "panel.layout.grid:GridSpec",
-    "GridStack": "panel.layout.gridstack:GridStack",
+    # "GridStack": "panel.layout.gridstack:GridStack",
     "HSpacer": "panel.layout.spacer:HSpacer",
     "ListLike": "panel.layout.base:ListLike",
     "ListPanel": "panel.layout.base:ListPanel",
