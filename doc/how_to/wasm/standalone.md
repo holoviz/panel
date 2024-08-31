@@ -20,7 +20,7 @@ Create a file called **script.html** with the following content:
   </head>
   <body>
     <div id="simple_app"></div>
-    <script>
+    <script type="text/javascript">
       async function main() {
         let pyodide = await loadPyodide();
         await pyodide.loadPackage("micropip");
