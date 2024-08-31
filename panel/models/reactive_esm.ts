@@ -148,7 +148,6 @@ function init_model_setter(target: ReactiveESM, name: string, value: any): boole
   return false
 }
 
-
 export class ReactiveESMView extends HTMLBoxView {
   declare model: ReactiveESM
   container: HTMLDivElement
@@ -492,7 +491,7 @@ export class ReactiveESM extends HTMLBox {
     super.initialize()
     this.model_proxy = new Proxy(this, {
       get: init_model_getter,
-      set: init_model_setter
+      set: init_model_setter,
     })
     this.recompile()
   }
