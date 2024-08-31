@@ -139,6 +139,15 @@ function init_model_getter(target: ReactiveESM, name: string) {
   }
 }
 
+function init_model_setter(target: ReactiveESM, name: string, value: any): boolean {
+  if (Reflect.has(target.data, name)) {
+    return Reflect.set(target.data, name, value)
+  } else if (Reflect.has(target, name)) {
+    return Reflect.set(target, name, value)
+  }
+  return false
+}
+
 export class ReactiveESMView extends HTMLBoxView {
   declare model: ReactiveESM
   container: HTMLDivElement
@@ -480,7 +489,10 @@ export class ReactiveESM extends HTMLBox {
 
   override initialize(): void {
     super.initialize()
-    this.model_proxy = new Proxy(this, {get: init_model_getter})
+    this.model_proxy = new Proxy(this, {
+      get: init_model_getter,
+      set: init_model_setter,
+    })
     this.recompile()
   }
 
