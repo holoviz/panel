@@ -20,6 +20,11 @@ class Compile(Subcommand):
             help    = "The Python modules to compile. May optionally define a single class.",
             default = None,
         )),
+        ('--build-dir', dict(
+            action = 'store',
+            type    = str,
+            help    = "Where to write the build directory."
+        )),
         ('--outfile', dict(
             action = 'store',
             type    = str,
@@ -31,7 +36,7 @@ class Compile(Subcommand):
         )),
         ('--verbose', dict(
             action  = 'store_true',
-            help    = "Whether to print progress"
+            help    = "Whether to show verbose output. Note when setting --outfile only the result will be printed to stdout."
         )),
     )
 
@@ -60,7 +65,11 @@ class Compile(Subcommand):
                 )
                 return 1
         out = compile_components(
-            components, minify=not args.unminify, verbose=args.verbose and args.outfile, outfile=args.outfile
+            components,
+            build_dir=args.build_dir,
+            minify=not args.unminify,
+            outfile=args.outfile,
+            verbose=args.verbose and args.outfile,
         )
         if args.outfile:
             if not out == 0:

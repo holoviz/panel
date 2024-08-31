@@ -4,6 +4,7 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import tempfile
 
@@ -41,14 +42,20 @@ _EXPORT_DEFAULT_RE = re.compile(r'\bexport\s+default\b')
 
 
 @contextmanager
-def change_to_tempdir():
+def setup_build_dir(build_dir: str | os.PathLike | None = None):
     original_directory = os.getcwd()
-    with tempfile.TemporaryDirectory() as temp_dir:
-        try:
-            os.chdir(temp_dir)
-            yield temp_dir
-        finally:
-            os.chdir(original_directory)
+    if build_dir:
+        temp_dir = pathlib.Path(build_dir).absolute()
+        temp_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        temp_dir = tempfile.mkdtemp()
+    try:
+        os.chdir(temp_dir)
+        yield temp_dir
+    finally:
+        os.chdir(original_directory)
+        if not build_dir:
+            shutil.rmtree(temp_dir)
 
 
 def check_cli_tool(tool_name):
@@ -312,10 +319,34 @@ def generate_project(
 
 def compile_components(
     components: list[type[ReactiveESM]],
+    build_dir: str | os.PathLike = None,
     outfile: str | os.PathLike = None,
     minify: bool = True,
     verbose: bool = True
-):
+) -> str | None:
+    """
+    Compiles a list of ReactiveESM components into a single JavaScript bundle
+    including their Javascript dependencies.
+
+    Arguments
+    ---------
+    components : list[type[ReactiveESM]]
+        A list of `ReactiveESM` component classes to compile.
+    build_dir : str | os.PathLike, optional
+        The directory where the build output will be saved. If None, a
+        temporary directory will be used.
+    outfile : str | os.PathLike, optional
+        The path to the output file where the compiled bundle will be saved.
+        If None the compiled output will be returned.
+    minify : bool, optional
+        If True, minifies the compiled JavaScript bundle.
+    verbose : bool, optional
+        If True, prints detailed logs during the compilation process.
+
+    Returns
+    -------
+    Returns the compiled bundle or None if outfile is provided.
+    """
     if not check_cli_tool('npm'):
         raise RuntimeError(
             'Could not find `npm` or it generated an error. Ensure it is '
@@ -330,16 +361,17 @@ def compile_components(
         )
 
     out = str(pathlib.Path(outfile).absolute()) if outfile else None
-    with change_to_tempdir() as temp_dir:
-        generate_project(components, temp_dir)
+    with setup_build_dir(build_dir) as build_dir:
+        generate_project(components, build_dir)
         extra_args = []
         if verbose:
             extra_args.append('--log-level=debug')
         install_cmd = ['npm', 'install'] + extra_args
         try:
-            print(f"Running command: {' '.join(install_cmd)}\n")  # noqa
+            if out:
+                print(f"Running command: {' '.join(install_cmd)}\n")  # noqa
             result = subprocess.run(install_cmd, check=True, capture_output=True, text=True)
-            if result.stdout and not verbose:
+            if result.stdout and out:
                 print(f"npm output:\n{GREEN}{result.stdout}{RESET}")  # noqa
             if result.stderr:
                 print("npm errors:\n{RED}{result.stderr}{RESET}")  # noqa
@@ -363,4 +395,4 @@ def compile_components(
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while running esbuild: {e.stderr}")  # noqa
             return None
-        return 0 if outfile else result
+        return 0 if outfile else result.stdout
