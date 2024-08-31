@@ -4,8 +4,8 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
-from panel import Card
-from panel.tests.util import serve_component
+from panel import Card, Row
+from panel.tests.util import serve_component, wait_until
 from panel.widgets import FloatSlider, TextInput
 
 pytestmark = pytest.mark.ui
@@ -182,3 +182,22 @@ def test_card_scrollable(page):
     serve_component(page, card)
 
     expect(page.locator('.card')).to_have_class('bk-panel-models-layout-Card card scrollable-vertical')
+
+
+def test_card_widget_not_collapsed(page, card_components):
+    # Fixes https://github.com/holoviz/panel/issues/7045
+    w1, w2 = card_components
+    card = Card(w1, header=Row(w2))
+
+    serve_component(page, card)
+
+    text_input = page.locator('.bk-input[type="text"]')
+    expect(text_input).to_have_count(1)
+
+    text_input.click()
+
+    text_input.press("F")
+    text_input.press("Enter")
+
+    wait_until(lambda: w2.value == 'F', page)
+    assert not card.collapsed

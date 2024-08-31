@@ -7,6 +7,7 @@ import asyncio
 import datetime as dt
 import inspect
 import logging
+import os
 import shutil
 import sys
 import threading
@@ -14,7 +15,7 @@ import time
 
 from collections import Counter, defaultdict
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
@@ -65,7 +66,9 @@ def set_curdoc(doc: Document):
     try:
         yield
     finally:
-        state._curdoc.reset(token)
+        # If _curdoc has been reset it will raise a ValueError
+        with suppress(ValueError):
+            state._curdoc.reset(token)
 
 def curdoc_locked() -> Document:
     try:
@@ -146,9 +149,9 @@ class _state(param.Parameterized):
     _location: ClassVar[Location | None] = None # Global location, e.g. for notebook context
     _locations: ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
 
-    # Locations
+    # Notifications
     _notification: ClassVar[NotificationArea | None] = None # Global location, e.g. for notebook context
-    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationArea]] = WeakKeyDictionary() # Server locations indexed by document
+    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationArea]] = WeakKeyDictionary() # Server notifications indexed by document
 
     # Templates
     _template: ClassVar[BaseTemplate | None] = None
@@ -173,9 +176,9 @@ class _state(param.Parameterized):
 
     # Dictionary of callbacks to be triggered on app load
     _onload: ClassVar[dict[Document, Callable[[], None]]] = WeakKeyDictionary()
-    _on_session_created: ClassVar[list[Callable[[BokehSessionContext], []]]] = []
-    _on_session_created_internal: ClassVar[list[Callable[[BokehSessionContext], []]]] = []
-    _on_session_destroyed: ClassVar[list[Callable[[BokehSessionContext], []]]] = []
+    _on_session_created: ClassVar[list[Callable[[BokehSessionContext], None]]] = []
+    _on_session_created_internal: ClassVar[list[Callable[[BokehSessionContext], None]]] = []
+    _on_session_destroyed: ClassVar[list[Callable[[BokehSessionContext], None]]] = []
     _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
     # Module that was run during setup
@@ -599,7 +602,7 @@ class _state(param.Parameterized):
 
     def execute(
         self,
-        callback: Callable([], None),
+        callback: Callable[[], None],
         schedule: bool | Literal['auto', 'thread'] = 'auto'
     ) -> None:
         """
@@ -769,6 +772,7 @@ class _state(param.Parameterized):
         any other state held by the server.
         """
         self.kill_all_servers()
+        self._curdoc = ContextVar('curdoc', default=None)
         self._indicators.clear()
         self._location = None
         self._locations.clear()
@@ -784,6 +788,9 @@ class _state(param.Parameterized):
         self._session_key_funcs.clear()
         self._on_session_created.clear()
         self._on_session_destroyed.clear()
+        self._stylesheets.clear()
+        self._scheduled.clear()
+        self._periodic.clear()
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
@@ -840,6 +847,7 @@ class _state(param.Parameterized):
           Whether the callback should be run on a thread (requires
           config.nthreads to be set).
         """
+        name = f"{os.getpid()}_{name}"
         if name in self._scheduled:
             if callback is not self._scheduled[name][1]:
                 self.param.warning(
@@ -868,7 +876,7 @@ class _state(param.Parameterized):
                         yield new.timestamp()
                 elif callable(at):
                     while True:
-                        new = at(dt.datetime.utcnow())
+                        new = at(dt.datetime.now(dt.timezone.utc).replace(tzinfo=None))
                         if new is None:
                             raise StopIteration
                         yield new.replace(tzinfo=dt.timezone.utc).astimezone().timestamp()

@@ -15,6 +15,7 @@ from bokeh.io.doc import patch_curdoc
 from bokeh.models import Div
 
 from panel.depends import bind, depends
+from panel.io.state import set_curdoc
 from panel.layout import Tabs, WidgetBox
 from panel.pane import Markdown
 from panel.reactive import Reactive, ReactiveHTML
@@ -369,6 +370,19 @@ def test_text_input_controls_explicit():
 
     text_input.placeholder = "Test placeholder..."
     assert placeholder.value == "Test placeholder..."
+
+def test_property_change_does_not_boomerang(document, comm):
+    text_input = TextInput(value='A')
+
+    model = text_input.get_root(document, comm)
+
+    assert model.value == 'A'
+    model.value = 'B'
+    with set_curdoc(document):
+        text_input._process_events({'value': 'C'})
+
+    assert model.value == 'B'
+    assert text_input.value == 'C'
 
 def test_reactive_html_basic():
 

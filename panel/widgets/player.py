@@ -8,7 +8,10 @@ from typing import TYPE_CHECKING, ClassVar, Mapping
 import param
 
 from ..config import config
-from ..models.widgets import Player as _BkPlayer
+from ..io.resources import CDN_DIST
+from ..models.widgets import (
+    DiscretePlayer as _BkDiscretePlayer, Player as _BkPlayer,
+)
 from ..util import indexOf, isIn
 from .base import Widget
 from .select import SelectBase
@@ -31,25 +34,53 @@ class PlayerBase(Widget):
         default='once', objects=['once', 'loop', 'reflect'], doc="""
         Policy used when player hits last frame""")
 
+    preview_duration = param.Integer(default=1500, bounds=(0, None), doc="""
+        Duration (in milliseconds) for showing the current FPS when clicking
+        the slower/faster buttons, before reverting to the icon.""")
+
     show_loop_controls = param.Boolean(default=True, doc="""
         Whether the loop controls radio buttons are shown""")
+
+    show_value = param.Boolean(default=False, doc="""
+        Whether to show the widget value""")
 
     step = param.Integer(default=1, doc="""
         Number of frames to step forward and back by on each event.""")
 
     height = param.Integer(default=80)
 
+    value_align = param.ObjectSelector(
+        objects=["start", "center", "end"], doc="""
+        Location to display the value of the slider
+        ("start", "center", "end")""")
+
     width = param.Integer(default=510, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+    scale_buttons = param.Number(default=1, doc="""
+        The scaling factor to resize the buttons.""")
+
+    visible_buttons = param.List(default=[
+        'slower', 'first', 'previous', 'reverse', 'pause', 'play', 'next', 'last', 'faster'
+    ], doc="""The buttons to display on the player.""")
+
+    visible_loop_options = param.List(default=[
+        'once', 'loop', 'reflect'
+    ], doc="The loop options to display on the player.")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': "title"}
 
     _widget_type: ClassVar[type[Model]] = _BkPlayer
+
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/player.css"]
 
     __abstract = True
 
     def __init__(self, **params):
+        if loop_options := params.get("visible_loop_options", []):
+            if params.get("loop_policy", "once") not in loop_options:
+                params["loop_policy"] = loop_options[0]
         if 'value' in params and 'value_throttled' in self.param:
             params['value_throttled'] = params['value']
         super().__init__(**params)
@@ -76,7 +107,7 @@ class Player(PlayerBase):
 
     :Example:
 
-    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop')
+    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop', value_align='top_center')
     """
 
     start = param.Integer(default=0, doc="Lower bound on the slider value")
@@ -130,19 +161,25 @@ class DiscretePlayer(PlayerBase, SelectBase):
     >>> DiscretePlayer(
     ...     name='Discrete Player',
     ...     options=[2, 4, 8, 16, 32, 64, 128], value=32,
-    ...     loop_policy='loop'
+    ...     loop_policy='loop',
+    ...     value_align='start'
     ... )
     """
 
     interval = param.Integer(default=500, doc="Interval between updates")
 
+    show_value = param.Boolean(default=True, doc="""
+        Whether to show the widget value""")
+
     value = param.Parameter(doc="Current player value")
 
     value_throttled = param.Parameter(constant=True, doc="Current player value")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'value_throttled': None}
+
+    _widget_type: ClassVar[type[Model]] = _BkDiscretePlayer
 
     def _process_param_change(self, msg):
         values = self.values
@@ -151,6 +188,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
             msg['end'] = len(values) - 1
             if values and not isIn(self.value, values):
                 self.value = values[0]
+            msg['options'] = self.labels
         if 'value' in msg:
             value = msg['value']
             if isIn(value, values):

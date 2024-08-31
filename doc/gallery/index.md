@@ -8,7 +8,7 @@ These Panel applications demonstrate what you can build with Panel and how to do
 :::{grid-item-card} Portfolio Optimizer
 
 ```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/portfolio_optimizer
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/portfolio_optimizer
 :width: 100%
 ```
 
@@ -20,7 +20,7 @@ Stock portfolio optimization by exploring the efficient frontier and optimizing 
 :::{grid-item-card} Streaming Videostream
 
 ```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/streaming_videostream
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/streaming_videostream
 :width: 100%
 ```
 
@@ -32,7 +32,7 @@ Applying face detection and other image transforms on your webcam input using sc
 :::{grid-item-card} Windturbines Explorer
 
 ```{image} https://assets.holoviz.org/panel/gallery/windturbines.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/windturbines
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/windturbines
 :width: 100%
 ```
 
@@ -44,7 +44,7 @@ Visually explore a dataset of US Windturbines.
 :::{grid-item-card} Portfolio Analyzer
 
 ```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/portfolio_analyzer
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/portfolio_analyzer
 :width: 100%
 ```
 
@@ -56,7 +56,7 @@ Analyze a stock portfolio using Plotly and Tabulator components.
 :::{grid-item-card} OGGM Glaciers
 
 ```{image} https://assets.holoviz.org/panel/gallery/glaciers.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/glaciers
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/glaciers
 :width: 100%
 ```
 
@@ -68,7 +68,7 @@ Visually explore the worlds glaciers in this application built in collaboration 
 :::{grid-item-card} VTK Slicer
 
 ```{image} https://assets.holoviz.org/panel/gallery/vtk_slicer.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/vtk_slicer
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/vtk_slicer
 :width: 100%
 ```
 
@@ -80,7 +80,7 @@ Visualizing MRI brain scans and their cross-sections using a VTK volume and link
 :::{grid-item-card} Deck.GL: NYC Taxi
 
 ```{image} https://assets.holoviz.org/panel/gallery/nyc_deckgl.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/nyc_deckgl
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/nyc_deckgl
 :width: 100%
 ```
 
@@ -92,7 +92,7 @@ NYC Taxi trips visualized and animated using Deck.GL.
 :::{grid-item-card} Gapminders
 
 ```{image} https://assets.holoviz.org/panel/gallery/gapminders.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/gapminders
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/gapminders
 :width: 100%
 ```
 
@@ -104,7 +104,7 @@ Visualizing the Gapminders data using the most common Python plotting libraries.
 :::{grid-item-card} VTK: St. Helens
 
 ```{image} https://assets.holoviz.org/panel/gallery/vtk_interactive.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/vtk_interactive
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/vtk_interactive
 :width: 100%
 ```
 
@@ -116,7 +116,7 @@ Visualizing the surface of Mount St. Helens using VTK and linked widgets to cont
 :::{grid-item-card} Penguin Crossfiltering
 
 ```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/penguin_crossfilter
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/penguin_crossfilter
 :width: 100%
 ```
 
@@ -128,7 +128,7 @@ Palmer Penguins data visualized using a set of linked cross-filtering plots.
 :::{grid-item-card} Deck.GL: Game of Life
 
 ```{image} https://assets.holoviz.org/panel/gallery/deckgl_game_of_life.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/deckgl_game_of_life
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/deckgl_game_of_life
 :width: 100%
 ```
 
@@ -140,7 +140,7 @@ Game of Life simulation rendered on a 3D plane using Deck.gl.
 :::{grid-item-card} hvPlot Explorer
 
 ```{image} https://assets.holoviz.org/panel/gallery/hvplot_explorer.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/hvplot_explorer
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/hvplot_explorer
 :width: 100%
 ```
 
@@ -152,7 +152,7 @@ Use the hvPlot explorer to interactive visualize your dataset.
 :::{grid-item-card} Iris KMeans Clustering
 
 ```{image} https://assets.holoviz.org/panel/gallery/iris_kmeans.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/iris_kmeans
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/iris_kmeans
 :width: 100%
 ```
 
@@ -164,7 +164,7 @@ Interactively apply KMeans clustering on the Iris dataset.
 :::{grid-item-card} XGBoost Classifier
 
 ```{image} https://assets.holoviz.org/panel/gallery/xgboost_classifier.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/xgboost_classifier
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/xgboost_classifier
 :width: 100%
 ```
 
@@ -176,7 +176,7 @@ Interactively apply a XGBoost classifier on the Iris dataset.
 :::{grid-item-card} Altair Brushing
 
 ```{image} https://assets.holoviz.org/panel/gallery/altair_brushing.png
-:target: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/altair_brushing
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/altair_brushing
 :width: 100%
 ```
 

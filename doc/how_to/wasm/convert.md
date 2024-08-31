@@ -27,6 +27,7 @@ The ``panel convert`` command has the following options:
 
 This example will demonstrate how to *convert* and *serve* a basic data app locally.
 
+- install the dependencies `pip install panel scikit-learn xgboost`.
 - Create a `script.py` file with the following content
 
 ```python
@@ -88,7 +89,8 @@ Using the `--to` argument on the CLI you can control the format of the file that
 
 - **`pyodide`** (default): Run application using Pyodide running in the main thread. This option is less performant than pyodide-worker but produces completely standalone HTML files that do not have to be hosted on a static file server (e.g. Github Pages).
 - **`pyodide-worker`**: Generates an HTML file and a JS file containing a Web Worker that runs in a separate thread. This is the most performant option, but files have to be hosted on a static file server.
-- **`pyscript`**: Generates an HTML leveraging PyScript. This produces standalone HTML files containing `<py-env>` and `<py-script>` tags containing the dependencies and the application code. This output is the most readable, and should have equivalent performance to the `pyodide` option.
+- **`pyscript`**: Generates an HTML leveraging PyScript. This produces standalone HTML files containing `<script type="py">` tags containing the dependencies and the application code. This output is the most readable, and should have equivalent performance to the `pyodide` option.
+- **`pyscript-worker`**: Same as `pyscript` except the Python is executed on a Web Worker. This option is slightly less efficient than the `pyodide-worker` option but still ensures that the frontend is not blocked while the code is executing.
 
 ## Requirements
 
@@ -118,9 +120,9 @@ Progressive web applications (PWAs) provide a way for your web apps to behave al
 
 Once generated, you can inspect the `site.webmanifest` file and modify it to your liking, including updating the favicons in the assets directory.
 
-```{note}
+:::{note}
 If you decide to enable the `--pwa` ensure that you also provide a unique `--title`. Otherwise the browser caches storing your apps dependencies will end up overwriting each other.
-```
+:::
 
 ## Handling HTTP requests
 

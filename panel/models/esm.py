@@ -27,6 +27,8 @@ class ESMEvent(ModelEvent):
 
 class ReactiveESM(HTMLBox):
 
+    class_name = bp.String()
+
     children = bp.List(bp.String)
 
     data = bp.Instance(DataModel)

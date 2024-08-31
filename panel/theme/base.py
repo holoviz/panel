@@ -108,6 +108,8 @@ class Design(param.Parameterized, ResourceComponent):
         'dark': DarkTheme
     }
 
+    _cache = {}
+
     def __init__(self, theme=None, **params):
         if isinstance(theme, type) and issubclass(theme, Theme):
             theme = theme._name
@@ -230,10 +232,12 @@ class Design(param.Parameterized, ResourceComponent):
     @classmethod
     def _apply_modifiers(
         cls, viewable: Viewable, mref: str, theme: Theme, isolated: bool,
-        cache={}, document=None
+        cache=None, document=None
     ) -> None:
         if mref not in viewable._models:
             return
+        if cache is None:
+            cache = cls._cache
         model, _ = viewable._models[mref]
         modifiers, child_modifiers = cls._get_modifiers(viewable, theme, isolated)
         cls._patch_modifiers(model.document or document, modifiers, cache)
