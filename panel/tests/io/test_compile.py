@@ -5,10 +5,20 @@ from panel.io.compile import (
 )
 
 
-def test_packages_from_code_simple():
+def test_packages_from_code_esm_sh():
     code, pkgs = packages_from_code('import * from "https://esm.sh/confetti-canvas@1.0.0"')
     assert code == 'import * from "confetti-canvas"'
     assert pkgs == {'confetti-canvas': '^1.0.0'}
+
+def test_packages_from_code_unpkg():
+    code, pkgs = packages_from_code('import * from "https://unpkg.com/esm@3.2.25/esm/loader.js"')
+    assert code == 'import * from "esm"'
+    assert pkgs == {'esm': '^3.2.25'}
+
+def test_packages_from_code_jsdelivr():
+    code, pkgs = packages_from_code('import * as vg from "https://cdn.jsdelivr.net/npm/@uwdata/vgplot@0.8.0/+esm"')
+    assert code == 'import * as vg from "@uwdata/vgplot"'
+    assert pkgs == {'@uwdata/vgplot': '^0.8.0'}
 
 @pytest.mark.parametrize('dev', ['rc', 'a', 'b'])
 def test_packages_from_code_dev(dev):
@@ -38,13 +48,29 @@ def test_replace_imports_trailing_slash():
 def test_replace_imports_only_from():
     assert replace_imports('import {bar} from "bar"', {'bar': 'pkg-bar'}) == 'import {bar} from "pkg-bar"'
 
-def test_packages_from_importmap_simple():
+def test_packages_from_importmap_esm_sh():
     code, packages = packages_from_importmap(
         'import * from "confetti"',
         {'confetti': 'https://esm.sh/confetti-canvas@1.0.0'}
     )
     assert code == 'import * from "confetti-canvas"'
     assert packages == {'confetti-canvas': '^1.0.0'}
+
+def test_packages_from_importmap_unpkg():
+    code, pkgs = packages_from_importmap(
+        'import * from "esm"',
+        {'esm': 'https://unpkg.com/esm@3.2.25/esm/loader.js'}
+    )
+    assert code == 'import * from "esm"'
+    assert pkgs == {'esm': '^3.2.25'}
+
+def test_packages_from_importmap_jsdelivr():
+    code, pkgs = packages_from_importmap(
+        'import * as vg from "@uwdata/vgplot"',
+        {"@uwdata/vgplot": "https://cdn.jsdelivr.net/npm/@uwdata/vgplot@0.8.0/+esm"}
+    )
+    assert code == 'import * as vg from "@uwdata/vgplot"'
+    assert pkgs == {'@uwdata/vgplot': '^0.8.0'}
 
 @pytest.mark.parametrize('dev', ['rc', 'a', 'b'])
 def test_packages_from_importmap_dev(dev):

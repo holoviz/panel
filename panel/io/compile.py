@@ -16,12 +16,24 @@ from ..util import camel_to_kebab
 GREEN, RED, RESET = "\033[0;32m", "\033[0;31m", "\033[0m"
 
 # Regex pattern to match import statements with URLs starting with https
-_ESM_IMPORT_RE = re.compile(r'import\s+.*?\s+from\s+["\'](https:\/\/[^\/]+\/([^@\/]+)(?:@([\d\.\w-]+))?[^"\']*)["\']')
+_ESM_IMPORT_RE = re.compile(
+    r'import\s+.*?\s+from\s+["\']'     # Match 'import ... from' with any content
+    r'(https:\/\/[^\/]+\/(?:npm\/)?'   # Match the base URL (e.g., https://cdn.jsdelivr.net/) and ignore /npm if present
+    r'((?:@[\w\.\-]+\/)?[\w\.\-]+)'    # Capture the package name, including optional scope
+    r'(?:@([\d\.\w-]+))?'              # Optionally capture the version after @
+    r'[^"\']*)["\']'                   # Match the rest of the URL up to the quote
+)
 _ESM_IMPORT_SUFFIX = re.compile(r'\/([^?"&\']*)')
 
 # Regex pattern to extract version specifiers from a URL
-_ESM_URL_RE = re.compile(r'(https:\/\/[^\/]+\/([^@\/]+)(?:@([\d\.\w-]+)))')
+_ESM_URL_RE = re.compile(
+    r'(https:\/\/[^\/]+\/(?:npm\/)?'
+    r'((?:@[\w\.\-]+\/)?[\w\.\-]+)'
+    r'(?:@([\d\.\w-]+))?'
+    r'[^"\']*)'
+)
 _ESM_IMPORT_ALIAS_RE = re.compile(r'(import\s+(?:\*\s+as\s+\w+|\{[^}]*\}|[\w*\s,]+)\s+from\s+[\'"])(.*?)([\'"])')
+_EXPORT_DEFAULT_RE = re.compile(r'\bexport\s+default\b')
 
 
 @contextmanager
@@ -93,11 +105,12 @@ def packages_from_code(esm_code: str) -> dict[str, str]:
         url, package_name, version = match
         packages[package_name] = f'^{version}'
         after_slash_match = _ESM_IMPORT_SUFFIX.search(url.split('@')[-1])
+        import_name = package_name
         if after_slash_match:
             suffix = after_slash_match.group(1)
-            import_name = f'{package_name}/{suffix}'
-        else:
-            import_name = package_name
+            if suffix != '+esm' and not suffix.endswith(('.js', '.mjs')):
+                # ESM specifier is used by some CDNs to load ESM bundle
+                import_name += f'/{suffix}'
         esm_code = esm_code.replace(url, import_name)
     return esm_code, packages
 
