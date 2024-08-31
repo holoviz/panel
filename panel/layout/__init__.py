@@ -28,21 +28,55 @@ How to use layouts in 2 simple steps
 For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
-from .accordion import Accordion  # noqa
-from .base import (  # noqa
-    Column, ListLike, ListPanel, Panel, Row, WidgetBox,
-)
-from .card import Card  # noqa
-from .feed import Feed  # noqa
-from .flex import FlexBox  # noqa
-from .float import FloatPanel  # noqa
-from .grid import GridBox, GridSpec  # noqa
-from .gridstack import GridStack  # noqa
-from .spacer import (  # noqa
-    Divider, HSpacer, Spacer, VSpacer,
-)
-from .swipe import Swipe  # noqa
-from .tabs import Tabs  # noqa
+from typing import TYPE_CHECKING as _TC
+
+if _TC:
+    from .accordion import Accordion
+    from .base import (
+        Column, ListLike, ListPanel, Panel, Row, WidgetBox,
+    )
+    from .card import Card
+    from .feed import Feed
+    from .flex import FlexBox
+    from .float import FloatPanel
+    from .grid import GridBox, GridSpec
+    from .gridstack import GridStack
+    from .spacer import (
+        Divider, HSpacer, Spacer, VSpacer,
+    )
+    from .swipe import Swipe
+    from .tabs import Tabs
+
+_attrs = {
+    "Accordion": "panel.layout.accordion:Accordion",
+    "Card": "panel.layout.card:Card",
+    "Column": "panel.layout.base:Column",
+    "Divider": "panel.layout.spacer:Divider",
+    "Feed": "panel.layout.feed:Feed",
+    "FloatPanel": "panel.layout.float:FloatPanel",
+    "FlexBox": "panel.layout.flex:FlexBox",
+    "GridBox": "panel.layout.grid:GridBox",
+    "GridSpec": "panel.layout.grid:GridSpec",
+    "GridStack": "panel.layout.gridstack:GridStack",
+    "HSpacer": "panel.layout.spacer:HSpacer",
+    "ListLike": "panel.layout.base:ListLike",
+    "ListPanel": "panel.layout.base:ListPanel",
+    "Panel": "panel.layout.base:Panel",
+    "Row": "panel.layout.base:Row",
+    "Spacer": "panel.layout.spacer:Spacer",
+    "Swipe": "panel.layout.swipe:Swipe",
+    "Tabs": "panel.layout.tabs:Tabs",
+    "VSpacer": "panel.layout.spacer:VSpacer",
+    "WidgetBox": "panel.layout.base:WidgetBox",
+}
+
+def __getattr__(name: str):
+    if name in _attrs:
+        import importlib
+        mod_name, _, attr_name = _attrs[name].partition(':')
+        mod = importlib.import_module(mod_name)
+        return getattr(mod, attr_name) if attr_name else mod
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = (
     "Accordion",
@@ -66,3 +100,5 @@ __all__ = (
     "VSpacer",
     "WidgetBox"
 )
+
+__dir__ = lambda: list(__all__)
