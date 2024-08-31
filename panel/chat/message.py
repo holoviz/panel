@@ -557,7 +557,11 @@ class ChatMessage(Pane):
 
     def _update_reaction_icons(self, _):
         self._icons_row[-1] = self._render_reaction_icons()
-        self._icon_divider.visible = len(self.reaction_icons.options) > 0 and self.chat_copy_icon.visible
+        self._icon_divider.visible = (
+            len(self.reaction_icons.options) > 0 and
+            self.show_reaction_icons and
+            self.chat_copy_icon.visible
+        )
 
     def _update(self, ref, old_models):
         """
@@ -600,7 +604,10 @@ class ChatMessage(Pane):
         if isinstance(object_panel, str) and self.show_copy_icon:
             self.chat_copy_icon.value = object_panel
             self.chat_copy_icon.visible = True
-            self._icon_divider.visible = len(self.reaction_icons.options) > 0
+            self._icon_divider.visible = (
+                len(self.reaction_icons.options) > 0 and
+                self.show_reaction_icons
+            )
         else:
             self.chat_copy_icon.value = ""
             self.chat_copy_icon.visible = False
