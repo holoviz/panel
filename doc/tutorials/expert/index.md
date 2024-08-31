@@ -18,5 +18,6 @@ We will assume you have an *intermediate skill level* corresponding to the what 
 :hidden:
 :maxdepth: 2
 
-custom_components
+custom_anywidget_components
+custom_js_components
 ```
