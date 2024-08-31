@@ -154,6 +154,7 @@ Build custom components wrapping Material UI using `ReactComponent`.
 
 esm/build
 esm/callbacks
+esm/custom_panes
 esm/custom_widgets
 esm/custom_layout
 esm/dataframe

@@ -20,7 +20,7 @@ CURPATH = pathlib.Path(__file__).parent
     str(CURPATH / 'app.py'),
     str(CURPATH / 'app.md'),
     str(CURPATH / 'app.ipynb'),
-])
+], ids=['py', 'md', 'ipynb'])
 def test_reload_app_on_touch(page, autoreload, app):
     path = pathlib.Path(app)
 

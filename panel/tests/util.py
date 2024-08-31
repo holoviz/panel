@@ -59,6 +59,7 @@ APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
 ON_POSIX = 'posix' in sys.builtin_module_names
 
 linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
+unix_only = pytest.mark.skipif(platform.system() == 'Windows', reason="Only supported on unix-like systems")
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
@@ -165,7 +166,7 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
             result = fn()
         except AssertionError as e:
             if timed_out():
-                raise TimeoutError(timeout_msg) from e
+                raise TimeoutError(f"{timeout_msg}: {e}") from e
         else:
             if result not in (None, True, False):
                 raise ValueError(
@@ -295,8 +296,9 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
 
 def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
     port = serve_and_wait(app, port=port, **kwargs)
-    reqs = [requests.get(f"http://localhost:{port}{suffix}") for i in range(n)]
-    return reqs[0] if len(reqs) == 1 else reqs
+    reqs = [r for _ in range(n) if (r := requests.get(f"http://localhost:{port}{suffix}")).ok]
+    assert len(reqs) == n, "Not all requests were successful"
+    return reqs[0] if n == 1 else reqs
 
 
 def wait_for_server(port, prefix=None, timeout=3):
@@ -316,7 +318,7 @@ def wait_for_server(port, prefix=None, timeout=3):
 
 @contextlib.contextmanager
 def run_panel_serve(args, cwd=None):
-    cmd = [sys.executable, "-m", "panel", "serve"] + args
+    cmd = [sys.executable, "-m", "panel", "serve", *map(str, args)]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd, close_fds=ON_POSIX)
     try:
         yield p
@@ -370,26 +372,31 @@ class NBSR:
         except Empty:
             return None
 
-def wait_for_port(stdout):
+def wait_for_regex(stdout, regex, count=1):
     nbsr = NBSR(stdout)
     m = None
-    output = []
+    output, found = [], []
     for _ in range(20):
         o = nbsr.readline(0.5)
         if not o:
             continue
         out = o.decode('utf-8')
         output.append(out)
-        m = APP_PATTERN.search(out)
+        m = regex.search(out)
         if m is not None:
+            found.append(m.group(1))
+        if len(found) == count:
             break
-    if m is None:
+    if len(found) < count:
         output = '\n    '.join(output)
         pytest.fail(
             "No matching log line in process output, following output "
             f"was captured:\n\n   {output}"
         )
-    return int(m.group(1))
+    return found
+
+def wait_for_port(stdout):
+    return int(wait_for_regex(stdout, APP_PATTERN)[0])
 
 def write_file(content, file_obj):
     file_obj.write(content)
