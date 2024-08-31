@@ -41,6 +41,8 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    ExportSpec = dict[str, list[str | tuple[str, ...]]]
+
 
 class ReactiveESMMetaclass(ReactiveMetaBase):
 
@@ -99,7 +101,11 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _esm: ClassVar[str | os.PathLike] = ""
 
-    _exports: ClassVar[str] = ""
+    # Specifies exports to make available to JS in a bundled file
+    # 1. Default export: "<export>"
+    # 2. Import all (`* as`): "*<export>"
+    # 3. Named export (`{ <export>, ... }`): ("<export>", ...)
+    _exports__: ClassVar[ExportSpec] = {}
 
     _importmap: ClassVar[dict[Literal['imports', 'scopes'], str]] = {}
 
@@ -150,8 +156,6 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         else:
             esm = cls._esm
         esm = textwrap.dedent(esm)
-        if compiled == 'compiling':
-            esm += textwrap.dedent(cls._exports)
         return esm
 
     def _cleanup(self, root: Model | None) -> None:
@@ -399,10 +403,10 @@ class ReactComponent(ReactiveESM):
 
     _react_version = '18.3.1'
 
-    _exports = """
-    import * as React from "react"
-    import { createRoot } from "react-dom/client"
-    export default {render, React, createRoot}"""
+    _exports__: ExportSpec = {
+        "react": ["*React"],
+        "react-dom/client": [("createRoot",)]
+    }
 
     @classmethod
     def _process_importmap(cls):

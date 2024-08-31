@@ -1,4 +1,5 @@
-import inspect
+from __future__ import annotations
+
 import json
 import os
 import pathlib
@@ -7,11 +8,14 @@ import subprocess
 import tempfile
 
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 from bokeh.application.handlers.code_runner import CodeRunner
 
 from ..custom import ReactComponent, ReactiveESM
-from ..util import camel_to_kebab
+
+if TYPE_CHECKING:
+    from .custom import ExportSpec
 
 GREEN, RED, RESET = "\033[0;32m", "\033[0;31m", "\033[0m"
 
@@ -60,7 +64,7 @@ def check_cli_tool(tool_name):
         return False
 
 
-def find_components(path: str | os.PathLike) -> list[type[ReactiveESM]]:
+def find_components(path: str | os.PathLike, name: str | None = None) -> list[type[ReactiveESM]]:
     """
     Creates a temporary module given a path-like object and finds all
     the ReactiveESM components defined therein.
@@ -69,6 +73,7 @@ def find_components(path: str | os.PathLike) -> list[type[ReactiveESM]]:
     ---------
     path : str | os.PathLike
         The path to the Python module.
+
 
     Returns
     -------
@@ -81,9 +86,16 @@ def find_components(path: str | os.PathLike) -> list[type[ReactiveESM]]:
     runner.run(module)
     components = []
     for v in module.__dict__.values():
-        if isinstance(v, type) and issubclass(v, ReactiveESM) and not v.abstract:
+        if (
+            isinstance(v, type) and
+            issubclass(v, ReactiveESM) and
+            not v.abstract and
+            (name is None or v.__name__ == name)
+        ):
             v.__path__ = path_obj.parent.absolute()
             components.append(v)
+    if name and not components:
+        raise ValueError("{name!r} class not found in {path!r}.")
     return components
 
 
@@ -203,30 +215,107 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, a
     esm, dependencies = packages_from_importmap(esm, importmap.get('imports', {}))
     esm, packages = packages_from_code(esm)
     dependencies.update(packages)
+    return esm, dependencies
 
-    # Create package.json structure
-    package_json = {
-        "name": camel_to_kebab(component.__name__),
-        "dependencies": dependencies
-    }
-    return esm, package_json
-
-
-def compile_component(component: type[ReactiveESM], minify: bool = True, verbose: bool = True):
+def merge_exports(old: ExportSpec, new: ExportSpec):
     """
-    Compiles and bundles the ESM code of a ReactiveESM component and
-    writes the compiled JS file to a file adjacent to the module
-    the component was defined in.
+    Appends the new exports to set of existing ones.
 
-    Arguments
-    ---------
-    component: type[ReactiveESM]
-        The component to compile.
-    minify: bool
-        Whether to minify the output.
-    verbose: bool
-        Whether to generate verbose output.
+    Appropriately combines different kinds of exports including
+    default, import-all exports and named exports.
     """
+    for export, specs in new.items():
+        if export not in old:
+            old[export] = list(specs)
+            continue
+        prev = old[export]
+        for spec in specs:
+            if isinstance(spec, tuple):
+                for i, p in enumerate(prev):
+                    if isinstance(p, tuple):
+                        prev[i] = tuple(dict.from_keys(p+spec))
+                        break
+                else:
+                    prev.append(spec)
+            elif spec not in prev:
+                prev.append(spec)
+
+
+def generate_index(imports: str, exports: list[str], export_spec: ExportSpec):
+    index_js = imports
+    exports = list(exports)
+    for module, specs in export_spec.items():
+        for spec in specs:
+            # TODO: Handle name clashes in exports
+            if isinstance(spec, tuple):
+                imports = f"{{{', '.join(spec)}}}"
+                exports.extend(spec)
+            elif spec.startswith('*'):
+                imports = f"* as {spec[1:]}"
+                exports.append(spec[1:])
+            else:
+                imports = spec
+                exports.append(spec)
+            index_js += f'import {imports} from "{module}"\n'
+
+    export_string = ', '.join(exports)
+    index_js += f"export default {{{export_string}}}"
+    return index_js
+
+
+def generate_project(
+    components: list[type[ReactiveESM]],
+    path: str | os.PathLike,
+    project_config: dict[str, any] = None
+):
+    """
+    Converts a set of ESM components into a Javascript project with
+    an index.js, package.json and a T|JS(X) per component.
+    """
+    path = pathlib.Path(path)
+    component_names = []
+    dependencies, export_spec = {}, {}
+    index = ''
+    for component in components:
+        name = component.__name__
+        esm_path = component._esm_path(compiled=False)
+        if esm_path:
+            ext = esm_path.suffix
+        else:
+            ext = 'jsx' if issubclass(component, ReactComponent) else 'js'
+        code, component_deps = extract_dependencies(component)
+        # Detect default export in component code and handle import accordingly
+        if _EXPORT_DEFAULT_RE.search(code):
+            index += f'import {name} from "./{name}"\n'
+        else:
+            index += f'import * as {name} from "./{name}"\n'
+
+        with open(path / f'{name}.{ext}', 'w') as component_file:
+            component_file.write(code)
+        # TODO: Improve merging of dependencies
+        dependencies.update(component_deps)
+        merge_exports(export_spec, component._exports__)
+        component_names.append(name)
+
+    # Create package.json and write to temp directory
+    package_json = {"dependencies": dependencies}
+    if project_config:
+        package_json.update(project_config)
+    with open(path / 'package.json', 'w') as package_json_file:
+        json.dump(package_json, package_json_file, indent=2)
+
+    # Generate index file from component imports, exports and export specs
+    index_js = generate_index(index, component_names, export_spec)
+    with open(path / 'index.js', 'w') as index_js_file:
+        index_js_file.write(index_js)
+
+
+def compile_components(
+    components: list[type[ReactiveESM]],
+    outfile: str | os.PathLike = None,
+    minify: bool = True,
+    verbose: bool = True
+):
     if not check_cli_tool('npm'):
         raise RuntimeError(
             'Could not find `npm` or it generated an error. Ensure it is '
@@ -240,24 +329,9 @@ def compile_component(component: type[ReactiveESM], minify: bool = True, verbose
             'install it with conda or with `npm install -g esbuild`.'
         )
 
-    # Get path
-    name = camel_to_kebab(component.__name__)
-    ext = 'jsx' if issubclass(component, ReactComponent) else 'js'
-    if hasattr(component, '__path__'):
-        out_path = component.__path__
-    else:
-        out_path = pathlib.Path(inspect.getfile(component)).parent
-    out = (out_path / f'{name}.compiled.js').absolute()
-
-    code, package_json = extract_dependencies(component)
-
-    with change_to_tempdir():
-        with open('package.json', 'w') as package_json_file:
-            json.dump(package_json, package_json_file, indent=2)
-
-        with open(f'index.{ext}', 'w') as index_js_file:
-            index_js_file.write(code)
-
+    out = str(pathlib.Path(outfile).absolute()) if outfile else None
+    with change_to_tempdir() as temp_dir:
+        generate_project(components, temp_dir)
         extra_args = []
         if verbose:
             extra_args.append('--log-level=debug')
@@ -265,23 +339,28 @@ def compile_component(component: type[ReactiveESM], minify: bool = True, verbose
         try:
             print(f"Running command: {' '.join(install_cmd)}\n")  # noqa
             result = subprocess.run(install_cmd, check=True, capture_output=True, text=True)
-            if result.stdout:
+            if result.stdout and not verbose:
                 print(f"npm output:\n{GREEN}{result.stdout}{RESET}")  # noqa
             if result.stderr:
                 print("npm errors:\n{RED}{result.stderr}{RESET}")  # noqa
+                return None
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while running npm install:\n{RED}{e.stderr}{RESET}")  # noqa
-            return 1
+            return None
 
         if minify:
             extra_args.append('--minify')
-        build_cmd = ['esbuild', f'index.{ext}', '--bundle', '--format=esm', f'--outfile={out}'] + extra_args
+        if out:
+            extra_args.append(f'--outfile={out}')
+        build_cmd = ['esbuild', 'index.js', '--bundle', '--format=esm'] + extra_args
         try:
-            print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
+            if verbose:
+                print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
             result = subprocess.run(build_cmd+['--color=true'], check=True, capture_output=True, text=True)
             if result.stderr:
                 print(f"esbuild output:\n{result.stderr}")  # noqa
+                return None
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while running esbuild: {e.stderr}")  # noqa
-            return 1
-        return 0
+            return None
+        return 0 if outfile else result
