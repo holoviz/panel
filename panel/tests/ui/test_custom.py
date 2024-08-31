@@ -79,6 +79,7 @@ class AnyWidgetInitialize(AnyWidgetComponent):
     _esm = """
     export function initialize({ model }) {
       model.set('count', 1)
+      model.save_changes()
     }
 
     export function render({ model, el }) {
