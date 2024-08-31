@@ -422,19 +422,11 @@ class NestedSelect(CompositeWidget):
         return False
 
     def _find_max_depth(self, d, depth=1):
-        if d is None or len(d) == 0:
-            return 0
-        elif not isinstance(d, dict):
-            return depth
-
+        if isinstance(d, list) or d is None:
+            return depth-1
         max_depth = depth
         for value in d.values():
-            if isinstance(value, dict):
-                max_depth = max(max_depth, self._find_max_depth(value, depth + 1))
-            # dict means it's a level, so it's not the last level
-            # list means it's a leaf, so it's the last level
-            if isinstance(value, list) and len(value) == 0 and max_depth > 0:
-                max_depth -= 1
+            max_depth = max(max_depth, self._find_max_depth(value, depth + 1))
         return max_depth
 
     def _resolve_callable_options(self, i, options) -> dict | list:

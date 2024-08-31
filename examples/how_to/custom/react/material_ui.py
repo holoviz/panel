@@ -1,5 +1,3 @@
-import pathlib
-
 import param
 
 import panel as pn

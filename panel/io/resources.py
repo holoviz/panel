@@ -258,7 +258,7 @@ def component_resource_path(component, attr, path):
     component_path = COMPONENT_PATH
     if state.rel_path:
         component_path = f"{state.rel_path}/{component_path}"
-    rel_path = str(resolve_custom_path(component, path, relative=True)).replace(os.path.sep, '/')
+    rel_path = os.fspath(resolve_custom_path(component, path, relative=True)).replace(os.path.sep, '/')
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
@@ -299,14 +299,15 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     stylesheet: str
         The stylesheet definition
     """
-    stylesheet = str(stylesheet)
-    if not stylesheet.startswith('http') and attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet)):
-        if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
-            stylesheet = component_resource_path(cls, attribute, stylesheet)
-            if config.autoreload and '?' not in stylesheet:
-                stylesheet += f'?v={uuid.uuid4().hex}'
-        else:
-            stylesheet = custom_path.read_text(encoding='utf-8')
+    stylesheet = os.fspath(stylesheet)
+    if stylesheet.startswith('http') or not (attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet))):
+        return stylesheet
+    if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
+        stylesheet = component_resource_path(cls, attribute, stylesheet)
+        if config.autoreload and '?' not in stylesheet:
+            stylesheet += f'?v={uuid.uuid4().hex}'
+    else:
+        stylesheet = custom_path.read_text(encoding='utf-8')
     return stylesheet
 
 def patch_model_css(root, dist_url):
@@ -748,7 +749,7 @@ class Resources(BkResources):
         # Add loading spinner
         if config.global_loading_spinner:
             loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8').replace(
-                '../assets', self.dist_dir
+                '../assets', self.dist_dir + 'assets'
             )
             raw.extend([loading_base, loading_css(
                 config.loading_spinner, config.loading_color, config.loading_max_height

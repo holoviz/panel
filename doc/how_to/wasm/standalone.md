@@ -11,7 +11,7 @@ Create a file called **script.html** with the following content:
 <html>
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/pyodide/v{{PYODIDE_VERSION}}/full/pyodide.js"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-{{BOKEH_VERSION}}.js"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{BOKEH_VERSION}}.min.js"></script>
@@ -35,8 +35,9 @@ Create a file called **script.html** with the following content:
           slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
           def callback(new):
               return f'Amplitude is: {new}'
-          pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app')
-        `);
+
+          pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
+      `);
       }
       main();
     </script>

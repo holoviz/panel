@@ -4,6 +4,7 @@ Writing an HTML file from scratch with all the Javascript and Python dependencie
 
 The ``panel convert`` command has the following options:
 
+```bash
     positional arguments:
     DIRECTORY-OR-SCRIPT   The app directories or scripts to serve (serve empty document if not specified)
 
@@ -23,6 +24,7 @@ The ``panel convert`` command has the following options:
     --watch               Watch the files
     --num-procs NUM_PROCS
                             The number of processes to start in parallel to convert the apps.
+```
 
 ## Example
 
@@ -91,6 +93,7 @@ Using the `--to` argument on the CLI you can control the format of the file that
 - **`pyodide`** (default): Run application using Pyodide running in the main thread. This option is less performant than pyodide-worker but produces completely standalone HTML files that do not have to be hosted on a static file server (e.g. Github Pages).
 - **`pyodide-worker`**: Generates an HTML file and a JS file containing a Web Worker that runs in a separate thread. This is the most performant option, but files have to be hosted on a static file server.
 - **`pyscript`**: Generates an HTML leveraging PyScript. This produces standalone HTML files containing `<script type="py">` tags containing the dependencies and the application code. This output is the most readable, and should have equivalent performance to the `pyodide` option.
+- **`pyscript-worker`**: Same as `pyscript` except the Python is executed on a Web Worker. This option is slightly less efficient than the `pyodide-worker` option but still ensures that the frontend is not blocked while the code is executing.
 
 ## Requirements
 

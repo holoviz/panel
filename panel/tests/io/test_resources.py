@@ -208,3 +208,16 @@ def test_resolve_stylesheet_long_css():
 }
 """
     assert resolve_stylesheet(cls, stylesheet, "_stylesheets")==stylesheet
+
+def test_resources_global_loading_indicator_server():
+    resources = Resources(mode='server')
+    with config.set(global_loading_spinner=True):
+        assert len(resources.css_raw) == 2
+        assert resources.css_raw[0].count('static/extensions/panel/assets') == 5
+
+def test_resources_global_loading_indicator_cdn():
+    resources = Resources(mode='cdn')
+    with config.set(global_loading_spinner=True):
+        assert len(resources.css_raw) == 2
+        assert resources.css_raw[0].count('https://cdn.holoviz.org/panel/') == 5
+        assert resources.css_raw[0].count('/dist/assets/') == 5

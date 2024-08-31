@@ -3,6 +3,7 @@ A module containing testing utilities and fixtures.
 """
 import asyncio
 import atexit
+import datetime as dt
 import os
 import pathlib
 import re
@@ -12,9 +13,9 @@ import socket
 import tempfile
 import time
 import unittest
-import warnings
 
 from contextlib import contextmanager
+from functools import cache
 from subprocess import PIPE, Popen
 
 import pandas as pd
@@ -42,12 +43,32 @@ JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
 
+if os.name != 'nt':
+    import resource
+
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+
+
+for e in os.environ:
+    if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", ):
+        os.environ.pop(e, None)
+
 try:
-    with warnings.catch_warnings():
-        warnings.filterwarnings("error", category=DeprecationWarning)
-        asyncio.get_event_loop()
+    asyncio.get_event_loop()
 except (RuntimeError, DeprecationWarning):
     asyncio.set_event_loop(asyncio.new_event_loop())
+
+@cache
+def internet_available(host="8.8.8.8", port=53, timeout=3):
+    """Check if the internet connection is available."""
+    try:
+        socket.setdefaulttimeout(timeout)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as conn:
+            conn.connect((host, port))
+        return True
+    except socket.error:
+        return False
 
 def port_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -79,7 +100,7 @@ def start_jupyter():
             break
         if time.monotonic() > deadline:
             raise TimeoutError(
-                'jupyter server did not start within {timeout} seconds.'
+                f'jupyter server did not start within {JUPYTER_TIMEOUT} seconds.'
             )
     JUPYTER_PORT = int(line.split(host)[-1][:4])
 
@@ -131,6 +152,8 @@ def pytest_configure(config):
     if config.option.jupyter and not port_open(JUPYTER_PORT):
         start_jupyter()
 
+    config.addinivalue_line("markers", "internet: mark test as requiring an internet connection")
+
 
 def pytest_collection_modifyitems(config, items):
     skipped, selected = [], []
@@ -150,6 +173,11 @@ def pytest_collection_modifyitems(config, items):
     items[:] = selected
 
 
+def pytest_runtest_setup(item):
+    if "internet" in item.keywords and not internet_available():
+        pytest.skip("Skipping test: No internet connection")
+
+
 @pytest.fixture
 def context(context):
     # Set the default timeout to 20 secs
@@ -167,9 +195,11 @@ def server_document():
     doc = Document()
     session_context = unittest.mock.Mock()
     doc._session_context = lambda: session_context
-    with set_curdoc(doc):
-        yield doc
-    doc._session_context = None
+    try:
+        with set_curdoc(doc):
+            yield doc
+    finally:
+        doc._session_context = None
 
 @pytest.fixture
 def bokeh_curdoc():
@@ -378,12 +408,15 @@ def module_cleanup():
     Cleanup Panel extensions after each test.
     """
     from bokeh.core.has_props import _default_resolver
-    to_reset = list(panel_extension._imports.values())
 
+    from panel.reactive import ReactiveMetaBase
+
+    to_reset = list(panel_extension._imports.values())
     _default_resolver._known_models = {
         name: model for name, model in _default_resolver._known_models.items()
         if not any(model.__module__.startswith(tr) for tr in to_reset)
     }
+    ReactiveMetaBase._loaded_extensions = set()
 
 @pytest.fixture(autouse=True)
 def server_cleanup():
@@ -402,7 +435,7 @@ def server_cleanup():
 def cache_cleanup():
     state.clear_caches()
     Design._resolve_modifiers.cache_clear()
-    state._stylesheets.clear()
+    Design._cache.clear()
 
 @pytest.fixture
 def autoreload():
@@ -496,3 +529,37 @@ def exception_handler_accumulator():
         yield exceptions
     finally:
         config.exception_handler = old_eh
+
+
+@pytest.fixture
+def df_mixed():
+    df = pd.DataFrame({
+        'int': [1, 2, 3, 4],
+        'float': [3.14, 6.28, 9.42, -2.45],
+        'str': ['A', 'B', 'C', 'D'],
+        'bool': [True, True, True, False],
+        'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
+        'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
+    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+    return df
+
+@pytest.fixture
+def df_strings():
+    descr = [
+        'Under the Weather',
+        'Top Drawer',
+        'Happy as a Clam',
+        'Cut To The Chase',
+        'Knock Your Socks Off',
+        'A Cold Day in Hell',
+        'All Greek To Me',
+        'A Cut Above',
+        'Cut The Mustard',
+        'Up In Arms',
+        'Playing For Keeps',
+        'Fit as a Fiddle',
+    ]
+
+    code = [f'{i:02d}' for i in range(len(descr))]
+
+    return pd.DataFrame(dict(code=code, descr=descr))

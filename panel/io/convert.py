@@ -41,8 +41,8 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.26.1'
-PYSCRIPT_VERSION = '2024.7.1'
+PYODIDE_VERSION = 'v0.26.2'
+PYSCRIPT_VERSION = '2024.8.1'
 WHL_PATH = DIST_DIR / 'wheels'
 PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
@@ -299,7 +299,7 @@ def script_to_html(
         if css_resources == 'auto':
             css_resources = []
         env_spec = ', '.join([repr(req) for req in reqs])
-        code = code.encode("unicode_escape").decode("utf-8").replace('`', '\`')
+        code = code.encode("unicode_escape").decode("utf-8").replace('`', r'\`')
         if runtime == 'pyodide-worker':
             if js_resources == 'auto':
                 js_resources = []

@@ -8,7 +8,7 @@ import ast
 import json
 
 from base64 import b64decode
-from datetime import date, datetime
+from datetime import date, datetime, time as dt_time
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional,
 )
@@ -31,9 +31,11 @@ from ..config import config
 from ..layout import Column, Panel
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
-    TextInput as _BkTextInput,
+    TextInput as _BkTextInput, TimePicker as _BkTimePicker,
 )
-from ..util import lazy_load, param_reprs, try_datetime64_to_datetime
+from ..util import (
+    escape, lazy_load, param_reprs, try_datetime64_to_datetime,
+)
 from .base import CompositeWidget, Widget
 
 if TYPE_CHECKING:
@@ -381,7 +383,8 @@ class FileDropper(Widget):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         self._widget_type = lazy_load(
-            'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root
+            'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root,
+            ext='filedropper'
         )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('delete_event', 'upload_event', model=model, doc=doc, comm=comm)
@@ -429,7 +432,7 @@ class StaticText(Widget):
     """
 
     value = param.Parameter(default=None, doc="""
-        The current value""")
+        The current value to be displayed.""")
 
     _format: ClassVar[str] = '<b>{title}</b>: {value}'
 
@@ -445,10 +448,22 @@ class StaticText(Widget):
 
     _widget_type: ClassVar[type[Model]] = _BkDiv
 
+    @property
+    def _linked_properties(self) -> tuple[str]:
+        return ()
+
+    def _init_params(self) -> dict[str, Any]:
+        return {
+            k: v for k, v in self.param.values().items()
+            if k in self._synced_params and (v is not None or k == 'value')
+        }
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'text' in msg:
-            text = str(msg.pop('text'))
+            text = msg.pop('text')
+            if not isinstance(text, str):
+                text = escape("" if text is None else str(text))
             partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
                 text = self._format.format(title=self.name, value=text.replace(partial, ''))
@@ -793,6 +808,77 @@ class DatetimeRangePicker(_DatetimePickerBase):
         return value
 
 
+class _TimeCommon(Widget):
+
+    hour_increment = param.Integer(default=1, doc="""
+    Defines the granularity of hour value increments in the UI.
+    """)
+
+    minute_increment = param.Integer(default=1, doc="""
+    Defines the granularity of minute value increments in the UI.
+    """)
+
+    second_increment = param.Integer(default=1, doc="""
+    Defines the granularity of second value increments in the UI.
+    """)
+
+    seconds = param.Boolean(default=False, doc="""
+    Allows to select seconds. By default only hours and minutes are
+    selectable, and AM/PM depending on the `clock` option.
+    """)
+
+    clock = param.String(default='12h', doc="""
+        Whether to use 12 hour or 24 hour clock.""")
+
+    __abstract = True
+
+
+class TimePicker(_TimeCommon):
+    """
+    The `TimePicker` allows selecting a `time` value using a text box
+    and a time-picking utility.
+
+    Reference: https://panel.holoviz.org/reference/widgets/TimePicker.html
+
+    :Example:
+
+    >>> TimePicker(
+    ...     value="12:59:31", start="09:00:00", end="18:00:00", name="Time"
+    ... )
+    """
+
+    value = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        The current value""")
+
+    start = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        Inclusive lower bound of the allowed time selection""")
+
+    end = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        Inclusive upper bound of the allowed time selection""")
+
+    format = param.String(default='H:i', doc="""
+        Formatting specification for the display of the picked date.
+
+        +---+------------------------------------+------------+
+        | H | Hours (24 hours)                   | 00 to 23   |
+        | h | Hours                              | 1 to 12    |
+        | G | Hours, 2 digits with leading zeros | 1 to 12    |
+        | i | Minutes                            | 00 to 59   |
+        | S | Seconds, 2 digits                  | 00 to 59   |
+        | s | Seconds                            | 0, 1 to 59 |
+        | K | AM/PM                              | AM or PM   |
+        +---+------------------------------------+------------+
+
+        See also https://flatpickr.js.org/formatting/#date-formatting-tokens.
+    """)
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'start': 'min_time', 'end': 'max_time', 'format': 'time_format'
+    }
+
+    _widget_type: ClassVar[type[Model]] = _BkTimePicker
+
+
 class ColorPicker(Widget):
     """
     The `ColorPicker` widget allows selecting a hexadecimal RGB color value
@@ -941,6 +1027,11 @@ class _SpinnerBase(_NumericInputBase):
             if "value_throttled" in msg:
                 msg["value"] = msg["value_throttled"]
         return super()._process_property_change(msg)
+
+    def _process_events(self, events: dict[str, Any]) -> None:
+        if config.throttled:
+            events.pop("value", None)
+        super()._process_events(events)
 
 
 class IntInput(_SpinnerBase, _IntInputBase):

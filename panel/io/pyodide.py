@@ -343,7 +343,8 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
             return
         json_patch, buffer_map = _process_document_events(doc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
-        dispatch_fn(json_patch, pyodide.ffi.to_js(buffer_map), msg_id)
+        buffers = js.Map.new(pyodide.ffi.to_js(buffer_map))
+        dispatch_fn(json_patch, buffers, msg_id)
 
     doc.on_change(pysync)
     doc.unhold()

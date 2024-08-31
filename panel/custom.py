@@ -28,6 +28,7 @@ from .pane.base import PaneBase  # noqa
 from .reactive import (  # noqa
     Reactive, ReactiveCustomBase, ReactiveHTML, ReactiveMetaBase,
 )
+from .util import camel_to_kebab
 from .util.checks import import_available
 from .viewable import (  # noqa
     Child, Children, Layoutable, Viewable, is_viewable_param,
@@ -153,7 +154,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     def _update_esm(self):
         esm = self._render_esm()
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             if esm == model.esm:
                 continue
             self._apply_update({}, {'esm': esm}, model, ref)
@@ -182,6 +183,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             data_params[k] = v
         data_props = self._process_param_change(data_params)
         params.update({
+            'class_name': camel_to_kebab(cls.__name__),
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload or getattr(self, '_debug', False),
             'esm': self._render_esm(),
@@ -373,11 +375,13 @@ class ReactComponent(ReactiveESM):
         imports = self._importmap.get('imports', {})
         imports_with_deps = {}
         dev_suffix = '&dev' if config.autoreload else ''
-        suffix = f'deps=react@{self._react_version},react-dom@{self._react_version}&external=react{dev_suffix}'
+        suffix = f'deps=react@{self._react_version},react-dom@{self._react_version}&external=react{dev_suffix},react-dom'
+        if any('@mui' in v for v in imports.values()):
+            suffix += ',react-is,@emotion/react'
         for k, v in imports.items():
             if '?' not in v and 'esm.sh' in v:
                 if v.endswith('/'):
-                    v = f'{v[:-1]}&{suffix}/'
+                    v = f'{v[:-1]}?{suffix}&path=/'
                 else:
                     v = f'{v}?{suffix}'
             imports_with_deps[k] = v

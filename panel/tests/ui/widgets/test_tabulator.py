@@ -24,22 +24,9 @@ from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
-from panel.widgets import Select, Tabulator
+from panel.widgets import Select, Tabulator, TextInput
 
 pytestmark = pytest.mark.ui
-
-
-@pytest.fixture
-def df_mixed():
-    df = pd.DataFrame({
-        'int': [1, 2, 3, 4],
-        'float': [3.14, 6.28, 9.42, -2.45],
-        'str': ['A', 'B', 'C', 'D'],
-        'bool': [True, True, True, False],
-        'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
-        'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
-    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
-    return df
 
 
 @pytest.fixture(scope='session')
@@ -177,13 +164,14 @@ def test_tabulator_value_changed(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1)
+
     df_mixed.loc['idx0', 'str'] = 'AA'
     # Need to trigger the value as the dataframe was modified
     # in place which is not detected.
     widget.param.trigger('value')
-    wait_until(lambda: page.locator('text="AA"') is not None, page)
-    changed_cell = page.locator('text="AA"')
-    expect(changed_cell).to_have_count(1)
+
+    expect(page.locator('text="AA"')).to_have_count(1)
 
 
 def test_tabulator_disabled(page, df_mixed):
@@ -1042,7 +1030,6 @@ def test_tabulator_frozen_rows(page):
     assert Y_bb == page.locator('text="Y"').bounding_box()
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3669')
 def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1062,8 +1049,7 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     # Catch a potential rescroll
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    # This fails
-    assert bb == page.locator('text="tomodify"').bounding_box()
+    wait_until(lambda: bb == page.locator('text="tomodify"').bounding_box(), page)
 
 
 @pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3249')
@@ -1111,9 +1097,11 @@ def test_tabulator_patch_no_height_resize(page):
 
     serve_component(page, app)
 
+    page.wait_for_timeout(100)
+
     page.mouse.wheel(delta_x=0, delta_y=10000)
     at_bottom_script = """
-    isAtBottom => (window.innerHeight + window.scrollY) >= document.body.scrollHeight;
+    () => Math.round(window.innerHeight + window.scrollY) === document.body.scrollHeight
     """
     wait_until(lambda: page.evaluate(at_bottom_script), page)
 
@@ -1122,16 +1110,11 @@ def test_tabulator_patch_no_height_resize(page):
     # Give it some time to potentially "re-scroll"
     page.wait_for_timeout(400)
 
-    wait_until(lambda: page.evaluate(at_bottom_script), page)
+    wait_until(lambda: page.locator('.pnx-tabulator').evaluate(at_bottom_script), page)
 
 
 @pytest.mark.parametrize(
-    'pagination',
-    (
-        pytest.param('local', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3553')),
-        pytest.param('remote', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3553')),
-        None,
-    )
+    'pagination', ('local', 'remote', None)
 )
 def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, pagination):
     widths = 100
@@ -1148,9 +1131,14 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
 
     serve_component(page, widget)
 
+    page.wait_for_timeout(100)
+
     header = page.locator(f'text="{col_name}"')
     # Scroll to the right
     header.scroll_into_view_if_needed()
+
+    page.wait_for_timeout(100)
+
     bb = header.bounding_box()
 
     header = page.locator('input[type="search"]')
@@ -1159,10 +1147,10 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
     header.press('Enter')
 
     # Wait to catch a potential rescroll
-    page.wait_for_timeout(400)
+    page.wait_for_timeout(500)
 
     # The table should keep the same scroll position, this fails
-    assert page.locator(f'text="{col_name}"').bounding_box() == bb
+    wait_until(lambda: page.locator(f'text="{col_name}"').bounding_box() == bb, page)
 
 
 def test_tabulator_header_filter_always_visible(page, df_mixed):
@@ -1587,6 +1575,34 @@ def test_tabulator_row_content_expand_from_python_after(page, df_mixed):
     expect(page.locator('text="►"')).to_have_count(len(df_mixed))
 
 
+def test_tabulator_row_content_expand_after_filtered(page, df_mixed):
+    table = Tabulator(df_mixed, row_content=lambda e: f"Hello {e.int}", header_filters=True)
+
+    serve_component(page, table)
+
+    idx_filter = page.locator('.tabulator-col').nth(2).locator('input[type="search"]')
+    idx_filter.click()
+    idx_filter.fill('idx1')
+    idx_filter.press('Enter')
+
+    rows = page.locator('.tabulator-row')
+
+    expect(rows).to_have_count(1)
+
+    page.locator('.tabulator-row').nth(0).locator('.tabulator-cell').nth(1).click()
+
+    expect(page.locator('.markdown')).to_have_text('Hello 2')
+
+    idx_filter.click()
+    idx_filter.fill('')
+    idx_filter.press('Enter')
+
+    expect(rows).to_have_count(4)
+
+    expect(rows.nth(0).locator('.markdown')).to_have_count(0)
+    expect(rows.nth(1).locator('.markdown')).to_have_text('Hello 2')
+
+
 def test_tabulator_groups(page, df_mixed):
     widget = Tabulator(
         df_mixed,
@@ -1981,7 +1997,6 @@ def test_tabulator_header_filters_default(page, df_mixed, cols):
         ([0, 1], 'input[type="number"]'),
         (np.array([0, 1], dtype=np.uint64), 'input[type="number"]'),
         ([0.1, 1.1], 'input[type="number"]'),
-        # ([True, False], 'input[type="checkbox"]'),  # Pandas cannot have boolean indexes apparently
     ),
 )
 def test_tabulator_header_filters_default_index(page, index, expected_selector):
@@ -2133,10 +2148,11 @@ def test_tabulator_streaming_default(page):
 
     serve_component(page, widget)
 
+    page.wait_for_timeout(100)
+
     expect(page.locator('.tabulator-row')).to_have_count(len(df))
 
     height_start = page.locator('.pnx-tabulator.tabulator').bounding_box()['height']
-
 
     def stream_data():
         widget.stream(df)  # follow is True by default
@@ -2152,6 +2168,24 @@ def test_tabulator_streaming_default(page):
     assert page.locator('.pnx-tabulator.tabulator').bounding_box()['height'] > height_start
 
 
+@pytest.mark.parametrize('pagination', ['remote', 'local'])
+def test_tabulator_streaming_follow_pagination(page, pagination):
+    df = pd.DataFrame(np.random.random((3, 2)), columns=['A', 'B'])
+    widget = Tabulator(df, pagination=pagination, page_size=3)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-row')).to_have_count(len(df))
+
+    widget.stream(df)
+
+    expect(page.locator('.tabulator-page.active')).to_have_text('2')
+
+    widget.stream(df)
+
+    expect(page.locator('.tabulator-page.active')).to_have_text('3')
+
+
 def test_tabulator_streaming_no_follow(page):
     nrows1 = 10
     arr = np.random.randint(10, 20, (nrows1, 2))
@@ -2162,10 +2196,15 @@ def test_tabulator_streaming_no_follow(page):
 
     serve_component(page, widget)
 
+    page.wait_for_timeout(100)
+
     expect(page.locator('.tabulator-row')).to_have_count(len(df))
-    assert page.locator('text="-1"').count() == 2
+    expect(page.locator('text="-1"')).to_have_count(2)
 
     height_start = page.locator('.pnx-tabulator.tabulator').bounding_box()['height']
+
+    scroll_top = page.locator('.pnx-tabulator.tabulator').evaluate("(el) => el.scrollTop")
+    assert scroll_top == 0
 
     recs = []
     nrows2 = 5
@@ -2180,16 +2219,16 @@ def test_tabulator_streaming_no_follow(page):
     repetitions = 3
     state.add_periodic_callback(stream_data, period=100, count=repetitions)
 
-    # Explicit wait to make sure the periodic callback has completed
+    # Wait until data is updated
+    wait_until(lambda: len(widget.value) == nrows1 + repetitions * nrows2, page)
+
+    # Explicit wait to make sure the periodic callback has propagated
     page.wait_for_timeout(500)
 
-    expect(page.locator('text="-1"')).to_have_count(2)
-    # As we're not in follow mode the last row isn't visible
-    # and seems to be out of reach to the selector. How visibility
-    # is used here seems brittle though, may need to be revisited.
-    expect(page.locator(f'text="{val[0]}"')).to_have_count(0)
+    scroll_top = page.locator('.pnx-tabulator.tabulator').evaluate("(el) => el.scrollTop")
+    assert scroll_top == 0
 
-    assert len(widget.value) == nrows1 + repetitions * nrows2
+    # Assert the data matches what we expect
     assert widget.current_view.equals(widget.value)
 
     assert page.locator('.pnx-tabulator.tabulator').bounding_box()['height'] == height_start
@@ -2264,7 +2303,7 @@ def test_tabulator_styling_init(page, df_mixed):
     df_styled = (
         df_mixed.style
         .apply(highlight_max, subset=['int'])
-        .applymap(color_false, subset=['bool'])
+        .map(color_false, subset=['bool'])
     )
     widget = Tabulator(df_styled)
 
@@ -2287,7 +2326,7 @@ def test_tabulator_patching_and_styling(page, df_mixed):
     widget.patch({'int': [(0, 100)]}, as_index=False)
 
     max_int = df_mixed['int'].max()
-    wait_until(lambda: page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"')) is not None, page)
+    expect(page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))).to_have_count(1)
     max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
@@ -2399,10 +2438,12 @@ def test_tabulator_sorters_set_after_init(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1)
+
     widget.sorters = [{'field': 'int', 'dir': 'desc'}]
 
     sheader = page.locator('[aria-sort="descending"]:visible')
-    expect(sheader).to_have_count(1)
+    wait_until(lambda: expect(sheader).to_have_count(1), page)
     assert sheader.get_attribute('tabulator-field') == 'int'
 
     expected_df_sorted = df_mixed.sort_values('int', ascending=False)
@@ -2552,19 +2593,23 @@ def test_tabulator_click_event_and_header_filters_and_streamed_data(page):
     str_header.press('Enter')
     wait_until(lambda: len(widget.filters) == 1, page)
 
+    page.wait_for_timeout(100)
+
     # Stream data in ensuring that it does not mess up the index
     widget.stream(pd.DataFrame([('D', 'Y')], columns=['col1', 'col2'], index=[5]))
 
+    page.wait_for_timeout(100)
+
     # Click on the last cell
     cell = page.locator('text="Z"')
-    cell.click()
+    cell.click(force=True)
 
     wait_until(lambda: len(values) == 1, page)
     # This cell was at index 4 in col2 of the original dataframe
     assert values[0] == ('col2', 4, 'Z')
 
     cell = page.locator('text="Y"')
-    cell.click()
+    cell.click(force=True)
 
     wait_until(lambda: len(values) == 2, page)
     # This cell was at index 5 in col2 of the original dataframe
@@ -2873,7 +2918,7 @@ def test_tabulator_edit_event_integrations(page, sorter, python_filter, header_f
         expected_current_view = expected_current_view.query(f'{python_filter_col} == @python_filter_val')
     if header_filter == 'header_filter':
         expected_current_view = expected_current_view.query(f'{header_filter_col} == @header_filter_val')
-    assert widget.current_view.equals(expected_current_view)
+    pd.testing.assert_frame_equal(widget.current_view, expected_current_view)
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
@@ -2950,7 +2995,6 @@ def test_tabulator_click_event_selection_integrations(page, sorter, python_filte
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
 def test_tabulator_selection_sorters_on_init(page, df_mixed):
     widget = Tabulator(df_mixed, sorters=[{'field': 'int', 'dir': 'desc'}])
 
@@ -2966,7 +3010,6 @@ def test_tabulator_selection_sorters_on_init(page, df_mixed):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.xfail(reason='https://github.com/holoviz/panel/issues/3664')
 def test_tabulator_selection_header_filter_unchanged(page):
     df = pd.DataFrame({
         'col1': list('XYYYYY'),
@@ -3019,6 +3062,23 @@ def test_tabulator_selection_header_filter_changed(page):
     expected_selected = df.iloc[selection, :]
     assert widget.selected_dataframe.equals(expected_selected)
 
+def test_tabulator_sorter_not_reversed_after_init(page):
+    df = pd.DataFrame({
+        'col1': [1, 2, 3, 4],
+        'col2': [1, 4, 3, 2],
+    })
+
+    sorters = [
+        {'field': 'col1', 'dir': 'desc'},
+        {'field': 'col2', 'dir': 'asc'}
+    ]
+    table = Tabulator(df, sorters=sorters)
+
+    serve_component(page, table)
+
+    expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1)
+    page.wait_for_timeout(300)
+    assert table.sorters == sorters
 
 def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
     widths = 100
@@ -3370,6 +3430,176 @@ def test_tabulator_update_hidden_columns(page):
     ), page)
 
 
+def test_tabulator_remote_pagination_auto_page_size_grow(page, df_mixed):
+    nrows, ncols = df_mixed.shape
+    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=1, height=200)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    wait_until(lambda: widget.page_size == 4, page)
+
+
+def test_tabulator_remote_pagination_auto_page_size_shrink(page, df_mixed):
+    nrows, ncols = df_mixed.shape
+    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=10, height=150)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    wait_until(lambda: widget.page_size == 3, page)
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_selection_indices_on_paginated_and_filtered_data(page, df_strings, pagination):
+    tbl = Tabulator(
+        df_strings,
+        disabled=True,
+        pagination=pagination,
+        page_size=6,
+    )
+
+    descr_filter = TextInput(name='descr', value='cut')
+
+    def contains_filter(df, pattern=None):
+        if not pattern:
+            return df
+        return df[df.descr.str.contains(pattern, case=False)]
+
+    filter_fn = param.bind(contains_filter, pattern=descr_filter)
+    tbl.add_filter(filter_fn)
+
+    serve_component(page, tbl)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    row = page.locator('.tabulator-row').nth(1)
+    row.click()
+
+    wait_until(lambda: tbl.selection == [7], page)
+
+    tbl.page_size = 2
+
+    page.locator('.tabulator-row').nth(0).click()
+
+    wait_until(lambda: tbl.selection == [3], page)
+
+    if pagination:
+        page.locator('.tabulator-pages > .tabulator-page').nth(1).click()
+        expect(page.locator('.tabulator-row')).to_have_count(1)
+        page.locator('.tabulator-row').nth(0).click()
+    else:
+        expect(page.locator('.tabulator-row')).to_have_count(3)
+        page.locator('.tabulator-row').nth(2).click()
+
+    wait_until(lambda: tbl.selection == [8], page)
+
+    descr_filter.value = ''
+
+    wait_until(lambda: tbl.selection == [8], page)
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_strings, pagination):
+    tbl = Tabulator(
+        df_strings,
+        disabled=True,
+        pagination=pagination,
+        page_size=6,
+    )
+
+    descr_filter = TextInput(name='descr', value='cut')
+
+    def contains_filter(df, pattern=None):
+        if not pattern:
+            return df
+        return df[df.descr.str.contains(pattern, case=False)]
+
+    filter_fn = param.bind(contains_filter, pattern=descr_filter)
+    tbl.add_filter(filter_fn)
+
+    serve_component(page, tbl)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    page.locator('.tabulator-col-title-holder').nth(3).click()
+
+    # Wait for sorting
+    page.wait_for_timeout(100)
+
+    row = page.locator('.tabulator-row').nth(1)
+    row.click()
+
+    wait_until(lambda: tbl.selection == [8], page)
+
+    tbl.page_size = 2
+
+    page.locator('.tabulator-col-title-holder').nth(3).click()
+
+    # Wait for sorting
+    page.wait_for_timeout(100)
+
+    page.locator('.tabulator-row').nth(0).click()
+
+    wait_until(lambda: tbl.selection == [3], page)
+
+    if pagination:
+        page.locator('.tabulator-pages > .tabulator-page').nth(1).click()
+        expect(page.locator('.tabulator-row')).to_have_count(1)
+        page.locator('.tabulator-row').nth(0).click()
+    else:
+        expect(page.locator('.tabulator-row')).to_have_count(3)
+        page.locator('.tabulator-row').nth(2).click()
+
+    wait_until(lambda: tbl.selection == [7], page)
+
+    descr_filter.value = ''
+
+    wait_until(lambda: tbl.selection == [7], page)
+
+
+@pytest.mark.parametrize('pagination', ['remote', 'local', None])
+def test_range_selection_on_sorted_data_downward(page, pagination):
+    df = pd.DataFrame({'a': [1, 3, 2, 4, 5, 6, 7, 8, 9], 'b': [6, 5, 6, 7, 7, 7, 7, 7, 7]})
+    table = Tabulator(df, disabled=True, pagination=pagination)
+
+    serve_component(page, table)
+
+    page.locator('.tabulator-col-title-holder').nth(2).click()
+
+    page.wait_for_timeout(100)
+
+    page.locator('.tabulator-row').nth(0).click()
+
+    page.keyboard.down('Shift')
+
+    page.locator('.tabulator-row').nth(1).click()
+
+    wait_until(lambda: table.selection == [0, 2], page)
+
+
+@pytest.mark.parametrize('pagination', ['remote', 'local', None])
+def test_range_selection_on_sorted_data_upward(page, pagination):
+    df = pd.DataFrame({'a': [1, 3, 2, 4, 5, 6, 7, 8, 9], 'b': [6, 5, 6, 7, 7, 7, 7, 7, 7]})
+    table = Tabulator(df, disabled=True, pagination=pagination, page_size=3)
+
+    serve_component(page, table)
+
+    page.locator('.tabulator-col-title-holder').nth(2).click()
+
+    page.wait_for_timeout(100)
+
+    page.locator('.tabulator-row').nth(1).click()
+
+    page.keyboard.down('Shift')
+
+    page.locator('.tabulator-row').nth(0).click()
+
+    wait_until(lambda: table.selection == [2, 0], page)
+
+
 class Test_RemotePagination:
 
     @pytest.fixture(autouse=True)
@@ -3389,6 +3619,7 @@ class Test_RemotePagination:
             ui_count = len(expected)
 
         expect(page.locator('.tabulator-selected')).to_have_count(ui_count)
+
         wait_until(lambda: self.widget.selection == expected, page)
 
     @contextmanager

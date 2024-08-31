@@ -488,7 +488,7 @@
   background: rgba(255, 255, 255, 0.2);
 }
 .tabulator .tabulator-footer .tabulator-page.active {
-  color: var(--neutral-foreground-active);
+  color: var(--accent-foreground-active);
 }
 .tabulator .tabulator-footer .tabulator-page:disabled {
   opacity: 0.5;
