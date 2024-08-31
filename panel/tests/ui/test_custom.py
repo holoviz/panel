@@ -59,7 +59,6 @@ class AnyWidgetUpdate(AnyWidgetComponent):
     }
     """
 
-
 @pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate])
 def test_update(page, component):
     example = component(text='Hello World!')
@@ -71,6 +70,66 @@ def test_update(page, component):
     example.text = "Foo!"
 
     expect(page.locator('h1')).to_have_text('Foo!')
+
+
+class AnyWidgetInitialize(AnyWidgetComponent):
+
+    count = param.Integer(default=0)
+
+    _esm = """
+    export function initialize({ model }) {
+      model.set('count', 1)
+    }
+
+    export function render({ model, el }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = `${model.get('count')}`
+      el.append(h1)
+    }
+    """
+
+class JSInitialize(JSComponent):
+
+    count = param.Integer(default=0)
+
+    _esm = """
+    export function initialize({ model }) {
+      model.count = 1
+    }
+
+    export function render({ model }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = `${model.count}`
+      return h1
+    }
+    """
+
+class ReactInitialize(ReactComponent):
+
+    count = param.Integer(default=0)
+
+    _esm = """
+    export function initialize({ model }) {
+      model.count = 1
+    }
+
+    export function render({ model }) {
+      const [count] = model.useState('count')
+      return <h1>{count}</h1>
+    }
+    """
+
+@pytest.mark.parametrize('component', [AnyWidgetInitialize, JSInitialize, ReactInitialize])
+def test_initialize(page, component):
+    example = Row(component())
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('1')
+
+    example[0] = component()
+
+    expect(page.locator('h1')).to_have_text('1')
 
 
 class JSUnwatch(JSComponent):
@@ -155,7 +214,6 @@ class JSInput(JSComponent):
     }
     """
 
-
 class ReactInput(ReactComponent):
 
     text = param.String()
@@ -172,7 +230,6 @@ class ReactInput(ReactComponent):
       )
     }
     """
-
 
 @pytest.mark.parametrize('component', [JSInput, ReactInput])
 def test_gather_input(page, component):
@@ -207,7 +264,6 @@ class JSSendEvent(JSComponent):
     def _handle_click(self, event):
         self.clicks += 1
 
-
 class ReactSendEvent(ReactComponent):
 
     clicks = param.Integer(default=0)
@@ -220,7 +276,6 @@ class ReactSendEvent(ReactComponent):
 
     def _handle_click(self, event):
         self.clicks += 1
-
 
 @pytest.mark.parametrize('component', [JSSendEvent, ReactSendEvent])
 def test_send_event(page, component):
@@ -247,7 +302,6 @@ class JSChild(JSComponent):
       return button
     }"""
 
-
 class ReactChild(ReactComponent):
 
     child = Child()
@@ -259,7 +313,6 @@ class ReactChild(ReactComponent):
       model.render_count += 1
       return <button>{model.get_child('child')}</button>
     }"""
-
 
 @pytest.mark.parametrize('component', [JSChild, ReactChild])
 def test_child(page, component):
@@ -291,7 +344,6 @@ class JSChildren(ListLike, JSComponent):
       return div
     }"""
 
-
 class JSChildrenNoReturn(JSChildren):
 
     _esm = """
@@ -302,7 +354,6 @@ class JSChildrenNoReturn(JSChildren):
       view.container.replaceChildren(div)
       model.render_count += 1
     }"""
-
 
 class ReactChildren(ListLike, ReactComponent):
 
@@ -315,7 +366,6 @@ class ReactChildren(ListLike, ReactComponent):
       model.render_count += 1
       return <div id="container">{model.get_child("objects")}</div>
     }"""
-
 
 @pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children(page, component):
@@ -338,7 +388,6 @@ def test_children(page, component):
 
     assert example.render_count == (3 if issubclass(component, JSChildren) else 2)
 
-
 @pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children_add_and_remove_without_error(page, component):
     example = component(objects=['A Markdown pane!'])
@@ -357,7 +406,6 @@ def test_children_add_and_remove_without_error(page, component):
     page.wait_for_timeout(500)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
-
 
 @pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children_append_without_rerender(page, component):
@@ -382,7 +430,6 @@ def test_children_append_without_rerender(page, component):
 
     assert child.render_count == 1
     assert example.render_count == 2
-
 
 
 JS_CODE_BEFORE = """
@@ -465,7 +512,6 @@ class JSLifecycleAfterRender(JSComponent):
       return h1
     }"""
 
-
 class ReactLifecycleAfterRender(ReactComponent):
 
     _esm = """
@@ -476,7 +522,6 @@ class ReactLifecycleAfterRender(ReactComponent):
       model.on('after_render', () => { setText('rendered') })
       return <h1>{text}</h1>
     }"""
-
 
 @pytest.mark.parametrize('component', [JSLifecycleAfterRender, ReactLifecycleAfterRender])
 def test_after_render_lifecycle_hooks(page, component):
@@ -498,7 +543,6 @@ class JSLifecycleAfterLayout(JSComponent):
       return h1
     }"""
 
-
 class ReactLifecycleAfterLayout(ReactComponent):
 
     _esm = """
@@ -509,7 +553,6 @@ class ReactLifecycleAfterLayout(ReactComponent):
       model.on('after_layout', () => { setText('layouted') })
       return <h1>{text}</h1>
     }"""
-
 
 @pytest.mark.parametrize('component', [JSLifecycleAfterLayout, ReactLifecycleAfterLayout])
 def test_after_layout_lifecycle_hooks(page, component):
@@ -543,7 +586,6 @@ class ReactLifecycleAfterResize(ReactComponent):
       model.on('resize', () => { setCount(count+1); })
       return <h1>{count}</h1>
     }"""
-
 
 @pytest.mark.parametrize('component', [JSLifecycleAfterResize, ReactLifecycleAfterResize])
 def test_after_resize_lifecycle_hooks(page, component):
@@ -596,3 +638,98 @@ def test_remove_lifecycle_hooks(page, component):
         example.clear()
 
     wait_until(lambda: msg_info.value.args[0].json_value() == "Removed", page)
+
+
+class JSDefaultExport(JSComponent):
+
+    _esm = """
+    function render({ model }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = 'Hello'
+      return h1
+    }
+
+    export default {render}
+    """
+
+class AnyWidgetDefaultExport(AnyWidgetComponent):
+
+    _esm = """
+    function render({ model, el }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = 'Hello'
+      el.append(h1)
+    }
+
+    export default {render}
+    """
+
+class ReactDefaultExport(ReactComponent):
+
+    _esm = """
+    function render({ model }) {
+      return <h1>Hello</h1>
+    }
+
+    export default { render }
+    """
+
+@pytest.mark.parametrize('component', [AnyWidgetDefaultExport, JSDefaultExport, ReactDefaultExport])
+def test_esm_component_default_export(page, component):
+    example = Row(component(sizing_mode='stretch_width'))
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("Hello")
+
+
+class JSDefaultFunctionExport(JSComponent):
+
+    _esm = """
+    export default () => {
+      function render({ model }) {
+        const h1 = document.createElement('h1')
+        h1.textContent = 'Hello'
+        return h1
+      }
+
+      return {render}
+    }
+    """
+
+class AnyWidgetDefaultFunctionExport(AnyWidgetComponent):
+
+    _esm = """
+    export default () => {
+      function render({ model, el }) {
+        const h1 = document.createElement('h1')
+        h1.textContent = 'Hello'
+        el.append(h1)
+      }
+
+      return {render}
+    }
+    """
+
+class ReactDefaultFunctionExport(ReactComponent):
+
+    _esm = """
+    export default () => {
+      function render({ model }) {
+        return <h1>Hello</h1>
+      }
+      return {render}
+    }
+    """
+
+@pytest.mark.parametrize('component', [AnyWidgetDefaultFunctionExport, JSDefaultExport, ReactDefaultExport])
+def test_esm_component_default_function_export(page, component):
+    example = Row(component(sizing_mode='stretch_width'))
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("Hello")
