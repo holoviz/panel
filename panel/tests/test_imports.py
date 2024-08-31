@@ -26,24 +26,19 @@ def test_limited_panel_imports():
     import sys
     import panel
 
-    found = sorted([k for k in sys.modules if k.startswith("panel")])
-
-    expected = [
+    found = {k for k in sys.modules if k.startswith("panel")}
+    expected = {
         "panel",
         "panel.__version",
         "panel._version",
         "panel.config",
         "panel.depends",
-        "panel.io",
-        "panel.io.logging",
-        "panel.io.state",
         "panel.util",
         "panel.util.checks",
         "panel.util.parameters",
-    ]
-
-    if found != expected:
-        mods = set(found) - set(expected)
+    }
+    mods = found - expected
+    if mods:
         print(", ".join(mods), end="")
     """
 

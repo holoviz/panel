@@ -330,12 +330,14 @@ class _config(_base_config):
         for p in self._parameter_set:
             if p.startswith('_') and p[1:] not in _config._globals:
                 setattr(self, p+'_', None)
-        if self.log_level:
+        if self.log_level and self.log_level != "WARNING":
             from .io.logging import panel_log_handler
             panel_log_handler.setLevel(self.log_level)
 
     @param.depends('_nthreads', watch=True, on_init=True)
     def _set_thread_pool(self):
+        if self.nthreads is None and _config_uninitialized:
+            return
         from .io.state import state
         if self.nthreads is None:
             if state._thread_pool is not None:
@@ -381,8 +383,11 @@ class _config(_base_config):
                 setattr(self, k+'_', v)
 
     def __setattr__(self, attr, value):
-        from .io.state import state
         from .util import param_watchers
+
+        def _get_curdoc():
+            from .io.state import state
+            return state.curdoc
 
         # _param__private added in Param 2
         if hasattr(self, '_param__private'):
@@ -398,16 +403,16 @@ class _config(_base_config):
             or self.param._TRIGGER
         ):
             super().__setattr__(attr if attr in self.param else f'_{attr}', value)
-        elif state.curdoc is not None:
+        elif not _config_uninitialized and (curdoc := _get_curdoc()):
             if attr in _config._parameter_set:
                 validate_config(self, attr, value)
             elif f'_{attr}' in _config._parameter_set:
                 validate_config(self, f'_{attr}', value)
             else:
                 raise AttributeError(f'{attr!r} is not a valid config parameter.')
-            if state.curdoc not in self._session_config:
-                self._session_config[state.curdoc] = {}
-            self._session_config[state.curdoc][attr] = value
+            if curdoc not in self._session_config:
+                self._session_config[curdoc] = {}
+            self._session_config[curdoc][attr] = value
             watchers = param_watchers(self).get(attr, {}).get('value', [])
             for w in watchers:
                 w.fn()
