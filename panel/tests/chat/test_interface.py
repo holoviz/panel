@@ -42,6 +42,7 @@ class TestChatInterface:
         chat_interface.avatar = Image("https://panel.holoviz.org/_static/logo_horizontal.png")
         assert chat_interface.avatar.object == "https://panel.holoviz.org/_static/logo_horizontal.png"
 
+    @pytest.mark.internet
     @pytest.mark.parametrize("type_", [bytes, BytesIO])
     def test_init_avatar_bytes(self, type_, chat_interface):
         with requests.get("https://panel.holoviz.org/_static/logo_horizontal.png") as resp:

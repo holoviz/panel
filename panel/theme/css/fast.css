@@ -307,7 +307,7 @@ table.panel-df {
   background-color: var(--neutral-fill-input-rest);
   border: 1px solid var(--accent-fill-rest);
   border-radius: calc(var(--control-corner-radius) * 1px);
-  color: var(--foreground-on-accent-rest);
+  color: var(--neutral-foreground-rest);
   font-size: var(--type-ramp-base-font-size);
   height: calc(
     (var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px
