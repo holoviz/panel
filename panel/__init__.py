@@ -105,7 +105,6 @@ _attrs = {
     "links": "panel.links",
     "pane": "panel.pane",
     "panel": "panel.pane:panel",
-    "param": "panel.param",
     "pipeline": "panel.pipeline",
     "reactive": "panel.reactive",
     "serve": "panel.io:serve",
