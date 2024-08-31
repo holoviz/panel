@@ -29,35 +29,92 @@ other layouts, then Panel will automatically wrap it in the right pane.
 For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
-from .alert import Alert  # noqa
-from .base import Pane, PaneBase, panel  # noqa
-from .deckgl import DeckGL  # noqa
-from .echarts import ECharts  # noqa
-from .equation import LaTeX  # noqa
-from .holoviews import HoloViews, Interactive  # noqa
-from .image import (  # noqa
-    GIF, ICO, JPG, PDF, PNG, SVG, Image, WebP,
-)
-from .ipywidget import IPyLeaflet, IPyWidget, Reacton  # noqa
-from .markup import (  # noqa
-    HTML, JSON, DataFrame, Markdown, Str,
-)
-from .media import Audio, Video  # noqa
-from .perspective import Perspective  # noqa
-from .placeholder import Placeholder  # noqa
-from .plot import (  # noqa
-    YT, Bokeh, Matplotlib, RGGPlot,
-)
-from .plotly import Plotly  # noqa
-from .streamz import Streamz  # noqa
-from .textual import Textual  # noqa
-from .vega import Vega  # noqa
-from .vizzu import Vizzu  # noqa
-from .vtk import VTK, VTKVolume  # noqa
+from typing import TYPE_CHECKING as _TC
 
-from ..param import (  # noqa  # isort: skip
-    ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
-)
+if _TC:
+    from ..param import (
+        ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
+    )
+    from .alert import Alert
+    from .base import Pane, PaneBase, panel
+    from .deckgl import DeckGL
+    from .echarts import ECharts
+    from .equation import LaTeX
+    from .holoviews import HoloViews, Interactive
+    from .image import (
+        GIF, ICO, JPG, PDF, PNG, SVG, Image, WebP,
+    )
+    from .ipywidget import IPyLeaflet, IPyWidget, Reacton
+    from .markup import (
+        HTML, JSON, DataFrame, Markdown, Str,
+    )
+    from .media import Audio, Video
+    from .perspective import Perspective
+    from .placeholder import Placeholder
+    from .plot import (
+        YT, Bokeh, Matplotlib, RGGPlot,
+    )
+    from .plotly import Plotly
+    from .streamz import Streamz
+    from .textual import Textual
+    from .vega import Vega
+    from .vizzu import Vizzu
+    from .vtk import VTK, VTKVolume
+
+_attrs = {
+    "Alert": "panel.pane.alert:Alert",
+    "Audio": "panel.pane.media:Audio",
+    "Bokeh": "panel.pane.plot:Bokeh",
+    "DataFrame": "panel.pane.markup:DataFrame",
+    "DeckGL": "panel.pane.deckgl:DeckGL",
+    "ECharts": "panel.pane.echarts:ECharts",
+    "GIF": "panel.pane.image:GIF",
+    "HoloViews": "panel.pane.holoviews:HoloViews",
+    "HTML": "panel.pane.markup:HTML",
+    "ICO": "panel.pane.image:ICO",
+    "Image": "panel.pane.image:Image",
+    "Interactive": "panel.pane.holoviews:Interactive",
+    "IPyWidget": "panel.pane.ipywidget:IPyWidget",
+    "IPyLeaflet": "panel.pane.ipywidget:IPyLeaflet",
+    "JPG": "panel.pane.image:JPG",
+    "JSON": "panel.pane.markup:JSON",
+    "LaTeX": "panel.pane.equation:LaTeX",
+    "Markdown": "panel.pane.markup:Markdown",
+    "Matplotlib": "panel.pane.plot:Matplotlib",
+    "Pane": "panel.pane.base:Pane",
+    "PaneBase": "panel.pane.base:PaneBase",
+    "ParamFunction": "panel.pane.param:ParamFunction",
+    "ParamMethod": "panel.pane.param:ParamMethod",
+    "ParamRef": "panel.pane.param:ParamRef",
+    "panel": "panel.pane.base:panel",
+    "PDF": "panel.pane.image:PDF",
+    "Perspective": "panel.pane.perspective:Perspective",
+    "Placeholder": "panel.pane.placeholder:Placeholder",
+    "Plotly": "panel.pane.plotly:Plotly",
+    "PNG": "panel.pane.image:PNG",
+    "ReactiveExpr": "panel.pane.param:ReactiveExpr",
+    "Reacton": "panel.pane.ipywidget:Reacton",
+    "RGGPlot": "panel.pane.plot:RGGPlot",
+    "Str": "panel.pane.markup:Str",
+    "Streamz": "panel.pane.streamz:Streamz",
+    "SVG": "panel.pane.image:SVG",
+    "Textual": "panel.pane.textual:Textual",
+    "Vega": "panel.pane.vega:Vega",
+    "Video": "panel.pane.media:Video",
+    "Vizzu": "panel.pane.vizzu:Vizzu",
+    "WebP": "panel.pane.image:WebP",
+    "VTK": "panel.pane.vtk:VTK",
+    "VTKVolume": "panel.pane.vtk:VTKVolume",
+    "YT": "panel.pane.plot:YT",
+}
+
+def __getattr__(name: str) -> object:
+    if name in _attrs:
+        import importlib
+        mod_name, _, attr_name = _attrs[name].partition(':')
+        mod = importlib.import_module(mod_name)
+        return getattr(mod, attr_name) if attr_name else mod
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = (
     "Alert",
@@ -70,6 +127,7 @@ __all__ = (
     "HoloViews",
     "HTML",
     "ICO",
+    "Image",
     "Interactive",
     "IPyWidget",
     "IPyLeaflet",
@@ -99,7 +157,10 @@ __all__ = (
     "Vega",
     "Video",
     "Vizzu",
+    "WebP",
     "VTK",
     "VTKVolume",
     "YT"
 )
+
+__dir__ = lambda: list(__all__)
