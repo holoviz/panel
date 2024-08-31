@@ -54,10 +54,9 @@ from .config import config, panel_extension as extension
 from .depends import bind, depends
 
 if _TC:
-    from . import reactive  # noqa: F401
     from . import (
-        layout, links, pane, param, pipeline, template, theme, viewable,
-        widgets,
+        chat, custom, layout, links, pane, param, pipeline, reactive, template,
+        theme, viewable, widgets,
     )
     from ._interact import interact
     from .io import serve, state
@@ -73,9 +72,6 @@ if _TC:
     from .param import Param, ReactiveExpr
     from .template import Template
     from .widgets import indicators, widget
-
-    from . import chat  # isort:skip noqa has to be after widgets
-    from . import custom  # isort:skip noqa has to be after widgets
 
 _attrs = {
     "Accordion": "panel.layout:Accordion",
@@ -168,6 +164,7 @@ __all__ = (
     "panel",
     "param",
     "pipeline",
+    "reactive",
     "rx",
     "serve",
     "state",
