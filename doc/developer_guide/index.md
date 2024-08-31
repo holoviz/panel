@@ -82,7 +82,7 @@ All available tasks can be found by running `pixi task list`, the following sect
 
 ### Editable install
 
-It can be advantageous to install the Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
+It can be advantageous to install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
 
 ```bash
 pixi run install
@@ -96,6 +96,8 @@ Currently, this needs to be run for each environment. So, if you want to install
 ```bash
 pixi run -e test-ui install
 ```
+
+You can find the list of environments in the **pixi.toml** file.
 
 :::
 
