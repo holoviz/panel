@@ -17,6 +17,8 @@ import {convertUndefined, formatError} from "./util"
 
 import error_css from "styles/models/esm.css"
 
+const MODULE_CACHE = new Map()
+
 @server_event("esm_event")
 export class ESMEvent extends ModelEvent {
   constructor(readonly model: ReactiveESM, readonly data: any) {
@@ -614,13 +616,24 @@ export class ReactiveESM extends HTMLBox {
     }
     this.compiled = compiled
     this._declare_importmap()
-    const url = URL.createObjectURL(
-      new Blob([this.compiled], {type: "text/javascript"}),
-    )
-    // @ts-ignore
-    this.compiled_module = importShim(url).then((mod: any) => {
+    let esm_module
+    if (!this.dev && MODULE_CACHE.has(this.name)) {
+      esm_module = Promise.resolve(MODULE_CACHE.get(this.name))
+    } else {
+      const url = URL.createObjectURL(
+        new Blob([this.compiled], {type: "text/javascript"}),
+      )
+      esm_module = (window as any).importShim(url)
+    }
+    this.compiled_module = (esm_module as Promise<any>).then((mod: any) => {
+      if (!this.dev) {
+        MODULE_CACHE.set(this.name, mod)
+      }
       try {
         let initialize
+        if (this.precompiled && (mod.default || {}).hasOwnProperty(this.name)) {
+          mod = mod.default[this.name as string]
+        }
         if (mod.initialize) {
           initialize = mod.initialize
         } else if (mod.default && mod.default.initialize) {

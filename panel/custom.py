@@ -253,7 +253,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         if not ((config.autoreload or getattr(self, '_debug', False)) and import_available('watchfiles')):
             return
         super()._setup_autoreload()
-        if (self._esm_path(compile=False) and not self._watching_esm):
+        if (self._esm_path(compiled=False) and not self._watching_esm):
             self._watching_esm = asyncio.Event()
             state.execute(self._watch_esm)
 

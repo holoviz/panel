@@ -133,6 +133,76 @@ def test_initialize(page, component):
     expect(page.locator('h1')).to_have_text('1')
 
 
+class AnyWidgetModuleCached(AnyWidgetComponent):
+
+    count = param.Integer(default=0)
+
+    _esm = """
+    let count = 0
+
+    export function initialize({ model }) {
+      count += 1
+      model.set('count', count)
+      model.save_changes()
+    }
+
+    export function render({ model, el }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = `${model.get('count')}`
+      el.append(h1)
+    }
+    """
+
+class JSModuleCached(JSComponent):
+
+    count = param.Integer(default=0)
+
+    _esm = """
+    let count = 0
+
+    export function initialize({ model }) {
+      count += 1
+      model.count = count
+    }
+
+    export function render({ model }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = `${model.count}`
+      return h1
+    }
+    """
+
+class ReactModuleCached(ReactComponent):
+
+    count = param.Integer(default=0)
+
+    _esm = """
+    let count = 0
+
+    export function initialize({ model }) {
+      count += 1
+      model.count = count
+    }
+
+    export function render({ model }) {
+      const [count] = model.useState('count')
+      return <h1>{count}</h1>
+    }
+    """
+
+@pytest.mark.parametrize('component', [AnyWidgetModuleCached, JSModuleCached, ReactModuleCached])
+def test_module_cached(page, component):
+    example = Row(component())
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('1')
+
+    example[0] = component()
+
+    expect(page.locator('h1')).to_have_text('2')
+
+
 class JSUnwatch(JSComponent):
 
     text = param.String()
