@@ -70,3 +70,7 @@ Explore the examples below:
 ### App Gallery
 
 - [VideoStream Interface](https://py.cafe/MarcSkovMadsen/videostream) from the [VideoStream Interface Tutorial](https://panel.holoviz.org/gallery/streaming_videostream.html).
+
+### Other
+
+- [Drawdata](https://py.cafe/MarcSkovMadsen/basic-drawdata) demonstrating that an ipywidget/ AnyWidget can be used with Panel in PY.CAFE.
