@@ -112,7 +112,7 @@ _attrs = {
     "param": "panel.param",
     "pipeline": "panel.pipeline",
     "reactive": "panel.reactive",
-    "serve": "panel.io.server:serve",
+    "serve": "panel.io:serve",
     "state": "panel.io.state:state",
     "template": "panel.template",
     "theme": "panel.theme",
