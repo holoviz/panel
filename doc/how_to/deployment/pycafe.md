@@ -56,20 +56,34 @@ Finally you can click **PUSH** to persist your app and click **SHARE** to share 
 
 Explore the examples below:
 
-- [Greeting App](https://py.cafe/maartenbreddels/panel-interactive-greeting-app ).
 - [Basic Github App](https://py.cafe/MarcSkovMadsen/pycafe-reference) from the [GitHub repository](https://github.com/holoviz/panel/#interactive-data-apps).
+- [Greeting App](https://py.cafe/maartenbreddels/panel-interactive-greeting-app ).
 - [XGBoost Training App](https://py.cafe/MarcSkovMadsen/xgboost-training) from the [Convert Apps to WASM Guide](https://panel.holoviz.org/how_to/wasm/convert.html).
 
 ### Basic Tutorials
 
-- [Basic Dashboard](https://py.cafe/MarcSkovMadsen/basic-dashboard) from the [Build a Dashboard Tutorial](../../tutorials/basic/build_dashboard.md).
-- [Basic Report](https://py.cafe/MarcSkovMadsen/basic-report) from the [Build a Report Tutorial](../../tutorials/basic/build_report.md).
-- [Basic Animation](https://py.cafe/MarcSkovMadsen/basic-animation) from the [Build an Animation Tutorial](../../tutorials/basic/build_report.md).
-- [Basic Image Classifier](https://py.cafe/MarcSkovMadsen/basic-image-classifier) from the [Build an Image Classifier Tutorial](../../tutorials/basic/build_image_classifier.md).
+- [Animation](https://py.cafe/MarcSkovMadsen/basic-animation) from the [Build an Animation Tutorial](../../tutorials/basic/build_report.md).
+- [Chatbot](https://py.cafe/MarcSkovMadsen/basic-chatbot) from the [Build a Chatbot Tutorial](../../tutorials/basic/build_chatbot.md).
+- [Crossfilter Dashboard](https://py.cafe/MarcSkovMadsen/basic-crossfilter-dashboard) from the [Build Crossfiltering Dashboard Tutorial](../../tutorials/basic/build_crossfilter_dashboard.md).
+- [Dashboard](https://py.cafe/MarcSkovMadsen/basic-dashboard) from the [Build a Dashboard Tutorial](../../tutorials/basic/build_dashboard.md).
+- [Image Classifier](https://py.cafe/MarcSkovMadsen/basic-image-classifier) from the [Build an Image Classifier Tutorial](../../tutorials/basic/build_image_classifier.md).
+- [Monitoring Dashboard](https://py.cafe/MarcSkovMadsen/basic-monitoring-dashboard) from the [Build an Monitoring Dashboard Tutorial](../../tutorials/basic/build_monitoring_dashboard.md).
+- [Report](https://py.cafe/MarcSkovMadsen/basic-report) from the [Build a Report Tutorial](../../tutorials/basic/build_report.md).
+- [Streaming Dashboard](https://py.cafe/MarcSkovMadsen/basic-streaming-dashboard) from the [Build Streaming Dashboard Tutorial](../../tutorials/basic/build_streaming_dashboard.md).
+- [Todo app | Widget approach](https://py.cafe/MarcSkovMadsen/basic-todo) from the [Build a todo app](../../tutorials/basic/build_todo.md).
+
+### Intermediate Tutorials
+
+- [Todo App | Class approach](https://py.cafe/MarcSkovMadsen/intermediate-todo-app) from the [Build a todo app](../../tutorials/intermediate/build_todo.md).
 
 ### App Gallery
 
-- [VideoStream Interface](https://py.cafe/MarcSkovMadsen/videostream) from the [VideoStream Interface Tutorial](https://panel.holoviz.org/gallery/streaming_videostream.html).
+- [Altair Brushing](https://py.cafe/MarcSkovMadsen/altair-brushing) from the [Altair Brushing Tutorial](../../gallery/altair_brushing.ipynb).
+- [hvPlot Explorer](https://py.cafe/MarcSkovMadsen/hvplot-explorer) from the [hvPlot Explorer Tutorial](../../gallery/hvplot_explorer.ipynb)
+- [NYC Deck.GL](https://py.cafe/MarcSkovMadsen/nyc-deckgl) from the [NYC Deck.Gl Tutorial](../../gallery/nyc_deckgl.ipynb).
+- [Penguin Crossfilter](https://py.cafe/MarcSkovMadsen/penguin-crossfilter) from the [Penguin Crossfilter Tutorial](../../gallery/penguin_crossfilter.ipynb)
+- [Portfolio Analyzer](https://py.cafe/MarcSkovMadsen/portfolio-analyzer) from the [Portfolio Analyzer Tutorial](../../gallery/portfolio_analyzer.ipynb).
+- [VideoStream Interface](https://py.cafe/MarcSkovMadsen/videostream) from the [VideoStream Interface Tutorial](../../gallery/streaming_videostream.ipynb).
 
 ### Other
 
