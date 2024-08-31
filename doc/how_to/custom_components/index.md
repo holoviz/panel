@@ -60,10 +60,6 @@ ESM Components is our 2nd generation api for custom components while `ReactiveHT
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-<<<<<<< HEAD
-:::{grid-item-card} {octicon}`columns;2.5em;sd-mr-1 sd-animate-grow50` Layouts
-=======
-
 :::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1 sd-animate-grow50` Building and Bundling ESM components
 :link: esm/build
 :link-type: doc
@@ -78,6 +74,13 @@ How to specify and bundle external dependencies for ESM components.
 How to add both JS and Python based callbacks to ESM components.
 :::
 
+:::{grid-item-card} {octicon}`image;2.5em;sd-mr-1 sd-animate-grow50` Panes
+:link: esm/custom_panes
+:link-type: doc
+
+How to create panes using ESM components
+:::
+
 :::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Widgets
 :link: esm/custom_widgets
 :link-type: doc
@@ -86,25 +89,10 @@ How to create a custom widget using ESM components
 :::
 
 :::{grid-item-card} {octicon}`columns;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Layouts
->>>>>>> 6c045a3c782a3c846ac706863e8d93c0053e2e2f
 :link: esm/custom_layout
 :link-type: doc
 
 How to create custom layouts using ESM components
-:::
-
-:::{grid-item-card} {octicon}`arrow-left;2.5em;sd-mr-1 sd-animate-grow50` Callbacks
-:link: esm/callbacks
-:link-type: doc
-
-How to add JS and Python based callbacks to ESM components.
-:::
-
-:::{grid-item-card} {octicon}`single-select;2.5em;sd-mr-1 sd-animate-grow50` Widgets
-:link: esm/custom_widgets
-:link-type: doc
-
-How to create input widgets using ESM components
 :::
 
 :::{grid-item-card} {octicon}`table;2.5em;sd-mr-1 sd-animate-grow50` DataFrame
@@ -116,7 +104,7 @@ How to create ESM components that render data a DataFrame.
 
 ::::
 
-### Examples
+### ESM Examples
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -223,7 +211,7 @@ How to create `ReactiveHTML` components that render data a DataFrame.
 
 ::::
 
-### Examples
+### `ReactiveHTML` Examples
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
