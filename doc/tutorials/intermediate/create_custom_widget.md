@@ -17,7 +17,7 @@ from panel.custom import PyComponent
 
 class FeatureInput(WidgetBase, PyComponent):
     """
-	The ```FeatureInput``` enables a user to select from a list of features and set their values.
+    The ```FeatureInput``` enables a user to select from a list of features and set their values.
     """
 
     value = param.Dict(
@@ -51,7 +51,7 @@ class FeatureInput(WidgetBase, PyComponent):
 
         self._layout = pn.Column(selected_features_widget, self._selected_widgets)
 
-	def __panel__(self):
+    def __panel__(self):
         return self._layout
 
     @param.depends("features", watch=True, on_init=True)
