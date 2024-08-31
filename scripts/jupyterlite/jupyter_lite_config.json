@@ -1,0 +1,6 @@
+{
+  "LiteBuildConfig": {
+    "contents": ["../../lite/files", "files"],
+    "output_dir": "../../lite/dist"
+  }
+}

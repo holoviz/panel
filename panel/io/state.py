@@ -7,6 +7,7 @@ import asyncio
 import datetime as dt
 import inspect
 import logging
+import os
 import shutil
 import sys
 import threading
@@ -14,7 +15,7 @@ import time
 
 from collections import Counter, defaultdict
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
@@ -65,7 +66,9 @@ def set_curdoc(doc: Document):
     try:
         yield
     finally:
-        state._curdoc.reset(token)
+        # If _curdoc has been reset it will raise a ValueError
+        with suppress(ValueError):
+            state._curdoc.reset(token)
 
 def curdoc_locked() -> Document:
     try:
@@ -844,6 +847,7 @@ class _state(param.Parameterized):
           Whether the callback should be run on a thread (requires
           config.nthreads to be set).
         """
+        name = f"{os.getpid()}_{name}"
         if name in self._scheduled:
             if callback is not self._scheduled[name][1]:
                 self.param.warning(

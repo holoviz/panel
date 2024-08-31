@@ -371,6 +371,7 @@ class TestChatMessage:
         message = ChatMessage(PNG(PNG_FILE))
         assert message.serialize() == "PNG='https://assets.holoviz.org/panel/samples/png_sample.png'"
 
+    @pytest.mark.internet
     def test_serialize_svg_embed(self):
         svg = SVG(SVG_FILE, embed=True, alt_text="abc")
         with BytesIO(svg._data(SVG_FILE)) as buf:

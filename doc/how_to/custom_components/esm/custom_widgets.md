@@ -1,4 +1,4 @@
-# Custom Widgets
+# Create Custom Widgets using ESM Components
 
 In this guide we will show you how to efficiently implement custom widgets using `JSComponent`, `ReactComponent` and `AnyWidgetComponent` to get input from the user.
 
@@ -9,7 +9,6 @@ This example we will show you to create an `ImageButton`.
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -74,11 +73,9 @@ button = ImageButton(
 )
 pn.Column(button, button.param.clicks,).servable()
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -136,11 +133,9 @@ button = ImageButton(
 )
 pn.Column(button, button.param.clicks).servable()
 ```
-
 :::
 
 :::{tab-item} `AnyWidgetComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -207,7 +202,6 @@ button = ImageButton(
 
 pn.Column(button, button.param.clicks).servable()
 ```
-
 :::
 
 ::::
