@@ -243,14 +243,16 @@ def _get_pyodide_version():
 
 def update_versions(app, docname, source):
     from panel.models.tabulator import TABULATOR_VERSION
+    from panel.models.vizzu import VIZZU_VERSION
 
     # Inspired by: https://stackoverflow.com/questions/8821511
     version_replace = {
-       "{{PANEL_VERSION}}" : PY_VERSION,
-       "{{BOKEH_VERSION}}" : BOKEH_VERSION,
-       "{{PYSCRIPT_VERSION}}" : PYSCRIPT_VERSION,
-       "{{PYODIDE_VERSION}}" : _get_pyodide_version(),
-       "{{TABULATOR_VERSION}}" : TABULATOR_VERSION,
+        "{{PANEL_VERSION}}" : PY_VERSION,
+        "{{BOKEH_VERSION}}" : BOKEH_VERSION,
+        "{{PYSCRIPT_VERSION}}" : PYSCRIPT_VERSION,
+        "{{PYODIDE_VERSION}}" : _get_pyodide_version(),
+        "{{TABULATOR_VERSION}}" : TABULATOR_VERSION,
+        "{{VIZZU_VERSION}}" : VIZZU_VERSION,
     }
 
     for old, new in version_replace.items():
