@@ -1,4 +1,4 @@
-# Include and Bundle external resources
+# Compile and Bundle ESM Components
 
 The ESM components make it possible to load external libraries from a CDN, NPM or GitHub using one of two approaches:
 
