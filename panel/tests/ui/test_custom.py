@@ -7,6 +7,7 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
+from panel.config import config
 from panel.custom import (
     AnyWidgetComponent, Child, Children, JSComponent, ReactComponent,
 )
@@ -540,16 +541,18 @@ def test_reload(page, js_file, component, before, after):
         _esm = pathlib.Path(js_file.name)
 
     example = CustomReload()
-    serve_component(page, example)
 
-    expect(page.locator('h1')).to_have_text('foo')
+    with config.set(autoreload=True):
+        serve_component(page, example)
 
-    js_file.file.write(after)
-    js_file.file.flush()
-    js_file.file.seek(0)
-    example._update_esm()
+        expect(page.locator('h1')).to_have_text('foo')
 
-    expect(page.locator('h1')).to_have_text('bar')
+        js_file.file.write(after)
+        js_file.file.flush()
+        js_file.file.seek(0)
+        example._update_esm()
+
+        expect(page.locator('h1')).to_have_text('bar')
 
 
 def test_anywidget_custom_event(page):
