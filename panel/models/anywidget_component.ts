@@ -1,7 +1,6 @@
 import type * as p from "@bokehjs/core/properties"
 
-import {ReactiveESM} from "./reactive_esm"
-import {ReactComponent, ReactComponentView} from "./react_component"
+import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
 
 class AnyWidgetModelAdapter {
   declare model: AnyWidgetComponent
@@ -91,7 +90,7 @@ class AnyWidgetAdapter extends AnyWidgetModelAdapter {
 
 }
 
-export class AnyWidgetComponentView extends ReactComponentView {
+export class AnyWidgetComponentView extends ReactiveESMView {
   declare model: AnyWidgetComponent
   adapter: AnyWidgetAdapter
   destroyer: Promise<((props: any) => void) | null>
@@ -132,12 +131,12 @@ export default {render}`
 export namespace AnyWidgetComponent {
   export type Attrs = p.AttrsOf<Props>
 
-  export type Props = ReactComponent.Props
+  export type Props = ReactiveESM.Props
 }
 
 export interface AnyWidgetComponent extends AnyWidgetComponent.Attrs {}
 
-export class AnyWidgetComponent extends ReactComponent {
+export class AnyWidgetComponent extends ReactiveESM {
   declare properties: AnyWidgetComponent.Props
 
   constructor(attrs?: Partial<AnyWidgetComponent.Attrs>) {
@@ -147,10 +146,6 @@ export class AnyWidgetComponent extends ReactComponent {
   protected override _run_initializer(initialize: (props: any) => void): void {
     const props = {model: new AnyWidgetModelAdapter(this)}
     initialize(props)
-  }
-
-  override compile(): string | null {
-    return ReactiveESM.prototype.compile.call(this)
   }
 
   static override __module__ = "panel.models.esm"
