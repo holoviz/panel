@@ -96,7 +96,6 @@ _attrs = {
     "_jupyter_server_extension_paths": "panel.io.notebook:_jupyter_server_extension_paths",
     "cache": "panel.io.cache:cache",
     "chat": "panel.chat",
-    "config": "panel.config:config",
     "custom": "panel.custom",
     "indicators": "panel.widgets:indicators",
     "interact": "panel._interact:interact",
@@ -105,6 +104,7 @@ _attrs = {
     "links": "panel.links",
     "pane": "panel.pane",
     "panel": "panel.pane:panel",
+    "param": None,  # available in panel/param.py
     "pipeline": "panel.pipeline",
     "reactive": "panel.reactive",
     "serve": "panel.io:serve",

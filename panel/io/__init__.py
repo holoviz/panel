@@ -58,6 +58,7 @@ _attrs = {
     "push_notebook": "panel.io.notebook:push_notebook",
     "profile": "panel.io.profile:profile",
     "Resources": "panel.io.resources:Resources",
+    "serve": None,  # See _serve_init()
 }
 
 
