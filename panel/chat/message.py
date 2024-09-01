@@ -300,8 +300,9 @@ class ChatMessage(Pane):
         self._activity_dot = HTML(
             "●",
             css_classes=["activity-dot"],
-            visible=self.param.show_activity_dot,
+            margin=(5, 0),
             sizing_mode=None,
+            visible=self.param.show_activity_dot,
         )
 
         meta_row = Row(
