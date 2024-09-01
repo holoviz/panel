@@ -99,6 +99,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _bokeh_model = _BkReactiveESM
 
+    _bundle: ClassVar[str | os.PathLike | None] = None
+
     _esm: ClassVar[str | os.PathLike] = ""
 
     # Specifies exports to make available to JS in a bundled file
@@ -119,13 +121,28 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     @classproperty
     def _compiled_path(cls) -> os.PathLike | None:
         if config.autoreload:
-            return None
+            return
         try:
             mod_path = pathlib.Path(inspect.getfile(cls)).parent
         except (OSError, TypeError, ValueError):
-            return None
-        cls_name = camel_to_kebab(cls.__name__)
-        path = mod_path / f'{cls_name}.compiled.js'
+            if not isinstance(cls._bundle, pathlib.PurePath):
+                return
+        if cls._bundle:
+            bundle = cls._bundle
+            if isinstance(bundle, pathlib.PurePath):
+                return bundle
+            elif bundle.endswith('.js'):
+                bundle_path = mod_path / bundle
+                if bundle_path.is_file():
+                    return bundle_path
+                return
+            else:
+                raise ValueError(
+                    'Could not resolve {cls.__name__}._bundle. Ensure '
+                    'you provide either a string with a relative or absolute '
+                    'path or a Path object to a .js file extension.'
+                )
+        path = mod_path / f'{cls.__name__}.bundle.js'
         return path if path.is_file() else None
 
     @classmethod
@@ -137,6 +154,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         esm = cls._esm
         if isinstance(esm, pathlib.PurePath):
             return esm
+        elif not esm.endswith(('.js', '.jsx', '.ts', '.tsx')):
+            return
         try:
             if hasattr(cls, '__path__'):
                 mod_path = cls.__path__
@@ -147,7 +166,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 return esm_path
         except (OSError, TypeError, ValueError):
             pass
-        return None
+        return
 
     @classmethod
     def _render_esm(cls, compiled: bool | Literal['compiling'] = True):
@@ -220,6 +239,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             'dev': config.autoreload or getattr(self, '_debug', False),
             'esm': self._render_esm(not config.autoreload),
             'importmap': importmap,
+            'name': f'{cls.__module__}.{cls.__name__}',
             'precompiled': precompiled
         })
         return params
@@ -407,6 +427,13 @@ class ReactComponent(ReactiveESM):
         "react": ["*React"],
         "react-dom/client": [("createRoot",)]
     }
+
+    @classmethod
+    def _render_esm(cls, compiled: bool | Literal['compiling'] = True):
+        esm = super()._render_esm(compiled=compiled)
+        if compiled == 'compiling':
+            esm = 'import * as React from "react"\n' + esm
+        return esm
 
     @classmethod
     def _process_importmap(cls):

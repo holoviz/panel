@@ -168,6 +168,7 @@ export class ReactiveESMView extends HTMLBoxView {
     ["resize", []],
     ["remove", []],
   ])
+  _module_cache: Map<string, any> = MODULE_CACHE
   _rendered: boolean = false
   _stale_children: boolean = false
 
@@ -627,12 +628,14 @@ export class ReactiveESM extends HTMLBox {
     }
     this.compiled_module = (esm_module as Promise<any>).then((mod: any) => {
       if (!this.dev) {
-        MODULE_CACHE.set(this.name, mod)
+	MODULE_CACHE.set(this.name, mod)
       }
       try {
         let initialize
-        if (this.precompiled && (mod.default || {}).hasOwnProperty(this.name)) {
-          mod = mod.default[this.name as string]
+	const parts = (this.name as string).split('.')
+	const name = parts[parts.length-1]
+        if (this.precompiled && (mod.default || {}).hasOwnProperty(name)) {
+          mod = mod.default[name]
         }
         if (mod.initialize) {
           initialize = mod.initialize

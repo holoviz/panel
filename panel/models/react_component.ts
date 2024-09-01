@@ -46,8 +46,9 @@ if (rendered && view.model.usesReact) {
     let import_code
     if (this.model.precompiled) {
       import_code = `
-const React = view.compiled_module.default.React
-const createRoot = view.compiled_module.default.createRoot`
+const ns = view._module_cache.get(view.model.name)
+const React = ns.default.React
+const createRoot = ns.default.createRoot`
     } else {
       import_code = `
 import * as React from "react"

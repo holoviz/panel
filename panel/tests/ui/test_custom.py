@@ -11,6 +11,7 @@ from panel.config import config
 from panel.custom import (
     AnyWidgetComponent, Child, Children, JSComponent, ReactComponent,
 )
+from panel.io.compile import compile_components
 from panel.layout import Row
 from panel.layout.base import ListLike
 from panel.pane import Markdown
@@ -807,3 +808,23 @@ def test_esm_component_default_function_export(page, component):
     expect(page.locator('h1')).to_have_count(1)
 
     expect(page.locator('h1')).to_have_text("Hello")
+
+
+@pytest.mark.parametrize('component', [AnyWidgetInitialize, JSInitialize, ReactInitialize])
+def test_esm_compile_simple(page, component):
+    outfile = pathlib.Path(__file__).parent / f'{component.__name__}.bundle.js'
+    ret = compile_components([component], outfile=outfile)
+    if ret or not outfile.is_file():
+        raise RuntimeError('Could not compile ESM component')
+
+    assert component._compiled_path == outfile
+
+    example = Row(component())
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('1')
+
+    example[0] = component()
+
+    expect(page.locator('h1')).to_have_text('1')
