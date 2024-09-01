@@ -628,12 +628,12 @@ export class ReactiveESM extends HTMLBox {
     }
     this.compiled_module = (esm_module as Promise<any>).then((mod: any) => {
       if (!this.dev) {
-	MODULE_CACHE.set(this.name, mod)
+        MODULE_CACHE.set(this.name, mod)
       }
       try {
         let initialize
-	const parts = (this.name as string).split('.')
-	const name = parts[parts.length-1]
+        const parts = (this.name as string).split('.')
+        const name = parts[parts.length-1]
         if (this.precompiled && (mod.default || {}).hasOwnProperty(name)) {
           mod = mod.default[name]
         }
