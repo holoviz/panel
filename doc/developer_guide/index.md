@@ -105,7 +105,7 @@ All available tasks can be found by running `pixi task list`, the following sect
 
 ### Editable install
 
-It can be advantageous to install the Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
+It can be advantageous to install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
 
 ```bash
 pixi run install
@@ -121,6 +121,8 @@ pixi run -e test-ui install
 ```
 
 :::
+
+You can find the names of the environments in the **pixi.toml** file.
 
 ## Linting
 
@@ -186,7 +188,7 @@ pixi run build-docs
 
 As Panel uses notebooks for much of the documentation, this will take significant time to run (around an hour).
 
-A development version of Panel can be found [here](https://holoviz-dev.github.io/panel/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
+A development version of the Panel docs can be found [here](https://holoviz-dev.github.io/panel/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
 To be able to run cells interactively you need `pyodide` server, this can be ran with:
 
@@ -196,7 +198,7 @@ pixi run serve-docs
 
 ## Build
 
-Panel have four build tasks. One is for building packages for Pip, Conda, Pyodide, and NPM.
+Panel have four build tasks in addition to `build-docs`:
 
 ```bash
 pixi run build-pip
@@ -209,7 +211,7 @@ pixi run build-npm
 
 Every push to the `main` branch or any PR branch on GitHub automatically triggers a test build with [GitHub Actions](https://github.com/features/actions).
 
-You can see the list of all current and previous builds at [this URL](https://github.com/holoviz/panel/actions)
+You can see the list of all current and previous builds at [this URL](https://github.com/holoviz/panel/actions).
 
 ### Etiquette
 
@@ -218,7 +220,6 @@ GitHub Actions provides free build workers for open-source projects. A few consi
 - Run the tests locally before opening or pushing to an opened PR.
 
 - Group commits to meaningful chunks of work before pushing to GitHub (i.e., don't push on every commit).
-
 
 ## Next Steps
 
@@ -232,6 +233,7 @@ You will likely want to check out the
 
 - [Dev version of Panel Site](https://holoviz-dev.github.io/panel)
   - Use this to explore new, not yet released features and docs
+  - Check out which branch is currently deployed [here](https://github.com/holoviz/panel/actions/workflows/docs.yaml)
 - [Panel main branch on Binder](https://mybinder.org/v2/gh/holoviz/panel/main?urlpath=lab/tree/examples)
   - Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.
   - Replace `main` with `name-of-other-branch` or `version`for other branches.
