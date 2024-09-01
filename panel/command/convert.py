@@ -7,6 +7,7 @@ from bokeh.command.subcommand import Argument, Subcommand
 
 from ..io.convert import convert_apps
 
+
 def _skip_file(file: str)->bool:
     return file.startswith("examples/gallery/vtk")
 
