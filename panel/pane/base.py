@@ -34,6 +34,7 @@ from ..util.parameters import get_params_to_inherit
 from ..viewable import (
     Layoutable, ServableMixin, Viewable, Viewer,
 )
+from . import _import_lazy_modules
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -248,6 +249,8 @@ class PaneBase(Layoutable):
         if isinstance(obj, Viewable):
             return type(obj)
         descendents = []
+
+        _import_lazy_modules()
         for p in param.concrete_descendents(PaneBase).values():
             if p.priority is None:
                 applies = True

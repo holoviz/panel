@@ -106,6 +106,8 @@ _attrs = {
     "VTK": "panel.pane.vtk:VTK",
     "VTKVolume": "panel.pane.vtk:VTKVolume",
     "YT": "panel.pane.plot:YT",
+    # Imports from panel
+    "plot": "panel.pane.plot",
 }
 
 def __getattr__(name: str) -> object:
@@ -164,3 +166,8 @@ __all__ = (
 )
 
 __dir__ = lambda: list(__all__)
+
+
+def _import_lazy_modules():
+    for name in _attrs:
+        __getattr__(name)

@@ -154,6 +154,8 @@ _attrs = {
     "Voice": "panel.widgets.text_to_speech:Voice",
     "Widget": "panel.widgets.base:Widget",
     "WidgetBase": "panel.widgets.base:WidgetBase",
+    # Imports from panel
+    "indicators": "panel.widgets.indicators",
 }
 
 
