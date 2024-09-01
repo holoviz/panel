@@ -181,20 +181,20 @@ nbsite = ">=0.8.4"
 selenium = "*"
 
 [feature.doc.tasks]
-_docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
-_docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
-_docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
-_docs-copy-panel-dist = 'cp -r ./panel/dist ./builtdocs/panel_dist'
-_docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json'
+_docs-build-api-reference = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
+_docs-build-app-gallery = 'python scripts/gallery/convert_gallery.py'
+_docs-build-main = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
+_docs-copy-results = 'cp -r ./panel/dist ./builtdocs/panel_dist'
+_docs-convert-examples-to-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json'
 serve-docs = 'python -m http.server 5500 --directory ./builtdocs'
 
 [feature.doc.tasks.build-docs]
 depends_on = [
-    '_docs-refmanual',
-    '_docs-convert-gallery',
-    '_docs-generate',
-    '_docs-copy-panel-dist',
-    '_docs-pyodide',
+    '_docs-build-api-reference',
+    '_docs-build-app-gallery',
+    '_docs-build-main',
+    '_docs-copy-results',
+    '_docs-convert-examples-to-pyodide',
 ]
 
 # =============================================

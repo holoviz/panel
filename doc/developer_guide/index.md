@@ -190,7 +190,17 @@ The documentation can be built with the command:
 pixi run build-docs
 ```
 
-As Panel uses notebooks for much of the documentation, this will take significant time to run (around an hour).
+As Panel uses notebooks for much of the documentation, this will take significant time to run (around an hour) the first time you run the command.
+
+To speed up your workflow, you may run specific sub tasks via the commands:
+
+```bash
+pixi run _docs-build-api-reference
+pixi run _docs-build-app-gallery
+pixi run _docs-build-main
+pixi run _docs-copy-results
+pixi run _docs-convert-examples-to-pyodide
+```
 
 A development version of the Panel docs can be found [here](https://holoviz-dev.github.io/panel/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
