@@ -13,6 +13,7 @@ import zipfile
 
 from concurrent.futures import ThreadPoolExecutor
 from functools import cache, partial
+from importlib import import_module
 
 import param
 import requests
@@ -52,6 +53,19 @@ def _download(url):
         except Exception as e:
             response, error = None, e
     return response, error
+
+def _walk_module(mod=None):
+    if mod is None:
+        mod = import_module("panel")
+    if not hasattr(mod, '_attrs'):
+        return
+
+    for sub_name in mod._attrs:
+        submod = getattr(mod, sub_name)
+        if submod:
+            _walk_module(submod)
+
+_walk_module()
 
 #---------------------------------------------------------------------
 # Public API
