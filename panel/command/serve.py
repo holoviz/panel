@@ -289,6 +289,8 @@ class Serve(_BkServe):
             except Exception as e:
                 if error:
                     raise e
+                else:
+                    continue
             with set_curdoc(session.document):
                 if config.session_key_func:
                     reuse_sessions = False
