@@ -207,7 +207,7 @@ A development version of the Panel docs can be found [here](https://holoviz-dev.
 To be able to run cells interactively with `pyodide` you need to _serve the docs_, this can be done with:
 
 ```bash
-pixi run serve-docs
+pixi run docs-serve
 ```
 
 ## Build
