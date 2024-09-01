@@ -213,8 +213,10 @@ class Param(Pane):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
+    mapping: ClassVar[Mapping[param.Parameter, Widget | Callable[[param.Parameter], Widget]]] = {}
+
     @classproperty
-    def mapping(cls) -> Mapping[param.Parameter, Widget | Callable[[param.Parameter], Widget]]:
+    def _default_mapping(cls) -> Mapping[param.Parameter, Widget | Callable[[param.Parameter], Widget]]:
         from .widgets import (
             ArrayInput, Button, Checkbox, ColorPicker, DatePicker,
             DateRangeSlider, DatetimeInput, DatetimeRangeSlider, FileInput,
@@ -767,10 +769,11 @@ class Param(Pane):
     @classmethod
     def widget_type(cls, pobj):
         ptype = type(pobj)
+        mapping = cls._default_mapping | cls.mapping
         for t in classlist(ptype)[::-1]:
-            if t not in cls.mapping:
+            if t not in mapping:
                 continue
-            wtype = cls.mapping[t]
+            wtype = mapping[t]
             if isinstance(wtype, types.FunctionType):
                 return wtype(pobj)
             return wtype
