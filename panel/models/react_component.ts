@@ -44,21 +44,26 @@ if (rendered && view.model.usesReact) {
   }
 }`
     let import_code
-    if (this.model.precompiled) {
+    if (this.model.bundle) {
       import_code = `
-const ns = view._module_cache.get(view.model.name)
-const React = ns.default.React
-const createRoot = ns.default.createRoot`
+const ns = await view._module_cache.get(view.model.bundle)
+const {React, createRoot} = ns.default`
     } else {
       import_code = `
 import * as React from "react"
 import { createRoot } from "react-dom/client"`
     }
     if (this.model.usesMui) {
-      import_code = `
+      if (this.model.bundle) {
+        import_code = `
+const ns = await view._module_cache.get(view.model.bundle)
+const {CacheProvider, React, createCache, createRoot} = ns.default`
+      } else {
+	import_code = `
 ${import_code}
 import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
+      }
       render_code = `
   if (rendered) {
     const cache = createCache({
@@ -249,7 +254,7 @@ export class ReactComponent extends ReactiveESM {
 
   override compile(): string | null {
     const compiled = super.compile()
-    if (this.precompiled) {
+    if (this.bundle) {
       return compiled
     } else if (compiled === null || !compiled.includes("React")) {
       return compiled

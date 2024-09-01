@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import pathlib
@@ -70,14 +71,14 @@ def check_cli_tool(tool_name):
         return False
 
 
-def find_components(path: str | os.PathLike, classes: list[str] | None = None) -> list[type[ReactiveESM]]:
+def find_components(module_or_file: str | os.PathLike, classes: list[str] | None = None) -> list[type[ReactiveESM]]:
     """
     Creates a temporary module given a path-like object and finds all
     the ReactiveESM components defined therein.
 
     Arguments
     ---------
-    path : str | os.PathLike
+    module_or_file : str | os.PathLike
         The path to the Python module.
     classes: list[str] | None
         Names of classes to return.
@@ -86,26 +87,31 @@ def find_components(path: str | os.PathLike, classes: list[str] | None = None) -
     -------
     List of ReactiveESM components defined in the module.
     """
+    py_file = module_or_file.endswith('.py')
+    if py_file:
+        path_obj = pathlib.Path(module_or_file)
+        source = path_obj.read_text(encoding='utf-8')
+        runner = CodeRunner(source, module_or_file, [])
+        module = runner.new_module()
+        runner.run(module)
+    else:
+        module = importlib.import_module(module_or_file)
     classes = classes or []
-    path_obj = pathlib.Path(path)
-    source = path_obj.read_text(encoding='utf-8')
-    runner = CodeRunner(source, path, [])
-    module = runner.new_module()
-    runner.run(module)
     components = []
     for v in module.__dict__.values():
         if (
             isinstance(v, type) and
             issubclass(v, ReactiveESM) and
             not v.abstract and
-            v.__name__ in classes
+            (not classes or v.__name__ in classes)
         ):
-            v.__path__ = path_obj.parent.absolute()
+            if py_file:
+                v.__path__ = path_obj.parent.absolute()
             components.append(v)
     not_found = set(classes) - set(c.__name__ for c in components)
     if classes and not_found:
         clss = ', '.join(map(repr, not_found))
-        raise ValueError(f'{clss} class(es) not found in {path!r}.')
+        raise ValueError(f'{clss} class(es) not found in {module_or_file!r}.')
     return components
 
 
@@ -227,6 +233,7 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, a
     dependencies.update(packages)
     return esm, dependencies
 
+
 def merge_exports(old: ExportSpec, new: ExportSpec):
     """
     Appends the new exports to set of existing ones.
@@ -243,7 +250,7 @@ def merge_exports(old: ExportSpec, new: ExportSpec):
             if isinstance(spec, tuple):
                 for i, p in enumerate(prev):
                     if isinstance(p, tuple):
-                        prev[i] = tuple(dict.from_keys(p+spec))
+                        prev[i] = tuple(dict.fromkeys(p+spec))
                         break
                 else:
                     prev.append(spec)

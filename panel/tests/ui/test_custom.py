@@ -817,7 +817,7 @@ def test_esm_compile_simple(page, component):
     if ret or not outfile.is_file():
         raise RuntimeError('Could not compile ESM component')
 
-    assert component._compiled_path == outfile
+    assert component._bundle_path == outfile
 
     example = Row(component())
 
@@ -828,3 +828,78 @@ def test_esm_compile_simple(page, component):
     example[0] = component()
 
     expect(page.locator('h1')).to_have_text('1')
+
+
+class JSBase(JSComponent):
+
+    _bundle = 'js.bundle.js'
+
+    _esm = """
+    export function render({model}) {
+      const h1 = document.createElement('h1')
+      h1.id = model.name
+      h1.textContent = "Rendered"
+      return h1
+    }
+    """
+
+class JS1(JSBase):
+    pass
+
+class JS2(JSBase):
+    pass
+
+
+class AnyWidgetBase(AnyWidgetComponent):
+
+    _bundle = 'anywidget.bundle.js'
+
+    _esm = """
+    export function render({model, el}) {
+      const h1 = document.createElement('h1')
+      h1.id = model.get("name")
+      h1.textContent = "Rendered"
+      el.append(h1)
+    }
+    """
+
+class AnyWidget1(AnyWidgetBase):
+    pass
+
+class AnyWidget2(AnyWidgetBase):
+    pass
+
+
+class ReactBase(ReactComponent):
+
+    _bundle = 'react.bundle.js'
+
+    _esm = """
+    export function render({model, el}) {
+      return <h1 id={model.name}>Rendered</h1>
+    }
+    """
+
+class React1(ReactBase):
+    pass
+
+class React2(ReactBase):
+    pass
+
+@pytest.mark.parametrize('components', [[JS1, JS2], [AnyWidget1, AnyWidget2], [React1, React2]])
+def test_esm_compile_shared(page, components):
+    component1, component2 = components
+    outfile = pathlib.Path(__file__).parent / component1._bundle
+    ret = compile_components([component1, component2], outfile=outfile)
+    if ret or not outfile.is_file():
+        raise RuntimeError('Could not compile ESM component')
+
+    assert component1._bundle_path == outfile
+    assert component2._bundle_path == outfile
+
+    example = Row(component1(), component2())
+
+    serve_component(page, example)
+
+    expect(page.locator(f'#{example[0].name}')).to_have_text('Rendered')
+    expect(page.locator(f'#{example[1].name}')).to_have_text('Rendered')

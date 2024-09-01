@@ -465,13 +465,13 @@ export namespace ReactiveESM {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = HTMLBox.Props & {
+    bundle: p.Property<string | null>
     children: p.Property<any>
     class_name: p.Property<string>
     data: p.Property<any>
     dev: p.Property<boolean>
     esm: p.Property<string>
     importmap: p.Property<any>
-    precompiled: p.Property<boolean>
   }
 }
 
@@ -586,7 +586,7 @@ export class ReactiveESM extends HTMLBox {
   }
 
   compile(): string | null {
-    if (this.precompiled) {
+    if (this.bundle != null) {
       return this.esm
     }
     let compiled
@@ -618,24 +618,27 @@ export class ReactiveESM extends HTMLBox {
     this.compiled = compiled
     this._declare_importmap()
     let esm_module
-    if (!this.dev && MODULE_CACHE.has(this.name)) {
-      esm_module = Promise.resolve(MODULE_CACHE.get(this.name))
+    const cache_key = this.bundle || `${this.class_name}-${this.esm.length}`
+    let resolve: (value: any) => void
+    if (!this.dev && MODULE_CACHE.has(cache_key)) {
+      esm_module = Promise.resolve(MODULE_CACHE.get(cache_key))
     } else {
+      if (!this.dev) {
+        MODULE_CACHE.set(cache_key, new Promise((res) => { resolve = res }))
+      }
       const url = URL.createObjectURL(
         new Blob([this.compiled], {type: "text/javascript"}),
       )
       esm_module = (window as any).importShim(url)
     }
     this.compiled_module = (esm_module as Promise<any>).then((mod: any) => {
-      if (!this.dev) {
-        MODULE_CACHE.set(this.name, mod)
+      if (resolve) {
+        resolve(mod)
       }
       try {
         let initialize
-        const parts = (this.name as string).split(".")
-        const name = parts[parts.length-1]
-        if (this.precompiled && (mod.default || {}).hasOwnProperty(name)) {
-          mod = mod.default[name]
+        if (this.bundle != null && (mod.default || {}).hasOwnProperty(this.name)) {
+          mod = mod.default[(this.name as any)]
         }
         if (mod.initialize) {
           initialize = mod.initialize
@@ -664,14 +667,14 @@ export class ReactiveESM extends HTMLBox {
 
   static {
     this.prototype.default_view = ReactiveESMView
-    this.define<ReactiveESM.Props>(({Any, Array, Bool, String}) => ({
-      children:    [ Array(String),       [] ],
-      class_name:  [ String,              "" ],
+    this.define<ReactiveESM.Props>(({Any, Array, Bool, Nullable, Str}) => ({
+      bundle:      [ Nullable(Str),     null ],
+      children:    [ Array(Str),          [] ],
+      class_name:  [ Str,                 "" ],
       data:        [ Any                     ],
       dev:         [ Bool,             false ],
-      esm:         [ String,              "" ],
+      esm:         [ Str,                 "" ],
       importmap:   [ Any,                 {} ],
-      precompiled: [ Bool,             false ],
     }))
   }
 }

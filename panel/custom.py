@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import inspect
 import os
 import pathlib
+import sys
 import textwrap
 
 from collections import defaultdict
@@ -119,7 +121,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._event_callbacks = defaultdict(list)
 
     @classproperty
-    def _compiled_path(cls) -> os.PathLike | None:
+    def _bundle_path(cls) -> os.PathLike | None:
         if config.autoreload:
             return
         try:
@@ -143,14 +145,24 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                     'path or a Path object to a .js file extension.'
                 )
         path = mod_path / f'{cls.__name__}.bundle.js'
-        return path if path.is_file() else None
+        if path.is_file():
+            return path
+        module = cls.__module__
+        path = mod_path / f'{module}.bundle.js'
+        if path.is_file():
+            return path
+        elif module in sys.modules:
+            module = os.path.basename(sys.modules[module].__file__).replace('.py', '')
+            path = mod_path / f'{module}.bundle.js'
+            return path if path.is_file() else None
+        return None
 
     @classmethod
     def _esm_path(cls, compiled: bool = True) -> os.PathLike | None:
         if compiled:
-            compiled_path = cls._compiled_path
-            if compiled_path:
-                return compiled_path
+            bundle_path = cls._bundle_path
+            if bundle_path:
+                return bundle_path
         esm = cls._esm
         if isinstance(esm, pathlib.PurePath):
             return esm
@@ -230,17 +242,22 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             if k in params:
                 params.pop(k)
             data_params[k] = v
+        bundle_path = self._bundle_path
+        if bundle_path:
+            bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
+            importmap = {}
+        else:
+            bundle_hash = None
+            importmap = self._process_importmap()
         data_props = self._process_param_change(data_params)
-        precompiled = self._compiled_path is not None
-        importmap = {} if precompiled else self._process_importmap()
         params.update({
+            'bundle': bundle_hash,
             'class_name': camel_to_kebab(cls.__name__),
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload or getattr(self, '_debug', False),
             'esm': self._render_esm(not config.autoreload),
             'importmap': importmap,
-            'name': f'{cls.__module__}.{cls.__name__}',
-            'precompiled': precompiled
+            'name': cls.__name__
         })
         return params
 
@@ -423,10 +440,19 @@ class ReactComponent(ReactiveESM):
 
     _react_version = '18.3.1'
 
-    _exports__: ExportSpec = {
-        "react": ["*React"],
-        "react-dom/client": [("createRoot",)]
-    }
+    @classproperty
+    def _exports__(cls) -> ExportSpec:
+        imports = cls._importmap.get('imports', {})
+        exports = {
+            "react": ["*React"],
+            "react-dom/client": [("createRoot",)]
+        }
+        if any('@mui' in v for v in imports.values()):
+            exports.update({
+                "@emotion/cache": "createCache",
+                "@emotion/react": ("CacheProvider",)
+            })
+        return exports
 
     @classmethod
     def _render_esm(cls, compiled: bool | Literal['compiling'] = True):

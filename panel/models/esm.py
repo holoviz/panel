@@ -27,6 +27,8 @@ class ESMEvent(ModelEvent):
 
 class ReactiveESM(HTMLBox):
 
+    bundle = bp.Nullable(bp.String)
+
     class_name = bp.String()
 
     children = bp.List(bp.String)
@@ -38,8 +40,6 @@ class ReactiveESM(HTMLBox):
     esm = bp.String()
 
     importmap = bp.Dict(bp.String, bp.Dict(bp.String, bp.String))
-
-    precompiled = bp.Bool(False)
 
     __javascript_modules_raw__ = [
         f"{config.npm_cdn}/es-module-shims@^1.10.0/dist/es-module-shims.min.js"
