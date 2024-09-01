@@ -80,6 +80,7 @@ html_theme_options = {
         "page-toc",
     ],
     "announcement": announcement_text,
+    "only_use_existing": True,
 }
 
 extensions += [
