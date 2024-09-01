@@ -59,7 +59,7 @@ import { createRoot } from "react-dom/client"`
 const ns = await view._module_cache.get(view.model.bundle)
 const {CacheProvider, React, createCache, createRoot} = ns.default`
       } else {
-	import_code = `
+        import_code = `
 ${import_code}
 import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
