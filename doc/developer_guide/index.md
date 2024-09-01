@@ -51,11 +51,34 @@ The `.pixi` directory can be large, so it is advised not to put the source direc
 
 The source code for the Panel project is hosted on [GitHub](https://github.com/holoviz/panel). The first thing you need to do is clone the repository.
 
+::::{tab-set}
+
+:::{tab-item} Contributor
+
 1. Go to [github.com/holoviz/panel](https://github.com/holoviz/panel)
 2. [Fork the repository](https://docs.github.com/en/get-started/quickstart/contributing-to-projects#forking-a-repository)
 3. Run in your terminal: `git clone https://github.com/<Your Username Here>/panel`
 
+:::
+
+:::{tab-item} Core Contributor
+
+As a core contributor you should be able to `git push` directly to the `panel` repository. You thus don't need your own _fork_ of the project.
+
+1. Run in your terminal: `git clone https://github.com/holoviz/panel.git`
+
+:::
+
+::::
+
 The instructions for cloning above created a `panel` directory at your file system location.
+
+Now navigate to the root of the `panel` project:
+
+```bash
+cd panel
+```
+
 This `panel` directory is the _source checkout_ for the remainder of this document, and your current working directory is this directory.
 
 ### Fetch tags from upstream
@@ -158,7 +181,7 @@ pixi run test-ui
 The documentation can be built with the command:
 
 ```bash
-pixi run docs-build
+pixi run build-docs
 ```
 
 As Panel uses notebooks for much of the documentation, this will take significant time to run (around an hour).
@@ -168,7 +191,7 @@ A development version of Panel can be found [here](https://holoviz-dev.github.io
 To be able to run cells interactively you need `pyodide` server, this can be ran with:
 
 ```bash
-pixi run docs-server
+pixi run serve-docs
 ```
 
 ## Build

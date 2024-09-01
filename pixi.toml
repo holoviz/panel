@@ -184,9 +184,9 @@ _docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
 _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
 _docs-copy-panel-dist = 'cp -r ./panel/dist ./builtdocs/panel_dist'
 _docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json'
-docs-server = 'python -m http.server 5500 --directory ./builtdocs'
+serve-docs = 'python -m http.server 5500 --directory ./builtdocs'
 
-[feature.doc.tasks.docs-build]
+[feature.doc.tasks.build-docs]
 depends_on = [
     '_docs-refmanual',
     '_docs-convert-gallery',
