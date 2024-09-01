@@ -163,3 +163,4 @@ panel/_version.py
 .uicoveragerc
 mario_button.*
 counter_button.*
+calculator.tcss

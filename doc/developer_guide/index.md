@@ -1,4 +1,8 @@
-# Setting up a development environment
+# Developer Guide
+
+Welcome. We are so happy you've decided to contribute.
+
+## Setting up a development environment
 
 The Panel library is a project that provides a wide range of data interfaces and an extensible set of plotting backends, which means the development and testing process involves a broad set of libraries.
 
@@ -190,7 +194,7 @@ As Panel uses notebooks for much of the documentation, this will take significan
 
 A development version of the Panel docs can be found [here](https://holoviz-dev.github.io/panel/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
-To be able to run cells interactively you need `pyodide` server, this can be ran with:
+To be able to run cells interactively with `pyodide` you need to _serve the docs_, this can be done with:
 
 ```bash
 pixi run serve-docs
@@ -233,7 +237,7 @@ You will likely want to check out the
 
 - [Dev version of Panel Site](https://holoviz-dev.github.io/panel)
   - Use this to explore new, not yet released features and docs
-  - Check out which branch is currently deployed [here](https://github.com/holoviz/panel/actions/workflows/docs.yaml)
+  - See which branch is currently deployed [here](https://github.com/holoviz/panel/actions/workflows/docs.yaml)
 - [Panel main branch on Binder](https://mybinder.org/v2/gh/holoviz/panel/main?urlpath=lab/tree/examples)
   - Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.
   - Replace `main` with `name-of-other-branch` or `version`for other branches.
