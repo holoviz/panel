@@ -632,7 +632,7 @@ export class ReactiveESM extends HTMLBox {
       }
       try {
         let initialize
-        const parts = (this.name as string).split('.')
+        const parts = (this.name as string).split(".")
         const name = parts[parts.length-1]
         if (this.precompiled && (mod.default || {}).hasOwnProperty(name)) {
           mod = mod.default[name]
