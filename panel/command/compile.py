@@ -30,7 +30,7 @@ class Compile(Subcommand):
             type    = str,
             help    = "File to write the bundle to."
         )),
-        ('--unminify', dict(
+        ('--unminified', dict(
             action  = 'store_true',
             help    = "Whether to generate unminified output."
         )),
@@ -46,6 +46,7 @@ class Compile(Subcommand):
             if '.py:' in module_spec:
                 *parts, cls = module_spec.split(':')
                 module = ':'.join(parts)
+                classes = cls.split(',')
             elif not module_spec.endswith('.py'):
                 print(  # noqa
                     f'{RED} Can only compile ESM components defined in a Python '
@@ -56,7 +57,7 @@ class Compile(Subcommand):
                 module = module_spec
                 cls = None
             try:
-                components += find_components(module, cls)
+                components += find_components(module, classes)
             except ValueError:
                 cls_error = f' and that class {cls!r} is defined therein' if cls else ''
                 print(  # noqa
@@ -67,9 +68,9 @@ class Compile(Subcommand):
         out = compile_components(
             components,
             build_dir=args.build_dir,
-            minify=not args.unminify,
+            minify=not args.unminified,
             outfile=args.outfile,
-            verbose=args.verbose and args.outfile,
+            verbose=args.verbose,
         )
         if args.outfile:
             if not out == 0:

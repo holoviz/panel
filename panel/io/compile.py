@@ -6,6 +6,7 @@ import pathlib
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 
 from contextlib import contextmanager
@@ -65,13 +66,11 @@ def check_cli_tool(tool_name):
             return True
         else:
             return False
-    except FileNotFoundError:
-        return False
     except Exception:
         return False
 
 
-def find_components(path: str | os.PathLike, name: str | None = None) -> list[type[ReactiveESM]]:
+def find_components(path: str | os.PathLike, classes: list[str] | None = None) -> list[type[ReactiveESM]]:
     """
     Creates a temporary module given a path-like object and finds all
     the ReactiveESM components defined therein.
@@ -80,12 +79,14 @@ def find_components(path: str | os.PathLike, name: str | None = None) -> list[ty
     ---------
     path : str | os.PathLike
         The path to the Python module.
-
+    classes: list[str] | None
+        Names of classes to return.
 
     Returns
     -------
     List of ReactiveESM components defined in the module.
     """
+    classes = classes or []
     path_obj = pathlib.Path(path)
     source = path_obj.read_text(encoding='utf-8')
     runner = CodeRunner(source, path, [])
@@ -97,12 +98,14 @@ def find_components(path: str | os.PathLike, name: str | None = None) -> list[ty
             isinstance(v, type) and
             issubclass(v, ReactiveESM) and
             not v.abstract and
-            (name is None or v.__name__ == name)
+            v.__name__ in classes
         ):
             v.__path__ = path_obj.parent.absolute()
             components.append(v)
-    if name and not components:
-        raise ValueError("{name!r} class not found in {path!r}.")
+    not_found = set(classes) - set(c.__name__ for c in components)
+    if classes and not_found:
+        clss = ', '.join(map(repr, not_found))
+        raise ValueError(f'{clss} class(es) not found in {path!r}.')
     return components
 
 
@@ -347,7 +350,8 @@ def compile_components(
     -------
     Returns the compiled bundle or None if outfile is provided.
     """
-    if not check_cli_tool('npm'):
+    npm_cmd = 'npm.cmd' if sys.platform == 'win32' else 'npm'
+    if not check_cli_tool(npm_cmd):
         raise RuntimeError(
             'Could not find `npm` or it generated an error. Ensure it is '
             'installed and can be run with `npm --version`. You can get it '
@@ -366,7 +370,7 @@ def compile_components(
         extra_args = []
         if verbose:
             extra_args.append('--log-level=debug')
-        install_cmd = ['npm', 'install'] + extra_args
+        install_cmd = [npm_cmd, 'install'] + extra_args
         try:
             if out:
                 print(f"Running command: {' '.join(install_cmd)}\n")  # noqa
