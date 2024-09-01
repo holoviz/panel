@@ -7,6 +7,8 @@ from bokeh.command.subcommand import Argument, Subcommand
 
 from ..io.convert import convert_apps
 
+def _skip_file(file: str)->bool:
+    return file.startswith("examples/gallery/vtk")
 
 class Convert(Subcommand):
     ''' Subcommand to convert Panel application to some build target, e.g. pyodide or pyscript.
@@ -107,7 +109,7 @@ class Convert(Subcommand):
             if hashes == prev_hashes:
                 time.sleep(0.5)
                 continue
-            files = [f for f, h in hashes.items() if prev_hashes.get(f) != h]
+            files = [f for f, h in hashes.items() if prev_hashes.get(f) != h and not _skip_file(f)]
             index = args.index and not built
             try:
                 convert_apps(
