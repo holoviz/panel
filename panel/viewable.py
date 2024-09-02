@@ -312,7 +312,7 @@ class ServableMixin:
         """
         Callback to handle FunctionHandler document creation.
         """
-        if server_id:
+        if server_id and server_id in state._servers:
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location) # type: ignore
 

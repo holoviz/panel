@@ -10,7 +10,7 @@ Panel empowers you to effortlessly style your apps using pre-built *designs*, re
 Additionally, Panel supports both `"default"` and `"dark"` themes to further tailor the appearance of your application.
 
 :::{note}
-In the sections below, you can run the provided code directly in the Panel documentation by utilizing the green *run* button, executing it in a notebook cell, or saving it in a file named `app.py` and serving it with `panel serve app.py --autoreload`.
+In the sections below, you can run the provided code directly in the Panel documentation by utilizing the green *run* button, executing it in a notebook cell, or saving it in a file named `app.py` and serving it with `panel serve app.py --dev`.
 :::
 
 ## Change the Design

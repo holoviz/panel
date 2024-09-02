@@ -254,7 +254,7 @@ class ChatMessage(Pane):
 
         reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
         if isinstance(reaction_icons, dict):
-            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons, default_layout=Row)
+            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons, default_layout=Row, sizing_mode=None)
         self._internal = True
         super().__init__(object=object, **params)
         self.chat_copy_icon = ChatCopyIcon(
@@ -294,18 +294,20 @@ class ChatMessage(Pane):
             self.param.user, height=20,
             css_classes=["name"],
             visible=self.param.show_user,
+            sizing_mode=None,
         )
 
         self._activity_dot = HTML(
             "●",
             css_classes=["activity-dot"],
+            margin=(5, 0),
+            sizing_mode=None,
             visible=self.param.show_activity_dot,
         )
 
         meta_row = Row(
             self._user_html,
             self._activity_dot,
-            sizing_mode="stretch_width",
             css_classes=["meta"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
@@ -344,8 +346,8 @@ class ChatMessage(Pane):
             header_col,
             self._center_row,
             footer_col,
-            self._timestamp_html,
             self._icons_row,
+            self._timestamp_html,
             css_classes=["right"],
             sizing_mode=None,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
@@ -556,6 +558,11 @@ class ChatMessage(Pane):
 
     def _update_reaction_icons(self, _):
         self._icons_row[-1] = self._render_reaction_icons()
+        self._icon_divider.visible = (
+            len(self.reaction_icons.options) > 0 and
+            self.show_reaction_icons and
+            self.chat_copy_icon.visible
+        )
 
     def _update(self, ref, old_models):
         """
@@ -598,7 +605,10 @@ class ChatMessage(Pane):
         if isinstance(object_panel, str) and self.show_copy_icon:
             self.chat_copy_icon.value = object_panel
             self.chat_copy_icon.visible = True
-            self._icon_divider.visible = True
+            self._icon_divider.visible = (
+                len(self.reaction_icons.options) > 0 and
+                self.show_reaction_icons
+            )
         else:
             self.chat_copy_icon.value = ""
             self.chat_copy_icon.visible = False

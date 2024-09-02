@@ -871,6 +871,7 @@ class panel_extension(_pyviz_extension):
 
         from .io.state import state
         if config.browser_info and state.browser_info:
+            from bokeh.document import Document
             doc = Document()
             comm = state._comm_manager.get_server_comm()
             model = state.browser_info._render_model(doc, comm)
