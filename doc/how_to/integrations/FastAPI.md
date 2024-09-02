@@ -152,8 +152,8 @@ def create_panel_app():
 
 add_applications({
     "/panel_app1": create_panel_app,
-	"/panel_app2": pn.Column('I am a Panel object!'),
-	"/panel_app3": "my_panel_app.py"
+    "/panel_app2": pn.Column('I am a Panel object!'),
+    "/panel_app3": "my_panel_app.py"
 }, app=app)
 ```
 

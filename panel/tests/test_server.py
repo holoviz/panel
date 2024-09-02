@@ -91,7 +91,7 @@ def test_server_template_static_resources(server_implementation):
 
 
 #@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
-def test_server_template_static_resources_with_prefix(server_implementation):
+def test_server_template_static_resources_with_prefix():
     template = BootstrapTemplate()
 
     r = serve_and_request({'template': template}, prefix="/prefix", suffix="/prefix/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
@@ -101,7 +101,7 @@ def test_server_template_static_resources_with_prefix(server_implementation):
 
 
 #@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
-def test_server_template_static_resources_with_prefix_relative_url(server_implementation):
+def test_server_template_static_resources_with_prefix_relative_url():
     template = BootstrapTemplate()
 
     r = serve_and_request({'template': template}, prefix='/prefix', suffix="/prefix/template")
@@ -246,7 +246,7 @@ def test_server_on_session_created(server_implementation):
 
 
 #@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
-def test_server_on_session_destroyed(server_implementation):
+def test_server_on_session_destroyed():
     session_contexts = []
     def append_session(session_context):
         session_contexts.append(session_context)
