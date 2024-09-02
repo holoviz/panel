@@ -12,7 +12,7 @@ Panel provides various options to control the size of components:
 - `max_width`/`max_height`: Allows setting a maximum width or height if responsive sizing is set along the corresponding dimension.
 
 :::{note}
-Throughout this tutorial, you can execute the provided code directly in the Panel documentation using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --autoreload`.
+Throughout this tutorial, you can execute the provided code directly in the Panel documentation using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --dev`.
 :::
 
 ## Inherent and Absolute Sizing

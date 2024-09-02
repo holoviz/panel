@@ -5,7 +5,7 @@ In this guide, we will learn to display Python objects easily with `pn.panel`:
 - Display any Python object via `pn.panel(the_object, ...)`.
 
 :::{note}
-When we ask to *run the code* in the sections below, we may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask to *run the code* in the sections below, we may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --dev`.
 :::
 
 ```{pyodide}
@@ -28,7 +28,7 @@ pn.panel("Hello World").servable()
 ```
 
 :::{note}
-We add `.servable()` to the component to add it to the app served by `panel serve app.py --autoreload`. Adding `.servable()` is not needed to display the component in a notebook.
+We add `.servable()` to the component to add it to the app served by `panel serve app.py --dev`. Adding `.servable()` is not needed to display the component in a notebook.
 :::
 
 `pn.panel` uses a *heuristic* algorithm to determine how to best display the `object`. To make this very explicit, we will `print` the component in all the examples below.

@@ -40,7 +40,7 @@ Copy this code into a file named `app.py` and save it.
 Now, open a terminal and run the following command:
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 This will start the server and provide you with a URL where your app is being served. Open this URL in your browser to see your app in action.
@@ -94,7 +94,7 @@ Serving this code will print information about the `layout` object, revealing it
 Serve the app by running the below command in a terminal.
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
@@ -131,7 +131,7 @@ pn.Row(
 ).servable()
 ```
 
-Serve the app with `panel serve app.py --autoreload`.
+Serve the app with `panel serve app.py --dev`.
 
 Open [http://localhost:5006](http://localhost:5006) in a browser.
 

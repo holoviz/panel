@@ -26,7 +26,7 @@ pn.template.FastListTemplate(
 Serve the app with:
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 It should resemble the following:
@@ -138,7 +138,7 @@ pn.template.FastListTemplate(
 Serve the app with:
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 It should appear as shown below. Try toggling the theme button in the upper right corner.

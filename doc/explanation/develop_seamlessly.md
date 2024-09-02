@@ -146,10 +146,10 @@ template.servable()
 From the terminal run the following command.
 
 ```bash
-panel serve app.py --show --autoreload
+panel serve app.py --show --dev
 ```
 
-The `--show` flag will open a browser tab with the live app and the `--autoreload` flag ensures that the app reloads whenever you make a change to the Python source. `--autoreload` is key to your developer experience, you will see the app being updated live when you save your app file! In the image below the windows have been re-arranged the way web developers like, on one side the code and on the other side a live view of the app, just like the *Preview* functionality in Jupyterlab.
+The `--show` flag will open a browser tab with the live app and the `--dev` flag ensures that the app reloads whenever you make a change to the Python source. `--dev` is key to your developer experience, you will see the app being updated live when you save your app file! In the image below the windows have been re-arranged the way web developers like, on one side the code and on the other side a live view of the app, just like the *Preview* functionality in Jupyterlab.
 
 ![VSCode Preview](../_static/images/vscode_preview.png)
 

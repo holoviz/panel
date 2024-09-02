@@ -87,7 +87,7 @@ class AdminApplicationContext(ApplicationContext):
 
 class Serve(_BkServe):
 
-    args = _BkServe.args + (
+    args = tuple((arg, arg_obj) for arg, arg_obj in _BkServe.args if arg != '--dev') + (
         ('--static-dirs', dict(
             metavar="KEY=VALUE",
             nargs='+',
@@ -232,6 +232,10 @@ class Serve(_BkServe):
             type    = str,
             help    = "The profiler to use by default, e.g. pyinstrument, snakeviz or memray."
         )),
+        ('--dev', dict(
+            action  = 'store_true',
+            help    = "Whether to enable dev mode. Equivalent to --autoreload."
+        )),
         ('--autoreload', dict(
             action  = 'store_true',
             help    = "Whether to autoreload source when script changes."
@@ -366,17 +370,21 @@ class Serve(_BkServe):
             module.__dict__['__file__'] = fullpath(args.setup)
             state._setup_module = module
 
-        if args.warm or args.autoreload:
+        if args.warm or config.autoreload:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
             initialize_session = not (args.num_procs and sys.version_info < (3, 12))
-            if args.autoreload:
+            if config.autoreload:
                 with record_modules(list(applications.values())):
                     self.warm_applications(
                         applications, args.reuse_sessions, error=False, initialize_session=initialize_session
                     )
             else:
                 self.warm_applications(applications, args.reuse_sessions, initialize_session=initialize_session)
+
+        # Disable Tornado's autoreload
+        if args.dev:
+            del server_kwargs['autoreload']
 
         if args.liveness:
             argvs = {f: args.args for f in files}
@@ -643,8 +651,9 @@ class Serve(_BkServe):
     def invoke(self, args: argparse.Namespace):
         # Autoreload must be enabled before the application(s) are executed
         # to avoid erroring out
-        config.autoreload = args.autoreload
+        config.autoreload = args.autoreload or bool(args.dev)
         # Empty layout are valid and the Bokeh warning is silenced as usually
         # not relevant to Panel users.
         silence(EMPTY_LAYOUT, True)
+        args.dev = None
         super().invoke(args)
