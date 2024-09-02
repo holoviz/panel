@@ -1176,11 +1176,14 @@ def get_server(
             server.show(login_endpoint if config.oauth_provider or basic_auth else '/')
         server.io_loop.add_callback(show_callback)
 
+    def sig_exit(*args, **kwargs):
+        server.io_loop.add_callback_from_signal(do_stop)
+
     def do_stop(*args, **kwargs):
         server.io_loop.stop()
 
     try:
-        server.io_loop.asyncio_loop.add_signal_handler(signal.SIGINT, do_stop)
+        signal.signal(signal.SIGINT, sig_exit)
     except ValueError:
         pass # Can't use signal on a thread
 
