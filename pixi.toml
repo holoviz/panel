@@ -112,6 +112,7 @@ pytest-xdist = "*"
 altair = "*"
 anywidget = "*"
 diskcache = "*"
+fastapi = "*"
 folium = "*"
 ipympl = "*"
 ipyvuetify = "*"
@@ -120,6 +121,9 @@ numba = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+
+[feature.test.pypi-dependencies]
+bokeh-fastapi = "~=0.1.0a0"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'

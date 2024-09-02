@@ -33,6 +33,7 @@ from panel.io.reload import (
 )
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
+from panel.tests.util import get_open_ports
 from panel.theme import Design
 
 CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
@@ -246,11 +247,7 @@ async def watch_files():
 
 @pytest.fixture
 def port():
-    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
-    new_port = PORT[0] + int(re.sub(r"\D", "", worker_id))
-    PORT[0] += worker_count
-    return new_port
+    return get_open_ports()[0]
 
 
 @pytest.fixture
