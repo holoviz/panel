@@ -5,7 +5,7 @@ In this tutorial, we come together to create a simple streaming dashboard to mon
 - We will use `pn.state.add_periodic_callback` to trigger a task to run on a schedule.
 
 :::{note}
-When we ask to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --dev`.
 :::
 
 ## Install the Dependencies
