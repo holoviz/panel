@@ -11,7 +11,6 @@ This example will show you how to create a *split* layout containing two objects
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 import panel as pn
 
@@ -90,11 +89,9 @@ split_js = SplitJS(
 )
 split_js.servable()
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 import panel as pn
 
@@ -164,7 +161,6 @@ split_react = SplitReact(
 )
 split_react.servable()
 ```
-
 :::
 
 ::::
@@ -174,19 +170,15 @@ Let's verify that the layout will automatically update when the `object` is chan
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 split_js.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 split_react.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
-
 :::
 
 ::::
@@ -196,7 +188,6 @@ Now, let's change it back:
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 split_js.right=pn.widgets.CodeEditor(
     value="Right",
@@ -206,11 +197,9 @@ split_js.right=pn.widgets.CodeEditor(
     language="python",
 )
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 split_react.right=pn.widgets.CodeEditor(
     value="Right",
@@ -220,7 +209,6 @@ split_react.right=pn.widgets.CodeEditor(
     language="python",
 )
 ```
-
 :::
 
 ::::
@@ -230,7 +218,6 @@ Now, let's change it back:
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 split_js.right=pn.widgets.CodeEditor(
     value="Right",
@@ -240,11 +227,9 @@ split_js.right=pn.widgets.CodeEditor(
     language="python",
 )
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 split_react.right=pn.widgets.CodeEditor(
     value="Right",
@@ -254,7 +239,6 @@ split_react.right=pn.widgets.CodeEditor(
     language="python",
 )
 ```
-
 :::
 
 ::::
@@ -266,7 +250,6 @@ A Panel `Column` or `Row` works as a list of objects. It is *list-like*. In this
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -343,7 +326,6 @@ You must list `ListLike, JSComponent` in exactly that order when you define the 
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -408,7 +390,6 @@ grid_react = GridReact(
 )
 grid_react.servable()
 ```
-
 :::
 
 ::::
@@ -422,7 +403,6 @@ You can now use `[...]` indexing and methods like `.append`, `.insert`, `pop`, e
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 grid_js.append(
     pn.widgets.CodeEditor(
@@ -432,11 +412,9 @@ grid_js.append(
     )
 )
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 grid_react.append(
     pn.widgets.CodeEditor(
@@ -446,7 +424,6 @@ grid_react.append(
     )
 )
 ```
-
 :::
 
 ::::
@@ -456,19 +433,15 @@ Let's remove it again:
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 grid_js.pop(-1)
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 grid_react.pop(-1)
 ```
-
 :::
 
 ::::
