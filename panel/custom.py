@@ -46,30 +46,41 @@ if TYPE_CHECKING:
     ExportSpec = dict[str, list[str | tuple[str, ...]]]
 
 
-class PyComponent(Viewer, Layoutable):
+class PyComponent(Viewable, Layoutable):
     """
     The `PyComponent` combines the convenience of `Viewer` components
-    that allow creating custom components by declaring a __panel__
+    that allow creating custom components by declaring a `__panel__`
     method with the ability of controlling layout and styling
     related parameters directly on the class. Internally the
     `PyComponent` will forward layout parameters to the underlying
-    object.
+    object, which is created lazily on render.
     """
 
     def __init__(self, **params):
         super().__init__(**params)
-        self.__views = []
-        self.param.watch(self._sync__views, [p for p in Layoutable.param if p != 'name'])
+        self.__view = None
+        self.param.watch(self._sync__view, [p for p in Layoutable.param if p != 'name'])
 
-    def _sync__views(self, *events):
+    def _sync__view(self, *events):
+        if self.__view is None:
+            return
         params = {e.name: e.new for e in events}
-        for view in self.__views:
-            with param.parameterized._syncing(view, list(params)):
-                view.param.update(params)
+        with param.parameterized._syncing(self.__view, list(params)):
+            self.__view.param.update(params)
 
-    def _create_view(self):
-        view = super()._create_view()
-        self.__views.append(view)
+    def _cleanup(self, root: Model | None = None) -> None:
+        if self.__view is not None:
+            self.__view._cleanup(root)
+
+    def _create__view(self):
+        from .pane import panel
+        from .param import ParamMethod
+
+        if hasattr(self.__panel__, "_dinfo"):
+            view = ParamMethod(self.__panel__, lazy=True)
+        else:
+            view = panel(self.__panel__())
+        self.__view = view
         params = view.param.values()
         overrides, sync = {}, {}
         for p in Layoutable.param:
@@ -80,7 +91,20 @@ class PyComponent(Viewer, Layoutable):
         self.param.update(overrides)
         with param.parameterized._syncing(view, list(sync)):
             view.param.update(sync)
-        return view
+
+    def _get_model(
+        self, doc: Document, root: Optional['Model'] = None,
+        parent: Optional['Model'] = None, comm: Optional[Comm] = None
+    ) -> 'Model':
+        if self.__view is None:
+            self._create__view()
+        return self.__view._get_model(doc, root, parent, comm)
+
+    def select(
+        self, selector: Optional[type | Callable[Viewable, bool]] = None
+    ) -> list[Viewable]:
+        return self.__view.select(selector)
+
 
 
 class ReactiveESMMetaclass(ReactiveMetaBase):
