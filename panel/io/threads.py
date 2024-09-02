@@ -1,6 +1,8 @@
 import asyncio
 import threading
 
+from .state import state
+
 
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method."""
@@ -11,6 +13,7 @@ class StoppableThread(threading.Thread):
         if hasattr(io_loop, 'asyncio_loop'):
             io_loop = io_loop.asyncio_loop
         self.asyncio_loop = io_loop
+        self.server_id = kwargs.get('kwargs', {}).get('server_id')
         self._shutdown_task = None
 
     def run(self) -> None:
@@ -30,19 +33,21 @@ class StoppableThread(threading.Thread):
                     bokeh_server.stop()
                 except Exception:
                     pass
-            elif hasattr(bokeh_server, 'shutdown'):
-                # Handle uvicorn server
-                try:
-                    self.asyncio_loop.run_until_complete(bokeh_server.shutdown())
-                except Exception:
-                    pass
             if hasattr(self, '_target'):
                 del self._target, self._args, self._kwargs # type: ignore
             else:
                 del self._Thread__target, self._Thread__args, self._Thread__kwargs # type: ignore
 
     def stop(self) -> None:
-        """Signal to stop the event loop gracefully."""
+        if not self.is_alive():
+            return
+        elif self.server_id and self.server_id in state._servers:
+            server, _, _ = state._servers[self.server_id]
+            if hasattr(server, 'should_exit'):
+                server.should_exit = True
+                while self.is_alive():
+                    continue
+                return
         if self._shutdown_task:
             raise RuntimeError("Thread already stopping")
         self._shutdown_task = asyncio.run_coroutine_threadsafe(self._shutdown(), self.asyncio_loop)

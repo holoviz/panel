@@ -24,7 +24,9 @@ from panel.pane import Markdown
 from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
-from panel.tests.util import serve_and_request, serve_and_wait, wait_until
+from panel.tests.util import (
+    get_open_ports, serve_and_request, serve_and_wait, wait_until,
+)
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
 )
@@ -225,7 +227,7 @@ def test_serve_config_per_session_state(server_implementation):
     def app2():
         config.raw_css = [CSS2]
 
-    port1, port2 = 7001, 7002
+    port1, port2 = get_open_ports(n=2)
     serve_and_wait(app1, port=port1)
     serve_and_wait(app2, port=port2)
 
