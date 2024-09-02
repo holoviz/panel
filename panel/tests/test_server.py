@@ -41,7 +41,7 @@ def server_implementation(request):
     old = serve_and_wait.server_implementation
     serve_and_wait.server_implementation = request.param
     try:
-        yield
+        yield request.param
     finally:
         serve_and_wait.server_implementation = old
 
