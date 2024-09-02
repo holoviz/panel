@@ -75,7 +75,7 @@ recommended = [
     'pillow',
     'plotly',
 ]
-standard = [
+dev = [
     'watchfiles',
 ]
 tests = [
