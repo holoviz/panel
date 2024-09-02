@@ -59,7 +59,6 @@ jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyte
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
 ON_POSIX = 'posix' in sys.builtin_module_names
 
-server_implementation = 'tornado'
 linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 unix_only = pytest.mark.skipif(platform.system() == 'Windows', reason="Only supported on unix-like systems")
 
@@ -284,7 +283,7 @@ def get_open_port():
 
 def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
-    if server_implementation == 'fastapi':
+    if serve_and_wait.server_implementation == 'fastapi':
         from panel.io.fastapi import serve as serve_app
         port = port or get_open_port()
     else:
@@ -292,13 +291,14 @@ def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
-    if server_implementation == 'fastapi':
+    if serve_and_wait.server_implementation == 'fastapi':
         port = port
     else:
         port = server.port
     wait_for_server(port, prefix=prefix)
     return port
 
+serve_and_wait.server_implementation = 'tornado'
 
 def serve_component(page, app, suffix='', wait=True, **kwargs):
     msgs = []
