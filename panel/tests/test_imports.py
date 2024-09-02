@@ -9,7 +9,7 @@ def test_no_blocklist_imports():
     import sys
     import panel
 
-    blocklist = {"pandas"}
+    blocklist = {"pandas", "bokeh.plotting"}
     mods = blocklist & set(sys.modules)
 
     if mods:
