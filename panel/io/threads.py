@@ -48,7 +48,8 @@ class StoppableThread(threading.Thread):
         self._shutdown_task = asyncio.run_coroutine_threadsafe(self._shutdown(), self.asyncio_loop)
 
     async def _shutdown(self):
-        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        cur_task = asyncio.current_task()
+        tasks = [t for t in asyncio.all_tasks() if t is not cur_task]
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
