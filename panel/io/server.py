@@ -1103,7 +1103,7 @@ def get_server(
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):
-        server.io_loop.add_callback_from_signal(do_stop)
+        server.io_loop.asyncio_loop.call_soon_threadsafe(do_stop)
 
     def do_stop(*args, **kwargs):
         server.io_loop.stop()
