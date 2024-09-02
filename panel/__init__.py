@@ -118,7 +118,15 @@ _attrs = {
 
 
 def __getattr__(name: str) -> object:
-    if name in _attrs:
+    if name == "no_lazy":
+        for attr in _attrs:
+            if attr in ("param"):
+                continue
+            mod = __getattr__(attr)
+            if hasattr(mod, "_attrs"):
+                getattr(mod._attrs, "no_lazy", None)
+        return name
+    elif name in _attrs:
         import importlib
         mod_name, _, attr_name = _attrs[name].partition(':')
         mod = importlib.import_module(mod_name)

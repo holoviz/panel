@@ -72,6 +72,12 @@ _attrs = {
 }
 
 def __getattr__(name: str):
+    if name == "no_lazy":
+        for attr in _attrs:
+            mod = __getattr__(attr)
+            if hasattr(mod, "_attrs"):
+                getattr(mod._attrs, "no_lazy", None)
+        return name
     if name in _attrs:
         import importlib
         mod_name, _, attr_name = _attrs[name].partition(':')
