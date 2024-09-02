@@ -6,7 +6,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import pathlib
 
 from functools import partial
 from types import FunctionType, MethodType
