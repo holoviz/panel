@@ -4,6 +4,7 @@ A module containing testing utilities and fixtures.
 import asyncio
 import atexit
 import datetime as dt
+import importlib
 import os
 import pathlib
 import re
@@ -567,15 +568,11 @@ def df_strings():
     return pd.DataFrame(dict(code=code, descr=descr))
 
 @pytest.fixture
-def tornado():
-    return 'tornado'
-
-@pytest.fixture
-def fastapi():
-    return 'fastapi'
-
-@pytest.fixture
 def server_implementation(request):
+    try:
+        importlib.import_module(request.param)
+    except Exception:
+        pytest.skip(f'Could not import {request.param}')
     old = panel.tests.util.server_implementation
     panel.tests.util.server_implementation = request.param
     try:
