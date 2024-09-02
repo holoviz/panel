@@ -6,19 +6,23 @@ import uuid
 from functools import wraps
 from typing import TYPE_CHECKING, Mapping, cast
 
-from bokeh_fastapi import BokehFastAPI
-from bokeh_fastapi.handler import WSHandler
-from fastapi import (
-    FastAPI, HTTPException, Query, Request,
-)
-from fastapi.responses import FileResponse
-
 from .application import build_applications
 from .document import _cleanup_doc, extra_socket_handlers
 from .resources import COMPONENT_PATH
 from .server import ComponentResourceHandler
 from .state import state
 from .threads import StoppableThread
+
+try:
+    from bokeh_fastapi import BokehFastAPI
+    from bokeh_fastapi.handler import WSHandler
+    from fastapi import (
+        FastAPI, HTTPException, Query, Request,
+    )
+    from fastapi.responses import FileResponse
+except ImportError:
+    msg = "bokeh_fastapi must be installed to use the panel.io.fastapi module."
+    raise ImportError(msg) from None
 
 if TYPE_CHECKING:
     from uvicorn import Server
