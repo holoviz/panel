@@ -107,7 +107,7 @@ def isdatetime(value) -> bool:
     Whether the array or scalar is recognized datetime type.
     """
     import numpy as np
-    all_datetimes = list(datetime_types())
+    all_datetimes = tuple(datetime_types())
 
     if is_series(value) and len(value):
         return isinstance(value.iloc[0], all_datetimes)
