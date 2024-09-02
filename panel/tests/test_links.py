@@ -96,7 +96,7 @@ def test_pnwidget_hvplot_links(document, comm):
 
     size_widget.jslink(points1, value='glyph.size')
 
-    row = Row(points1, size_widget)
+    row = Row(HoloViews(points1, backend='bokeh'), size_widget)
     model = row.get_root(document, comm=comm)
     hv_views = row.select(HoloViews)
     widg_views = row.select(FloatSlider)
@@ -138,7 +138,7 @@ def test_bkwidget_hvplot_links(document, comm):
 
     Link(bokeh_widget, points1, properties={'value': 'glyph.size'})
 
-    row = Row(points1, bokeh_widget)
+    row = Row(HoloViews(points1, backend='bokeh'), bokeh_widget)
     model = row.get_root(document, comm=comm)
     hv_views = row.select(HoloViews)
 
@@ -316,7 +316,7 @@ def test_widget_jscallback_args_model(document, comm):
 def test_hvplot_jscallback(document, comm):
     points1 = hv.Points([1, 2, 3])
 
-    hvplot = HoloViews(points1)
+    hvplot = HoloViews(points1, backend='bokeh')
 
     hvplot.jscallback(**{'x_range.start': "some_code"})
 
@@ -337,7 +337,7 @@ def test_link_with_customcode(document, comm):
       x_range.end = source.value[1]
     """
     range_widget.jslink(curve, code={'value': code})
-    row = Row(curve, range_widget)
+    row = Row(HoloViews(curve, backend='bokeh'), range_widget)
 
     range_widget.value = (0.5, 0.7)
     model = row.get_root(document, comm=comm)
@@ -352,4 +352,4 @@ def test_link_with_customcode(document, comm):
     link_customjs = range_slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is range_slider
     assert link_customjs.args['x_range'] is x_range
-    assert link_customjs.code == "try { %s } catch(err) { console.log(err) }" % code
+    assert link_customjs.code == f"try {{ {code} }} catch(err) {{ console.log(err) }}"

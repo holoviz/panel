@@ -1,10 +1,26 @@
 """
 Custom bokeh Markup models.
 """
+from typing import Any
+
 from bokeh.core.properties import (
     Bool, Dict, Either, Float, Int, List, Null, String,
 )
+from bokeh.events import ModelEvent
 from bokeh.models.widgets import Markup
+
+
+class HTMLStreamEvent(ModelEvent):
+
+    event_name = 'html_stream'
+
+    def __init__(self, model, patch=None, start=None):
+        self.patch = patch
+        self.start = start
+        super().__init__(model=model)
+
+    def event_values(self) -> dict[str, Any]:
+        return dict(super().event_values(), patch=self.patch, start=self.start)
 
 
 class HTML(Markup):
@@ -31,6 +47,6 @@ class JSON(Markup):
 
 class PDF(Markup):
 
-    embed = Bool(True, help="Whether to embed the file")
+    embed = Bool(False, help="Whether to embed the file")
 
     start_page = Int(default=1, help="Start page of the pdf, by default the first page.")

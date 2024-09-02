@@ -1,6 +1,7 @@
 # Style Components
 
-Panel provides a comprehensive system for applying designs, themes and custom styling for components. This section will take you through these concepts.
+Panel provides a comprehensive system for applying designs, themes and custom styling for components.
+This section will take you through these concepts.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -49,6 +50,78 @@ How to control the visibility of a component.
 
 ::::
 
+This section will show you how to style the most common plotting libraries for use with Panel.
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Altair
+:link: altair
+:link-type: doc
+
+```{image} ../../_static/logos/altair-logo.png
+:width: 125px
+:align: center
+:name: Altair
+```
+
+How to style an Altair plot
+:::
+
+:::{grid-item-card} ECharts
+:link: echarts
+:link-type: doc
+
+```{image} ../../_static/logos/echarts-logo.png
+:width: 125px
+:align: center
+:name: ECharts
+```
+
+How to style an ECharts plot
+:::
+
+:::{grid-item-card} Matplotlib
+:link: matplotlib
+:link-type: doc
+
+```{image} ../../_static/logos/matplotlib-logo.png
+:width: 125px
+:align: center
+:name: Matplotlib
+```
+
+How to style a Matplotlib plot
+:::
+
+:::{grid-item-card} Plotly
+:link: plotly
+:link-type: doc
+
+```{image} ../../_static/logos/plotly-logo.png
+:width: 125px
+:align: center
+:name: Plotly
+```
+
+How to style a Plotly plot
+:::
+
+:::{grid-item-card} Vega Lite
+:link: vega
+:link-type: doc
+
+```{image} ../../_static/logos/vegalite-logo.png
+:width: 125px
+:align: center
+:name: Vega
+```
+
+How to style a Vega Lite plot
+:::
+
+::::
+
 ```{toctree}
 :titlesonly:
 :hidden:
@@ -57,6 +130,12 @@ How to control the visibility of a component.
 design
 themes
 apply_css
+design_variables
 load_icon
 visibility
+altair
+echarts
+matplotlib
+plotly
+vega
 ```

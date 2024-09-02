@@ -4,11 +4,14 @@ from typing import TYPE_CHECKING, Optional
 
 import param
 
+from bokeh.models import CustomJS
+
 from ..config import config
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
-from .resources import CSS_URLS, bundled_files
+from .resources import CSS_URLS, bundled_files, get_dist_path
+from .state import state
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -41,6 +44,14 @@ class Notification(param.Parameterized):
 
 class NotificationAreaBase(ReactiveHTML):
 
+    js_events = param.Dict(default={}, doc="""
+        A dictionary that configures notifications for specific Bokeh Document
+        events, e.g.:
+
+          {'connection_lost': {'type': 'error', 'message': 'Connection Lost!', 'duration': 5}}
+
+        will trigger a warning on the Bokeh ConnectionLost event.""")
+
     notifications = param.List(item_type=Notification)
 
     position = param.Selector(default='bottom-right', objects=[
@@ -71,7 +82,19 @@ class NotificationAreaBase(ReactiveHTML):
         preprocess: bool = True
     ) -> 'Model':
         root = super().get_root(doc, comm, preprocess)
+        for event, notification in self.js_events.items():
+            doc.js_on_event(event, CustomJS(code=f"""
+            var config = {{
+              message: {notification['message']!r},
+              duration: {notification.get('duration', 0)},
+              notification_type: {notification['type']!r},
+              _destroyed: false
+            }}
+            notifications.data.notifications.push(config)
+            notifications.data.properties.notifications.change.emit()
+            """, args={'notifications': root}))
         self._documents[doc] = root
+        state._views[root.ref['id']] = (self, root, doc, comm)
         return root
 
     def send(self, message, duration=3000, type=None, background=None, icon=None):
@@ -153,7 +176,9 @@ class NotificationArea(NotificationAreaBase):
 
     @classproperty
     def __css__(cls):
-        return bundled_files(cls, 'css')
+        return bundled_files(cls, 'css') + [
+            f"{get_dist_path()}css/notifications.css"
+        ]
 
     _template = ""
 
@@ -243,7 +268,6 @@ class NotificationArea(NotificationAreaBase):
             if (ntype.value === 'custom') {
               config.background = color.color
             }
-            console.log(config, ntype.value)
             notifications.data.notifications.push(config)
             notifications.data.properties.notifications.change.emit()
             """

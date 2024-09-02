@@ -4,8 +4,9 @@ import datetime as dt
 import sys
 
 from enum import Enum
+from functools import partial
 from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Callable, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -14,9 +15,9 @@ import param
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
-from ..io.resources import CDN_DIST
+from ..io.state import state
 from ..reactive import ReactiveData
-from ..util import lazy_load
+from ..util import datetime_types, lazy_load
 from ..viewable import Viewable
 from .base import ModelPane
 
@@ -25,10 +26,13 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-DEFAULT_THEME = "material"
+    from ..models.perspective import PerspectiveClickEvent
+
+DEFAULT_THEME = "pro"
 
 THEMES = [
-    'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark', 'vaporwave'
+    'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark',
+    'vaporwave', 'pro', 'pro-dark'
 ]
 
 class Plugin(Enum):
@@ -49,9 +53,9 @@ class Plugin(Enum):
     SUNBURST_D3 = "d3_sunburst"  # d3fc
     HEATMAP_D3 = "d3_heatmap"  # d3fc
     CANDLESTICK = "d3_candlestick"  # d3fc
-    CANDLESTICK_D3 = "d3_candlestick"  # d3fc
+    CANDLESTICK_D3 = "d3_candlestick"  # noqa: PIE796, d3fc
     OHLC = "d3_ohlc"  # d3fc
-    OHLC_D3 = "d3_ohlc"  # d3fc
+    OHLC_D3 = "d3_ohlc"  # noqa: PIE796, d3fc
 
     @staticmethod
     def options():
@@ -152,7 +156,7 @@ def deconstruct_pandas(data, kwargs=None):
         new_names = list(data.index.names)
         for j, val in enumerate(data.index.names):
             if val is None:
-                new_names[j] = "index" if i == 0 else "index-{}".format(i)
+                new_names[j] = "index" if i == 0 else f"index-{i}"
                 i += 1
                 # kwargs['group_by'].append(str(new_names[j]))
             else:
@@ -197,7 +201,7 @@ def deconstruct_pandas(data, kwargs=None):
         new_names = list(data.index.names)
         for j, val in enumerate(data.index.names):
             if val is None:
-                new_names[j] = "index" if i == 0 else "index-{}".format(i)
+                new_names[j] = "index" if i == 0 else f"index-{i}"
                 i += 1
                 if push_row_pivot:
                     kwargs["group_by"].append(str(new_names[j]))
@@ -260,23 +264,30 @@ class Perspective(ModelPane, ReactiveData):
 
     :Example:
 
-    >>> Perspective(df, plugin='hypergrid', theme='material-dark')
+    >>> Perspective(df, plugin='hypergrid', theme='pro-dark')
     """
 
-    aggregates = param.Dict(default=None, doc="""
+    aggregates = param.Dict(default=None, nested_refs=True, doc="""
       How to aggregate. For example {"x": "distinct count"}""")
 
-    columns = param.List(default=None, doc="""
-        A list of source columns to show as columns. For example ["x", "y"]""")
+    columns = param.List(default=None, nested_refs=True, doc="""
+      A list of source columns to show as columns. For example ["x", "y"]""")
 
-    expressions = param.List(default=None, doc="""
+    columns_config = param.Dict(default=None, nested_refs=True, doc="""
+      Column configuration allowing specification of formatters, coloring
+      and a variety of other attributes for each column.""")
+
+    editable = param.Boolean(default=True, allow_None=True, doc="""
+      Whether items are editable.""")
+
+    expressions = param.ClassSelector(class_=(dict, list), default=None, nested_refs=True, doc="""
       A list of expressions computing new columns from existing columns.
       For example [""x"+"index""]""")
 
-    split_by = param.List(default=None, doc="""
+    split_by = param.List(default=None, nested_refs=True, doc="""
       A list of source columns to pivot by. For example ["x", "y"]""")
 
-    filters = param.List(default=None, doc="""
+    filters = param.List(default=None, nested_refs=True, doc="""
       How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")
 
     min_width = param.Integer(default=420, bounds=(0, None), doc="""
@@ -297,30 +308,29 @@ class Perspective(ModelPane, ReactiveData):
     plugin = param.ObjectSelector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
       The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")
 
-    plugin_config = param.Dict(default={}, doc="""
+    plugin_config = param.Dict(default={}, nested_refs=True, doc="""
       Configuration for the PerspectiveViewerPlugin.""")
 
-    toggle_config = param.Boolean(default=True, doc="""
-      Whether to show the config menu.""")
+    settings = param.Boolean(default=True, doc="""
+      Whether to show the settings menu.""")
 
-    theme = param.ObjectSelector(default='material', objects=THEMES, doc="""
-      The style of the PerspectiveViewer. For example material-dark""")
+    theme = param.ObjectSelector(default='pro', objects=THEMES, doc="""
+      The style of the PerspectiveViewer. For example pro-dark""")
+
+    title = param.String(default=None, doc="""
+      Title for the Perspective viewer.""")
 
     priority: ClassVar[float | bool | None] = None
 
-    _bokeh_model: ClassVar[Type[Model] | None] = None
+    _bokeh_model: ClassVar[type[Model] | None] = None
 
-    _data_params: ClassVar[List[str]] = ['object']
+    _data_params: ClassVar[list[str]] = ['object']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None
     }
 
     _updates: ClassVar[bool] = True
-
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/perspective-datatable.css'
-    ]
 
     @classmethod
     def applies(cls, object):
@@ -331,6 +341,13 @@ class Perspective(ModelPane, ReactiveData):
             if isinstance(object, pd.DataFrame):
                 return 0
         return False
+
+    def __init__(self, object=None, **params):
+        click_handler = params.pop('on_click', None)
+        self._on_click_callbacks = []
+        super().__init__(object, **params)
+        if click_handler:
+            self.on_click(click_handler)
 
     def _get_data(self):
         if self.object is None:
@@ -359,11 +376,9 @@ class Perspective(ModelPane, ReactiveData):
 
     def _get_properties(self, doc, source=None):
         props = super()._get_properties(doc)
+        if 'theme' in props and 'material' in props['theme']:
+            props['theme'] = props['theme'].replace('material', 'pro')
         del props['object']
-        if props.get('toggle_config'):
-            props['height'] = self.height or 300
-        else:
-            props['height'] = self.height or 150
         if source is None:
             source = ColumnDataSource(data=self._data)
         else:
@@ -373,8 +388,8 @@ class Perspective(ModelPane, ReactiveData):
         for col, array in source.data.items():
             if not isinstance(array, np.ndarray):
                 array = np.asarray(array)
-            kind = array.dtype.kind.lower()
-            if kind == 'm':
+            kind = array.dtype.kind
+            if kind == 'M':
                 schema[col] = 'datetime'
             elif kind in 'ui':
                 schema[col] = 'integer'
@@ -382,15 +397,15 @@ class Perspective(ModelPane, ReactiveData):
                 schema[col] = 'boolean'
             elif kind == 'f':
                 schema[col] = 'float'
-            elif kind == 'su':
+            elif kind in 'sU':
                 schema[col] = 'string'
             else:
                 if len(array):
                     value = array[0]
-                    if isinstance(value, dt.date):
-                        schema[col] = 'date'
-                    elif isinstance(value, dt.datetime):
+                    if isinstance(value, datetime_types) and type(value) is not dt.date:
                         schema[col] = 'datetime'
+                    elif isinstance(value, dt.date):
+                        schema[col] = 'date'
                     elif isinstance(value, str):
                         schema[col] = 'string'
                     elif isinstance(value, (float, np.floating)):
@@ -405,9 +420,10 @@ class Perspective(ModelPane, ReactiveData):
 
     def _get_theme(self, theme, resources=None):
         from ..models.perspective import THEME_URL
+        theme = theme.replace('material', 'pro')
         theme_url = f'{THEME_URL}{theme}.css'
         if self._bokeh_model is not None:
-            self._bokeh_model.__css_raw__ = self._bokeh_model.__css_raw__[:3] + [theme_url]
+            self._bokeh_model.__css_raw__ = self._bokeh_model.__css_raw__[:5] + [theme_url]
         return theme_url
 
     def _process_param_change(self, params):
@@ -417,16 +433,24 @@ class Perspective(ModelPane, ReactiveData):
             params['stylesheets'] = [
                 ImportedStyleSheet(url=ss) for ss in css
             ] + params.get('stylesheets', self.stylesheets)
+        if 'theme' in params and 'material' in params['theme']:
+            params['theme'] = params['theme'].replace('material', 'pro')
         props = super()._process_param_change(params)
         for p in ('columns', 'group_by', 'split_by'):
             if props.get(p):
                 props[p] = [None if col is None else str(col) for col in props[p]]
+        if props.get('settings'):
+            props['height'] = self.height or 300
+        else:
+            props['height'] = self.height or 150
         if props.get('sort'):
             props['sort'] = [[str(col), *args] for col, *args in props['sort']]
         if props.get('filters'):
             props['filters'] = [[str(col), *args] for col, *args in props['filters']]
         if props.get('aggregates'):
             props['aggregates'] = {str(col): agg for col, agg in props['aggregates'].items()}
+        if isinstance(props.get('expressions'), list):
+            props['expressions'] = {f'expression_{i}': exp for i, exp in enumerate(props['expressions'])}
         return props
 
     def _as_digit(self, col):
@@ -457,7 +481,28 @@ class Perspective(ModelPane, ReactiveData):
         self._bokeh_model = lazy_load(
             'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root
         )
-        return super()._get_model(doc, root, parent, comm)
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('perspective-click', model=model, doc=doc, comm=comm)
+        return model
 
     def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties(model.document, source=model.source))
+
+    def _process_event(self, event):
+        if event.event_name == 'perspective-click':
+            for cb in self._on_click_callbacks:
+                state.execute(partial(cb, event), schedule=False)
+
+    def on_click(self, callback: Callable[[PerspectiveClickEvent], None]):
+        """
+        Register a callback to be executed when any row is clicked.
+        The callback is given a PerspectiveClickEvent declaring the
+        config, column names, and row values of the row that was
+        clicked.
+
+        Arguments
+        ---------
+        callback: (callable)
+            The callback to run on edit events.
+        """
+        self._on_click_callbacks.append(callback)

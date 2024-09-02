@@ -22,6 +22,9 @@ class SlidesTemplate(VanillaTemplate):
     SlidesTemplate is built on top of Vanilla web components.
     """
 
+    collapsed_sidebar = param.Selector(default=True, constant=True, doc="""
+        Whether the sidebar (if present) is initially collapsed.""")
+
     reveal_config = param.Dict(default={}, doc="""
         Configuration parameters for reveal.js""")
 

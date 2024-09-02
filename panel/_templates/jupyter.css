@@ -7,9 +7,9 @@
 }
 
 /* Override VSCode background color */
-.cell-output-ipywidget-background:has(> .cell-output-ipywidget-background
-    > .lm-Widget
-    > *[data-root-id]),
+.cell-output-ipywidget-background:has(
+    > .cell-output-ipywidget-background > .lm-Widget > *[data-root-id]
+  ),
 .cell-output-ipywidget-background:has(> .lm-Widget > *[data-root-id]) {
   background-color: transparent !important;
 }

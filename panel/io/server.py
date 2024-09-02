@@ -3,41 +3,34 @@ Utilities for creating bokeh Server instances.
 """
 from __future__ import annotations
 
+import ast
 import asyncio
 import datetime as dt
-import gc
-import html
 import importlib
+import inspect
 import logging
 import os
 import pathlib
 import signal
 import sys
 import threading
-import traceback
 import uuid
-import weakref
 
-from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
 from html import escape
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union,
+    TYPE_CHECKING, Any, Callable, Mapping, Optional, Union,
 )
 from urllib.parse import urljoin, urlparse
 
 import bokeh
-import bokeh.command.util
 import param
 import tornado
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
-from bokeh.application.handlers.code import (
-    CodeHandler, _monkeypatch_io, patch_curdoc,
-)
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
@@ -47,7 +40,6 @@ from bokeh.embed.bundle import Script
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.io import curdoc
 from bokeh.models import CustomJS
 from bokeh.server.server import Server as BokehServer
 from bokeh.server.urls import per_app_patterns, toplevel_patterns
@@ -72,18 +64,21 @@ from tornado.wsgi import WSGIContainer
 from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
-from .document import init_doc, unlocked, with_lock  # noqa
+from .application import Application, build_single_handler_application
+from .document import (  # noqa
+    _cleanup_doc, init_doc, unlocked, with_lock,
+)
+from .liveness import LivenessHandler
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
-from .markdown import build_single_handler_application
-from .profile import profile_ctx
-from .reload import autoreload_watcher
+from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
     Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
 )
+from .session import generate_session
 from .state import set_curdoc, state
 
 logger = logging.getLogger(__name__)
@@ -135,6 +130,8 @@ def _eval_panel(
             body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
             """)
         )
+
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
 
     # Set up instrumentation for logging sessions
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
@@ -195,7 +192,7 @@ def _initialize_session_info(session_context: 'BokehSessionContext'):
     state.session_info['total'] += 1
     if history > 0 and len(sessions) >= history:
         old_history = list(sessions.items())
-        sessions = OrderedDict(old_history[-(history-1):])
+        sessions = dict(old_history[-(history-1):])
         state.session_info['sessions'] = sessions
     sessions[session_id] = {
         'launched': dt.datetime.now().timestamp(),
@@ -206,12 +203,11 @@ def _initialize_session_info(session_context: 'BokehSessionContext'):
     }
     state.param.trigger('session_info')
 
-state.on_session_created(_initialize_session_info)
+state._on_session_created_internal.append(_initialize_session_info)
 
 #---------------------------------------------------------------------
 # Bokeh patches
 #---------------------------------------------------------------------
-
 
 def html_page_for_render_items(
     bundle: Bundle | tuple[str, str], docs_json: dict[ID, DocJson],
@@ -281,7 +277,7 @@ def server_html_page_for_session(
     title: str,
     token: str | None = None,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: Optional[Dict[str, Any]] = None,
+    template_variables: Optional[dict[str, Any]] = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
@@ -330,87 +326,51 @@ def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url
 
     return AUTOLOAD_JS.render(bundle=bundle, elementid=element_id)
 
-def destroy_document(self, session):
-    """
-    Override for Document.destroy() without calling gc.collect directly.
-    The gc.collect() call is scheduled as a task, ensuring that when
-    multiple documents are destroyed in quick succession we do not
-    schedule excessive garbage collection.
-    """
-    if session is not None:
-        self.remove_on_change(session)
-
-    del self._roots
-    del self._theme
-    del self._template
-    self._session_context = None
-
-    self.callbacks.destroy()
-    self.models.destroy()
-    self.modules.destroy()
-
-    # Clear periodic callbacks
-    for cb in state._periodic.get(self, []):
-        cb.stop()
-
-    # Clean up pn.state to avoid tasks getting executed on dead session
-    for attr in dir(state):
-        if not attr.startswith('_'):
-            continue
-        state_obj = getattr(state, attr)
-        if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
-            del state_obj[self]
-
-    # Schedule GC
-    at = dt.datetime.now() + dt.timedelta(seconds=5)
-    state.schedule_task('gc.collect', gc.collect, at=at)
-
-    del self.destroy
 
 # Patch Server to attach task factory to asyncio loop and handle Admin server context
 class Server(BokehServer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._autoreload_stop_event = None
         if state._admin_context:
             state._admin_context._loop = self._loop
+
+    def setup_file(self):
+        setup_path = state._setup_module.__dict__['__file__']
+        with open(setup_path) as f:
+            setup_source = f.read()
+        nodes = ast.parse(setup_source, os.fspath(setup_path))
+        code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
+        exec(code, state._setup_module.__dict__)
 
     def start(self) -> None:
         super().start()
         if state._admin_context:
             self._loop.add_callback(state._admin_context.run_load_hook)
+        if state._setup_module:
+            self._loop.add_callback(self.setup_file)
+        if config.autoreload:
+            from .reload import setup_autoreload_watcher
+            self._autoreload_stop_event = stop_event = asyncio.Event()
+            self._autoreload_task = self._loop.asyncio_loop.create_task(setup_autoreload_watcher(stop_event))
 
     def stop(self, wait: bool = True) -> None:
+        if self._autoreload_stop_event:
+            # For the stop event to be processed we have to restart
+            # the IOLoop briefly, ensuring an orderly cleanup
+            async def stop_autoreload():
+                self._autoreload_stop_event.set()
+                await self._autoreload_task
+            try:
+                self._loop.asyncio_loop.run_until_complete(stop_autoreload())
+            except RuntimeError:
+                pass # Ignore if the event loop is still running
         super().stop(wait=wait)
         if state._admin_context:
             state._admin_context.run_unload_hook()
 
 bokeh.server.server.Server = Server
-
-
-# Patch Application to handle session callbacks
-class Application(BkApplication):
-
-    def __init__(self, *args, **kwargs):
-        self._admin = kwargs.pop('admin', None)
-        super().__init__(*args, **kwargs)
-
-    async def on_session_created(self, session_context):
-        with set_curdoc(session_context._document):
-            if self._admin is not None:
-                config._admin = self._admin
-            for cb in state._on_session_created:
-                cb(session_context)
-        await super().on_session_created(session_context)
-
-    def initialize_document(self, doc):
-        super().initialize_document(doc)
-        if doc in state._templates and doc not in state._templates[doc]._documents:
-            template = state._templates[doc]
-            with set_curdoc(doc):
-                template.server_doc(title=template.title, location=True, doc=doc)
-
-bokeh.command.util.Application = Application # type: ignore
 
 class SessionPrefixHandler:
 
@@ -438,8 +398,25 @@ class SessionPrefixHandler:
                 state.base_url = old_url
                 state.rel_path = old_rel
 
-# Patch Bokeh DocHandler URL
-class DocHandler(BkDocHandler, SessionPrefixHandler):
+class LoginUrlMixin:
+    """
+    Overrides the AuthRequestHandler.get_login_url implementation to
+    correctly handle prefixes.
+    """
+
+    def get_login_url(self):
+        ''' Delegates to``get_login_url`` method of the auth provider, or the
+        ``login_url`` attribute.
+
+        '''
+        if self.application.auth_provider.get_login_url is not None:
+            return '.' + self.application.auth_provider.get_login_url(self)
+        if self.application.auth_provider.login_url is not None:
+            return '.' + self.application.auth_provider.login_url
+        raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
+
+
+class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
 
     @authenticated
     async def get_session(self):
@@ -460,8 +437,103 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                     session.block_expiration()
         return session
 
+    def _generate_token_payload(self):
+        app = self.application
+        if app.include_headers is None:
+            excluded_headers = (app.exclude_headers or [])
+            allowed_headers = [header for header in self.request.headers
+                               if header not in excluded_headers]
+        else:
+            allowed_headers = app.include_headers
+        headers = {k: v for k, v in self.request.headers.items()
+                   if k in allowed_headers}
+
+        if app.include_cookies is None:
+            excluded_cookies = (app.exclude_cookies or [])
+            allowed_cookies = [cookie for cookie in self.request.cookies
+                               if cookie not in excluded_cookies]
+        else:
+            allowed_cookies = app.include_cookies
+        cookies = {k: v.value for k, v in self.request.cookies.items()
+                   if k in allowed_cookies}
+
+        if cookies and 'Cookie' in headers and 'Cookie' not in (app.include_headers or []):
+            # Do not include Cookie header since cookies can be restored from cookies dict
+            del headers['Cookie']
+
+        arguments = {} if self.request.arguments is None else self.request.arguments
+        payload = {'headers': headers, 'cookies': cookies, 'arguments': arguments}
+        payload.update(self.application_context.application.process_request(self.request))
+        return payload
+
+    def _authorize(self, session=False):
+        """
+        """
+        auth_cb = config.authorize_callback
+        # If inside a session ensure the authorize callback is not global
+        if not auth_cb or (session and auth_cb is config._param__private.values['authorize_callback']):
+            return True, None
+        authorized = False
+        auth_params = inspect.signature(auth_cb).parameters
+        if len(auth_params) == 1:
+            auth_args = (state.user_info,)
+        elif len(auth_params) == 2:
+            auth_args = (state.user_info, self.request.path,)
+        else:
+            raise RuntimeError(
+                'Authorization callback must accept either 1) a single argument '
+                'which is the user name or 2) two arguments which includes the '
+                'user name and the url path the user is trying to access.'
+            )
+        auth_error = f'{state.user} is not authorized to access this application.'
+        try:
+            authorized = auth_cb(*auth_args)
+            if isinstance(authorized, str):
+                self.redirect(authorized)
+                return None, None
+            elif not authorized:
+                auth_error = (
+                    f'Access denied! User {state.user!r} is not authorized '
+                    f'for the given app {self.request.path!r}.'
+                )
+            if authorized:
+                auth_error = None
+        except Exception:
+            auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
+        return authorized, auth_error
+
+    def _render_auth_error(self, auth_error):
+        if config.auth_template:
+            with open(config.auth_template) as f:
+                template = _env.from_string(f.read())
+        else:
+            template = ERROR_TEMPLATE
+        return template.render(
+            npm_cdn=config.npm_cdn,
+            title='Panel: Authorization Error',
+            error_type='Authorization Error',
+            error='User is not authorized.',
+            error_msg=auth_error
+        )
+
     @authenticated
     async def get(self, *args, **kwargs):
+        # Run global authorization callback
+        payload = self._generate_token_payload()
+        if config.authorize_callback:
+            temp_session = generate_session(
+                self.application, self.request, payload, initialize=False
+            )
+            with set_curdoc(temp_session.document):
+                authorized, auth_error = self._authorize()
+            if authorized is None:
+                return
+            elif not authorized:
+                page = self._render_auth_error(auth_error)
+                self.set_header("Content-Type", 'text/html')
+                self.write(page)
+                return
+
         app = self.application
         with self._session_prefix():
             key_func = state._session_key_funcs.get(self.request.path, lambda r: r.path)
@@ -473,6 +545,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                     signed=self.application.sign_sessions
                 )
                 payload = get_token_payload(session.token)
+                payload.update(payload)
                 del payload['session_expiry']
                 token = generate_jwt_token(
                     session_id,
@@ -485,26 +558,20 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 token = session.token
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
-                if config.authorize_callback and not config.authorize_callback(state.user_info):
-                    if config.auth_template:
-                        with open(config.auth_template) as f:
-                            template = _env.from_string(f.read())
-                    else:
-                        template = ERROR_TEMPLATE
-                    page = template.render(
-                        npm_cdn=config.npm_cdn,
-                        title='Panel: Authorization Error',
-                        error_type='Authorization Error',
-                        error='User is not authorized.',
-                        error_msg=f'{state.user} is not authorized to access this application.'
-                    )
-                else:
-                    resources = Resources.from_bokeh(self.application.resources())
+                resources = Resources.from_bokeh(self.application.resources())
+                # Session authorization callback
+                authorized, auth_error = self._authorize(session=True)
+                if authorized:
                     page = server_html_page_for_session(
                         session, resources=resources, title=session.document.title,
                         token=token, template=session.document.template,
                         template_variables=session.document.template_variables,
                     )
+                elif authorized is None:
+                    return
+                else:
+                    page = self._render_auth_error(auth_error)
+
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
@@ -526,7 +593,7 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
         absolute_url = self.get_argument("bokeh-absolute-url", default=None)
 
         if absolute_url:
-            server_url = '{uri.scheme}://{uri.netloc}'.format(uri=urlparse(absolute_url))
+            server_url = f'{urlparse(absolute_url).scheme}://{urlparse(absolute_url).netloc}'
         else:
             server_url = None
 
@@ -546,7 +613,7 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
 
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
 
-class RootHandler(BkRootHandler):
+class RootHandler(LoginUrlMixin, BkRootHandler):
     """
     Custom RootHandler that provides the CDN_DIST directory as a
     template variable.
@@ -559,6 +626,39 @@ class RootHandler(BkRootHandler):
 toplevel_patterns[0] = (r'/?', RootHandler)
 bokeh.server.tornado.RootHandler = RootHandler
 
+# Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
+def create_static_handler(prefix, key, app):
+    # patch
+    key = '/__patchedroot' if key == '/' else key
+
+    route = prefix
+    route += "/static/(.*)" if key == "/" else key + "/static/(.*)"
+    if app.static_path is not None:
+        return (route, StaticFileHandler, {"path" : app.static_path})
+    return (route, StaticHandler, {})
+
+bokeh.server.tornado.create_static_handler = create_static_handler
+
+#---------------------------------------------------------------------
+# Async patches
+#---------------------------------------------------------------------
+
+# Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
+# support the WindowsProactorEventLoopPolicy so we restore it,
+# unless we detect we are running on jupyter_server.
+if (
+    sys.platform == 'win32' and
+    tornado.version_info >= (6, 1) and
+    type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy and
+    (('jupyter_server' not in sys.modules and
+      'jupyter_client' not in sys.modules) or
+     'pytest' in sys.modules)
+):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+#---------------------------------------------------------------------
+# Public API
+#---------------------------------------------------------------------
 
 class ComponentResourceHandler(StaticFileHandler):
     """
@@ -590,11 +690,11 @@ class ComponentResourceHandler(StaticFileHandler):
         try:
             module = importlib.import_module(mod)
         except ModuleNotFoundError:
-            raise HTTPError(404, 'Module not found')
+            raise HTTPError(404, 'Module not found') from None
         try:
             component = getattr(module, cls)
         except AttributeError:
-            raise HTTPError(404, 'Component not found')
+            raise HTTPError(404, 'Component not found') from None
 
         # May only access resources listed in specific attributes
         if rtype not in self._resource_attrs:
@@ -603,7 +703,7 @@ class ComponentResourceHandler(StaticFileHandler):
         try:
             resources = getattr(component, rtype)
         except AttributeError:
-            raise HTTPError(404, 'Resource type not found')
+            raise HTTPError(404, 'Resource type not found') from None
 
         # Handle template resources
         if rtype == '_resources':
@@ -652,144 +752,6 @@ class ComponentResourceHandler(StaticFileHandler):
         return absolute_path
 
 
-def modify_document(self, doc: 'Document'):
-    from bokeh.io.doc import set_curdoc as bk_set_curdoc
-
-    from ..config import config
-
-    logger.info(LOG_SESSION_LAUNCHING, id(doc))
-
-    if config.autoreload:
-        path = self._runner.path
-        argv = self._runner._argv
-        handler = type(self)(filename=path, argv=argv)
-        self._runner = handler._runner
-
-    module = self._runner.new_module()
-
-    # If no module was returned it means the code runner has some permanent
-    # unfixable problem, e.g. the configured source code has a syntax error
-    if module is None:
-        return
-
-    # One reason modules are stored is to prevent the module
-    # from being gc'd before the document is. A symptom of a
-    # gc'd module is that its globals become None. Additionally
-    # stored modules are used to provide correct paths to
-    # custom models resolver.
-    sys.modules[module.__name__] = module
-    doc.modules._modules.append(module)
-
-    try:
-        old_doc = curdoc()
-    except RuntimeError:
-        old_doc = None
-    bk_set_curdoc(doc)
-
-    if config.autoreload:
-        set_curdoc(doc)
-        state.onload(autoreload_watcher)
-
-    sessions = []
-
-    try:
-        def post_check():
-            newdoc = curdoc()
-            # Do not let curdoc track modules when autoreload is enabled
-            # otherwise it will erroneously complain that there is
-            # a memory leak
-            if config.autoreload:
-                newdoc.modules._modules = []
-
-            # script is supposed to edit the doc not replace it
-            if newdoc is not doc:
-                raise RuntimeError("%s at '%s' replaced the output document" % (self._origin, self._runner.path))
-
-        def handle_exception(handler, e):
-            from bokeh.application.handlers.handler import handle_exception
-
-            from ..pane import Alert
-
-            # Clean up
-            del sys.modules[module.__name__]
-
-            if hasattr(doc, 'modules'):
-                doc.modules._modules.remove(module)
-            else:
-                doc._modules.remove(module)
-            bokeh.application.handlers.code_runner.handle_exception = handle_exception
-            tb = html.escape(traceback.format_exc()).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-
-            # Serve error
-            e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-            Alert(
-                f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
-                alert_type='danger', margin=5, sizing_mode='stretch_width'
-            ).servable()
-
-        if config.autoreload:
-            bokeh.application.handlers.code_runner.handle_exception = handle_exception
-
-        state._launching.append(doc)
-        with _monkeypatch_io(self._loggers):
-            with patch_curdoc(doc):
-                with profile_ctx(config.profiler) as sessions:
-                    self._runner.run(module, post_check)
-
-        def _log_session_destroyed(session_context):
-            logger.info(LOG_SESSION_DESTROYED, id(doc))
-
-        doc.on_session_destroyed(_log_session_destroyed)
-        doc.destroy = partial(destroy_document, doc) # type: ignore
-    finally:
-        state._launching.remove(doc)
-        if config.profiler:
-            try:
-                path = doc.session_context.request.path
-                state._profiles[(path, config.profiler)] += sessions
-                state.param.trigger('_profiles')
-            except Exception:
-                pass
-        if old_doc is not None:
-            bk_set_curdoc(old_doc)
-
-CodeHandler.modify_document = modify_document # type: ignore
-
-# Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
-def create_static_handler(prefix, key, app):
-    # patch
-    key = '/__patchedroot' if key == '/' else key
-
-    route = prefix
-    route += "/static/(.*)" if key == "/" else key + "/static/(.*)"
-    if app.static_path is not None:
-        return (route, StaticFileHandler, {"path" : app.static_path})
-    return (route, StaticHandler, {})
-
-bokeh.server.tornado.create_static_handler = create_static_handler
-
-#---------------------------------------------------------------------
-# Async patches
-#---------------------------------------------------------------------
-
-# Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
-# support the WindowsProactorEventLoopPolicy so we restore it,
-# unless we detect we are running on jupyter_server.
-if (
-    sys.platform == 'win32' and
-    sys.version_info[:3] >= (3, 8, 0) and
-    tornado.version_info >= (6, 1) and
-    type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy and
-    (('jupyter_server' not in sys.modules and
-      'jupyter_client' not in sys.modules) or
-     'pytest' in sys.modules)
-):
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
-#---------------------------------------------------------------------
-# Public API
-#---------------------------------------------------------------------
-
 def serve(
     panels: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
     port: int = 0,
@@ -804,7 +766,7 @@ def serve(
     threaded: bool = False,
     admin: bool = False,
     **kwargs
-) -> threading.Thread | Server:
+) -> StoppableThread | Server:
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -862,10 +824,15 @@ def serve(
     ))
     if threaded:
         kwargs['loop'] = loop = IOLoop(make_current=False) if loop is None else loop
+        # To ensure that we have correspondence between state._threads and state._servers
+        # we must provide a server_id here
+        if 'server_id' not in kwargs:
+            kwargs['server_id'] = uuid.uuid4().hex
+
         server = StoppableThread(
             target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
         )
-        server_id = kwargs.get('server_id', uuid.uuid4().hex)
+        server_id = kwargs['server_id']
         state._threads[server_id] = server
         server.start()
     else:
@@ -904,9 +871,9 @@ def get_static_routes(static_dirs):
                              "this is reserved for internal use.")
         path = fullpath(path)
         if not os.path.isdir(path):
-            raise ValueError("Cannot serve non-existent path %s" % path)
+            raise ValueError(f"Cannot serve non-existent path {path}")
         patterns.append(
-            (r"%s/(.*)" % slug, StaticFileHandler, {"path": path})
+            (rf"{slug}/(.*)", StaticFileHandler, {"path": path})
         )
     patterns.append((
         f'/{COMPONENT_PATH}(.*)', ComponentResourceHandler, {}
@@ -932,9 +899,20 @@ def get_server(
     oauth_secret: Optional[str] = None,
     oauth_redirect_uri: Optional[str] = None,
     oauth_extra_params: Mapping[str, str] = {},
+    oauth_error_template: Optional[str] = None,
     cookie_secret: Optional[str] = None,
     oauth_encryption_key: Optional[str] = None,
+    oauth_jwt_user: Optional[str] = None,
+    oauth_refresh_tokens: Optional[bool] = None,
+    oauth_guest_endpoints: Optional[bool] = None,
+    oauth_optional: Optional[bool] = None,
+    login_endpoint: Optional[str] = None,
+    logout_endpoint: Optional[str] = None,
+    login_template: Optional[str] = None,
+    logout_template: Optional[str] = None,
     session_history: Optional[int] = None,
+    liveness: bool | str = False,
+    warm: bool = False,
     **kwargs
 ) -> Server:
     """
@@ -986,18 +964,46 @@ def get_server(
       The client secret for the OAuth provider
     oauth_redirect_uri: Optional[str] = None,
       Overrides the default OAuth redirect URI
+    oauth_jwt_user: Optional[str] = None,
+      Key that identifies the user in the JWT id_token.
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
+    oauth_error_template: str (optional, default=None)
+      Jinja2 template used when displaying authentication errors.
     cookie_secret: str (optional, default=None)
       A random secret string to sign cookies (required for OAuth)
-    oauth_encryption_key: str (optional, default=False)
+    oauth_encryption_key: str (optional, default=None)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    oauth_guest_endpoints: list (optional, default=None)
+      List of endpoints that can be accessed as a guest without authenticating.
+    oauth_optional: bool (optional, default=None)
+      Whether the user will be forced to go through login flow or if
+      they can access all applications as a guest.
+    oauth_refresh_tokens: bool (optional, default=None)
+      Whether to automatically refresh OAuth access tokens when they expire.
+    login_endpoint: str (optional, default=None)
+      Overrides the default login endpoint `/login`
+    logout_endpoint: str (optional, default=None)
+      Overrides the default logout endpoint `/logout`
+    logout_template: str (optional, default=None)
+      Jinja2 template served when viewing the login endpoint when
+      authentication is enabled.
+    logout_template: str (optional, default=None)
+      Jinja2 template served when viewing the logout endpoint when
+      authentication is enabled.
     session_history: int (optional, default=None)
       The amount of session history to accumulate. If set to non-zero
       and non-None value will launch a REST endpoint at
       /rest/session_info, which returns information about the session
       history.
+    liveness: bool | str (optional, default=False)
+      Whether to add a liveness endpoint. If a string is provided
+      then this will be used as the endpoint, otherwise the endpoint
+      will be hosted at /liveness.
+    warm: bool (optional, default=False)
+      Whether to run the applications before serving them to ensure
+      all imports and caches are fully warmed up before serving the app.
     kwargs: dict
       Additional keyword arguments to pass to Server instance.
 
@@ -1014,6 +1020,8 @@ def get_server(
     if isinstance(panel, dict):
         apps = {}
         for slug, app in panel.items():
+            if slug.endswith('/') and not slug == '/':
+                raise ValueError(f"Invalid URL: trailing slash '/' used for {slug!r} not supported.")
             if isinstance(title, dict):
                 try:
                     title_ = title[slug]
@@ -1021,7 +1029,7 @@ def get_server(
                     raise KeyError(
                         "Keys of the title dictionary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
-                        "title dictionary.")
+                        "title dictionary.") from None
             else:
                 title_ = title
             slug = slug if slug.startswith('/') else '/'+slug
@@ -1038,7 +1046,7 @@ def get_server(
                     continue
             if isinstance(app, pathlib.Path):
                 app = str(app) # enables serving apps from Paths
-            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb") or app.endswith('.md'))
+            if (isinstance(app, str) and app.endswith(('.py', '.ipynb', '.md'))
                 and os.path.isfile(app)):
                 apps[slug] = app = build_single_handler_application(app)
                 app._admin = admin
@@ -1050,12 +1058,25 @@ def get_server(
     else:
         if isinstance(panel, pathlib.Path):
             panel = str(panel) # enables serving apps from Paths
-        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb") or panel.endswith('.md'))
+        if isinstance(panel, BkApplication):
+            panel = {'/': app}
+        elif (isinstance(panel, str) and panel.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(panel)):
             apps = {'/': build_single_handler_application(panel)}
         else:
             handler = FunctionHandler(partial(_eval_panel, panel, server_id, title, location, admin))
             apps = {'/': Application(handler, admin=admin)}
+
+    if warm or config.autoreload:
+        for app in apps.values():
+            if config.autoreload:
+                with record_modules(list(apps.values())):
+                    session = generate_session(app)
+            else:
+                session = generate_session(app)
+            with set_curdoc(session.document):
+                state._on_load(None)
+            _cleanup_doc(session.document, destroy=True)
 
     if admin:
         if '/admin' in apps:
@@ -1075,6 +1096,10 @@ def get_server(
         pattern = REST_PROVIDERS['param']([], 'rest')
         extra_patterns.extend(pattern)
         state.publish('session_info', state, ['session_info'])
+
+    if liveness:
+        liveness_endpoint = 'liveness' if isinstance(liveness, bool) else liveness
+        extra_patterns += [(rf"/{liveness_endpoint}", LivenessHandler, dict(applications=apps))]
 
     opts = dict(kwargs)
     if loop:
@@ -1097,14 +1122,22 @@ def get_server(
     # Configure OAuth
     from ..config import config
     server_config = {}
-    if basic_auth:
-        from ..auth import BasicProvider
-        server_config['basic_auth'] = basic_auth
-        opts['auth_provider'] = BasicProvider()
-    elif oauth_provider:
-        from ..auth import OAuthProvider
-        config.oauth_provider = oauth_provider # type: ignore
-        opts['auth_provider'] = OAuthProvider()
+    login_template = kwargs.pop('basic_login_template', login_template)
+    if basic_auth or oauth_provider:
+        from ..auth import BasicAuthProvider, OAuthProvider
+        if basic_auth:
+            server_config['basic_auth'] = basic_auth
+            provider = BasicAuthProvider
+        else:
+            config.oauth_provider = oauth_provider
+            provider = OAuthProvider
+        opts['auth_provider'] = provider(
+            login_endpoint=login_endpoint,
+            logout_endpoint=logout_endpoint,
+            login_template=login_template,
+            logout_template=logout_template,
+            error_template=oauth_error_template
+        )
     if oauth_key:
         config.oauth_key = oauth_key # type: ignore
     if oauth_secret:
@@ -1115,20 +1148,29 @@ def get_server(
         config.cookie_secret = cookie_secret # type: ignore
     if oauth_redirect_uri:
         config.oauth_redirect_uri = oauth_redirect_uri # type: ignore
+    if oauth_refresh_tokens is not None:
+        config.oauth_refresh_tokens = oauth_refresh_tokens
+    if oauth_optional is not None:
+        config.oauth_optional = oauth_optional
+    if oauth_guest_endpoints is not None:
+        config.oauth_guest_endpoints = oauth_guest_endpoints
+    if oauth_jwt_user is not None:
+        config.oauth_jwt_user = oauth_jwt_user
     opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)
     if verbose:
         address = server.address or 'localhost'
         url = f"http://{address}:{server.port}{server.prefix}"
-        print(f"Launching server at {url}")
+        print(f"Launching server at {url}")  # noqa: T201
 
     state._servers[server_id] = (server, panel, [])
     state._server_config[server._tornado] = server_config
 
     if show:
+        login_endpoint = login_endpoint or '/login'
         def show_callback():
-            server.show('/login' if config.oauth_provider else '/')
+            server.show(login_endpoint if config.oauth_provider or basic_auth else '/')
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):
@@ -1185,4 +1227,15 @@ class StoppableThread(threading.Thread):
                 del self._Thread__target, self._Thread__args, self._Thread__kwargs # type: ignore
 
     def stop(self) -> None:
-        self.io_loop.add_callback(self.io_loop.stop)
+        """Signal to stop the event loop gracefully."""
+        self.io_loop.add_callback(self._graceful_stop)
+
+    async def _shutdown(self):
+        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        self.io_loop.stop()
+
+    def _graceful_stop(self):
+        self.io_loop.add_callback(self._shutdown)

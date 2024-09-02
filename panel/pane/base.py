@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Tuple, Type, TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, TypeVar,
 )
 
+import numpy as np
 import param
 
 from bokeh.models import ImportedStyleSheet
@@ -22,11 +22,15 @@ from ..io.cache import _generate_hash
 from ..io.document import create_doc_if_none_exists, unlocked
 from ..io.notebook import push
 from ..io.state import state
-from ..layout.base import NamedListPanel, Panel, Row
+from ..layout.base import (
+    Column, ListPanel, NamedListPanel, Panel, Row,
+)
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
-from ..util import param_reprs
+from ..util import param_reprs, param_watchers
+from ..util.checks import is_dataframe, is_series
+from ..util.parameters import get_params_to_inherit
 from ..viewable import (
     Layoutable, ServableMixin, Viewable, Viewer,
 )
@@ -35,7 +39,6 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
-
 
 def panel(obj: Any, **kwargs) -> Viewable:
     """
@@ -47,12 +50,14 @@ def panel(obj: Any, **kwargs) -> Viewable:
 
     Any keyword arguments are passed down to the applicable Pane.
 
-    To lazily render components you may also provide a Python
-    function, with or without bound parameter dependencies and set
-    `defer_load=True`. Setting `loading_indicator=True` will display a
-    loading indicator while the function is being evaluated.
+    Setting `loading_indicator=True` will display a loading indicator while the function is being
+    evaluated.
 
-    Reference: https://panel.holoviz.org/background/components/components_overview.html#panes
+    To lazily render components when the application loads, you may also provide a Python
+    function, with or without bound parameter dependencies and set
+    `defer_load=True`.
+
+    Reference: https://panel.holoviz.org/explanation/components/components_overview.html#panes
 
     >>> pn.panel(some_python_object, width=500)
 
@@ -89,19 +94,29 @@ class RerenderError(RuntimeError):
     Error raised when a pane requests re-rendering during initial render.
     """
 
+    def __init__(self, *args, layout=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.layout = layout
+
+
 T = TypeVar('T', bound='PaneBase')
 
-class PaneBase(Reactive):
+
+class PaneBase(Layoutable):
     """
-    PaneBase is the abstract baseclass for all atomic displayable units
-    in the Panel library. We call any child class of `PaneBase` a `Pane`.
+    PaneBase represents an abstract baseclass which can be used as a
+    mix-in class to define a component that mirrors the Pane API.
+    This means that this component will participate in the automatic
+    resolution of the appropriate pane type when Panel is asked to
+    render an object of unknown type.
 
-    Panes defines an extensible interface for wrapping arbitrary
-    objects and transforming them into Bokeh models.
-
-    Panes are reactive in the sense that when the object they are
-    wrapping is replaced or modified the `bokeh.model.Model` that
-    is rendered should reflect these changes.
+    The resolution of the appropriate pane type can be implemented
+    using the ``applies`` method and the ``priority`` class attribute.
+    The applies method should either return a boolean value indicating
+    whether the pane can render the supplied object. If it can the
+    priority determines which of the panes that apply will be selected.
+    If the priority is None then the ``applies`` method must return
+    a priority value.
     """
 
     default_layout = param.ClassSelector(default=Row, class_=(Panel),
@@ -114,7 +129,7 @@ class PaneBase(Reactive):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    object = param.Parameter(default=None, doc="""
+    object = param.Parameter(default=None, allow_refs=True, doc="""
         The object being wrapped, which will be converted to a
         Bokeh model.""")
 
@@ -127,27 +142,18 @@ class PaneBase(Reactive):
     # Whether applies requires full set of keywords
     _applies_kw: ClassVar[bool] = False
 
+    _skip_layoutable = ('css_classes', 'margin', 'name')
+
     # Whether the Pane layout can be safely unpacked
     _unpack: ClassVar[bool] = True
-
-    # Declares whether Pane supports updates to the Bokeh model
-    _updates: ClassVar[bool] = False
-
-    # Mapping from parameter name to bokeh model property name
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'default_layout': None, 'loading': None
-    }
-
-    # List of parameters that trigger a rerender of the Bokeh model
-    _rerender_params: ClassVar[List[str]] = ['object']
-
-    _skip_layoutable = ('background', 'css_classes', 'margin', 'name')
 
     __abstract = True
 
     def __init__(self, object=None, **params):
         self._object_changing = False
         super().__init__(object=object, **params)
+        if not hasattr(self, '_internal_callbacks'):
+            self._internal_callbacks = []
         applies = self.applies(self.object, **(params if self._applies_kw else {}))
         if (isinstance(applies, bool) and not applies) and self.object is not None:
             self._type_error(self.object)
@@ -157,10 +163,9 @@ class PaneBase(Reactive):
             k not in self._skip_layoutable
         }
         self.layout = self.default_layout(self, **kwargs)
-        self._internal_callbacks.extend([
-            self.param.watch(self._sync_layoutable, list(Layoutable.param)),
-            self.param.watch(self._update_pane, self._rerender_params)
-        ])
+        self._internal_callbacks.append(
+            self.param.watch(self._sync_layoutable, list(Layoutable.param))
+        )
         self._sync_layoutable()
 
     def _validate_ref(self, pname, value):
@@ -198,8 +203,7 @@ class PaneBase(Reactive):
         self.layout.param.update({k: v for k, v in kwargs.items() if v != old_values[k]})
 
     def _type_error(self, object):
-        raise ValueError("%s pane does not support objects of type '%s'." %
-                         (type(self).__name__, type(object).__name__))
+        raise ValueError(f"{type(self).__name__} pane does not support objects of type '{type(object).__name__}'.")
 
     def __repr__(self, depth: int = 0) -> str:
         cls = type(self).__name__
@@ -214,24 +218,120 @@ class PaneBase(Reactive):
         """
         return self.layout[index]
 
+    @classmethod
+    def applies(cls, obj: Any) -> float | bool | None:
+        """
+        Returns boolean or float indicating whether the Pane
+        can render the object.
+
+        If the priority of the pane is set to
+        `None`, this method may also be used to define a float priority
+        depending on the object being rendered.
+        """
+        return None
+
+    @classmethod
+    def get_pane_type(cls, obj: Any, **kwargs) -> type['PaneBase']:
+        """
+        Returns the applicable Pane type given an object by resolving
+        the precedence of all types whose applies method declares that
+        the object is supported.
+
+        Arguments
+        ---------
+        obj (object): The object type to return a Pane type for
+
+        Returns
+        -------
+        The applicable Pane type with the highest precedence.
+        """
+        if isinstance(obj, Viewable):
+            return type(obj)
+        descendents = []
+        for p in param.concrete_descendents(PaneBase).values():
+            if p.priority is None:
+                applies = True
+                try:
+                    priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
+                except Exception:
+                    priority = False
+            else:
+                applies = None
+                priority = p.priority
+            if isinstance(priority, bool) and priority:
+                raise ValueError('If a Pane declares no priority '
+                                 'the applies method should return a '
+                                 'priority value specific to the '
+                                 f'object type or False, but the {p.__name__} pane '
+                                 'declares no priority.')
+            elif priority is None or priority is False:
+                continue
+            descendents.append((priority, applies, p))
+        pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
+        for _, applies, pane_type in pane_types:
+            if applies is None:
+                try:
+                    applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
+                except Exception:
+                    applies = False
+            if not applies:
+                continue
+            return pane_type
+        raise TypeError(f'{type(obj).__name__} type could not be rendered.')
+
+
+class Pane(PaneBase, Reactive):
+    """
+    Pane is the abstract baseclass for all atomic displayable units
+    in the Panel library.
+
+    Panes defines an extensible interface for wrapping arbitrary
+    objects and transforming them into renderable components.
+
+    Panes are reactive in the sense that when the object they are
+    wrapping is replaced or modified the UI will reflect the updated
+    object.
+    """
+
+    # Declares whether Pane supports updates to the Bokeh model
+    _updates: ClassVar[bool] = False
+
+    # Mapping from parameter name to bokeh model property name
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'default_layout': None, 'loading': None
+    }
+
+    # List of parameters that trigger a rerender of the Bokeh model
+    _rerender_params: ClassVar[list[str]] = ['object']
+
+    __abstract = True
+
+    def __init__(self, object=None, **params):
+        super().__init__(object=object, **params)
+        self._internal_callbacks.append(
+            self.param.watch(self._update_pane, self._rerender_params)
+        )
+
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
 
     @property
-    def _linked_properties(self) -> Tuple[str]:
+    def _linked_properties(self) -> tuple[str]:
         return tuple(
             self._property_mapping.get(p, p) for p in self.param
             if p not in PaneBase.param and self._property_mapping.get(p, p) is not None
         )
 
     @property
-    def _linkable_params(self) -> List[str]:
+    def _linkable_params(self) -> list[str]:
         return [p for p in self._synced_params if self._property_mapping.get(p, False) is not None]
 
     @property
-    def _synced_params(self) -> List[str]:
-        ignored_params = ['name', 'default_layout', 'loading', 'background', 'stylesheets']+self._rerender_params
+    def _synced_params(self) -> list[str]:
+        ignored_params = [
+            'name', 'default_layout', 'loading', 'stylesheets'
+        ] + self._rerender_params
         return [p for p in self.param if p not in ignored_params and not p.startswith('_')]
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
@@ -248,6 +348,22 @@ class PaneBase(Reactive):
             return
 
         new_model = self._get_model(doc, root, parent, comm)
+
+        # Ensure we also update any fake root referencing the object
+        from ..io import state
+        ref = root.ref['id']
+        fake_view = fake_ref = fake_root = None
+        if ref in state._views:
+            view = state._views[ref][0]
+            for fake_ref in state._fake_roots:
+                if fake_ref not in state._views:
+                    continue
+                fake_view, fake_root = state._views[fake_ref][:2]
+        if fake_ref in self._models:
+            self._models[fake_ref] = (new_model, self._models[fake_ref][1])
+        if hasattr(self, '_plots') and fake_ref in self._plots:
+            self._plots[fake_ref] = self._plots[ref]
+
         try:
             if isinstance(parent, _BkGridBox):
                 indexes = [
@@ -256,55 +372,55 @@ class PaneBase(Reactive):
                 ]
                 if indexes:
                     index = indexes[0]
+                    new_model = (new_model,) + parent.children[index][1:]
+                    parent.children[index] = new_model
                 else:
                     raise ValueError
-                new_model = (new_model,) + parent.children[index][1:]
             elif isinstance(parent, _BkReactiveHTML):
                 for node, children in parent.children.items():
                     if old_model in children:
                         index = children.index(old_model)
                         new_models = list(children)
                         new_models[index] = new_model
+                        parent.children[node] = new_models
                         break
             elif isinstance(parent, _BkTabs):
                 index = [tab.child for tab in parent.tabs].index(old_model)
+                old_tab = parent.tabs[index]
+                props = dict(old_tab.properties_with_values(), child=new_model)
+                parent.tabs[index] = _BkTabPanel(**props)
             else:
                 index = parent.children.index(old_model)
+                parent.children[index] = new_model
         except ValueError:
             self.param.warning(
                 f'{type(self).__name__} pane model {old_model!r} could not be '
                 f'replaced with new model {new_model!r}, ensure that the parent '
                 'is not modified at the same time the panel is being updated.'
             )
-        else:
-            if isinstance(parent, _BkReactiveHTML):
-                parent.children[node] = new_models
-            elif isinstance(parent, _BkTabs):
-                old_tab = parent.tabs[index]
-                props = dict(old_tab.properties_with_values(), child=new_model)
-                parent.tabs[index] = _BkTabPanel(**props)
-            else:
-                parent.children[index] = new_model
-            layout_parent = self.layout._models.get(ref, [None])[0]
-            if parent is layout_parent:
-                parent.update(**self.layout._compute_sizing_mode(
-                    parent.children,
-                    dict(
-                        sizing_mode=self.layout.sizing_mode,
-                        styles=self.layout.styles,
-                        width=self.layout.width,
-                        min_width=self.layout.min_width,
-                        margin=self.layout.margin
-                    )
-                ))
+            return
 
-        from ..io import state
-        ref = root.ref['id']
-        if ref in state._views:
-            state._views[ref][0]._preprocess(root)
+        layout_parent = self.layout._models.get(ref, [None])[0]
+        if parent is layout_parent:
+            parent.update(**self.layout._compute_sizing_mode(
+                parent.children,
+                dict(
+                    sizing_mode=self.layout.sizing_mode,
+                    styles=self.layout.styles,
+                    width=self.layout.width,
+                    min_width=self.layout.min_width,
+                    margin=self.layout.margin
+                )
+            ))
+
+        # If there is a fake root we run pre-processors on it
+        if fake_view is not None and view in fake_view:
+            fake_view._preprocess(fake_root, self)
+        else:
+            view._preprocess(root, self)
 
     def _update_pane(self, *events) -> None:
-        for ref, (_, parent) in self._models.items():
+        for ref, (_, parent) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
@@ -331,7 +447,7 @@ class PaneBase(Reactive):
     def _get_root_model(
         self, doc: Optional[Document] = None, comm: Comm | None = None,
         preprocess: bool = True
-    ) -> Tuple[Viewable, Model]:
+    ) -> tuple[Viewable, Model]:
         if self._updates:
             root = self._get_model(doc, comm=comm)
             root_view = self
@@ -346,18 +462,6 @@ class PaneBase(Reactive):
     # Public API
     #----------------------------------------------------------------
 
-    @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        """
-        Returns boolean or float indicating whether the Pane
-        can render the object.
-
-        If the priority of the pane is set to
-        `None`, this method may also be used to define a float priority
-        depending on the object being rendered.
-        """
-        return None
-
     def clone(self: T, object: Optional[Any] = None, **params) -> T:
         """
         Makes a copy of the Pane sharing the same parameters.
@@ -371,11 +475,7 @@ class PaneBase(Reactive):
         -------
         Cloned Pane object
         """
-        inherited = {
-            p: v for p, v in self.param.values().items()
-            if not self.param[p].readonly and v is not self.param[p].default
-            and not (v is None and not self.param[p].allow_None)
-        }
+        inherited = get_params_to_inherit(self)
         params = dict(inherited, **params)
         old_object = params.pop('object', None)
         if object is None:
@@ -416,57 +516,8 @@ class PaneBase(Reactive):
         state._views[ref] = (root_view, root, doc, comm)
         return root
 
-    @classmethod
-    def get_pane_type(cls, obj: Any, **kwargs) -> Type['PaneBase']:
-        """
-        Returns the applicable Pane type given an object by resolving
-        the precedence of all types whose applies method declares that
-        the object is supported.
 
-        Arguments
-        ---------
-        obj (object): The object type to return a Pane type for
-
-        Returns
-        -------
-        The applicable Pane type with the highest precedence.
-        """
-        if isinstance(obj, Viewable):
-            return type(obj)
-        descendents = []
-        for p in param.concrete_descendents(PaneBase).values():
-            if p.priority is None:
-                applies = True
-                try:
-                    priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
-                except Exception:
-                    priority = False
-            else:
-                applies = None
-                priority = p.priority
-            if isinstance(priority, bool) and priority:
-                raise ValueError('If a Pane declares no priority '
-                                 'the applies method should return a '
-                                 'priority value specific to the '
-                                 'object type or False, but the %s pane '
-                                 'declares no priority.' % p.__name__)
-            elif priority is None or priority is False:
-                continue
-            descendents.append((priority, applies, p))
-        pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
-        for _, applies, pane_type in pane_types:
-            if applies is None:
-                try:
-                    applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
-                except Exception:
-                    applies = False
-            if not applies:
-                continue
-            return pane_type
-        raise TypeError('%s type could not be rendered.' % type(obj).__name__)
-
-
-class ModelPane(PaneBase):
+class ModelPane(Pane):
     """
     ModelPane provides a baseclass that allows quickly wrapping a
     Bokeh model and translating parameters defined on the class
@@ -504,7 +555,7 @@ class ModelPane(PaneBase):
         params['object'] = self.object
         return params
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         return dict(object=obj)
 
     def _process_param_change(self, params):
@@ -518,7 +569,7 @@ class ModelPane(PaneBase):
         return super()._process_param_change(params)
 
 
-class ReplacementPane(PaneBase):
+class ReplacementPane(Pane):
     """
     ReplacementPane provides a baseclass for dynamic components that
     may have to dynamically update or switch out their contents, e.g.
@@ -532,11 +583,15 @@ class ReplacementPane(PaneBase):
     inplace = param.Boolean(default=False, doc="""
         Whether to update the object inplace.""")
 
-    _pane = param.ClassSelector(class_=Viewable)
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
 
-    _ignored_refs: ClassVar[Tuple[str]] = ['object']
+    _pane = param.ClassSelector(class_=Viewable, allow_refs=False)
 
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _ignored_refs: ClassVar[tuple[str,...]] = ('object',)
+
+    _linked_properties: ClassVar[tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None, 'inplace': None}
 
@@ -550,7 +605,7 @@ class ReplacementPane(PaneBase):
         super().__init__(object, **params)
         self._pane = panel(None)
         self._internal = True
-        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
+        self._inner_layout = Column(self._pane, **{k: v for k, v in params.items() if k in Column.param})
         self._internal_callbacks.append(
             self.param.watch(self._update_inner_layout, list(Layoutable.param))
         )
@@ -582,7 +637,7 @@ class ReplacementPane(PaneBase):
         self._pane.param.update({event.name: event.new for event in events})
 
     @classmethod
-    def _recursive_update(cls, layout: Panel, index: int, old: Reactive, new: Reactive):
+    def _recursive_update(cls, old: Reactive, new: Reactive):
         """
         Recursively descends through Panel layouts and diffs their
         contents updating only changed parameters ensuring we don't
@@ -590,10 +645,6 @@ class ReplacementPane(PaneBase):
 
         Arguments
         ---------
-        layout: Panel
-          The layout the items are being updated or replaced on.
-        index: int
-          The index of the item being replaced.
         old: Reactive
           The Reactive component being updated or replaced.
         new: Reactive
@@ -601,32 +652,45 @@ class ReplacementPane(PaneBase):
           or replaced with.
         """
         ignored = ('name',)
-        if type(old) is not type(new):
-            layout[index] = new
-            return
-        if isinstance(new, Panel):
+        if isinstance(new, ListPanel):
             if len(old) == len(new):
                 for i, (sub_old, sub_new) in enumerate(zip(old, new)):
+                    if type(sub_old) is not type(sub_new):
+                        old[i] = new
+                        continue
                     if isinstance(new, NamedListPanel):
                         old._names[i] = new._names[i]
-                    cls._recursive_update(new, i, sub_old, sub_new)
+                    cls._recursive_update(sub_old, sub_new)
                 ignored += ('objects',)
         pvals = dict(old.param.values())
         new_params = {}
-        for k, new_p in new.param.values().items():
-            old_p = pvals[k]
-            if k in ignored or new_p is old_p:
+        for p, p_new in new.param.values().items():
+            p_old = pvals[p]
+            if p in ignored or p_new is p_old:
                 continue
             try:
-                equal = _generate_hash(new_p) == _generate_hash(old_p)
+                equal = p_new == p_old
+                if is_dataframe(equal) or is_series(equal) or isinstance(equal, np.ndarray):
+                    equal = equal.all()
+                equal = bool(equal)
             except Exception:
                 try:
-                    equal = bool(new_p == old_p)
+                    equal = _generate_hash(p_new) == _generate_hash(p_old)
                 except Exception:
                     equal = False
             if not equal:
-                new_params[k] = new_p
-        old.param.update(**new_params)
+                new_params[p] = p_new
+        if isinstance(old, PaneBase):
+            changing = any(p in old._rerender_params for p in new_params)
+            old._object_changing = changing
+            try:
+                with param.edit_constant(old):
+                    old.param.update(**new_params)
+            finally:
+                old._object_changing = False
+        else:
+            with param.edit_constant(old):
+                old.param.update(**new_params)
 
     @classmethod
     def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, inplace: bool=False, **kwargs):
@@ -638,7 +702,7 @@ class ReplacementPane(PaneBase):
         custom_watchers = []
         if isinstance(object, Reactive):
             watchers = [
-                w for pwatchers in object._param_watchers.values()
+                w for pwatchers in param_watchers(object).values()
                 for awatchers in pwatchers.values() for w in awatchers
             ]
             custom_watchers = [
@@ -652,46 +716,20 @@ class ReplacementPane(PaneBase):
         if type(old_object) is pane_type and ((not links and not custom_watchers and was_internal) or inplace):
             if isinstance(object, Panel) and len(old_object) == len(object):
                 for i, (old, new) in enumerate(zip(old_object, object)):
-                    cls._recursive_update(old_object, i, old, new)
-            elif isinstance(object, Reactive):
-                pvals = dict(old_object.param.values())
-                new_params = {}
-                for k, v in object.param.values().items():
-                    if k == 'name' or v is pvals[k]:
+                    if type(old) is not type(new):
+                        old_object[i] = new
                         continue
-                    try:
-                        equal = (v == pvals[k])
-                    except Exception:
-                        equal = False
-                    if not equal:
-                        new_params[k] = v
-                if isinstance(object, PaneBase):
-                    changing = any(p in old_object._rerender_params for p in new_params)
-                    old_object._object_changing = changing
-                    try:
-                        old_object.param.update(**new_params)
-                    finally:
-                        old_object._object_changing = False
-                else:
-                    old_object.param.update(**new_params)
-            else:
+                    cls._recursive_update(old, new)
+            elif isinstance(object, Reactive):
+                cls._recursive_update(old_object, object)
+            elif old_object.object is not object:
+                # See https://github.com/holoviz/param/pull/901
                 old_object.object = object
         else:
             # Replace pane entirely
-            pane = panel(object, **{k: v for k, v in kwargs.items()
-                                    if k in pane_type.param})
-            if pane is object:
-                # If all watchers on the object are internal watchers
-                # we can make a clone of the object and update this
-                # clone going forward, otherwise we have replace the
-                # model entirely which is more expensive.
-                if not (custom_watchers or links):
-                    pane = object.clone()
-                    internal = True
-                else:
-                    internal = False
-            else:
-                internal = object is not old_object
+            pane_params = {k: v for k, v in kwargs.items() if k in pane_type.param}
+            pane = panel(object, **pane_params)
+            internal = pane is not object
         return pane, internal
 
     def _update_inner(self, new_object: Any) -> None:
@@ -704,7 +742,7 @@ class ReplacementPane(PaneBase):
             return
 
         self._pane = new_pane
-        self._inner_layout[0] = self._pane
+        self._inner_layout[:] = [self._pane]
         self._internal = internal
 
     def _cleanup(self, root: Model | None = None) -> None:
@@ -724,7 +762,7 @@ class ReplacementPane(PaneBase):
     # Public API
     #----------------------------------------------------------------
 
-    def select(self, selector: type | Callable | None = None) -> List[Viewable]:
+    def select(self, selector: type | Callable | None = None) -> list[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.

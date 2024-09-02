@@ -4,7 +4,21 @@ For simple uses cases it may be totally sufficient to enable a basic Auth provid
 
 ## Setting up basic authentication
 
-Basic authentication can be set up simply by providing the `--basic-auth` commandline argument (or the `PANEL_BASIC_AUTH` environment variable):
+Basic authentication can be set up simply by providing the `--basic-auth` commandline argument (or the `PANEL_BASIC_AUTH` environment variable). Here is how to do it:
+
+Create a basic `app.py` file.
+
+```python
+import panel as pn
+
+pn.extension(template="fast")
+
+logout = pn.widgets.Button(name="Log out")
+logout.js_on_click(code="""window.location.href = './logout'""")
+pn.Column(f"Congrats `{pn.state.user}`. You got access!", logout).servable()
+```
+
+Now serve the application
 
 ```bash
 panel serve app.py --basic-auth my_password --cookie-secret my_super_safe_cookie_secret
@@ -12,9 +26,19 @@ panel serve app.py --basic-auth my_password --cookie-secret my_super_safe_cookie
 
 When loading the application you should now see a very simple login form:
 
-![Panel Pyodide App](../../_static/images/basic_auth.png)
+![Basic Auth Login Form](../../_static/images/basic_auth.png)
 
-In this mode the username is not authenticated and will simply be provided as part of the [user info](user_info.md).
+If you enter an invalid password it will look like
+
+![Invalid Basic Auth Login Form](../../_static/images/basic_auth_invalid.png)
+
+If you enter the valid password (i.e. `my_password`) it will look like
+
+![Valid Basic Auth Login Form](../../_static/images/basic_auth_valid.png)
+
+If you click the *Log out* button you will be sent back to the log in form.
+
+In this mode the `username` is not authenticated. The `username` is provided as part of the [user info](user_info.md).
 
 ## User credentials
 
@@ -35,7 +59,7 @@ panel serve app.py --basic-auth credentials.json --cookie-secret my_super_safe_c
 
 The basic auth provider will now check the provided credentials against the credentials declared in this file.
 
-:::note
+:::{admonition} Note
 When serving an application dynamically using `pn.serve` you can also provide a dictionary of usernames and passwords via the `basic_auth` keyword argument.
 :::
 
@@ -45,32 +69,4 @@ When serving an application dynamically using `pn.serve` you can also provide a 
 For a more in-depth understanding of custom template take a look at the [how to > Build a Custom Template](../templates/template_custom.md) guide.
 ```
 
-If you want to customize the authentication template you can provide a custom template with the `--basic-login-template` CLI argument. The template needs to submit `username` and `password` to the `/login` endpoint of the Panel server, e.g. the form of the default template looks like this:
-
-```html
-<form class="login-form" action="/login" method="post">
-    <div class="form-header">
-        <h3><img src="https://panel.holoviz.org/_images/logo_stacked.png" width="150" height="120"></h3>
-        <p> Login to access your application</p>
-    </div>
-    <div class="form-group">
-        <span style="color:rgb(255, 0, 0);font-weight:bold" class="errormessage">{{errormessage}}</span>
-    </div>
-    <p></p>
-    <!--Email Input-->
-    <div class="form-group">
-        <input name="username" type="text" class="form-input" autocapitalize="off" autocorrect="off" placeholder="username">
-    </div>
-    <!--Password Input-->
-    <div class="form-group">
-        <input name="password" type="password" class="form-input" placeholder="password">
-    </div>
-    <!--Login Button-->
-    <div class="form-group">
-        <button class="form-button" type="submit">Login</button>
-    </div>
-    <div><small>
-    <p><a href="https://panel.holoviz.org/how_to/authentication/index.html">See the documentation</a> for a full discussion.</p>
-    </small></div>
-</form>
-```
+If you want to customize the authentication template you can provide a custom template with the `--basic-login-template` CLI argument. The template needs to submit `username` and `password` to the `/login` endpoint of the Panel server, e.g. the form of the default template looks like this. Check out the default template [here](https://github.com/holoviz/panel/blob/main/panel/_templates/basic_login.html) for inspiration.

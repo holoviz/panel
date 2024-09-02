@@ -27,7 +27,7 @@ def color_negative_red(val):
     color = 'red' if val < 0 else 'green'
     return 'color: %s' % color
 
-tabulator.style.applymap(color_negative_red)
+tabulator.style.map(color_negative_red)
 
 def stream():
     data = df.iloc[-1] + np.random.randn(4)

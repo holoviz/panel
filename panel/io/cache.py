@@ -1,6 +1,8 @@
 """
 Implements memoization for functions with arbitrary arguments
 """
+from __future__ import annotations
+
 import datetime as dt
 import functools
 import hashlib
@@ -12,13 +14,18 @@ import pickle
 import sys
 import threading
 import time
-import unittest
 import unittest.mock
 import weakref
 
 from contextlib import contextmanager
+from typing import (
+    TYPE_CHECKING, Any, Callable, Hashable, Literal, ParamSpec, Protocol,
+    TypeVar, overload,
+)
 
 import param
+
+from param.parameterized import iscoroutinefunction
 
 from .state import state
 
@@ -26,11 +33,22 @@ from .state import state
 # Private API
 #---------------------------------------------------------------------
 
+if TYPE_CHECKING:
+    _P = ParamSpec("_P")
+    _R = TypeVar("_R")
+    _CallableT = TypeVar("_CallableT", bound=Callable)
+
+    class _CachedFunc(Protocol[_CallableT]):
+        def clear(self, func_hashes: list[str | None]) -> None:
+            pass
+
+        __call__: _CallableT
+
 _CYCLE_PLACEHOLDER = b"panel-93KZ39Q-floatingdangeroushomechose-CYCLE"
 
 _FFI_TYPE_NAMES = ("_cffi_backend.FFI", "builtins.CompiledFFI",)
 
-_HASH_MAP = {}
+_HASH_MAP: dict[Hashable, str] = {}
 
 _HASH_STACKS = weakref.WeakKeyDictionary()
 
@@ -53,7 +71,7 @@ if sys.platform == 'win32':
 else:
     _TIME_FN = time.monotonic
 
-class _Stack(object):
+class _Stack:
 
     def __init__(self):
         self._stack = {}
@@ -72,7 +90,7 @@ def _get_fqn(obj):
     the_type = type(obj)
     module = the_type.__module__
     name = the_type.__qualname__
-    return "%s.%s" % (module, name)
+    return f"{module}.{name}"
 
 def _int_to_bytes(i):
     num_bytes = (i.bit_length() + 8) // 8
@@ -110,6 +128,10 @@ def _pandas_hash(obj):
     if len(obj) >= _PANDAS_ROWS_LARGE:
         obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
     try:
+        if isinstance(obj, pd.DataFrame):
+            return ((b"%s" % pd.util.hash_pandas_object(obj).sum())
+                + (b"%s" % pd.util.hash_pandas_object(obj.columns).sum())
+            )
         return b"%s" % pd.util.hash_pandas_object(obj).sum()
     except TypeError:
         # Use pickle if pandas cannot hash the object for example if
@@ -190,14 +212,14 @@ def _generate_hash_inner(obj):
             raise ValueError(
                 f'User hash function {hash_func!r} failed for input '
                 f'{obj!r} with following error: {type(e).__name__}("{e}").'
-            )
+            ) from e
         return output
     if hasattr(obj, '__reduce__'):
         h = hashlib.new("md5")
         try:
             reduce_data = obj.__reduce__()
         except BaseException:
-            raise ValueError(f'Could not hash object of type {type(obj).__name__}')
+            raise ValueError(f'Could not hash object of type {type(obj).__name__}') from None
         for item in reduce_data:
             h.update(_generate_hash(item))
         return h.digest()
@@ -299,14 +321,46 @@ def compute_hash(func, hash_funcs, args, kwargs):
         _HASH_MAP[key] = hash_value
     return hash_value
 
+@overload
+def cache(
+    func: Literal[None] = ...,
+    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = ...,
+    max_items: int | None = ...,
+    policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
+    ttl: float | None = ...,
+    to_disk: bool = ...,
+    cache_path: str | os.PathLike = ...,
+    per_session: bool = ...,
+) -> Callable[[Callable[_P, _R]], _CachedFunc[Callable[_P, _R]]]:
+    ...
+
+@overload
+def cache(
+    func: Callable[_P, _R],
+    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = ...,
+    max_items: int | None = ...,
+    policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
+    ttl: float | None = ...,
+    to_disk: bool = ...,
+    cache_path: str | os.PathLike = ...,
+    per_session: bool = ...,
+) -> _CachedFunc[Callable[_P, _R]]:
+    ...
 
 def cache(
-    func=None, hash_funcs=None, max_items=None, policy='LRU',
-    ttl=None, to_disk=False, cache_path='./cache'
-):
+    func: Callable[_P, _R] | None = None,
+    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = None,
+    max_items: int | None = None,
+    policy: Literal['FIFO', 'LRU', 'LFU'] = 'LRU',
+    ttl: float | None = None,
+    to_disk: bool = False,
+    cache_path: str | os.PathLike = './cache',
+    per_session: bool = False
+) -> _CachedFunc[Callable[_P, _R]] | Callable[[Callable[_P, _R]], _CachedFunc[Callable[_P, _R]]]:
     """
-    Decorator to memoize functions with options to configure the
-    caching behavior
+    Memoizes functions for a user session. Can be used as function annotation or just directly.
+
+    For global caching across user sessions use `pn.state.as_cached`.
 
     Arguments
     ---------
@@ -316,6 +370,9 @@ def cache(
         A dictionary mapping from a type to a function which returns
         a hash for an object of that type. If provided this will
         override the default hashing function provided by Panel.
+    max_items: int or None
+        The maximum items to keep in the cache. Default is None, which does
+        not limit number of items stored in the cache.
     policy: str
         A caching policy when max_items is set, must be one of:
           - FIFO: First in - First out
@@ -326,8 +383,10 @@ def cache(
         the cache should not expire. The default is None.
     to_disk: bool
         Whether to cache to disk using diskcache.
-    cache_dir: str
+    cache_path: str
         Directory to cache to on disk.
+    per_session: bool
+        Whether to cache data only for the current session.
     """
     if policy.lower() not in ('fifo', 'lru', 'lfu'):
         raise ValueError(
@@ -336,21 +395,22 @@ def cache(
 
     hash_funcs = hash_funcs or {}
     if func is None:
-        return lambda f: cache(
-            func=f,
-            hash_funcs=hash_funcs,
-            max_items=max_items,
-            ttl=ttl,
-            to_disk=to_disk,
-            cache_path=cache_path
-        )
-    func_hash = None # noqa
+        def decorator(func: Callable[_P, _R]) -> _CachedFunc[Callable[_P, _R]]:
+            return cache(
+                func=func,
+                hash_funcs=hash_funcs,
+                max_items=max_items,
+                ttl=ttl,
+                to_disk=to_disk,
+                cache_path=cache_path,
+                per_session=per_session,
+            )
+        return decorator
+    func_hashes = [None] # noqa
 
     lock = threading.RLock()
 
-    @functools.wraps(func)
-    def wrapped_func(*args, **kwargs):
-        global func_hash
+    def hash_func(*args, **kwargs):
         # Handle param.depends method by adding parameters to arguments
         func_name = func.__name__
         is_method = (
@@ -375,8 +435,11 @@ def cache(
             func_hash = (fname, type(args[0]).__name__, func.__name__)
         else:
             func_hash = (fname, func.__name__)
+        if per_session:
+            func_hash += (id(state.curdoc),)
         func_hash = hashlib.sha256(_generate_hash(func_hash)).hexdigest()
 
+        func_hashes[0] = func_hash
         func_cache = state._memoize_cache.get(func_hash)
 
         if func_cache is None:
@@ -391,23 +454,45 @@ def cache(
             _cleanup_ttl(func_cache, ttl, time)
 
         if hash_value in func_cache:
-            with lock:
-                ret, ts, count, _ = func_cache[hash_value]
-                func_cache[hash_value] = (ret, ts, count+1, time)
-                return ret
+            return func_cache, hash_value, time
 
         if max_items is not None:
             _cleanup_cache(func_cache, policy, max_items, time)
 
-        ret = func(*args, **kwargs)
-        with lock:
-            func_cache[hash_value] = (ret, time, 0, time)
-        return ret
+        return func_cache, hash_value, time
 
-    def clear():
-        global func_hash
-        if func_hash is None:
+    if iscoroutinefunction(func):
+        @functools.wraps(func)
+        async def wrapped_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            func_cache, hash_value, time = hash_func(*args, **kwargs)
+            if hash_value in func_cache:
+                with lock:
+                    ret, ts, count, _ = func_cache[hash_value]
+                    func_cache[hash_value] = (ret, ts, count+1, time)
+            else:
+                ret = await func(*args, **kwargs)
+                with lock:
+                    func_cache[hash_value] = (ret, time, 0, time)
+            return ret
+    else:
+        @functools.wraps(func)
+        def wrapped_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            func_cache, hash_value, time = hash_func(*args, **kwargs)
+            if hash_value in func_cache:
+                with lock:
+                    ret, ts, count, _ = func_cache[hash_value]
+                    func_cache[hash_value] = (ret, ts, count+1, time)
+            else:
+                ret = func(*args, **kwargs)
+                with lock:
+                    func_cache[hash_value] = (ret, time, 0, time)
+            return ret
+
+    def clear(func_hashes=func_hashes):
+        # clear called before anything is cached.
+        if func_hashes[0] is None:
             return
+        func_hash = func_hashes[0]
         if to_disk:
             from diskcache import Index
             cache = Index(os.path.join(cache_path, func_hash))
@@ -415,7 +500,13 @@ def cache(
         else:
             cache = state._memoize_cache.get(func_hash, {})
         cache.clear()
-    wrapped_func.clear = clear
+
+    wrapped_func.clear = clear  # type: ignore[attr-defined]
+
+    if per_session and state.curdoc and state.curdoc.session_context:
+        def server_clear(session_context, clear=clear):
+            clear()
+        state.curdoc.on_session_destroyed(server_clear)
 
     try:
         wrapped_func.__dict__.update(func.__dict__)
@@ -423,3 +514,10 @@ def cache(
         pass
 
     return wrapped_func
+
+def is_equal(value, other)->bool:
+    """Returns True if value and other are equal
+
+    Supports complex values like DataFrames
+    """
+    return value is other or _generate_hash(value)==_generate_hash(other)

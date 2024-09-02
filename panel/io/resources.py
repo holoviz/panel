@@ -4,6 +4,7 @@ resources via the panel.config object.
 """
 from __future__ import annotations
 
+import functools
 import importlib
 import json
 import logging
@@ -12,20 +13,19 @@ import os
 import pathlib
 import re
 import textwrap
+import uuid
 
-from base64 import b64encode
-from collections import OrderedDict
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING, Dict, List, Literal, TypedDict,
-)
+from typing import TYPE_CHECKING, Literal, TypedDict
 
+import bokeh.embed.wrappers
 import param
 
 from bokeh.embed.bundle import (
-    CSS_RESOURCES as BkCSS_RESOURCES, Bundle as BkBundle, _bundle_extensions,
-    _use_mathjax, bundle_models, extension_dirs,
+    CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle,
+    _bundle_extensions, _use_mathjax, bundle_models, extension_dirs,
 )
 from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet
@@ -37,17 +37,16 @@ from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
 from ..util import isurl, url_path
-from .loading import LOADING_INDICATOR_CSS_CLASS
 from .state import state
 
 if TYPE_CHECKING:
     from bokeh.resources import Urls
 
     class ResourcesType(TypedDict):
-        css: Dict[str, str]
-        js:  Dict[str, str]
-        js_modules: Dict[str, str]
-        raw_css: List[str]
+        css: dict[str, str]
+        js:  dict[str, str]
+        js_modules: dict[str, str]
+        raw_css: list[str]
 
 logger = logging.getLogger(__name__)
 
@@ -60,18 +59,31 @@ with open(Path(__file__).parent.parent / 'package.json') as f:
 def get_env():
     ''' Get the correct Jinja2 Environment, also for frozen scripts.
     '''
-    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '_templates'))
-    return Environment(loader=FileSystemLoader(local_path))
+    internal_path = pathlib.Path(__file__).parent / '..' / '_templates'
+    template_path = pathlib.Path(__file__).parent / '..' / 'template'
+    return Environment(loader=FileSystemLoader([
+        str(internal_path.resolve()), str(template_path.resolve())
+    ]))
 
 def conffilter(value):
-    return json.dumps(OrderedDict(value)).replace('"', '\'')
+    return json.dumps(dict(value)).replace('"', '\'')
+
+class json_dumps(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, URL):
+            return str(obj)
+        return super().default(obj)
 
 _env = get_env()
 _env.trim_blocks = True
 _env.lstrip_blocks = True
-_env.filters['json'] = lambda obj: Markup(json.dumps(obj))
+_env.filters['json'] = lambda obj: Markup(json.dumps(obj, cls=json_dumps))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
+
+@functools.cache
+def parse_template(*args, **kwargs):
+    return _env.from_string(*args, **kwargs)
 
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE = 'server'
@@ -82,16 +94,18 @@ ASSETS_DIR = PANEL_DIR / 'assets'
 INDEX_TEMPLATE = _env.get_template('convert_index.html')
 BASE_TEMPLATE = _env.get_template('base.html')
 ERROR_TEMPLATE = _env.get_template('error.html')
+LOGOUT_TEMPLATE = _env.get_template('logout.html')
 BASIC_LOGIN_TEMPLATE = _env.get_template('basic_login.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
-CDN_URL = f"https://cdn.holoviz.org/panel/{JS_VERSION}/"
+CDN_ROOT = "https://cdn.holoviz.org/panel/"
+CDN_URL = f"{CDN_ROOT}{JS_VERSION}/"
 CDN_DIST = f"{CDN_URL}dist/"
 DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
 
-BK_PREFIX_RE = re.compile('\.bk\.')
+BK_PREFIX_RE = re.compile(r'\.bk\.')
 
 RESOURCE_URLS = {
     'font-awesome': {
@@ -133,6 +147,16 @@ JS_URLS = {
 
 extension_dirs['panel'] = str(DIST_DIR)
 
+bokeh.embed.wrappers._ONLOAD = """\
+(function() {
+  const fn = function() {
+%(code)s
+  };
+  if (document.readyState != "loading") fn();
+else document.addEventListener("DOMContentLoaded", fn, {once: true});
+})();\
+"""
+
 mimetypes.add_type("application/javascript", ".js")
 
 @contextmanager
@@ -169,15 +193,13 @@ def process_raw_css(raw_css):
     """
     return [BK_PREFIX_RE.sub('.', css) for css in raw_css]
 
-def loading_css():
-    from ..config import config
-    with open(ASSETS_DIR / f'{config.loading_spinner}_spinner.svg', encoding='utf-8') as f:
-        svg = f.read().replace('\n', '').format(color=config.loading_color)
-    b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
+@lru_cache(maxsize=None)
+def loading_css(loading_spinner, color, max_height):
     return textwrap.dedent(f"""
-    :host(.{LOADING_INDICATOR_CSS_CLASS}.pn-{config.loading_spinner}):before, .pn-loading.pn-{config.loading_spinner}:before {{
-      background-image: url("data:image/svg+xml;base64,{b64}");
-      background-size: auto calc(min(50%, {config.loading_max_height}px));
+    :host(.pn-loading):before, .pn-loading:before {{
+      background-color: {color};
+      mask-size: auto calc(min(50%, {max_height}px));
+      -webkit-mask-size: auto calc(min(50%, {max_height}px));
     }}""")
 
 def resolve_custom_path(
@@ -214,7 +236,10 @@ def resolve_custom_path(
         abs_path = path
     else:
         abs_path = module_path / path
-    if not abs_path.is_file():
+    try:
+        if not abs_path.is_file():
+            return None
+    except OSError:
         return None
     abs_path = abs_path.resolve()
     if not relative:
@@ -233,7 +258,7 @@ def component_resource_path(component, attr, path):
     component_path = COMPONENT_PATH
     if state.rel_path:
         component_path = f"{state.rel_path}/{component_path}"
-    rel_path = str(resolve_custom_path(component, path, relative=True)).replace(os.path.sep, '/')
+    rel_path = os.fspath(resolve_custom_path(component, path, relative=True)).replace(os.path.sep, '/')
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
@@ -242,12 +267,20 @@ def patch_stylesheet(stylesheet, dist_url):
         patched_url = url.replace(CDN_DIST+dist_url, dist_url)
     elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
         patched_url = url.replace(CDN_DIST, dist_url)
+    elif url.startswith(LOCAL_DIST) and dist_url.lstrip('./').startswith(LOCAL_DIST):
+        patched_url = url.replace(LOCAL_DIST, dist_url)
     else:
         return
+    version_suffix = f'?v={JS_VERSION}'
+    if not patched_url.endswith(version_suffix):
+        patched_url += version_suffix
     try:
         stylesheet.url = patched_url
     except Exception:
         pass
+
+def _is_file_path(stylesheet: str)->bool:
+    return stylesheet.lower().endswith(".css")
 
 def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     """
@@ -257,6 +290,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
 
     - Absolute URL defined with http(s) protocol
     - A path relative to the component
+    - A raw css string
 
     Arguments
     ---------
@@ -265,12 +299,15 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     stylesheet: str
         The stylesheet definition
     """
-    stylesheet = str(stylesheet)
-    if not stylesheet.startswith('http') and attribute and (custom_path:= resolve_custom_path(cls, stylesheet)):
-        if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
-            stylesheet = component_resource_path(cls, attribute, stylesheet)
-        else:
-            stylesheet = custom_path.read_text(encoding='utf-8')
+    stylesheet = os.fspath(stylesheet)
+    if stylesheet.startswith('http') or not (attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet))):
+        return stylesheet
+    if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
+        stylesheet = component_resource_path(cls, attribute, stylesheet)
+        if config.autoreload and '?' not in stylesheet:
+            stylesheet += f'?v={uuid.uuid4().hex}'
+    else:
+        stylesheet = custom_path.read_text(encoding='utf-8')
     return stylesheet
 
 def patch_model_css(root, dist_url):
@@ -303,10 +340,15 @@ def global_css(name):
 
 def bundled_files(model, file_type='javascript'):
     name = model.__name__.lower()
+    raw_files = getattr(model, f"__{file_type}_raw__", [])
+    for cls in model.__mro__[1:]:
+        cls_files = getattr(cls, f"__{file_type}_raw__", [])
+        if raw_files is cls_files:
+            name = cls.__name__.lower()
     bdir = BUNDLE_DIR / name
     shared = list((JS_URLS if file_type == 'javascript' else CSS_URLS).values())
     files = []
-    for url in getattr(model, f"__{file_type}_raw__", []):
+    for url in raw_files:
         if url.startswith(CDN_DIST):
             filepath = url.replace(f'{CDN_DIST}bundled/', '')
         elif url.startswith(config.npm_cdn):
@@ -352,7 +394,7 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
     elif roots:
         use_mathjax = _use_mathjax(roots) or 'mathjax' in ext._loaded_extensions
     else:
-        use_mathjax = False
+        use_mathjax = 'mathjax' in ext._loaded_extensions
 
     if js_resources:
         js_resources = js_resources.clone()
@@ -370,16 +412,21 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
     extensions = _bundle_extensions(None, js_resources)
     if reloading:
         extensions = [
-            ext for ext in extensions if not ext.cdn_url.startswith('https://unpkg.com/@holoviz/panel@')
+            ext for ext in extensions if not (ext.cdn_url is not None and str(ext.cdn_url).startswith('https://unpkg.com/@holoviz/panel@'))
         ]
+
     extra_js = []
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
     elif mode == "server":
         for bundle in extensions:
             server_url = bundle.server_url
+            if not isinstance(server_url, str):
+                server_url = str(server_url)
             if resources.root_url and not resources.absolute:
-                server_url = server_url.replace(resources.root_url, '')
+                server_url = server_url.replace(resources.root_url, '', 1)
+                if state.rel_path:
+                    server_url = f'{state.rel_path}/{server_url}'
             js_files.append(server_url)
     elif mode == "cdn":
         for bundle in extensions:
@@ -396,6 +443,10 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
         js_raw.append(ext)
 
     hashes = js_resources.hashes if js_resources else {}
+
+    js_files = list(map(URL, js_files))
+    css_files = list(map(URL, css_files))
+
     return Bundle(
         css_files=css_files,
         css_raw=css_raw,
@@ -440,7 +491,12 @@ class ResourceComponent:
             prefixed_dist = dist_path
 
         bundlepath = BUNDLE_DIR / resource_path.replace('/', os.path.sep)
-        if bundlepath.is_file():
+        # Windows may trigger OSError: [WinError 123]
+        try:
+            is_file = bundlepath.is_file()
+        except Exception:
+            is_file = False
+        if is_file:
             return f'{prefixed_dist}bundled/{resource_path}'
         elif isurl(resource):
             return resource
@@ -449,7 +505,11 @@ class ResourceComponent:
                 cls, f'_resources/{resource_type}', resource
             )
 
-    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
+    def resolve_resources(
+        self,
+        cdn: bool | Literal['auto'] = 'auto',
+        extras: dict[str, dict[str, str]] | None = None
+    ) -> ResourcesType:
         """
         Resolves the resources required for this component.
 
@@ -459,6 +519,9 @@ class ResourceComponent:
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
             global settings.
+        extras: dict[str, dict[str, str]] | None
+            Additional resources to add to the bundle. Valid resource
+            types include js, js_modules and css.
 
         Returns
         -------
@@ -480,7 +543,6 @@ class ResourceComponent:
             else:
                 resources[rt] = res
 
-        cdn = use_cdn() if cdn == 'auto' else cdn
         resource_types: ResourcesType = {
             'js': {},
             'js_modules': {},
@@ -488,6 +550,7 @@ class ResourceComponent:
             'raw_css': []
         }
 
+        cdn = use_cdn() if cdn == 'auto' else cdn
         for resource_type in resource_types:
             if resource_type not in resources or resource_type == 'raw_css':
                 continue
@@ -498,6 +561,18 @@ class ResourceComponent:
                 )
                 if resolved_resource:
                     resource_files[rname] = resolved_resource
+
+        version_suffix = f'?v={JS_VERSION}'
+        dist_path = get_dist_path(cdn=cdn)
+        for resource_type, extra_resources in (extras or {}).items():
+            resource_files = resource_types[resource_type]
+            for name, res in extra_resources.items():
+                if not cdn:
+                    res = res.replace(CDN_DIST, dist_path)
+                    if not res.endswith(version_suffix):
+                        res += version_suffix
+                resource_files[name] = res
+
         return resource_types
 
 
@@ -561,12 +636,12 @@ class Resources(BkResources):
         """
         Adds resources for ReactiveHTML components.
         """
-        from ..reactive import ReactiveHTML
-        for model in param.concrete_descendents(ReactiveHTML).values():
+        from ..reactive import ReactiveCustomBase
+        for model in param.concrete_descendents(ReactiveCustomBase).values():
             if not (getattr(model, resource_type, None) and model._loaded()):
                 continue
             for resource in getattr(model, resource_type, []):
-                if not isurl(resource) and not resource.startswith('static/extensions'):
+                if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
                     resource = component_resource_path(model, resource_type, resource)
                 if resource not in resources:
                     resources.append(resource)
@@ -576,20 +651,25 @@ class Resources(BkResources):
         Computes relative and absolute paths for resources.
         """
         new_resources = []
+        version_suffix = f'?v={JS_VERSION}'
         cdn_base = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/'
         for resource in resources:
+            if not isinstance(resource, str):
+                resource = str(resource)
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
             if self.mode == 'server':
                 resource = resource.replace(CDN_DIST, LOCAL_DIST)
-            if (resource.startswith(state.base_url) or resource.startswith('static/')):
+            if resource.startswith((state.base_url, "static/")):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
                 if state.rel_path:
                     resource = f'{state.rel_path}/{resource}'
                 elif self.absolute and self.mode == 'server':
                     resource = f'{self.root_url}{resource}'
+            if resource.endswith('.css'):
+                resource += version_suffix
             new_resources.append(resource)
         return new_resources
 
@@ -652,10 +732,11 @@ class Resources(BkResources):
         # Inline local dist resources
         css_files = self._collect_external_resources("__css__")
         self.extra_resources(css_files, '__css__')
-        raw += [
-            (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
-            for css in css_files if is_cdn_url(css)
-        ]
+        if self.mode.lower() not in ('server', 'cdn'):
+            raw += [
+                (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+                for css in css_files if is_cdn_url(css)
+            ]
 
         # Add local CSS files
         for cssf in config.css_files:
@@ -667,8 +748,12 @@ class Resources(BkResources):
 
         # Add loading spinner
         if config.global_loading_spinner:
-            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
-            raw.extend([loading_base, loading_css()])
+            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8').replace(
+                '../assets', self.dist_dir + 'assets'
+            )
+            raw.extend([loading_base, loading_css(
+                config.loading_spinner, config.loading_color, config.loading_max_height
+            )])
         return raw + process_raw_css(config.raw_css) + process_raw_css(config.global_css)
 
     @property
@@ -705,9 +790,16 @@ class Resources(BkResources):
     @property
     def js_modules(self):
         from ..config import config
-        from ..reactive import ReactiveHTML
+        from ..reactive import ReactiveCustomBase
 
         modules = list(config.js_modules.values())
+        for model in Model.model_class_reverse_map.values():
+            if not hasattr(model, '__javascript_modules__'):
+                continue
+            for module in model.__javascript_modules__:
+                if module not in modules:
+                    modules.append(module)
+
         self.extra_resources(modules, '__javascript_modules__')
         if config.design:
             design_resources = config.design().resolve_resources(
@@ -718,7 +810,7 @@ class Resources(BkResources):
                 if res not in modules
             ]
 
-        for model in param.concrete_descendents(ReactiveHTML).values():
+        for model in param.concrete_descendents(ReactiveCustomBase).values():
             if not (getattr(model, '__javascript_modules__', None) and model._loaded()):
                 continue
             for js_module in model.__javascript_modules__:
@@ -735,7 +827,7 @@ class Resources(BkResources):
         for model in Model.model_class_reverse_map.values():
             if hasattr(model, '__javascript_module_exports__'):
                 modules.update(dict(zip(model.__javascript_module_exports__, model.__javascript_modules__)))
-        return modules
+        return dict(zip(modules, self.adjust_paths(modules.values())))
 
     @property
     def js_raw(self):

@@ -1,16 +1,21 @@
 import datetime
-import time
+import sys
 
+from pathlib import Path
+
+import numpy as np
 import pytest
 
-from panel.io.server import serve
-from panel.tests.util import wait_until
-from panel.widgets import DatetimePicker, DatetimeRangePicker
+import panel as pn
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
+
+from playwright.sync_api import Error, expect
+
+from panel.tests.util import serve_component, wait_until
+from panel.widgets import (
+    DatetimePicker, DatetimeRangePicker, TextAreaInput, TextInput,
+)
 
 pytestmark = pytest.mark.ui
 
@@ -142,11 +147,10 @@ def valid_next_month(old_month, new_month, old_year, new_year):
     return True
 
 
-def test_datetimepicker_default(page, port, weekdays_as_str, months_as_str):
+def test_datetimepicker_default(page, weekdays_as_str, months_as_str):
     datetime_picker_widget = DatetimePicker()
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-calendar')
     expect(datetime_picker).to_have_count(1)
@@ -302,7 +306,7 @@ def test_datetimepicker_default(page, port, weekdays_as_str, months_as_str):
     assert valid_next_time(sec_before_click, sec_after_click, max_value=60, amount=5)
 
 
-def test_datetimepicker_value(page, port, march_2021, datetime_value_data):
+def test_datetimepicker_value(page, march_2021, datetime_value_data):
 
     year, month, day, hour, min, sec, month_str, date_str, datetime_str = datetime_value_data
 
@@ -311,9 +315,8 @@ def test_datetimepicker_value(page, port, march_2021, datetime_value_data):
     datetime_picker_widget = DatetimePicker(
         value=datetime.datetime(year, month, day, hour, min, sec)
     )
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, datetime_picker_widget)
 
     datetime_value = page.locator('.flatpickr-input')
     assert datetime_value.input_value() == datetime_str
@@ -373,15 +376,14 @@ def test_datetimepicker_value(page, port, march_2021, datetime_value_data):
     assert valid_prev_time(sec_before_click, sec_after_click, max_value=60, amount=5)
 
 
-def test_datetimepicker_start_end(page, port, march_2021, datetime_start_end):
+def test_datetimepicker_start_end(page, march_2021, datetime_start_end):
     start, end, selectable_dates = datetime_start_end
 
     march_2021_str, num_days, _, _ = march_2021
 
     datetime_picker_widget = DatetimePicker(start=start, end=end)
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, datetime_picker_widget)
 
     datetime_value = page.locator('.flatpickr-input')
     # click to show the datetime picker container
@@ -396,15 +398,14 @@ def test_datetimepicker_start_end(page, port, march_2021, datetime_start_end):
     expect(disabled_days).to_have_count(num_days - len(selectable_dates))
 
 
-def test_datetimepicker_disabled_dates(page, port, disabled_dates):
+def test_datetimepicker_disabled_dates(page, disabled_dates):
     active_date, disabled_list, disabled_str_list = disabled_dates
 
     datetime_picker_widget = DatetimePicker(
         disabled_dates=disabled_list, value=active_date
     )
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -417,14 +418,13 @@ def test_datetimepicker_disabled_dates(page, port, disabled_dates):
         assert disabled_days.nth(i).get_attribute('aria-label') == disabled_str_list[i]
 
 
-def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
+def test_datetimepicker_enabled_dates(page, march_2021, enabled_dates):
     active_date, enabled_list, enabled_str_list = enabled_dates
     datetime_picker_widget = DatetimePicker(
         enabled_dates=enabled_list, value=active_date
     )
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -435,27 +435,29 @@ def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
     disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
     expect(disabled_days).to_have_count(num_days - len(enabled_list))
 
+    # enable all days
+    datetime_picker_widget.enabled_dates = None
+    disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
+    expect(disabled_days).to_have_count(0)
 
-def test_datetimepicker_enable_time(page, port):
+
+def test_datetimepicker_enable_time(page):
     datetime_picker_widget = DatetimePicker(enable_time=False)
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
-    datetime_value = page.locator('.flatpickr-input')
-    datetime_value.dblclick()
+    page.locator('.flatpickr-input').dblclick()
 
     # no time editor
     time_editor = page.locator('.flatpickr-calendar .flatpickr-time.time24hr.hasSeconds')
     expect(time_editor).to_have_count(0)
 
 
-def test_datetimepicker_enable_seconds(page, port):
+def test_datetimepicker_enable_seconds(page):
     datetime_picker_widget = DatetimePicker(enable_seconds=False)
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -481,11 +483,10 @@ def test_datetimepicker_enable_seconds(page, port):
     expect(time_separators).to_have_count(1)
 
 
-def test_datetimepicker_military_time(page, port):
+def test_datetimepicker_military_time(page):
     datetime_picker_widget = DatetimePicker(military_time=False)
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -532,49 +533,40 @@ def test_datetimepicker_military_time(page, port):
     assert valid_next_time(hour_before_click, hour_after_click, max_value=13, amount=1)
 
 
-def test_datetimepicker_disable_editing(page, port):
+def test_datetimepicker_disable_editing(page):
     datetime_picker_widget = DatetimePicker(disabled=True)
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
 
-    datetime_value = page.locator('.flatpickr-input')
-    assert datetime_value.get_attribute('disabled') == 'true'
+    serve_component(page, datetime_picker_widget)
+
+    expect(page.locator('.flatpickr-input')).to_have_attribute('disabled', '')
 
 
-def test_datetimepicker_visible(page, port):
+def test_datetimepicker_visible(page):
     # add css class to search for name more easily
     datetime_picker_widget = DatetimePicker(
         visible=False, css_classes=['invisible-datetimepicker']
     )
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
 
-    invisible_datetime_picker = page.locator('.invisible-datetimepicker')
-    expect(invisible_datetime_picker).to_have_css('display', 'none')
+    serve_component(page, datetime_picker_widget)
+
+    expect(page.locator('.invisible-datetimepicker')).to_have_css('display', 'none')
 
 
-def test_datetimepicker_name(page, port):
+def test_datetimepicker_name(page):
     name = 'Datetime Picker'
     # add css class to search for name more easily
     datetime_picker_widget = DatetimePicker(
         name=name, css_classes=['datetimepicker-with-name']
     )
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
 
-    datetime_picker_with_name = page.locator('.datetimepicker-with-name')
-    datetime_picker_with_name.locator(".bk-input-group").text_content() == name
+    serve_component(page, datetime_picker_widget)
 
+    expect(page.locator('.datetimepicker-with-name > .bk-input-group > label')).to_have_text(name)
 
-def test_datetimepicker_no_value(page, port, datetime_start_end):
+def test_datetimepicker_no_value(page, datetime_start_end):
     datetime_picker_widget = DatetimePicker()
 
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-input')
     assert datetime_picker.input_value() == ""
@@ -586,12 +578,10 @@ def test_datetimepicker_no_value(page, port, datetime_start_end):
     wait_until(lambda: datetime_picker.input_value() == '', page)
 
 
-def test_datetimerangepicker_no_value(page, port, datetime_start_end):
+def test_datetimerangepicker_no_value(page, datetime_start_end):
     datetime_picker_widget = DatetimeRangePicker()
 
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-input')
     assert datetime_picker.input_value() == ""
@@ -601,15 +591,14 @@ def test_datetimerangepicker_no_value(page, port, datetime_start_end):
     wait_until(lambda: datetime_picker.input_value() == expected, page)
 
     datetime_picker_widget.value = None
+
     wait_until(lambda: datetime_picker.input_value() == '', page)
 
 
-def test_datetimepicker_remove_value(page, port, datetime_start_end):
+def test_datetimepicker_remove_value(page, datetime_start_end):
     datetime_picker_widget = DatetimePicker(value=datetime_start_end[0])
 
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-input')
     assert datetime_picker.input_value() == "2021-03-02 00:00:00"
@@ -620,3 +609,168 @@ def test_datetimepicker_remove_value(page, port, datetime_start_end):
     datetime_picker.press("Escape")
 
     wait_until(lambda: datetime_picker_widget.value is None, page)
+
+
+def test_datetime_picker_start_end_datetime64(page):
+    datetime_picker_widget = DatetimePicker(
+        value=datetime.datetime(2021, 3, 2),
+        start=np.datetime64("2021-03-02"),
+        end=np.datetime64("2021-03-03")
+    )
+
+    serve_component(page, datetime_picker_widget)
+
+    datetime_picker = page.locator('.flatpickr-input')
+    datetime_picker.dblclick()
+
+    # locate by aria label March 1, 2021
+    prev_month_day = page.locator('[aria-label="March 1, 2021"]')
+    # assert class "flatpickr-day flatpickr-disabled"
+    assert "flatpickr-disabled" in prev_month_day.get_attribute("class"), "The date should be disabled"
+
+    # locate by aria label March 3, 2021
+    next_month_day = page.locator('[aria-label="March 3, 2021"]')
+    # assert not class "flatpickr-day flatpickr-disabled"
+    assert "flatpickr-disabled" not in next_month_day.get_attribute("class"), "The date should be enabled"
+
+    # locate by aria label March 4, 2021
+    next_next_month_day = page.locator('[aria-label="March 4, 2021"]')
+    # assert class "flatpickr-day flatpickr-disabled"
+    assert "flatpickr-disabled" in next_next_month_day.get_attribute("class"), "The date should be disabled"
+
+
+def test_text_area_auto_grow_init(page):
+    text_area = TextAreaInput(auto_grow=True, value="1\n2\n3\n4\n")
+
+    serve_component(page, text_area)
+
+    expect(page.locator('.bk-input')).to_have_js_property('rows', 5)
+
+
+def test_text_area_auto_grow(page):
+    text_area = TextAreaInput(auto_grow=True, value="1\n2\n3\n4\n")
+
+    serve_component(page, text_area)
+
+    input_area = page.locator('.bk-input')
+    input_area.click()
+    input_area.press('Enter')
+    input_area.press('Enter')
+    input_area.press('Enter')
+
+    expect(page.locator('.bk-input')).to_have_js_property('rows', 8)
+
+
+def test_text_area_auto_grow_max_rows(page):
+    text_area = TextAreaInput(auto_grow=True, value="1\n2\n3\n4\n", max_rows=7)
+
+    serve_component(page, text_area)
+
+    input_area = page.locator('.bk-input')
+    input_area.click()
+    input_area.press('Enter')
+    input_area.press('Enter')
+    input_area.press('Enter')
+
+    expect(page.locator('.bk-input')).to_have_js_property('rows', 7)
+
+
+def test_text_area_auto_grow_min_rows(page):
+    text_area = TextAreaInput(auto_grow=True, value="1\n2\n3\n4\n", rows=3)
+
+    serve_component(page, text_area)
+
+    input_area = page.locator('.bk-input')
+    input_area.click()
+    for _ in range(5):
+        input_area.press('ArrowDown')
+    for _ in range(10):
+        input_area.press('Backspace')
+
+    expect(page.locator('.bk-input')).to_have_js_property('rows', 3)
+
+
+def test_text_area_auto_grow_shrink_back_on_new_value(page):
+    text_area = TextAreaInput(auto_grow=True, value="1\n2\n3\n4\n", max_rows=5)
+
+    serve_component(page, text_area)
+
+    input_area = page.locator('.bk-input')
+    input_area.click()
+    for _ in range(5):
+        input_area.press('ArrowDown')
+    for _ in range(10):
+        input_area.press('Backspace')
+
+    text_area.value = ""
+
+    expect(page.locator('.bk-input')).to_have_js_property('rows', 2)
+
+def test_textinput_enter(page):
+    text_input = TextInput()
+    clicks = [0]
+
+    @pn.depends(text_input.param.enter_pressed, watch=True)
+    def on_enter(event):
+        clicks[0] += 1
+
+    serve_component(page, text_input)
+    input_area = page.locator('.bk-input').first
+    input_area.click()
+    input_area.press('Enter')
+    wait_until(lambda: clicks[0] == 1)
+
+    input_area.press("H")
+    input_area.press("Enter")
+    wait_until(lambda: clicks[0] == 2)
+    assert text_input.value == "H"
+
+def test_filedropper_text_file(page):
+    widget = pn.widgets.FileDropper()
+    serve_component(page, widget)
+
+    file = Path(__file__)
+
+    page.set_input_files('input[type="file"]', file)
+
+    wait_until(lambda: len(widget.value) == 1, page)
+    data = file.read_text()
+    if sys.platform == 'win32':
+        data = data.replace("\n", "\r\n")
+    assert widget.value == {file.name: data}
+
+def test_filedropper_wrong_filetype_error(page):
+    widget = pn.widgets.FileDropper(accepted_filetypes=["png"])
+    serve_component(page, widget)
+
+    page.set_input_files('input[type="file"]', __file__)
+
+    get_element = lambda: page.query_selector('span.filepond--file-status-main')
+    wait_until(lambda: get_element() is not None, page)
+    element = get_element()
+    wait_until(lambda: element.inner_text() == 'File is of invalid type', page)
+
+def test_filedropper_multiple_file_error(page):
+    widget = pn.widgets.FileDropper()
+    serve_component(page, widget)
+
+    msg = "Non-multiple file input can only accept single file"
+    with pytest.raises(Error, match=msg):
+        page.set_input_files('input[type="file"]', [__file__, __file__])
+
+def test_filedropper_multiple_files(page):
+    widget = pn.widgets.FileDropper(multiple=True)
+    serve_component(page, widget)
+
+    file1 = Path(__file__)
+    file2 = file1.parent / '__init__.py'
+
+    page.set_input_files('input[type="file"]', [file1, file2])
+    data1 = file1.read_text()
+    data2 = file2.read_text()
+    if sys.platform == 'win32':
+        data1 = data1.replace("\n", "\r\n")
+        data2 = data2.replace("\n", "\r\n")
+
+    wait_until(lambda: len(widget.value) == 2)
+    assert widget.value == {file1.name: data1, file2.name: data2}

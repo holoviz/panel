@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import importlib.util
 import os
 import sys
 
@@ -39,8 +40,7 @@ def isurl(obj: Any, formats: Iterable[str] | None = None) -> bool:
         return False
     lower_string = obj.lower().split('?')[0].split('#')[0]
     return (
-        lower_string.startswith('http://')
-        or lower_string.startswith('https://')
+        lower_string.startswith(("http://", "https://"))
     ) and (formats is None or any(lower_string.endswith('.'+fmt) for fmt in formats))
 
 
@@ -56,6 +56,13 @@ def is_series(obj) -> bool:
         return False
     import pandas as pd
     return isinstance(obj, pd.Series)
+
+
+def is_mpl_axes(obj) -> bool:
+    if 'matplotlib' not in sys.modules:
+        return False
+    from matplotlib.axes import Axes
+    return isinstance(obj, Axes)
 
 
 def isIn(obj, objs):
@@ -116,3 +123,20 @@ def is_number(s: Any) -> bool:
         return True
     except ValueError:
         return False
+
+
+def import_available(module: str):
+    """
+    Checks whether a module can be imported
+
+    Arguments
+    ---------
+    module: str
+
+    Returns
+    -------
+    available: bool
+      Whether the module is available to be imported
+    """
+    spec = importlib.util.find_spec(module)
+    return spec is not None

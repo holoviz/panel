@@ -1,14 +1,17 @@
+import asyncio
 import os
 
+import pandas as pd
 import param
 import pytest
 
 from bokeh.models import (
-    AutocompleteInput as BkAutocompleteInput, Button, Checkbox as BkCheckbox,
-    Column as BkColumn, Div, MultiSelect, RangeSlider as BkRangeSlider,
-    Row as BkRow, Select, Slider, Tabs as BkTabs, TextInput,
-    TextInput as BkTextInput, Toggle,
+    AutocompleteInput as BkAutocompleteInput, Button as BkButton,
+    Checkbox as BkCheckbox, Column as BkColumn, Div, MultiSelect,
+    RangeSlider as BkRangeSlider, Row as BkRow, Select, Slider, Tabs as BkTabs,
+    TextInput, TextInput as BkTextInput, Toggle,
 )
+from packaging.version import Version
 
 from panel import config
 from panel.depends import bind
@@ -19,11 +22,13 @@ from panel.pane import (
     HTML, Bokeh, Markdown, Matplotlib, PaneBase, Str, panel,
 )
 from panel.param import (
-    JSONInit, Param, ParamFunction, ParamMethod,
+    JSONInit, Param, ParamFunction, ParamMethod, Skip,
 )
-from panel.tests.util import mpl_available, mpl_figure
+from panel.tests.util import (
+    async_wait_until, mpl_available, mpl_figure, wait_until,
+)
 from panel.widgets import (
-    AutocompleteInput, Checkbox, DatePicker, DatetimeInput,
+    AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
     EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
     RangeSlider,
 )
@@ -389,7 +394,7 @@ def test_action_param(document, comm):
     model = test_pane.get_root(document, comm=comm)
 
     button = model.children[1]
-    assert isinstance(button, Button)
+    assert isinstance(button, BkButton)
 
     # Check that the action is actually executed
     pn_button = test_pane.layout[1]
@@ -516,6 +521,123 @@ def test_param_label(document, comm):
     b_param = test.param['b']
     b_param.label = 'C'
     assert test_pane._widgets['b'].name == 'C'
+
+
+def test_param_widget_type(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), label='A')
+        b = param.Number(default=1.2, bounds=(0, 5), label='B')
+
+    test = Test()
+    test_pane = Param(test, widgets={'b': {'widget_type': EditableFloatSlider}})
+
+
+    # Check that b is displayed with an EditableFloatSlider
+    wa = test_pane._widgets['a']
+    wb = test_pane._widgets['b']
+    assert not isinstance(wa, EditableFloatSlider)
+    assert isinstance(wb, EditableFloatSlider)
+    assert wb.value == 1.2
+    assert (wb.fixed_start, wb.fixed_end) == (0, 5)
+    assert wb.name == 'B'
+
+
+def test_param_throttled(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), label='A')
+        b = param.Number(default=1.2, bounds=(0, 5), label='B')
+
+    test = Test()
+    try:
+        param.parameterized.warnings_as_exceptions = True
+        test_pane = Param(test, widgets={'b': {'throttled': True}})
+    finally:
+        param.parameterized.warnings_as_exceptions = False
+
+    model = test_pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    _, ma, mb = model.children
+
+    ma.value = 1
+    assert ma.value == 1
+    assert ma.value_throttled == 1.2
+    assert test.a == 1
+
+    test.a = 2
+    assert ma.value == 2
+    assert ma.value_throttled == 1.2
+    assert test.a == 2
+
+    # `test.b` is linked to `mb.value_throttled` instead of `mb.value` when throttled
+    test_pane._widgets['b']._process_events({'value_throttled': 3})
+    assert mb.value != 3
+    assert test.b == 3
+
+    mb.value = 4
+    assert test.b == 3
+    assert mb.value == 4
+
+    test.b = 5
+    assert mb.value == 5
+    assert test_pane._widgets['b'].value == 5
+    assert test_pane._widgets['b'].value_throttled == 5
+
+
+def test_param_onkeyup(document, comm):
+    class Test(param.Parameterized):
+        a = param.String(default='1.2', label='A')
+        b = param.String(default='1.2', label='B')
+
+    test = Test()
+    try:
+        param.parameterized.warnings_as_exceptions = True
+        test_pane = Param(test, widgets={'b': {'onkeyup': True}})
+    finally:
+        param.parameterized.warnings_as_exceptions = False
+
+    model = test_pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    _, ma, mb = model.children
+
+    ma.value = '1'
+    assert ma.value == '1'
+    assert ma.value_input == ''
+    assert test.a == '1'
+
+    test.a = '2'
+    assert ma.value == '2'
+    assert ma.value_input == ''
+    assert test.a == '2'
+
+    # `test.b` is linked to `mb.value_input` instead of `mb.value` when onkeyup
+    test_pane._widgets['b']._process_events({'value_input': '3'})
+    assert mb.value != '3'
+    assert test.b == '3'
+
+    mb.value = '4'
+    assert test.b == '3'
+    assert mb.value == '4'
+
+
+def test_param_event_parameter(document, comm):
+
+    l = []
+    class Test(param.Parameterized):
+        e = param.Event()
+
+        @param.depends('e', watch=True)
+        def incr(self):
+            l.append(1)
+
+    test = Test()
+    test_pane = Param(test)
+
+    test_pane._widgets['e']._process_events({'clicks': 1})
+
+    # Check that a watcher was set on the button that depends on e
+    assert l == [1]
 
 
 def test_param_precedence_ordering(document, comm):
@@ -751,9 +873,14 @@ def test_set_widgets_throttled(document, comm):
     assert number.value != 3
     assert test.a == 3
 
-    pane._widgets['a']._process_events({'value': 4})
+    number.value = 4
     assert test.a == 3
     assert number.value == 4
+
+    test.a = 5
+    assert number.value == 5
+    assert pane._widgets['a'].value == 5
+    assert pane._widgets['a'].value_throttled == 5
 
 
 def test_set_show_name(document, comm):
@@ -978,7 +1105,7 @@ def test_expand_param_subobject_tabs(document, comm):
 
 def test_param_js_callbacks(document, comm):
     class JsButton(param.Parameterized):
-        param_btn = param.Action(default=lambda self: print('Action Python Response'), label='Action')
+        param_btn = param.Action(default=lambda self: print('Action Python Response'), label='Action')  # noqa: T201
 
     param_button = Param(JsButton())
     code = "console.log('Action button clicked')"
@@ -1058,7 +1185,7 @@ def test_param_function_pane(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1078,6 +1205,14 @@ def test_param_function_pane(document, comm):
     assert inner_pane._models == {}
 
 
+def test_resolve_param_function_pane_when_defer_load(document, comm):
+    def view():
+        return Div(text='blah')
+
+    pane = panel(view, defer_load=True)
+    assert isinstance(pane, ParamFunction)
+
+
 def test_param_function_pane_defer_load(document, comm):
     test = View()
 
@@ -1095,7 +1230,7 @@ def test_param_function_pane_defer_load(document, comm):
     # Create pane
     with set_curdoc(document):
         row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1125,24 +1260,24 @@ def test_param_function_pane_config_defer_load():
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.defer_load==config.defer_load
+    assert test.defer_load == config.defer_load
 
     # When
-    config.defer_load=not config.defer_load
+    config.defer_load = not config.defer_load
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.defer_load==config.defer_load
+    assert test.defer_load == config.defer_load
 
     # When
-    config.defer_load=not config.defer_load
+    config.defer_load = not config.defer_load
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.defer_load==config.defer_load
+    assert test.defer_load == config.defer_load
 
     # Clean Up
-    config.defer_load=config.param.defer_load.default
+    config.defer_load = config.param.defer_load.default
 
 def test_param_function_pane_config_loading_indicator():
     # When
@@ -1182,20 +1317,20 @@ def test_param_function_pane_update(document, comm):
 
     pane = panel(view)
     inner_pane = pane._pane
-    assert inner_pane is not objs[0]
+    assert inner_pane is objs[0]
     assert inner_pane.object is objs[0].object
-    assert pane._internal
+    assert not pane._internal
 
     test.a = 1
 
-    assert pane._pane is inner_pane
-    assert pane._internal
+    assert pane._pane is not inner_pane
+    assert not pane._internal
 
     objs[0].param.watch(print, ['object'])
 
     test.a = 0
 
-    assert pane._pane is not inner_pane
+    assert pane._pane is inner_pane
     assert not pane._internal
 
 
@@ -1211,7 +1346,7 @@ def test_param_method_pane(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1240,7 +1375,7 @@ def test_param_method_pane_subobject(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert isinstance(model, Div)
@@ -1274,7 +1409,7 @@ def test_param_method_pane_mpl(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1303,7 +1438,7 @@ def test_param_method_pane_changing_type(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     text = model.text
@@ -1431,7 +1566,7 @@ def test_set_widget_autocompleteinput(document, comm):
 
     autocompleteinput = model.children[1]
     assert isinstance(autocompleteinput, BkAutocompleteInput)
-    assert autocompleteinput.completions == ['a', 'b']
+    assert autocompleteinput.completions == ['a', 'b', '']
     assert autocompleteinput.value == ''
     assert autocompleteinput.disabled == False
 
@@ -1491,6 +1626,43 @@ def test_sorted_func():
     assert input3.name=="bac"
 
 
+def test_param_editablerangeslider_with_bounds():
+    class Test(param.Parameterized):
+        i = param.Range(default=(1, 2), softbounds=(1, 5), bounds=(0, 10))
+
+    t = Test()
+    w = EditableRangeSlider.from_param(t.param.i)
+
+    if Version(param.__version__) >= Version('2.0.0a3'):
+        msg = r"Range parameter 'EditableRangeSlider\.value' lower bound must be in range \[0, 10\], not -1\."
+    elif Version(param.__version__) >= Version('2.0.0a2'):
+        msg = r"Attribute 'bound' of Range parameter 'EditableRangeSlider\.value' must be in range '\[0, 10\]'"
+    else:
+        msg = r"Range parameter 'value''s lower bound must be in range \[0, 10\]"
+    with pytest.raises(ValueError, match=msg):
+        w.value = (-1, 2)
+
+    assert w.value == (1, 2)
+
+
+def test_from_param_with_ref_as_option():
+    class Test(param.Parameterized):
+        s = param.String(default='A')
+
+        @param.depends('s')
+        def ref(self):
+            return [self.s] + ['B']
+
+    t = Test()
+    w = AutocompleteInput.from_param(t.param.s, options=t.ref)
+
+    assert w.options == ['A', 'B']
+
+    t.s = 'C'
+
+    assert w.options == ['C', 'B']
+
+
 def test_paramfunction_bare_emits_warning(caplog):
 
     def foo():
@@ -1525,11 +1697,43 @@ def test_param_editablefloatslider_with_bounds():
     t = Test()
     w = EditableFloatSlider.from_param(t.param.i)
 
-    msg = "Parameter 'value' must be at least 0, not -1"
+    if Version(param.__version__) > Version('2.0.0a2'):
+        msg = "Number parameter 'EditableFloatSlider.value' must be at least 0, not -1"
+    else:
+        msg = "Parameter 'value' must be at least 0, not -1"
     with pytest.raises(ValueError, match=msg):
         w.value = -1
 
     assert w.value == 1
+
+
+def test_param_function_inplace_dataframe_update(document, comm):
+    number = NumberInput(value=0)
+
+    def layout(value):
+        return pd.DataFrame({
+            'x': [0, 1, 2],
+            'y': [0, 1, value]
+        })
+
+    pane = ParamFunction(bind(layout, number), inplace=True)
+
+    root = pane.get_root(document, comm)
+
+    model = root.children[0]
+
+    html_table = model.text
+    assert html_table.startswith("&lt;table class=&quot;dataframe panel-df&quot;&gt;\n  &lt;thead&gt;\n")
+
+    number.value = 314
+
+    assert model is root.children[0]
+    assert model.text != html_table
+    assert '314' in model.text
+
+    html_table = model.text
+    number.param.trigger('value')
+    assert model.text is html_table
 
 
 def test_param_function_recursive_update(document, comm):
@@ -1538,27 +1742,233 @@ def test_param_function_recursive_update(document, comm):
     def layout(value):
         return Row(Markdown(f"{value}"))
 
+    pane = ParamFunction(bind(layout, checkbox), inplace=True)
+
+    root = pane.get_root(document, comm)
+
+    layout = root.children[0]
+
+    assert layout.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert layout is root.children[0]
+    assert layout.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+
+def test_param_function_recursive_update_multiple(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def layout(value):
+        return Row(Markdown(f"{value}"), Markdown(f"{not value}"))
+
     layout = ParamFunction(bind(layout, checkbox), inplace=True)
 
     root = layout.get_root(document, comm)
 
-    assert root.children[0].children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    layout = root.children[0]
+
+    assert layout.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    assert layout.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
     checkbox.value = True
 
-    assert root.children[0].children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    assert layout is root.children[0]
+    assert layout.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    assert layout.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
-def test_param_editablerangeslider_with_bounds():
-    class Test(param.Parameterized):
-        i = param.Range(default=(1, 2), softbounds=(1, 5), bounds=(0, 10))
+async def test_param_generator(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def function(value):
+        yield Markdown(f"{value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+
+    checkbox.value = True
+
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
-    t = Test()
-    w = EditableRangeSlider.from_param(t.param.i)
+async def test_param_generator_append(document, comm):
+    checkbox = Checkbox(value=False)
 
-    msg = "Range parameter 'value''s lower bound must be in range \[0, 10\]"
-    with pytest.raises(ValueError, match=msg):
-        w.value = (-1, 2)
+    def function(value):
+        yield Markdown(f"{value}")
+        yield Markdown(f"{not value}")
 
-    assert w.value == (1, 2)
+    pane = ParamFunction(bind(function, checkbox), generator_mode='append')
+
+    root = pane.get_root(document, comm)
+
+    await async_wait_until(lambda: len(root.children) == 2)
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    await async_wait_until(lambda: len(root.children) == 2)
+    await async_wait_until(lambda: (
+        (root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n') and
+        (root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    ))
+
+
+async def test_param_async_generator(document, comm):
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+
+    checkbox.value = True
+
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
+
+
+@pytest.mark.flaky(max_runs=3)
+async def test_param_async_generator_append(document, comm):
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+        await asyncio.sleep(0.01)
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox), generator_mode='append')
+
+    root = pane.get_root(document, comm)
+
+    await async_wait_until(lambda: len(root.children) == 1, interval=10)
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    await async_wait_until(lambda: len(root.children) == 2, interval=10)
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    await async_wait_until(lambda: len(root.children) == 1, interval=10)
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await async_wait_until(lambda: len(root.children) == 2, interval=10)
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+
+@pytest.mark.flaky(max_runs=3)
+def test_param_generator_multiple(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def function(value):
+        yield Markdown(f"{value}")
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n', timeout=10_000)
+
+    checkbox.value = True
+
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+
+async def test_param_async_generator_multiple(document, comm):
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+        await asyncio.sleep(0.1)
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    assert root.children[0].text == '&lt;pre&gt; &lt;/pre&gt;'
+    await asyncio.sleep(0.1)
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await asyncio.sleep(0.1)
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await asyncio.sleep(0.2)
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+async def test_param_async_generator_abort(document, comm):
+    number = NumberInput(value=0)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+        await asyncio.sleep(0.1)
+        yield Markdown(f"{value + 1}")
+
+    pane = ParamFunction(bind(function, number))
+
+    root = pane.get_root(document, comm)
+
+    assert root.children[0].text == '&lt;pre&gt; &lt;/pre&gt;'
+    await asyncio.sleep(0.01)
+    assert root.children[0].text == '&lt;p&gt;0&lt;/p&gt;\n'
+
+    number.value = 5
+
+    await asyncio.sleep(0.01)
+    assert root.children[0].text == '&lt;p&gt;5&lt;/p&gt;\n'
+    await asyncio.sleep(0.1)
+    assert root.children[0].text == '&lt;p&gt;6&lt;/p&gt;\n'
+
+
+def test_skip_param(document, comm):
+    checkbox = Checkbox(value=False)
+    button = Button()
+
+    def layout(value, click):
+        if not click:
+            raise Skip()
+        return Markdown(f"{value}")
+
+    layout = ParamFunction(bind(layout, checkbox, button))
+
+    root = layout.get_root(document, comm)
+
+    div = root.children[0]
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    checkbox.value = True
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    button.param.trigger('value')
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+
+async def test_async_skip_param(document, comm):
+    checkbox = Checkbox(value=False)
+    button = Button()
+
+    async def layout(value, click):
+        if not click:
+            raise Skip()
+        return Markdown(f"{value}")
+
+    layout = ParamFunction(bind(layout, checkbox, button))
+
+    root = layout.get_root(document, comm)
+
+    div = root.children[0]
+    await asyncio.sleep(0.01)
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    checkbox.value = True
+    await asyncio.sleep(0.01)
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    button.param.trigger('value')
+    await asyncio.sleep(0.01)
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'

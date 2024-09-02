@@ -1,0 +1,370 @@
+{% extends "vanilla/vanilla.html" %}
+
+{% block header_end %}
+{% if editable %}
+<div id="header-indicators">
+  <div id="grid-undo" class="header-icon disabled-button" title="Undo the last action"></div>
+  <div id="grid-reset" class="header-icon" title="Reset the Layout"></div>
+  {% if local_save %}
+  <div id="grid-save" class="header-icon disabled-button" title="Save the Layout to Local Storage"></div>
+  {% endif %}
+  {% if busy %}
+  <div class="pn-busy-container" title="Busy Indicator">
+    {{ embed(roots.busy_indicator) | indent(6) }}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block main %}
+<div class="main" id="main">
+  {% if main_max_width -%}
+  <div style="margin-left: auto; margin-right: auto; max-width: {{main_max_width}}">
+  {% endif %}
+  <div id="main-grid" class="muuri-grid">
+    {% for doc in docs %}
+    {% for root in doc.roots %}
+    {% if "main" in root.tags %}
+    <div class="muuri-grid-item {{ 'muuri-item-shown' if layout.get(root.id, {'visible': True}).get('visible', True) else 'muuri-item-hidden' }}" data-id="{{ root.id }}">
+      {{ embed(root) | indent(4) }}
+      {% if editable %}
+      <span class="muuri-handle drag"></span>
+      <span class="muuri-handle delete"></span>
+      <span class="muuri-handle resize"></span>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+  </div>
+  {%- if main_max_width %}
+  </div>
+  {% endif %}
+
+  <div id="pn-Modal" class="pn-modal header-adjust">
+    <div class="pn-modal-content">
+      <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+      {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "modal" in root.tags %}
+      {{ embed(root) | indent(10) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+<script>
+  function openNav() {
+    document.getElementById("sidebar").classList.remove("hidden");
+    document.getElementById("sidebar-button").onclick = closeNav;
+  }
+
+  function closeNav() {
+    document.getElementById("sidebar").classList.add("hidden");
+    document.getElementById("sidebar-button").onclick = openNav;
+  }
+
+  const modal = document.getElementById("pn-Modal");
+  const span = document.getElementById("pn-closeModal");
+
+  span.onclick = function() {
+    modal.style.display = "none";
+  }
+
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+
+  function scroll(item) {
+    const child = item.children[0].children[0]
+    if (child && (child.scrollHeight > item.clientHeight)) {
+      item.style.overflowY = 'auto';
+    } else {
+      item.style.removeProperty('overflow-y')
+    }
+  }
+
+  function export_layout() {
+    const layout = [];
+    const items = grid.getItems();
+    const el_ids = items.map((item) => item.getElement().getAttribute('data-id'))
+    for (const item of items) {
+      const el = item.getElement();
+      let height = el.style.height.slice(null, -2);
+      if (!height) {
+        const {top} = item.getMargin();
+        height = item.getHeight()-top;
+      } else {
+        height = parseFloat(height);
+      }
+      let width;
+      if (el.style.width.length) {
+        width = parseFloat(el.style.width.split('(')[1].split('%')[0]);
+      } else {
+        width = 100;
+      }
+      layout.push({
+        index: el_ids.indexOf(el.getAttribute('data-id')),
+        width: width,
+        height: height,
+        visible: item.isVisible(),
+      })
+    }
+    return layout;
+  }
+
+  function resize_item(item, width, height, notify = true) {
+    const screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
+    if (((width/100) * screen_width) < 100) {
+      width = (100/screen_width) * 100;
+    }
+    width = Math.min(100, width);
+    item.style.width = `calc( ${width}% - 30px)`;
+    if (height == null) {
+      item.style.height = "";
+    } else {
+      item.style.height = `${height}px`;
+    }
+    if (notify) {
+      grid.refreshItems()
+      grid.layout()
+    }
+    scroll(item)
+    {% if local_save and editable %}
+    document.getElementById('grid-save').classList.remove('disabled-button')
+    {% endif %}
+  }
+
+  function getFromLS(key) {
+    let ls = {};
+    if (window.localStorage) {
+      try {
+        ls = JSON.parse(window.localStorage.getItem(window.location.origin + window.location.pathname)) || {};
+      } catch (e) {
+        /*Ignore*/
+      }
+    }
+    const specs = ls[key];
+    if (specs == null)
+      return
+    const els = document.querySelectorAll("[data-id]")
+    for (const spec of specs) {
+      spec['id'] = els[spec.index].getAttribute('data-id')
+    }
+    return specs
+  }
+
+  // Initialize grid
+  const layout = getFromLS('grid-layout') || {{ muuri_layout|json  }}
+  const ids = layout.map(s => s.id)
+  const grid = new Muuri('.muuri-grid', {
+    sortData: {id: (item, el) => {
+      const index = ids.indexOf(el.getAttribute('data-id'))
+      return index === -1 ? Infinity : index;
+    }},
+    dragEnabled: {{ editable|json }},
+    dragHandle: '.muuri-handle.drag',
+    layout: {fillGaps: true}
+  }).on('dragInit', function () {
+    undo_stack.push({action: "drag", items: grid.getItems()})
+  }).on('dragEnd', function () {
+    const last_event = undo_stack.pop()
+    if (last_event.action == "move") {
+      undo_stack.push(last_event)
+    }
+  }).on('move', function () {
+    const last_event = undo_stack.pop()
+    if (last_event.action === "drag") {
+      const event = {...last_event, action: "move"}
+      undo_stack.push(event)
+      document.getElementById('grid-undo').classList.remove('disabled-button')
+    }
+  })
+  for (const spec of layout) {
+    const el = document.querySelector(`[data-id="${spec.id}"]`);
+    if (el && spec.width && spec.height) {
+      resize_item(el, spec.width, spec.height, false)
+    }
+  }
+  const hidden = [...document.querySelectorAll('.muuri-item-hidden')]
+  if (hidden.length) {
+    grid.hide(hidden.map(el => grid.getItem(el)), {instant: true, layout: false});
+  }
+  grid.refreshSortData();
+  grid.refreshItems();
+  grid.sort('id', {layout: false});
+  grid.layout({instant: true})
+
+  window.muuriGrid = grid;
+
+  window.addEventListener('resize', function(event) {
+    grid.getItems().map(item => scroll(item.getElement()))
+    grid.refreshItems()
+    grid.layout()
+  }, true);
+
+  // Set up reset, hide and resize actions
+  {% if editable %}
+    const undo_stack = []
+  const undo_button = document.getElementById("grid-undo")
+  undo_button.addEventListener("click", function() {
+    const action = undo_stack.pop()
+    if (!action) {
+      return
+    }
+    if (undo_stack.length === 0) {
+      undo_button.classList.add('disabled-button')
+    }
+    switch(action.action) {
+      case "hide":
+        grid.show([action.item], {instant: true});
+      case "resize":
+        resize_item(action.item.getElement(), action.width, action.height, false);
+        grid.refreshItems()
+        grid.layout()
+      case "move":
+        grid.sort(action.items)
+    }
+  })
+
+  const reset_button = document.getElementById("grid-reset")
+  reset_button.addEventListener("click", function() {
+    if (window.localStorage) {
+      window.localStorage.removeItem(window.location.origin + window.location.pathname)
+    }
+    document.getElementById('content').classList.add('pn-loading', 'pn-{{ loading_spinner }}')
+    const queryParams = new URLSearchParams(window.location.search);
+    queryParams.set('reset', 1);
+    window.location.search = queryParams.toString();
+  })
+
+  for (const handle of document.querySelectorAll('.muuri-handle.delete')) {
+    handle.addEventListener("click", (event) => {
+      const item = grid.getItem(event.target.parentElement);
+      grid.hide([item], {instant: true});
+      undo_stack.push({action: "hide", item: item})
+      undo_button.classList.remove('disabled-button')
+      {% if local_save %}
+      document.getElementById('grid-save').classList.remove('disabled-button')
+      {% endif %}
+    })
+  }
+
+  function saveToLS(key, value) {
+    if (window.localStorage) {
+      window.localStorage.setItem(
+        window.location.origin + window.location.pathname,
+        JSON.stringify({
+          [key]: value
+        })
+      );
+    }
+  }
+
+  {% if local_save %}
+  const save_button = document.getElementById("grid-save")
+  save_button.addEventListener("click", function() {
+    if (!save_button.classList.contains('disabled-button')) {
+      const layout = export_layout()
+      saveToLS('grid-layout', layout)
+      save_button.classList.add('disabled-button')
+    }
+  })
+  {% endif %}
+
+  window.resizeableGrid = interact('.muuri-grid-item')
+  .resizable({
+    // resize from all edges and corners
+    edges: { right: '.muuri-handle.resize', bottom: '.muuri-handle.resize' },
+    listeners: {
+      start (event) {
+        const el = event.target
+        const item = grid.getItem(el);
+        let height = el.style.height.slice(null, -2);
+        if (!height) {
+          const {top} = item.getMargin();
+          height = item.getHeight()-top;
+        } else {
+          height = parseFloat(height);
+        }
+        let width;
+        if (el.style.width.length) {
+          width = parseFloat(el.style.width.split('(')[1].split('%')[0]);
+        } else {
+          width = 100;
+        }
+        undo_stack.push({action: "resize", item, width, height})
+      },
+      move (event) {
+        const item = grid.getItem(event.target);
+        const {top, bottom} = item.getMargin();
+        const screen_width = grid.getElement().clientWidth;
+        const width = (event.rect.width/screen_width)*100
+        const height = event.rect.height-top-bottom;
+        event.target.style.zIndex = 100;
+        resize_item(event.target, width, height, false);
+        grid.refreshItems()
+        grid.layout()
+        window.dispatchEvent(new Event('resize'));
+      },
+      end (event) {
+        event.target.style.removeProperty('z-index')
+        grid.refreshItems()
+        grid.layout()
+        window.dispatchEvent(new Event('resize'));
+        undo_button.classList.remove('disabled-button')
+        {% if local_save %}
+        save_button.classList.remove('disabled-button')
+        {% endif %}
+      }
+    },
+    modifiers: [
+      interact.modifiers.restrictSize({
+        min: { width: 100, height: 50 }
+      }),
+      interact.modifiers.snapEdges({
+        offset: 'parent',
+        targets: [
+          // Snap to other items or right edge if within 25 pixels
+          function (x, y, interaction) {
+            const target = {range: 25}
+            const grid_bbox = grid.getElement().getBoundingClientRect()
+            for (const item of grid.getItems()) {
+              if ((item.getElement() === interaction.element) && item.isVisible()) {
+                continue
+              }
+              const {top, left} = item.getPosition();
+              const margin = item.getMargin()
+              const bottom = (top + item.getHeight()) + margin.top + margin.bottom;
+              const right = (left + item.getWidth()) + margin.left + margin.right;
+
+              if (Math.abs(right - x) < target.range) {
+                target.x = right + margin.right
+              }
+              if (Math.abs(bottom - y) < target.range) {
+                target.y = bottom
+              }
+            }
+            if ((grid_bbox.width - x) < target.range) {
+              target.x = grid_bbox.width+10
+            }
+            return target
+          }
+        ]
+      })
+    ]
+  })
+  {% endif %}
+</script>
+{% endblock %}
+
+{% block state_roots %}
+{{ super() }}
+{{ embed(roots.editor) }}
+{% endblock %}

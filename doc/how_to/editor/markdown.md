@@ -89,4 +89,4 @@ Then, from the command line, launch a server with:
 panel serve app.md --show --autoreload
 ```
 
-![The rendered Panel application written as a Markdown file.](../../_static/markdown_sample.png)
+![The rendered Panel application written as a Markdown file.](../../_static/images/markdown_sample.png)

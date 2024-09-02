@@ -1,4 +1,5 @@
-import {ColorMapper, ContinuousColorMapper, LinearColorMapper} from "@bokehjs/models/mappers"
+import type {ColorMapper, ContinuousColorMapper} from "@bokehjs/models/mappers"
+import {LinearColorMapper} from "@bokehjs/models/mappers"
 import {range, linspace} from "@bokehjs/core/util/array"
 
 export declare type ColorBarOptions = {
@@ -16,27 +17,36 @@ export class VTKColorBar {
   constructor(
     private parent: HTMLElement,
     private mapper: ColorMapper,
-    private options: ColorBarOptions = {}
+    private options: ColorBarOptions = {},
   ) {
-    if (!options.ticksNum) options.ticksNum = 5
-    if (!options.fontFamily) options.fontFamily = "Arial"
-    if (!options.fontSize) options.fontSize = "12px"
-    if (!options.ticksSize) options.ticksSize = 2
+    if (!options.ticksNum) {
+      options.ticksNum = 5
+    }
+    if (!options.fontFamily) {
+      options.fontFamily = "Arial"
+    }
+    if (!options.fontSize) {
+      options.fontSize = "12px"
+    }
+    if (!options.ticksSize) {
+      options.ticksSize = 2
+    }
     this.canvas = document.createElement("canvas")
     this.canvas.style.width = "100%"
     this.parent.appendChild(this.canvas)
     this.ctx = this.canvas.getContext("2d")!
     this.ctx.font = `${this.options.fontSize} ${this.options.fontFamily}`
     this.ctx.lineWidth = options.ticksSize
-    if (!options.height)
+    if (!options.height) {
       options.height = `${(this.font_height+1) * 4}px` //title/ticks/colorbar
+    }
     this.canvas.style.height = options.height
     this.draw_colorbar()
   }
 
   get values(): number[] {
     const {min, max} = (this.mapper as ContinuousColorMapper).metrics
-    return linspace(min, max, this.options.ticksNum!)
+    return linspace(min, max, this.options.ticksNum)
   }
 
   get ticks(): string[] {
@@ -44,7 +54,7 @@ export class VTKColorBar {
   }
 
   get title(): string {
-    return this.mapper.name ? this.mapper.name : "scalars"
+    return this.mapper.name ?? "scalars"
   }
 
   get font_height(): number {
@@ -55,8 +65,9 @@ export class VTKColorBar {
         actualBoundingBoxDescent,
       } = this.ctx.measureText(`${val}`)
       const height = actualBoundingBoxAscent + actualBoundingBoxDescent
-      if (font_height < height)
+      if (font_height < height) {
         font_height = height
+      }
     })
     return font_height
   }
@@ -86,12 +97,12 @@ export class VTKColorBar {
       0,
       2 * (this.font_height + 1) + 1,
       this.canvas.width,
-      this.canvas.height
+      this.canvas.height,
     )
     this.ctx.restore()
     this.ctx.save()
     //title
-    this.ctx.textAlign = 'center'
+    this.ctx.textAlign = "center"
     this.ctx.fillText(this.title, this.canvas.width/2, font_height+1)
     this.ctx.restore()
     this.ctx.save()

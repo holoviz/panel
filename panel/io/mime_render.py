@@ -17,41 +17,29 @@ import ast
 import base64
 import copy
 import io
-import pathlib
-import pkgutil
 import sys
 import traceback
 
 from contextlib import redirect_stderr, redirect_stdout
 from html import escape
 from textwrap import dedent
-from typing import Any, Dict, List
-
-import markdown
+from typing import Any
 
 #---------------------------------------------------------------------
 # Import API
 #---------------------------------------------------------------------
 
-def _stdlibs():
-    env_dir = str(pathlib.Path(sys.executable).parent.parent)
-    modules = list(sys.builtin_module_names)
-    for m in pkgutil.iter_modules():
-        mpath = getattr(m.module_finder, 'path', '')
-        if mpath.startswith(env_dir) and 'site-packages' not in mpath:
-            modules.append(m.name)
-    return modules
-
-_STDLIBS = _stdlibs()
+_STDLIBS = sys.stdlib_module_names
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
+    'transformers_js': 'transformers-js-py',
 }
 _IGNORED_PKGS = ['js', 'pyodide']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
 
-def find_imports(code: str) -> List[str]:
+def find_requirements(code: str) -> list[str]:
     """
-    Finds the imports in a string of code.
+    Finds the packages required in a string of code.
 
     Parameters
     ----------
@@ -61,7 +49,7 @@ def find_imports(code: str) -> List[str]:
     Returns
     -------
     ``List[str]``
-        A list of module names that are imported in the code.
+        A list of package names that are to be installed for the code to be able to run.
 
     Examples
     --------
@@ -135,7 +123,7 @@ def _display(*objs, **kwargs):
 
 def exec_with_return(
     code: str,
-    global_context: Dict[str, Any] = None,
+    global_context: dict[str, Any] = None,
     stdout: Any = None,
     stderr: Any = None
 ) -> Any:
@@ -176,7 +164,7 @@ def exec_with_return(
             exec(compile(init_ast, "<ast>", "exec"), global_context)
             if not last_ast.body:
                 out = None
-            elif type(last_ast.body[0]) == ast.Expr:
+            elif type(last_ast.body[0]) is ast.Expr:
                 out = eval(compile(_convert_expr(last_ast.body[0]), "<ast>", "eval"), global_context)
             else:
                 exec(compile(last_ast, "<ast>", "exec"), global_context)
@@ -218,13 +206,14 @@ def render_svg(value, meta, mime):
 
 def render_image(value, meta, mime):
     data = f"data:{mime};charset=utf-8;base64,{value}"
-    attrs = " ".join(['{k}="{v}"' for k, v in meta.items()])
+    attrs = " ".join([f'{k}="{v}"' for k, v in meta.items()])
     return f'<img src="{data}" {attrs}</img>', 'text/html'
 
 def render_javascript(value, meta, mime):
     return f'<script>{value}</script>', 'text/html'
 
 def render_markdown(value, meta, mime):
+    import markdown
     return (markdown.markdown(
         value, extensions=["extra", "smarty", "codehilite"], output_format='html5'
     ), 'text/html')
@@ -234,6 +223,12 @@ def render_pdf(value, meta, mime):
     base64_pdf = base64.b64encode(data).decode("utf-8")
     src = f"data:application/pdf;base64,{base64_pdf}"
     return f'<embed src="{src}" width="100%" height="100%" type="application/pdf">', 'text/html'
+
+def render_plotly(value, meta, mime):
+    from ..pane import Plotly
+
+    config = value.pop('config', {})
+    return Plotly(value, config=config)
 
 def identity(value, meta, mime):
     return value, mime
@@ -248,6 +243,7 @@ MIME_RENDERERS = {
     "text/html": identity,
     "text/markdown": render_markdown,
     "text/plain": identity,
+    "application/vnd.plotly.v1+json": render_plotly
 }
 
 def eval_formatter(obj, print_method):

@@ -8,6 +8,15 @@ from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
 
 
+def _custom_repr(self):
+    try:
+        return f"ImportedStyleSheet(url={self.url!r})"
+    except Exception:
+        return "ImportedStyleSheet(...)"
+
+ImportedStyleSheet.__repr__ = _custom_repr
+
+
 class DesignTest(Design):
 
     modifiers = {
@@ -233,9 +242,9 @@ def test_design_apply_with_dist_url(document, comm):
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('https://mock.holoviz.org/css/loading.css')
+    assert s2.url.startswith('https://mock.holoviz.org/css/loading.css?v')
     assert isinstance(s3, ImportedStyleSheet)
-    assert s3.url == 'https://mock.holoviz.org/bundled/theme/default.css'
+    assert s3.url.startswith('https://mock.holoviz.org/bundled/theme/default.css?v')
     assert isinstance(s4, ImportedStyleSheet)
     assert s4.url == 'foo.css'
     assert s5 == '.bk-input {\n  color: red;\n}\n'

@@ -46,7 +46,7 @@ class TextEditor(Widget):
 
     placeholder = param.String(doc="Placeholder output when the editor is empty.")
 
-    value = param.String(doc="State of the current text in the editor")
+    value = param.String(default="", doc="State of the current text in the editor")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'name': 'name', 'value': 'text'

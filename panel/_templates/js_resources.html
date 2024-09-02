@@ -15,6 +15,8 @@ configuration in a Resources object.
 :type js_raw: list[str]
 
 #}
+<script type="esms-options">{"shimMode": true}</script>
+
 {% for file in js_files %}
 <script type="text/javascript" src="{{ file }}"></script>
 {% endfor %}
@@ -25,7 +27,7 @@ configuration in a Resources object.
 
 {%- for name, file in js_module_exports.items() %}
 <script type="module">
-  import {{ name }} from "{{ file }}";
+  import {{ name }} from "{% if not file.startswith('http') %}./{% endif %}{{ file }}";
   window.{{ name }} = {{ name }}
 </script>
 {%- endfor %}

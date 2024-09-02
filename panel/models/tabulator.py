@@ -16,16 +16,17 @@ from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
 
-TABULATOR_VERSION = "5.4.4"
+TABULATOR_VERSION = "6.2.1"
 
-JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.js"
+JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js"
 MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
 
 THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-    'bootstrap4', 'materialize', 'bulma', 'semantic-ui'
+    'bootstrap4', 'bootstrap4', 'bootstrap5', 'materialize', 'bulma',
+    'semantic-ui'
 ]
 # Theme names were renamed in Tabulator 5.0.
 _TABULATOR_THEMES_MAPPING = {
@@ -50,6 +51,35 @@ class TableEditEvent(ModelEvent):
             f'{type(self).__name__}(column={self.column}, row={self.row}, '
             f'value={self.value}, old={self.old})'
         )
+
+class SelectionEvent(ModelEvent):
+
+    event_name = 'selection-change'
+
+    def __init__(self, model, indices, selected, flush):
+        """ Selection Event
+
+        Parameters
+        ----------
+        model : ModelEvent
+            An event send when a selection is changed on the frontend.
+        indices : list[int]
+            A list of changed indices selected/deselected rows.
+        selected : bool
+            If true the rows were selected, if false they were deselected.
+        flush : bool
+            Whether the current selection should be emptied before adding the new indices.
+        """
+        self.indices = indices
+        self.selected = selected
+        self.flush = flush
+        super().__init__(model=model)
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(indices={self.indices}, selected={self.selected}, flush={self.flush})'
+        )
+
 
 class CellClickEvent(ModelEvent):
 
@@ -125,7 +155,7 @@ class DataTabulator(HTMLBox):
 
     page = Nullable(Int)
 
-    page_size = Int()
+    page_size = Nullable(Int)
 
     max_page = Int()
 
@@ -134,6 +164,8 @@ class DataTabulator(HTMLBox):
     select_mode = Any()
 
     selectable_rows = Nullable(List(Int))
+
+    theme_classes = List(String)
 
     __css_raw__ = CSS_URLS
 

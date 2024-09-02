@@ -54,10 +54,12 @@ class ECharts(LayoutDOM):
 
     data = Nullable(Dict(String, Any))
 
+    options = Nullable(Dict(String, Any))
+
     event_config = Dict(String, Any)
 
     js_events = Dict(String, List(Any))
 
     renderer = Enum("canvas", "svg")
 
-    theme = Enum("default", "light", "dark")
+    theme = String("default")

@@ -7,9 +7,7 @@ import os
 
 from base64 import b64encode
 from io import BytesIO
-from typing import (
-    Any, ClassVar, Dict, List, Mapping,
-)
+from typing import Any, ClassVar, Mapping
 
 import numpy as np
 import param
@@ -36,7 +34,6 @@ class TensorLikeMeta(type):
 class TensorLike(metaclass=TensorLikeMeta):
     """A class similar to torch.Tensor. We don't want to make PyTorch a dependency of this project
     """
-    pass
 
 class _MediaBase(ModelPane):
 
@@ -67,7 +64,7 @@ class _MediaBase(ModelPane):
 
     _default_mime: ClassVar[str]
 
-    _formats: ClassVar[List[str]]
+    _formats: ClassVar[list[str]]
 
     _media_type: ClassVar[str]
 
@@ -75,7 +72,7 @@ class _MediaBase(ModelPane):
         'sample_rate': None, 'object': 'value'
     }
 
-    _rerender_params: ClassVar[List[str]] = []
+    _rerender_params: ClassVar[list[str]] = []
 
     _updates: ClassVar[bool] = True
 
@@ -116,7 +113,7 @@ class _MediaBase(ModelPane):
             del msg['js_property_callbacks']
         return msg
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         fmt = self._default_mime
         if obj is None:
             data = b''
@@ -232,6 +229,8 @@ class Video(_MediaBase):
     ...     width=640, height=360, loop=True
     ... )
     """
+    volume = param.Integer(default=100, bounds=(0, 100), doc="""
+        The volume of the media player.""")
 
     _bokeh_model = _BkVideo
 

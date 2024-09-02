@@ -1,38 +1,43 @@
-import time
-
 import pytest
+
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
+
+from panel.pane import Markdown
+from panel.template import BootstrapTemplate
+from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
-from panel.io.server import serve
-from panel.pane import Markdown
-from panel.template import BootstrapTemplate
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
-
-
-def test_bootstrap_template_no_console_errors(page, port):
+def test_bootstrap_template_no_console_errors(page):
     tmpl = BootstrapTemplate()
     md = Markdown('Initial')
 
     tmpl.main.append(md)
 
-    serve(tmpl, port=port, threaded=True, show=False)
+    msgs, _ = serve_component(page, tmpl)
 
-    time.sleep(0.2)
-
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
-
-    page.goto(f"http://localhost:{port}")
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
 
     assert [msg for msg in msgs if msg.type == 'error'] == []
 
 
-def test_bootstrap_template_raw_css_on_config(page, port):
+def test_bootstrap_template_nested_route_no_console_errors(page):
+    tmpl = BootstrapTemplate()
+    md = Markdown('Initial')
+
+    tmpl.main.append(md)
+
+    msgs, _ = serve_component(page, {'/foo/bar': tmpl})
+
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
+
+    assert [msg for msg in msgs if msg.type == 'error'] == []
+
+
+def test_bootstrap_template_raw_css_on_config(page):
     tmpl = BootstrapTemplate()
 
     tmpl.config.raw_css = ['.markdown { color: rgb(255, 0, 0); }']
@@ -41,33 +46,21 @@ def test_bootstrap_template_raw_css_on_config(page, port):
 
     tmpl.main.append(md)
 
-    serve(tmpl, port=port, threaded=True, show=False)
-
-    time.sleep(1)
-
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
-
-    page.goto(f"http://localhost:{port}")
+    msgs, _ = serve_component(page, tmpl)
 
     expect(page.locator('.markdown')).to_have_css('color', 'rgb(255, 0, 0)')
 
     assert [msg for msg in msgs if msg.type == 'error'] == []
 
 
-def test_bootstrap_template_updates(page, port):
+def test_bootstrap_template_updates(page):
     tmpl = BootstrapTemplate()
     md = Markdown('Initial')
 
     tmpl.main.append(md)
 
-    serve(tmpl, port=port, threaded=True, show=False)
+    serve_component(page, tmpl)
 
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
-
-    assert page.locator(".markdown").locator("div").text_content() == 'Initial\n'
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'
-    time.sleep(0.1)
-    assert page.locator(".markdown").locator("div").text_content() == 'Updated\n'
+    expect(page.locator(".markdown").locator("div")).to_have_text('Updated\n')

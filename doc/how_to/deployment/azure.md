@@ -26,6 +26,6 @@ You also need to configure your app service **general settings** to
 - allow `Web sockets` and
 - be `Always on`
 
-<img src="../../_static/azure_deployment.png" style="width:67%"></img>
+<img src="../../_static/images/azure_deployment.png" style="width:67%"></img>
 
 If you would like to setup **automated CI/ CD** via Azure DevOps, Azure Pipelines and Docker to a Web App for Containers, you can find a good starting point in the [devops Folder](https://github.com/MarcSkovMadsen/awesome-panel/tree/master/devops) of [awesome-panel.org](https://awesome-panel.org).

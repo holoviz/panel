@@ -17,30 +17,33 @@ How to use indicators
 """
 from __future__ import annotations
 
+import asyncio
 import math
 import os
 import sys
+import time
 
 from math import pi
 from typing import (
-    TYPE_CHECKING, ClassVar, Dict, List, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource, FixedTicker
+from bokeh.models import ColumnDataSource, FixedTicker, Tooltip
 from bokeh.plotting import figure
-from tqdm.asyncio import tqdm as _tqdm
 
+from .._param import Align
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
 from ..models import (
-    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator,
+    HTML, Progress as _BkProgress, TooltipIcon as _BkTooltipIcon,
+    TrendIndicator as _BkTrendIndicator,
 )
 from ..pane.markup import Str
 from ..reactive import SyncableData
-from ..util import escape, updating
+from ..util import PARAM_NAME_PATTERN, escape, updating
 from ..viewable import Viewable
 from .base import Widget
 
@@ -50,6 +53,10 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+try:
+    from tqdm.asyncio import tqdm as _tqdm
+except ImportError:
+    _tqdm = None
 
 RED   = "#d9534f"
 GREEN = "#5cb85c"
@@ -64,7 +71,7 @@ class Indicator(Widget):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
@@ -77,10 +84,64 @@ class BooleanIndicator(Indicator):
     visually indicate a boolean value.
     """
 
+    throttle = param.Integer(default=500, doc=""""
+        Throttles value change events, ensuring that they only toggle
+        off after a minimum time specified in milliseconds has passed.""")
+
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'throttle': None}
+
     __abstract = True
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._last__updated = time.monotonic()
+        self._reset__task = None
+
+    def _throttle_events(self, events):
+        try:
+            io_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return events
+        if not io_loop.is_running():
+            return events
+
+        throttled_events = {}
+        async def schedule_off():
+            await asyncio.sleep(self.throttle/1000)
+            if self._reset__task:
+                self.param.trigger('value')
+            self._reset__task = None
+
+        for k, e in events.items():
+            if e.name != 'value':
+                throttled_events[k] = e
+                continue
+            new_time = time.monotonic()
+            if ((new_time - self._last__updated) < self.throttle/1000) and not e.new:
+                if self._reset__task:
+                    self._reset__task.cancel()
+                self._reset__task = asyncio.create_task(schedule_off())
+                continue
+            elif self._reset__task and e.new:
+                self._last__updated = new_time
+                self._reset__task.cancel()
+                self._reset__task = None
+                continue
+            throttled_events[k] = e
+            self._last__updated = new_time
+        return throttled_events
+
+    def _update_model(
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+    ) -> None:
+        events = self._throttle_events(events)
+        if not events:
+            return
+        super()._update_model(events, msg, root, model, doc, comm)
 
 
 class BooleanStatus(BooleanIndicator):
@@ -114,9 +175,9 @@ class BooleanStatus(BooleanIndicator):
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None}
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/booleanstatus.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/booleanstatus.css']
 
-    _widget_type: ClassVar[Type[Model]] = HTML
+    _widget_type: ClassVar[type[Model]] = HTML
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -149,26 +210,42 @@ class LoadingSpinner(BooleanIndicator):
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'])
 
-    height = param.Integer(default=125, doc="""
-        height of the circle.""")
-
-    width = param.Integer(default=125, doc="""
-        Width of the circle.""")
+    size = param.Integer(default=125, doc="""
+        Size of the spinner in pixels.""")
 
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None, 'bgcolor': None}
+    _rename = {'name': 'text'}
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/loadingspinner.css']
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': None, 'color': None, 'bgcolor': None, 'size': None
+    }
 
-    _widget_type: ClassVar[Type[Model]] = HTML
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/loadingspinner.css']
+
+    _widget_type: ClassVar[type[Model]] = HTML
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
+        if 'text' in msg:
+            text = msg.pop('text')
+            if not PARAM_NAME_PATTERN.match(text):
+                msg['text'] = escape(f'<span><b>{text}</b></span>')
         value = msg.pop('value', None)
         color = msg.pop('color', None)
         bgcolor = msg.pop('bgcolor', None)
+        if msg.get('sizing_mode') == 'fixed':
+            msg['sizing_mode'] = None
+        if 'size' in msg or 'height' in msg or 'stylesheets' in msg:
+            if 'width' in msg and msg['width'] == msg.get('height'):
+                del msg['width']
+            size = int(min(msg.pop('height', self.height) or float('inf'), msg.pop('size', self.size)))
+            msg['stylesheets'] = (
+                [f':host {{ --loading-spinner-size: {size}px; }}'] +
+                msg.get('stylesheets', [])
+            )
+            msg['min_width'] = msg['min_height'] = size
         if value is None and not (color or bgcolor):
             return msg
         color_cls = f'{self.color}-{self.bgcolor}'
@@ -214,6 +291,10 @@ class Progress(ValueIndicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])
+
     value = param.Integer(default=-1, bounds=(-1, None), doc="""
         The current value of the progress bar. If set to -1 the progress
         bar will be indeterminate and animate depending on the active
@@ -221,17 +302,15 @@ class Progress(ValueIndicator):
 
     width = param.Integer(default=300)
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/progress.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/progress.css']
 
-    _widget_type: ClassVar[Type[Model]] = _BkProgress
+    _widget_type: ClassVar[type[Model]] = _BkProgress
 
     @param.depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (-1, self.max)
 
     def __init__(self,**params):
-        if "sizing_mode" not in params:
-            params["sizing_mode"] = None
         super().__init__(**params)
         self._update_value_bounds()
 
@@ -275,7 +354,7 @@ class Number(ValueIndicator):
         'title_size': None
     }
 
-    _widget_type: ClassVar[Type[Model]] = HTML
+    _widget_type: ClassVar[type[Model]] = HTML
 
     def __init__(self, **params):
         if "sizing_mode" not in params:
@@ -284,6 +363,8 @@ class Number(ValueIndicator):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
+        if not any(p in self._source_transforms or p == 'name' for p in msg):
+            return msg
         font_size = msg.pop('font_size', self.font_size)
         title_font_size = msg.pop('title_size', self.title_size)
         name = msg.pop('name', self.name)
@@ -329,7 +410,7 @@ class String(ValueIndicator):
         'value': None, 'default_color': None, 'font_size': None, 'title_size': None
     }
 
-    _widget_type: ClassVar[Type[Model]] = HTML
+    _widget_type: ClassVar[type[Model]] = HTML
 
     def __init__(self, **params):
         if "sizing_mode" not in params:
@@ -338,6 +419,8 @@ class String(ValueIndicator):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
+        if not any(p in self._source_transforms or p == 'name' for p in msg):
+            return msg
         font_size = msg.pop('font_size', self.font_size)
         title_font_size = msg.pop('title_size', self.title_size)
         name = msg.pop('name', self.name)
@@ -423,7 +506,7 @@ class Gauge(ValueIndicator):
         if 'panel.models.echarts' not in sys.modules:
             from ..models.echarts import ECharts
         else:
-            ECharts = getattr(sys.modules['panel.models.echarts'], 'ECharts')
+            ECharts = sys.modules['panel.models.echarts'].ECharts
         return ECharts
 
     def __init__(self, **params):
@@ -437,7 +520,7 @@ class Gauge(ValueIndicator):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         vmin, vmax = msg.pop('bounds', self.bounds)
-        msg['data'] = {
+        msg['data'] = data = {
             'tooltip': {
                 'formatter': msg.pop('tooltip_format', self.tooltip_format)
             },
@@ -463,6 +546,13 @@ class Gauge(ValueIndicator):
                 }
             }]
         }
+        sm = self.sizing_mode
+        if 'stretch' in sm:
+            data['responsive'] = True
+            if 'width' in msg and ('both' in sm or 'width' in sm):
+                del msg['width']
+            if 'height' in msg  and ('both' in sm or 'height' in sm):
+                del msg['height']
         colors = msg.pop('colors', self.colors)
         if colors:
             msg['data']['series'][0]['axisLine']['lineStyle']['color'] = colors
@@ -492,6 +582,9 @@ class Dial(ValueIndicator):
 
     annulus_width = param.Number(default=0.2, doc="""
       Width of the radial annulus as a fraction of the total.""")
+
+    background = param.Parameter(default=None, doc="""
+        Background color of the component.""")
 
     bounds = param.Range(default=(0, 100), doc="""
       The upper and lower bound of the dial.""")
@@ -543,7 +636,7 @@ class Dial(ValueIndicator):
 
     width = param.Integer(default=250, bounds=(1, None))
 
-    _manual_params: ClassVar[List[str]] = [
+    _manual_params: ClassVar[list[str]] = [
         'value', 'start_angle', 'end_angle', 'bounds',
         'annulus_width', 'format', 'background', 'needle_width',
         'tick_size', 'title_size', 'value_size', 'colors',
@@ -551,7 +644,7 @@ class Dial(ValueIndicator):
         'width', 'nan_format', 'needle_color', 'label_color'
     ]
 
-    _data_params: ClassVar[List[str]] = _manual_params
+    _data_params: ClassVar[list[str]] = _manual_params
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'background': 'background_fill_color'
@@ -1014,7 +1107,7 @@ class Trend(SyncableData, Indicator):
     :Example:
 
     >>> data = {'x': np.arange(50), 'y': np.random.randn(50).cumsum()}
-    >>> Trend(title='Price', data=data, plot_type='area', width=200, height=200)
+    >>> Trend(name='Price', data=data, plot_type='area', width=200, height=200)
     """
 
     data = param.Parameter(doc="""
@@ -1044,7 +1137,7 @@ class Trend(SyncableData, Indicator):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    title = param.String(doc="""The title or a short description of the card""")
+    name = param.String(doc="""The name or a short description of the card""")
 
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
@@ -1052,15 +1145,15 @@ class Trend(SyncableData, Indicator):
     value_change = param.Parameter(default='auto', doc="""
       A secondary value. For example the change in percent.""")
 
-    _data_params: ClassVar[List[str]] = ['data']
+    _data_params: ClassVar[list[str]] = ['data']
 
-    _manual_params: ClassVar[List[str]] = ['data']
+    _manual_params: ClassVar[list[str]] = ['data']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'data': None, 'name': 'name', 'selection': None
+        'data': None, 'name': 'title', 'selection': None
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkTrendIndicator
+    _widget_type: ClassVar[type[Model]] = _BkTrendIndicator
 
     def _get_data(self):
         if self.data is None:
@@ -1122,9 +1215,11 @@ MARGIN = {
 
 
 
-class ptqdm(_tqdm):
+class ptqdm(_tqdm or object):
 
     def __init__(self, *args, **kwargs):
+        if _tqdm is None:
+            raise ImportError("tqdm is required for this indicator")
         self._indicator = kwargs.pop('indicator')
         super().__init__(*args, **kwargs)
 
@@ -1174,11 +1269,11 @@ class Tqdm(Indicator):
         The layout for the text and progress indicator.""",)
 
     lock = param.ClassSelector(class_=object, default=None,
-                               doc="""The `mutithreading.Lock` or `multiprocessing.Lock` object to be used by Tqdm.""",)
+                               doc="""The `multithreading.Lock` or `multiprocessing.Lock` object to be used by Tqdm.""",)
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    progress = param.ClassSelector(class_=Progress, precedence=-1, doc="""
+    progress = param.ClassSelector(class_=Progress, allow_refs=False, precedence=-1, doc="""
         The Progress indicator used to display the progress.""",)
 
     text = param.String(default='', doc="""
@@ -1199,7 +1294,7 @@ class Tqdm(Indicator):
     write_to_console = param.Boolean(default=False, doc="""
         Whether or not to also write to the console.""")
 
-    _layouts: ClassVar[Dict[Type[Panel], str]] = {Row: 'row', Column: 'column'}
+    _layouts: ClassVar[dict[type[Panel], str]] = {Row: 'row', Column: 'column'}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'min': None, 'max': None, 'text': None, 'name': 'name'
@@ -1307,6 +1402,38 @@ class Tqdm(Indicator):
         self.value = self.param.value.default
         self.text = self.param.text.default
 
+
+class TooltipIcon(Widget):
+    """
+    The `TooltipIcon` displays a small `?` icon. When you hover over the `?` icon, the `value`
+    will display.
+
+    Use the `TooltipIcon` to provide
+
+    - helpful information to users without taking up a lot of screen space
+    - tooltips next to Panel widgets that do not support tooltips yet.
+
+    Reference: https://panel.holoviz.org/reference/indicators/TooltipIcon.html
+
+    :Example:
+
+    >>> pn.widgets.TooltipIcon(value="This is a simple tooltip by using a string")
+    """
+
+
+    align = Align(default='center', doc="""
+        Whether the object should be aligned with the start, end or
+        center of its container. If set as a tuple it will declare
+        (vertical, horizontal) alignment.""")
+
+    value = param.ClassSelector(default="Description", class_=(str, Tooltip), doc="""
+        The description in the tooltip.""")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'description'}
+
+    _widget_type = _BkTooltipIcon
+
+
 __all__ = [
     "BooleanIndicator",
     "BooleanStatus",
@@ -1317,6 +1444,7 @@ __all__ = [
     "Number",
     "Progress",
     "String",
+    "TooltipIcon",
     "Tqdm",
     "Trend",
     "ValueIndicator",

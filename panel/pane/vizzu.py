@@ -4,7 +4,7 @@ import datetime as dt
 import sys
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, Optional,
 )
 
 import numpy as np
@@ -35,18 +35,18 @@ class Vizzu(ModelPane, SyncableData):
     >>> Vizzu(df)
     """
 
-    animation = param.Dict(default={}, doc="""
-        Animation settings (see https://lib.vizzuhq.com/latest/reference/modules/vizzu.Anim.html).""")
+    animation = param.Dict(default={}, nested_refs=True, doc="""
+        Animation settings (see https://lib.vizzuhq.com/latest/reference/modules/Anim/).""")
 
-    config = param.Dict(default={}, doc="""
+    config = param.Dict(default={}, nested_refs=True, doc="""
         The config contains all of the parameters needed to render a
         particular static chart or a state of an animated chart
-        (see https://lib.vizzuhq.com/latest/reference/interfaces/vizzu.Config.Chart.html).""")
+        (see https://lib.vizzuhq.com/latest/reference/interfaces/Config.Chart/).""")
 
     click = param.Parameter(doc="""
         Data associated with the latest click event.""")
 
-    column_types = param.Dict(default={}, doc="""
+    column_types = param.Dict(default={}, nested_refs=True, doc="""
         Optional column definitions. If not defined will be inferred
         from the data.""")
 
@@ -54,22 +54,28 @@ class Vizzu(ModelPane, SyncableData):
         The config contains all of the parameters needed to render a
         particular static chart or a state of an animated chart.""")
 
-    style = param.Dict(default={}, doc="""
+    style = param.Dict(default={}, nested_refs=True, doc="""
         Style configuration of the chart.""")
 
-    _data_params: ClassVar[List[str]] = ['object']
+    tooltip = param.Boolean(default=False, doc="""
+        Whether to enable tooltips on the chart.""")
 
-    _rename: ClassVar[Dict[str, str | None]] = {
+    _data_params: ClassVar[list[str]] = ['object']
+
+    _rename: ClassVar[dict[str, str | None]] = {
         'click': None, 'column_types': None, 'object': None
     }
 
-    _rerender_params: ClassVar[List[str]] = []
+    _rerender_params: ClassVar[list[str]] = []
 
     _updates: ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
+        click_handler = params.pop('on_click', None)
         super().__init__(object, **params)
         self._event_handlers = []
+        if click_handler:
+            self.on_click(click_handler)
 
     @classmethod
     def applies(cls, object):
@@ -117,7 +123,7 @@ class Vizzu(ModelPane, SyncableData):
                         columns.append({'name': col, 'type': 'datetime'})
                     elif isinstance(value, str):
                         columns.append({'name': col, 'type': 'dimension'})
-                    elif isinstance(value, (float, np.float, int, np.int)):
+                    elif isinstance(value, (float, np.float64, np.int_, int)):
                         columns.append({'name': col, 'type': 'measure'})
                     else:
                         columns.append({'name': col, 'type': 'dimension'})
@@ -162,7 +168,7 @@ class Vizzu(ModelPane, SyncableData):
         pass
 
     def animate(
-        self, anim: Dict[str, Any], options: int | Dict[str, Any] | None = None
+        self, anim: dict[str, Any], options: int | dict[str, Any] | None = None
     ) -> None:
         """
         Updates the chart with a new configuration.
@@ -186,7 +192,7 @@ class Vizzu(ModelPane, SyncableData):
 
     # Public API
 
-    def on_click(self, callback: Callable[[Dict], None]):
+    def on_click(self, callback: Callable[[dict], None]):
         """
         Register a callback to be executed when any element in the
         chart is clicked on.

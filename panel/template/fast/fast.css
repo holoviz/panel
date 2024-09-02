@@ -146,7 +146,7 @@ img.app-logo {
   transform-origin: center left;
   height: calc(100vh - 76px);
   overflow-y: auto;
-  padding: 15px 10px 5px 0;
+  padding: 15px 10px 5px 5px;
 }
 
 #sidebar.hidden {
@@ -171,10 +171,6 @@ img.app-logo {
   border: none;
 }
 
-.sidenav fast-menu {
-  width: 100%;
-}
-
 .sidenav fast-menu a {
   padding: 8px 8px 8px 32px;
   text-decoration: none;
@@ -192,6 +188,7 @@ img.app-logo {
 .sidenav fast-menu {
   background-color: var(--background-color);
   box-shadow: none;
+  width: 100%;
 }
 
 .sidenav .closebtn {
@@ -215,6 +212,10 @@ img.app-logo {
   padding-inline-start: 0px;
   margin-block-start: 0;
   margin-block-end: 0;
+}
+
+div.pn-wrapper {
+  height: 100%;
 }
 
 .pn-modal-close {
@@ -364,4 +365,15 @@ fast-card {
   --dialog-height: auto;
   --background-color: var(--neutral-layer-floating);
   z-index: 10;
+}
+
+.pn-modal-content {
+  display: block;
+  overflow-x: auto;
+}
+
+textarea.xterm-helper-textarea,
+span.xterm-char-measure-element {
+  pointer-events: none;
+  opacity: 0;
 }

@@ -16,6 +16,7 @@ from bokeh.core.property.bases import Property
 from bokeh.models import CustomJS
 from param.parameterized import Watcher
 
+from ..util import param_watchers
 from .model import add_to_doc, diff
 from .state import state
 
@@ -81,7 +82,7 @@ def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=No
 
 
 def get_watchers(reactive):
-    return [w for pwatchers in reactive._param_watchers.values()
+    return [w for pwatchers in param_watchers(reactive).values()
             for awatchers in pwatchers.values() for w in awatchers]
 
 
@@ -157,7 +158,7 @@ def links_to_jslinks(model, widget):
 
         mappings = []
         for pname, tgt_spec in link.links.items():
-            if Watcher(*link[:-4]) in widget._param_watchers[pname]['value']:
+            if Watcher(*link[:-4]) in param_watchers(widget)[pname]['value']:
                 mappings.append((pname, tgt_spec))
 
         if mappings:
@@ -246,6 +247,8 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
 
     widget_data, merged, ignore = [], {}, []
     for widget in widgets:
+        if 'composite' in widget.tags:
+            continue
         if widget._param_pane is not None:
             # Replace parameter links with JS links
             link = param_to_jslink(model, widget)

@@ -1,6 +1,6 @@
 # Manually Cache
 
-This guide addresses how to manually cache data and objects on global object - `pn.state.cache`.
+This guide addresses how to cache data and objects globally across user sessions - `pn.state.cache`.
 
 ---
 

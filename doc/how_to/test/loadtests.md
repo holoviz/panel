@@ -14,7 +14,7 @@ This kind of testing is really useful if you want to
 Before you get started ensure you have installed the required dependencies:
 
 ```bash
-pip install panel pytest locust pytest-playwright pytest-asyncio loadwright==0.1.0
+pip install panel pytest locust pytest-playwright pytest-asyncio loadwright
 ```
 
 and ensure `playwright` sets up the browsers it will use to display the applications:

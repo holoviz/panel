@@ -10,10 +10,11 @@ import param
 from bokeh.document.events import MessageSentEvent
 from bokeh.document.json import Literal, MessageSent, TypedDict
 from bokeh.util.serialization import make_id
-from ipykernel.comm import Comm, CommManager
+from ipykernel.comm import CommManager
 from ipykernel.kernelbase import Kernel
 from ipywidgets import Widget
 from ipywidgets._version import __protocol_version__
+from ipywidgets.widgets.widget import _remove_buffers
 
 # Stop ipywidgets_bokeh from patching the kernel
 ipykernel.kernelbase.Kernel._instance = ''
@@ -28,6 +29,11 @@ from traitlets import Any
 from ..config import __version__
 from ..util import classproperty
 from .state import set_curdoc, state
+
+try:
+    from ipykernel.comm.comm import BaseComm as _IPyComm
+except Exception:
+    from ipykernel.comm.comm import Comm as _IPyComm
 
 try:
     # Support for ipywidgets>=8.0.5
@@ -69,19 +75,28 @@ def _on_widget_constructed(widget, doc=None):
         (not (comm and isinstance(widget.comm, comm.DummyComm)) and
          isinstance(widget.comm.kernel, PanelKernel))):
         return
-    args = dict(
-        kernel=kernel,
-        target_name='jupyter.widget', data={}, buffers=[],
-        metadata={'version': __protocol_version__}
-    )
+    wstate, buffer_paths, buffers = _remove_buffers(widget.get_state())
+    args = {
+        'target_name': 'jupyter.widget',
+        'data': {
+            'state': wstate,
+            'buffer_paths': buffer_paths
+        },
+        'buffers': buffers,
+        'metadata': {
+            'version': __protocol_version__
+        },
+    }
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
     try:
-        widget.comm = Comm(**args)
+        widget.comm = _IPyComm(**args)
+        widget.comm.kernel = kernel
     except Exception as e:
         if 'PANEL_IPYWIDGET' not in os.environ:
             raise e
     kernel.register_widget(widget)
+
 
 # Patch font-awesome CSS onto ipywidgets_bokeh IPyWidget
 IPyWidget.__css__ = [
@@ -122,8 +137,9 @@ class MessageSentEventPatched(MessageSentEvent):
 class PanelSessionWebsocket(SessionWebsocket):
 
     def __init__(self, *args, **kwargs):
-        session.Session.__init__(self, *args, **kwargs)
+        self.parent = kwargs.pop('parent', None)
         self._document = kwargs.pop('document', None)
+        session.Session.__init__(self, **kwargs)
         self._queue = []
         self._document.on_message("ipywidgets_bokeh", self.receive)
 
@@ -203,7 +219,6 @@ class PanelKernel(Kernel):
     def register_widget(self, widget):
         comm = widget.comm
         comm.kernel = self
-        comm.open()
         self.comm_manager.register_comm(comm)
 
     def _wrap_handler(self, msg_type, handler):

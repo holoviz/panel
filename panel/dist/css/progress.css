@@ -20,7 +20,10 @@ progress[value]::-webkit-progress-bar {
 
 progress[value] ::-webkit-progress-value {
   position: relative;
-  background-size: 35px 20px, 100% 100%, 100% 100%;
+  background-size:
+    35px 20px,
+    100% 100%,
+    100% 100%;
   border-radius: 3px;
 }
 
@@ -33,7 +36,10 @@ progress.active:not([value])::before {
 }
 
 progress[value]::-moz-progress-bar {
-  background-size: 35px 20px, 100% 100%, 100% 100%;
+  background-size:
+    35px 20px,
+    100% 100%,
+    100% 100%;
   border-radius: 3px;
 }
 

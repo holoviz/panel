@@ -6,8 +6,10 @@ from pathlib import Path
 
 import pytest
 
+from requests.exceptions import MissingSchema
+
 from panel.pane import (
-    GIF, ICO, JPG, PDF, PNG, SVG,
+    GIF, ICO, JPG, PDF, PNG, SVG, WebP,
 )
 from panel.pane.markup import escape
 
@@ -15,7 +17,11 @@ JPG_FILE = 'https://assets.holoviz.org/panel/samples/jpg_sample.jpg'
 JPEG_FILE = 'https://assets.holoviz.org/panel/samples/jpeg_sample.jpeg'
 PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
 SVG_FILE = 'https://assets.holoviz.org/panel/samples/svg_sample.svg'
+WEBP_FILE = 'https://assets.holoviz.org/panel/samples/webp_sample.webp'
 
+embed_parametrize = pytest.mark.parametrize(
+    'embed', [False, pytest.param(True, marks=pytest.mark.internet)]
+)
 
 def test_jpeg_applies():
     assert JPG.applies(JPEG_FILE)
@@ -67,14 +73,17 @@ twopixel = dict(\
           b'AAAAAAAAAAAAAAAAFBv/EABkRAAEFAAAAAAAAAAAAAAAAAAEAAjFxsf/aAAwDAQ' + \
           b'ACEQMRAD8AA0qs5HvTHQcJdsChioXSbOr/2Q==',
     ico = b'AAABAAEAAgEAAAEAIAA0AAAAFgAAACgAAAACAAAAAgAAAAEAIAAAAAAACAAAAHQ' + \
-          b'SAAB0EgAAAAAAAAAAAAD//////////wAAAAA=')
+          b'SAAB0EgAAAAAAAAAAAAD//////////wAAAAA=',
+    webp= b'UklGRkIAAABXRUJQVlA4WAoAAAAQAAAAAQAAAAAAQUxQSAMAAAAAAAAAVlA4IBg' + \
+          b'AAAAwAQCdASoCAAEAAUAmJaQAA3AA/v02aAA='
+          )
 
 
-def test_imgshape():
-    for t in [PNG, JPG, GIF, ICO]:
-        w,h = t._imgshape(b64decode(twopixel[t.name.lower()]))
-        assert w == 2
-        assert h == 1
+@pytest.mark.parametrize('t', [PNG, JPG, GIF, ICO, WebP], ids=lambda t: t.name.lower())
+def test_imgshape(t):
+    w, h = t._imgshape(b64decode(twopixel[t.name.lower()]))
+    assert w == 2
+    assert h == 1
 
 def test_load_from_byteio():
     """Testing a loading a image from a ByteIo"""
@@ -100,6 +109,7 @@ def test_load_from_stringio():
     image_data = image_pane._data(memory)
     assert 'PNG' in image_data
 
+@pytest.mark.internet
 def test_loading_a_image_from_url():
     """Tests the loading of a image from a url"""
     url = 'https://raw.githubusercontent.com/holoviz/panel/main/doc/_static/logo.png'
@@ -150,18 +160,30 @@ def test_pdf_no_embed(document, comm):
 
     assert model.text.startswith(f"&lt;embed src=&quot;{url}")
 
+def test_pdf_local_file(document, comm):
+    path = Path(__file__).parent.parent / "test_data" / "sample.pdf"
+    pdf_pane = PDF(object=path)
+    try:
+        model = pdf_pane.get_root(document, comm)
+    except MissingSchema:
+        return # ignore issues with local paths
+    assert model.text.startswith("&lt;embed src=&quot;data:application/pdf;base64,JVBER")
+    assert model.text.endswith("==#page=1&quot; width=&#x27;100%&#x27; height=&#x27;100%&#x27; type=&quot;application/pdf&quot;&gt;")
+
 def test_png_native_size(document, comm):
     png = PNG(PNG_FILE, embed=False)
     model = png.get_root(document, comm)
     assert 'width: auto' in model.text
     assert 'height: auto' in model.text
 
+@pytest.mark.internet
 def test_png_native_size_embed(document, comm):
     png = PNG(PNG_FILE, embed=True)
     model = png.get_root(document, comm)
     assert 'width: 800px' in model.text
     assert 'height: 600px' in model.text
 
+@pytest.mark.internet
 def test_png_native_size_embed_with_width(document, comm):
     png = PNG(PNG_FILE, embed=True, width=200)
     model = png.get_root(document, comm)
@@ -174,6 +196,7 @@ def test_png_native_size_with_width(document, comm):
     assert 'width: 200px' in model.text
     assert 'height: auto' in model.text
 
+@pytest.mark.internet
 def test_png_native_size_embed_with_height(document, comm):
     png = PNG(PNG_FILE, embed=True, height=200)
     model = png.get_root(document, comm)
@@ -186,6 +209,7 @@ def test_png_native_size_with_height(document, comm):
     assert 'width: auto' in model.text
     assert 'height: 200px' in model.text
 
+@pytest.mark.internet
 def test_png_embed_scaled_fixed_size(document, comm):
     png = PNG(PNG_FILE, width=400, embed=True)
     model = png.get_root(document, comm)
@@ -199,7 +223,7 @@ def test_png_scaled_fixed_size(document, comm):
     assert 'height: auto' in model.text
 
 @pytest.mark.parametrize('sizing_mode', ['scale_width', 'stretch_width', 'stretch_both', 'scale_both'])
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_png_scale_width(sizing_mode, embed, document, comm):
     png = PNG(PNG_FILE, sizing_mode=sizing_mode, fixed_aspect=True, embed=embed)
     model = png.get_root(document, comm)
@@ -207,56 +231,56 @@ def test_png_scale_width(sizing_mode, embed, document, comm):
     assert 'height: auto' in model.text
 
 @pytest.mark.parametrize('sizing_mode', ['scale_height', 'stretch_height'])
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_png_scale_height(sizing_mode, embed, document, comm):
     png = PNG(PNG_FILE, sizing_mode=sizing_mode, fixed_aspect=True, embed=embed)
     model = png.get_root(document, comm)
     assert 'width: auto' in model.text
     assert 'height: 100%' in model.text
 
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_png_stretch_width(embed, document, comm):
     png = PNG(PNG_FILE, sizing_mode='stretch_width', fixed_aspect=False, embed=embed, height=500)
     model = png.get_root(document, comm)
     assert 'width: 100%' in model.text
     assert 'height: 500px' in model.text
 
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_png_stretch_height(embed, document, comm):
     png = PNG(PNG_FILE, sizing_mode='stretch_height', fixed_aspect=False, width=500, embed=embed)
     model = png.get_root(document, comm)
     assert 'width: 500px' in model.text
     assert 'height: 100%' in model.text
 
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_png_stretch_both(embed, document, comm):
     png = PNG(PNG_FILE, sizing_mode='stretch_both', fixed_aspect=False, embed=embed)
     model = png.get_root(document, comm)
     assert 'width: 100%' in model.text
     assert 'height: 100%' in model.text
 
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_svg_native_size(embed, document, comm):
     svg = SVG(SVG_FILE, embed=embed)
     model = svg.get_root(document, comm)
     assert 'width: auto' in model.text
     assert 'height: auto' in model.text
 
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_svg_native_size_with_width(embed, document, comm):
     svg = SVG(SVG_FILE, embed=embed, width=200)
     model = svg.get_root(document, comm)
     assert 'width: 200px' in model.text
     assert 'height: auto' in model.text
 
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_svg_native_size_with_height(embed, document, comm):
     svg = SVG(SVG_FILE, embed=embed, height=200)
     model = svg.get_root(document, comm)
     assert 'width: auto' in model.text
     assert 'height: 200px' in model.text
 
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_svg_scaled_fixed_size(embed, document, comm):
     svg = SVG(SVG_FILE, width=400, embed=embed)
     model = svg.get_root(document, comm)
@@ -264,7 +288,7 @@ def test_svg_scaled_fixed_size(embed, document, comm):
     assert 'height: auto' in model.text
 
 @pytest.mark.parametrize('sizing_mode', ['scale_width', 'stretch_width', 'stretch_both', 'scale_both'])
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_svg_scale_width(sizing_mode, embed, document, comm):
     svg = SVG(SVG_FILE, sizing_mode=sizing_mode, fixed_aspect=True, embed=embed)
     model = svg.get_root(document, comm)
@@ -272,30 +296,36 @@ def test_svg_scale_width(sizing_mode, embed, document, comm):
     assert 'height: auto' in model.text
 
 @pytest.mark.parametrize('sizing_mode', ['scale_height', 'stretch_height'])
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_svg_scale_height(sizing_mode, embed, document, comm):
     svg = SVG(SVG_FILE, sizing_mode=sizing_mode, fixed_aspect=True, embed=embed)
     model = svg.get_root(document, comm)
     assert 'width: auto' in model.text
     assert 'height: 100%' in model.text
 
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_svg_stretch_width(embed, document, comm):
     svg = SVG(SVG_FILE, sizing_mode='stretch_width', fixed_aspect=False, embed=embed, height=500)
     model = svg.get_root(document, comm)
     assert 'width: 100%' in model.text
     assert 'height: 500px' in model.text
 
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_svg_stretch_height(embed, document, comm):
     svg = SVG(SVG_FILE, sizing_mode='stretch_height', fixed_aspect=False, width=500, embed=embed)
     model = svg.get_root(document, comm)
     assert 'width: 500px' in model.text
     assert 'height: 100%' in model.text
 
-@pytest.mark.parametrize('embed', [False, True])
+@embed_parametrize
 def test_svg_stretch_both(embed, document, comm):
     svg = SVG(SVG_FILE, sizing_mode='stretch_both', fixed_aspect=False, embed=embed)
     model = svg.get_root(document, comm)
     assert 'width: 100%' in model.text
     assert 'height: 100%' in model.text
+
+def test_image_caption(document, comm):
+    png = PNG(PNG_FILE, caption='Some Caption')
+    model = png.get_root(document, comm)
+    assert 'Some Caption' in model.text
+    assert 'figcaption' in model.text

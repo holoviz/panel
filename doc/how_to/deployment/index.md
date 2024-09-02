@@ -7,6 +7,13 @@ For guides on running and configuring a Panel server see the [server how-to guid
 ::::{grid} 2 3 3 5
 :gutter: 1 1 1 2
 
+:::{grid-item-card} AWS
+:link: aws
+:link-type: doc
+
+![AWS Logo](../../_static/logos/aws.png)
+:::
+
 :::{grid-item-card} Azure
 :link: azure
 :link-type: doc
@@ -42,6 +49,13 @@ For guides on running and configuring a Panel server see the [server how-to guid
 ![Hugging Face Logo](../../_static/logos/huggingface.png)
 :::
 
+:::{grid-item-card} Ploomber Cloud
+:link: ploomber
+:link-type: doc
+
+![Ploomber Logo](../../_static/logos/ploomber.png)
+:::
+
 ::::
 
 ## Other Cloud Providers
@@ -53,9 +67,11 @@ Panel can be used with just about any cloud provider that can launch a Python pr
 :hidden:
 :maxdepth: 2
 
+aws
 azure
 binder
 gcp
 heroku
 huggingface
+ploomber
 ```

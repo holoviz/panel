@@ -45,8 +45,12 @@ class GoldenTemplate(BasicTemplate):
         if 'main' in tags:
             model.margin = (10, 15, 10, 10)
 
-    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
-        resources = super().resolve_resources(cdn=cdn)
+    def resolve_resources(
+        self,
+        cdn: bool | Literal['auto'] = 'auto',
+        extras: dict[str, dict[str, str]] | None = None
+    ) -> ResourcesType:
+        resources = super().resolve_resources(cdn=cdn, extras=extras)
         del_theme = 'dark' if self._design.theme._name =='default' else 'light'
         del resources['css'][f'golden-theme-{del_theme}']
         return resources

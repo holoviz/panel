@@ -17,8 +17,8 @@ In order for Panel to set up communication channels inside JupyterLite we have t
 To get Panel installed inside a Jupyterlite session we have to install it with `piplite`. The default Bokeh and Panel packages are quite large since they contain contents which are needed in a server environment. Since we will be running inside Jupyter these contents are not needed. To bundle the optimized packages download them from the CDN and place them in the `<lite-dir>/pypi` directory. You can download them from the CDN (replacing the latest version numbers):
 
 ```
-https://cdn.holoviz.org/panel/1.0.0/dist/wheels/bokeh-3.1.1-py3-none-any.whl
-https://cdn.holoviz.org/panel/1.0.0/dist/wheels/panel-1.0.0-py3-none-any.whl
+https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl
+https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl
 ```
 
 ## Building Panelite

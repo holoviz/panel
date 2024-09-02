@@ -5,7 +5,7 @@ bokeh model.
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -14,7 +14,6 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..io.resources import CDN_DIST
 from ..util import isdatetime, lazy_load
 from ..viewable import Layoutable
 from .base import ModelPane
@@ -45,25 +44,27 @@ class Plotly(ModelPane):
     >>> Plotly(some_plotly_figure, width=500, height=500)
     """
 
-    click_data = param.Dict(doc="Click callback data")
+    click_data = param.Dict(doc="Click event data from `plotly_click` event.")
 
-    clickannotation_data = param.Dict(doc="Clickannotation callback data")
+    clickannotation_data = param.Dict(doc="Clickannotation event data from `plotly_clickannotation` event.")
 
-    config = param.Dict(doc="Config data")
+    config = param.Dict(nested_refs=True, doc="""
+        Plotly configuration options. See https://plotly.com/javascript/configuration-options/""")
 
-    hover_data = param.Dict(doc="Hover callback data")
+    hover_data = param.Dict(doc="Hover event data from `plotly_hover` and `plotly_unhover` events.")
 
     link_figure = param.Boolean(default=True, doc="""
        Attach callbacks to the Plotly figure to update output when it
        is modified in place.""")
 
-    relayout_data = param.Dict(doc="Relayout callback data")
+    relayout_data = param.Dict(nested_refs=True, doc="Relayout event data from `plotly_relayout` event")
 
-    restyle_data = param.List(doc="Restyle callback data")
+    restyle_data = param.List(nested_refs=True, doc="Restyle event data from `plotly_restyle` event")
 
-    selected_data = param.Dict(doc="Selected callback data")
+    selected_data = param.Dict(nested_refs=True, doc="Selected event data from `plotly_selected` and `plotly_deselect` events.")
 
-    viewport = param.Dict(doc="Current viewport state")
+    viewport = param.Dict(nested_refs=True, doc="""Current viewport state, i.e. the x- and y-axis limits of the displayed plot.
+                          Updated on `plotly_relayout`, `plotly_relayouting` and `plotly_restyle` events.""")
 
     viewport_update_policy = param.Selector(default="mouseup", doc="""
         Policy by which the viewport parameter is updated during user interactions.
@@ -84,14 +85,11 @@ class Plotly(ModelPane):
 
     priority: ClassVar[float | bool | None] = 0.8
 
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/plotly.css'
-    ]
-
     _updates: ClassVar[bool] = True
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'link_figure': None, 'object': None
+        'link_figure': None, 'object': None, 'click_data': None, 'clickannotation_data': None,
+        'hover_data': None, 'selected_data': None
     }
 
     @classmethod
@@ -132,7 +130,7 @@ class Plotly(ModelPane):
     @staticmethod
     def _get_sources_for_trace(json, data, parent_path=''):
         for key, value in list(json.items()):
-            full_path = key if not parent_path else "{}.{}".format(parent_path, key)
+            full_path = key if not parent_path else f"{parent_path}.{key}"
             if isinstance(value, np.ndarray):
                 # Extract numpy array
                 data[full_path] = [json.pop(key)]
@@ -185,6 +183,10 @@ class Plotly(ModelPane):
         if self._figure is None or self.relayout_data is None:
             return
         relayout_data = self._clean_relayout_data(self.relayout_data)
+        # The _compound_array_props are sometimes not correctly reset
+        # which means that they are desynchronized with _props causing
+        # incorrect lookups and potential errors when updating a property
+        self._figure.layout._compound_array_props.clear()
         self._figure.plotly_relayout(relayout_data)
 
     @staticmethod
@@ -204,7 +206,7 @@ class Plotly(ModelPane):
             msg['relayout'] = relayout_data
         if restyle_data:
             msg['restyle'] = {'data': restyle_data, 'traces': trace_indexes}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
 
     def _update_from_figure(self, event, *args, **kwargs):
@@ -234,6 +236,11 @@ class Plotly(ModelPane):
             if update_array:
                 update_sources = True
                 cds.data[key] = [new]
+
+        for key in list(cds.data):
+            if key not in trace_arrays:
+                del cds.data[key]
+                update_sources = True
 
         return update_sources
 
@@ -282,14 +289,41 @@ class Plotly(ModelPane):
                 params['styles'] = {}
         return params
 
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'layout' in props or 'stylesheets' in props:
+            if 'layout' in props:
+                layout = props['layout']
+            elif self._models:
+                # Improve lookup of current layout
+                layout = list(self._models.values())[0][0].layout
+            else:
+                return props
+            btn_color = layout.get('template', {}).get('layout', {}).get('font', {}).get('color', 'black')
+            props['stylesheets'] = props.get('stylesheets', []) + [
+                f':host {{ --plotly-icon-color: gray; --plotly-active-icon-color: {btn_color}; }}'
+            ]
+        return props
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        self._bokeh_model  = lazy_load(
-            'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
-        )
-        return super()._get_model(doc, root, parent, comm)
+        if not hasattr(self, '_bokeh_model'):
+            self._bokeh_model = lazy_load(
+                'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
+            )
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('plotly_event', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event):
+        etype = event.data['type']
+        pname = f'{etype}_data'
+        if getattr(self, pname) == event.data['data']:
+            self.param.trigger(pname)
+        else:
+            self.param.update(**{pname: event.data['data']})
 
     def _update(self, ref: str, model: Model) -> None:
         if self.object is None:

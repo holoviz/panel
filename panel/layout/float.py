@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar, List
+from typing import ClassVar
 
 import param
 
@@ -34,6 +34,14 @@ STATUS = [
 class FloatPanel(ListLike, ReactiveHTML):
     """
     Float provides a floating panel layout.
+
+    Reference: https://panel.holoviz.org/reference/layouts/FloatPanel.html
+
+    :Example:
+
+    >>> import panel as pn
+    >>> pn.extension("floatpanel")
+    >>> pn.layout.FloatPanel("**I can float**!", position="center", width=300).servable()
     """
 
     config = param.Dict({}, doc="""
@@ -94,13 +102,26 @@ class FloatPanel(ListLike, ReactiveHTML):
           contentSize: `${model.width} ${model.height}`,
           onstatuschange: function() {
             data.status = this.status
-          }
+          },
+          onbeforeclose: function() {
+           data.status = 'closed'
+           return true
+          },
         }
         if (data.contained) {
           config.container = view.container
         }
         config = {...config, ...data.config}
         state.panel = jsPanel.create(config);
+        if (data.status !== 'normalized') {
+          view.run_script('status')
+        }
+        state.resizeHandler = (event) => {
+          if (event.panel === state.panel) {
+            view.invalidate_layout()
+          }
+        }
+        document.addEventListener('jspanelresizestop', state.resizeHandler, false)
         """,
         "name": "state.panel.setHeaderTitle(data.name)",
         "status": """
@@ -131,7 +152,11 @@ class FloatPanel(ListLike, ReactiveHTML):
         """,
         "contained": "delete state.panel; view.invalidate_render();",
         "theme": "state.panel.setTheme(data.theme)",
-        "remove": "view.run_script('close'); state.panel = undefined;",
+        "remove": """
+        document.removeEventListener('jspanelresizestop', state.resizeHandler, false);
+        view.run_script('close');
+        state.panel = undefined;
+        """,
         "offsetx": "view.run_script('reposition')",
         "offsety": "view.run_script('reposition')",
         "position": "if (!data.contained) { view.run_script('reposition') }",
@@ -169,7 +194,7 @@ class FloatPanel(ListLike, ReactiveHTML):
         }
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/floatpanel.css'
     ]
 
@@ -189,3 +214,23 @@ class FloatPanel(ListLike, ReactiveHTML):
 
     def __init__(self, *objects, name='', **params):
         super().__init__(objects=list(objects), name=name, **params)
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = super().select(selector)
+        for obj in self:
+            objects += obj.select(selector)
+        return objects

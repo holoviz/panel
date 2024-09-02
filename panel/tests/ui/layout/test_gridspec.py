@@ -1,13 +1,12 @@
-import time
 
 import pytest
 
 from panel import Column, GridSpec, Spacer
-from panel.io.server import serve
+from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
-def test_gridspec(page, port):
+def test_gridspec(page):
     gspec = GridSpec(width=800, height=600, margin=0)
 
     gspec[:,   0  ] = Spacer(styles=dict(background='red'))
@@ -16,11 +15,7 @@ def test_gridspec(page, port):
     gspec[2,   1:4] = Spacer(styles=dict(background='blue'))
     gspec[0:1, 3:4] = Spacer(styles=dict(background='purple'))
 
-    serve(gspec, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, gspec)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")
@@ -64,19 +59,17 @@ def test_gridspec(page, port):
 
     gspec[1, 1] = Spacer(styles=dict(background='black'))
 
-    time.sleep(0.2)
-
     children = page.locator(".bk-GridBox > div")
-    bbox6 = children.nth(5).bounding_box()
     assert children.nth(5).evaluate("""(element) =>
         window.getComputedStyle(element).getPropertyValue('background-color')""") == 'rgb(0, 0, 0)'
+    bbox6 = children.nth(5).bounding_box()
     assert bbox6['x'] == 200
     assert bbox6['y'] == 200
     assert bbox6['width'] == 200
     assert bbox6['height'] == 200
 
 
-def test_gridspec_stretch(page, port):
+def test_gridspec_stretch(page):
     gspec = GridSpec(sizing_mode='stretch_both')
     col = Column(gspec, width=800, height=600)
 
@@ -86,11 +79,7 @@ def test_gridspec_stretch(page, port):
     gspec[2,   1:4] = Spacer(styles=dict(background='blue'))
     gspec[0:1, 3:4] = Spacer(styles=dict(background='purple'))
 
-    serve(col, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, col)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox > div")
@@ -134,12 +123,10 @@ def test_gridspec_stretch(page, port):
 
     gspec[1, 1] = Spacer(styles=dict(background='black'))
 
-    time.sleep(0.25)
-
     children = page.locator(".bk-GridBox > div")
-    bbox6 = children.nth(5).bounding_box()
     assert children.nth(5).evaluate("""(element) =>
         window.getComputedStyle(element).getPropertyValue('background-color')""") == 'rgb(0, 0, 0)'
+    bbox6 = children.nth(5).bounding_box()
     assert bbox6['x'] == 200
     assert bbox6['y'] == 200
     assert bbox6['width'] == 200

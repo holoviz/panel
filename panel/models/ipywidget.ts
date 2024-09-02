@@ -1,40 +1,36 @@
-import {InlineStyleSheet, StyleSheetLike} from "@bokehjs/core/dom"
-import * as p from "@bokehjs/core/properties"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {InlineStyleSheet} from "@bokehjs/core/dom"
+import type * as p from "@bokehjs/core/properties"
 
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 const Jupyter = (window as any).Jupyter
 
 export class IPyWidgetView extends HTMLBoxView {
-  model: IPyWidget
+  declare model: IPyWidget
+
   private ipyview: any
   private ipychildren: any[]
   private manager: any
 
-  override async lazy_initialize(): Promise<void> {
-    await super.lazy_initialize()
+  override initialize(): void {
+    super.initialize()
     let manager: any
-    if ((Jupyter != null) && (Jupyter.notebook != null))
+    if ((Jupyter != null) && (Jupyter.notebook != null)) {
       manager = Jupyter.notebook.kernel.widget_manager
-    else if ((window as any).PyViz.widget_manager != null)
+    } else if ((window as any).PyViz.widget_manager != null) {
       manager = (window as any).PyViz.widget_manager
-    else {
+    } else {
       console.warn("Panel IPyWidget model could not find a WidgetManager")
       return
     }
     this.manager = manager
     this.ipychildren = []
-    const {spec, state} = this.model.bundle
-    const models = await manager.set_state(state)
-    const model = models.find((item: any) => item.model_id == spec.model_id)
-    if (model != null) {
-      const view = await this.manager.create_view(model, {el: this.el})
-      this.ipyview = view
-      if (view.children_views) {
-        for (const child of view.children_views.views)
-          this.ipychildren.push(await child)
-      }
-    }
+  }
+
+  override remove(): void {
+    this.ipyview.remove()
+    super.remove()
   }
 
   protected _ipy_stylesheets(): StyleSheetLike[] {
@@ -57,15 +53,30 @@ export class IPyWidgetView extends HTMLBoxView {
     return [...super.stylesheets(), ...this._ipy_stylesheets()]
   }
 
-  render(): void {
+  override render(): void {
     super.render()
-    if (this.ipyview != null) {
+    const {spec, state} = this.model.bundle
+    this.manager.set_state(state).then(async (models: any) => {
+      const model = models.find((item: any) => item.model_id == spec.model_id)
+      if (model == null) {
+        return
+      }
+
+      const view = await this.manager.create_view(model, {el: this.el})
+      this.ipyview = view
+      this.ipychildren = []
+      if (view.children_views) {
+        for (const child of view.children_views.views) {
+          this.ipychildren.push(await child)
+        }
+      }
       this.shadow_el.appendChild(this.ipyview.el)
-      this.ipyview.trigger('displayed', this.ipyview)
-      for (const child of this.ipychildren)
-        child.trigger('displayed', child)
+      this.ipyview.trigger("displayed", this.ipyview)
+      for (const child of this.ipychildren) {
+        child.trigger("displayed", child)
+      }
       this.invalidate_layout()
-    }
+    })
   }
 }
 
@@ -79,13 +90,13 @@ export namespace IPyWidget {
 export interface IPyWidget extends IPyWidget.Attrs {}
 
 export class IPyWidget extends HTMLBox {
-  properties: IPyWidget.Props
+  declare properties: IPyWidget.Props
 
   constructor(attrs?: Partial<IPyWidget.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.ipywidget"
+  static override __module__ = "panel.models.ipywidget"
 
   static {
     this.prototype.default_view = IPyWidgetView

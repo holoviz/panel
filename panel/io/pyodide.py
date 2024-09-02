@@ -2,24 +2,22 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import hashlib
 import io
 import json
 import os
-import pathlib
 import sys
+import uuid
 
-from typing import (
-    Any, Callable, List, Tuple,
-)
+from typing import Any, Callable
 
 import bokeh
+import js
 import param
 
 import pyodide # isort: split
 
 from bokeh import __version__
-from bokeh.core.serialization import Buffer, Serializer
+from bokeh.core.serialization import Buffer, Serialized, Serializer
 from bokeh.document import Document
 from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
@@ -29,10 +27,7 @@ from bokeh.events import DocumentReady
 from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
-from bokeh.util.sampledata import (
-    __file__ as _bk_util_dir, _download_file, external_data_dir, splitext,
-)
-from js import JSON, Object, XMLHttpRequest
+from js import JSON, XMLHttpRequest
 
 from ..config import config
 from ..util import edit_readonly, isurl
@@ -47,16 +42,37 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 
 try:
     from js import document as js_document  # noqa
+    try:
+        # PyScript Next Worker now patches js.document by default
+        from pyscript import RUNNING_IN_WORKER as _IN_PYSCRIPT_WORKER
+        if _IN_PYSCRIPT_WORKER:
+            from pyscript import window
+            js.window = window
+    except Exception:
+        _IN_PYSCRIPT_WORKER = False
     _IN_WORKER = False
 except Exception:
-    _IN_WORKER = True
+    try:
+        # Initial version of PyScript Next Worker support did not patch js.document
+        from pyscript import RUNNING_IN_WORKER as _IN_PYSCRIPT_WORKER
+        if _IN_PYSCRIPT_WORKER:
+            from pyscript import document, window
+            js.document = document
+            js.window = window
+        _IN_WORKER = False
+    except Exception:
+        _IN_PYSCRIPT_WORKER = False
+        _IN_WORKER = True
+
+# Ensure we don't try to load MPL WASM backend in worker
+if _IN_WORKER:
+    os.environ['MPLBACKEND'] = 'agg'
 
 try:
     import pyodide_http
     pyodide_http.patch_all()
 except Exception:
     pyodide_http = None
-    pass
 
 try:
     # Patch fsspec with synchronous http support
@@ -100,17 +116,21 @@ if pyodide_http is None:
         return _read_json_original(*args, **kwargs)
     pandas.read_json = _read_json
 
+_tasks = set()
+
 def async_execute(func: Any):
     event_loop = asyncio.get_running_loop()
     if event_loop.is_running():
-        asyncio.create_task(func())
+        task = asyncio.create_task(func())
+        _tasks.add(task)
+        task.add_done_callback(_tasks.discard)
     else:
         event_loop.run_until_complete(func())
     return
 
 param.parameterized.async_executor = async_execute
 
-def _doc_json(doc: Document, root_els=None) -> Tuple[str, str, str]:
+def _doc_json(doc: Document, root_els=None) -> tuple[str, str, str]:
     """
     Serializes a Bokeh Document into JSON representations of the entire
     Document, the individual render_items and the ids of DOM nodes to
@@ -142,7 +162,7 @@ def _doc_json(doc: Document, root_els=None) -> Tuple[str, str, str]:
         })
     return json.dumps(docs_json), json.dumps(render_items_json), json.dumps(root_ids)
 
-def _model_json(model: Model, target: str) -> Tuple[Document, str]:
+def _model_json(model: Model, target: str) -> tuple[Document, str]:
     """
     Renders a Bokeh Model to JSON representation given a particular
     DOM target and returns the Document and the serialized JSON string.
@@ -212,7 +232,7 @@ def _serialize_buffers(obj, buffers={}):
             return obj.to_base64()
     return obj
 
-def _process_document_events(doc: Document, events: List[Any]):
+def _process_document_events(doc: Document, events: list[Any]):
     serializer = Serializer(references=doc.models.synced_references)
     patch_json = PatchJson(events=serializer.encode(events))
     doc.models.flush_synced()
@@ -222,6 +242,39 @@ def _process_document_events(doc: Document, events: List[Any]):
         buffer_map[buffer.id] = pyodide.ffi.to_js(buffer.to_bytes()).buffer
     patch_json = _serialize_buffers(patch_json, buffers=buffer_map)
     return patch_json, buffer_map
+
+# JS function to convert undefined -> null (workaround for https://github.com/pyodide/pyodide/issues/3968)
+_dict_converter = pyodide.code.run_js("""
+((entries) => {
+  for (let entry of entries) {
+    if (entry[1] === undefined) {
+      entry[1] = null;
+    }
+  }
+  return Object.fromEntries(entries);
+})
+""")
+
+_current_buffers = []
+_patching = False
+
+def _bytes_converter(value, converter, other):
+    if not hasattr(value, 'buffer'):
+        return value
+    value = dict(value.object_entries())
+    uid = uuid.uuid4().hex
+    _current_buffers.append(
+        Buffer(id=uid, data=value['buffer'].to_bytes())
+    )
+    return {'id': uid}
+
+def _convert_json_patch(json_patch):
+    try:
+        patch = json_patch.to_py(default_converter=_bytes_converter)
+        serialized = Serialized(content=patch, buffers=list(_current_buffers))
+    finally:
+        _current_buffers.clear()
+    return serialized
 
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
@@ -235,27 +288,38 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     jsdoc: Javascript Document
         The Javascript Bokeh Document instance to sync.
     """
+
     def jssync(event):
         setter_id = getattr(event, 'setter_id', None)
-        if (setter_id is not None and setter_id == 'python'):
+        if (setter_id is not None and setter_id == 'python') or _patching:
             return
         json_patch = jsdoc.create_json_patch(pyodide.ffi.to_js([event]))
-        pydoc.apply_json_patch(json_patch.to_py(), setter='js')
+        patch = _convert_json_patch(json_patch)
+        pydoc.apply_json_patch(patch, setter='js')
 
     jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
 
     def pysync(event):
+        global _patching
         setter = getattr(event, 'setter', None)
         if setter is not None and setter == 'js':
             return
         json_patch, buffer_map = _process_document_events(pydoc, [event])
-        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=Object.fromEntries)
+        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
         buffer_map = pyodide.ffi.to_js(buffer_map)
-        jsdoc.apply_json_patch(json_patch, buffer_map)
+        _patching = True
+        try:
+            jsdoc.apply_json_patch(json_patch, buffer_map)
+        finally:
+            _patching = False
 
     pydoc.on_change(pysync)
-    pydoc.unhold()
-    pydoc.callbacks.trigger_event(DocumentReady())
+
+    try:
+        pydoc.unhold()
+        pydoc.callbacks.trigger_event(DocumentReady())
+    except Exception as e:
+        print(f'Error raised while processing Document events: {e}')  # noqa: T201
 
 def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None, setter: str | None = None):
     """
@@ -278,8 +342,9 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
         if setter is not None and getattr(event, 'setter', None) == setter:
             return
         json_patch, buffer_map = _process_document_events(doc, [event])
-        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=Object.fromEntries)
-        dispatch_fn(json_patch, pyodide.ffi.to_js(buffer_map), msg_id)
+        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
+        buffers = js.Map.new(pyodide.ffi.to_js(buffer_map))
+        dispatch_fn(json_patch, buffers, msg_id)
 
     doc.on_change(pysync)
     doc.unhold()
@@ -297,13 +362,12 @@ async def _link_model(ref: str, doc: Document) -> None:
     doc: bokeh.document.Document
         The bokeh Document to sync the rendered Model with.
     """
-    from js import Bokeh
-    rendered = Bokeh.index.object_keys()
+    rendered = js.window.Bokeh.index.object_keys()
     if ref not in rendered:
         await asyncio.sleep(0.1)
         await _link_model(ref, doc)
         return
-    views = Bokeh.index.object_values()
+    views = js.window.Bokeh.index.object_values()
     view = views[rendered.indexOf(ref)]
     _link_docs(doc, view.model.document)
 
@@ -316,33 +380,6 @@ def _get_pyscript_target():
         return sys.stdout._out # type: ignore
     elif not _IN_WORKER:
         raise ValueError("Could not determine target node to write to.")
-
-def _download_sampledata(progress: bool = False) -> None:
-    """
-    Download bokeh sampledata
-    """
-    data_dir = external_data_dir(create=True)
-    s3 = 'https://sampledata.bokeh.org'
-    with open(pathlib.Path(_bk_util_dir).parent / "sampledata.json") as f:
-        files = json.load(f)
-    for filename, md5 in files:
-        real_name, ext = splitext(filename)
-        if ext == '.zip':
-            if not splitext(real_name)[1]:
-                real_name += ".csv"
-        else:
-            real_name += ext
-        real_path = data_dir / real_name
-        if real_path.exists():
-            with open(real_path, "rb") as file:
-                data = file.read()
-            local_md5 = hashlib.md5(data).hexdigest()
-            if local_md5 == md5:
-                continue
-        _download_file(s3, filename, data_dir, progress=progress)
-
-bokeh.sampledata.download = _download_sampledata
-bokeh.util.sampledata.download = _download_sampledata
 
 #---------------------------------------------------------------------
 # Public API
@@ -381,7 +418,9 @@ def render_script(obj: Any, target: str) -> str:
         render_item.roots._roots[root] = target
     document.getElementById(target).classList.add('bk-root')
     script = script_for_render_items(docs_json, [render_item])
-    asyncio.create_task(_link_model(doc.roots[0].ref['id'], doc))
+    task = asyncio.create_task(_link_model(doc.roots[0].ref['id'], doc))
+    _tasks.add(task)
+    task.add_done_callback(_tasks.discard)
     return wrap_in_script_tag(script)
 
 def serve(*args, **kwargs):
@@ -427,14 +466,11 @@ async def write(target: str, obj: Any) -> None:
     obj: Viewable
         Object to render into the DOM node
     """
-
-    from js import Bokeh
-
     from ..pane import panel as as_panel
 
     obj = as_panel(obj)
     pydoc, model_json = _model_json(obj, target)
-    views = await Bokeh.embed.embed_item(JSON.parse(model_json))
+    views = await js.window.Bokeh.embed.embed_item(JSON.parse(model_json))
     jsdoc = list(views.roots)[0].model.document
     _link_docs(pydoc, jsdoc)
     pydoc.unhold()
@@ -446,7 +482,7 @@ def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
-    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, config.loading_spinner)
+    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}')
 
 def sync_location():
     """
@@ -454,15 +490,17 @@ def sync_location():
     """
     if not state.location:
         return
-    from js import window
-    loc_string = JSON.stringify(window.location)
+    try:
+        loc_string = JSON.stringify(js.window.location)
+    except Exception:
+        return
     loc_data = json.loads(loc_string)
     with edit_readonly(state.location):
         state.location.param.update({
             k: v for k, v in loc_data.items() if k in state.location.param
         })
 
-async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
+async def write_doc(doc: Document | None = None) -> tuple[str, str, str]:
     """
     Renders the contents of the Document into an existing template.
     Note that this assumes that the HTML file this function runs in
@@ -489,8 +527,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
 
     # Test whether we have access to DOM
     try:
-        from js import Bokeh, document
-        root_els = document.querySelectorAll('[data-root-id]')
+        root_els = js.document.querySelectorAll('[data-root-id]')
         for el in root_els:
             el.innerHTML = ''
     except Exception:
@@ -500,7 +537,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
 
     # If we have DOM access render and sync the document
     if root_els is not None:
-        views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
+        views = await js.window.Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
         jsdoc = list(views[0].roots)[0].model.document
         _link_docs(pydoc, jsdoc)
         sync_location()
@@ -533,7 +570,9 @@ def pyrender(
     Returns an JS Map containing the content, mime_type, stdout and stderr.
     """
     from ..pane import HoloViews, Interactive, panel as as_panel
+    from ..param import ReactiveExpr
     from ..viewable import Viewable, Viewer
+    PANES = (HoloViews, Interactive, ReactiveExpr)
     kwargs = {}
     if stdout_callback:
         kwargs['stdout'] = WriteCallbackStream(stdout_callback)
@@ -541,7 +580,7 @@ def pyrender(
         kwargs['stderr'] = WriteCallbackStream(stderr_callback)
     out = exec_with_return(code, **kwargs)
     ret = {}
-    if isinstance(out, (Model, Viewable, Viewer)) or HoloViews.applies(out) or Interactive.applies(out):
+    if isinstance(out, (Model, Viewable, Viewer)) or any(pane.applies(out) for pane in PANES):
         doc, model_json = _model_json(as_panel(out), target)
         state.cache[target] = doc
         ret['content'], ret['mime_type'] = model_json, 'application/bokeh'

@@ -56,6 +56,7 @@ from tornado.web import StaticFileHandler
 
 from ..config import config
 from .resources import DIST_DIR, ERROR_TEMPLATE, _env
+from .server import COMPONENT_PATH, ComponentResourceHandler
 from .state import state
 
 logger = logging.getLogger(__name__)
@@ -113,7 +114,7 @@ import sys
 
 app = r'{{ path }}'
 os.chdir(str(pathlib.Path(app).parent))
-sys.path = [os.getcwd()] + sys.path[1:]
+sys.path = [os.getcwd()] + sys.path
 
 from panel.io.jupyter_executor import PanelExecutor
 executor = PanelExecutor(app, '{{ token }}', '{{ root_url }}')
@@ -144,7 +145,37 @@ def generate_executor(path: str, token: str, root_url: str) -> str:
         execute_template.render(path=path, token=token, root_url=root_url)
     )
 
-class PanelJupyterHandler(JupyterHandler):
+class PanelBaseHandler(JupyterHandler):
+
+    def initialize(self, **kwargs):
+        super().initialize(**kwargs)
+        self.notebook_path = kwargs.pop('notebook_path', [])
+
+    def nb_path(self, path=None):
+        root_dir = get_server_root_dir(self.application.settings)
+        rel_path = pathlib.Path(self.notebook_path or path)
+        if rel_path.is_absolute():
+            notebook_path = str(rel_path)
+        else:
+            notebook_path = str((root_dir / rel_path).absolute())
+        return pathlib.Path(notebook_path)
+
+
+class PanelLayoutHandler(PanelBaseHandler):
+
+    @tornado.web.authenticated
+    async def get(self, path=None):
+        nb_path = self.nb_path(path)
+        layout_path = nb_path.parent / f'.{nb_path.name}.layout'
+        if not layout_path.is_file():
+            return {}
+        with open(layout_path, encoding='utf-8') as f:
+            layout = json.load(f)
+        self.set_header('Content-Type', 'text/json')
+        self.finish(layout)
+
+
+class PanelJupyterHandler(PanelBaseHandler):
     """
     The PanelJupyterHandler expects to be given a path to a notebook,
     .py file or Lumen .yaml file. Based on the kernelspec in the
@@ -158,7 +189,6 @@ class PanelJupyterHandler(JupyterHandler):
 
     def initialize(self, **kwargs):
         super().initialize(**kwargs)
-        self.notebook_path = kwargs.pop('notebook_path', [])
         self.kernel_started = False
 
     async def _get_info(self, msg_id, timeout=KERNEL_TIMEOUT):
@@ -169,9 +199,9 @@ class PanelJupyterHandler(JupyterHandler):
                 raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
             try:
                 msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
-            except Empty:
+            except Empty as e:
                 if not await ensure_async(self.kernel.is_alive()):
-                    raise RuntimeError("Kernel died before establishing Comm connection to Panel application.")
+                    raise RuntimeError("Kernel died before establishing Comm connection to Panel application.") from e
                 continue
             if msg['parent_header'].get('msg_id') != msg_id:
                 continue
@@ -179,7 +209,7 @@ class PanelJupyterHandler(JupyterHandler):
             if msg_type == 'execute_result':
                 data = msg['content']['data']
                 if 'text/error' in data:
-                    raise RuntimeError("Panel application errored during startup.")
+                    raise RuntimeError(data['text/error'])
                 extension_dirs = data['application/bokeh-extensions']
                 result = data['text/html']
             elif msg_type == 'comm_open' and msg['content']['target_name'] == self.session_id:
@@ -192,13 +222,7 @@ class PanelJupyterHandler(JupyterHandler):
 
     @tornado.web.authenticated
     async def get(self, path=None):
-        root_dir = get_server_root_dir(self.application.settings)
-        rel_path = pathlib.Path(self.notebook_path or path)
-        if rel_path.is_absolute():
-            notebook_path = str(rel_path)
-        else:
-            notebook_path = str((root_dir / rel_path).absolute())
-
+        notebook_path = self.nb_path(path)
         if (
             self.notebook_path and path
         ):  # when we are in single notebook mode but have a path
@@ -217,7 +241,7 @@ class PanelJupyterHandler(JupyterHandler):
         # Provision a kernel with the desired kernelspec
         if self.request.arguments.get('kernel'):
             requested_kernel = self.request.arguments.pop('kernel')[0].decode('utf-8')
-        elif notebook_path.endswith('.ipynb'):
+        elif notebook_path.suffix == '.ipynb':
             with open(notebook_path) as f:
                 nb = json.load(f)
             requested_kernel = nb.get('metadata', {}).get('kernelspec', {}).get('name')
@@ -231,7 +255,7 @@ class PanelJupyterHandler(JupyterHandler):
                 html = KERNEL_ERROR_TEMPLATE.render(
                     base_url=f'{root_url}/',
                     kernels=available_kernels,
-                    error_type='Kernel error',
+                    error_type='Kernel Error',
                     error=f"No such kernel '{requested_kernel}'",
                     title='Panel: Kernel not found'
                 )
@@ -240,12 +264,10 @@ class PanelJupyterHandler(JupyterHandler):
 
         kernel_env = {**os.environ}
         kernel_id = await ensure_async(
-            (
-                self.kernel_manager.start_kernel(
-                    kernel_name=requested_kernel,
-                    path=cwd,
-                    env=kernel_env,
-                )
+            self.kernel_manager.start_kernel(
+                kernel_name=requested_kernel,
+                path=cwd,
+                env=kernel_env,
             )
         )
         kernel_future = self.kernel_manager.get_kernel(kernel_id)
@@ -277,8 +299,8 @@ class PanelJupyterHandler(JupyterHandler):
             html = ERROR_TEMPLATE.render(
                 npm_cdn=config.npm_cdn,
                 base_url=f'{root_url}/',
-                error_type="Kernel error",
-                error="Failed to start kernel",
+                error_type="Kernel Error",
+                error="Failed to start application",
                 error_msg=str(e),
                 title="Panel: Kernel Error"
             )
@@ -305,6 +327,8 @@ class PanelWSProxy(WSHandler, JupyterHandler):
     Jupyter kernel that is running the Panel application. It send and
     receives Bokeh protocol messages via a Jupyter Comm.
     """
+
+    _tasks = set()
 
     def __init__(self, tornado_app, *args, **kw) -> None:
         # Note: tornado_app is stored as self.application
@@ -373,7 +397,9 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         await self.send_message(msg)
 
         self._ping_job.start()
-        asyncio.create_task(self._check_for_message())
+        task = asyncio.create_task(self._check_for_message())
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
 
     async def _check_for_message(self):
         while True:
@@ -381,9 +407,9 @@ class PanelWSProxy(WSHandler, JupyterHandler):
                 break
             try:
                 msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
-            except Empty:
+            except Empty as e:
                 if not await ensure_async(self.kernel.is_alive()):
-                    raise RuntimeError("Kernel died before expected shutdown of Panel app.")
+                    raise RuntimeError("Kernel died before expected shutdown of Panel app.") from e
                 continue
 
             msg_type = msg['header']['msg_type']
@@ -423,10 +449,10 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         if self.session_id in state._kernels:
             del state._kernels[self.session_id]
         self._ping_job.stop()
-        reply = self.kernel.shutdown(reply=True)
-        future = self.kernel_manager.shutdown_kernel(self.kernel_id, now=True)
-        asyncio.ensure_future(reply)
-        asyncio.ensure_future(future)
+        self._shutdown_futures = [
+            asyncio.ensure_future(self.kernel.shutdown(reply=True)),
+            asyncio.ensure_future(self.kernel_manager.shutdown_kernel(self.kernel_id, now=True))
+        ]
         self.kernel = None
 
 
@@ -445,8 +471,12 @@ def _load_jupyter_server_extension(notebook_app):
              PanelWSProxy),
             (urljoin(base_url, r"panel-preview/render/(.*)"),
              PanelJupyterHandler, {}),
+            (urljoin(base_url, r"panel-preview/layout/(.*)"),
+             PanelLayoutHandler, {}),
             (urljoin(base_url, r"panel_dist/(.*)"),
-             StaticFileHandler, dict(path=DIST_DIR))
+             StaticFileHandler, dict(path=DIST_DIR)),
+            (urljoin(base_url, f'panel-preview/{COMPONENT_PATH}(.*)'),
+             ComponentResourceHandler, {})
         ]
     )
 

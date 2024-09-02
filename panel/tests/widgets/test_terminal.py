@@ -40,6 +40,7 @@ def test_terminal(document, comm):
 
 @not_windows
 @not_osx
+@pytest.mark.subprocess
 def test_subprocess():
     args = "bash"
     terminal = pn.widgets.Terminal()
@@ -65,6 +66,7 @@ def test_subprocess():
 
 @not_windows
 @not_osx
+@pytest.mark.subprocess
 def test_run_list_args():
     terminal = pn.widgets.Terminal()
     subprocess = terminal.subprocess
@@ -91,10 +93,10 @@ def write_to_terminal(term):
 
 def print_to_terminal(term):
     sys.stdout = term
-    print("This print statement is redirected from stdout to the Panel Terminal")
+    print("This print statement is redirected from stdout to the Panel Terminal")  # noqa: T201
 
     sys.stdout = sys.__stdout__
-    print("This print statement is again redirected to the server console")
+    print("This print statement is again redirected to the server console")  # noqa: T201
 
 
 def get_logger(term):
@@ -112,7 +114,7 @@ def get_logger(term):
 
 
 def _special_characters(term, iterations=1):
-    for _ in range(0, iterations):
+    for _ in range(iterations):
         term.write("Danish Characters: æøåÆØÅ\n")
         term.write("Emoji: Python 🐍  Panel ❤️  LOL 😊 \n")
         term.write("Links: https://awesome-panel.org\n")
@@ -148,7 +150,7 @@ def get_app():
     log_button.on_click(lambda x: logger.info("Hello Info Logger"))
 
     stream_button = pn.widgets.Button(name="Stream", button_type="primary")
-    stream_button.on_click(lambda x: [logger.info(uuid.uuid4()) for i in range(0, 300)])
+    stream_button.on_click(lambda x: [logger.info(uuid.uuid4()) for i in range(300)])
 
     run_ls_in_subprocess_button = pn.widgets.Button(
         name="Run ls in subprocess", button_type="primary"

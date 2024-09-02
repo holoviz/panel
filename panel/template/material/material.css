@@ -98,6 +98,7 @@ img {
 #sidebar .mdc-list {
   padding-left: 5px;
   padding-right: 5px;
+  width: 100%;
 }
 
 .mdc-drawer-app-content {
@@ -155,9 +156,9 @@ img.app-logo {
 }
 
 .main-content {
-  height: calc(100vh - 64px);
+  height: calc(100vh - 84px);
   overflow: auto;
-  padding: 5px 15px 0px 15px;
+  padding: 10px 20px 20px 10px;
 }
 
 #header {
@@ -179,6 +180,7 @@ img.app-logo {
 }
 
 .mdc-drawer__content {
+  display: flex;
   overflow-x: hidden;
 }
 
@@ -216,4 +218,17 @@ img.app-logo {
   color: #000;
   text-decoration: none;
   cursor: pointer;
+}
+
+.mdc-top-app-bar__row {
+  min-height: 64px;
+}
+
+.tabulator-popup-container {
+  background-color: var(--mdc-theme-surface);
+}
+
+.tabulator-edit-list .tabulator-edit-list-item:hover {
+  background-color: var(--mdc-theme-primary);
+  color: var(--mdc-theme-on-primary);
 }

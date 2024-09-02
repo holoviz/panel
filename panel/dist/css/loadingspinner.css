@@ -3,16 +3,30 @@
   display: flex;
 }
 
+:host(.loader) div {
+  display: table;
+}
+
+:host(.loader) div > span {
+  display: table-cell;
+  vertical-align: middle;
+}
+
 :host(.loader) div::after {
   content: '';
   display: block;
   border-radius: 50%;
-  -webkit-mask-image: radial-gradient(transparent 50%, rgba(0, 0, 0, 1) 54%);
-  width: 100%;
-  height: 100%;
+  -webkit-mask-image: radial-gradient(transparent 50%, rgba(0, 0, 0, 1) 0);
   left: 0;
   top: 0;
-  animation: spin 2s linear infinite;
+  height: var(--loading-spinner-size);
+  width: var(--loading-spinner-size);
+  position: absolute;
+}
+
+:host(.loader) div > span {
+  font-size: max(calc(var(--loading-spinner-size) * 0.2), 12px);
+  padding-left: calc(var(--loading-spinner-size) + 1em);
 }
 
 :host(.loader.dark) div::after {

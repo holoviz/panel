@@ -13,6 +13,6 @@ def get_clusters(x, y, n_clusters):
     return ...
 ```
 
-<img src="../../_static/admin_logs.png" width="80%"></img>
+<img src="../../_static/images/admin_logs.png" width="80%"></img>
 
 ## Related Resources
