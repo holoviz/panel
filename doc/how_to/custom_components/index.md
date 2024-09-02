@@ -53,11 +53,12 @@ examples/table_viewer
 
 ## ESM Components
 
-Build custom components in Javascript using so called ESM components, which allow you to write components that automatically sync parameter state between Python and JS. ESM components can be written in pure JS, using React or using the AnyWidget specification.
+Build custom components in Javascript using so called ESM components, which allow you to write components that automatically sync parameter state between Python and JS. ESM components can be written in pure JavaScript, using [React](https://react.dev/) or using the [AnyWidget](https://anywidget.dev/) specification.
+
+ESM Components is our 2nd generation api for custom components while `ReactiveHTML` is our 1st generation. We recommend using ESM Components over `ReactiveHTML`.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
-
 
 :::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1 sd-animate-grow50` Compile and Bundle ESM Components
 :link: esm/build
@@ -73,6 +74,13 @@ How to specify external dependencies for ESM components and compile them into JS
 How to add both JS and Python based callbacks to ESM components.
 :::
 
+:::{grid-item-card} {octicon}`image;2.5em;sd-mr-1 sd-animate-grow50` Panes
+:link: esm/custom_panes
+:link-type: doc
+
+How to create panes using ESM components
+:::
+
 :::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Widgets
 :link: esm/custom_widgets
 :link-type: doc
@@ -84,19 +92,19 @@ How to create a custom widget using ESM components
 :link: esm/custom_layout
 :link-type: doc
 
-How to create a custom layout using ESM components
+How to create custom layouts using ESM components
 :::
 
-:::{grid-item-card} {octicon}`table;2.5em;sd-mr-1 sd-animate-grow50` Render a `DataFrame`
+:::{grid-item-card} {octicon}`table;2.5em;sd-mr-1 sd-animate-grow50` DataFrame
 :link: esm/dataframe
 :link-type: doc
 
-How to create `JSComponent`s and `ReactComponent`s that render data in a DataFrame.
+How to create ESM components that render data a DataFrame.
 :::
 
 ::::
 
-### Examples
+### ESM Examples
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -197,12 +205,13 @@ How to create input widgets using `ReactiveHTML`
 :link: reactive_html/reactive_html_dataframe
 :link-type: doc
 
-How to create components using `ReactiveHTML` and a DataFrame parameter
+How to create `ReactiveHTML` components that render data a DataFrame.
+
 :::
 
 ::::
 
-### Examples
+### `ReactiveHTML` Examples
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
