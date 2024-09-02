@@ -220,6 +220,9 @@ class _state(param.Parameterized):
     _oauth_user_overrides = {}
     _active_users = Counter()
 
+    # Watchers
+    _watch_events: list[asyncio.Event] = []
+
     def __repr__(self) -> str:
         server_info = []
         for server, panel, _docs in self._servers.values():
