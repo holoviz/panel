@@ -8,11 +8,13 @@ from typing import TYPE_CHECKING, Mapping, cast
 
 from bokeh_fastapi import BokehFastAPI
 from bokeh_fastapi.handler import WSHandler
-from fastapi import FastAPI
+from fastapi import (
+    FastAPI, HTTPException, Query, Request,
+)
 from fastapi.responses import FileResponse
 
 from .application import build_applications
-from .document import extra_socket_handlers
+from .document import _cleanup_doc, extra_socket_handlers
 from .resources import COMPONENT_PATH
 from .server import ComponentResourceHandler
 from .state import state
@@ -24,6 +26,9 @@ if TYPE_CHECKING:
     from .application import TViewableFuncOrPath
     from .location import Location
 
+#---------------------------------------------------------------------
+# Private API
+#---------------------------------------------------------------------
 
 def dispatch_fastapi(conn, events=None, msg=None):
     if msg is None:
@@ -33,12 +38,36 @@ def dispatch_fastapi(conn, events=None, msg=None):
 extra_socket_handlers[WSHandler] = dispatch_fastapi
 
 
+def add_liveness_handler(app, endpoint, applications):
+    @app.get(endpoint, response_model=dict[str, bool])
+    async def liveness_handler(request: Request, endpoint: str | None = Query(None)):
+        if endpoint is not None:
+            if endpoint not in applications:
+                raise HTTPException(status_code=400, detail=f"Endpoint {endpoint!r} does not exist.")
+            app_instance = applications[endpoint]
+            try:
+                doc = app_instance.create_document()
+                _cleanup_doc(doc)
+                return {endpoint: True}
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Endpoint {endpoint!r} could not be served. Application raised error: {e}"
+                ) from e
+        else:
+            return {str(request.url.path): True}
+
+#---------------------------------------------------------------------
+# Public API
+#---------------------------------------------------------------------
+
 def add_applications(
     panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
     app: FastAPI | None = None,
     title: str | dict[str, str] | None = None,
     location: bool | Location = True,
     admin: bool = False,
+    liveness: bool | str = False,
     **kwargs
 ):
     """
@@ -59,11 +88,18 @@ def add_applications(
         set the URL location.
     admin: boolean (default=False)
         Whether to enable the admin panel
+    liveness: bool | str (optional, default=False)
+      Whether to add a liveness endpoint. If a string is provided
+      then this will be used as the endpoint, otherwise the endpoint
+      will be hosted at /liveness.
     **kwargs:
         Additional keyword arguments to pass to the BokehFastAPI application
     """
     apps = build_applications(panel, title=title, location=location, admin=admin)
     application = BokehFastAPI(apps, app=app, **kwargs)
+    if liveness:
+        liveness_endpoint = liveness if isinstance(liveness, str) else '/liveness'
+        add_liveness_handler(application.app, endpoint=liveness_endpoint, applications=apps)
 
     @application.app.get(
         f"/{COMPONENT_PATH.rstrip('/')}" + "/{path:path}", include_in_schema=False
@@ -151,6 +187,10 @@ def get_server(
         set the URL location.
     admin: boolean (default=False)
         Whether to enable the admin panel
+    liveness: bool | str (optional, default=False)
+      Whether to add a liveness endpoint. If a string is provided
+      then this will be used as the endpoint, otherwise the endpoint
+      will be hosted at /liveness.
     start : boolean(optional, default=False)
       Whether to start the Server.
     **kwargs:
@@ -172,6 +212,7 @@ def get_server(
     application = add_applications(
         panel, title=title, location=location, admin=admin, **kwargs
     )
+
     config = uvicorn.Config(application.app, port=port, loop=loop)
     server = uvicorn.Server(config)
 
@@ -200,6 +241,7 @@ def serve(
     location: bool = True,
     threaded: bool = False,
     admin: bool = False,
+    liveness: bool | str = False,
     **kwargs
 ) -> StoppableThread | Server:
     """
@@ -246,6 +288,10 @@ def serve(
       Whether to start the server on a new Thread
     admin: boolean (default=False)
       Whether to enable the admin panel
+    liveness: bool | str (optional, default=False)
+      Whether to add a liveness endpoint. If a string is provided
+      then this will be used as the endpoint, otherwise the endpoint
+      will be hosted at /liveness.
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
@@ -254,7 +300,7 @@ def serve(
     kwargs = dict(kwargs, **dict(
         port=port, address=address, websocket_origin=websocket_origin,
         loop=loop, show=show, start=start, title=title, verbose=verbose,
-        location=location, admin=admin
+        location=location, admin=admin, liveness=liveness
     ))
     if threaded:
         # To ensure that we have correspondence between state._threads and state._servers

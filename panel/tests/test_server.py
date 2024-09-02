@@ -80,7 +80,8 @@ def test_server_root_handler():
     assert 'href="./app"' in r.content.decode('utf-8')
 
 
-def test_server_template_static_resources():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_template_static_resources(server_implementation):
     template = BootstrapTemplate()
 
     r = serve_and_request({'template': template}, suffix="/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
@@ -89,7 +90,8 @@ def test_server_template_static_resources():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_template_static_resources_with_prefix():
+#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_template_static_resources_with_prefix(server_implementation):
     template = BootstrapTemplate()
 
     r = serve_and_request({'template': template}, prefix="/prefix", suffix="/prefix/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
@@ -98,7 +100,8 @@ def test_server_template_static_resources_with_prefix():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_template_static_resources_with_prefix_relative_url():
+#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_template_static_resources_with_prefix_relative_url(server_implementation):
     template = BootstrapTemplate()
 
     r = serve_and_request({'template': template}, prefix='/prefix', suffix="/prefix/template")
@@ -114,7 +117,8 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
     assert f'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
 
-def test_server_extensions_on_root():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_extensions_on_root(server_implementation):
     md = Markdown('# Title')
     assert serve_and_request(md).ok
 
@@ -129,7 +133,8 @@ def test_autoload_js(port):
     assert f"http://localhost:{port}/static/extensions/panel/panel.min.js" in r.content.decode('utf-8')
 
 
-def test_server_async_callbacks():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_async_callbacks(server_implementation):
     button = Button(name='Click')
 
     counts = []
@@ -153,7 +158,8 @@ def test_server_async_callbacks():
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_async_local_state(bokeh_curdoc):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_async_local_state(server_implementation, bokeh_curdoc):
     docs = {}
 
     async def task():
@@ -174,7 +180,8 @@ def test_server_async_local_state(bokeh_curdoc):
     wait_until(lambda: all([len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()]))
 
 
-def test_server_async_local_state_nested_tasks(bokeh_curdoc):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_async_local_state_nested_tasks(server_implementation, bokeh_curdoc):
     docs = {}
     _tasks = set()
 
@@ -200,7 +207,8 @@ def test_server_async_local_state_nested_tasks(bokeh_curdoc):
     wait_until(lambda: all(len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()))
 
 
-def test_serve_config_per_session_state():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_serve_config_per_session_state(server_implementation):
     CSS1 = 'body { background-color: red }'
     CSS2 = 'body { background-color: green }'
     def app1():
@@ -223,7 +231,8 @@ def test_serve_config_per_session_state():
     assert CSS2 in r2
 
 
-def test_server_on_session_created():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_on_session_created(server_implementation):
     session_contexts = []
     def append_session(session_context):
         session_contexts.append(session_context)
@@ -236,7 +245,8 @@ def test_server_on_session_created():
     assert len(session_contexts) == 3
 
 
-def test_server_on_session_destroyed():
+#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_on_session_destroyed(server_implementation):
     session_contexts = []
     def append_session(session_context):
         session_contexts.append(session_context)
@@ -281,7 +291,8 @@ def test_server_session_info():
     assert state.session_info['live'] == 0
 
 
-def test_server_periodic_async_callback(threads):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_periodic_async_callback(server_implementation, threads):
     counts = []
 
     async def cb(count=[0]):
@@ -301,7 +312,8 @@ def test_server_periodic_async_callback(threads):
     wait_until(lambda: len(counts) >= 5 and counts == list(range(len(counts))))
 
 
-def test_server_schedule_repeat():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_schedule_repeat(server_implementation):
     state.cache['count'] = 0
     def periodic_cb():
         state.cache['count'] += 1
@@ -314,7 +326,9 @@ def test_server_schedule_repeat():
 
     wait_until(lambda: state.cache['count'] > 0)
 
-def test_server_schedule_threaded(threads):
+
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_schedule_threaded(server_implementation, threads):
     counts = []
     def periodic_cb(count=[0]):
         count[0] += 1
@@ -333,7 +347,8 @@ def test_server_schedule_threaded(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_schedule_at():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_schedule_at(server_implementation):
     def periodic_cb():
         state.cache['at'] = dt.datetime.now()
 
@@ -351,7 +366,8 @@ def test_server_schedule_at():
     assert len(state._scheduled) == 0
 
 
-def test_server_schedule_at_iterator():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_schedule_at_iterator(server_implementation):
     state.cache['at'] = []
     def periodic_cb():
         state.cache['at'].append(dt.datetime.now())
@@ -376,7 +392,8 @@ def test_server_schedule_at_iterator():
     assert len(state._scheduled) == 0
 
 
-def test_server_schedule_at_callable():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_schedule_at_callable(server_implementation):
     state.cache['at'] = []
     def periodic_cb():
         state.cache['at'].append(dt.datetime.now())
@@ -487,20 +504,23 @@ def test_multiple_titles(multiple_apps_server_sessions):
             slugs=('app1', 'app2'), titles={'badkey': 'APP1', 'app2': 'APP2'})
 
 
-def test_serve_can_serve_panel_app_from_file():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_serve_can_serve_panel_app_from_file(server_implementation):
     path = pathlib.Path(__file__).parent / "io"/"panel_app.py"
     server = get_server({"panel-app": path})
     assert "/panel-app" in server._tornado.applications
 
 
-def test_serve_can_serve_bokeh_app_from_file():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_serve_can_serve_bokeh_app_from_file(server_implementation):
     path = pathlib.Path(__file__).parent / "io"/"bk_app.py"
     server = get_server({"bk-app": path})
     assert "/bk-app" in server._tornado.applications
 
 
 
-def test_server_on_load_after_init_with_threads(threads):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_on_load_after_init_with_threads(server_implementation, threads):
     loaded = []
 
     def cb():
@@ -526,7 +546,8 @@ def test_server_on_load_after_init_with_threads(threads):
     assert loaded == [(doc, False), (doc, True)]
 
 
-def test_server_on_load_after_init():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_on_load_after_init(server_implementation):
     loaded = []
 
     def cb():
@@ -552,7 +573,8 @@ def test_server_on_load_after_init():
     assert loaded == [(doc, False), (doc, True)]
 
 
-def test_server_on_load_during_load(threads):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_on_load_during_load(server_implementation, threads):
     loaded = []
 
     def cb():
@@ -576,7 +598,8 @@ def test_server_on_load_during_load(threads):
     wait_until(lambda: loaded == [False, False])
 
 
-def test_server_thread_pool_on_load(threads):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_thread_pool_on_load(server_implementation, threads):
     counts = []
 
     def cb(count=[0]):
@@ -602,7 +625,8 @@ def test_server_thread_pool_on_load(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_execute(threads):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_thread_pool_execute(server_implementation, threads):
     counts = []
 
     def cb(count=[0]):
@@ -622,7 +646,8 @@ def test_server_thread_pool_execute(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_defer_load(threads):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_thread_pool_defer_load(server_implementation, threads):
     counts = []
 
     def cb(count=[0]):
@@ -650,7 +675,8 @@ def test_server_thread_pool_defer_load(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_change_event(threads):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_thread_pool_change_event(server_implementation, threads):
     button = Button(name='Click')
     button2 = Button(name='Click')
 
@@ -678,7 +704,8 @@ def test_server_thread_pool_change_event(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_bokeh_event(threads):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_thread_pool_bokeh_event(server_implementation, threads):
     import pandas as pd
 
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['A', 'B'])
@@ -706,7 +733,8 @@ def test_server_thread_pool_bokeh_event(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_periodic(threads):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_thread_pool_periodic(server_implementation, threads):
     counts = []
 
     def cb(count=[0]):
@@ -755,7 +783,8 @@ def test_server_thread_pool_onload(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_busy(threads):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_thread_pool_busy(server_implementation, threads):
     button = Button(name='Click')
     clicks = []
 

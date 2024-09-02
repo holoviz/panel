@@ -26,6 +26,8 @@ from bokeh.document import Document
 from bokeh.io.doc import curdoc, set_curdoc as set_bkdoc
 from pyviz_comms import Comm
 
+import panel.tests.util
+
 from panel import config, serve
 from panel.config import panel_extension
 from panel.io.reload import (
@@ -563,3 +565,20 @@ def df_strings():
     code = [f'{i:02d}' for i in range(len(descr))]
 
     return pd.DataFrame(dict(code=code, descr=descr))
+
+@pytest.fixture
+def tornado():
+    return 'tornado'
+
+@pytest.fixture
+def fastapi():
+    return 'fastapi'
+
+@pytest.fixture
+def server_implementation(request):
+    old = panel.tests.util.server_implementation
+    panel.tests.util.server_implementation = request.param
+    try:
+        yield
+    finally:
+        panel.tests.util.server_implementation = old

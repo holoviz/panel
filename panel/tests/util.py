@@ -4,6 +4,7 @@ import http.server
 import os
 import platform
 import re
+import socket
 import subprocess
 import sys
 import time
@@ -58,6 +59,7 @@ jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyte
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
 ON_POSIX = 'posix' in sys.builtin_module_names
 
+server_implementation = 'tornado'
 linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 unix_only = pytest.mark.skipif(platform.system() == 'Windows', reason="Only supported on unix-like systems")
 
@@ -272,12 +274,28 @@ def get_ctrl_modifier():
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
 
 
+def get_open_port():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('127.0.0.1', 0))
+    addr, port = s.getsockname()
+    s.close()
+    return port
+
+
 def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
-    serve(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
+    if server_implementation == 'fastapi':
+        from panel.io.fastapi import serve as serve_app
+        port = port or get_open_port()
+    else:
+        serve_app = serve
+    serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
-    port = server.port
+    if server_implementation == 'fastapi':
+        port = port
+    else:
+        port = server.port
     wait_for_server(port, prefix=prefix)
     return port
 
