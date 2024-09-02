@@ -63,7 +63,7 @@ class PyComponent(Viewer, Layoutable):
 
     def _sync__views(self, *events):
         params = {e.name: e.new for e in events}
-        for view in self._views:
+        for view in self.__views:
             with param.parameterized._syncing(view, list(params)):
                 view.param.update(params)
 
