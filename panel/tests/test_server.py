@@ -7,6 +7,8 @@ import pathlib
 import time
 import weakref
 
+from functools import partial
+
 import param
 import pytest
 import requests
@@ -358,17 +360,18 @@ def test_server_schedule_at(server_implementation):
     def periodic_cb():
         state.cache['at'] = dt.datetime.now()
 
-    scheduled = dt.datetime.now() + dt.timedelta(seconds=1.57)
+    scheduled = []
 
     def app():
-        state.schedule_task('periodic', periodic_cb, at=scheduled)
+        scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.57))
+        state.schedule_task('periodic', periodic_cb, at=scheduled[0])
         return '# state.schedule test'
 
     serve_and_request(app)
 
     # Check callback was executed within small margin of error
     wait_until(lambda: 'at' in state.cache)
-    assert abs(state.cache['at'] - scheduled) < dt.timedelta(seconds=0.2)
+    assert abs(state.cache['at'] - scheduled[0]) < dt.timedelta(seconds=0.2)
     assert len(state._scheduled) == 0
 
 
@@ -377,14 +380,16 @@ def test_server_schedule_at_iterator(server_implementation):
     def periodic_cb():
         state.cache['at'].append(dt.datetime.now())
 
-    scheduled1 = dt.datetime.now() + dt.timedelta(seconds=1.57)
-    scheduled2 = dt.datetime.now() + dt.timedelta(seconds=1.86)
+    scheduled = []
 
     def schedule():
-        yield scheduled1
-        yield scheduled2
+        yield from scheduled
 
     def app():
+        scheduled.extend([
+            dt.datetime.now() + dt.timedelta(seconds=0.57),
+            dt.datetime.now() + dt.timedelta(seconds=0.86)
+        ])
         state.schedule_task('periodic', periodic_cb, at=schedule())
         return '# state.schedule test'
 
@@ -392,8 +397,8 @@ def test_server_schedule_at_iterator(server_implementation):
 
     # Check callbacks were executed within small margin of error
     wait_until(lambda: len(state.cache['at']) == 2)
-    assert abs(state.cache['at'][0] - scheduled1) < dt.timedelta(seconds=0.2)
-    assert abs(state.cache['at'][1] - scheduled2) < dt.timedelta(seconds=0.2)
+    assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.2)
+    assert abs(state.cache['at'][1] - scheduled[1]) < dt.timedelta(seconds=0.2)
     assert len(state._scheduled) == 0
 
 
@@ -402,17 +407,17 @@ def test_server_schedule_at_callable(server_implementation):
     def periodic_cb():
         state.cache['at'].append(dt.datetime.now())
 
-    scheduled = [
-        dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=1.57),
-        dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=1.86)
-    ]
-    siter = iter(scheduled)
+    scheduled = []
 
-    def schedule(utcnow):
+    def schedule(siter, utcnow):
         return next(siter)
 
     def app():
-        state.schedule_task('periodic', periodic_cb, at=schedule)
+        scheduled[:] = [
+            dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=s)
+            for s in (0.57, 0.86)
+        ]
+        state.schedule_task('periodic', periodic_cb, at=partial(schedule, iter(scheduled)))
         return '# state.schedule test'
 
     serve_and_request(app)
@@ -421,12 +426,9 @@ def test_server_schedule_at_callable(server_implementation):
     wait_until(lambda: len(state.cache['at']) == 2)
 
     # Convert scheduled times to local time
-    scheduled = [
-        s.replace(tzinfo=dt.timezone.utc).astimezone().replace(tzinfo=None)
-        for s in scheduled
-    ]
-    assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.2)
-    assert abs(state.cache['at'][1] - scheduled[1]) < dt.timedelta(seconds=0.2)
+    converted = [s.replace(tzinfo=dt.timezone.utc).astimezone().replace(tzinfo=None) for s in scheduled]
+    assert abs(state.cache['at'][0] - converted[0]) < dt.timedelta(seconds=0.2)
+    assert abs(state.cache['at'][1] - converted[1]) < dt.timedelta(seconds=0.2)
     assert len(state._scheduled) == 0
 
 
