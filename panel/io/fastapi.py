@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 
+from functools import wraps
 from typing import TYPE_CHECKING, Mapping, cast
 
 from bokeh_fastapi import BokehFastAPI
@@ -34,22 +35,22 @@ extra_socket_handlers[WSHandler] = dispatch_fastapi
 
 def add_applications(
     panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
-    server: FastAPI | None = None,
+    app: FastAPI | None = None,
     title: str | dict[str, str] | None = None,
     location: bool | Location = True,
     admin: bool = False,
     **kwargs
 ):
     """
-    Adds application(s) to an existing uvicorn based FastAPI server.
+    Adds application(s) to an existing FastAPI application.
 
     Arguments
     ---------
+    app: FastAPI
+        FastAPI app to add Panel application(s) to.
     panel: Viewable, function or {str: Viewable}
         A Panel object, a function returning a Panel object or a
         dictionary mapping from the URL slug to either.
-    app: FastAPI
-        FastAPI app to add Panel application(s) to
     title : str or {str: str} (optional, default=None)
         An HTML title for the application or a dictionary mapping
         from the URL slug to a customized title.
@@ -61,7 +62,7 @@ def add_applications(
     **kwargs:
         Additional keyword arguments to pass to the BokehFastAPI application
     """
-    apps = build_applications(panel)
+    apps = build_applications(panel, title=title, location=location, admin=admin)
     application = BokehFastAPI(apps, app=app, **kwargs)
 
     @application.app.get(
@@ -76,6 +77,49 @@ def add_applications(
         return FileResponse(resolved_path)
 
     return application
+
+
+def add_application(
+    path: str,
+    app: FastAPI,
+    title: str = "Panel App",
+    location: bool | Location = True,
+    admin: bool = False,
+    **kwargs
+):
+    """
+    Decorator that adds a Panel app to a FastAPI application.
+
+    Arguments
+    ---------
+    path: str
+        The path to serve the application on.
+    app: FastAPI
+        FastAPI app to add Panel application(s) to.
+    title : str
+        An HTML title for the application.
+    location : boolean or panel.io.location.Location
+        Whether to create a Location component to observe and
+        set the URL location.
+    admin: boolean (default=False)
+        Whether to enable the admin panel
+    **kwargs:
+        Additional keyword arguments to pass to the BokehFastAPI application
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        # Register the Panel application after the function is defined
+        add_applications(
+            {path: func},
+            app=app,
+            title=title
+        )
+        return wrapper
+
+    return decorator
 
 
 def get_server(
