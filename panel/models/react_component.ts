@@ -24,34 +24,50 @@ export class ReactComponentView extends ReactiveESMView {
     for (const cb of handlers) {
       cb()
     }
+    if (!this._rendered) {
+      for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
+        cb()
+      }
+    }
     this._rendered = true
   }
 
   protected override _render_code(): string {
     let render_code = `
-  if (rendered && view.model.usesReact) {
-    view._changing = true
-    const root = createRoot(view.container)
-    try {
-      root.render(rendered)
-    } catch(e) {
-      view.render_error(e)
-    }
-    view._changing = false
-    view.after_rendered()
-  }`
-    let import_code = `
+if (rendered && view.model.usesReact) {
+  view._changing = true
+  const root = createRoot(view.container)
+  try {
+    root.render(rendered)
+  } catch(e) {
+    view.render_error(e)
+  }
+}`
+    let import_code
+    if (this.model.bundle) {
+      import_code = `
+const ns = await view._module_cache.get(view.model.bundle)
+const {React, createRoot} = ns.default`
+    } else {
+      import_code = `
 import * as React from "react"
 import { createRoot } from "react-dom/client"`
+    }
     if (this.model.usesMui) {
-      import_code = `
+      if (this.model.bundle) {
+        import_code = `
+const ns = await view._module_cache.get(view.model.bundle)
+const {CacheProvider, React, createCache, createRoot} = ns.default`
+      } else {
+        import_code = `
 ${import_code}
 import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
+      }
       render_code = `
   if (rendered) {
     const cache = createCache({
-      key: 'css',
+      key: 'css-${this.model.id}',
       prepend: true,
       container: view.style_cache,
     })
@@ -60,9 +76,9 @@ import { CacheProvider } from "@emotion/react"`
   ${render_code}`
     }
     return `
-${import_code}
-
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
+
+${import_code}
 
 class Child extends React.Component {
 
@@ -178,13 +194,14 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return React.createElement('div')
     }
-    return React.createElement('div', {}, this.props.children);
+    return React.createElement('div', {className: "error-wrapper"}, this.props.children);
   }
 }
 
 class Component extends React.Component {
 
   componentDidMount() {
+    this.props.view._changing = false
     this.props.view.after_rendered()
   }
 
@@ -211,9 +228,7 @@ export default {render}`
 export namespace ReactComponent {
   export type Attrs = p.AttrsOf<Props>
 
-  export type Props = ReactiveESM.Props & {
-    react_version: p.Property<string>
-  }
+  export type Props = ReactiveESM.Props
 }
 
 export interface ReactComponent extends ReactComponent.Attrs {}
@@ -237,35 +252,11 @@ export class ReactComponent extends ReactiveESM {
     return this.compiled !== null && this.compiled.includes("React")
   }
 
-  protected override _declare_importmap(): void {
-    const react_version = this.react_version
-    const imports = this.importmap?.imports
-    const scopes = this.importmap?.scopes
-    const pkg_suffix = this.dev ? "?dev": ""
-    const path_suffix = this.dev ? "&dev": ""
-    const importMap = {
-      imports: {
-        react: `https://esm.sh/react@${react_version}${pkg_suffix}`,
-        "react/": `https://esm.sh/react@${react_version}${path_suffix}/`,
-        "react-dom/": `https://esm.sh/react-dom@${react_version}&deps=react@${react_version},react-dom@${react_version}${path_suffix}/`,
-        ...imports,
-      },
-      scopes: scopes || {},
-    }
-    if (this.usesMui) {
-      importMap.imports = {
-        ...importMap.imports,
-        "@emotion/cache": "https://esm.sh/@emotion/cache",
-        "@emotion/react": `https://esm.sh/@emotion/react?external=react${path_suffix}`,
-      }
-    }
-    // @ts-ignore
-    importShim.addImportMap(importMap)
-  }
-
   override compile(): string | null {
     const compiled = super.compile()
-    if (compiled === null || !compiled.includes("React")) {
+    if (this.bundle) {
+      return compiled
+    } else if (compiled === null || !compiled.includes("React")) {
       return compiled
     }
     return `
@@ -278,9 +269,5 @@ ${compiled}`
 
   static {
     this.prototype.default_view = ReactComponentView
-
-    this.define<ReactComponent.Props>(({String}) => ({
-      react_version: [ String,    "18.3.1" ],
-    }))
   }
 }

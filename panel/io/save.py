@@ -248,6 +248,7 @@ def save(
     elif isinstance(resources, BkResources):
         mode = resources.mode
 
+    template_variables = dict(template_variables) if template_variables else {}
     comm = Comm()
     with config.set(embed=embed):
         if isinstance(panel, Document):
@@ -255,6 +256,7 @@ def save(
         elif isinstance(panel, BaseTemplate):
             with set_resource_mode(mode):
                 panel._init_doc(doc, title=title)
+                template_variables.update(doc._template_variables)
             model = doc
         else:
             model = panel.get_root(doc, comm)

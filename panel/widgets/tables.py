@@ -21,9 +21,9 @@ from bokeh.models.widgets.tables import (
     StringEditor, StringFormatter, SumAggregator, TableColumn,
 )
 from bokeh.util.serialization import convert_datetime_array
+from param.parameterized import transform_reference
 from pyviz_comms import JupyterComm
 
-from ..depends import transform_reference
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData

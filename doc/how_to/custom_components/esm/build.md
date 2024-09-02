@@ -1,6 +1,6 @@
-# Handling of external resources
+# Compile and Bundle ESM Components
 
-The ESM components make it possible to load external libraries from NPM or GitHub easily using one of two approaches:
+The ESM components make it possible to load external libraries from a CDN, NPM or GitHub using one of two approaches:
 
 1. Directly importing from `esm.sh` or another CDN or by defining a so called importmap.
 2. Bundling the resources using `npm` and `esbuild`.
@@ -78,21 +78,225 @@ Now that we have separately declared the import we can update the `import` line 
 import confetti from "canvas-confetti";
 ```
 
-This approach cleanly separates the definitions of the libraries and their versions from the actual code. Import maps have a bunch of other features but in most cases the imports section will be all you need.
+This approach cleanly separates the definitions of the libraries and their versions from the actual code. If you are only importing a single library this is generally all you need to do, however once you have multiple inter-connected dependencies you may have to go beyond this.
 
-## Bundling
+Let's say for instance you want to import libraries `A`, `B` and `C`. Both `B` and `C` depend on `A`, however because esm.sh rewrites imports you may end up with multiple different versions `A`.
 
-Importing libraries directly from a CDN allows for extremely quick iteration but also means that the users of your components will have to have access to the internet to fetch the required modules. By bundling the component resources you can ship a self-contained module that includes all the dependencies, while also ensuring that you only fetch the parts of the libraries that are actually needed.
+In order to avoid this we can ask `esm.sh` not to rewrite the imports using the `external` query parameter. This tells esm.sh that `A` will be provided externally (i.e. by us), ensuring that libraries `B` and `C` both import the version of `A` we declare:
 
-### Tooling
+```python
+{
+  "imports": {
+    "A": "https://esm.sh/A@1.0.0",
+    "B": "https://esm.sh/B?external=A",
+    "C": "https://esm.sh/C?external=A",
+  }
+}
+```
 
-The tooling we recommend to bundle your component resources include `esbuild` and `npm`, both can conveniently be installed with `conda`:
+To give a real world example that esm.sh itself provides:
 
+```
+{
+  "imports": {
+    "preact": "https://esm.sh/preact@10.7.2",
+    "preact-render-to-string": "https://esm.sh/preact-render-to-string@5.2.0?external=preact"
+  }
+}
+```
+:::{note}
+Import maps supports trailing slash that can not work with URL search params friendly. To fix this issue, esm.sh provides a special format for import URL that allows you to use query params with trailing slash: change the query prefix ? to & and put it after the package version.
+
+```
+{
+  "imports": {
+    "react-dom": "https://esm.sh/react-dom@18.2.0?pin=v135&dev",
+    "react-dom/": "https://esm.sh/react-dom@18.2.0&pin=v135&dev/"
+  }
+}
+```
+:::
+
+## Compile & Bundling
+
+Importing libraries directly from a CDN allows for quick experimentation and iteration but also means that the users of your components will have to have access to the internet to fetch the required modules. By compiling and bundling the component and external resources you can ship a self-contained and optimized ESM module that includes all the dependencies, while also ensuring that you only fetch the parts of the libraries that are actually needed. The `panel compile` command provides a simple entrypoint to compile one or more components into a single component.
+
+### Setup
+
+The compilation and bundling workflow depends on two JavaScript tools: `node.js` (or more specifically the node package manager `npm`) and `esbuild`. The most convenient way to install them is `conda` but you can also set up your own node environment using something like [`asdf`](https://asdf-vm.com/guide/getting-started.html), [`nvm`](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) or [`volta`](https://volta.sh/).
+
+::::{tab-set}
+
+:::{tab-item} `conda`
 ```bash
 conda install esbuild npm
 ```
+:::
 
-### Configuration
+:::{tab-item} Custom Node.js installation
+
+Once you have set up `node.js` you can install `esbuild` globally with:
+
+```bash
+npm install -g esbuild
+```
+
+and confirm the installation with:
+
+```bash
+esbuild --version
+```
+:::
+
+::::
+
+### Panel Compile Command
+
+Panel provides the `panel compile` command to automate the compilation of ESM components from the command line and bundle their resources. This functionality requires `npm` and `esbuild` to be installed globally on your system.
+
+#### Example Usage
+
+Let's consider a confetti.py module containing a custom JavaScript component:
+
+```python
+# confetti.py
+import panel as pn
+
+from panel.custom import JSComponent
+
+class ConfettiButton(JSComponent):
+
+    _esm = """
+import confetti from "https://esm.sh/canvas-confetti@1.6.0";
+
+export function render() {
+  const button = document.createElement('button')
+  button.addEventListener('click', () => confetti())
+  button.append('Click me!')
+  return button
+}"""
+```
+
+To compile this component, you can use the following command:
+
+```bash
+panel compile confetti
+```
+
+:::{hint}
+`panel compile` accepts file paths, e.g. `my_components/custom.py`, and dotted module name, e.g. `my_package.custom`. If you provide a module name it must be importable.
+:::
+
+This will automatically discover the `ConfettiButton` but you can also explicitly request a single component by adding the class name:
+
+```bash
+panel compile confetti:ConfettiButton
+```
+
+After running the command you should output that looks a like this, indicating the build succeeded:
+
+```bash
+Running command: npm install
+
+npm output:
+
+added 1 package, and audited 2 packages in 649ms
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+Running command: esbuild /var/folders/7c/ww31pmxj2j18w_mn_qy52gdh0000gq/T/tmp9yhyqo55/index.js --bundle --format=esm --outfile=<module-path>/ConfettiButton.bundle.js --minify
+
+esbuild output:
+
+  .....<module-path>/ConfettiButton.bundle.js  10.5kb
+
+⚡ Done in 9ms
+```
+
+The compiled JavaScript file will be automatically loaded if it remains alongside the component. If you rename the component or modify its code or `_importmap`, you must recompile the component. For ongoing development, consider using the `--autoreload` option to ignore the compiled file and automatically reload the development version when it changes.
+
+#### Compilation Steps
+
+The `panel compile` command performs the compilation and bundling in several steps:
+
+1. **Identify Components**: The first step is to discover the components in the provided module(s).
+2. **Extract External Dependencies**: The command identifies external dependencies from the `_importmap` (if defined) or directly from the ESM code. These dependencies are written to a `package.json` file in a temporary build directory. The `.js(x)` files corresponding to each component are also placed in this directory.
+3. **Install Dependencies**: The command runs `npm install` within the build directory to fetch all external dependencies specified in `package.json`.
+4. **Bundle and Minify**: The command executes `esbuild index.js --bundle --format=esm --minify --outfile=<module-path>ConfettiButton.bundle.js` to bundle the ESM code into a single minified JavaScript file.
+5. **Output the Compiled Bundle(s)**: The final output is one or more compiled JavaScript bundle (`ConfettiButton.bundle.js`).
+
+#### Compiling Multiple Components
+
+If you intend to ship multiple components with shared dependencies, `panel compile` can generate a combined bundle, which ensures that the dependencies are only loaded once. By default it will generate one bundle per module or per component, but if you declare a `_bundle` attribute on the class, declared either as a string defining a relative path or a `pathlib.Path`, you can generate shared bundles across modules. These bundles can include as many components as needed and will be automatically loaded when you use the component.
+
+As an example, imagine you have a components declared across your package containing two distinct components. By declaring a path that resolves to the same location we can bundle them together:
+
+```python
+# my_package/my_module.py
+class ComponentA(JSComponent):
+    _bundle = './dist/custom.bundle.js'
+
+# my_package/subpackage/other_module.py
+class ComponentB(JSComponent):
+    _bundle = '../dist/custom.bundle.js'
+```
+
+when you compile it with:
+
+```bash
+panel compile my_package.my_module my_package.subpackage.other_module
+```
+
+you will end up with a single `custom.bundle.js` file placed in the `my_package/dist` directory.
+
+#### Using the `--build-dir` Option
+
+The `--build-dir` option allows you to specify a custom directory where the `package.json` and raw JavaScript/JSX modules will be written. This is useful if you need to manually modify the dependencies before the bundling process and/or debug issues while bundling. To use this feature, follow these steps:
+
+1. Run the compile command with the `--build-dir` option to generate the directory:
+
+```bash
+panel compile confetti.py --build-dir ./custom_build_dir
+```
+
+2. Navigate to the specified build directory and manually edit the `package.json` file to adjust dependencies as needed.
+
+3. Once you've made your changes, you can manually run the `esbuild` command:
+
+```bash
+esbuild custom_build_dir/index.js --format=esm --bundle --minify
+```
+
+Here is a typical structure of the build_dir directory:
+
+```
+custom_build_dir/
+├── index.js
+├── package.json
+├── <Component>.js
+└── <OtherComponent>.js
+```
+
+The compiled JS file will now be loaded automatically as long as it remains alongside the component. If you rename the component you will have to delete and recompile the JS file. If you make changes to the code or `_importmap` you also have to recompile. During development we recommend using `--autoreload`, which ignores the compiled file.
+
+```{caution}
+The `panel compile` CLI tool is still very new and experimental. In our testing it was able to compile and bundle most components but there are bound to be corner cases.
+
+We will continue to improve the tool and eventually allow you to bundle multiple components into a single bundle to allow sharing of resources.
+```
+
+### React Components
+
+React components automatically include `react` and `react-dom` in their bundles. The version of `React` that is loaded can be specified the `_react_version` attribute on the component class. We strongly suggest you pin a specific version on your component to ensure your component does not break should the version be bumped in Panel.
+
+### Manual Compilation
+
+If you have more complex requirements or the automatic compilation fails for whatever reason you can also manually compile the output. We generally strongly recommend that you start by generating the initial bundle structure by providing a `--build-dir` and then tweaking the resulting output.
+
+#### Configuration
 
 To run the bundling we will need one additional file, the `package.json`, which, just like the import maps, determines the required packages and their versions. The `package.json` is a complex file with tons of configuration options but all we will need are the [dependencies](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies).
 
@@ -123,7 +327,7 @@ pn.extension()
 
 class ConfettiButton(JSComponent):
 
-    _esm = 'confetti.bundled.js'
+    _esm = 'confetti.js'
 
 ConfettiButton().servable()
 ```
@@ -153,15 +357,7 @@ npm install
 This will fetch the packages and install them into the local `node_modules` directory. Once that is complete we can run the bundling:
 
 ```bash
-esbuild confetti.js --bundle --format=esm --minify --outfile=confetti.bundled.js
+esbuild confetti.js --bundle --format=esm --minify --outfile=ConfettiButton.bundle.js
 ```
 
-This will create a new file called `confetti.bundled.js`, which includes all the dependencies (even CSS, image files and other static assets if you have imported them).
-
-The only thing left to do now is to update the `_esm` declaration to point to the new bundled file:
-
-```python
-class ConfettiButton(JSComponent):
-
-    _esm = 'confetti.bundled.js'
-```
+This will create a new file called `ConfettiButton.bundle.js`, which includes all the dependencies (even CSS, image files and other static assets if you have imported them).

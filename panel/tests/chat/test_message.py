@@ -54,7 +54,7 @@ class TestChatMessage:
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "ABC"
 
-        icons = columns[1][5][2]
+        icons = columns[1][4][2]
         assert isinstance(icons, ChatReactionIcons)
 
         footer_col = columns[1][3]
@@ -65,22 +65,29 @@ class TestChatMessage:
         assert isinstance(footer_col[1], Markdown)
         assert footer_col[1].object == "Footer 2"
 
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
 
     def test_reactions_dynamic(self):
-        message = ChatMessage(reactions=["favorite"])
+        message = ChatMessage("hi", reactions=["favorite"])
         assert message.reaction_icons.value == ["favorite"]
 
         message.reactions = ["thumbs-up"]
         assert message.reaction_icons.value == ["thumbs-up"]
 
     def test_reaction_icons_dynamic(self):
-        message = ChatMessage(reaction_icons={"favorite": "heart"})
+        message = ChatMessage("hi", reaction_icons={"favorite": "heart"})
         assert message.reaction_icons.options == {"favorite": "heart"}
 
         message.reaction_icons = ChatReactionIcons(options={"like": "thumb-up"})
         assert message._icons_row[-1] == message.reaction_icons
+        assert message._icon_divider.visible
+
+        message.reaction_icons = ChatReactionIcons(options={})
+        assert not message._icon_divider.visible
+
+        message = ChatMessage("hi", reaction_icons={})
+        assert not message._icon_divider.visible
 
     def test_reactions_link(self):
         # on init
@@ -171,39 +178,39 @@ class TestChatMessage:
     def test_update_timestamp(self):
         message = ChatMessage()
         columns = message._composite.objects
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now().strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="UTC")
         columns = message._composite.objects
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="US/Pacific")
         columns = message._composite.objects
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now(tz=ZoneInfo("US/Pacific")).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         special_dt = datetime.datetime(2023, 6, 24, 15)
         message.timestamp = special_dt
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         dt_str = special_dt.strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         mm_dd_yyyy = "%b %d, %Y"
         message.timestamp_format = mm_dd_yyyy
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         dt_str = special_dt.strftime(mm_dd_yyyy)
         assert timestamp_pane.object == dt_str
 
         message.show_timestamp = False
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         assert not timestamp_pane.visible
 
     def test_does_not_turn_widget_into_str(self):
@@ -322,17 +329,20 @@ class TestChatMessage:
         message = ChatMessage(object=widget(value="testing"))
         assert message.chat_copy_icon.visible
         assert message.chat_copy_icon.value == "testing"
+        assert message._icon_divider.visible
 
     def test_chat_copy_icon_disabled(self):
         message = ChatMessage(object="testing", show_copy_icon=False)
         assert not message.chat_copy_icon.visible
         assert not message.chat_copy_icon.value
+        assert not message._icon_divider.visible
 
     @pytest.mark.parametrize("component", [Column, FileInput])
     def test_chat_copy_icon_not_string(self, component):
         message = ChatMessage(object=component())
         assert not message.chat_copy_icon.visible
         assert not message.chat_copy_icon.value
+        assert not message._icon_divider.visible
 
     def test_serialize_text_prefix_with_viewable_type(self):
         message = ChatMessage(Markdown("string"))
@@ -371,6 +381,7 @@ class TestChatMessage:
         message = ChatMessage(PNG(PNG_FILE))
         assert message.serialize() == "PNG='https://assets.holoviz.org/panel/samples/png_sample.png'"
 
+    @pytest.mark.internet
     def test_serialize_svg_embed(self):
         svg = SVG(SVG_FILE, embed=True, alt_text="abc")
         with BytesIO(svg._data(SVG_FILE)) as buf:

@@ -168,6 +168,9 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     interval = param.Integer(default=500, doc="Interval between updates")
 
+    show_value = param.Boolean(default=True, doc="""
+        Whether to show the widget value""")
+
     value = param.Parameter(doc="Current player value")
 
     value_throttled = param.Parameter(constant=True, doc="Current player value")
@@ -185,6 +188,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
             msg['end'] = len(values) - 1
             if values and not isIn(self.value, values):
                 self.value = values[0]
+            msg['options'] = self.labels
         if 'value' in msg:
             value = msg['value']
             if isIn(value, values):

@@ -27,6 +27,10 @@ class ESMEvent(ModelEvent):
 
 class ReactiveESM(HTMLBox):
 
+    bundle = bp.Nullable(bp.String)
+
+    class_name = bp.String()
+
     children = bp.List(bp.String)
 
     data = bp.Instance(DataModel)
@@ -50,8 +54,6 @@ class ReactComponent(ReactiveESM):
     """
     Renders jsx/tsx based ESM bundles using React.
     """
-
-    react_version = bp.String('18.3.1')
 
 
 class AnyWidgetComponent(ReactComponent):

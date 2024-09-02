@@ -8,7 +8,7 @@ import ast
 import json
 
 from base64 import b64decode
-from datetime import date, datetime
+from datetime import date, datetime, time as dt_time
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional,
 )
@@ -31,7 +31,7 @@ from ..config import config
 from ..layout import Column, Panel
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
-    TextInput as _BkTextInput,
+    TextInput as _BkTextInput, TimePicker as _BkTimePicker,
 )
 from ..util import (
     escape, lazy_load, param_reprs, try_datetime64_to_datetime,
@@ -806,6 +806,77 @@ class DatetimeRangePicker(_DatetimePickerBase):
             value = ""
 
         return value
+
+
+class _TimeCommon(Widget):
+
+    hour_increment = param.Integer(default=1, doc="""
+    Defines the granularity of hour value increments in the UI.
+    """)
+
+    minute_increment = param.Integer(default=1, doc="""
+    Defines the granularity of minute value increments in the UI.
+    """)
+
+    second_increment = param.Integer(default=1, doc="""
+    Defines the granularity of second value increments in the UI.
+    """)
+
+    seconds = param.Boolean(default=False, doc="""
+    Allows to select seconds. By default only hours and minutes are
+    selectable, and AM/PM depending on the `clock` option.
+    """)
+
+    clock = param.String(default='12h', doc="""
+        Whether to use 12 hour or 24 hour clock.""")
+
+    __abstract = True
+
+
+class TimePicker(_TimeCommon):
+    """
+    The `TimePicker` allows selecting a `time` value using a text box
+    and a time-picking utility.
+
+    Reference: https://panel.holoviz.org/reference/widgets/TimePicker.html
+
+    :Example:
+
+    >>> TimePicker(
+    ...     value="12:59:31", start="09:00:00", end="18:00:00", name="Time"
+    ... )
+    """
+
+    value = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        The current value""")
+
+    start = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        Inclusive lower bound of the allowed time selection""")
+
+    end = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        Inclusive upper bound of the allowed time selection""")
+
+    format = param.String(default='H:i', doc="""
+        Formatting specification for the display of the picked date.
+
+        +---+------------------------------------+------------+
+        | H | Hours (24 hours)                   | 00 to 23   |
+        | h | Hours                              | 1 to 12    |
+        | G | Hours, 2 digits with leading zeros | 1 to 12    |
+        | i | Minutes                            | 00 to 59   |
+        | S | Seconds, 2 digits                  | 00 to 59   |
+        | s | Seconds                            | 0, 1 to 59 |
+        | K | AM/PM                              | AM or PM   |
+        +---+------------------------------------+------------+
+
+        See also https://flatpickr.js.org/formatting/#date-formatting-tokens.
+    """)
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'start': 'min_time', 'end': 'max_time', 'format': 'time_format'
+    }
+
+    _widget_type: ClassVar[type[Model]] = _BkTimePicker
 
 
 class ColorPicker(Widget):
