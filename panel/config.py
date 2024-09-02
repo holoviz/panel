@@ -11,7 +11,6 @@ import os
 import sys
 import warnings
 
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from weakref import WeakKeyDictionary
 
@@ -346,6 +345,8 @@ class _config(_base_config):
             return
         if state._thread_pool:
             raise RuntimeError("Thread pool already running")
+        from concurrent.futures import ThreadPoolExecutor
+
         threads = self.nthreads if self.nthreads else None
         state._thread_pool = ThreadPoolExecutor(max_workers=threads)
 
