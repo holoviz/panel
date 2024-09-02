@@ -69,7 +69,6 @@ Now that you've mastered the more advanced concepts of Panel, it's time to put y
 - **Create an Interactive Report:** Elevate the interactivity of your reports through embedding.
 - **[Create a Todo App](build_todo.md):** Create a Todo App using a class based approach.
 - **[Test a Todo App](test_todo.md):** Learn how to test a class based Panel app.
-- **[Create a Custom widget](create_custom_widget.md):** Create a custom `FeatureInput` widget.
 - **Serve Apps without a Server:** Explore the realm of WASM to serve your apps without traditional servers.
 - **[Build a Server Video Stream](build_server_video_stream.md):** Utilize threading to set up a video stream from a camera connected to a server without blocking the UI.
 
@@ -87,6 +86,5 @@ serve
 advanced_layouts
 build_todo
 test_todo
-create_custom_widget
 build_server_video_stream
 ```
