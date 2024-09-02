@@ -140,6 +140,7 @@ playwright = { version = "*", channel = "microsoft" }
 pytest-playwright = "*"
 pytest-asyncio = "*"
 jupyter_server = "*"
+esbuild = "*"
 packaging = "*"
 
 [feature.test-ui.tasks]

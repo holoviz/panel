@@ -28,7 +28,7 @@ class Convert(Subcommand):
         ('--to', dict(
             action  = 'store',
             type    = str,
-            help    = "The format to convert to, one of 'pyodide' (default), 'pyodide-worker' or 'pyscript'",
+            help    = "The format to convert to, one of 'pyodide' (default), 'pyodide-worker', 'pyscript' or 'pyscript-worker'",
             default = 'pyodide'
         )),
         ('--compiled', dict(

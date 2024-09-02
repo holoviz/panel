@@ -4,12 +4,13 @@ Writing an HTML file from scratch with all the Javascript and Python dependencie
 
 The ``panel convert`` command has the following options:
 
+```bash
     positional arguments:
     DIRECTORY-OR-SCRIPT   The app directories or scripts to serve (serve empty document if not specified)
 
     options:
     -h, --help            show this help message and exit
-    --to TO               The format to convert to, one of 'pyodide' (default), 'pyodide-worker' or 'pyscript'
+    --to TO               The format to convert to, one of 'pyodide' (default), 'pyodide-worker', 'pyscript' or 'pyscript-worker'
     --compiled            Whether to use the compiled and faster version of Pyodide.
     --out OUT             The directory to write the file to.
     --title TITLE         A custom title for the application(s).
@@ -17,11 +18,13 @@ The ``panel convert`` command has the following options:
     --index               Whether to create an index if multiple files are served.
     --pwa                 Whether to add files to serve applications as a Progressive Web App.
     --requirements REQUIREMENTS [REQUIREMENTS ...]
-                            Explicit requirements to add to the converted file, a single requirements.txt file or a JSON file containing requirements per app. By default requirements are inferred from the code.
+                            Explicit requirements to add to the converted file, a single requirements.txt file or a JSON file containing requirements per app. By default requirements
+                            are inferred from the code.
     --disable-http-patch  Whether to disable patching http requests using the pyodide-http library.
     --watch               Watch the files
     --num-procs NUM_PROCS
                             The number of processes to start in parallel to convert the apps.
+```
 
 ## Example
 
