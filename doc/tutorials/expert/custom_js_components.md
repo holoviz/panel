@@ -201,7 +201,7 @@ Create a file named `mario_button.css`:
 To serve the application, run the following command in your terminal:
 
 ```sh
-panel serve mario_button.py --autoreload
+panel serve mario_button.py --dev
 ```
 
 This command will start a Panel server and automatically reload changes as you edit the files.

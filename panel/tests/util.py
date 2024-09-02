@@ -322,7 +322,7 @@ def run_panel_serve(args, cwd=None):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd, close_fds=ON_POSIX)
     try:
         yield p
-    except Exception as e:
+    except BaseException as e:
         p.terminate()
         p.wait()
         print("An error occurred: %s", e)  # noqa: T201

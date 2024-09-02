@@ -60,11 +60,11 @@ ESM Components is our 2nd generation api for custom components while `ReactiveHT
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1 sd-animate-grow50` Building and Bundling ESM components
+:::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1 sd-animate-grow50` Compile and Bundle ESM Components
 :link: esm/build
 :link-type: doc
 
-How to specify and bundle external dependencies for ESM components.
+How to specify external dependencies for ESM components and compile them into JS bundles.
 :::
 
 :::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Add callbacks to ESM components

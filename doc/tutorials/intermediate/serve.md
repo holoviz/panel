@@ -37,12 +37,12 @@ pn.panel("Hello Notebook World").servable()
 
 Run the cells and save the notebook if you have not already done it.
 
-Run `panel serve app.py app2.ipynb --autoreload`.
+Run `panel serve app.py app2.ipynb --dev`.
 
 It should look like
 
 ```bash
-$ panel serve app.py app2.ipynb --autoreload
+$ panel serve app.py app2.ipynb --dev
 2024-01-17 21:14:43,502 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
 2024-01-17 21:14:43,503 User authentication hooks NOT provided (default user enabled)
 2024-01-17 21:14:43,506 Bokeh app running at: http://localhost:5006/app

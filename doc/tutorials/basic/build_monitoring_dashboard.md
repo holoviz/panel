@@ -237,7 +237,7 @@ Now serve the app with:
 :sync: script
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 :::
@@ -246,7 +246,7 @@ panel serve app.py --autoreload
 :sync: notebook
 
 ```bash
-panel serve app.ipynb --autoreload
+panel serve app.ipynb --dev
 ```
 
 :::

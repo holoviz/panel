@@ -11,7 +11,7 @@ In this guide, we'll explore the following aspects of layouts:
 - **Reference Guides**: Explore detailed documentation for each layout in the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the [Component Gallery](../../reference/index.md).
 
 :::{note}
-As you follow along with the code examples below, feel free to execute them directly in the Panel documentation, a notebook cell, or within a file named `app.py` served with `panel serve app.py --autoreload`.
+As you follow along with the code examples below, feel free to execute them directly in the Panel documentation, a notebook cell, or within a file named `app.py` served with `panel serve app.py --dev`.
 :::
 
 ## Layout in a Column

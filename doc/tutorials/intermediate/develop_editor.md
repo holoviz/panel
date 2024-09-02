@@ -15,7 +15,7 @@ Some of the features demonstrated in this guide might require special configurat
 
 ## Resetting the Cache
 
-When developing with the `--autoreload` option and utilizing caching, you may need to reset the cache. You have the option to clear either the entire cache or just the cache for a specific function.
+When developing with the `--dev` option and utilizing caching, you may need to reset the cache. You have the option to clear either the entire cache or just the cache for a specific function.
 
 Execute the code below:
 
@@ -62,7 +62,7 @@ def handle_click(event):
 pn.widgets.Button(name="Click Me", on_click=handle_click, button_type="primary").servable()
 ```
 
-Serve the app with `panel serve app.py --autoreload`.
+Serve the app with `panel serve app.py --dev`.
 
 Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
 
@@ -75,7 +75,7 @@ Click the `Click Me` Button.
 Your terminal will look something like
 
 ```bash
-$ panel serve app.py --autoreload
+$ panel serve app.py --dev
 2024-01-20 08:12:09,512 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
 2024-01-20 08:12:09,514 User authentication hooks NOT provided (default user enabled)
 2024-01-20 08:12:09,516 Bokeh app running at: http://localhost:5006/app

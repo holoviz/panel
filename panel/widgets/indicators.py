@@ -32,7 +32,6 @@ import numpy as np
 import param
 
 from bokeh.models import ColumnDataSource, FixedTicker, Tooltip
-from bokeh.plotting import figure
 
 from .._param import Align
 from ..io.resources import CDN_DIST
@@ -737,6 +736,7 @@ class Dial(ValueIndicator):
         return annulus_data, needle_data, threshold_data, text_data
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
+        from bokeh.plotting import figure
         properties = self._get_properties(doc)
         model = figure(
             x_range=(-1,1), y_range=(-1,1), tools=[],
@@ -953,6 +953,8 @@ class LinearGauge(ValueIndicator):
         )
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
+        from bokeh.plotting import figure
+
         params = self._get_properties(doc)
         model = figure(
             outline_line_color=None, toolbar_location=None, tools=[],

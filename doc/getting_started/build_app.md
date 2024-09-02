@@ -124,7 +124,7 @@ Save the notebook with the name `app.ipynb`.
 Finally, we'll serve the app with:
 
 ```bash
-panel serve app.ipynb --autoreload
+panel serve app.ipynb --dev
 ```
 
 Now, open the app in your browser at [http://localhost:5006/app](http://localhost:5006/app).
@@ -138,7 +138,7 @@ It should look like this:
 If you prefer developing in a Python Script using an editor, you can copy the code into a file `app.py` and serve it.
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 :::

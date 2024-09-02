@@ -59,6 +59,7 @@
 
 .name {
   font-size: 1em;
+  width: fit-content;
 }
 
 .center {
@@ -141,11 +142,9 @@
   display: inline-block;
   animation: fadeOut 2s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
   color: #32cd32;
-  /* since 1.25em, fix margins to everything is perceived to be more aligned */
+  /* since 1.25em, adjust line-height */
   font-size: 1.25em;
-  margin-left: -2.5px;
-  margin-top: 2px;
-  margin-bottom: 5px;
+  line-height: 0.9em;
 }
 
 .divider {

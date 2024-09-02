@@ -17,6 +17,8 @@ import {convertUndefined, formatError} from "./util"
 
 import error_css from "styles/models/esm.css"
 
+const MODULE_CACHE = new Map()
+
 @server_event("esm_event")
 export class ESMEvent extends ModelEvent {
   constructor(readonly model: ReactiveESM, readonly data: any) {
@@ -139,6 +141,15 @@ function init_model_getter(target: ReactiveESM, name: string) {
   }
 }
 
+function init_model_setter(target: ReactiveESM, name: string, value: any): boolean {
+  if (Reflect.has(target.data, name)) {
+    return Reflect.set(target.data, name, value)
+  } else if (Reflect.has(target, name)) {
+    return Reflect.set(target, name, value)
+  }
+  return false
+}
+
 export class ReactiveESMView extends HTMLBoxView {
   declare model: ReactiveESM
   container: HTMLDivElement
@@ -157,6 +168,7 @@ export class ReactiveESMView extends HTMLBoxView {
     ["resize", []],
     ["remove", []],
   ])
+  _module_cache: Map<string, any> = MODULE_CACHE
   _rendered: boolean = false
   _stale_children: boolean = false
 
@@ -453,6 +465,7 @@ export namespace ReactiveESM {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = HTMLBox.Props & {
+    bundle: p.Property<string | null>
     children: p.Property<any>
     class_name: p.Property<string>
     data: p.Property<any>
@@ -480,7 +493,10 @@ export class ReactiveESM extends HTMLBox {
 
   override initialize(): void {
     super.initialize()
-    this.model_proxy = new Proxy(this, {get: init_model_getter})
+    this.model_proxy = new Proxy(this, {
+      get: init_model_getter,
+      set: init_model_setter,
+    })
     this.recompile()
   }
 
@@ -570,6 +586,9 @@ export class ReactiveESM extends HTMLBox {
   }
 
   compile(): string | null {
+    if (this.bundle != null) {
+      return this.esm
+    }
     let compiled
     try {
       compiled = transform(
@@ -598,13 +617,29 @@ export class ReactiveESM extends HTMLBox {
     }
     this.compiled = compiled
     this._declare_importmap()
-    const url = URL.createObjectURL(
-      new Blob([this.compiled], {type: "text/javascript"}),
-    )
-    // @ts-ignore
-    this.compiled_module = importShim(url).then((mod: any) => {
+    let esm_module
+    const cache_key = this.bundle || `${this.class_name}-${this.esm.length}`
+    let resolve: (value: any) => void
+    if (!this.dev && MODULE_CACHE.has(cache_key)) {
+      esm_module = Promise.resolve(MODULE_CACHE.get(cache_key))
+    } else {
+      if (!this.dev) {
+        MODULE_CACHE.set(cache_key, new Promise((res) => { resolve = res }))
+      }
+      const url = URL.createObjectURL(
+        new Blob([this.compiled], {type: "text/javascript"}),
+      )
+      esm_module = (window as any).importShim(url)
+    }
+    this.compiled_module = (esm_module as Promise<any>).then((mod: any) => {
+      if (resolve) {
+        resolve(mod)
+      }
       try {
         let initialize
+        if (this.bundle != null && (mod.default || {}).hasOwnProperty(this.name)) {
+          mod = mod.default[(this.name as any)]
+        }
         if (mod.initialize) {
           initialize = mod.initialize
         } else if (mod.default && mod.default.initialize) {
@@ -632,13 +667,14 @@ export class ReactiveESM extends HTMLBox {
 
   static {
     this.prototype.default_view = ReactiveESMView
-    this.define<ReactiveESM.Props>(({Any, Array, Bool, String}) => ({
-      children:   [ Array(String),       [] ],
-      class_name: [ String,              "" ],
-      data:       [ Any                     ],
-      dev:        [ Bool,             false ],
-      esm:        [ String,              "" ],
-      importmap:  [ Any,                 {} ],
+    this.define<ReactiveESM.Props>(({Any, Array, Bool, Nullable, Str}) => ({
+      bundle:      [ Nullable(Str),     null ],
+      children:    [ Array(Str),          [] ],
+      class_name:  [ Str,                 "" ],
+      data:        [ Any                     ],
+      dev:         [ Bool,             false ],
+      esm:         [ Str,                 "" ],
+      importmap:   [ Any,                 {} ],
     }))
   }
 }
