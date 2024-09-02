@@ -17,7 +17,7 @@ from pyviz_comms import JupyterComm
 
 from ..io.state import state
 from ..reactive import ReactiveData
-from ..util import datetime_types, lazy_load
+from ..util import anyinstance, datetime_types, lazy_load
 from ..viewable import Viewable
 from .base import ModelPane
 
@@ -402,7 +402,7 @@ class Perspective(ModelPane, ReactiveData):
             else:
                 if len(array):
                     value = array[0]
-                    if isinstance(value, datetime_types) and type(value) is not dt.date:
+                    if anyinstance(value, datetime_types) and type(value) is not dt.date:
                         schema[col] = 'datetime'
                     elif isinstance(value, dt.date):
                         schema[col] = 'date'

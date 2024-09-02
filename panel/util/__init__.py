@@ -4,9 +4,9 @@ Various general utilities used in the panel codebase.
 from __future__ import annotations
 
 import ast
-import asyncio
 import base64
 import datetime as dt
+import inspect
 import json
 import logging
 import numbers
@@ -497,6 +497,7 @@ async def to_async_gen(sync_gen):
         except StopIteration:
             return done
 
+    import asyncio
     while True:
         value = await asyncio.to_thread(safe_next)
         if value is done:
@@ -528,3 +529,14 @@ def camel_to_kebab(name):
     kebab_case = re.sub(r'([a-z0-9])([A-Z])', r'\1-\2', name)
     kebab_case = re.sub(r'([A-Z]+)([A-Z][a-z0-9])', r'\1-\2', kebab_case)
     return kebab_case.lower()
+
+def anyinstance(obj, class_tuple_generator):
+    if inspect.isgeneratorfunction(class_tuple_generator):
+        return any(isinstance(obj, i) for i in class_tuple_generator())
+    return isinstance(obj, class_tuple_generator)
+
+
+def anysubclass(obj, class_tuple_generator):
+    if inspect.isgeneratorfunction(class_tuple_generator):
+        return any(issubclass(obj, i) for i in class_tuple_generator())
+    return issubclass(obj, class_tuple_generator)
