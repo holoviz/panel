@@ -360,9 +360,9 @@ class Server(BokehServer):
             # For the stop event to be processed we have to restart
             # the IOLoop briefly, ensuring an orderly cleanup
             async def stop_autoreload():
-                # Clean up views
-                for (view, model, _, _) in state._views.values():
-                    view._cleanup(model)
+                for event in state._watch_events:
+                    event.set()
+                state._watch_events = []
                 self._autoreload_stop_event.set()
                 await self._autoreload_task
             try:

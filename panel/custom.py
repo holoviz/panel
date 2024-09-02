@@ -205,6 +205,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         super()._cleanup(root)
         if not self._models and self._watching_esm:
             self._watching_esm.set()
+            if self._watching_esm in state._watch_events:
+                state._watch_events.remove(self._watching_esm)
             self._watching_esm = False
 
     async def _watch_esm(self):
@@ -291,7 +293,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             return
         super()._setup_autoreload()
         if (self._esm_path(compiled=False) and not self._watching_esm):
-            self._watching_esm = asyncio.Event()
+            self._watching_esm = event = asyncio.Event()
+            state._watch_events.append(event)
             state.execute(self._watch_esm)
 
     def _get_model(
