@@ -82,8 +82,10 @@ class PyComponent(Viewable, Layoutable):
                     del self.__changing[p]
 
     def _cleanup(self, root: Model | None = None) -> None:
-        if self.__view is not None:
-            self.__view._cleanup(root)
+        if self.__view is None:
+            return
+        super()._cleanup(root)
+        self.__view._cleanup(root)
 
     def _create__view(self):
         from .pane import panel
@@ -112,12 +114,15 @@ class PyComponent(Viewable, Layoutable):
     ) -> 'Model':
         if self.__view is None:
             self._create__view()
-        return self.__view._get_model(doc, root, parent, comm)
+        model = self.__view._get_model(doc, root, parent, comm)
+        root = model if root is None else root
+        self._models[root] = (model, parent)
+        return model
 
     def select(
         self, selector: Optional[type | Callable[Viewable, bool]] = None
     ) -> list[Viewable]:
-        return self.__view.select(selector)
+        return super().select(selector) + self.__view.select(selector)
 
 
 
