@@ -24,6 +24,8 @@ conda install fastapi
 ```
 :::
 
+::::
+
 ## Create a FastAPI application
 
 Start by creating a FastAPI application. In this application, we will define a root endpoint that returns a simple JSON response. Open your text editor or IDE and create a file named main.py:
