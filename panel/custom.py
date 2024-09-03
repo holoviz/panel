@@ -59,14 +59,27 @@ class PyComponent(Viewable, Layoutable):
     def __init__(self, **params):
         super().__init__(**params)
         self.__view = None
+        self.__changing = {}
         self.param.watch(self._sync__view, [p for p in Layoutable.param if p != 'name'])
 
     def _sync__view(self, *events):
-        if self.__view is None:
+        if not events or self.__view is None:
             return
-        params = {e.name: e.new for e in events}
-        with param.parameterized._syncing(self.__view, list(params)):
-            self.__view.param.update(params)
+        target = self.__view if events[0].obj is self else self
+        params = {
+            e.name: e.new for e in events if e.name not in self.__changing
+            or self.__changing[e.name] is not e.new
+        }
+        if not params:
+            return
+        try:
+            self.__changing.update(params)
+            with param.parameterized._syncing(target, list(params)):
+                target.param.update(params)
+        finally:
+            for p in params:
+                if p in self.__changing:
+                    del self.__changing[p]
 
     def _cleanup(self, root: Model | None = None) -> None:
         if self.__view is not None:
@@ -88,6 +101,7 @@ class PyComponent(Viewable, Layoutable):
                 overrides[p] = params[p]
             elif p != 'name':
                 sync[p] = getattr(self, p)
+        view.param.watch(self._sync__view, [p for p in Layoutable.param if p != 'name'])
         self.param.update(overrides)
         with param.parameterized._syncing(view, list(sync)):
             view.param.update(sync)
