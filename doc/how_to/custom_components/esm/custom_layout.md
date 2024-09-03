@@ -316,6 +316,36 @@ split_anywidget.right=pn.widgets.CodeEditor(
 
 ::::
 
+Now, let's change it back:
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+```{pyodide}
+split_js.right=pn.widgets.CodeEditor(
+    value="Right",
+    sizing_mode="stretch_both",
+    margin=0,
+    theme="monokai",
+    language="python",
+)
+```
+:::
+
+:::{tab-item} `ReactComponent`
+```{pyodide}
+split_react.right=pn.widgets.CodeEditor(
+    value="Right",
+    sizing_mode="stretch_both",
+    margin=0,
+    theme="monokai",
+    language="python",
+)
+```
+:::
+
+::::
+
 ## Layout a List of Objects
 
 A Panel `Column` or `Row` works as a list of objects. It is *list-like*. In this section, we will show you how to create your own *list-like* layout using Panel's `NamedListLike` class.

@@ -2,9 +2,9 @@
 
 These How-to pages provide solutions for common tasks related to extending Panel with custom components.
 
-## `Viewer` Components
+## `Viewer` and `PyComponent`
 
-Build custom components by combining existing components.
+Build custom components by combining existing components in Python.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -14,6 +14,13 @@ Build custom components by combining existing components.
 :link-type: doc
 
 How to build custom components that are combinations of existing components.
+:::
+
+:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Combine Existing Components
+:link: python/create_custom widget
+:link-type: doc
+
+How to build a custom widget by subclassing `PyComponent` and `WidgetBase`.
 :::
 
 ::::
@@ -47,6 +54,7 @@ Build a custom component wrapping a table and some widgets using the `Viewer` pa
 :maxdepth: 2
 
 custom_viewer
+python/create_custom_widget
 examples/plot_viewer
 examples/table_viewer
 ```

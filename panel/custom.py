@@ -33,7 +33,7 @@ from .reactive import (  # noqa
 from .util import camel_to_kebab, classproperty
 from .util.checks import import_available
 from .viewable import (  # noqa
-    Child, Children, Layoutable, Viewable, is_viewable_param,
+    Child, Children, Layoutable, Viewable, Viewer, is_viewable_param,
 )
 from .widgets.base import WidgetBase  # noqa
 
@@ -44,6 +44,88 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
     ExportSpec = dict[str, list[str | tuple[str, ...]]]
+
+
+class PyComponent(Viewable, Layoutable):
+    """
+    The `PyComponent` combines the convenience of `Viewer` components
+    that allow creating custom components by declaring a `__panel__`
+    method with the ability of controlling layout and styling
+    related parameters directly on the class. Internally the
+    `PyComponent` will forward layout parameters to the underlying
+    object, which is created lazily on render.
+    """
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._view__ = None
+        self._changing__ = {}
+        self.param.watch(self._sync__view, [p for p in Layoutable.param if p != 'name'])
+
+    def _sync__view(self, *events):
+        if not events or self._view__ is None:
+            return
+        target = self._view__ if events[0].obj is self else self
+        params = {
+            e.name: e.new for e in events if e.name not in self._changing__
+            or self._changing__[e.name] is not e.new
+        }
+        if not params:
+            return
+        try:
+            self._changing__.update(params)
+            with param.parameterized._syncing(target, list(params)):
+                target.param.update(params)
+        finally:
+            for p in params:
+                if p in self._changing__:
+                    del self._changing__[p]
+
+    def _cleanup(self, root: Model | None = None) -> None:
+        if self._view__ is None:
+            return
+        super()._cleanup(root)
+        if root and root.ref['id'] in self._models:
+            del self._models[root.ref['id']]
+        self._view__._cleanup(root)
+
+    def _create__view(self):
+        from .pane import panel
+        from .param import ParamMethod
+
+        if hasattr(self.__panel__, "_dinfo"):
+            view = ParamMethod(self.__panel__, lazy=True)
+        else:
+            view = panel(self.__panel__())
+        self._view__ = view
+        params = view.param.values()
+        overrides, sync = {}, {}
+        for p in Layoutable.param:
+            if p != 'name' and view.param[p].default != params[p]:
+                overrides[p] = params[p]
+            elif p != 'name':
+                sync[p] = getattr(self, p)
+        view.param.watch(self._sync__view, [p for p in Layoutable.param if p != 'name'])
+        self.param.update(overrides)
+        with param.parameterized._syncing(view, list(sync)):
+            view.param.update(sync)
+
+    def _get_model(
+        self, doc: Document, root: Optional['Model'] = None,
+        parent: Optional['Model'] = None, comm: Optional[Comm] = None
+    ) -> 'Model':
+        if self._view__ is None:
+            self._create__view()
+        model = self._view__._get_model(doc, root, parent, comm)
+        root = model if root is None else root
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+    def select(
+        self, selector: Optional[type | Callable[Viewable, bool]] = None
+    ) -> list[Viewable]:
+        return super().select(selector) + self._view__.select(selector)
+
 
 
 class ReactiveESMMetaclass(ReactiveMetaBase):
@@ -73,6 +155,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     variable. Use this to define a `render` function as shown in the
     example below.
 
+    ```
     import panel as pn
     import param
 
@@ -97,6 +180,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         """
 
     CounterButton().servable()
+    ```
     '''
 
     _bokeh_model = _BkReactiveESM
@@ -375,6 +459,7 @@ class JSComponent(ReactiveESM):
     variable. Use this to define a `render` function as shown in the
     example below.
 
+    ```
     import panel as pn
     import param
 
@@ -399,6 +484,7 @@ class JSComponent(ReactiveESM):
         """
 
     CounterButton().servable()
+    ```
     '''
 
     __abstract = True
@@ -415,6 +501,7 @@ class ReactComponent(ReactiveESM):
     variable. Use this to define a `render` function as shown in the
     example below.
 
+    ```
     import panel as pn
     import param
 
@@ -435,6 +522,7 @@ class ReactComponent(ReactiveESM):
         """
 
     CounterButton().servable()
+    ```
     '''
 
     __abstract = True
