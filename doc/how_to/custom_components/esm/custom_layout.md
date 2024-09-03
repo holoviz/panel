@@ -265,8 +265,6 @@ split_react.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `Cod
 ```
 :::
 
-:::
-
 :::{tab-item} `AnyWidgetComponent`
 ```{pyodide}
 split_anywidget.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
