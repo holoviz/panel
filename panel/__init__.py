@@ -104,7 +104,7 @@ _attrs = {
     "links": "panel.links",
     "pane": "panel.pane",
     "panel": "panel.pane:panel",
-    "param": None,  # available in panel/param.py
+    "param": "panel.param",
     "pipeline": "panel.pipeline",
     "reactive": "panel.reactive",
     "serve": "panel.io:serve",
@@ -120,8 +120,6 @@ _attrs = {
 def __getattr__(name: str) -> object:
     if name == "no_lazy":
         for attr in _attrs:
-            if attr in ("param"):
-                continue
             mod = __getattr__(attr)
             if hasattr(mod, "_attrs"):
                 getattr(mod._attrs, "no_lazy", None)
