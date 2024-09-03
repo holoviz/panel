@@ -54,7 +54,7 @@ Build a custom component wrapping a table and some widgets using the `Viewer` pa
 :maxdepth: 2
 
 custom_viewer
-python/create_custom widget
+python/create_custom_widget
 examples/plot_viewer
 examples/table_viewer
 ```
