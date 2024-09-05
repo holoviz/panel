@@ -244,6 +244,7 @@ split_anywidget = SplitAnyWidget(
 )
 split_anywidget.servable()
 ```
+:::
 
 ::::
 
@@ -262,8 +263,6 @@ split_js.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEd
 ```{pyodide}
 split_react.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
-:::
-
 :::
 
 :::{tab-item} `AnyWidgetComponent`
