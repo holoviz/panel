@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     _CallableT = TypeVar("_CallableT", bound=Callable)
 
     class _CachedFunc(Protocol[_CallableT]):
-        def clear(self, func_hashes: list[str | None]) -> None:
+        def clear(self, func_hashes: list[str | None]=[None]) -> None:
             pass
 
         __call__: _CallableT
