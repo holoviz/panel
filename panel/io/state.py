@@ -1054,20 +1054,25 @@ class _state(param.Parameterized):
 
     @property
     def notifications(self) -> NotificationArea | None:
-        from ..config import config
-        if config.notifications and self.curdoc and self.curdoc.session_context and self.curdoc not in self._notifications:
-            from .notifications import NotificationArea
-            js_events = {}
-            if config.ready_notification:
-                js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
-            if config.disconnect_notification:
-                js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
-            self._notifications[self.curdoc] = notifications = NotificationArea(js_events=js_events)
-            return notifications
-        elif self.curdoc is None or self.curdoc.session_context is None:
+        if self.curdoc is None:
             return self._notification
-        else:
-            return self._notifications.get(self.curdoc) if self.curdoc else None
+
+        is_session = (self.curdoc.session_context is not None or self._is_pyodide)
+        if self.curdoc in self._notifications:
+            return self._notifications[self.curdoc]
+
+        from panel.config import config
+        if not (config.notifications and is_session):
+            return None if is_session else self._notification
+
+        from panel.io.notifications import NotificationArea
+        js_events = {}
+        if config.ready_notification:
+            js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
+        if config.disconnect_notification:
+            js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
+        self._notifications[self.curdoc] = notifications = NotificationArea(js_events=js_events)
+        return notifications
 
     @property
     def refresh_token(self) -> str | None:
