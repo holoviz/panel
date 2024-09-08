@@ -443,7 +443,7 @@ class BaseTable(ReactiveData, Widget):
                 continue
             if isinstance(filt, (FunctionType, MethodType, partial)):
                 res = filt(df)
-                if type(res) == type(df): #function returned filtered dataframe
+                if type(res) is type(df): #function returned filtered dataframe
                     df = res
                 else: #assume boolean mask
                     filters.append(res)
