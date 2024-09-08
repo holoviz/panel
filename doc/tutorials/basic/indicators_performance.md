@@ -23,7 +23,7 @@ In this tutorial, we'll explore various indicators offered by Panel to showcase 
 For a comprehensive list of indicators and their detailed reference guides, you can always refer to the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) in the [Component Gallery](../../reference/index.md).
 
 :::{note}
-Throughout this tutorial, whenever we refer to "run the code," you can execute it directly in the Panel docs using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --autoreload`.
+Throughout this tutorial, whenever we refer to "run the code," you can execute it directly in the Panel docs using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --dev`.
 :::
 
 ## Display a Number
@@ -44,7 +44,7 @@ pn.indicators.Number(
 ```
 
 :::{note}
-Adding `.servable()` to the `Number` indicator incorporates it into the app served by `panel serve app.py --autoreload`. Note that it's not necessary for displaying the indicator in a notebook.
+Adding `.servable()` to the `Number` indicator incorporates it into the app served by `panel serve app.py --dev`. Note that it's not necessary for displaying the indicator in a notebook.
 :::
 
 Feel free to tweak the `value` from `8.6` to `11.4` and observe the color change to *red*.

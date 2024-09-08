@@ -548,7 +548,7 @@ def convert_apps(
     compiled: bool
         Whether to use the compiled and faster version of Pyodide.
     """
-    if isinstance(apps, str):
+    if isinstance(apps, (str, os.PathLike)):
         apps = [apps]
     if dest_path is None:
         dest_path = pathlib.Path('./')
@@ -563,7 +563,7 @@ def convert_apps(
         for app in apps:
             matches = [
                 deps for name, deps in requirements.items()
-                if app.endswith(name.replace(os.path.sep, '/'))
+                if str(app).endswith(name.replace(os.path.sep, '/'))
             ]
             app_requirements[app] = matches[0] if matches else 'auto'
     else:

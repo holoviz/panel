@@ -9,7 +9,7 @@ Let's bring our Panel apps to life with dynamic indicators and notifications, mu
 - Provide notifications using `pn.state.notifications`.
 
 :::{note}
-In the sections below, you can execute the code directly in the Panel documentation using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
+In the sections below, you can execute the code directly in the Panel documentation using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --dev`.
 :::
 
 ```{pyodide}

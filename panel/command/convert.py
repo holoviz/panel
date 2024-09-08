@@ -25,10 +25,15 @@ class Convert(Subcommand):
             help    = "The app directories or scripts to serve (serve empty document if not specified)",
             default = None,
         )),
+        ('--exclude', dict(
+            nargs   = '*',
+            help    = "A list of files to exclude.",
+            default = None
+        )),
         ('--to', dict(
             action  = 'store',
             type    = str,
-            help    = "The format to convert to, one of 'pyodide' (default), 'pyodide-worker' or 'pyscript'",
+            help    = "The format to convert to, one of 'pyodide' (default), 'pyodide-worker', 'pyscript' or 'pyscript-worker'",
             default = 'pyodide'
         )),
         ('--compiled', dict(
@@ -100,14 +105,25 @@ class Convert(Subcommand):
             elif req.endswith('.json'):
                 with open(req, encoding='utf-8') as req_file:
                     requirements = json.load(req_file)
+
+        excluded = [pathlib.Path(e).absolute() for e in args.exclude] if args.exclude else []
+        included = []
+        for f in args.files:
+            p = pathlib.Path(f).absolute()
+            if not p.is_file():
+                raise ValueError('File {f!r} not found.')
+            elif p not in excluded:
+                included.append(p)
+
         prev_hashes = {}
         built = False
         while True:
-            hashes = {f: hash(open(f).read()) for f in args.files}
+            hashes = {f: hash(open(f).read()) for f in included}
             if hashes == prev_hashes:
                 time.sleep(0.5)
                 continue
             files = [f for f, h in hashes.items() if prev_hashes.get(f) != h]
+
             index = args.index and not built
             try:
                 convert_apps(
