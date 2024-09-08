@@ -62,7 +62,7 @@ template.main.append(
 )
 template.servable();
 ```
-::::
+:::
 
 Now, we can activate this app on the command line:
 

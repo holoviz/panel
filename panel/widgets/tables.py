@@ -442,7 +442,11 @@ class BaseTable(ReactiveData, Widget):
             if col_name is not None and col_name not in df.columns:
                 continue
             if isinstance(filt, (FunctionType, MethodType, partial)):
-                df = filt(df)
+                res = filt(df)
+                if type(res) == type(df): #function returned filtered dataframe
+                    df = res
+                else: #assume boolean mask
+                    filters.append(res)
                 continue
             if isinstance(filt, param.Parameter):
                 val = getattr(filt.owner, filt.name)

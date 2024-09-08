@@ -82,6 +82,7 @@ def hello_world(text):
 pn.Row(widget, pn.bind(hello_world, widget)).servable()
 ```
 ````
+:::
 
 Then, from the command line, launch a server with:
 
