@@ -154,7 +154,7 @@ class BaseTable(ReactiveData, Widget):
         have to reset various settings including expanded rows,
         scroll position, pagination etc.
         """
-        if type(old) != type(new) or isinstance(new, dict) or len(old) != len(new):
+        if type(old) is not type(new) or isinstance(new, dict) or len(old) != len(new):
             return True
         return (old.index != new.index).any()
 
