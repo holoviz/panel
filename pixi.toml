@@ -177,6 +177,7 @@ test-type = 'mypy panel'
 [feature.doc.activation.env]
 MOZ_HEADLESS = "1"
 PANEL_IPYWIDGET = "1"
+OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES"
 
 [feature.doc.dependencies]
 lxml = "*"
