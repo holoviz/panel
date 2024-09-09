@@ -54,7 +54,7 @@ pn.panel("Hello World").servable()
 You *serve* and *show* (i.e. open) the app in your browser with *autoreload* via
 
 ```bash
-panel serve app.py --autoreload --show
+panel serve app.py --dev --show
 ```
 
 ![Panel Hello World Example](../../_static/images/panel_hello_world.png)

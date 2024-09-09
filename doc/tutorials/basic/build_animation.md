@@ -146,7 +146,7 @@ VALUE = "p_cap"
 
 @pn.cache()
 def get_data():
-    return pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
+    return pd.read_csv("https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz")
 
 data = get_data()
 min_year = int(data.p_year.min())
@@ -257,7 +257,7 @@ Now serve the app with:
 :sync: script
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 :::
@@ -266,7 +266,7 @@ panel serve app.py --autoreload
 :sync: notebook
 
 ```bash
-panel serve app.ipynb --autoreload
+panel serve app.ipynb --dev
 ```
 
 :::

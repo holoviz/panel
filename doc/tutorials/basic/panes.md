@@ -15,7 +15,7 @@ You might notice a lot of repetition from the previous section regarding `pn.pan
 :::
 
 :::{note}
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --dev`.
 :::
 
 ```{pyodide}
@@ -40,7 +40,7 @@ pn.pane.Str(
 ```
 
 :::{note}
-We add `.servable()` to the component to add it to the app served by `panel serve app.py --autoreload`. Adding `.servable()` is not needed to display the component in a notebook.
+We add `.servable()` to the component to add it to the app served by `panel serve app.py --dev`. Adding `.servable()` is not needed to display the component in a notebook.
 :::
 
 :::{note}

@@ -154,7 +154,7 @@ class BaseTable(ReactiveData, Widget):
         have to reset various settings including expanded rows,
         scroll position, pagination etc.
         """
-        if type(old) != type(new) or isinstance(new, dict) or len(old) != len(new):
+        if type(old) is not type(new) or isinstance(new, dict) or len(old) != len(new):
             return True
         return (old.index != new.index).any()
 
@@ -442,7 +442,11 @@ class BaseTable(ReactiveData, Widget):
             if col_name is not None and col_name not in df.columns:
                 continue
             if isinstance(filt, (FunctionType, MethodType, partial)):
-                df = filt(df)
+                res = filt(df)
+                if type(res) is type(df): #function returned filtered dataframe
+                    df = res
+                else: #assume boolean mask
+                    filters.append(res)
                 continue
             if isinstance(filt, param.Parameter):
                 val = getattr(filt.owner, filt.name)

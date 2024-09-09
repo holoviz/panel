@@ -37,7 +37,7 @@ By placing a Panel component at the end of a notebook cell, it renders as part o
 To add Panel components to your app, mark them as `.servable()` and serve the app with:
 
 ```bash
-panel serve app.ipynb --autoreload
+panel serve app.ipynb --dev
 ```
 
 You've already experimented with this while [building a simple app](build_app.md).
@@ -47,10 +47,10 @@ You've already experimented with this while [building a simple app](build_app.md
 If you're working in an editor, declare the Panel components you want to display as `.servable()`, then serve the script with:
 
 ```bash
-panel serve app.py --autoreload --show
+panel serve app.py --dev --show
 ```
 
-Upon running that command, Panel launches a server that serves your app, opens a tab in your default browser (`--show`), and updates the application whenever you modify the code (`--autoreload`).
+Upon running that command, Panel launches a server that serves your app, opens a tab in your default browser (`--show`), and updates the application whenever you modify the code (`--dev`).
 
 <img src="https://assets.holoviz.org/panel/gifs/vscode_autoreload.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
 

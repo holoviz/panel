@@ -17,10 +17,6 @@ from weakref import WeakKeyDictionary
 
 import param
 
-from bokeh.core.has_props import _default_resolver
-from bokeh.document import Document
-from bokeh.model import Model
-from bokeh.settings import settings as bk_settings
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
@@ -41,6 +37,7 @@ _LOCAL_DEV_VERSION = (
 #---------------------------------------------------------------------
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
+_config_uninitialized = True
 
 def validate_config(config, parameter, value):
     """
@@ -435,7 +432,7 @@ class _config(_base_config):
         ensure that even on first access mutable parameters do not
         end up being modified.
         """
-        if attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param'):
+        if _config_uninitialized or attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param'):
             return super().__getattribute__(attr)
 
         from .io.state import state
@@ -621,6 +618,7 @@ else:
 _config._parameter_set = set(_params)
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
+_config_uninitialized = False
 
 class panel_extension(_pyviz_extension):
     """
@@ -703,6 +701,10 @@ class panel_extension(_pyviz_extension):
     _comms_detected_before = False
 
     def __call__(self, *args, **params):
+        from bokeh.core.has_props import _default_resolver
+        from bokeh.model import Model
+        from bokeh.settings import settings as bk_settings
+
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
@@ -855,6 +857,7 @@ class panel_extension(_pyviz_extension):
     @staticmethod
     def _display_globals():
         if config.browser_info and state.browser_info:
+            from bokeh.document import Document
             doc = Document()
             comm = state._comm_manager.get_server_comm()
             model = state.browser_info._render_model(doc, comm)

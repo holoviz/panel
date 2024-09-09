@@ -390,6 +390,8 @@ class Syncable(Renderable):
             model._event_callbacks = {}
         if not self._models and self._watching_stylesheets:
             self._watching_stylesheets.set()
+            if self._watching_stylesheets in state._watch_events:
+                state._watch_events.remove(self._watching_stylesheets)
             self._watching_stylesheets = False
         comm, client_comm = self._comms.pop(ref, (None, None))
         if comm:
@@ -414,7 +416,8 @@ class Syncable(Renderable):
         paths = [sts for sts in self._stylesheets if isinstance(sts, pathlib.PurePath)]
         if (self._watching_stylesheets or not (config.autoreload and paths and import_available('watchfiles'))):
             return
-        self._watching_stylesheets = asyncio.Event()
+        self._watching_stylesheets = event = asyncio.Event()
+        state._watch_events.append(event)
         state.execute(self._watch_stylesheets)
 
     async def _watch_stylesheets(self):

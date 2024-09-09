@@ -2073,6 +2073,43 @@ def test_tabulator_function_filter(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
+def test_tabulator_function_mask_filter(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    widget = TextInput(value='foo3')
+
+    def filter_c(df, value):
+        return df.C.str.contains(value)
+
+    table.add_filter(bind(filter_c, value=widget), 'C')
+
+    expected = {
+        'index': np.array([2]),
+        'A': np.array([2]),
+        'B': np.array([0]),
+        'C': np.array(['foo3']),
+        'D': np.array(['2009-01-05T00:00:00.000000000'],
+                      dtype='datetime64[ns]').astype(np.int64) / 10e5
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+    widget.value = 'foo1'
+
+    expected = {
+        'index': np.array([0]),
+        'A': np.array([0]),
+        'B': np.array([0]),
+        'C': np.array(['foo1']),
+        'D': np.array(['2009-01-01T00:00:00.000000000'],
+                      dtype='datetime64[ns]').astype(np.int64) / 10e5
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
 def test_tabulator_constant_tuple_filter(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)

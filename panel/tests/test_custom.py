@@ -1,8 +1,47 @@
 import param
 
-from panel.custom import ReactiveESM
+from panel.custom import PyComponent, ReactiveESM
+from panel.layout import Row
 from panel.pane import Markdown
 from panel.viewable import Viewable
+
+
+class SimplePyComponent(PyComponent):
+
+    def __panel__(self):
+        return Row(1, 2, 3, height=42)
+
+
+def test_py_component_syncs(document, comm):
+    spy = SimplePyComponent(width=42)
+
+    spy.get_root(document, comm)
+
+    assert isinstance(spy._view__, Row)
+    assert spy._view__.width == 42
+    assert spy.height == 42
+
+    spy.width = 84
+
+    assert spy._view__.width == 84
+
+    spy._view__.width = 42
+
+    assert spy._view__.width == 42
+
+
+def test_py_component_cleanup(document, comm):
+    spy = SimplePyComponent(width=42)
+
+    model = spy.get_root(document, comm)
+
+    assert model.ref['id'] in spy._models
+    assert model.ref['id'] in spy._view__._models
+
+    spy._cleanup(model)
+
+    assert not spy._models
+    assert not spy._view__._models
 
 
 class ESMWithChildren(ReactiveESM):
