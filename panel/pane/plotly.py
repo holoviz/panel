@@ -227,7 +227,7 @@ class Plotly(ModelPane):
             try:
                 old = cds.data.get(key)[0]
                 update_array = (
-                    (type(old) != type(new)) or
+                    (type(old) is not type(new)) or
                     (new.shape != old.shape) or
                     (new != old).any())
             except Exception:
