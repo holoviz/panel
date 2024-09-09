@@ -137,12 +137,13 @@ nbsite_gallery_conf = {
                 'PanelCallbackHandler': 'LangChain CallbackHandler',
             },
             'as_pyodide': True,
-            'normalize_titles': False
+            'normalize_titles': False,
         }
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
     'deployment_url': gallery_url,
     'jupyterlite_url': jlite_url,
+    'only_use_existing': True,
 }
 
 if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
