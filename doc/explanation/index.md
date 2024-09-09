@@ -293,7 +293,6 @@ develop_seamlessly
 apis
 components
 linking
-comms
 styling
 dependencies
 comparisons
