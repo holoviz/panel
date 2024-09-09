@@ -2597,3 +2597,13 @@ def test_selection_cleared_remote_pagination_new_values(document, comm):
 
     table.value = df.copy()
     assert table.selection == []
+
+
+def test_save_user_columns_configuration(document, comm):
+    df = pd.DataFrame({"header": [True, False, True]})
+    configuration={"columns": [{"field": "header", "headerTooltip": True}]}
+    tabulator = Tabulator(df, configuration=configuration, show_index=False)
+
+    expected = [{'field': 'header', 'sorter': 'boolean', 'headerTooltip': True}]
+    model = tabulator.get_root(document, comm)
+    assert model.configuration["columns"] == expected
