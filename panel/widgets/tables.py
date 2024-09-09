@@ -1129,6 +1129,10 @@ class Tabulator(BaseTable):
         Whether to enable filters in the header or dictionary
         configuring filters for each column.""")
 
+    header_tooltips = param.Dict(default={}, doc="""
+        Dictionary mapping from column name to a tooltip to show when
+        hovering over the column header.""")
+
     hidden_columns = param.List(default=[], nested_refs=True, doc="""
         List of columns to hide.""")
 
@@ -1220,7 +1224,7 @@ class Tabulator(BaseTable):
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
         'text_align': None, 'embed_content': None, 'header_align': None,
-        'header_filters': None, 'styles': 'cell_styles',
+        'header_filters': None, 'header_tooltips': None, 'styles': 'cell_styles',
         'title_formatters': None, 'sortable': None, 'initial_page_size': None
     }
 
@@ -1984,6 +1988,9 @@ class Tabulator(BaseTable):
             if isinstance(self.widths, dict) and isinstance(self.widths.get(field), str):
                 col_dict['width'] = self.widths[field]
             col_dict.update(self._get_filter_spec(column))
+
+            if field in self.header_tooltips:
+                col_dict["headerTooltip"] = self.header_tooltips.get(field)
 
             if isinstance(index, tuple):
                 if columns:
