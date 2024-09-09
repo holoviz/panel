@@ -2607,3 +2607,12 @@ def test_save_user_columns_configuration(document, comm):
     expected = [{'field': 'header', 'sorter': 'boolean', 'headerTooltip': True}]
     model = tabulator.get_root(document, comm)
     assert model.configuration["columns"] == expected
+
+def test_header_filters_categorial_dtype():
+    # Test for https://github.com/holoviz/panel/issues/7234
+    df = pd.DataFrame({'model': ['A', 'B', 'C', 'D', 'E']})
+    df['model'] = df['model'].astype('category')
+
+    widget = Tabulator(df, header_filters=True)
+    widget.filters = [{'field': 'model', 'type': 'like', 'value': 'A'}]
+    assert widget.current_view.size == 1
