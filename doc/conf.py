@@ -85,9 +85,9 @@ html_theme_options = {
 extensions += [
     'sphinx.ext.napoleon',
     'nbsite.gallery',
-    'sphinx_copybutton',
     'nbsite.pyodide',
     'nbsite.analytics',
+    'sphinx_copybutton',
 ]
 napoleon_numpy_docstring = True
 
