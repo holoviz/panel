@@ -3954,3 +3954,18 @@ class Test_RemotePagination_CheckboxSelection(Test_RemotePagination):
             self.set_filtering(page, n)
             self.check_selected(page, list(range(10)), 0)
             expect(page.locator('.tabulator')).to_have_count(1)
+
+
+def test_tabulator_header_tooltips(page):
+    df = pd.DataFrame({"header": [True, False, True]})
+    widget = Tabulator(df, header_tooltips={"header": "Test"})
+
+    serve_component(page, widget)
+
+    header = page.locator('.tabulator-col-title', has_text="header")
+    expect(header).to_have_count(1)
+    header.hover()
+
+    page.wait_for_timeout(200)
+
+    expect(page.locator('.tabulator-tooltip')).to_have_text("Test")
