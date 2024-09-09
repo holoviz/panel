@@ -2036,7 +2036,11 @@ class Tabulator(BaseTable):
         if self.groups and 'columns' in configuration:
             raise ValueError("Groups must be defined either explicitly "
                              "or via the configuration, not both.")
-        configuration['columns'] = self._config_columns(columns)
+        user_columns = configuration.get('columns', {})
+        configuration["columns"] = self._config_columns(columns)
+        for idx, col in enumerate(columns):
+            if col.field in user_columns:
+                configuration["columns"][idx] |= user_columns[col.field]
         configuration['dataTree'] = self.hierarchical
         if self.sizing_mode in ('stretch_height', 'stretch_both'):
             configuration['maxHeight'] = '100%'
