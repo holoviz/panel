@@ -84,7 +84,6 @@ html_theme_options = {
 
 
 extensions = [
-    'myst_nb',
     'sphinx_design',
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
