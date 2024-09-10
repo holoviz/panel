@@ -114,4 +114,4 @@ pn.Column(
 
 ## Related Resources
 
-- To create custom components from scratch, check out [How To > Build Components from Scratch](./custom_reactiveHTML.md) and read the associated [Explanation > Building Custom Components](../../explanation/components/components_custom.md) for further explanation.
+- To create custom components from scratch, check out [How To > Build Components from Scratch](./reactive_html/reactive_html_widgets.md) and read the associated [Explanation > Building Custom Components](../../explanation/components/reactive_html_components.md) for further explanation.
