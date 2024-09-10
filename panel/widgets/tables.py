@@ -513,7 +513,8 @@ class BaseTable(ReactiveData, Widget):
                 elif not val:
                     continue
 
-            val = col.dtype.type(val)
+            if col.dtype.kind != 'O':
+                val = col.dtype.type(val)
             if op == '=':
                 filters.append(col == val)
             elif op == '!=':
