@@ -184,7 +184,7 @@ lxml = "*"
 selenium = "*"
 
 [feature.doc.pypi-dependencies]
-nbsite = {git = "https://github.com/holoviz-dev/nbsite.git", "rev" = "76dd21193abc34646d51780a6c434681a5c87799"}
+nbsite = {git = "https://github.com/holoviz-dev/nbsite.git", "rev" = "d848d71589286d7e1644fa3956247ddf26d9f451"}
 
 [feature.doc.tasks]
 _docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
