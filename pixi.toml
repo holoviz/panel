@@ -181,7 +181,7 @@ OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES"
 
 [feature.doc.dependencies]
 lxml = "*"
-nbsite = "nbsite@git+https://github.com/holoviz-dev/nbsite.git@34bfcc9ff67630e407398171fd69f6cc0e694f32"
+nbsite = {git = "nbsite@git+https://github.com/holoviz-dev/nbsite.git@34bfcc9ff67630e407398171fd69f6cc0e694f32"}
 selenium = "*"
 
 [feature.doc.tasks]
