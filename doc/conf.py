@@ -71,8 +71,8 @@ html_theme_options = {
             "icon": "fa-brands fa-discord",
         },
     ],
-    "pygment_light_style": "material",
-    "pygment_dark_style": "material",
+    "pygments_light_style": "material",
+    "pygments_dark_style": "material",
     "header_links_before_dropdown": 5,
     'secondary_sidebar_items': [
         "github-stars-button",
