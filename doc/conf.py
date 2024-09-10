@@ -82,14 +82,26 @@ html_theme_options = {
     "announcement": announcement_text,
 }
 
-extensions += [
-    'sphinx.ext.napoleon',
+
+extensions = [
+    'myst_nb',
+    'sphinx_design',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.linkcode',
+    'sphinx_copybutton',
+    'sphinxext.rediraffe',
     'nbsite.gallery',
     'nbsite.pyodide',
     'nbsite.analytics',
-    'sphinx_copybutton',
 ]
 napoleon_numpy_docstring = True
+
+autodoc_mock_imports = ["panel.pane.vtk"]
 
 myst_enable_extensions = ["colon_fence", "deflist"]
 

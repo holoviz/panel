@@ -78,16 +78,10 @@ def format_directive(module, package=None):
         directive += '    :%s:\n' % option
     return directive
 
-def format_inheritance_diagram(module, package=None):
-    """Create the inheritance_diagram directive and add the options."""
-    directive = '.. inheritance-diagram:: %s\n' % makename(package, module)
-    return directive
-
 def create_module_file(package, module, opts):
     """Build the text of the file and write the file."""
 
     text = format_heading(1, '%s Module' % module)
-    text += format_inheritance_diagram(package, module)
     text += format_heading(2, ':mod:`%s` Module' % module)
     text += format_directive(module, package)
     write_file(makename(package, module), text, opts)
@@ -109,7 +103,6 @@ def create_package_file(root, master_package, subroot, py_files, opts, subs):
         else:
             heading = ':mod:`%s` Module' % py_file
         text += format_heading(2, heading)
-        text += format_inheritance_diagram(is_package and subroot or py_path, master_package)
         text += '\n\n'
         text += format_directive(is_package and subroot or py_path, master_package)
         text += '\n-------\n\n'
