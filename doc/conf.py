@@ -2,6 +2,8 @@ import json
 import os
 import pathlib
 
+from typing import Any
+
 import param
 
 param.parameterized.docstring_signature = False
@@ -270,6 +272,26 @@ def update_versions(app, docname, source):
         source[0] = source[0].replace(old, new)
 
 
+def setup_mystnb(app):
+    from myst_nb.core.config import NbParserConfig
+    from myst_nb.sphinx_ext import create_mystnb_config
+
+    _UNSET = "--unset--"
+    for name, default, field in NbParserConfig().as_triple():
+        if not field.metadata.get("sphinx_exclude"):
+            # TODO add types?
+            app.add_config_value(f"nb_{name}", default, "env", Any)  # type: ignore[arg-type]
+            if "legacy_name" in field.metadata:
+                app.add_config_value(
+                    f"{field.metadata['legacy_name']}",
+                    _UNSET,
+                    "env",
+                    Any,  # type: ignore[arg-type]
+                )
+    app.add_config_value("nb_render_priority", _UNSET, "env", Any)  # type: ignore[arg-type]
+    create_mystnb_config(app)
+
+
 def setup(app) -> None:
     try:
         from nbsite.paramdoc import param_formatter, param_skip
@@ -277,6 +299,8 @@ def setup(app) -> None:
         app.connect('autodoc-skip-member', param_skip)
     except ImportError:
         print('no param_formatter (no param?)')
+
+    app.connect('builder-inited', setup_mystnb)
 
     app.connect('source-read', update_versions)
     nbbuild.setup(app)
