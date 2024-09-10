@@ -45,12 +45,12 @@ class FeatureInput(WidgetBase, PyComponent):
 
         super().__init__(**params)
 
-        selected_features_widget = pn.widgets.MultiChoice.from_param(
+        self.selected_features_widget = pn.widgets.MultiChoice.from_param(
             self.param.selected_features, sizing_mode="stretch_width"
         )
 
     def __panel__(self):
-        return pn.Column(selected_features_widget, self._selected_widgets)
+        return pn.Column(self.selected_features_widget, self._selected_widgets)
 
     @param.depends("features", watch=True, on_init=True)
     def _reset_selected_features(self):
@@ -69,7 +69,7 @@ class FeatureInput(WidgetBase, PyComponent):
         self._update_selected_widgets(org_value)
         self._update_value()
 
-    def _update_value(self, *args):  # pylint: disable=unused-argument
+    def _update_value(self, *args):
         new_value = {}
 
         for widget in self._selected_widgets:
