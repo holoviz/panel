@@ -138,6 +138,10 @@ class MockSessionContext(SessionContext):
         return
 
     @property
+    def session(self):
+        return None
+
+    @property
     def destroyed(self) -> bool:
         return False
 
