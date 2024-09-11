@@ -19,21 +19,29 @@ import error_css from "styles/models/esm.css"
 
 const MODULE_CACHE = new Map()
 
-@server_event("esm_event")
-export class ESMEvent extends ModelEvent {
-  constructor(readonly model: ReactiveESM, readonly data: any) {
+export class DataEvent extends ModelEvent {
+
+  constructor(readonly data: unknown) {
     super()
-    this.data = data
-    this.origin = model
   }
 
   protected override get event_values(): Attrs {
     return {model: this.origin, data: this.data}
   }
 
+  static {
+    this.prototype.event_name = "data_event"
+  }
+}
+
+@server_event("esm_event")
+export class ESMEvent extends DataEvent {
+
   static override from_values(values: object) {
     const {model, data} = values as {model: ReactiveESM, data: any}
-    return new ESMEvent(model, data)
+    const event = new ESMEvent(data)
+    event.origin = model
+    return event
   }
 }
 
@@ -55,6 +63,10 @@ export function model_getter(target: ReactiveESMView, name: string) {
         return target.get_child_view(child_model)?.el
       }
       return null
+    }
+  } else if (name === "send_msg") {
+    return (data: any) => {
+      model.trigger_event(new DataEvent(data))
     }
   } else if (name === "send_event") {
     return (name: string, event: Event) => {
@@ -161,7 +173,7 @@ export class ReactiveESMView extends HTMLBoxView {
   _changing: boolean = false
   _child_callbacks: Map<string, ((new_views: UIElementView[]) => void)[]>
   _child_rendered: Map<UIElementView, boolean> = new Map()
-  _event_handlers: ((event: ESMEvent) => void)[] = []
+  _event_handlers: ((data: unknown) => void)[] = []
   _lifecycle_handlers: Map<string, (() => void)[]> =  new Map([
     ["after_layout", []],
     ["after_render", []],
@@ -220,11 +232,11 @@ export class ReactiveESMView extends HTMLBoxView {
     this.model.disconnect_watchers(this)
   }
 
-  on_event(callback: (event: ESMEvent) => void): void {
+  on_event(callback: (data: unknown) => void): void {
     this._event_handlers.push(callback)
   }
 
-  remove_on_event(callback: (event: ESMEvent) => void): boolean {
+  remove_on_event(callback: (data: unknown) => void): boolean {
     if (this._event_handlers.includes(callback)) {
       this._event_handlers = this._event_handlers.filter((item) => item !== callback)
       return true
