@@ -64,7 +64,7 @@ export function model_getter(target: ReactiveESMView, name: string) {
       }
       return null
     }
-  } else if (name === "send_data") {
+  } else if (name === "send_msg") {
     return (data: any) => {
       model.trigger_event(new DataEvent(data))
     }

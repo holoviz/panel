@@ -402,6 +402,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         if isinstance(event, DataEvent):
             for cb in self._msg__callbacks:
                 state.execute(partial(cb, event), schedule=False)
+            state.execute(partial(self._handle_msg, event.data), schedule=False)
             return
         elif not isinstance(event, DOMEvent):
             return
@@ -438,6 +439,29 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)
 
+    def _handle_msg(self, data: any) -> None:
+        """
+        Message handler for messages sent from the frontend using the
+        `model.send_msg` API.
+
+        Arguments
+        ---------
+        data: any
+            Data received from the frontend.
+        """
+
+    def _send_msg(self, data: any) -> None:
+        """
+        Sends data to the frontend which can be observed on the frontend
+        with the `model.on_msg("msg:custom", callback)` API.
+
+        Arguments
+        ---------
+        data: any
+            Data to send to the frontend.
+        """
+        self._send_event(ESMEvent, data=data)
+
     def on_msg(self, callback: Callable) -> None:
         """
         Registers a callback to be executed when a message event
@@ -445,8 +469,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
         Arguments
         ---------
+        event: str
+          Name of the DOM event to add an event listener to.
         callback: callable
-          A callable which will be given the ESMEvent object.
+          A callable which will be given the msg data.
         """
         self._msg__callbacks.append(callback)
 
@@ -624,4 +650,4 @@ class AnyWidgetComponent(ReactComponent):
         ---------
         msg: dict
         """
-        self._send_event(ESMEvent, data=msg)
+        self._send_msg(msg)
