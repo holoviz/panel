@@ -13,9 +13,9 @@ from ..util import classproperty
 from .layout import HTMLBox
 
 
-class ESMEvent(ModelEvent):
+class DataEvent(ModelEvent):
 
-    event_name = 'esm_event'
+    event_name = 'data_event'
 
     def __init__(self, model, data=None):
         self.data = data
@@ -23,6 +23,11 @@ class ESMEvent(ModelEvent):
 
     def event_values(self) -> dict[str, Any]:
         return dict(super().event_values(), data=self.data)
+
+
+class ESMEvent(DataEvent):
+
+    event_name = 'esm_event'
 
 
 class ReactiveESM(HTMLBox):
