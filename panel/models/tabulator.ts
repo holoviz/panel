@@ -302,65 +302,18 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
   return input
 }
 
-const nestedEditor = function(cell: any, onRendered: any, success: any, cancel: any, editorParams: any) {
+const nestedEditor = function(cell: any, editorParams: any) {
   //cell - the cell component for the editable cell
-  //onRendered - function to call when the editor has been rendered
-  //success - function to call to pass the successfully updated value to Tabulator
-  //cancel - function to call to abort the edit and return to a normal cell
 
-  //create and style input
-  const cellValue = cell.getValue()
   const row = cell.getRow().getData()
-
-  let options = editorParams.values
+  let values = editorParams.options
   for (const i of editorParams.lookup_order) {
-    options = options[row[i]]
-    if (Array.isArray(options)) {
+    values = values[row[i]]
+    if (Array.isArray(values)) {
       break
     }
   }
-
-  const select = document.createElement("select")
-  for (const option of options) {
-    const opt = document.createElement("option")
-    opt.value = option
-    opt.text = option
-    opt.selected = option === cellValue
-    select.appendChild(opt)
-  }
-
-  select.style.padding = "4px"
-  select.style.width = "100%"
-  select.style.boxSizing = "border-box"
-
-  select.value = cellValue
-
-  const show = () => {
-    select.focus()
-    select.style.height = "100%"
-  }
-  onRendered(show)
-
-  function onChange() {
-    success(select.value)
-  }
-
-  //submit new value on blur or change
-  select.addEventListener("blur", onChange)
-  select.addEventListener("change", onChange)
-
-  //submit new value on enter
-  select.addEventListener("keydown", (e) => {
-    if (e.key == "Enter") {
-      setTimeout(onChange, 100)
-    }
-
-    if (e.key == "Escape") {
-      setTimeout(cancel, 100)
-    }
-  })
-
-  return select
+  return values
 }
 
 function find_column(group: any, field: string): any {
@@ -1017,7 +970,10 @@ export class DataTabulatorView extends HTMLBoxView {
         } else if (tab_column.editor === "datetime") {
           tab_column.editor = datetimeEditor
         } else if (tab_column.editor === "nested") {
-          tab_column.editor = nestedEditor
+          tab_column.editorParams.valuesLookup = (cell: any) => {
+            return nestedEditor(cell, tab_column.editorParams)
+          }
+          tab_column.editor = "list"
         }
       } else if (ctype === "StringEditor") {
         if (editor.completions.length > 0) {
