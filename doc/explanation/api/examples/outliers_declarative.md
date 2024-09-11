@@ -101,7 +101,7 @@ Save the notebook with the name `app.ipynb`.
 Finally, we'll serve the app by running the command below in a terminal:
 
 ```bash
-panel serve app.ipynb --autoreload
+panel serve app.ipynb --dev
 ```
 
 Now, open the app in your browser at [http://localhost:5006/app](http://localhost:5006/app).
