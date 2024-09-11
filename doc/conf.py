@@ -274,6 +274,9 @@ def update_versions(app, docname, source):
 
 def setup_mystnb(app):
     from myst_nb.core.config import NbParserConfig
+    from myst_nb.sphinx_ import (
+        HideCodeCellNode, HideInputCells, SelectMimeType,
+    )
     from myst_nb.sphinx_ext import create_mystnb_config
 
     _UNSET = "--unset--"
@@ -290,6 +293,14 @@ def setup_mystnb(app):
                 )
     app.add_config_value("nb_render_priority", _UNSET, "env", Any)  # type: ignore[arg-type]
     create_mystnb_config(app)
+
+    # add post-transform for selecting mime type from a bundle
+    app.add_post_transform(SelectMimeType)
+
+    # setup collapsible content
+    app.add_post_transform(HideInputCells)
+    HideCodeCellNode.add_to_app(app)
+
 
 
 def setup(app) -> None:
