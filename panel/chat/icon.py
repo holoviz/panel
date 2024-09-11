@@ -6,6 +6,7 @@ from typing import ClassVar
 
 import param
 
+from .._param import Margin
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel
 from ..reactive import ReactiveHTML
@@ -40,6 +41,11 @@ class ChatReactionIcons(CompositeWidget):
         If not set, the active icon name will default to its "filled" version.""")
 
     css_classes = param.List(default=["reaction-icons"], doc="The CSS classes of the widget.")
+
+    margin = Margin(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
 
     options = param.Dict(default={"favorite": "heart"}, doc="""
         A key-value pair of reaction values and their corresponding tabler icon names
@@ -148,8 +154,6 @@ class ChatCopyIcon(ReactiveHTML):
           data.fill = "none";
         """
     }
-
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_copy_icon.css"]
 
     @param.depends('_request_sync', watch=True)
     def _sync(self):
