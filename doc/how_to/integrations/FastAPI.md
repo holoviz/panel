@@ -19,8 +19,14 @@ conda install fastapi
 :::
 
 :::{tab-item} `pip`
-```pip
-conda install fastapi
+```bash
+pip install fastapi
+```
+:::
+
+:::{tab-item} `panel`
+```bash
+pip install panel[fastapi]
 ```
 :::
 
