@@ -39,7 +39,6 @@ export class ESMEvent extends DataEvent {
 
   static override from_values(values: object) {
     const {model, data} = values as {model: ReactiveESM, data: any}
-    console.log(model, data)
     const event = new ESMEvent(data)
     event.origin = model
     return event
@@ -67,7 +66,6 @@ export function model_getter(target: ReactiveESMView, name: string) {
     }
   } else if (name === "send_data") {
     return (data: any) => {
-      console.trace()
       model.trigger_event(new DataEvent(data))
     }
   } else if (name === "send_event") {
