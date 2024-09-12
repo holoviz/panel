@@ -13,9 +13,9 @@ from ..util import classproperty
 from .layout import HTMLBox
 
 
-class ESMEvent(ModelEvent):
+class DataEvent(ModelEvent):
 
-    event_name = 'esm_event'
+    event_name = 'data_event'
 
     def __init__(self, model, data=None):
         self.data = data
@@ -25,7 +25,16 @@ class ESMEvent(ModelEvent):
         return dict(super().event_values(), data=self.data)
 
 
+class ESMEvent(DataEvent):
+
+    event_name = 'esm_event'
+
+
 class ReactiveESM(HTMLBox):
+
+    bundle = bp.Nullable(bp.String)
+
+    class_name = bp.String()
 
     children = bp.List(bp.String)
 
@@ -50,8 +59,6 @@ class ReactComponent(ReactiveESM):
     """
     Renders jsx/tsx based ESM bundles using React.
     """
-
-    react_version = bp.String('18.3.1')
 
 
 class AnyWidgetComponent(ReactComponent):

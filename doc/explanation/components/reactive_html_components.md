@@ -12,7 +12,7 @@ This page will walk you through using the `ReactiveHTML` class to craft custom c
 
 A *`ReactiveHTML` component* is essentially a class that you create by inheriting from the `ReactiveHTML` class. Within this custom class, you are required to define the `_template` attribute using HTML, which serves as the *design blueprint* for your custom component. You can use Javascript *template variables* `${...}` as well as Python [Jinja2](https://jinja.palletsprojects.com) syntax to make the template *dynamic*.
 
-Here is a basic `SlideShow` component
+Here is a basic `Slideshow` component
 
 ```{pyodide}
 import param

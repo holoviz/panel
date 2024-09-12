@@ -3,7 +3,7 @@
 In this section you will learn about `pn.rx`. `pn.rx` extends the concepts from `pn.bind` that your learned in the previous section.
 
 :::{note}
-You might feel some repetition from the previous section on `pn.bind`. We do this on purpose to enable you to compare and contrast. `pn.rx` is the an extension of `pn.bind` that provides more power and flexibility. `pn.bind` has been the core API in Panel for a long time, so you will meet it across our documentation and community sites, and thus its very important to learn.
+You might feel some repetition from the previous section on `pn.bind`. We do this on purpose to enable you to compare and contrast. `pn.rx` is an extension of `pn.bind` that provides more power and flexibility. `pn.bind` has been the core API in Panel for a long time, so you will meet it across our documentation and community sites, and thus its very important to learn.
 
 `pn.rx` will enable you to build more complicated applications using a more flexible and maintainable architecture.
 :::

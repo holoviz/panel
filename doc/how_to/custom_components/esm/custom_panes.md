@@ -1,4 +1,4 @@
-# Create Panes with ReactiveHTML
+# Create Panes using ESM Components
 
 In this guide we will show you how to efficiently implement custom panes using `JSComponent`, `ReactComponent` and `AnyWidgetComponent` to get input from the user.
 
@@ -9,7 +9,6 @@ This example will show you the basics of creating a [ChartJS](https://www.chartj
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -68,11 +67,9 @@ pn.Column(chart_type, chart).servable()
 ```
 
 Note how we had to add the `canvasEl` to the `el` before we could render the chart. Some libraries will require the element to be attached to the DOM before we could render it. Dealing with layout issues like this sometimes requires a bit of iteration. If you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -126,11 +123,9 @@ chart = ChartReactComponent(
 )
 pn.Column(chart_type, chart).servable()
 ```
-
 :::
 
 ::: {tab-item} `AnyWidgetComponent`
-
 ```{pyodide}
 import panel as pn
 import param
@@ -147,12 +142,13 @@ function render({ model, el }) {
   const canvasEl = document.createElement('canvas')
   // Add DOM node before creating the chart
   el.append(canvasEl)
-  const create_chart = () => new Chart(canvasEl.getContext('2d'), model.object)
+  const create_chart = () => new Chart(canvasEl.getContext('2d'), model.get("object"))
   let chart = create_chart()
   model.on("object", () => {
-     chart.destroy()
-     chart = create_chart()
-   })
+    chart.destroy()
+    chart = create_chart()
+  })
+  return () => chart.destroy()
 }
 
 export default { render };
@@ -200,7 +196,6 @@ This example will show you how to build a more advanced [CytoscapeJS](https://js
 ::::{tab-set}
 
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 import param
 import panel as pn
@@ -314,11 +309,9 @@ pn.Row(
     graph,
 ).servable()
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 import param
 import panel as pn
@@ -416,11 +409,9 @@ pn.Row(
     graph,
 ).servable()
 ```
-
 :::
 
-::: `AnyWidgetComponent`
-
+:::{tab-item} `AnyWidgetComponent`
 ```{pyodide}
 import param
 import panel as pn
@@ -500,7 +491,7 @@ export default { render };
 """]
 
 
-pn.extension("cytoscape", sizing_mode="stretch_width")
+pn.extension(sizing_mode="stretch_width")
 
 elements = [
     {"data": {"id": "A", "label": "A"}},
@@ -531,7 +522,6 @@ pn.Row(
     graph,
 ).servable()
 ```
-
 :::
 
 ::::

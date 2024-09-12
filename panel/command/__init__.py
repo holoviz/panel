@@ -12,6 +12,7 @@ from bokeh.util.strings import nice_join
 
 from .. import __version__
 from .bundle import Bundle
+from .compile import Compile
 from .convert import Convert
 from .oauth_secret import OAuthSecret
 from .serve import Serve
@@ -51,10 +52,23 @@ def transform_cmds(argv):
 def main(args=None):
     """Mirrors bokeh CLI and adds additional Panel specific commands """
     from bokeh.command.subcommands import all as bokeh_commands
-    bokeh_commands = bokeh_commands + [OAuthSecret, Convert, Bundle]
+    bokeh_commands = bokeh_commands + [OAuthSecret, Compile, Convert, Bundle]
+
+    description = """\
+Found a Bug or Have a Feature Request?
+Open an issue at: https://github.com/holoviz/panel/issues
+
+Have a Question?
+Ask on our Discord chat server: https://discord.gg/rb6gPXbdAr
+
+Need Help?
+Ask a question on our forum: https://discourse.holoviz.org
+
+For more information, see the documentation at: https://panel.holoviz.org """
 
     parser = argparse.ArgumentParser(
-        prog="panel", epilog="See '<command> --help' to read about a specific subcommand."
+        prog="panel", epilog="See '<command> --help' to read about a specific subcommand.",
+        description=description, formatter_class=argparse.RawTextHelpFormatter
     )
 
     parser.add_argument('-v', '--version', action='version', version=__version__)
@@ -65,6 +79,10 @@ def main(args=None):
         if cls is BkServe:
             subparser = subs.add_parser(Serve.name, help=Serve.help)
             subcommand = Serve(parser=subparser)
+            subparser.set_defaults(invoke=subcommand.invoke)
+        elif cls is Compile:
+            subparser = subs.add_parser(Compile.name, help=Compile.help)
+            subcommand = Compile(parser=subparser)
             subparser.set_defaults(invoke=subcommand.invoke)
         elif cls is Convert:
             subparser = subs.add_parser(Convert.name, help=Convert.help)
@@ -102,6 +120,9 @@ def main(args=None):
         elif sys.argv[1] == 'bundle':
             args = parser.parse_args(sys.argv[1:])
             ret = Bundle(parser).invoke(args)
+        elif sys.argv[1] == 'compile':
+            args = parser.parse_args(sys.argv[1:])
+            ret = Compile(parser).invoke(args)
         else:
             ret = bokeh_entry_point()
     else:

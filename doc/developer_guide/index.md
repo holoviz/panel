@@ -82,7 +82,7 @@ All available tasks can be found by running `pixi task list`, the following sect
 
 ### Editable install
 
-It can be advantageous to install the Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
+It can be advantageous to install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
 
 ```bash
 pixi run install
@@ -96,6 +96,8 @@ Currently, this needs to be run for each environment. So, if you want to install
 ```bash
 pixi run -e test-ui install
 ```
+
+You can find the list of environments in the **pixi.toml** file.
 
 :::
 
@@ -165,7 +167,7 @@ As Panel uses notebooks for much of the documentation, this will take significan
 
 A development version of Panel can be found [here](https://holoviz-dev.github.io/panel/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
-To be able to run cells interactively you need `pyodide` server, this can be ran with:
+To be able to run cells interactively you need `pyodide` server, this can be run with:
 
 ```bash
 pixi run docs-server
@@ -173,7 +175,7 @@ pixi run docs-server
 
 ## Build
 
-Panel have four build tasks. One is for building packages for Pip, Conda, Pyodide, and NPM.
+Panel has four build tasks, for building packages for Pip, Conda, Pyodide, and NPM.
 
 ```bash
 pixi run build-pip

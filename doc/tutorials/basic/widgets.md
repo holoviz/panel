@@ -42,7 +42,7 @@ pn.widgets.Button(
 With features like icons, button types, and descriptions, buttons provide both functionality and visual cues to users. Hover over the button to see its description displayed as a helpful tooltip.
 
 :::{note}
-The `.servable()` method is used to include the component in the app served by `panel serve app.py --autoreload`. This is not necessary for displaying the component in a notebook.
+The `.servable()` method is used to include the component in the app served by `panel serve app.py --dev`. This is not necessary for displaying the component in a notebook.
 :::
 
 For a deeper understanding of the `Button` widget and its capabilities, refer to its detailed [reference guide](../../reference/widgets/Button.md).

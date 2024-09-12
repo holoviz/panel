@@ -15,6 +15,7 @@ import time
 import unittest
 
 from contextlib import contextmanager
+from functools import cache
 from subprocess import PIPE, Popen
 
 import pandas as pd
@@ -32,6 +33,7 @@ from panel.io.reload import (
 )
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
+from panel.tests.util import get_open_ports
 from panel.theme import Design
 
 CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
@@ -58,6 +60,16 @@ try:
 except (RuntimeError, DeprecationWarning):
     asyncio.set_event_loop(asyncio.new_event_loop())
 
+@cache
+def internet_available(host="8.8.8.8", port=53, timeout=3):
+    """Check if the internet connection is available."""
+    try:
+        socket.setdefaulttimeout(timeout)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as conn:
+            conn.connect((host, port))
+        return True
+    except socket.error:
+        return False
 
 def port_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -141,6 +153,8 @@ def pytest_configure(config):
     if config.option.jupyter and not port_open(JUPYTER_PORT):
         start_jupyter()
 
+    config.addinivalue_line("markers", "internet: mark test as requiring an internet connection")
+
 
 def pytest_collection_modifyitems(config, items):
     skipped, selected = [], []
@@ -158,6 +172,11 @@ def pytest_collection_modifyitems(config, items):
 
     config.hook.pytest_deselected(items=skipped)
     items[:] = selected
+
+
+def pytest_runtest_setup(item):
+    if "internet" in item.keywords and not internet_available():
+        pytest.skip("Skipping test: No internet connection")
 
 
 @pytest.fixture
@@ -228,11 +247,7 @@ async def watch_files():
 
 @pytest.fixture
 def port():
-    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
-    new_port = PORT[0] + int(re.sub(r"\D", "", worker_id))
-    PORT[0] += worker_count
-    return new_port
+    return get_open_ports()[0]
 
 
 @pytest.fixture
