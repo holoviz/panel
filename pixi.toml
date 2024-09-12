@@ -181,10 +181,8 @@ OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES"
 
 [feature.doc.dependencies]
 lxml = "*"
+nbsite = ">=0.8.6rc1"
 selenium = "*"
-
-[feature.doc.pypi-dependencies]
-nbsite = {git = "https://github.com/holoviz-dev/nbsite.git", "rev" = "25ba971f5a71a1cd978e1bbd626afacf6918dcd5"}
 
 [feature.doc.tasks]
 _docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
