@@ -56,9 +56,9 @@ Finally you can click **PUSH** to persist your app and click **SHARE** to share 
 
 Explore the examples below:
 
-- [Basic Github App](https://py.cafe/MarcSkovMadsen/pycafe-reference) from the [GitHub repository](https://github.com/holoviz/panel/#interactive-data-apps).
+- [Basic Github App](https://py.cafe/Panel_Org/pycafe-reference) from the [GitHub repository](https://github.com/holoviz/panel/#interactive-data-apps).
 - [Greeting App](https://py.cafe/maartenbreddels/panel-interactive-greeting-app ).
-- [XGBoost Training App](https://py.cafe/MarcSkovMadsen/xgboost-training) from the [Convert Apps to WASM Guide](https://panel.holoviz.org/how_to/wasm/convert.html).
+- [XGBoost Training App](https://py.cafe/Panel_Org/xgboost-training) from the [Convert Apps to WASM Guide](https://panel.holoviz.org/how_to/wasm/convert.html).
 
 ### Basic Tutorials
 
