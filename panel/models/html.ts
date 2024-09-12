@@ -177,15 +177,15 @@ export class HTMLView extends PanelMarkupView {
     for (const anchor of this.container.querySelectorAll('a')) {
       const link = anchor.getAttribute('href')
       if (link && link.startsWith('#')) {
-	anchor.addEventListener('click', () => {
-	  const found = searchAllDOMs(document.body, link)
-	  if (found.length && found[0] instanceof Element) {
-	    found[0].scrollIntoView()
-	  }
-	})
-	if (!this.root.has_finished() && window.location.hash === link) {
-	  anchor.scrollIntoView()
-	}
+        anchor.addEventListener('click', () => {
+          const found = searchAllDOMs(document.body, link)
+          if (found.length && found[0] instanceof Element) {
+            found[0].scrollIntoView()
+          }
+        })
+        if (!this.root.has_finished() && window.location.hash === link) {
+          anchor.scrollIntoView()
+        }
       }
     }
   }
