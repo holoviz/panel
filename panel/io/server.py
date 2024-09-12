@@ -28,7 +28,6 @@ import param
 import tornado
 
 # Bokeh imports
-from bokeh.application.handlers.function import FunctionHandler
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
 from bokeh.core.validation import silence
@@ -60,7 +59,7 @@ from tornado.wsgi import WSGIContainer
 from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
-from .application import Application, build_applications
+from .application import build_applications
 from .document import (  # noqa
     _cleanup_doc, init_doc, unlocked, with_lock,
 )
@@ -1000,7 +999,9 @@ def get_server(
     )
 
     if warm or config.autoreload:
-        for app in apps.values():
+        for endpoint, app in apps.items():
+            if endpoint == '/admin':
+                continue
             if config.autoreload:
                 with record_modules(list(apps.values())):
                     session = generate_session(app)
@@ -1009,16 +1010,6 @@ def get_server(
             with set_curdoc(session.document):
                 state._on_load(None)
             _cleanup_doc(session.document, destroy=True)
-
-    if admin:
-        if '/admin' in apps:
-            raise ValueError(
-                'Cannot enable admin panel because another app is being served '
-                'on the /admin endpoint'
-            )
-        from .admin import admin_panel
-        admin_handler = FunctionHandler(admin_panel)
-        apps['/admin'] = Application(admin_handler)
 
     extra_patterns += get_static_routes(static_dirs)
 
