@@ -155,6 +155,8 @@ class ChatCopyIcon(ReactiveHTML):
         """
     }
 
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_copy_icon.css"]
+
     @param.depends('_request_sync', watch=True)
     def _sync(self):
         self._synced = self.value
