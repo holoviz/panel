@@ -308,12 +308,12 @@ const nestedEditor = function(cell: any, editorParams: any) {
   const row = cell.getRow().getData()
   let values = editorParams.options
   for (const i of editorParams.lookup_order) {
-    values = values[row[i]]
+    values = row[i] in values ? values[row[i]] : []
     if (Array.isArray(values)) {
       break
     }
   }
-  return values
+  return values ? values : []
 }
 
 function find_column(group: any, field: string): any {
