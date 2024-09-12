@@ -158,7 +158,7 @@ export class HTMLView extends PanelMarkupView {
             found[0].scrollIntoView()
           }
         })
-        if (!this.root.has_finished() && window.location.hash === link) {
+        if (!this.root.has_finished() && this.model.document && window.location.hash === link) {
           this.model.document.on_event("document_ready", () => anchor.scrollIntoView())
         }
       }
