@@ -54,7 +54,7 @@ class TestChatMessage:
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "ABC"
 
-        icons = columns[1][4][2]
+        icons = columns[1][4][1]
         assert isinstance(icons, ChatReactionIcons)
 
         footer_col = columns[1][3]
@@ -81,13 +81,10 @@ class TestChatMessage:
 
         message.reaction_icons = ChatReactionIcons(options={"like": "thumb-up"})
         assert message._icons_row[-1] == message.reaction_icons
-        assert message._icon_divider.visible
 
         message.reaction_icons = ChatReactionIcons(options={})
-        assert not message._icon_divider.visible
 
         message = ChatMessage("hi", reaction_icons={})
-        assert not message._icon_divider.visible
 
     def test_reactions_link(self):
         # on init
@@ -329,20 +326,17 @@ class TestChatMessage:
         message = ChatMessage(object=widget(value="testing"))
         assert message.chat_copy_icon.visible
         assert message.chat_copy_icon.value == "testing"
-        assert message._icon_divider.visible
 
     def test_chat_copy_icon_disabled(self):
         message = ChatMessage(object="testing", show_copy_icon=False)
         assert not message.chat_copy_icon.visible
         assert not message.chat_copy_icon.value
-        assert not message._icon_divider.visible
 
     @pytest.mark.parametrize("component", [Column, FileInput])
     def test_chat_copy_icon_not_string(self, component):
         message = ChatMessage(object=component())
         assert not message.chat_copy_icon.visible
         assert not message.chat_copy_icon.value
-        assert not message._icon_divider.visible
 
     def test_serialize_text_prefix_with_viewable_type(self):
         message = ChatMessage(Markdown("string"))
