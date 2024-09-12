@@ -54,8 +54,21 @@ def main(args=None):
     from bokeh.command.subcommands import all as bokeh_commands
     bokeh_commands = bokeh_commands + [OAuthSecret, Compile, Convert, Bundle]
 
+    description = """\
+Found a Bug or Have a Feature Request?
+Open an issue at: https://github.com/holoviz/panel/issues
+
+Have a Question?
+Ask on our Discord chat server: https://discord.gg/rb6gPXbdAr
+
+Need Help?
+Ask a question on our forum: https://discourse.holoviz.org
+
+For more information, see the documentation at: https://panel.holoviz.org """
+
     parser = argparse.ArgumentParser(
-        prog="panel", epilog="See '<command> --help' to read about a specific subcommand."
+        prog="panel", epilog="See '<command> --help' to read about a specific subcommand.",
+        description=description, formatter_class=argparse.RawTextHelpFormatter
     )
 
     parser.add_argument('-v', '--version', action='version', version=__version__)

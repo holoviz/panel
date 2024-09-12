@@ -746,6 +746,11 @@ class Dial(ValueIndicator):
         model.xaxis.visible = False
         model.yaxis.visible = False
         model.grid.visible = False
+        if self.background in (None, "transparent"):
+            model.background_fill_alpha = 0
+        else:
+            model.background_fill_alpha = 1
+            model.background_fill_color = self.background
 
         annulus, needle, threshold, text = self._get_data(properties)
 

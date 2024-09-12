@@ -361,6 +361,55 @@ def test_send_event(page, component):
     wait_until(lambda: button.clicks, page)
 
 
+class JSSendMsg(JSComponent):
+
+    clicks = param.Integer(default=0)
+
+    msg = param.String()
+
+    _esm = """
+    export function render({ model }) {
+      const button = document.createElement('button')
+      button.id = 'button'
+      button.onclick = (event) => model.send_msg('click')
+      return button
+    }
+    """
+
+    def _handle_msg(self, msg):
+        self.msg = msg
+        self.clicks += 1
+
+
+class ReactSendMsg(ReactComponent):
+
+    clicks = param.Integer(default=0)
+
+    msg = param.String()
+
+    _esm = """
+    export function render({ model }) {
+      return <button id="button" onClick={(event) => model.send_msg('click')}/>
+    }
+    """
+
+    def _handle_msg(self, msg):
+        self.msg = msg
+        self.clicks += 1
+
+
+@pytest.mark.parametrize('component', [JSSendMsg, ReactSendMsg])
+def test_send_msg(page, component):
+    button = component()
+
+    serve_component(page, button)
+
+    page.locator('#button').click()
+
+    wait_until(lambda: button.clicks, page)
+    assert button.msg == 'click'
+
+
 class JSChild(JSComponent):
 
     child = Child()
