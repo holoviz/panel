@@ -162,7 +162,7 @@ export class HTMLView extends PanelMarkupView {
           this.model.document.on_event("document_ready", () => {
             anchor.scrollIntoView()
             setTimeout(() => anchor.scrollIntoView(), 5)
-          }
+          })
         }
       }
     }
