@@ -159,7 +159,7 @@ export class HTMLView extends PanelMarkupView {
           }
         })
         if (!this.root.has_finished() && window.location.hash === link) {
-	  this.model.document.on_event("document_ready", () => anchor.scrollIntoView())
+          this.model.document.on_event("document_ready", () => anchor.scrollIntoView())
         }
       }
     }
