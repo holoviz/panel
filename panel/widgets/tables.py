@@ -513,7 +513,8 @@ class BaseTable(ReactiveData, Widget):
                 elif not val:
                     continue
 
-            val = col.dtype.type(val)
+            if col.dtype.kind != 'O':
+                val = col.dtype.type(val)
             if op == '=':
                 filters.append(col == val)
             elif op == '!=':
@@ -1129,6 +1130,10 @@ class Tabulator(BaseTable):
         Whether to enable filters in the header or dictionary
         configuring filters for each column.""")
 
+    header_tooltips = param.Dict(default={}, doc="""
+        Dictionary mapping from column name to a tooltip to show when
+        hovering over the column header.""")
+
     hidden_columns = param.List(default=[], nested_refs=True, doc="""
         List of columns to hide.""")
 
@@ -1220,7 +1225,7 @@ class Tabulator(BaseTable):
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
         'text_align': None, 'embed_content': None, 'header_align': None,
-        'header_filters': None, 'styles': 'cell_styles',
+        'header_filters': None, 'header_tooltips': None, 'styles': 'cell_styles',
         'title_formatters': None, 'sortable': None, 'initial_page_size': None
     }
 
@@ -1985,6 +1990,9 @@ class Tabulator(BaseTable):
                 col_dict['width'] = self.widths[field]
             col_dict.update(self._get_filter_spec(column))
 
+            if field in self.header_tooltips:
+                col_dict["headerTooltip"] = self.header_tooltips[field]
+
             if isinstance(index, tuple):
                 if columns:
                     children = columns
@@ -2029,7 +2037,11 @@ class Tabulator(BaseTable):
         if self.groups and 'columns' in configuration:
             raise ValueError("Groups must be defined either explicitly "
                              "or via the configuration, not both.")
-        configuration['columns'] = self._config_columns(columns)
+        user_columns = {v["field"]: v for v in configuration.get('columns', {})}
+        configuration["columns"] = self._config_columns(columns)
+        for idx, col in enumerate(columns):
+            if (name := col.field) in user_columns:
+                configuration["columns"][idx] |= user_columns[name]
         configuration['dataTree'] = self.hierarchical
         if self.sizing_mode in ('stretch_height', 'stretch_both'):
             configuration['maxHeight'] = '100%'

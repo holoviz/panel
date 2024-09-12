@@ -302,6 +302,20 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
   return input
 }
 
+const nestedEditor = function(cell: any, editorParams: any) {
+  //cell - the cell component for the editable cell
+
+  const row = cell.getRow().getData()
+  let values = editorParams.options
+  for (const i of editorParams.lookup_order) {
+    values = row[i] in values ? values[row[i]] : []
+    if (Array.isArray(values)) {
+      break
+    }
+  }
+  return values ? values : []
+}
+
 function find_column(group: any, field: string): any {
   if (group.columns != null) {
     for (const col of group.columns) {
@@ -955,6 +969,11 @@ export class DataTabulatorView extends HTMLBoxView {
           tab_column.editor = dateEditor
         } else if (tab_column.editor === "datetime") {
           tab_column.editor = datetimeEditor
+        } else if (tab_column.editor === "nested") {
+          tab_column.editorParams.valuesLookup = (cell: any) => {
+            return nestedEditor(cell, tab_column.editorParams)
+          }
+          tab_column.editor = "list"
         }
       } else if (ctype === "StringEditor") {
         if (editor.completions.length > 0) {

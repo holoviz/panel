@@ -728,6 +728,49 @@ def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumul
     assert not exception_handler_accumulator
 
 
+@pytest.mark.parametrize("opt0", ['A', 'B'])
+@pytest.mark.parametrize("opt1", ["1", "2"])
+def test_tabulator_editors_nested(page, opt0, opt1):
+    df = pd.DataFrame({"0": ["A"], "1": [1], "2": [None]})
+
+    options = {
+        "A": list(range(5)),
+        "B": { "1": list(range(5, 10)), "2": list(range(10, 15))},
+    }
+    tabulator_editors = {
+        "0": {"type": "list", "values": ["A", "B"]},
+        "1": {"type": "list", "values": [1, 2]},
+        "2": {"type": "nested", "options": options, "lookup_order": ["0", "1"]},
+    }
+
+    widget = Tabulator(df, editors=tabulator_editors, show_index=False)
+    serve_component(page, widget)
+
+    cells = page.locator('.tabulator-cell.tabulator-editable')
+    expect(cells).to_have_count(3)
+
+    # Change the 0th column
+    cells.nth(0).click()
+    item = page.locator('.tabulator-edit-list-item', has_text=opt0)
+    expect(item).to_have_count(1)
+    item.click()
+
+    # Change the 1th column
+    cells.nth(1).click()
+    item = page.locator('.tabulator-edit-list-item', has_text=opt1)
+    expect(item).to_have_count(1)
+    item.click()
+
+    # Check the last column matches
+    cells.nth(2).click()
+    items = page.locator('.tabulator-edit-list-item')
+    expect(items).to_have_count(5)
+
+    items_text = items.all_inner_texts()
+    expected = options[opt0][opt1] if opt0 == "B" else options[opt0]
+    assert items_text == list(map(str, expected))
+
+
 @pytest.mark.parametrize('layout', Tabulator.param['layout'].objects)
 def test_tabulator_column_layouts(page, df_mixed, layout):
     widget = Tabulator(df_mixed, layout=layout)
@@ -3954,3 +3997,18 @@ class Test_RemotePagination_CheckboxSelection(Test_RemotePagination):
             self.set_filtering(page, n)
             self.check_selected(page, list(range(10)), 0)
             expect(page.locator('.tabulator')).to_have_count(1)
+
+
+def test_tabulator_header_tooltips(page):
+    df = pd.DataFrame({"header": [True, False, True]})
+    widget = Tabulator(df, header_tooltips={"header": "Test"})
+
+    serve_component(page, widget)
+
+    header = page.locator('.tabulator-col-title', has_text="header")
+    expect(header).to_have_count(1)
+    header.hover()
+
+    page.wait_for_timeout(200)
+
+    expect(page.locator('.tabulator-tooltip')).to_have_text("Test")

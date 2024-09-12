@@ -75,6 +75,10 @@ recommended = [
     'pillow',
     'plotly',
 ]
+fastapi = [
+    'bokeh-fastapi == 0.1.0',
+    'uvicorn',
+]
 dev = [
     'watchfiles',
 ]

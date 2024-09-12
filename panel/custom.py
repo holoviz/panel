@@ -9,6 +9,7 @@ import sys
 import textwrap
 
 from collections import defaultdict
+from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping, Optional,
 )
@@ -24,7 +25,7 @@ from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
     ReactComponent as _BkReactComponent, ReactiveESM as _BkReactiveESM,
 )
-from .models.esm import ESMEvent
+from .models.esm import DataEvent, ESMEvent
 from .models.reactive_html import DOMEvent
 from .pane.base import PaneBase  # noqa
 from .reactive import (  # noqa
@@ -202,7 +203,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     def __init__(self, **params):
         super().__init__(**params)
         self._watching_esm = False
-        self._event_callbacks = defaultdict(list)
+        self._event__callbacks = defaultdict(list)
+        self._msg__callbacks = []
 
     @classproperty
     def _bundle_path(cls) -> os.PathLike | None:
@@ -392,17 +394,22 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         model.children = list(children)
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model.data, self._linked_properties, doc, root, comm)
-        self._register_events('dom_event', model=model, doc=doc, comm=comm)
+        self._register_events('dom_event', 'data_event', model=model, doc=doc, comm=comm)
         self._setup_autoreload()
         return model
 
     def _process_event(self, event: 'Event') -> None:
-        if not isinstance(event, DOMEvent):
+        if isinstance(event, DataEvent):
+            for cb in self._msg__callbacks:
+                state.execute(partial(cb, event), schedule=False)
+            state.execute(partial(self._handle_msg, event.data), schedule=False)
+            return
+        elif not isinstance(event, DOMEvent):
             return
         if hasattr(self, f'_handle_{event.node}'):
             getattr(self, f'_handle_{event.node}')(event)
-        for cb in self._event_callbacks.get(event.node, []):
-            cb(event)
+        for cb in self._event__callbacks.get(event.node, []):
+            state.execute(partial(cb, event), schedule=False)
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
@@ -432,6 +439,43 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)
 
+    def _handle_msg(self, data: any) -> None:
+        """
+        Message handler for messages sent from the frontend using the
+        `model.send_msg` API.
+
+        Arguments
+        ---------
+        data: any
+            Data received from the frontend.
+        """
+
+    def _send_msg(self, data: any) -> None:
+        """
+        Sends data to the frontend which can be observed on the frontend
+        with the `model.on_msg("msg:custom", callback)` API.
+
+        Arguments
+        ---------
+        data: any
+            Data to send to the frontend.
+        """
+        self._send_event(ESMEvent, data=data)
+
+    def on_msg(self, callback: Callable) -> None:
+        """
+        Registers a callback to be executed when a message event
+        containing arbitrary data is received.
+
+        Arguments
+        ---------
+        event: str
+          Name of the DOM event to add an event listener to.
+        callback: callable
+          A callable which will be given the msg data.
+        """
+        self._msg__callbacks.append(callback)
+
     def on_event(self, event: str, callback: Callable) -> None:
         """
         Registers a callback to be executed when the specified DOM
@@ -444,7 +488,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         callback: callable
           A callable which will be given the DOMEvent object.
         """
-        self._event_callbacks[event].append(callback)
+        self._event__callbacks[event].append(callback)
 
 
 class JSComponent(ReactiveESM):
@@ -606,4 +650,4 @@ class AnyWidgetComponent(ReactComponent):
         ---------
         msg: dict
         """
-        self._send_event(ESMEvent, data=msg)
+        self._send_msg(msg)
