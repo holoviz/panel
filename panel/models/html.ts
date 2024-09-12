@@ -154,7 +154,7 @@ export class HTMLView extends PanelMarkupView {
       if (link && link.startsWith("#")) {
         anchor.addEventListener("click", () => {
           const found = searchAllDOMs(document.body, link)
-          if (found.length && found[0] instanceof Element) {
+          if ((found.length > 0) && found[0] instanceof Element) {
             found[0].scrollIntoView()
           }
         })
