@@ -6,6 +6,22 @@ import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 import {serializeEvent} from "./event-to-object"
 
+function searchAllDOMs(node: Element | ShadowRoot, selector: string): (Element | ShadowRoot)[] {
+  let found: (Element | ShadowRoot)[] = []
+
+  if (node instanceof Element && node.matches(selector)) {
+    found.push(node)
+  }
+  node.children && Array.from(node.children).forEach(child => {
+    found = found.concat(searchAllDOMs(child, selector))
+  })
+
+  if (node instanceof Element && node.shadowRoot) {
+    found = found.concat(searchAllDOMs(node.shadowRoot, selector));
+  }
+  return found;
+}
+
 @server_event("html_stream")
 export class HTMLStreamEvent extends ModelEvent {
   constructor(readonly model: HTML, readonly patch: string, readonly start: number) {
@@ -153,6 +169,24 @@ export class HTMLView extends PanelMarkupView {
   override style_redraw(): void {
     if (this.model.visible) {
       this.container.style.visibility = "visible"
+    }
+  }
+
+  override after_layout(): void {
+    super.after_layout()
+    for (const anchor of this.container.querySelectorAll('a')) {
+      const link = anchor.getAttribute('href')
+      if (link && link.startsWith('#')) {
+	anchor.addEventListener('click', () => {
+	  const found = searchAllDOMs(document.body, link)
+	  if (found.length && found[0] instanceof Element) {
+	    found[0].scrollIntoView()
+	  }
+	})
+	if (!this.root.has_finished() && window.location.hash === link) {
+	  anchor.scrollIntoView()
+	}
+      }
     }
   }
 
