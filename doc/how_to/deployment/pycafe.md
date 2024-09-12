@@ -48,7 +48,7 @@ pn.template.FastListTemplate(
 
 After updating the file, save it, and the app will reload instantly.
 
-<iframe src="https://py.cafe/app/MarcSkovMadsen/pycafe-reference" title="PyCafe Reference Example" frameborder="0" style="width: 100%; height: 500px;"></iframe>
+<iframe src="https://py.cafe/app/Panel_Org/pycafe-reference" title="PyCafe Reference Example" frameborder="0" style="width: 100%; height: 500px;"></iframe>
 
 Finally you can click **PUSH** to persist your app and click **SHARE** to share it with the world.
 
@@ -62,29 +62,25 @@ Explore the examples below:
 
 ### Basic Tutorials
 
-- [Animation](https://py.cafe/MarcSkovMadsen/basic-animation) from the [Build an Animation Tutorial](../../tutorials/basic/build_report.md).
-- [Chatbot](https://py.cafe/MarcSkovMadsen/basic-chatbot) from the [Build a Chatbot Tutorial](../../tutorials/basic/build_chatbot.md).
-- [Crossfilter Dashboard](https://py.cafe/MarcSkovMadsen/basic-crossfilter-dashboard) from the [Build Crossfiltering Dashboard Tutorial](../../tutorials/basic/build_crossfilter_dashboard.md).
-- [Dashboard](https://py.cafe/MarcSkovMadsen/basic-dashboard) from the [Build a Dashboard Tutorial](../../tutorials/basic/build_dashboard.md).
-- [Image Classifier](https://py.cafe/MarcSkovMadsen/basic-image-classifier) from the [Build an Image Classifier Tutorial](../../tutorials/basic/build_image_classifier.md).
-- [Monitoring Dashboard](https://py.cafe/MarcSkovMadsen/basic-monitoring-dashboard) from the [Build an Monitoring Dashboard Tutorial](../../tutorials/basic/build_monitoring_dashboard.md).
-- [Report](https://py.cafe/MarcSkovMadsen/basic-report) from the [Build a Report Tutorial](../../tutorials/basic/build_report.md).
-- [Streaming Dashboard](https://py.cafe/MarcSkovMadsen/basic-streaming-dashboard) from the [Build Streaming Dashboard Tutorial](../../tutorials/basic/build_streaming_dashboard.md).
-- [Todo app | Widget approach](https://py.cafe/MarcSkovMadsen/basic-todo) from the [Build a todo app](../../tutorials/basic/build_todo.md).
+- [Animation](https://py.cafe/Panel_Org/basic-animation) from the [Build an Animation Tutorial](../../tutorials/basic/build_report.md).
+- [Chatbot](https://py.cafe/Panel_Org/basic-chatbot) from the [Build a Chatbot Tutorial](../../tutorials/basic/build_chatbot.md).
+- [Crossfilter Dashboard](https://py.cafe/Panel_Org/basic-crossfilter-dashboard) from the [Build Crossfiltering Dashboard Tutorial](../../tutorials/basic/build_crossfilter_dashboard.md).
+- [Dashboard](https://py.cafe/Panel_Org/basic-dashboard) from the [Build a Dashboard Tutorial](../../tutorials/basic/build_dashboard.md).
+- [Image Classifier](https://py.cafe/Panel_Org/basic-image-classifier) from the [Build an Image Classifier Tutorial](../../tutorials/basic/build_image_classifier.md).
+- [Monitoring Dashboard](https://py.cafe/Panel_Org/basic-monitoring-dashboard) from the [Build an Monitoring Dashboard Tutorial](../../tutorials/basic/build_monitoring_dashboard.md).
+- [Report](https://py.cafe/Panel_Org/basic-report) from the [Build a Report Tutorial](../../tutorials/basic/build_report.md).
+- [Streaming Dashboard](https://py.cafe/Panel_Org/basic-streaming-dashboard) from the [Build Streaming Dashboard Tutorial](../../tutorials/basic/build_streaming_dashboard.md).
+- [Todo app | Widget approach](https://py.cafe/Panel_Org/basic-todo) from the [Build a todo app](../../tutorials/basic/build_todo.md).
 
 ### Intermediate Tutorials
 
-- [Todo App | Class approach](https://py.cafe/MarcSkovMadsen/intermediate-todo-app) from the [Build a todo app](../../tutorials/intermediate/build_todo.md).
+- [Todo App | Class approach](https://py.cafe/Panel_Org/intermediate-todo-app) from the [Build a todo app](../../tutorials/intermediate/build_todo.md).
 
 ### App Gallery
 
-- [Altair Brushing](https://py.cafe/MarcSkovMadsen/altair-brushing) from the [Altair Brushing Tutorial](../../gallery/altair_brushing.ipynb).
-- [hvPlot Explorer](https://py.cafe/MarcSkovMadsen/hvplot-explorer) from the [hvPlot Explorer Tutorial](../../gallery/hvplot_explorer.ipynb)
-- [NYC Deck.GL](https://py.cafe/MarcSkovMadsen/nyc-deckgl) from the [NYC Deck.Gl Tutorial](../../gallery/nyc_deckgl.ipynb).
-- [Penguin Crossfilter](https://py.cafe/MarcSkovMadsen/penguin-crossfilter) from the [Penguin Crossfilter Tutorial](../../gallery/penguin_crossfilter.ipynb)
-- [Portfolio Analyzer](https://py.cafe/MarcSkovMadsen/portfolio-analyzer) from the [Portfolio Analyzer Tutorial](../../gallery/portfolio_analyzer.ipynb).
-- [VideoStream Interface](https://py.cafe/MarcSkovMadsen/videostream) from the [VideoStream Interface Tutorial](../../gallery/streaming_videostream.ipynb).
-
-### Other
-
-- [Drawdata](https://py.cafe/MarcSkovMadsen/basic-drawdata) demonstrating that an ipywidget/ AnyWidget can be used with Panel in PY.CAFE.
+- [Altair Brushing](https://py.cafe/Panel_Org/altair-brushing) from the [Altair Brushing Tutorial](../../gallery/altair_brushing.ipynb).
+- [hvPlot Explorer](https://py.cafe/Panel_Org/hvplot-explorer) from the [hvPlot Explorer Tutorial](../../gallery/hvplot_explorer.ipynb)
+- [NYC Deck.GL](https://py.cafe/Panel_Org/nyc-deckgl) from the [NYC Deck.Gl Tutorial](../../gallery/nyc_deckgl.ipynb).
+- [Penguin Crossfilter](https://py.cafe/Panel_Org/penguin-crossfilter) from the [Penguin Crossfilter Tutorial](../../gallery/penguin_crossfilter.ipynb)
+- [Portfolio Analyzer](https://py.cafe/Panel_Org/portfolio-analyzer) from the [Portfolio Analyzer Tutorial](../../gallery/portfolio_analyzer.ipynb).
+- [VideoStream Interface](https://py.cafe/Panel_Org/videostream) from the [VideoStream Interface Tutorial](../../gallery/streaming_videostream.ipynb).
