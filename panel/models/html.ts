@@ -143,12 +143,27 @@ export class HTMLView extends PanelMarkupView {
   }
 
   set_html(html: string | null): void {
-    if (html !== null) {
-      this.container.innerHTML = html
-      if (this.model.run_scripts) {
-        run_scripts(this.container)
+    if (html === null) {
+      return
+    }
+    this.container.innerHTML = html
+    if (this.model.run_scripts) {
+      run_scripts(this.container)
+    }
+    this._setup_event_listeners()
+    for (const anchor of this.container.querySelectorAll('a')) {
+      const link = anchor.getAttribute('href')
+      if (link && link.startsWith('#')) {
+        anchor.addEventListener('click', () => {
+          const found = searchAllDOMs(document.body, link)
+          if (found.length && found[0] instanceof Element) {
+            found[0].scrollIntoView()
+          }
+        })
+        if (!this.root.has_finished() && window.location.hash === link) {
+	  this.model.document.on_event('document_ready', () => anchor.scrollIntoView())
+        }
       }
-      this._setup_event_listeners()
     }
   }
 
@@ -169,24 +184,6 @@ export class HTMLView extends PanelMarkupView {
   override style_redraw(): void {
     if (this.model.visible) {
       this.container.style.visibility = "visible"
-    }
-  }
-
-  override after_layout(): void {
-    super.after_layout()
-    for (const anchor of this.container.querySelectorAll('a')) {
-      const link = anchor.getAttribute('href')
-      if (link && link.startsWith('#')) {
-        anchor.addEventListener('click', () => {
-          const found = searchAllDOMs(document.body, link)
-          if (found.length && found[0] instanceof Element) {
-            found[0].scrollIntoView()
-          }
-        })
-        if (!this.root.has_finished() && window.location.hash === link) {
-          anchor.scrollIntoView()
-        }
-      }
     }
   }
 
