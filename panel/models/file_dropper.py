@@ -49,12 +49,35 @@ class FileDropper(InputWidget):
         f"{config.npm_cdn}/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.js",
         f"{config.npm_cdn}/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.js",
         f"{config.npm_cdn}/filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min.js",
-        f"{config.npm_cdn}/filepond@^4/dist/filepond.js"
+        f"{config.npm_cdn}/filepond@^4/dist/filepond.min.js"
     ]
 
     @classproperty
     def __javascript__(cls):
         return bundled_files(cls)
+
+    __js_require__ = {
+        'paths': {
+            "filepond":  f"{config.npm_cdn}/filepond@^4/dist/filepond",
+            "filepond-preview-image": f"{config.npm_cdn}/filepond-plugin-image-preview/dist/filepond-plugin-image-preview",
+            "filepond-validate-size": f"{config.npm_cdn}/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size",
+            "filepond-validate-type": f"{config.npm_cdn}/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type",
+            "filepond-preview-pdf": f"{config.npm_cdn}/filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min",
+        },
+        'exports': {
+            'filepond': 'FilePond',
+            'filepond-preview-image': 'FilePondPluginImagePreview',
+            'filepond-preview-pdf': 'FilePondPluginPdfPreview',
+            'filepond-validate-size': 'FilePondPluginFileValidateSize',
+            'filepond-validate-type': 'FilePondPluginFileValidateType'
+        }
+    }
+
+    @classproperty
+    def __js_skip__(cls):
+        return {
+            'FilePond': cls.__javascript__[:]
+        }
 
     __css_raw__ = [
         f"{config.npm_cdn}/filepond@^4/dist/filepond.css",
