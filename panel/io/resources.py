@@ -761,8 +761,9 @@ class Resources(BkResources):
         from ..config import config
 
         # Gather JS files
-        files = super(Resources, self).js_files
-        self.extra_resources(files, '__javascript__')
+        with set_resource_mode(self.mode):
+            files = super(Resources, self).js_files
+            self.extra_resources(files, '__javascript__')
         files += [js for js in config.js_files.values()]
         if config.design:
             design_js = config.design().resolve_resources(
