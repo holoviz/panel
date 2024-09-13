@@ -220,7 +220,7 @@ export class DeckGLPlotView extends LayoutDOMView {
       const props = this.jsonConverter.convert(jsonInput)
       const getTooltip = makeTooltip(tooltip, props.layers)
       if (props.mapStyle === null) {
-	props.map = null
+        props.map = null
       } else if (props.mapStyle.includes("carto")) {
         this._map = new (window as any).maplibregl.Map({
           container,
