@@ -52,7 +52,7 @@ class ReactiveESM(HTMLBox):
 
     @classproperty
     def __javascript__(cls):
-        return bundled_files(cls, 'javascript_modules')
+        return bundled_files(cls)
 
 
 class ReactComponent(ReactiveESM):
