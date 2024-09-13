@@ -4,10 +4,13 @@
 
 ### Features
 
-- Allow building custom ESM based JS and React components ([#5593](https://github.com/holoviz/panel/pull/5593))
+- Allow building custom ESM based `JSComponent` and `ReactComponent` ([#5593](https://github.com/holoviz/panel/pull/5593))
 - Add `Placeholder` pane ([#6790](https://github.com/holoviz/panel/pull/6790))
 - Add `FileDropper` widget ([#6826](https://github.com/holoviz/panel/pull/6826))
 - Add `ChatStep` component to show/hide intermediate steps ([#6617](https://github.com/holoviz/panel/pull/6617))
+- Add `TimePicker` widget ([#7013](https://github.com/holoviz/panel/pull/7013))
+- Add `PyComponent` baseclass ([#7051](https://github.com/holoviz/panel/pull/7051))
+- Add native support for running Panel on FastAPI server ([#7205](https://github.com/holoviz/panel/pull/7205))
 
 ### Enhancements
 
@@ -21,6 +24,13 @@
 - Implement support for multi-index columns in Tabulator ([#7108](https://github.com/holoviz/panel/pull/7108))
 - Add placeholder while loading to ChatFeed ([#7042](https://github.com/holoviz/panel/pull/7042))
 - Allow streaming chunks to HTML panes ([#7125](https://github.com/holoviz/panel/pull/7125))
+- Show `Player` interval value on click ([#7064](https://github.com/holoviz/panel/pull/7064))
+- Expose `Player` options to scale and hide buttons ([#7065](https://github.com/holoviz/panel/pull/7065))
+- Add `on_keyup` and `value_input` for `CodeEditor` ([#6919](https://github.com/holoviz/panel/pull/6919))
+- Detect WebGL support on `BrowserInfo` ([#6931](https://github.com/holoviz/panel/pull/6931))
+- Tweak `ChatMessage` layout ([#7209](https://github.com/holoviz/panel/pull/7209), [#7266](https://github.com/holoviz/panel/pull/7266))
+- Add nested editor to `Tabulator` ([#7251](https://github.com/holoviz/panel/pull/7251))
+- Support anchor links in `HTML` and `Markdown` panes ([#7258](https://github.com/holoviz/panel/pull/7258), [#7263](https://github.com/holoviz/panel/pull/7263))
 
 ### Bug fixes
 
@@ -42,10 +52,23 @@
 - Correctly map `Tabulator` expanded indexes when paginated, filtered and sorted ([#7103](https://github.com/holoviz/panel/pull/7103))
 - Ensure custom `HoloViews` backends do not error out ([#7114](https://github.com/holoviz/panel/pull/7114))
 - Ensure events are always dispatched sequentially ([#7128](https://github.com/holoviz/panel/pull/7128))
+- Ensure multiselect Tabulator header filter uses 'in' filter function ([#7111](https://github.com/holoviz/panel/pull/7111))
+- Ensure no content warning is not displayed when template is added ([#7164](https://github.com/holoviz/panel/pull/7164))
+- Make it easy to prompt user for input in ChatFeed ([#7148](https://github.com/holoviz/panel/pull/7148))
+- Fix `LaTeX` pane MathJax rendering ([#7188](https://github.com/holoviz/panel/pull/7188))
+- Ensure OAuth expiry is numeric and can be compared ([#7191](https://github.com/holoviz/panel/pull/7191))
+- Correctly detect max depth of NestedSelect if level is empty ([#7194](https://github.com/holoviz/panel/pull/7194))
+- Make `--setup`/`--autoreload`/`--warm` work with `--num-procs` ([#6913](https://github.com/holoviz/panel/pull/6913))
+- Ensure error rendering application does not crash server ([#7223](https://github.com/holoviz/panel/pull/7223))
+- Refactor state.notifications to fix pyodide ([#7235](https://github.com/holoviz/panel/pull/7235))
+- Handle setting None value on `DateRangePicker` ([#7240](https://github.com/holoviz/panel/pull/7240))
+- Add header_tooltips parameter to `Tabulator` ([#7241](https://github.com/holoviz/panel/pull/7241))
+- Fix issue using `Tabulator.header_filter` with recent Pandas versions ([#7242](https://github.com/holoviz/panel/pull/7242))
+- Fix setting of Dial background ([#7261](https://github.com/holoviz/panel/pull/7261))
 
 ### Compatibility and Updates
 
-- Update to Bokeh 3.5
+- Update to Bokeh 3.5.x
 - Update `Tabulator` to 6.2.1 ([#6840](https://github.com/holoviz/panel/pull/6840))
 - Update to latest Pyscript (2024.08.01) and Pyodide (0.26.2) ([#7016](https://github.com/holoviz/panel/pull/7016))
 - Add compatibility for latest Textual ([#7130](https://github.com/holoviz/panel/pull/7130))
@@ -54,10 +77,14 @@
 
 - Update Tabulator.ipynb to show correct version number of Tabulator ([#7053](https://github.com/holoviz/panel/pull/7053))
 - Update jupyterlite version ([#7129](https://github.com/holoviz/panel/pull/7129))
+- Describe usage of pyscript editor ([#7017](https://github.com/holoviz/panel/pull/7017))
+- Add pycafe deployment guide ([#7183](https://github.com/holoviz/panel/pull/7183))
+- Add WebLLM example to gallery ([#7265](https://github.com/holoviz/panel/pull/7265))
 
 ### Deprecation and API Warnings
 
 - `PasswordInput` and `TextAreaInput` no longer inherit directly from `TextInput` ([#6593](https://github.com/holoviz/panel/pull/6593))
+- Remove deprecated `panel.depends.param_value_if_widget` function ([#7202](https://github.com/holoviz/panel/pull/7202))
 
 ## Version 1.4.5
 
