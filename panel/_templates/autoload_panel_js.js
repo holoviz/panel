@@ -28,9 +28,9 @@ calls it with the rendered model.
   const reloading = {{ reloading|default(False)|json }};
   const Bokeh = root.Bokeh;
 
-  if (typeof (root._bokeh_timeout) === "undefined" || force) {
+  // Set a timeout for this load but only if we are not already initializing
+  if (typeof (root._bokeh_timeout) === "undefined" || (force || !root._bokeh_is_initializing)) {
     root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
-    root._bokeh_is_initializing = false
     root._bokeh_failed_load = false;
   }
 
@@ -55,10 +55,11 @@ calls it with the rendered model.
     root._bokeh_onload_callbacks.push(callback);
 
     if (root._bokeh_is_loading > 0) {
+      // Don't load bokeh if it is still initializing
       console.debug("Bokeh: BokehJS is being loaded, scheduling callback at", now());
       return null;
-    }
-    if (js_urls.length === 0 && js_modules.length === 0 && Object.keys(js_exports).length === 0) {
+    } else if (js_urls.length === 0 && js_modules.length === 0 && Object.keys(js_exports).length === 0) {
+      // There is nothing to load
       run_callbacks();
       return null;
     }
@@ -241,11 +242,6 @@ calls it with the rendered model.
         }
         root.Bokeh = Bokeh;
       }
-      {%- if elementid -%}
-      if (force === true) {
-        display_loaded();
-      }
-      {%- endif -%}
     } else if (Date.now() < root._bokeh_timeout) {
       setTimeout(run_inline_js, 100);
     } else if (!root._bokeh_failed_load) {
@@ -264,6 +260,9 @@ calls it with the rendered model.
     // that we do not start loading a newer (Panel>=1.0 and Bokeh>3) version
     // before older versions are fully initialized.
     if (root._bokeh_is_initializing && Date.now() > root._bokeh_timeout) {
+      // If the timeout and bokeh was not successfully loaded we reset
+      // everything and try loading again
+      root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
       root._bokeh_is_initializing = false;
       root._bokeh_onload_callbacks = undefined;
       root._bokeh_is_loading = 0
