@@ -126,7 +126,7 @@ def _autoload_js(
             config[key].update(c)
     return AUTOLOAD_NB_JS.render(
         bundle    = bundle,
-        force     = True,
+        force     = not reloading,
         reloading = reloading,
         timeout   = load_timeout,
         config    = config,

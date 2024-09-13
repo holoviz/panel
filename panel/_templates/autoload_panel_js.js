@@ -30,6 +30,7 @@ calls it with the rendered model.
 
   if (typeof (root._bokeh_timeout) === "undefined" || force) {
     root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
+    root._bokeh_is_initializing = false
     root._bokeh_failed_load = false;
   }
 
@@ -71,8 +72,9 @@ calls it with the rendered model.
     }
     window._bokeh_on_load = on_load
 
-    function on_error() {
-      console.error("failed to load " + url);
+    function on_error(e) {
+      const src_el = e.srcElement
+      console.error("failed to load " + (src_el.href || src_el.src));
     }
 
     const skip = [];
@@ -264,6 +266,7 @@ calls it with the rendered model.
     if (root._bokeh_is_initializing && Date.now() > root._bokeh_timeout) {
       root._bokeh_is_initializing = false;
       root._bokeh_onload_callbacks = undefined;
+      root._bokeh_is_loading = 0
       console.log("Bokeh: BokehJS was loaded multiple times but one version failed to initialize.");
       load_or_wait();
     } else if (root._bokeh_is_initializing || (typeof root._bokeh_is_initializing === "undefined" && root._bokeh_onload_callbacks !== undefined)) {
@@ -273,7 +276,9 @@ calls it with the rendered model.
       root._bokeh_onload_callbacks = []
       const bokeh_loaded = root.Bokeh != null && (root.Bokeh.version === py_version || (root.Bokeh.versions !== undefined && root.Bokeh.versions.has(py_version)));
       if (!reloading && !bokeh_loaded) {
-        root.Bokeh = undefined;
+        if (root.Bokeh) {
+          root.Bokeh = undefined;
+        }
         console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
       }
       load_libs(css_urls, js_urls, js_modules, js_exports, function() {
