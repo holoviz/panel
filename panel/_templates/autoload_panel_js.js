@@ -23,10 +23,10 @@ calls it with the rendered model.
     return new Date();
   }
 
-  var force = {{ force|default(False)|json }};
-  var py_version = '{{ version }}'.replace('rc', '-rc.').replace('.dev', '-dev.');
-  var reloading = {{ reloading|default(False)|json }};
-  var Bokeh = root.Bokeh;
+  const force = {{ force|default(False)|json }};
+  const py_version = '{{ version }}'.replace('rc', '-rc.').replace('.dev', '-dev.');
+  const reloading = {{ reloading|default(False)|json }};
+  const Bokeh = root.Bokeh;
 
   if (typeof (root._bokeh_timeout) === "undefined" || force) {
     root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
@@ -75,7 +75,7 @@ calls it with the rendered model.
       console.error("failed to load " + url);
     }
 
-    var skip = [];
+    const skip = [];
     if (window.requirejs) {
       window.requirejs.config({{ config|conffilter }});
       {% for r in requirements %}
@@ -91,17 +91,18 @@ calls it with the rendered model.
       root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length + Object.keys(js_exports).length;
     }
 
-    var existing_stylesheets = []
-    var links = document.getElementsByTagName('link')
-    for (var i = 0; i < links.length; i++) {
-      var link = links[i]
+    const existing_stylesheets = []
+    const links = document.getElementsByTagName('link')
+    for (let i = 0; i < links.length; i++) {
+      const link = links[i]
       if (link.href != null) {
 	existing_stylesheets.push(link.href)
       }
     }
-    for (var i = 0; i < css_urls.length; i++) {
-      var url = css_urls[i];
-      if (existing_stylesheets.indexOf(url) !== -1) {
+    for (let i = 0; i < css_urls.length; i++) {
+      const url = css_urls[i];
+      const escaped = encodeURI(url)
+      if (existing_stylesheets.indexOf(escaped) !== -1) {
 	on_load()
 	continue;
       }
@@ -119,27 +120,28 @@ calls it with the rendered model.
     if (((window.{{ lib }} !== undefined) && (!(window.{{ lib }} instanceof HTMLElement))) || window.requirejs) {
       var urls = {{ urls }};
       for (var i = 0; i < urls.length; i++) {
-        skip.push(urls[i])
+        skip.push(escapeURI(urls[i]))
       }
     }
     {%- endfor %}
     var existing_scripts = []
-    var scripts = document.getElementsByTagName('script')
-    for (var i = 0; i < scripts.length; i++) {
+    const scripts = document.getElementsByTagName('script')
+    for (let i = 0; i < scripts.length; i++) {
       var script = scripts[i]
       if (script.src != null) {
 	existing_scripts.push(script.src)
       }
     }
-    for (var i = 0; i < js_urls.length; i++) {
-      var url = js_urls[i];
-      if (skip.indexOf(url) !== -1 || existing_scripts.indexOf(url) !== -1) {
+    for (let i = 0; i < js_urls.length; i++) {
+      const url = js_urls[i];
+      const escaped = encodeURI(url)
+      if (skip.indexOf(escaped) !== -1 || existing_scripts.indexOf(escaped) !== -1) {
 	if (!window.requirejs) {
 	  on_load();
 	}
 	continue;
       }
-      var element = document.createElement('script');
+      const element = document.createElement('script');
       element.onload = on_load;
       element.onerror = on_error;
       element.async = false;
@@ -147,9 +149,10 @@ calls it with the rendered model.
       console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
       document.head.appendChild(element);
     }
-    for (var i = 0; i < js_modules.length; i++) {
-      var url = js_modules[i];
-      if (skip.indexOf(url) !== -1 || existing_scripts.indexOf(url) !== -1) {
+    for (let i = 0; i < js_modules.length; i++) {
+      const url = js_modules[i];
+      const escaped = encodeURI(url)
+      if (skip.indexOf(escaped) !== -1 || existing_scripts.indexOf(escaped) !== -1) {
 	if (!window.requirejs) {
 	  on_load();
 	}
@@ -165,8 +168,9 @@ calls it with the rendered model.
       document.head.appendChild(element);
     }
     for (const name in js_exports) {
-      var url = js_exports[name];
-      if (skip.indexOf(url) >= 0 || root[name] != null) {
+      const url = js_exports[name];
+      const escaped = encodeURI(url)
+      if (skip.indexOf(escaped) >= 0 || root[name] != null) {
 	if (!window.requirejs) {
 	  on_load();
 	}
@@ -195,11 +199,11 @@ calls it with the rendered model.
     document.body.appendChild(element);
   }
 
-  var js_urls = {{ bundle.js_urls|json }};
-  var js_modules = {{ bundle.js_modules|json }};
-  var js_exports = {{ bundle.js_module_exports|json }};
-  var css_urls = {{ bundle.css_urls|json }};
-  var inline_js = [
+  const js_urls = {{ bundle.js_urls|json }};
+  const js_modules = {{ bundle.js_modules|json }};
+  const js_exports = {{ bundle.js_module_exports|json }};
+  const css_urls = {{ bundle.css_urls|json }};
+  const inline_js = [
     {%- for css in bundle.css_raw %}
     function(Bokeh) {
       inject_raw_css({{ css|json }});
@@ -215,7 +219,7 @@ calls it with the rendered model.
 
   function run_inline_js() {
     if ((root.Bokeh !== undefined) || (force === true)) {
-      for (var i = 0; i < inline_js.length; i++) {
+      for (let i = 0; i < inline_js.length; i++) {
 	try {
           inline_js[i].call(root, root.Bokeh);
 	} catch(e) {
