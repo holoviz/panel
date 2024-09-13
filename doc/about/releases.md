@@ -4,6 +4,10 @@ See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual su
 
 ## Version 1.5.0
 
+This release, while technically a minor release hugely expands the scope of what is possible in Panel. In particular the introduction of the new `panel.custom` module makes it trivially easy to create new JS and React based components using modern tooling, a first-class developer experience and support for compilation and bundling. We are incredibly excited to see which new components you build using this approach. This release also includes native integration with FastAPI, such that you can now run Panel apps natively on an existing FastAPI server. We also introduce a number of new components, improved the developer experience, and squashed a huge number of bugs, particularly for the `Tabulator` component.
+
+We really appreciate all the work that went into this release from 21 separate contributors. In particular we would like to welcome our new contributors @twobitunicorn, @justinwiley, @dwr-psandhu, @jordansamuels, @gandhis1, @jeffrey-hicks, @kdheepak, @sjdemartini, @alfredocarella and @pmeier. Next we want to recognize our returning contributors @cdeil, @Coderambling, @jrycw and @TBym, and finally the dedicated crew of core contributors which includes @Hoxbro, @MarcSkovMadsen, @ahuang11, @maximlt, @mattpap, @jbednar and @philippjfr.
+
 ### Features
 
 - Allow building custom ESM based `JSComponent` and `ReactComponent` ([#5593](https://github.com/holoviz/panel/pull/5593))
@@ -17,15 +21,15 @@ See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual su
 ### Enhancements
 
 - Allow callbacks after append and stream ([#6805](https://github.com/holoviz/panel/pull/6805))
-- Enable directory uploads with FileInput ([#6808](https://github.com/holoviz/panel/pull/6808))
-- Make autoreload robust to syntax errors and empty apps ([#7028](https://github.com/holoviz/panel/pull/7028))
-- Add support for automatically determining optimal Tabulator page_size ([#6978](https://github.com/holoviz/panel/pull/6978))
+- Enable directory uploads with `FileInput` ([#6808](https://github.com/holoviz/panel/pull/6808))
+- Make `autoreload` robust to syntax errors and empty apps ([#7028](https://github.com/holoviz/panel/pull/7028))
+- Add support for automatically determining optimal `Tabulator.page_size` ([#6978](https://github.com/holoviz/panel/pull/6978))
 - Various typing improvements ([#7081](https://github.com/holoviz/panel/pull/7081), [#7092](https://github.com/holoviz/panel/pull/7092), [#7094](https://github.com/holoviz/panel/pull/7094), [#7132](https://github.com/holoviz/panel/pull/7132))
 - Display value for player ([#7060](https://github.com/holoviz/panel/pull/7060))
-- Optimize rendering and scrolling behavior of Feed ([#7101](https://github.com/holoviz/panel/pull/7101))
-- Implement support for multi-index columns in Tabulator ([#7108](https://github.com/holoviz/panel/pull/7108))
-- Add placeholder while loading to ChatFeed ([#7042](https://github.com/holoviz/panel/pull/7042))
-- Allow streaming chunks to HTML panes ([#7125](https://github.com/holoviz/panel/pull/7125))
+- Optimize rendering and scrolling behavior of `Feed` ([#7101](https://github.com/holoviz/panel/pull/7101))
+- Implement support for multi-index columns in `Tabulator` ([#7108](https://github.com/holoviz/panel/pull/7108))
+- Add placeholder while loading to `ChatFeed` ([#7042](https://github.com/holoviz/panel/pull/7042))
+- Allow streaming chunks to `HTML` and `Markdown` panes ([#7125](https://github.com/holoviz/panel/pull/7125))
 - Show `Player` interval value on click ([#7064](https://github.com/holoviz/panel/pull/7064))
 - Expose `Player` options to scale and hide buttons ([#7065](https://github.com/holoviz/panel/pull/7065))
 - Add `on_keyup` and `value_input` for `CodeEditor` ([#6919](https://github.com/holoviz/panel/pull/6919))
@@ -54,30 +58,31 @@ See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual su
 - Correctly map `Tabulator` expanded indexes when paginated, filtered and sorted ([#7103](https://github.com/holoviz/panel/pull/7103))
 - Ensure custom `HoloViews` backends do not error out ([#7114](https://github.com/holoviz/panel/pull/7114))
 - Ensure events are always dispatched sequentially ([#7128](https://github.com/holoviz/panel/pull/7128))
-- Ensure multiselect Tabulator header filter uses 'in' filter function ([#7111](https://github.com/holoviz/panel/pull/7111))
+- Ensure `'multiselect'` `Tabulator.header_filter` uses 'in' filter function ([#7111](https://github.com/holoviz/panel/pull/7111))
 - Ensure no content warning is not displayed when template is added ([#7164](https://github.com/holoviz/panel/pull/7164))
-- Make it easy to prompt user for input in ChatFeed ([#7148](https://github.com/holoviz/panel/pull/7148))
+- Make it easy to prompt user for input in `ChatFeed` ([#7148](https://github.com/holoviz/panel/pull/7148))
 - Fix `LaTeX` pane MathJax rendering ([#7188](https://github.com/holoviz/panel/pull/7188))
 - Ensure OAuth expiry is numeric and can be compared ([#7191](https://github.com/holoviz/panel/pull/7191))
-- Correctly detect max depth of NestedSelect if level is empty ([#7194](https://github.com/holoviz/panel/pull/7194))
+- Correctly detect max depth of `NestedSelect` if level is empty ([#7194](https://github.com/holoviz/panel/pull/7194))
 - Make `--setup`/`--autoreload`/`--warm` work with `--num-procs` ([#6913](https://github.com/holoviz/panel/pull/6913))
 - Ensure error rendering application does not crash server ([#7223](https://github.com/holoviz/panel/pull/7223))
-- Refactor state.notifications to fix pyodide ([#7235](https://github.com/holoviz/panel/pull/7235))
+- Refactor `state.notifications` to fix pyodide ([#7235](https://github.com/holoviz/panel/pull/7235))
 - Handle setting None value on `DateRangePicker` ([#7240](https://github.com/holoviz/panel/pull/7240))
 - Add header_tooltips parameter to `Tabulator` ([#7241](https://github.com/holoviz/panel/pull/7241))
 - Fix issue using `Tabulator.header_filter` with recent Pandas versions ([#7242](https://github.com/holoviz/panel/pull/7242))
-- Fix setting of Dial background ([#7261](https://github.com/holoviz/panel/pull/7261))
+- Fix setting of `Dial` background ([#7261](https://github.com/holoviz/panel/pull/7261))
+- Fix issues when loading multiple times in a Jupyter(Lab) session ([#7269](https://github.com/holoviz/panel/pull/7269))
 
 ### Compatibility and Updates
 
 - Update to Bokeh 3.5.x
 - Update `Tabulator` to 6.2.1 ([#6840](https://github.com/holoviz/panel/pull/6840))
 - Update to latest Pyscript (2024.08.01) and Pyodide (0.26.2) ([#7016](https://github.com/holoviz/panel/pull/7016))
-- Add compatibility for latest Textual ([#7130](https://github.com/holoviz/panel/pull/7130))
+- Add compatibility for latest `Textual` ([#7130](https://github.com/holoviz/panel/pull/7130))
 
 ### Documentation
 
-- Update Tabulator.ipynb to show correct version number of Tabulator ([#7053](https://github.com/holoviz/panel/pull/7053))
+- Update Tabulator.ipynb to show correct version number of `Tabulator` ([#7053](https://github.com/holoviz/panel/pull/7053))
 - Update jupyterlite version ([#7129](https://github.com/holoviz/panel/pull/7129))
 - Describe usage of pyscript editor ([#7017](https://github.com/holoviz/panel/pull/7017))
 - Add pycafe deployment guide ([#7183](https://github.com/holoviz/panel/pull/7183))
