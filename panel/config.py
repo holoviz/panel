@@ -840,8 +840,7 @@ class panel_extension(_pyviz_extension):
             else:
                 with param.logging_level('ERROR'):
                     hv.plotting.Renderer.load_nb(config.inline)
-                    if hasattr(hv.plotting.Renderer, '_render_with_panel'):
-                        nb_loaded = True
+                    nb_loaded = True
 
         # Disable simple ids, old state and multiple tabs in notebooks can cause IDs to clash
         bk_settings.simple_ids.set_value(False)
