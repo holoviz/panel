@@ -61,9 +61,6 @@ calls it with the rendered model.
       run_callbacks();
       return null;
     }
-    if (!reloading) {
-      console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
-    }
 
     function on_load() {
       root._bokeh_is_loading--;
@@ -270,9 +267,10 @@ calls it with the rendered model.
     } else {
       root._bokeh_is_initializing = true
       root._bokeh_onload_callbacks = []
-      var bokeh_loaded = Bokeh != null && (Bokeh.version === py_version || (Bokeh.versions !== undefined && Bokeh.versions.has(py_version)));
+      const bokeh_loaded = root.Bokeh != null && (root.Bokeh.version === py_version || (root.Bokeh.versions !== undefined && root.Bokeh.versions.has(py_version)));
       if (!reloading && !bokeh_loaded) {
 	root.Bokeh = undefined;
+	console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
       }
       load_libs(css_urls, js_urls, js_modules, js_exports, function() {
 	console.debug("Bokeh: BokehJS plotting callback run at", now());
