@@ -175,7 +175,7 @@ Interactively apply a XGBoost classifier on the Iris dataset.
 
 :::{grid-item-card} WebLLM ChatInterface
 
-```{image} https://assets.holoviz.org/panel/gallery/WebLLM.png
+```{image} https://assets.holoviz.org/panel/gallery/webllm.png
 :target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/webllm
 :width: 100%
 ```
