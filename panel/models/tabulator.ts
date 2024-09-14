@@ -359,7 +359,6 @@ export class DataTabulatorView extends HTMLBoxView {
   _debounced_redraw: any = null
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
-  _scroll_timeout: number | null = null
   _is_scrolling: boolean = false
 
   override connect_signals(): void {
@@ -595,17 +594,7 @@ export class DataTabulatorView extends HTMLBoxView {
       return `${cell.getColumn().getField()}: ${cell.getValue()}`
     })
     this.tabulator.on("scrollVertical", debounce(() => {
-      if (isNumber(this._scroll_timeout)) {
-        clearTimeout(this._scroll_timeout)
-      }
-      this.record_scroll()
       this.setStyles()
-      this._scroll_timeout = setTimeout(() => {
-        this._is_scrolling = true
-      }, 100)
-    }, 50, false))
-    this.tabulator.on("scrollHorizontal", debounce(() => {
-      this.record_scroll()
     }, 50, false))
 
     // Sync state with model
@@ -659,10 +648,23 @@ export class DataTabulatorView extends HTMLBoxView {
     this.renderChildren()
     this.setStyles()
 
+    // Track scrolling position and active scroll
+    const holder = this.shadow_el.querySelector(".tabulator-tableholder")
+    let scroll_timeout: ReturnType<typeof setTimeout> | undefined
+    if (holder) {
+      holder.addEventListener('scroll', () => {
+        this.record_scroll()
+        this._is_scrolling = true
+        clearTimeout(scroll_timeout)
+        scroll_timeout = setTimeout(() => {
+          this._is_scrolling = false
+        }, 200)
+      })
+    }
+
     if (this.model.pagination) {
       if (this.model.page_size == null) {
         const table = this.shadow_el.querySelector(".tabulator-table")
-        const holder = this.shadow_el.querySelector(".tabulator-tableholder")
         if (table != null && holder != null) {
           const table_height = holder.clientHeight
           let height = 0
