@@ -595,7 +595,9 @@ export class DataTabulatorView extends HTMLBoxView {
       return `${cell.getColumn().getField()}: ${cell.getValue()}`
     })
     this.tabulator.on("scrollVertical", debounce(() => {
-      clearTimeout(this._scroll_timeout)
+      if (isNumber(this._scroll_timeout)) {
+        clearTimeout(this._scroll_timeout)
+      }
       this.record_scroll()
       this.setStyles()
       this._scroll_timeout = setTimeout(() => {
