@@ -359,6 +359,8 @@ export class DataTabulatorView extends HTMLBoxView {
   _debounced_redraw: any = null
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
+  _scroll_timeout: number | null = null
+  _is_scrolling: boolean = false
 
   override connect_signals(): void {
     super.connect_signals()
@@ -514,7 +516,9 @@ export class DataTabulatorView extends HTMLBoxView {
 
   override after_resize(): void {
     super.after_resize()
-    this._debounced_redraw()
+    if (!this._is_scrolling) {
+      this._debounced_redraw()
+    }
   }
 
   _resize_redraw(): void {
@@ -591,8 +595,12 @@ export class DataTabulatorView extends HTMLBoxView {
       return `${cell.getColumn().getField()}: ${cell.getValue()}`
     })
     this.tabulator.on("scrollVertical", debounce(() => {
+      clearTimeout(this._scroll_timeout)
       this.record_scroll()
       this.setStyles()
+      this._scroll_timeout = setTimeout(() => {
+        this._is_scrolling = true
+      }, 100)
     }, 50, false))
     this.tabulator.on("scrollHorizontal", debounce(() => {
       this.record_scroll()
@@ -740,7 +748,6 @@ export class DataTabulatorView extends HTMLBoxView {
       paginationSize: this.model.page_size || 20,
       paginationInitialPage: 1,
       groupBy: this.groupBy,
-      rowFormatter: (row: any) => this._render_row(row),
       frozenRows: (row: any) => {
         return (this.model.frozen_rows.length > 0) ? this.model.frozen_rows.includes(row._row.data._index) : false
       },
@@ -765,10 +772,17 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
+  get_child(idx: number): LayoutDOM | null {
+    if (this.model.children instanceof Map) {
+      return this.model.children.get(idx) || null
+    }
+    return null
+  }
+
   override get child_models(): LayoutDOM[] {
     const children: LayoutDOM[] = []
     for (const idx of this.model.expanded) {
-      const child = this.model.children.get(idx)
+      const child = this.get_child(idx)
       if (child != null) {
         children.push(child)
       }
@@ -790,11 +804,8 @@ export class DataTabulatorView extends HTMLBoxView {
         }
       }
       for (const index of this.model.expanded) {
-        if (!this.model.children.has(index)) {
-          continue
-        }
+        const model = this.get_child(index)
         const row = lookup.get(index)
-        const model = this.model.children.get(index)
         const view = model == null ? null : this._child_views.get(model)
         if (view != null) {
           const render = (new_children as UIElementView[]).includes(view)
@@ -811,10 +822,10 @@ export class DataTabulatorView extends HTMLBoxView {
 
   _render_row(row: any, resize: boolean = true, render: boolean = true): void {
     const index = row._row?.data._index
-    if (!this.model.expanded.includes(index) || this.model.children.get(index) == null) {
+    if (!this.model.expanded.includes(index)) {
       return
     }
-    const model = this.model.children.get(index)
+    const model = this.get_child(index)
     const view = model == null ? null : this._child_views.get(model)
     if (view == null) {
       return
@@ -823,7 +834,13 @@ export class DataTabulatorView extends HTMLBoxView {
     const style = getComputedStyle(this.tabulator.element.children[1].children[0])
     const bg = style.backgroundColor
     const neg_margin = rowEl.style.paddingLeft ? `-${rowEl.style.paddingLeft}` : "0"
-    const viewEl = div({style: {background_color: bg, margin_left: neg_margin, max_width: "100%", overflow_x: "hidden"}})
+    const prev_child = rowEl.children[rowEl.children.length-1]
+    let viewEl
+    if (prev_child != null && prev_child.className == "row-content") {
+      viewEl = prev_child
+    } else {
+      viewEl = div({class: "row-content", style: {background_color: bg, margin_left: neg_margin, max_width: "100%", overflow_x: "hidden"}})
+    }
     viewEl.appendChild(view.el)
     rowEl.appendChild(viewEl)
     if (!view.has_finished() && render) {
@@ -851,7 +868,7 @@ export class DataTabulatorView extends HTMLBoxView {
     } else {
       const exp_index = expanded.indexOf(index)
       const removed = expanded.splice(exp_index, 1)[0]
-      const model = this.model.children.get(removed)
+      const model = this.get_child(removed)
       if (model != null) {
         const view = this._child_views.get(model)
         if (view !== undefined && view.el != null) {
@@ -865,7 +882,7 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     let ready = true
     for (const idx of this.model.expanded) {
-      if (this.model.children.get(idx) == null) {
+      if (this.get_child(idx) == null) {
         ready = false
         break
       }
