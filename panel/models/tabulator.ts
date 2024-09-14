@@ -652,7 +652,7 @@ export class DataTabulatorView extends HTMLBoxView {
     const holder = this.shadow_el.querySelector(".tabulator-tableholder")
     let scroll_timeout: ReturnType<typeof setTimeout> | undefined
     if (holder) {
-      holder.addEventListener('scroll', () => {
+      holder.addEventListener("scroll", () => {
         this.record_scroll()
         this._is_scrolling = true
         clearTimeout(scroll_timeout)
