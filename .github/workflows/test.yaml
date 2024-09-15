@@ -206,8 +206,6 @@ jobs:
       - name: Launch JupyterLab
         shell: pixi run -e test-ui bash -el {0}
         run: |
-          echo $PATH
-          pixi info
           jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
           (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
       - name: Build JupyterLite
