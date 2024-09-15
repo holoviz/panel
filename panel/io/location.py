@@ -44,10 +44,10 @@ def _get_location_params(protocol: str|None, host: str| None, uri: str| None)->d
 
         if uri.startswith("https,"):
             uri = uri.replace("https,", "")
-        
+
         if uri.startswith("http"):
             uri = urlparse.urlparse(uri).path
-        
+
         href += uri
         if '?' in uri and '#' in uri:
             params['pathname'], query = uri.split('?')
