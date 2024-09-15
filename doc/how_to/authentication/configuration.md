@@ -92,7 +92,7 @@ or in Python:
 pn.serve(app, oauth_extra_params={'tenant_id': ...}, ...)
 ```
 
-The `oauth_extra_params` can also be used to provide the authentication URLs for the `'generic'`, `'password'`, and `'auth_code'` OAuth providers. Specifically you can provide a `'AUTHORIZE_URL'`, `'TOKEN_URL'` and `'USER_URL'` as extra parameters. Lastly it may be used to define the [scopes](#Scopes).
+The `oauth_extra_params` can also be used to provide the authentication URLs for the `'generic'`, `'password'`, and `'auth_code'` OAuth providers. Specifically you can provide a `'AUTHORIZE_URL'`, `'TOKEN_URL'` and `'USER_URL'` as extra parameters. Lastly it may be used to define the [scopes](#scopes).
 
 ## `cookie_secret`
 
