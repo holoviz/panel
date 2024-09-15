@@ -86,6 +86,7 @@ html_theme_options = {
 
 
 extensions = [
+    'bokeh.sphinxext.bokeh_plot',
     'myst_parser',
     'sphinx_design',
     'sphinx.ext.autodoc',
