@@ -1,4 +1,8 @@
-# Setting up a development environment
+# Developer Guide
+
+Welcome. We are so happy you've decided to contribute.
+
+## Setting up a development environment
 
 The Panel library is a project that provides a wide range of data interfaces and an extensible set of plotting backends, which means the development and testing process involves a broad set of libraries.
 
@@ -97,7 +101,7 @@ Currently, this needs to be run for each environment. So, if you want to install
 pixi run -e test-ui install
 ```
 
-You can find the list of environments in the **pixi.toml** file.
+You can find the list of environments in the **pixi.toml** file or via the command `pixi info`.
 
 :::
 
