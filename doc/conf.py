@@ -95,6 +95,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.linkcode',
+    'sphinx.ext.inheritance_diagram',
     'sphinx_copybutton',
     'sphinxext.rediraffe',
     'nbsite.gallery',
