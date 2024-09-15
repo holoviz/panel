@@ -13,9 +13,9 @@ from ..util import classproperty
 from .layout import HTMLBox
 
 
-class ESMEvent(ModelEvent):
+class DataEvent(ModelEvent):
 
-    event_name = 'esm_event'
+    event_name = 'data_event'
 
     def __init__(self, model, data=None):
         self.data = data
@@ -23,6 +23,11 @@ class ESMEvent(ModelEvent):
 
     def event_values(self) -> dict[str, Any]:
         return dict(super().event_values(), data=self.data)
+
+
+class ESMEvent(DataEvent):
+
+    event_name = 'esm_event'
 
 
 class ReactiveESM(HTMLBox):
@@ -41,13 +46,13 @@ class ReactiveESM(HTMLBox):
 
     importmap = bp.Dict(bp.String, bp.Dict(bp.String, bp.String))
 
-    __javascript_modules_raw__ = [
+    __javascript_raw__ = [
         f"{config.npm_cdn}/es-module-shims@^1.10.0/dist/es-module-shims.min.js"
     ]
 
     @classproperty
-    def __javascript_modules__(cls):
-        return bundled_files(cls, 'javascript_modules')
+    def __javascript__(cls):
+        return bundled_files(cls)
 
 
 class ReactComponent(ReactiveESM):

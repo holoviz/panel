@@ -264,4 +264,15 @@ def build_applications(
         else:
             handler = FunctionHandler(partial(_eval_panel, app, server_id, title_, location, admin))
             apps[slug] = Application(handler, admin=admin)
+
+    if admin:
+        if '/admin' in apps:
+            raise ValueError(
+                'Cannot enable admin panel because another app is being served '
+                'on the /admin endpoint'
+            )
+        from .admin import admin_panel
+        admin_handler = FunctionHandler(admin_panel)
+        apps['/admin'] = Application(admin_handler)
+
     return apps

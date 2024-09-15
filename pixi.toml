@@ -177,16 +177,18 @@ test-type = 'mypy panel'
 [feature.doc.activation.env]
 MOZ_HEADLESS = "1"
 PANEL_IPYWIDGET = "1"
+OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES"
 
 [feature.doc.dependencies]
 lxml = "*"
-nbsite = ">=0.8.4"
+nbsite = ">=0.8.6rc5"
 selenium = "*"
 
 [feature.doc.tasks]
 _docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
 _docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
-_docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
+_docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel --disable-parallel'
+_docs-generate-parallel = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
 _docs-copy-panel-dist = 'cp -r ./panel/dist ./builtdocs/panel_dist'
 _docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json --exclude examples/gallery/vtk*.ipynb'
 docs-server = 'python -m http.server 5500 --directory ./builtdocs'
@@ -196,6 +198,15 @@ depends_on = [
     '_docs-refmanual',
     '_docs-convert-gallery',
     '_docs-generate',
+    '_docs-copy-panel-dist',
+    '_docs-pyodide',
+]
+
+[feature.doc.tasks.docs-build-parallel]
+depends_on = [
+    '_docs-refmanual',
+    '_docs-convert-gallery',
+    '_docs-generate-parallel',
     '_docs-copy-panel-dist',
     '_docs-pyodide',
 ]

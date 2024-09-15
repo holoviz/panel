@@ -266,8 +266,6 @@ class ChatMessage(Pane):
         self._build_layout()
 
     def _build_layout(self):
-        self._icon_divider = HTML(" | ", width=1, css_classes=["divider"])
-
         self._left_col = left_col = Column(
             self._render_avatar(),
             max_width=60,
@@ -334,7 +332,6 @@ class ChatMessage(Pane):
 
         self._icons_row = Row(
             self.chat_copy_icon,
-            self._icon_divider,
             self._render_reaction_icons(),
             css_classes=["icons"],
             sizing_mode="stretch_width",
@@ -558,11 +555,6 @@ class ChatMessage(Pane):
 
     def _update_reaction_icons(self, _):
         self._icons_row[-1] = self._render_reaction_icons()
-        self._icon_divider.visible = (
-            len(self.reaction_icons.options) > 0 and
-            self.show_reaction_icons and
-            self.chat_copy_icon.visible
-        )
 
     def _update(self, ref, old_models):
         """
@@ -605,14 +597,9 @@ class ChatMessage(Pane):
         if isinstance(object_panel, str) and self.show_copy_icon:
             self.chat_copy_icon.value = object_panel
             self.chat_copy_icon.visible = True
-            self._icon_divider.visible = (
-                len(self.reaction_icons.options) > 0 and
-                self.show_reaction_icons
-            )
         else:
             self.chat_copy_icon.value = ""
             self.chat_copy_icon.visible = False
-            self._icon_divider.visible = False
 
     def _cleanup(self, root=None) -> None:
         """
