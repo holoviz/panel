@@ -203,6 +203,5 @@ def test_location_sync_to_dataframe_with_initial_value(location, dataframe):
     )
 ])
 def test_get_location_params(protocol, host, uri, expected):
-    from urllib.parse import urlparse
     params = _get_location_params(protocol, host, uri)
     assert params==expected
