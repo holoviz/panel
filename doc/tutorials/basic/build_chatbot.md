@@ -90,5 +90,5 @@ In this section, we have used the *easy to use*, *high-level* [`ChatInterface`](
 
 ## Resources
 
-- [Chat Component Gallery](https://panel.holoviz.org/reference/index.html#chat)
+- [Chat Component Gallery](../../reference/index.rst#chat)
 - [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/)

@@ -165,7 +165,7 @@ Open the app in your browser at [http://localhost:8000/script.html](http://local
 Click the green *run* button that appears when you hover over the lower-right corner of the editor to see the application.
 
 :::note
-In the example, we included **mini-coi.js**. This is not necessary if the [appropriate HTTP headers](https://docs.pyscript.net/2024.7.1/user-guide/workers/) are set on your server, such as on [pyscript.com](pyscript.com) or in Github pages.
+In the example, we included **mini-coi.js**. This is not necessary if the [appropriate HTTP headers](https://docs.pyscript.net/2024.7.1/user-guide/workers/) are set on your server, such as on [pyscript.com](https://pyscript.com) or in Github pages.
 :::
 
 ## Rendering Panel Components in Pyodide or PyScript

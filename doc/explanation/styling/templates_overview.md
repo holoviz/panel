@@ -32,4 +32,5 @@ Panel ships with a number of these default themes built on different CSS framewo
 * **[``Slidestemplate``](../../reference/templates/Slides.md)**: For presentations, built on [reveal.js](https://revealjs.com/) framework
 
 ## Related Resources
+
 - See [How-to > Apply Templates](../../how_to/templates/index.md) for template solutions.

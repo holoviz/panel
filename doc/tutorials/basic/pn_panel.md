@@ -299,7 +299,7 @@ component.servable()
 
 ## Display any Python object in a layout
 
-If we place objects in a [*layout*](https://panel.holoviz.org/reference/index.html#layouts) like [`pn.Column`](../../reference/layouts/Column.md) (more about layouts later), then the layout will apply `pn.panel` for us automatically.
+If we place objects in a [*layout*](../../reference/index.rst#layouts) like [`pn.Column`](../../reference/layouts/Column.md) (more about layouts later), then the layout will apply `pn.panel` for us automatically.
 
 Run the code below:
 
@@ -343,7 +343,7 @@ The example above sets the *css* `styles` of the `Audio` player. The `styles` pa
 
 ## Consider Performance
 
-`pn.panel` is a versatile helper function that converts objects into a [*Pane*](https://panel.holoviz.org/reference/index.html#panes). It automatically selects the best *representation* for an object based on available [*Pane*](https://panel.holoviz.org/reference/index.html#panes) types, ranking them by priority.
+`pn.panel` is a versatile helper function that converts objects into a [*Pane*](../../reference/index.rst#panes). It automatically selects the best *representation* for an object based on available [*Pane*](../../reference/index.rst#panes) types, ranking them by priority.
 
 For optimal performance, specify the desired *Pane* type directly, like `pn.pane.Matplotlib(fig)` instead of using `pn.panel(fig)`. You will learn about *Panes*  in the [Display Content with Panes](panes.md) section.
 
@@ -374,4 +374,4 @@ In this guide, we have learned to display Python objects easily with `pn.panel`:
 
 ### Component Gallery
 
-- [Panes](https://panel.holoviz.org/reference/index.html#panes)
+- [Panes](../../reference/index.rst#panes)

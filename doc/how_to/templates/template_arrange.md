@@ -57,4 +57,4 @@ panel serve app.py --show --autoreload
 
 - See [How-to > Apply Templates > Toggle Modal](./template_modal.md) for a dedicated guide to toggling the modal.
 - See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
-- Read [Explanation > Templates](../../explanation/templates/templates_overview.md) for explanation.
+- Read [Explanation > Templates](../../explanation/styling/templates_overview.md) for explanation.

@@ -1,6 +1,6 @@
 # Creating a `MarioButton` with `JSComponent`
 
-In this tutorial we will build a *[Mario](https://mario.nintendo.com/) style button* with sounds and animations using the [`AnyWidgetComponent`](../../reference/custom/AnyWidgetComponent.md) feature in Panel. It aims to help you learn how to push the boundaries of what can be achieved with HoloViz Panel by creating advanced components using modern JavaScript and CSS technologies.
+In this tutorial we will build a *[Mario](https://mario.nintendo.com/) style button* with sounds and animations using the [`AnyWidgetComponent`](../../reference/custom_components/AnyWidgetComponent.md) feature in Panel. It aims to help you learn how to push the boundaries of what can be achieved with HoloViz Panel by creating advanced components using modern JavaScript and CSS technologies.
 
 ![Mario chime button](https://assets.holoviz.org/panel/tutorials/ipymario.gif)
 
