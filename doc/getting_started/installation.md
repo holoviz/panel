@@ -78,38 +78,6 @@ Make sure Panel is installed in the same environment as JupyterLab/Jupyter Noteb
 If you plan to use Panel in a non-Jupyter notebook environment, such as Google Colab or VSCode, refer to the [relevant how-to section](../how_to/notebook/other_nb.md).
 :::
 
-## Updating Panel
-
-:::{important}
-
-Instead of updating, we recommend that you create a new virtual environment from scratch and reinstall Panel to minimize the risk of potential issues.
-
-:::
-
-We suggest updating the dependencies `param` and `bokeh` along with `panel` and `watchfiles` to reduce the likelihood of problems.
-
-:::::{tab-set}
-
-::::{tab-item} pip
-:sync: pip
-
-```bash
-pip install --upgrade panel watchfiles param bokeh
-```
-
-::::
-
-::::{tab-item} conda
-:sync: conda
-
-```bash
-conda update panel watchfiles param bokeh
-```
-
-::::
-
-:::::
-
 ## Next Steps
 
 Now that you have installed Panel, let's [build a simple application](build_app.md).
