@@ -79,5 +79,5 @@ In this way we can update both the current `object` and the `styles` **Parameter
 
 ## Related Resources
 
-- Learn [how to use generators with `bind`](./bind_generator)
+- Learn [how to use generators with `bind`](bind_generators.md)
 - Understand [Param](../../explanation/dependencies/param.md)

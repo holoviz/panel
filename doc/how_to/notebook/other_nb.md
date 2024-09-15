@@ -27,7 +27,7 @@ Please note that in Colab rendering for each notebook cell is isolated, which me
 :::
 
 :::{warning}
-The [IpyWidgets](../../reference/panes/IpyWidget.ipynb) pane does not work in Google Colab. Thus you cannot use IpyWidgets with Panel in Colab.
+The [IpyWidgets](../../reference/panes/IPyWidget.md) pane does not work in Google Colab. Thus you cannot use IpyWidgets with Panel in Colab.
 :::
 
 ## PyCharm Notebook

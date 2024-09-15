@@ -2,7 +2,7 @@
 
 This guide addresses how to convert [AnyWidget](https://anywidget.dev/) widgets to custom `JSComponent` or `ReactComponent` widgets.
 
-Please note that AnyWidget widgets are [`ipywidgets`](https://ipywidgets.readthedocs.io/en/stable/) and can be used directly in Panel via the [`IpyWidgets`](../../reference/panes/IPyWidget.ipynb) pane and the `Traitlets` `@observe` API without a conversion. We recommend trying this option first. If it does not work for your use case, please consider contributing to the existing `AnyWidget` before converting it to a Panel widget.
+Please note that AnyWidget widgets are [`ipywidgets`](https://ipywidgets.readthedocs.io/en/stable/) and can be used directly in Panel via the [`IpyWidgets`](../../../reference/panes/Image.md) pane and the `Traitlets` `@observe` API without a conversion. We recommend trying this option first. If it does not work for your use case, please consider contributing to the existing `AnyWidget` before converting it to a Panel widget.
 
 Some reasons you might still want to convert an `AnyWidget` to a custom Panel widget are:
 
@@ -18,7 +18,7 @@ The high-level steps needed for converting `AnyWidgets` components to Panel comp
 
 #### Step 1: Base Class Conversion
 
-Convert from the `AnyWidget` base class to the Panel [`JSComponent`](../../reference/panes/JSComponent.ipynb) base class. If the `_esm` script is based on [React](https://react.dev/), use the [`ReactComponent`](../../reference/panes/ReactComponent.ipynb).
+Convert from the `AnyWidget` base class to the Panel [`JSComponent`](../../../reference/custom_components/JSComponent.md) base class. If the `_esm` script is based on [React](https://react.dev/), use the [`ReactComponent`](../../../reference/custom_components/ReactComponent.md).
 
 #### Step 2: Attribute Conversion
 
@@ -169,15 +169,15 @@ CounterButton().servable()
 
 ### Mario Button
 
-Check out our [Custom Components Tutorial](../../../tutorials/expert/custom_components.md) to see a converted version of the [ipymario](https://github.com/manzt/ipymario) widget.
+Check out our [Custom Components Tutorial](../../../tutorials/expert/custom_anywidget_components.md) to see a converted version of the [ipymario](https://github.com/manzt/ipymario) widget.
 
-[![Mario Button](https://assets.holoviz.org/panel/tutorials/ipymario.gif)](../../../tutorials/expert/custom_components.md)
+[![Mario Button](https://assets.holoviz.org/panel/tutorials/ipymario.gif)](../../../tutorials/expert/custom_anywidget_components.md)
 
 ## References
 
 ### Tutorials
 
-- [Build Custom Components](../../../how_to/custom_components/reactive_esm/reactive_esm_layout.md)
+- [Build Custom AnyWidget Components](../../../tutorials/expert/custom_anywidget_components.md)
 
 ### How-To Guides
 
@@ -185,8 +185,8 @@ Check out our [Custom Components Tutorial](../../../tutorials/expert/custom_comp
 
 ### Reference Guides
 
-- [`JSComponent`](../../../reference/panes/JSComponent.md)
-- [`ReactComponent`](../../../reference/panes/ReactComponent.md)
-- [`PreactComponent`](../../../reference/panes/PreactComponent.md)
+- [`JSComponent`](../../../reference/custom_components/JSComponent.md)
+- [`ReactComponent`](../../../reference/custom_components/ReactComponent.md)
+- [`AnyWidgetComponent`](../../../reference/custom_components/AnyWidgetComponent.md)
 
 With these skills, you are now equipped to pioneer and push the boundaries of what can be achieved with Panel. Happy coding!

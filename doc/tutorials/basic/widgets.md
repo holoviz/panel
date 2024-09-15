@@ -6,7 +6,7 @@ Welcome to the tutorial on accepting user inputs with widgets in Panel! Let's di
 
 Widgets, found within the `pn.widgets` namespace, are powerful tools for capturing user input and interaction. They offer a wide range of functionality and customization options, making them essential for creating dynamic and engaging apps.
 
-You can explore the full array of available widgets and their detailed reference guides in the [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the [Component Gallery](../../reference/index.md).
+You can explore the full array of available widgets and their detailed reference guides in the [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the [Component Gallery](../../reference/index.rst).
 
 :::{note}
 Widgets typically utilize the `value` parameter to capture user input.

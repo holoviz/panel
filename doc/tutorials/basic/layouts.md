@@ -8,7 +8,7 @@ In this guide, we'll explore the following aspects of layouts:
 
 - **Layouts**: Accessible in the `pn` namespace.
 - **Layout Techniques**: Utilize `pn.Column` and `pn.Row` to structure your content.
-- **Reference Guides**: Explore detailed documentation for each layout in the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the [Component Gallery](../../reference/index.md).
+- **Reference Guides**: Explore detailed documentation for each layout in the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the [Component Gallery](../../reference/index.rst).
 
 :::{note}
 As you follow along with the code examples below, feel free to execute them directly in the Panel documentation, a notebook cell, or within a file named `app.py` served with `panel serve app.py --dev`.

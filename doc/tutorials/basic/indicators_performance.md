@@ -20,7 +20,7 @@ In this tutorial, we'll explore various indicators offered by Panel to showcase 
 - **Current Performance**: Utilize the [`Number`](../../reference/indicators/Number.md) indicator to display the current performance.
 - **Trending Performance**: Employ the [`Trend`](../../reference/indicators/Trend.md) indicator to showcase the trending performance over time.
 
-For a comprehensive list of indicators and their detailed reference guides, you can always refer to the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) in the [Component Gallery](../../reference/index.md).
+For a comprehensive list of indicators and their detailed reference guides, you can always refer to the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) in the [Component Gallery](../../reference/index.rst).
 
 :::{note}
 Throughout this tutorial, whenever we refer to "run the code," you can execute it directly in the Panel docs using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --dev`.
@@ -88,4 +88,4 @@ In this tutorial, we have explored using Panel's versatile indicators by creatin
 - Leveraged the [`Number`](../../reference/indicators/Number.md) indicator to display current performance.
 - Utilized the [`Trend`](../../reference/indicators/Trend.md) indicator to showcase trending performance over time.
 
-Remember, there's a collection of indicators waiting for you to explore in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md). Keep experimenting and uncovering new insights! 🚀
+Remember, there's a collection of indicators waiting for you to explore in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.rst). Keep experimenting and uncovering new insights! 🚀

@@ -47,7 +47,7 @@ For additional configuration options, refer to the [`FastListTemplate` reference
 Panel offers a rich assortment of built-in templates, including a versatile [`Slides`](../../reference/templates/Slides.md) template.
 :::
 
-Take a moment to explore the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) in the [Component Gallery](../../reference/index.md), then return here.
+Take a moment to explore the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) in the [Component Gallery](../../reference/index.rst), then return here.
 
 ## Integrating Templates in a Notebook
 
@@ -165,7 +165,7 @@ Note that `accent` and `main_layout` are exclusive to Fast templates like [FastL
 In this tutorial, we've explored the power of pre-made templates for structuring your app with ease:
 
 - Templates are available in the `pn.template` namespace.
-- Find a variety of templates in the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md).
+- Find a variety of templates in the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.rst).
 - Templates offer high customizability.
 
 ## References
@@ -189,4 +189,4 @@ In this tutorial, we've explored the power of pre-made templates for structuring
 
 ### Component Gallery
 
-- Explore the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) in the [Component Gallery](../../reference/index.md) for more options.
+- Explore the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) in the [Component Gallery](../../reference/index.rst) for more options.

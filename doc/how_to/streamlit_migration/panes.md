@@ -5,7 +5,7 @@ In Panel the objects that can display your Python objects are called *panes*. Wi
 - Get notifications about interactions like click events on your plots and tables and react to them.
 - Use unique data visualization ecosystems like HoloViz, ipywidgets and VTK.
 
-Check out the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md) for the full list of *panes*.
+Check out the [Panes Section](../../reference/index.rst#panes) of the [Component Gallery](../../reference/index.rst) for the full list of *panes*.
 
 ---
 
@@ -17,7 +17,7 @@ To display content in Panel:
 `pn.pane.SomeObject` *CamelCased* classes.
 - Replace your Streamlit text elements with `pn.pane.Markdown`.
 
-Identify the relevant Panel *pane*s in the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
+Identify the relevant Panel *pane*s in the [Panes Section](../../reference/index.rst#panes) of the [Component Gallery](../../reference/index.rst).
 
 ## Examples
 

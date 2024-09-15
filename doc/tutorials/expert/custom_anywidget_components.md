@@ -226,7 +226,7 @@ Try clicking the button to see the button bounce more slowly.
 
 ## Conclusion
 
-You've now created a custom `MarioButton` component using  [`AnyWidgetComponent`](../../reference/panes/AnyWidgetComponent.md) in HoloViz Panel. This button features a pixelated Mario icon, plays a chime sound when clicked, and has customizable parameters for gain, duration, size, and animation.
+You've now created a custom `MarioButton` component using  [`AnyWidgetComponent`](../../reference/custom_components/AnyWidgetComponent.md) in HoloViz Panel. This button features a pixelated Mario icon, plays a chime sound when clicked, and has customizable parameters for gain, duration, size, and animation.
 
 ## References
 
@@ -240,6 +240,6 @@ You've now created a custom `MarioButton` component using  [`AnyWidgetComponent`
 
 ### Reference Guides
 
-- [`AnyWidgetComponent`](../../reference/panes/AnyWidgetComponent.md)
-- [`JSComponent`](../../reference/panes/JSComponent.md)
-- [`ReactComponent`](../../reference/panes/ReactComponent.md)
+- [`AnyWidgetComponent`](../../reference/custom_components/AnyWidgetComponent.md)
+- [`JSComponent`](../../reference/custom_components/JSComponent.md)
+- [`ReactComponent`](../../reference/custom_components/ReactComponent.md)

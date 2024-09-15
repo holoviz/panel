@@ -96,7 +96,7 @@ component.servable()
 ```
 
 :::{tip}
-If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.md) *widget* and [Perspective](../../reference/panes/Perspective.md) *pane*.
+If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.rst) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.md) *widget* and [Perspective](../../reference/panes/Perspective.md) *pane*.
 :::
 
 ## Display Plots

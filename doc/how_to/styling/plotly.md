@@ -1,6 +1,6 @@
 # Style Plotly Plots
 
-This guide addresses how to style Plotly plots displayed using the [Plotly pane](../../../examples/reference/panes/Plotly.ipynb).
+This guide addresses how to style Plotly plots displayed using the [Plotly pane](../../reference/panes/Plotly.md).
 
 Plotly provides a list of built in templates in `plotly.io.templates`. See the [Plotly Templates Guide](https://plotly.com/python/templates/).
 

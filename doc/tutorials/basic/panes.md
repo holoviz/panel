@@ -4,7 +4,7 @@ In this tutorial, we will learn to display objects with *Panes*:
 
 - *Panes* are available in the `pn.pane` namespace.
 - *Panes* take an `object` argument as well as other arguments.
-- Discover all *Panes* and their *reference guides* in the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md).
+- Discover all *Panes* and their *reference guides* in the [Panes Section](../../reference/index.rst#panes) of the [Component Gallery](../../reference/index.rst).
 
 :::{note}
 A *Pane* is a component that can display an object. It takes an `object` as an argument.
@@ -71,10 +71,10 @@ Read more [here](https://en.wikipedia.org/wiki/Wind_turbine).
 ```
 
 :::{tip}
-It's key for success with Panel to be able to navigate the [Component Gallery](../../reference/index.md) and use the *reference guides*.
+It's key for success with Panel to be able to navigate the [Component Gallery](../../reference/index.rst) and use the *reference guides*.
 :::
 
-Click [this link](https://panel.holoviz.org/reference/index.html#panes) to the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md). Identify the [Markdown Reference Guide](../../reference/panes/Markdown.md) and open it. You don't have to spend time studying the details right now.
+Click [this link](https://panel.holoviz.org/reference/index.html#panes) to the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.rst). Identify the [Markdown Reference Guide](../../reference/panes/Markdown.md) and open it. You don't have to spend time studying the details right now.
 
 ### Display Alerts
 
@@ -335,7 +335,7 @@ pn.pane.DataFrame(data).servable()
 ```
 
 :::{note}
-If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.md) widget and [Perspective](../../reference/panes/Perspective.md) pane.
+If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.rst) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.md) widget and [Perspective](../../reference/panes/Perspective.md) pane.
 :::
 
 ## Display any Python object
@@ -366,7 +366,7 @@ In this guide, we have learned to display Python objects with *Panes*:
 - Display plot figures like [Altair](https://altair-viz.github.io/), [ECharts](https://echarts.apache.org/en/index.html), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/python/) and [Vizzu](https://vizzuhq.com/) with the [`Vega`](../../reference/panes/Vega.md), [`ECharts`](../../reference/panes/ECharts.md), [`HoloViews`](../../reference/panes/HoloViews.md), [`Matplotlib`](../../reference/panes/Matplotlib.md), [`Plotly`](../../reference/panes/Plotly.md) and [`Vizzu`](../../reference/panes/Vizzu.md) *panes*, respectively.
 - Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.md) and [`Perspective`]((../../reference/panes/Perspective.md)) *panes*.
 - Add JavaScript dependencies via `pn.extension`. For example `pn.extension("vega")` or `pn.extension("plotly")`
-- Discover all *Panes* and their *reference guides* in the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md).
+- Discover all *Panes* and their *reference guides* in the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.rst).
 
 ## Resources
 
