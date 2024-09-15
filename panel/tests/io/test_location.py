@@ -189,10 +189,20 @@ def test_location_sync_to_dataframe_with_initial_value(location, dataframe):
     location.sync(p)
     pd.testing.assert_frame_equal(p.dataframe, dataframe)
 
-@pytest.mark.parametrize(("protocol", "host", "uri"), [
+@pytest.mark.parametrize(("protocol", "host", "uri", "expected"), [
+    # Started with the command fastapi dev script.py on local laptop
+    (
+        "http", "127.0.0.1", "/panel",
+        {'protocol': 'http:', 'hostname': '127.0.0.1', 'pathname': '/panel', 'href': 'http://127.0.0.1/panel'}
+    ),
     # Started with the command fastapi dev script.py --root-path /some/path in VS Code terminal on JupyterHub
-    ("http", "::ffff:172.20.0.233", "https,http://sub.domain.dk/some/path/panel")
+    (
+        "http", "::ffff:172.20.0.233", "https,http://sub.domain.dk/some/path/panel",
+        # I believe the below should be the result. But do not know for sure
+        {"protocol": "http:", "hostname": "172.20.0.233", "pathname": "/some/path/panel", 'href': 'http://172.20.0.233/some/path/panel'}
+    )
 ])
-def test_get_location_params(protocol, host, uri):
+def test_get_location_params(protocol, host, uri, expected):
+    from urllib.parse import urlparse
     params = _get_location_params(protocol, host, uri)
-    assert params
+    assert params==expected

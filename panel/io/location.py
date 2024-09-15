@@ -31,6 +31,9 @@ def _get_location_params(protocol: str|None, host: str| None, uri: str| None)->d
     if protocol:
         params['protocol'] = href = f'{protocol}:'
     if host:
+        if host.startswith("::ffff:"):
+            host = host.replace("::ffff:", "")
+
         href += f'//{host}'
         if ':' in host:
             params['hostname'], params['port'] = host.split(':')
@@ -38,6 +41,13 @@ def _get_location_params(protocol: str|None, host: str| None, uri: str| None)->d
             params['hostname'] = host
     if uri:
         search = hash = None
+
+        if uri.startswith("https,"):
+            uri = uri.replace("https,", "")
+        
+        if uri.startswith("http"):
+            uri = urlparse.urlparse(uri).path
+        
         href += uri
         if '?' in uri and '#' in uri:
             params['pathname'], query = uri.split('?')
