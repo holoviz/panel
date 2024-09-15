@@ -2,7 +2,7 @@ import pandas as pd
 import param
 import pytest
 
-from panel.io.location import Location
+from panel.io.location import Location, _get_location_params
 from panel.io.state import state
 from panel.tests.util import serve_and_request, wait_until
 from panel.util import edit_readonly
@@ -188,3 +188,11 @@ def test_location_sync_to_dataframe_with_initial_value(location, dataframe):
     location.search = "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
     location.sync(p)
     pd.testing.assert_frame_equal(p.dataframe, dataframe)
+
+@pytest.mark.parametrize(("protocol", "host", "uri"), [
+    # Started with the command fastapi dev script.py --root-path /some/path in VS Code terminal on JupyterHub
+    ("http", "::ffff:172.20.0.233", "https,http://sub.domain.dk/some/path/panel")
+])
+def test_get_location_params(protocol, host, uri):
+    params = _get_location_params(protocol, host, uri)
+    assert params

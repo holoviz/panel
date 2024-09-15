@@ -25,6 +25,36 @@ if TYPE_CHECKING:
     from bokeh.server.contexts import BokehSessionContext
     from pyviz_comms import Comm
 
+def _get_location_params(protocol: str|None, host: str| None, uri: str| None)->dict:
+    params = {}
+    href = ''
+    if protocol:
+        params['protocol'] = href = f'{protocol}:'
+    if host:
+        href += f'//{host}'
+        if ':' in host:
+            params['hostname'], params['port'] = host.split(':')
+        else:
+            params['hostname'] = host
+    if uri:
+        search = hash = None
+        href += uri
+        if '?' in uri and '#' in uri:
+            params['pathname'], query = uri.split('?')
+            search, hash = query.split('#')
+        elif '?' in uri:
+            params['pathname'], search = uri.split('?')
+        elif '#' in uri:
+            params['pathname'], hash = uri.split('#')
+        else:
+            params['pathname'] = uri
+        if search:
+            params['search'] = f'?{search}'
+        if hash:
+            params['hash'] = f'#{hash}'
+    params['href'] = href
+    return params
+
 class Location(Syncable):
     """
     The Location component can be made available in a server context
@@ -70,33 +100,7 @@ class Location(Syncable):
         except ImportError:
             return cls()
 
-        params = {}
-        href = ''
-        if request.protocol:
-            params['protocol'] = href = f'{request.protocol}:'
-        if request.host:
-            href += f'//{request.host}'
-            if ':' in request.host:
-                params['hostname'], params['port'] = request.host.split(':')
-            else:
-                params['hostname'] = request.host
-        if request.uri:
-            search = hash = None
-            href += request.uri
-            if '?' in request.uri and '#' in request.uri:
-                params['pathname'], query = request.uri.split('?')
-                search, hash = query.split('#')
-            elif '?' in request.uri:
-                params['pathname'], search = request.uri.split('?')
-            elif '#' in request.uri:
-                params['pathname'], hash = request.uri.split('#')
-            else:
-                params['pathname'] = request.uri
-            if search:
-                params['search'] = f'?{search}'
-            if hash:
-                params['hash'] = f'#{hash}'
-        params['href'] = href
+        params = _get_location_params(request.protocol, request.host, request.uri)
         loc = cls()
         with edit_readonly(loc):
             loc.param.update(params)
