@@ -199,6 +199,10 @@ jobs:
         id: install
       - name: Build pyodide wheels
         run: pixi run -e test-ui "python ./scripts/build_pyodide_wheels.py"
+      - name: Set environment variables for macOS
+        if: contains(matrix.os, 'macos')
+        run: |
+          pixi shell-hook -e test-ui >> $HOME/.bashrc
       - name: Launch JupyterLab
         shell: pixi run -e test-ui bash -el {0}
         run: |
