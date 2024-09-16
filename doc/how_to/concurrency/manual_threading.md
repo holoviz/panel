@@ -1,6 +1,6 @@
 # Set Up Manual Threading
 
-Enabling threading in Panel, as demonstrated in the [automatic threading guide](threading.md), provides a simple method to achieve concurrency. However, there are situations where greater control is necessary.
+Enabling threading in Panel, as demonstrated in the [automatic threading guide](threading), provides a simple method to achieve concurrency. However, there are situations where greater control is necessary.
 
 Below, we will demonstrate how to safely implement threads either per session or globally across multiple sessions.
 

@@ -3,14 +3,14 @@
 This guide addresses how to arrange components in a template layout.
 
 ```{admonition} Prerequisites
-1. The [How to > Set a Template](./template_set.md) guide demonstrates how to set a template for a deployable app.
+1. The [How to > Set a Template](./template_set) guide demonstrates how to set a template for a deployable app.
 ```
 
 ---
 
 The default templates that are provided with Panel define four content areas on the page, which can be populated as desired: `header`, `sidebar`, `main`, and `modal` (a dialog box/popup window).
 
-Let's create a simple app and place components in the `header`, `sidebar`, and `main` areas (see the dedicated guide on the [`modal`](./template_modal.md)). We'll first save this script below into a file called `app.py`:
+Let's create a simple app and place components in the `header`, `sidebar`, and `main` areas (see the dedicated guide on the [`modal`](./template_modal)). We'll first save this script below into a file called `app.py`:
 
 :::{card} app.py
 ``` {code-block} python
@@ -55,6 +55,6 @@ panel serve app.py --show --autoreload
 
 ## Related Resources
 
-- See [How-to > Apply Templates > Toggle Modal](./template_modal.md) for a dedicated guide to toggling the modal.
-- See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
-- Read [Explanation > Templates](../../explanation/styling/templates_overview.md) for explanation.
+- See [How-to > Apply Templates > Toggle Modal](./template_modal) for a dedicated guide to toggling the modal.
+- See [How-to > Apply Templates > Set a Template](./template_set) for alternate approaches to set a template.
+- Read [Explanation > Templates](../../explanation/styling/templates_overview) for explanation.

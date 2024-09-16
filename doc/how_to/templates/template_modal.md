@@ -3,7 +3,7 @@
 This guide addresses how to toggle the modal area of a template.
 
 ```{admonition} Prerequisites
-1. The [How to > Set a Template](./template_set.md) guide demonstrates how to set a template for a deployable app.
+1. The [How to > Set a Template](./template_set) guide demonstrates how to set a template for a deployable app.
 ```
 
 ---
@@ -68,5 +68,5 @@ panel serve app.py --show --autoreload
 
 ## Related Resources
 
-- See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
-- Read [Explanation > Templates](../../explanation/styling/templates_overview.md) for explanation.
+- See [How-to > Apply Templates > Set a Template](./template_set) for alternate approaches to set a template.
+- Read [Explanation > Templates](../../explanation/styling/templates_overview) for explanation.

@@ -62,30 +62,30 @@ Explore the [`panel-org`](https://py.cafe/panel-org) gallery examples below:
 
 ### Basic Tutorials
 
-- [Animation](https://py.cafe/panel-org/basic-animation) from the [Build an Animation Tutorial](../../tutorials/basic/build_report.md).
-- [Chatbot](https://py.cafe/panel-org/basic-chatbot) from the [Build a Chatbot Tutorial](../../tutorials/basic/build_chatbot.md).
-- [Crossfilter Dashboard](https://py.cafe/panel-org/basic-crossfilter-dashboard) from the [Build Crossfiltering Dashboard Tutorial](../../tutorials/basic/build_crossfilter_dashboard.md).
-- [Dashboard](https://py.cafe/panel-org/basic-dashboard) from the [Build a Dashboard Tutorial](../../tutorials/basic/build_dashboard.md).
-- [Image Classifier](https://py.cafe/panel-org/basic-image-classifier) from the [Build an Image Classifier Tutorial](../../tutorials/basic/build_image_classifier.md).
-- [Monitoring Dashboard](https://py.cafe/panel-org/basic-monitoring-dashboard) from the [Build an Monitoring Dashboard Tutorial](../../tutorials/basic/build_monitoring_dashboard.md).
-- [Report](https://py.cafe/panel-org/basic-report) from the [Build a Report Tutorial](../../tutorials/basic/build_report.md).
-- [Streaming Dashboard](https://py.cafe/panel-org/basic-streaming-dashboard) from the [Build Streaming Dashboard Tutorial](../../tutorials/basic/build_streaming_dashboard.md).
-- [Todo app | Widget approach](https://py.cafe/panel-org/basic-todo) from the [Build a todo app](../../tutorials/basic/build_todo.md).
+- [Animation](https://py.cafe/panel-org/basic-animation) from the [Build an Animation Tutorial](../../tutorials/basic/build_report).
+- [Chatbot](https://py.cafe/panel-org/basic-chatbot) from the [Build a Chatbot Tutorial](../../tutorials/basic/build_chatbot).
+- [Crossfilter Dashboard](https://py.cafe/panel-org/basic-crossfilter-dashboard) from the [Build Crossfiltering Dashboard Tutorial](../../tutorials/basic/build_crossfilter_dashboard).
+- [Dashboard](https://py.cafe/panel-org/basic-dashboard) from the [Build a Dashboard Tutorial](../../tutorials/basic/build_dashboard).
+- [Image Classifier](https://py.cafe/panel-org/basic-image-classifier) from the [Build an Image Classifier Tutorial](../../tutorials/basic/build_image_classifier).
+- [Monitoring Dashboard](https://py.cafe/panel-org/basic-monitoring-dashboard) from the [Build an Monitoring Dashboard Tutorial](../../tutorials/basic/build_monitoring_dashboard).
+- [Report](https://py.cafe/panel-org/basic-report) from the [Build a Report Tutorial](../../tutorials/basic/build_report).
+- [Streaming Dashboard](https://py.cafe/panel-org/basic-streaming-dashboard) from the [Build Streaming Dashboard Tutorial](../../tutorials/basic/build_streaming_dashboard).
+- [Todo app | Widget approach](https://py.cafe/panel-org/basic-todo) from the [Build a todo app](../../tutorials/basic/build_todo).
 
 ### Intermediate Tutorials
 
-- [Todo App | Class approach](https://py.cafe/panel-org/intermediate-todo-app) from the [Build a todo app](../../tutorials/intermediate/build_todo.md).
+- [Todo App | Class approach](https://py.cafe/panel-org/intermediate-todo-app) from the [Build a todo app](../../tutorials/intermediate/build_todo).
 
 ## Expert Tutorials
 
-- [Mario Chime Button | AnyWidget](https://py.cafe/panel-org/panel-mario-chime-anywidget) from the [Custom AnyWidget Tutorial](../../tutorials/expert/custom_anywidget_components.md).
-- [Mario Chime Button | JSComponent](https://py.cafe/panel-org/panel-mario-chime-jscomponent) from the [Custom JSComponent Tutorial](../../tutorials/expert/custom_js_components.md).
+- [Mario Chime Button | AnyWidget](https://py.cafe/panel-org/panel-mario-chime-anywidget) from the [Custom AnyWidget Tutorial](../../tutorials/expert/custom_anywidget_components).
+- [Mario Chime Button | JSComponent](https://py.cafe/panel-org/panel-mario-chime-jscomponent) from the [Custom JSComponent Tutorial](../../tutorials/expert/custom_js_components).
 
 ### App Gallery
 
-- [Altair Brushing](https://py.cafe/panel-org/altair-brushing) from the [Altair Brushing Tutorial](../../gallery/altair_brushing.md).
-- [hvPlot Explorer](https://py.cafe/panel-org/hvplot-explorer) from the [hvPlot Explorer Tutorial](../../gallery/hvplot_explorer.md)
-- [NYC Deck.GL](https://py.cafe/panel-org/nyc-deckgl) from the [NYC Deck.Gl Tutorial](../../gallery/nyc_deckgl.md).
-- [Penguin Crossfilter](https://py.cafe/panel-org/penguin-crossfilter) from the [Penguin Crossfilter Tutorial](../../gallery/penguin_crossfilter.md)
-- [Portfolio Analyzer](https://py.cafe/panel-org/portfolio-analyzer) from the [Portfolio Analyzer Tutorial](../../gallery/portfolio_analyzer.md).
-- [VideoStream Interface](https://py.cafe/panel-org/videostream) from the [VideoStream Interface Tutorial](../../gallery/streaming_videostream.md).
+- [Altair Brushing](https://py.cafe/panel-org/altair-brushing) from the [Altair Brushing Tutorial](../../gallery/altair_brushing).
+- [hvPlot Explorer](https://py.cafe/panel-org/hvplot-explorer) from the [hvPlot Explorer Tutorial](../../gallery/hvplot_explorer)
+- [NYC Deck.GL](https://py.cafe/panel-org/nyc-deckgl) from the [NYC Deck.Gl Tutorial](../../gallery/nyc_deckgl).
+- [Penguin Crossfilter](https://py.cafe/panel-org/penguin-crossfilter) from the [Penguin Crossfilter Tutorial](../../gallery/penguin_crossfilter)
+- [Portfolio Analyzer](https://py.cafe/panel-org/portfolio-analyzer) from the [Portfolio Analyzer Tutorial](../../gallery/portfolio_analyzer).
+- [VideoStream Interface](https://py.cafe/panel-org/videostream) from the [VideoStream Interface Tutorial](../../gallery/streaming_videostream).

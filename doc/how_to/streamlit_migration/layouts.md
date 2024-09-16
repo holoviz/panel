@@ -66,4 +66,4 @@ pn.Column(row1, row2).servable()
 
 ![Panel Layout Example](../../_static/images/panel_layout_example.png)
 
-Panels `Column` and `Row` are *list like* objects. So you can use familiar methods like `.append`, `.pop` and `[]` indexing when you work with them. For the details check out the [`Column` Guide](../../reference/layouts/Column.md) and the [`Row` Guide](../../reference/layouts/Row.md)
+Panels `Column` and `Row` are *list like* objects. So you can use familiar methods like `.append`, `.pop` and `[]` indexing when you work with them. For the details check out the [`Column` Guide](../../reference/layouts/Column) and the [`Row` Guide](../../reference/layouts/Row)

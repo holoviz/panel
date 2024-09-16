@@ -50,7 +50,7 @@ Because we've imported `hvplot.pandas`, we can utilize `.hvplot()` to render the
 df_rx.hvplot(kind="scatter", x="bill_length_mm", y="bill_depth_mm", by="sex")
 ```
 
-We can leverage [`panel.ReactiveExpr`](../../reference/panes/ReactiveExpr.md) to assist in rendering `df_rx`. This allows us to include all widgets related to `df_rx`, while also offering the flexibility to customize the appearance of the widgets. For instance, we can specify `pn.Column` as the `widget_layout` parameter and `top` as the `widget_location` parameter, as shown below:
+We can leverage [`panel.ReactiveExpr`](../../reference/panes/ReactiveExpr) to assist in rendering `df_rx`. This allows us to include all widgets related to `df_rx`, while also offering the flexibility to customize the appearance of the widgets. For instance, we can specify `pn.Column` as the `widget_layout` parameter and `top` as the `widget_location` parameter, as shown below:
 
 ```{pyodide}
 pn.ReactiveExpr(
@@ -81,10 +81,10 @@ pn.Column(
 )
 ```
 
-Finally, if performance is critical, you might want to consider using [Reactive expressions as references](../../reference/panes/ReactiveExpr.md#reactive-expressions-as-references). For instance, you can try replacing `df_rx` with `df_rx.rx()` in this tutorial.
+Finally, if performance is critical, you might want to consider using [Reactive expressions as references](../../reference/panes/ReactiveExpr#reactive-expressions-as-references). For instance, you can try replacing `df_rx` with `df_rx.rx()` in this tutorial.
 
 ## Related Resources
 
 * [Reactive Functions and Expressions of Param](https://param.holoviz.org/user_guide/Reactive_Expressions.html)
-* [Reactive Expressions of Panel](../../tutorials/basic/pn_rx.md)
-* [panel.ReactiveExpr documentation](../../reference/panes/ReactiveExpr.md#reactiveexpr)
+* [Reactive Expressions of Panel](../../tutorials/basic/pn_rx)
+* [panel.ReactiveExpr documentation](../../reference/panes/ReactiveExpr#reactiveexpr)

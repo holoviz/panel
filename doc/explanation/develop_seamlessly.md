@@ -26,7 +26,7 @@ import panel as pn
 pn.extension()
 ```
 
-The extension ensures that the [`pyviz_comms`](https://github.com/holoviz/pyviz_comms) and all required Javascript and CSS resources are added to your notebook environment. If you are going to be using any custom extensions, such as [Vega](../reference/panes/Vega.md) or [Tabulator](../reference/widgets/Tabulator.md) you must ensure that you initialize these as well.
+The extension ensures that the [`pyviz_comms`](https://github.com/holoviz/pyviz_comms) and all required Javascript and CSS resources are added to your notebook environment. If you are going to be using any custom extensions, such as [Vega](../reference/panes/Vega) or [Tabulator](../reference/widgets/Tabulator) you must ensure that you initialize these as well.
 
 ```{pyodide}
 pn.extension('vega', 'tabulator')
@@ -157,12 +157,12 @@ The `--show` flag will open a browser tab with the live app and the `--dev` flag
 
 ### Tutorials
 
-- [Develop in an Editor (Basic)](../tutorials/basic/develop_editor.md)
-- [Develop in an Editor (Intermediate)](../tutorials/intermediate/develop_editor.md)¨
-- [Develop in a Notebook (Basic)](../tutorials/basic/develop_notebook.md)
+- [Develop in an Editor (Basic)](../tutorials/basic/develop_editor)
+- [Develop in an Editor (Intermediate)](../tutorials/intermediate/develop_editor)
+- [Develop in a Notebook (Basic)](../tutorials/basic/develop_notebook)
 
 ### How-to
 
-- [Configure PyCharm](../how_to/editor/pycharm_configure.md)
-- [Configure VS Code](../how_to/editor/vscode_configure.md)
-- [Write apps in Markdown](../how_to/editor/markdown.md)
+- [Configure PyCharm](../how_to/editor/pycharm_configure)
+- [Configure VS Code](../how_to/editor/vscode_configure)
+- [Write apps in Markdown](../how_to/editor/markdown)

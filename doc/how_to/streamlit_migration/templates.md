@@ -12,13 +12,13 @@ When migrating you will have to decide which template to use
 
 - Blank (default)
 - A built-in template like *vanilla*, *bootstrap*, *material* or *fast*. See the [Templates Section](../../reference/index.rst#templates) of the [Components Guide](../../reference/index.rst).
-- A [custom template](../../how_to/templates/template_custom.md) declared using Jinja2 syntax.
+- A [custom template](../../how_to/templates/template_custom) declared using Jinja2 syntax.
 
 ## Example
 
 ### FastListTemplate Example
 
-Here is an example with the [`FastListTemplate`](../../reference/templates/FastListTemplate.md).
+Here is an example with the [`FastListTemplate`](../../reference/templates/FastListTemplate).
 
 ```python
 from asyncio import sleep

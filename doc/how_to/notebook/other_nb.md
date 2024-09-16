@@ -27,20 +27,20 @@ Please note that in Colab rendering for each notebook cell is isolated, which me
 :::
 
 :::{warning}
-The [IpyWidgets](../../reference/panes/IPyWidget.md) pane does not work in Google Colab. Thus you cannot use IpyWidgets with Panel in Colab.
+The [IpyWidgets](../../reference/panes/IPyWidget) pane does not work in Google Colab. Thus you cannot use IpyWidgets with Panel in Colab.
 :::
 
 ## PyCharm Notebook
 
 PyCharm Professional offers support for [notebooks](https://www.jetbrains.com/help/pycharm/ipython-notebook-support.html) and [ipywidgets](https://www.jetbrains.com/help/pycharm/interactive-js-widgets.html). Thanks to the [`jupyter_bokeh`](https://github.com/bokeh/jupyter_bokeh) integration, Panel objects can be utilized as ipywidgets, allowing for interactive use of Panel components within PyCharm Professional. To ensure full functionality, install `jupyter_bokeh` using `pip install jupyter jupyter_bokeh` or `conda install jupyter jupyter_bokeh`, followed by activating the extension with `pn.extension()`.
 
-For additional guidance, refer to the [How-To Configure PyCharm Guide](../editor/pycharm_configure.md).
+For additional guidance, refer to the [How-To Configure PyCharm Guide](../editor/pycharm_configure).
 
 ## VSCode notebook
 
 Visual Studio Code (VS Code) supports notebooks and ipywidgets, and Panel objects can be used as ipywidgets thanks to [`jupyter_bokeh`](https://github.com/bokeh/jupyter_bokeh), which means that you can use Panel components interactively in VS Code. Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with `pn.extension()`.
 
-See also the [How-To Configure VS Code Guide](../editor/vscode_configure.md).
+See also the [How-To Configure VS Code Guide](../editor/vscode_configure).
 
 ## nteract and other ipywidgets notebooks
 

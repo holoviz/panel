@@ -22,4 +22,4 @@ These videos from a dedicated Streamlit fan walk you through some of Streamlit's
 
 ## Code Examples
 
-If you want to compare examples with code, check out the [How to Migrate From Streamlit Guide](../../how_to/streamlit_migration/index.md).
+If you want to compare examples with code, check out the [How to Migrate From Streamlit Guide](../../how_to/streamlit_migration/index).

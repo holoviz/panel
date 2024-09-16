@@ -2,7 +2,7 @@
 
 The callback API in Panel is the lowest-level approach, affording the greatest amount of flexibility but also quickly growing in complexity because each new interactive behavior requires additional callbacks that can interact in complex ways. Nonetheless, callbacks are important to know about, and can often be used to complement the other approaches. For instance, one specific callback could be used in addition to the more reactive approaches the other APIs provide.
 
-For more details on defining callbacks see the [linking how-to guides](../../how_to/links/index.md).
+For more details on defining callbacks see the [linking how-to guides](../../how_to/links/index).
 
 ## Pros:
 

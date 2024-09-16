@@ -276,4 +276,4 @@ As you can see, *Parameters* offer a very generic mechanism for your Python code
 ## Related Resources
 
 - See [Param's documentation](https://param.holoviz.org/)
-- See [How-to > Declare UIs with Declarative API](../../how_to/param/index.md).
+- See [How-to > Declare UIs with Declarative API](../../how_to/param/index).

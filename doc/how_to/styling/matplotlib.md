@@ -1,6 +1,6 @@
 # Style Matplotlib Plots
 
-This guide addresses how to style Matplotlib plots displayed using the [Matplotlib pane](../..//reference/panes/Matplotlib.md).
+This guide addresses how to style Matplotlib plots displayed using the [Matplotlib pane](../../reference/panes/Matplotlib).
 
 There are nearly 30 builtin styles to Matplotlib that can be activated with the `plt.style.use` function. The style names are listed in the `plt.style.available` array.
 
