@@ -20,9 +20,9 @@ The best practices described on this page serve as a checklist of items to keep 
 - Wrong: Not intended behavior, won't really work.
 :::
 
-### Update params effectively
+## Update params effectively
 
-#### Good
+### Good
 
 Use `obj.param.update`:
 
@@ -44,7 +44,7 @@ progress = pn.indicators.Progress(value=100, active=False, bar_color="dark")
 pn.Row(button, progress)
 ```
 
-#### Okay
+### Okay
 
 The following shows setting parameters individually, which could be inefficient.
 
@@ -65,9 +65,9 @@ progress = pn.indicators.Progress(value=100, active=False, bar_color="dark")
 pn.Row(button, progress)
 ```
 
-### Throttle slider callbacks
+## Throttle slider callbacks
 
-#### Good
+### Good
 
 To prevent sliders from triggering excessive callbacks, set `throttled=True` so that it only triggers once upon mouse-up.
 
@@ -83,7 +83,7 @@ output = pn.bind(callback, slider)
 pn.Row(slider, output)
 ```
 
-#### Good
+### Good
 
 Alternatively, limit the scope by binding against `value_throttled` instead of `value`.
 
@@ -97,7 +97,7 @@ output = pn.bind(callback, slider.param.value_throttled)
 pn.Row(slider, output)
 ```
 
-#### Bad
+### Bad
 
 If the operation is expensive, binding against `value` can be really slow.
 
@@ -111,9 +111,9 @@ output = pn.bind(callback, slider.param.value)
 pn.Row(slider, output)
 ```
 
-### Defer expensive operations
+## Defer expensive operations
 
-#### Good
+### Good
 
 Its easy defer the execution of all bound and displayed functions with `pn.extension(defer_load=True)` (note this applies to served applications, not to interactive notebook environments):
 
@@ -130,7 +130,7 @@ layout = pn.Column("Check this out!", onload)
 # layout.show()
 ```
 
-#### Okay
+### Okay
 
 If you need finer control, start by instantiating the initial layout with placeholder `pn.Columns`, then populate it later in `onload`.
 
@@ -146,9 +146,9 @@ display(layout)
 pn.state.onload(onload)
 ```
 
-### Show indicator while computing
+## Show indicator while computing
 
-#### Good
+### Good
 
 Set `loading=True` to show a spinner while processing to let the user know it's working.
 
@@ -164,7 +164,7 @@ layout = pn.Column("Click below to compute", button)
 layout
 ```
 
-#### Okay
+### Okay
 
 You can also wrap a `try/finally` to do the same thing.
 
@@ -183,9 +183,9 @@ layout = pn.Column("Click below to compute", button)
 layout
 ```
 
-### Manage exceptions gracefully
+## Manage exceptions gracefully
 
-#### Good
+### Good
 
 Use:
 - `try` block to update values on success
@@ -218,9 +218,9 @@ layout = pn.Column(pn.Row(busy, text), slider, output)
 layout
 ```
 
-### Cache values for speed
+## Cache values for speed
 
-#### Good
+### Good
 
 Wrap the decorator `pn.cache` for automatic handling.
 
@@ -235,7 +235,7 @@ output = pn.bind(callback, slider.param.value_throttled)
 pn.Row(slider, output)
 ```
 
-#### Okay
+### Okay
 
 Or, manually handle the cache with `pn.state.cache`.
 
@@ -253,9 +253,9 @@ output = pn.bind(callback, slider.param.value_throttled)
 pn.Row(slider, output)
 ```
 
-### Preserve axes ranges on update
+## Preserve axes ranges on update
 
-#### Good
+### Good
 
 To prevent the plot from resetting to its original axes ranges when zoomed in, simply wrap `hv.DynamicMap`.
 
@@ -275,7 +275,7 @@ plot = hv.DynamicMap(pn.bind(add_point, button.param.clicks))
 pn.Column(button, plot)
 ```
 
-#### Okay
+### Okay
 
 If you want the object to be completely refreshed, simply drop `hv.DynamicMap`. If it's a long computation, it's good to set `loading_indicator=True`.
 
@@ -296,9 +296,9 @@ plot = pn.bind(add_point, button.param.clicks)
 pn.Column(button, plot)
 ```
 
-### FlexBox instead of Column/Row
+## FlexBox instead of Column/Row
 
-#### Good
+### Good
 
 `pn.FlexBox` automatically moves objects to another row/column, depending on the space available.
 
@@ -311,7 +311,7 @@ pn.FlexBox(
 )
 ```
 
-#### Okay
+### Okay
 
 `pn.Column`/`pn.Row` will overflow if the content is too long/wide.
 
@@ -324,9 +324,9 @@ pn.Row(
 )
 ```
 
-### Reuse objects for efficiency
+## Reuse objects for efficiency
 
-#### Good
+### Good
 
 Imagine Panel components as placeholders and use them as such rather than re-creating them on update.
 
@@ -342,7 +342,7 @@ button.param.trigger("clicks")  # initialize
 pn.Column(button, df_pane)
 ```
 
-#### Okay
+### Okay
 
 This instantiates the `pn.pane.DataFrame` on every click.
 
