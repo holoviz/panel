@@ -13,7 +13,7 @@ To migrate your layouts to Panel
 - replace your Streamlit `st.some_layout` *snake cased* function with the corresponding Panel
 `pn.SomeLayout` *CamelCased* class.
 
-You can identify the relevant layout to migrate to in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
+You can identify the relevant layout to migrate to in the [Layouts Section](../../reference/index.rst#layouts) of the [Component Gallery](../../reference/index.rst).
 
 ## Example
 

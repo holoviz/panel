@@ -41,7 +41,7 @@ On the other hand, if you're looking for a **more advanced** approach that gives
 
 ## The Name
 
-`ReactiveHTML` is named for its ability to enable reactive programming in HTML. Unlike the static HTML content that the [`HTML`](../../../examples/reference/panes/HTML.ipynb) pane displays, `ReactiveHTML` components can update their view dynamically in response to changes in parameter values and other events.
+`ReactiveHTML` is named for its ability to enable reactive programming in HTML. Unlike the static HTML content that the [`HTML`](../../reference/panes/HTML.md) pane displays, `ReactiveHTML` components can update their view dynamically in response to changes in parameter values and other events.
 
 We could also have called the `ReactiveHTML` class for example `BaseComponent`, `HTMLComponent`, `SimpleComponent` or `AnyComponent` to give you the right associations.
 
@@ -49,11 +49,11 @@ It's worth noting that the name `ReactiveHTML` is not related to the JavaScript 
 
 ## How-to Guides
 
-To see `ReactiveHTML` in action and discover how to create your custom components, check out our detailed guide: [How-to > Create Custom Components with ReactiveHTML](../../how_to/custom_components/reactive_html/index.md). It's packed with practical examples to help you get started quickly.
+To see `ReactiveHTML` in action and discover how to create your custom components, check out our detailed guide: [How-to > Create Custom Components with ReactiveHTML](../../how_to/custom_components/index.md#reactivehtml-components). It's packed with practical examples to help you get started quickly.
 
 ## API Guide
 
-You can find it here [API > ReactiveHTML](../../api/panel.reactive.html#panel.reactive.ReactiveHTML).
+You can find it here [API > ReactiveHTML](../../api/panel.reactive.rst#panel.reactive.ReactiveHTML).
 
 ## Class Attributes
 

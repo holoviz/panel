@@ -78,9 +78,9 @@ Explore the [`panel-org`](https://py.cafe/panel-org) gallery examples below:
 
 ### App Gallery
 
-- [Altair Brushing](https://py.cafe/panel-org/altair-brushing) from the [Altair Brushing Tutorial](../../gallery/altair_brushing.ipynb).
-- [hvPlot Explorer](https://py.cafe/panel-org/hvplot-explorer) from the [hvPlot Explorer Tutorial](../../gallery/hvplot_explorer.ipynb)
-- [NYC Deck.GL](https://py.cafe/panel-org/nyc-deckgl) from the [NYC Deck.Gl Tutorial](../../gallery/nyc_deckgl.ipynb).
-- [Penguin Crossfilter](https://py.cafe/panel-org/penguin-crossfilter) from the [Penguin Crossfilter Tutorial](../../gallery/penguin_crossfilter.ipynb)
-- [Portfolio Analyzer](https://py.cafe/panel-org/portfolio-analyzer) from the [Portfolio Analyzer Tutorial](../../gallery/portfolio_analyzer.ipynb).
-- [VideoStream Interface](https://py.cafe/panel-org/videostream) from the [VideoStream Interface Tutorial](../../gallery/streaming_videostream.ipynb).
+- [Altair Brushing](https://py.cafe/panel-org/altair-brushing) from the [Altair Brushing Tutorial](../../gallery/altair_brushing.md).
+- [hvPlot Explorer](https://py.cafe/panel-org/hvplot-explorer) from the [hvPlot Explorer Tutorial](../../gallery/hvplot_explorer.md)
+- [NYC Deck.GL](https://py.cafe/panel-org/nyc-deckgl) from the [NYC Deck.Gl Tutorial](../../gallery/nyc_deckgl.md).
+- [Penguin Crossfilter](https://py.cafe/panel-org/penguin-crossfilter) from the [Penguin Crossfilter Tutorial](../../gallery/penguin_crossfilter.md)
+- [Portfolio Analyzer](https://py.cafe/panel-org/portfolio-analyzer) from the [Portfolio Analyzer Tutorial](../../gallery/portfolio_analyzer.md).
+- [VideoStream Interface](https://py.cafe/panel-org/videostream) from the [VideoStream Interface Tutorial](../../gallery/streaming_videostream.md).

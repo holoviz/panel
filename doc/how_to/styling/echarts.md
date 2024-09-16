@@ -1,6 +1,6 @@
 # Style Echarts Plots
 
-This guide addresses how to style ECharts plots displayed using the [ECharts pane](../../../examples/reference/panes/ECharts.ipynb).
+This guide addresses how to style ECharts plots displayed using the [ECharts pane](../../reference/panes/ECharts.md).
 
 You can select the theme of ECharts plots using the `ECharts.theme` parameter.
 

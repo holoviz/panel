@@ -171,4 +171,4 @@ pn.FlexBox(
 
 ## References
 
-- [PyComponent](../../reference/custom_components/PyComponent.html)
+- [PyComponent](../../../reference/custom_components/PyComponent.md)

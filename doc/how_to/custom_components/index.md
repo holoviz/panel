@@ -17,7 +17,7 @@ How to build custom components that are combinations of existing components.
 :::
 
 :::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Combine Existing Components
-:link: python/create_custom widget
+:link: python/create_custom_widget
 :link-type: doc
 
 How to build a custom widget by subclassing `PyComponent` and `WidgetBase`.

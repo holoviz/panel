@@ -826,7 +826,7 @@ This micro-release focuses on a small number of enhancements and rendering relat
 - Treat `Tabulator` `row_contents` as real children ensuring layout behaves correctly ([#5292](https://github.com/holoviz/panel/pull/5292))
 - Fix `Video` `min_height` and `max_height` ([#5296](https://github.com/holoviz/panel/pull/5296))
 - Make `TextEditor` invisible until CSS is loaded ([#5297](https://github.com/holoviz/panel/pull/5297))
-- Fix `disabled` parameter on editable sliders ([#5319]((https://github.com/holoviz/panel/pull/5319))
+- Fix `disabled` parameter on editable sliders ([#5319](https://github.com/holoviz/panel/pull/5319))
 
 ### Compatibility
 

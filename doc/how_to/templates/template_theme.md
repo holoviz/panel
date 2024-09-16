@@ -76,4 +76,4 @@ panel serve app.py --show --autoreload
 
 - See [How-to > Apply Templates > Build a Custom Template](./template_custom.md) to create a completely custom template.
 - See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
-- Read [Background > Templates](../../explanation/templates/templates_overview.md) for explanation.
+- Read [Background > Templates](../../explanation/styling/templates_overview.md) for explanation.

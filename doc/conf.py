@@ -86,6 +86,7 @@ html_theme_options = {
 
 
 extensions = [
+    'bokeh.sphinxext.bokeh_plot',
     'myst_parser',
     'sphinx_design',
     'sphinx.ext.autodoc',
@@ -95,6 +96,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.linkcode',
+    'sphinx.ext.inheritance_diagram',
     'sphinx_copybutton',
     'sphinxext.rediraffe',
     'nbsite.gallery',
