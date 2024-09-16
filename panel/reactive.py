@@ -63,7 +63,7 @@ if TYPE_CHECKING:
     from bokeh.models.sources import DataDict, Patches
     from pyviz_comms import Comm
 
-    from .layout.base import Panel
+    from .layout.base import Panel as BasePanel
     from .links import Callback, JSLinkTarget, Link
 
 log = logging.getLogger('panel.reactive')
@@ -781,7 +781,7 @@ class Reactive(Syncable, Viewable):
         self._links.append(link)
         return cb
 
-    def controls(self, parameters: list[str] = [], jslink: bool = True, **kwargs) -> 'Panel':
+    def controls(self, parameters: list[str] = [], jslink: bool = True, **kwargs) -> BasePanel:
         """
         Creates a set of widgets which allow manipulating the parameters
         on this instance. By default all parameters which support
