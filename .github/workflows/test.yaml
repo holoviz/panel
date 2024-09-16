@@ -29,7 +29,7 @@ concurrency:
 
 defaults:
   run:
-    shell: bash -l {0}
+    shell: bash -el {0}
 
 env:
   DISPLAY: ":99.0"
@@ -199,13 +199,17 @@ jobs:
         id: install
       - name: Build pyodide wheels
         run: pixi run -e test-ui "python ./scripts/build_pyodide_wheels.py"
+      - name: Set environment variables for macOS
+        if: contains(matrix.os, 'macos')
+        run: |
+          pixi shell-hook -e test-ui >> $HOME/.bashrc
       - name: Launch JupyterLab
-        shell: pixi run -e test-ui bash -l {0}
+        shell: pixi run -e test-ui bash -el {0}
         run: |
           jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
           (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
       - name: Build JupyterLite
-        shell: pixi run -e test-ui bash -l {0}
+        shell: pixi run -e test-ui bash -el {0}
         run: pixi run -e lite lite-build
       - name: Wait for JupyterLab
         uses: ifaxity/wait-on-action@v1.2.1
@@ -227,7 +231,7 @@ jobs:
           if-no-files-found: ignore
       - name: Stop JupyterLab
         if: always()
-        shell: pixi run -e test-ui bash -l {0}
+        shell: pixi run -e test-ui bash -el {0}
         run: |
           jupyter lab stop 8887 || true
       - uses: codecov/codecov-action@v4

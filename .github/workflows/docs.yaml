@@ -23,7 +23,7 @@ on:
 
 defaults:
   run:
-    shell: bash -l {0}
+    shell: bash -el {0}
 
 env:
   DISPLAY: ":99.0"
