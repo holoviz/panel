@@ -73,7 +73,7 @@ export function run_scripts(node: Element): void {
 }
 
 function throttle(func: Function, limit: number): any {
-  let lastFunc: number
+  let lastFunc: ReturnType<typeof setTimeout> | undefined
   let lastRan: number
 
   return function(...args: any) {
@@ -85,7 +85,6 @@ function throttle(func: Function, limit: number): any {
       lastRan = Date.now()
     } else {
       clearTimeout(lastFunc)
-
       lastFunc = setTimeout(function() {
         if ((Date.now() - lastRan) >= limit) {
           func.apply(context, args)
