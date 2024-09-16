@@ -2,7 +2,7 @@
 
 Panel supports many ways of indicating activity
 
-- Indicators. See the [Indicators Section](../../reference/indicators/index.rst#indicators) of the [Component Gallery](../../reference/index.rst).
+- Indicators. See the [Indicators Section](../../reference/indicators/index#indicators) of the [Component Gallery](../../reference/index).
 - `disabled`/ `loading` parameters on Panel components
 - `loading_indicator` parameter for `pn.panel` or `pn.config`. If `True` a loading indicator will be shown on your *bound functions* when they are re-run.
 

@@ -13,7 +13,7 @@ To migrate your app's input widgets to Panel:
 - Replace your Streamlit `st.some_widget` function with the corresponding Panel
 `pn.widgets.SomeWidget` class.
 
-You can identify the corresponding widget via the [Widgets Section](../../reference/index.rst#widgets) of the [Component Gallery](../../reference/index.rst).
+You can identify the corresponding widget via the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
 
 ## Example
 

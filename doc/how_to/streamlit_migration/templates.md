@@ -11,7 +11,7 @@ With Panel you have the flexibility to use the *default, blank template*, one of
 When migrating you will have to decide which template to use
 
 - Blank (default)
-- A built-in template like *vanilla*, *bootstrap*, *material* or *fast*. See the [Templates Section](../../reference/index.rst#templates) of the [Components Guide](../../reference/index.rst).
+- A built-in template like *vanilla*, *bootstrap*, *material* or *fast*. See the [Templates Section](../../reference/index.md#templates) of the [Components Guide](../../reference/index).
 - A [custom template](../../how_to/templates/template_custom) declared using Jinja2 syntax.
 
 ## Example

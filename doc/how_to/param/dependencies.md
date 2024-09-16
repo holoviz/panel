@@ -3,7 +3,7 @@
 This guide addresses how to leverage `@param.depends` to express dependencies and trigger events based on UI interactions.
 
 ```{admonition} Prerequisites
-1. The [How to > Generate Widgets from Parameters](./uis) guide demonstrates the automatic generation of widgets without dependencies.
+1. The [How to > Generate Widgets from Parameters](uis) guide demonstrates the automatic generation of widgets without dependencies.
 ```
 
 ---
@@ -38,7 +38,7 @@ sine = Sine(name='ASCII Sine Wave')
 pn.Row(sine.param, sine.view)
 ```
 
-The parameterized and annotated ``view`` method could return any one of the types handled by the [Pane objects](../../explanation/components/components_overview.md#panes) Panel provides, making it easy to link parameters and their associated widgets to a plot or other output. Parameterized classes can therefore be a very useful pattern for encapsulating a part of a computational workflow with an associated visualization, declaratively expressing the dependencies between the parameters and the computation.
+The parameterized and annotated ``view`` method could return any one of the types handled by the [Pane objects](../../explanation/components/components_overview#panes) Panel provides, making it easy to link parameters and their associated widgets to a plot or other output. Parameterized classes can therefore be a very useful pattern for encapsulating a part of a computational workflow with an associated visualization, declaratively expressing the dependencies between the parameters and the computation.
 
 By default, a Param pane will show widgets for all parameters with a `precedence` value above the value `pn.Param.display_threshold`, so you can use `precedence` to automatically hide parameters that are not meant to have widgets.  You can also explicitly choose which parameters should have widgets in a given pane, by passing a `parameters` argument.  For example, this code gives a `phase` widget, while maintaining `sine.frequency` at the initial value of `1`:
 
