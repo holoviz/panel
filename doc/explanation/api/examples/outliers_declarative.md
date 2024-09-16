@@ -82,3 +82,40 @@ pn.Column(obj.param, obj.view)
 ```
 
 To support various domains, you can create hierarchies of classes encapsulating parameters and functionality across different object families. Parameters and code can inherit across classes as needed, without depending on any specific GUI library. This approach facilitates the maintenance of large codebases, all displayable and editable with Panel, adaptable over time. For a more complex illustration, refer to the [Attractors Panel app](https://examples.holoviz.org/gallery/attractors/attractors_panel.html) ([source](https://github.com/holoviz-topics/examples/tree/main/attractors)), and explore the Panel codebase itself for extensive usage of Param throughout the codebase.
+
+## Serving the Notebook
+
+Lets finalize our app by organizing our components in a nicely styled template (`MaterialTemplate`) and mark it `.servable()` to add it to our served app:
+
+```python
+pn.template.MaterialTemplate(
+    site="Panel",
+    title="Getting Started App",
+    sidebar=[obj.param],
+    main=[obj.view],
+).servable(); # The ; is needed in the notebook to not display the template. Its not needed in a script
+```
+
+Save the notebook with the name `app.ipynb`.
+
+Finally, we'll serve the app by running the command below in a terminal:
+
+```bash
+panel serve app.ipynb --dev
+```
+
+Now, open the app in your browser at [http://localhost:5006/app](http://localhost:5006/app).
+
+It should look like this:
+
+![Getting Started App](../../../_static/images/getting_started_app.png)
+
+:::{tip}
+
+If you prefer developing in a Python Script using an editor, you can copy the code into a file `app.py` and serve it.
+
+```bash
+panel serve app.py --autoreload
+```
+
+:::
