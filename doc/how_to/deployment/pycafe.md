@@ -48,7 +48,7 @@ pn.template.FastListTemplate(
 
 After updating the file, save it, and the app will reload instantly.
 
-<iframe src="https://py.cafe/app/panel-org/pycafe-reference" title="PyCafe Reference Example" frameborder="0" style="width: 100%; height: 500px;"></iframe>
+<iframe src="https://py.cafe/embed/panel-org/pycafe-reference?theme=light&linkToApp=false" title="PyCafe Reference Example" frameborder="0" style="width: 100%; height: 500px;"></iframe>
 
 Finally you can click **PUSH** to persist your app and click **SHARE** to share it with the world.
 
