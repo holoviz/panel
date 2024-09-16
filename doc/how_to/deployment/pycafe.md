@@ -57,7 +57,7 @@ Finally you can click **PUSH** to persist your app and click **SHARE** to share 
 Explore the [`panel-org`](https://py.cafe/panel-org) gallery examples below:
 
 - [Basic Github App](https://py.cafe/panel-org/pycafe-reference) from the [GitHub repository](https://github.com/holoviz/panel/#interactive-data-apps).
-- [Greeting App](https://py.cafe/maartenbreddels/panel-interactive-greeting-app ).
+- [Build an App](https://py.cafe/panel-org/build-app) from the [Build an App | Getting Started guide](https://panel.holoviz.org/getting_started/build_app.html).
 - [XGBoost Training App](https://py.cafe/panel-org/xgboost-training) from the [Convert Apps to WASM Guide](https://panel.holoviz.org/how_to/wasm/convert.html).
 
 ### Basic Tutorials
@@ -75,6 +75,11 @@ Explore the [`panel-org`](https://py.cafe/panel-org) gallery examples below:
 ### Intermediate Tutorials
 
 - [Todo App | Class approach](https://py.cafe/panel-org/intermediate-todo-app) from the [Build a todo app](../../tutorials/intermediate/build_todo.md).
+
+## Expert Tutorials
+
+- [Mario Chime Button | AnyWidget](https://py.cafe/panel-org/panel-mario-chime-anywidget) from the [Custom AnyWidget Tutorial](../../tutorials/expert/custom_anywidget_components.md).
+- [Mario Chime Button | JSComponent](https://py.cafe/panel-org/panel-mario-chime-jscomponent) from the [Custom JSComponent Tutorial](../../tutorials/expert/custom_js_components.md).
 
 ### App Gallery
 
