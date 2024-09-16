@@ -121,27 +121,6 @@ How to access and manipulate state related to the user session, HTTP request and
 
 ::::
 
-## Apply best practices
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1 sd-animate-grow50` For dev experience
-:link: best_practices/index/dev_experience
-:link-type: doc
-
-A checklist of best practices for developing with Panel.
-:::
-
-
-:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1 sd-animate-grow50` For user experience
-:link: best_practices/index/user_experience
-:link-type: doc
-
-A checklist of best practices for designing Panel applications.
-:::
-
-::::
 ## Extending Panel
 
 ::::{grid} 1 2 2 3
@@ -208,6 +187,13 @@ How to cache data across sessions and memoize the output of functions.
 :link-type: doc
 
 How to improve the scalability of your Panel application.
+:::
+
+:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1 sd-animate-grow50` Best Practices
+:link: best_practices/index
+:link-type: doc
+
+A checklist of best practices for improving the development and user experience with Panel.
 :::
 
 :::{grid-item-card} {octicon}`shield-check;2.5em;sd-mr-1 sd-animate-grow50` Add authentication
@@ -303,7 +289,6 @@ prepare_to_develop
 build_apps
 use_specialized_uis
 manage_session_tasks
-best_practices
 extending_panel
 test_and_debug
 prepare_to_share

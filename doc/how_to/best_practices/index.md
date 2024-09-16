@@ -5,7 +5,7 @@ This section is to provide a checklist of best practices for developing with Pan
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`gear;2.5em;sd-mr-1 sd-animate-grow50` Dev Experience
+:::{grid-item-card} {octicon}`gear;2.5em;sd-mr-1 sd-animate-grow50` Developer Experience
 :link: dev_experience
 :link-type: doc
 
