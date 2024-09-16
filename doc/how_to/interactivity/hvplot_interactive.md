@@ -87,4 +87,4 @@ Finally, if performance is critical, you might want to consider using [Reactive 
 
 * [Reactive Functions and Expressions of Param](https://param.holoviz.org/user_guide/Reactive_Expressions.html)
 * [Reactive Expressions of Panel](../../tutorials/basic/pn_rx)
-* [panel.ReactiveExpr documentation](../../reference/panes/ReactiveExpr#reactiveexpr)
+* [panel.ReactiveExpr documentation](../../reference/panes/ReactiveExpr)

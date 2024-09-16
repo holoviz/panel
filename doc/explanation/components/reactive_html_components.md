@@ -49,7 +49,7 @@ It's worth noting that the name `ReactiveHTML` is not related to the JavaScript 
 
 ## How-to Guides
 
-To see `ReactiveHTML` in action and discover how to create your custom components, check out our detailed guide: [How-to > Create Custom Components with ReactiveHTML](../../how_to/custom_components/index#reactivehtml-components). It's packed with practical examples to help you get started quickly.
+To see `ReactiveHTML` in action and discover how to create your custom components, check out our detailed guide: [How-to > Create Custom Components with ReactiveHTML](../../how_to/custom_components/index.md#reactivehtml-components). It's packed with practical examples to help you get started quickly.
 
 ## API Guide
 

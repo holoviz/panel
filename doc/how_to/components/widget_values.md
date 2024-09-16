@@ -33,4 +33,4 @@ widget.value = '3'
 
 ## Related Resources
 
-- Learn more about Panes in [Explanation > Components](../../explanation/components/components_overview#panes).
+- Learn more about Panes in [Explanation > Components](../../explanation/components/components_overview.md#panes).
