@@ -181,7 +181,7 @@ OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES"
 
 [feature.doc.dependencies]
 lxml = "*"
-nbsite = ">=0.8.6rc5"
+nbsite = ">=0.8.6rc9"
 selenium = "*"
 
 [feature.doc.tasks]

@@ -160,4 +160,4 @@ This command will automatically restore the persisted layout data from the noteb
 
 ### Component Gallery
 
-- [EditableTemplate](../../reference/templates/EditableTemplate.md)
+- [EditableTemplate](../../reference/templates/EditableTemplate)

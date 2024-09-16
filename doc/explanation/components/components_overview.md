@@ -17,7 +17,7 @@ The main objects that Panel provides, and that we are going to call *components*
 - *Templates*: templates are components that render multiple Panel objects in an HTML document. The basic template, which you get when you serve an app without setting any template, is basically a blank canvas. Instead when you use one of the built-in templates you can easily improve the design and branding of your app, which will get for free a header, a sidebar, etc.
 - *Notifications*: notifications are components that display so called "toasts", designed to mimic the push notifications that have been popularized by mobile and desktop operating systems.
 
-All the Panel components can be visualized on the [Component Gallery](../../reference/index.rst).
+All the Panel components can be visualized on the [Component Gallery](../../reference/index).
 
 :::{tip}
 Components usually have in their docstring a link to their documentation page, use `<component>?` in a notebook or your IDE inspection capabilities to access the link.

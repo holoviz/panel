@@ -63,7 +63,7 @@ if TYPE_CHECKING:
     from bokeh.models.sources import DataDict, Patches
     from pyviz_comms import Comm
 
-    from .layout.base import Panel
+    from .layout.base import Panel as BasePanel
     from .links import Callback, JSLinkTarget, Link
 
 log = logging.getLogger('panel.reactive')
@@ -727,7 +727,7 @@ class Reactive(Syncable, Viewable):
           Maps from a parameter in the source object to a callback.
         bidirectional: bool
           Whether to link source and target bi-directionally
-        **links: dict
+        links: dict
           Maps between parameters on this object to the parameters
           on the supplied object.
         """
@@ -781,7 +781,7 @@ class Reactive(Syncable, Viewable):
         self._links.append(link)
         return cb
 
-    def controls(self, parameters: list[str] = [], jslink: bool = True, **kwargs) -> 'Panel':
+    def controls(self, parameters: list[str] = [], jslink: bool = True, **kwargs) -> BasePanel:
         """
         Creates a set of widgets which allow manipulating the parameters
         on this instance. By default all parameters which support
@@ -851,7 +851,7 @@ class Reactive(Syncable, Viewable):
         ----------
         args: dict
           A mapping of objects to make available to the JS callback
-        **callbacks: dict
+        callbacks: dict
           A mapping between properties on the source model and the code
           to execute when that property changes
 
@@ -888,7 +888,7 @@ class Reactive(Syncable, Viewable):
           A mapping of objects to make available to the JS callback
         bidirectional: boolean
           Whether to link source and target bi-directionally
-        **links: dict
+        links: dict
           A mapping between properties on the source model and the
           target model property to link it to.
 

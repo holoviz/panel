@@ -3,7 +3,7 @@
 This guide addresses how to access information about the HTTP request associated with a session.
 
 ```{admonition} Prerequisites
-1. See the [How to > Access and Manipulate the URL](url.md) guide to learn how to work with the URL.
+1. See the [How to > Access and Manipulate the URL](url) guide to learn how to work with the URL.
 ```
 ---
 

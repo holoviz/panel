@@ -3,7 +3,7 @@
 This guide addresses how to extend Param based UIs with custom widgets.
 
 ```{admonition} Prerequisites
-1. The [How to > Generate Widgets from Parameters](./uis.md) guide demonstrates the default case of automatically generating widgets.
+1. The [How to > Generate Widgets from Parameters](./uis) guide demonstrates the default case of automatically generating widgets.
 ```
 
 ---
@@ -82,4 +82,4 @@ pn.Param(CustomExample.param, sort=sort_func, name="Sort by Label Length Example
 
 ## Related Resources
 
-- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs
+- See the [Explanation > APIs](../../explanation/api/index) for context on this and other Panel APIs

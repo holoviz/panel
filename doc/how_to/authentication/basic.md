@@ -38,7 +38,7 @@ If you enter the valid password (i.e. `my_password`) it will look like
 
 If you click the *Log out* button you will be sent back to the log in form.
 
-In this mode the `username` is not authenticated. The `username` is provided as part of the [user info](user_info.md).
+In this mode the `username` is not authenticated. The `username` is provided as part of the [user info](user_info).
 
 ## User credentials
 
@@ -66,7 +66,7 @@ When serving an application dynamically using `pn.serve` you can also provide a 
 ## Custom templates
 
 ```{admonition} Prerequisites
-For a more in-depth understanding of custom template take a look at the [how to > Build a Custom Template](../templates/template_custom.md) guide.
+For a more in-depth understanding of custom template take a look at the [how to > Build a Custom Template](../templates/template_custom) guide.
 ```
 
 If you want to customize the authentication template you can provide a custom template with the `--basic-login-template` CLI argument. The template needs to submit `username` and `password` to the `/login` endpoint of the Panel server, e.g. the form of the default template looks like this. Check out the default template [here](https://github.com/holoviz/panel/blob/main/panel/_templates/basic_login.html) for inspiration.

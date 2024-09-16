@@ -3,7 +3,7 @@
 This guide addresses how to leverage `@param.depends` to express dependencies and trigger events based on UI interactions.
 
 ```{admonition} Prerequisites
-1. The [How to > Generate Widgets from Parameters](./uis.md) guide demonstrates the automatic generation of widgets without dependencies.
+1. The [How to > Generate Widgets from Parameters](uis) guide demonstrates the automatic generation of widgets without dependencies.
 ```
 
 ---
@@ -87,4 +87,4 @@ Whenever the continent changes Param will now eagerly execute the ``_update_coun
 
 ## Related Resources
 
-- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs
+- See the [Explanation > APIs](../../explanation/api/index) for context on this and other Panel APIs

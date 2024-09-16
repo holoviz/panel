@@ -56,4 +56,4 @@ Note that here we explicitly set `t.value` before displaying the panel to trigge
 ---
 
 ## Related Resources
-- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs
+- See the [Explanation > APIs](../../explanation/api/index) for context on this and other Panel APIs
