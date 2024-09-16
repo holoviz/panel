@@ -727,7 +727,7 @@ class Reactive(Syncable, Viewable):
           Maps from a parameter in the source object to a callback.
         bidirectional: bool
           Whether to link source and target bi-directionally
-        **links: dict
+        :param **links:: dict
           Maps between parameters on this object to the parameters
           on the supplied object.
         """
@@ -888,7 +888,7 @@ class Reactive(Syncable, Viewable):
           A mapping of objects to make available to the JS callback
         bidirectional: boolean
           Whether to link source and target bi-directionally
-        **links: dict
+        :param **links:: dict
           A mapping between properties on the source model and the
           target model property to link it to.
 
