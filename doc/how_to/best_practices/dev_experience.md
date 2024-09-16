@@ -65,7 +65,7 @@ class ExampleApp(pn.viewable.Viewer):
             sidebar=[...],
         )
 
-ExampleApp().servable();  # semi-colon to suppress output in notebook
+# ExampleApp().servable()
 ```
 
 ### Okay
@@ -83,7 +83,7 @@ class ExampleApp(param.Parameterized):
             sidebar=[...],
         )
 
-ExampleApp().view().servable();  # semi-colon to suppress output in notebook
+# ExampleApp().view().servable()
 ```
 
 ## Build widgets from parameters
