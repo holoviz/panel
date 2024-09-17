@@ -46,7 +46,7 @@ pn.Row(button, progress)
 
 ### Okay
 
-The following shows setting parameters individually, which could be inefficient.
+The following shows setting parameters individually, which could be inefficient and may temporarily leave the object in an inconsistent state.
 
 ```{pyodide}
 def run(event):
@@ -69,7 +69,7 @@ pn.Row(button, progress)
 
 ### Good
 
-To prevent sliders from triggering excessive callbacks, set `throttled=True` so that it only triggers once upon mouse-up.
+When callbacks are expensive to run, you can prevent sliders from triggering too many callbacks, by setting `throttled=True`. When throttled, callbacks will be triggered only once, upon mouse-up.
 
 ```{pyodide}
 pn.extension(throttled=True)
@@ -85,7 +85,7 @@ pn.Row(slider, output)
 
 ### Good
 
-Alternatively, limit the scope by binding against `value_throttled` instead of `value`.
+Alternatively, you can apply throttling only to the specific widgets with the most expensive callbacks, by binding to `value_throttled` instead of `value`.
 
 ```{pyodide}
 def callback(value):
@@ -99,7 +99,7 @@ pn.Row(slider, output)
 
 ### Bad
 
-If the operation is expensive, binding against `value` can be really slow.
+Binding against `value` can be really slow for expensive callbacks.
 
 ```{pyodide}
 def callback(value):
@@ -115,7 +115,7 @@ pn.Row(slider, output)
 
 ### Good
 
-Its easy defer the execution of all bound and displayed functions with `pn.extension(defer_load=True)` (note this applies to served applications, not to interactive notebook environments):
+It's easy to defer the execution of all bound and displayed functions with `pn.extension(defer_load=True)` (note this applies to served applications, not to interactive notebook environments):
 
 ```{pyodide}
 pn.extension(defer_load=True, loading_indicator=True)
@@ -222,7 +222,7 @@ layout
 
 ### Good
 
-Wrap the decorator `pn.cache` for automatic handling.
+Wrap your callback with a `pn.cache` decorator so that values are automatically cached so that expensive computations are not repeated.
 
 ```{pyodide}
 @pn.cache
@@ -237,7 +237,7 @@ pn.Row(slider, output)
 
 ### Okay
 
-Or, manually handle the cache with `pn.state.cache`.
+Or, manually handle the cache yourself with `pn.state.cache`.
 
 ```{pyodide}
 def callback(value):
@@ -257,7 +257,7 @@ pn.Row(slider, output)
 
 ### Good
 
-To prevent the plot from resetting to its original axes ranges when zoomed in, simply wrap `hv.DynamicMap`.
+When you are working with HoloViews or hvPlot in Panel, you can prevent the plot from resetting to its original axes ranges when zoomed in by wrapping it with `hv.DynamicMap`.
 
 ```{pyodide}
 import numpy as np
@@ -328,12 +328,11 @@ pn.Row(
 
 ### Good
 
-Imagine Panel components as placeholders and use them as such rather than re-creating them on update.
+Imagine Panel components as placeholders and use them as such, rather than re-creating them on update.
 
 ```{pyodide}
 def randomize(event):
     df_pane.object = pd.DataFrame(np.random.randn(10, 3), columns=list("ABC"))
-
 
 button = pn.widgets.Button(name="Compute", on_click=randomize)
 df_pane = pn.pane.DataFrame()
@@ -344,7 +343,7 @@ pn.Column(button, df_pane)
 
 ### Okay
 
-This instantiates the `pn.pane.DataFrame` on every click.
+If your callback returns a Panel object rather than the underlying object being displayed, you'll end up instantiating the `pn.pane.DataFrame` on every click (which is typically slower and will often have distracting flickering).
 
 ```{pyodide}
 def randomize(clicks):
