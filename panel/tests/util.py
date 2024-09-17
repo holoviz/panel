@@ -394,7 +394,7 @@ class NBSR:
         except Empty:
             return None
 
-def wait_for_regex(stdout, regex, count=1):
+def wait_for_regex(stdout, regex, count=1, return_output=False):
     nbsr = NBSR(stdout)
     m = None
     output, found = [], []
@@ -415,7 +415,7 @@ def wait_for_regex(stdout, regex, count=1):
             "No matching log line in process output, following output "
             f"was captured:\n\n   {output}"
         )
-    return found
+    return (found, output) if return_output else found
 
 def wait_for_port(stdout):
     return int(wait_for_regex(stdout, APP_PATTERN)[0])
