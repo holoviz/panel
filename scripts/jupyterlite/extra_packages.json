@@ -1,5 +1,5 @@
 [
-  "panel",
-  "bokeh",
+  "https://cdn.holoviz.org/panel/1.5.0/dist/wheels/panel-1.5.0-py3-none-any.whl",
+  "https://cdn.holoviz.org/panel/1.5.0/dist/wheels/bokeh-3.5.2-py3-none-any.whl",
   "pyodide-http"
 ]
