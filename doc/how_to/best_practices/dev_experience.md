@@ -54,7 +54,7 @@ Instead of inheriting from `param.Parameterized`, using `pn.viewable.Viewer` all
 
 For example, it's possible to use `ExampleApp().servable()` instead of `ExampleApp().view().servable()`.
 
-```{pyodide}
+```python
 class ExampleApp(pn.viewable.Viewer):
 
     ...
@@ -65,14 +65,14 @@ class ExampleApp(pn.viewable.Viewer):
             sidebar=[...],
         )
 
-ExampleApp().servable();  # semi-colon to suppress output in notebook
+ExampleApp().servable();
 ```
 
 ### Okay
 
 This method works, but should be reserved for cases where there's no Panel output.
 
-```{pyodide}
+```python
 class ExampleApp(param.Parameterized):
 
     ...
@@ -83,7 +83,7 @@ class ExampleApp(param.Parameterized):
             sidebar=[...],
         )
 
-ExampleApp().view().servable();  # semi-colon to suppress output in notebook
+ExampleApp().view().servable();
 ```
 
 ## Build widgets from parameters
