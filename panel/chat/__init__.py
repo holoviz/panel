@@ -52,9 +52,10 @@ def __getattr__(name):
     """
     Lazily import langchain module when accessed.
     """
+    import importlib as _importlib
+
     if name == "langchain":
-        from . import langchain
-        return langchain
+        return _importlib.import_module("panel.chat.langchain")
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __dir__ = lambda: list(__all__)
