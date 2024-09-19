@@ -46,11 +46,13 @@ clicks = pn.bind(show_clicks, button.clicks)  # not button.clicks!
 pn.Row(button, clicks)
 ```
 
-## Inherit from `pn.viewer.Viewer`
+## Inherit from `pn.viewer.Viewer` or `pn.custom.PyComponent`
 
 ### Good
 
-`param.Parameterized` is a very general class that can be used separately from Panel for working with Parameters. But if you want a Parameterized class to use with Panel, it is usually appropriate to inherit from the Panel-specific class `pn.viewable.Viewer` instead, because `Viewer` allows direct invocation of the class, resembling a native Panel object.
+`param.Parameterized` is a very general class that can be used separately from Panel for working with Parameters.
+
+But if you want a Parameterized class to use with Panel, it is usually appropriate to inherit from the Panel-specific class `pn.viewable.Viewer` instead, because `Viewer` allows direct instantiation of the `Viewer` class, resembling a native Panel object.
 
 For example, it's possible to use `ExampleApp().servable()` instead of `ExampleApp().view().servable()`.
 
@@ -66,6 +68,17 @@ class ExampleApp(pn.viewable.Viewer):
         )
 
 ExampleApp().servable();
+```
+
+`Viewer` is ideal if you're building a class with some fairly specific business logic, *but* if you are simply building a reusable component assembled from other Panel components use [`PyComponent`](https://panel.holoviz.org/reference/custom_components/PyComponent.html) instead.
+
+```python
+class MultipleChildren(PyComponent):
+
+    objects = Children()
+
+    def __panel__(self):
+        return pn.Column(objects=self.param['objects'], styles={"background": "silver"})
 ```
 
 ### Okay
