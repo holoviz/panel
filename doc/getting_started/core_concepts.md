@@ -55,7 +55,7 @@ Upon running that command, Panel launches a server that serves your app, opens a
 <img src="https://assets.holoviz.org/panel/gifs/vscode_autoreload.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 ```{tip}
-We recommend installing [`watchfiles`](https://watchfiles.helpmanual.io) to get the best user experience when using `--autoreload`.
+We recommend installing [`watchfiles`](https://watchfiles.helpmanual.io) to get the best user experience when using `--dev` flag.
 ```
 
 ```{tip}

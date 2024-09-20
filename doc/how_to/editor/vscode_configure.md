@@ -173,7 +173,7 @@ To speed up your workflow we recommend configuring a keyboard short cut to `pane
     {
         "key": "ctrl+shift+space",
         "command": "workbench.action.terminal.sendSequence",
-        "args": { "text": "panel serve ${relativeFile} --autoreload --show\u000D" }
+        "args": { "text": "panel serve ${relativeFile} --dev --show\u000D" }
     }
 ]
 ```

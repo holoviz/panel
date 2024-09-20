@@ -216,7 +216,7 @@ esbuild output:
 ⚡ Done in 9ms
 ```
 
-The compiled JavaScript file will be automatically loaded if it remains alongside the component. If you rename the component or modify its code or `_importmap`, you must recompile the component. For ongoing development, consider using the `--autoreload` option to ignore the compiled file and automatically reload the development version when it changes.
+The compiled JavaScript file will be automatically loaded if it remains alongside the component. If you rename the component or modify its code or `_importmap`, you must recompile the component. For ongoing development, consider using the `--dev` option to ignore the compiled file and automatically reload the development version when it changes.
 
 #### Compilation Steps
 
@@ -280,7 +280,7 @@ custom_build_dir/
 └── <OtherComponent>.js
 ```
 
-The compiled JS file will now be loaded automatically as long as it remains alongside the component. If you rename the component you will have to delete and recompile the JS file. If you make changes to the code or `_importmap` you also have to recompile. During development we recommend using `--autoreload`, which ignores the compiled file.
+The compiled JS file will now be loaded automatically as long as it remains alongside the component. If you rename the component you will have to delete and recompile the JS file. If you make changes to the code or `_importmap` you also have to recompile. During development we recommend using `--dev`, which ignores the compiled file.
 
 ```{caution}
 The `panel compile` CLI tool is still very new and experimental. In our testing it was able to compile and bundle most components but there are bound to be corner cases.

@@ -61,7 +61,7 @@ template.servable();
 Now we can activate this app on the command line. When we click the button in the sidebar, we see the modal pop up:
 
 ```bash
-panel serve app.py --show --autoreload
+panel serve app.py --show --dev
 ```
 
 <img src="../../_static/images/template_arrange_modal.png" alt="example panel app with an active modal">

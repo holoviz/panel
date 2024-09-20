@@ -87,7 +87,7 @@ pn.Row(widget, pn.bind(hello_world, widget)).servable()
 Then, from the command line, launch a server with:
 
 ```bash
-panel serve app.md --show --autoreload
+panel serve app.md --show --dev
 ```
 
 ![The rendered Panel application written as a Markdown file.](../../_static/images/markdown_sample.png)
