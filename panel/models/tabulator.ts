@@ -513,7 +513,7 @@ export class DataTabulatorView extends HTMLBoxView {
     const finished = this.root.has_finished()
     if (this.tabulator != null && this._initializing && !this._building && finished) {
       this._initializing = false
-      this._debounced_redraw()
+      this.redraw()
     }
   }
 
@@ -697,7 +697,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this._building = false
     if (this._initializing && this.root.has_finished()) {
       this._initializing = false
-      this._debounced_redraw()
+      this.redraw()
     }
   }
 
