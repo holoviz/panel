@@ -13,7 +13,6 @@ from .pane import HoloViews, Markdown
 from .param import Param
 from .util import param_reprs
 from .viewable import Viewer
-from .widgets import Button, Select
 
 
 class PipelineError(RuntimeError):
@@ -172,6 +171,8 @@ class Pipeline(Viewer):
             import holoviews as hv
         except Exception:
             raise ImportError('Pipeline requires holoviews to be installed') from None
+
+        from .widgets import Select
 
         super().__init__(**params)
 
@@ -391,6 +392,7 @@ class Pipeline(Viewer):
             self.next_button.disabled = disabled
 
     def _get_error_button(self, e):
+        from .widgets import Button
         msg = str(e) if isinstance(e, PipelineError) else ""
         if self.debug:
             type, value, trb = sys.exc_info()

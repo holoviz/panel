@@ -36,7 +36,6 @@ from pyviz_comms import Comm  # type: ignore
 
 from ._param import Align, Aspect, Margin
 from .config import config, panel_extension
-from .io import serve
 from .io.document import create_doc_if_none_exists, init_doc
 from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
@@ -451,6 +450,7 @@ class ServableMixin:
           Returns the Bokeh server instance or the thread the server
           was launched on (if threaded=True)
         """
+        from .io.server import serve
         return serve(
             self, port=port, address=address, websocket_origin=websocket_origin,
             show=open, start=True, title=title, verbose=verbose,

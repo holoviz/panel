@@ -3,7 +3,7 @@ from datetime import date
 from bokeh.models import Column as BkColumn, Div as BkDiv
 
 from panel import widgets
-from panel.interact import interactive
+from panel._interact import interactive
 from panel.models import HTML as BkHTML
 from panel.pane import HTML
 

@@ -45,34 +45,92 @@ https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews
 To learn more about Panel check out
 https://panel.holoviz.org/getting_started/index.html
 """
+from typing import TYPE_CHECKING as _TC
+
 from param import rx
 
-from . import layout  # noqa
-from . import links  # noqa
-from . import pane  # noqa
-from . import param  # noqa
-from . import pipeline  # noqa
-from . import reactive  # noqa
-from . import template  # noqa
-from . import viewable  # noqa
-from . import widgets  # noqa
-from .config import __version__, config, panel_extension as extension  # noqa
-from .depends import bind, depends  # noqa
-from .interact import interact  # noqa
-from .io import (  # noqa
-    _jupyter_server_extension_paths, cache, ipywidget, serve, state,
-)
-from .layout import (  # noqa
-    Accordion, Card, Column, Feed, FlexBox, FloatPanel, GridBox, GridSpec,
-    GridStack, HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
-)
-from .pane import panel  # noqa
-from .param import Param, ReactiveExpr  # noqa
-from .template import Template  # noqa
-from .widgets import indicators, widget  # noqa
+from .__version import __version__
+from .config import config, panel_extension as extension
+from .depends import bind, depends
 
-from . import custom  # isort:skip noqa has to be after widgets
-from . import chat  # isort:skip noqa has to be after widgets
+if _TC:
+    from . import (
+        chat, custom, layout, links, pane, param, pipeline, reactive, template,
+        theme, viewable, widgets,
+    )
+    from ._interact import interact
+    from .io import serve, state
+    from .io.cache import cache
+    from .io.notebook import (  # noqa: F401
+        _jupyter_server_extension_paths, ipywidget,
+    )
+    from .layout import (
+        Accordion, Card, Column, Feed, FlexBox, FloatPanel, GridBox, GridSpec,
+        GridStack, HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
+    )
+    from .pane import panel
+    from .param import Param, ReactiveExpr
+    from .template import Template
+    from .widgets import indicators, widget
+
+_attrs = {
+    "Accordion": "panel.layout:Accordion",
+    "Card": "panel.layout:Card",
+    "Column": "panel.layout:Column",
+    "Feed": "panel.layout:Feed",
+    "FlexBox": "panel.layout:FlexBox",
+    "FloatPanel": "panel.layout:FloatPanel",
+    "GridBox": "panel.layout:GridBox",
+    "GridSpec": "panel.layout:GridSpec",
+    "GridStack": "panel.layout:GridStack",
+    "HSpacer": "panel.layout:HSpacer",
+    "Param": "panel.param:Param",
+    "ReactiveExpr": "panel.param:ReactiveExpr",
+    "Row": "panel.layout:Row",
+    "Spacer": "panel.layout:Spacer",
+    "Swipe": "panel.layout:Swipe",
+    "Tabs": "panel.layout:Tabs",
+    "Template": "panel.template:Template",
+    "VSpacer": "panel.layout:VSpacer",
+    "WidgetBox": "panel.layout:WidgetBox",
+    "_jupyter_server_extension_paths": "panel.io.notebook:_jupyter_server_extension_paths",
+    "cache": "panel.io.cache:cache",
+    "chat": "panel.chat",
+    "custom": "panel.custom",
+    "indicators": "panel.widgets:indicators",
+    "interact": "panel._interact:interact",
+    "ipywidget": "panel.io.notebook:ipywidget",
+    "layout": "panel.layout",
+    "links": "panel.links",
+    "pane": "panel.pane",
+    "panel": "panel.pane:panel",
+    "param": "panel.param",
+    "pipeline": "panel.pipeline",
+    "reactive": "panel.reactive",
+    "serve": "panel.io:serve",
+    "state": "panel.io.state:state",
+    "template": "panel.template",
+    "theme": "panel.theme",
+    "viewable": "panel.viewable",
+    "widget": "panel.widgets:widget",
+    "widgets": "panel.widgets",
+}
+
+
+def __getattr__(name: str) -> object:
+    if name == "no_lazy":
+        for attr in _attrs:
+            mod = __getattr__(attr)
+            if hasattr(mod, "_attrs"):
+                getattr(mod._attrs, "no_lazy", None)
+        return name
+    elif name in _attrs:
+        import importlib
+        mod_name, _, attr_name = _attrs[name].partition(':')
+        mod = importlib.import_module(mod_name)
+        return getattr(mod, attr_name) if attr_name else mod
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = (
     "__version__",
@@ -111,11 +169,15 @@ __all__ = (
     "panel",
     "param",
     "pipeline",
+    "reactive",
     "rx",
     "serve",
     "state",
+    "theme",
     "template",
     "viewable",
     "widgets",
     "widget"
 )
+
+__dir__ = lambda: list(__all__)

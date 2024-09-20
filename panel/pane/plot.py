@@ -20,7 +20,8 @@ from bokeh.models import (
 )
 from bokeh.themes import Theme
 
-from ..io import remove_root, state
+from ..io import state
+from ..io.model import remove_root
 from ..io.notebook import push
 from ..util import escape
 from ..viewable import Layoutable

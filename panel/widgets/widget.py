@@ -9,11 +9,6 @@ empty = Parameter.empty
 
 import param
 
-from .base import Widget
-from .input import Checkbox, TextInput
-from .select import Select
-from .slider import DiscreteSlider, FloatSlider, IntSlider
-
 
 class fixed(param.Parameterized):
     """
@@ -103,6 +98,7 @@ class widget(param.ParameterizedFunction):
 
     def __call__(self, value: Any, name: str, default=empty, **params):
         """Build a ValueWidget instance given an abbreviation or Widget."""
+        from .base import Widget
         if isinstance(value, Widget):
             widget = value
         elif isinstance(value, tuple):
@@ -136,6 +132,8 @@ class widget(param.ParameterizedFunction):
     @staticmethod
     def widget_from_single_value(o, name):
         """Make widgets from single values, which can be used as parameter defaults."""
+        from .input import Checkbox, TextInput
+        from .slider import FloatSlider, IntSlider
         if isinstance(o, str):
             return TextInput(value=str(o), name=name)
         elif isinstance(o, bool):
@@ -152,6 +150,7 @@ class widget(param.ParameterizedFunction):
     @staticmethod
     def widget_from_tuple(o, name, default=empty):
         """Make widgets from a tuple abbreviation."""
+        from .slider import FloatSlider, IntSlider
         int_default = (default is empty or isinstance(default, int))
         if _matches(o, (Real, Real)):
             min, max, value = _get_min_max_value(o[0], o[1])
@@ -192,6 +191,9 @@ class widget(param.ParameterizedFunction):
     def widget_from_iterable(o, name):
         """Make widgets from an iterable. This should not be done for
         a string or tuple."""
+        from .select import Select
+        from .slider import DiscreteSlider
+
         # Select expects a dict or list, so we convert an arbitrary
         # iterable to either of those.
         values = list(o.values()) if isinstance(o, Mapping) else list(o)
