@@ -146,7 +146,7 @@ The `add_application` decorator is useful when server an application defined in 
 import panel as pn
 
 from fastapi import FastAPI
-from panel.io.fastapi import add_application
+from panel.io.fastapi import add_applications
 
 app = FastAPI()
 
