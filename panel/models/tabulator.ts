@@ -603,7 +603,9 @@ export class DataTabulatorView extends HTMLBoxView {
     }, 50, false))
 
     // Sync state with model
-    this.tabulator.on("rowSelectionChanged", (data: any, rows: any, selected: any, deselected: any) => this.rowSelectionChanged(data, rows, selected, deselected))
+    this.tabulator.on("rowSelectionChanged", (data: any, rows: any, selected: any, deselected: any) => {
+      this.rowSelectionChanged(data, rows, selected, deselected)
+    })
     this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
     this.tabulator.on("cellEdited", (cell: any) => this.cellEdited(cell))
     this.tabulator.on("dataFiltering", (filters: any) => {
@@ -778,16 +780,7 @@ export class DataTabulatorView extends HTMLBoxView {
       configuration.ajaxURL = "http://panel.pyviz.org"
       configuration.sortMode = "remote"
     }
-    const cds: any = this.model.source
-    let data: any[]
-    if (cds === null || (cds.columns().length === 0)) {
-      data = []
-    } else {
-      data = transform_cds_to_records(cds, true)
-    }
-    if (configuration.dataTree) {
-      data = group_data(data, this.model.columns, this.model.indexes, this.model.aggregators)
-    }
+    const data = this.getData()
     return {
       ...configuration,
       data,
@@ -915,10 +908,17 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   getData(): any[] {
-    let data = transform_cds_to_records(this.model.source, true)
+    const cds = this.model.source
+    let data: any[]
+    if (cds === null || (cds.columns().length === 0)) {
+      data = []
+    } else {
+      data = transform_cds_to_records(cds, true)
+    }
     if (this.model.configuration.dataTree) {
       data = group_data(data, this.model.columns, this.model.indexes, this.model.aggregators)
     }
+    console.trace(data)
     return data
   }
 
