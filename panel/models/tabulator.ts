@@ -356,6 +356,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _lastHorizontalScrollbarLeftPosition: number = 0
   _applied_styles: boolean = false
   _building: boolean = false
+  _redrawing: boolean = false
   _debounced_redraw: any = null
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
@@ -491,9 +492,10 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   redraw(columns: boolean = true, rows: boolean = true): void {
-    if (this._building || this.tabulator != null) {
+    if (this._building || this.tabulator == null || this._redrawing) {
       return
     }
+    this._redrawing = true
     if (columns && (this.tabulator.columnManager.element != null)) {
       this.tabulator.columnManager.redraw(true)
     }
@@ -502,20 +504,22 @@ export class DataTabulatorView extends HTMLBoxView {
       this.renderChildren()
       this.setStyles()
     }
+    this._redrawing = false
     this._restore_scroll = true
   }
 
   override after_layout(): void {
     super.after_layout()
-    if (this.tabulator != null && this._initializing) {
+    const finished = this.root.has_finished()
+    if (this.tabulator != null && this._initializing && !this._building && finished) {
+      this._initializing = false
       this.redraw()
     }
-    this._initializing = false
   }
 
   override after_resize(): void {
     super.after_resize()
-    if (!this._is_scrolling) {
+    if (!this._is_scrolling && !this._redrawing) {
       this._debounced_redraw()
     }
   }
@@ -643,7 +647,6 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   tableBuilt(): void {
-    this._building = false
     this.setSelection()
     this.renderChildren()
     this.setStyles()
@@ -689,6 +692,20 @@ export class DataTabulatorView extends HTMLBoxView {
       }
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
+    }
+    this._building = false
+    if (this._initializing && this.root.has_finished()) {
+      this._initializing = false
+      this.redraw()
+    } else if (!this.root.has_finished()) {
+      const finalize = () => {
+        if (this.root.has_finished()) {
+          this._initializing = false
+        } else {
+          setTimeout(finalize, 10)
+        }
+      }
+      setTimeout(finalize, 10)
     }
   }
 
