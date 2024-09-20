@@ -232,7 +232,7 @@ pre-commit = "*"
 
 [feature.lint.tasks]
 lint = 'pre-commit run --all-files'
-lint-install = 'pre-commit install'
+lint-install = 'pre-commit install -t=pre-commit'
 
 # =============================================
 # =================== LITE ====================
