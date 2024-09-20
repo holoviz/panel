@@ -70,7 +70,7 @@ class ExampleApp(pn.viewable.Viewer):
 ExampleApp().servable();
 ```
 
-`Viewer` is ideal if you're building a class with some fairly specific business logic, *but* if you are simply building a reusable component assembled from other Panel components use [`PyComponent`](https://panel.holoviz.org/reference/custom_components/PyComponent.html) instead.
+`Viewer` is ideal if you're building a class with some fairly specific business logic, *but* if you are building a reusable component assembled from other Panel components use [`PyComponent`](https://panel.holoviz.org/reference/custom_components/PyComponent.html) instead.
 
 ```python
 class MultipleChildren(PyComponent):
