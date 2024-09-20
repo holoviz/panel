@@ -132,7 +132,7 @@ async def setup_autoreload_watcher(stop_event=None):
         import watchfiles  # noqa
     except Exception:
         warnings.warn(
-            '--autoreload functionality now depends on the watchfiles '
+            '--dev and --autoreload functionality now depends on the watchfiles '
             'library. In future versions autoreload will not work without '
             'watchfiles being installed. Since it provides a much better '
             'user experience consider installing it today.', FutureWarning,
