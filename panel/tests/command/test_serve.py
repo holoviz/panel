@@ -134,3 +134,18 @@ def test_serve_num_procs_setup(tmp_path):
     with run_panel_serve(["--port", "0", py, "--num-procs", 2, "--setup", setup_py], cwd=tmp_path) as p:
         pid1, pid2 = wait_for_regex(p.stdout, regex=regex, count=2)
         assert pid1 != pid2
+
+
+def test_serve_setup(tmp_path):
+    app = "import panel as pn; pn.panel('Hello').servable()"
+    py = tmp_path / "app.py"
+    py.write_text(app)
+
+    setup_app = 'print(f"Setup running before", flush=True)'
+    setup_py = tmp_path / "setup.py"
+    setup_py.write_text(setup_app)
+
+    regex = re.compile('(Setup running before)')
+    with run_panel_serve(["--port", "0", py, "--setup", setup_py], cwd=tmp_path) as p:
+        _, output = wait_for_regex(p.stdout, regex=regex, return_output=True)
+        assert output[0].strip() == "Setup running before"

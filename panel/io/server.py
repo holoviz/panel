@@ -3,7 +3,6 @@ Utilities for creating bokeh Server instances.
 """
 from __future__ import annotations
 
-import ast
 import asyncio
 import datetime as dt
 import importlib
@@ -295,20 +294,12 @@ class Server(BokehServer):
         if state._admin_context:
             state._admin_context._loop = self._loop
 
-    def setup_file(self):
-        setup_path = state._setup_module.__dict__['__file__']
-        with open(setup_path) as f:
-            setup_source = f.read()
-        nodes = ast.parse(setup_source, os.fspath(setup_path))
-        code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
-        exec(code, state._setup_module.__dict__)
-
     def start(self) -> None:
         super().start()
         if state._admin_context:
             self._loop.add_callback(state._admin_context.run_load_hook)
-        if state._setup_module:
-            self._loop.add_callback(self.setup_file)
+        if state._setup_module and state._setup_file_callback:
+            self._loop.add_callback(state._setup_file_callback)
         if config.autoreload:
             from .reload import setup_autoreload_watcher
             self._autoreload_stop_event = stop_event = asyncio.Event()
