@@ -550,7 +550,6 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     super.render()
     this._initializing = true
-    this._building = true
     const container = div({style: {display: "contents"}})
     const el = div({style: {width: "100%", height: "100%", visibility: "hidden"}})
     this.container = el
