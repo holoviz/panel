@@ -125,7 +125,7 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
         with:
           cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
 
@@ -139,7 +139,7 @@ jobs:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     timeout-minutes: 90
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: ${{ matrix.environment }}
           opengl: true
@@ -193,7 +193,7 @@ jobs:
       OKTA_OAUTH_USER: ${{ secrets.OKTA_OAUTH_USER }}
       OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: ${{ matrix.environment }}
         id: install
@@ -246,7 +246,7 @@ jobs:
         environment: ["test-core"]
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: ${{ matrix.environment }}
       - name: Test Unit
@@ -265,7 +265,7 @@ jobs:
         environment: ["test-type"]
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: ${{ matrix.environment }}
       - name: Test Type
