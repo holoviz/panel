@@ -495,7 +495,6 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this._building || this.tabulator == null || this._redrawing) {
       return
     }
-    console.log('redrawing')
     this._redrawing = true
     if (columns && (this.tabulator.columnManager.element != null)) {
       this.tabulator.columnManager.redraw(true)
@@ -1326,7 +1325,6 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   rowClicked(e: any, row: any) {
-  console.log(this._initializing, this)
     if (
       this._selection_updating ||
         this._initializing ||
