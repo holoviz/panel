@@ -918,7 +918,6 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this.model.configuration.dataTree) {
       data = group_data(data, this.model.columns, this.model.indexes, this.model.aggregators)
     }
-    console.trace(data)
     return data
   }
 
