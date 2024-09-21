@@ -11,16 +11,16 @@ PYTHONIOENCODING = "utf-8"
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [environments]
-test-310 = ["py310", "recommended", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-311 = ["py311", "recommended", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-312 = ["py312", "recommended", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-ui = ["py312", "recommended", "test-core", "test", "test-ui"]
+test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py313", "test-core", "test-unit-task"]
-test-type = ["py311", "recommended", "type"]
-docs = ["py311", "recommended", "example", "doc"]
-build = ["py311", "recommended", "build"]
+test-type = ["py311", "type"]
+docs = ["py311", "example", "doc"]
+build = ["py311", "build"]
 lint = ["py311", "lint"]
-lite = ["py311", "recommended", "lite"]
+lite = ["py311", "lite"]
 
 [dependencies]
 nodejs = ">=18"
@@ -42,13 +42,6 @@ requests = "*"
 tqdm = ">=4.48.0"
 typing_extensions = "*"
 
-[feature.recommended.dependencies]
-holoviews = ">=1.16.0"
-jupyterlab = "*"
-matplotlib-base = "*"
-pillow = "*"
-plotly = ">=4.0"
-
 [feature.py310.dependencies]
 python = "3.10.*"
 
@@ -65,6 +58,13 @@ channels = ["pyviz/label/dev", "conda-forge/label/python_rc", "conda-forge"]
 python = "3.13.*"
 
 [feature.example.dependencies]
+# Optional dependencies - recommended
+holoviews = ">=1.16.0"
+jupyterlab = "*"
+matplotlib-base = "*"
+pillow = "*"
+plotly = ">=4.0"
+# Example dependencies
 aiohttp = "*"
 altair = "*"
 bokeh_sampledata = "*"
@@ -114,6 +114,15 @@ pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
 [feature.test.dependencies]
+# Optional dependencies - recommended
+holoviews = ">=1.16.0"
+jupyterlab = "*"
+matplotlib-base = "*"
+pillow = "*"
+plotly = ">=4.0"
+# Optional dependencies - dev
+watchfiles = "*"
+# Test dependencies
 altair = "*"
 anywidget = "*"
 bokeh_sampledata = "*"
@@ -127,7 +136,6 @@ numba = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
-watchfiles = "*"
 
 [feature.test.pypi-dependencies]
 bokeh-fastapi = "~=0.1.0a0"
