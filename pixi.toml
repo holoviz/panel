@@ -11,16 +11,16 @@ PYTHONIOENCODING = "utf-8"
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [environments]
-test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-ui = ["py312", "test-core", "test", "test-ui"]
-test-core = ["py312", "test-core", "test-unit-task"]
-test-type = ["py311", "type"]
-docs = ["py311", "example", "doc"]
-build = ["py311", "build"]
+test-310 = ["py310", "recommended", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-311 = ["py311", "recommended", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-312 = ["py312", "recommended", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-ui = ["py312", "recommended", "test-core", "test", "test-ui"]
+test-core = ["py313", "test-core", "test-unit-task"]
+test-type = ["py311", "recommended", "type"]
+docs = ["py311", "recommended", "example", "doc"]
+build = ["py311", "recommended", "build"]
 lint = ["py311", "lint"]
-lite = ["py311", "lite"]
+lite = ["py311", "recommended", "lite"]
 
 [dependencies]
 nodejs = ">=18"
@@ -41,15 +41,13 @@ pyviz_comms = ">=2.0.0"
 requests = "*"
 tqdm = ">=4.48.0"
 typing_extensions = "*"
-# Recommended
+
+[feature.recommended.dependencies]
 holoviews = ">=1.16.0"
 jupyterlab = "*"
 matplotlib-base = "*"
 pillow = "*"
 plotly = ">=4.0"
-# Standard
-watchfiles = "*"
-bokeh_sampledata = "*"
 
 [feature.py310.dependencies]
 python = "3.10.*"
@@ -60,9 +58,16 @@ python = "3.11.*"
 [feature.py312.dependencies]
 python = "3.12.*"
 
+[feature.py313]
+channels = ["pyviz/label/dev", "conda-forge/label/python_rc", "conda-forge"]
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
 [feature.example.dependencies]
 aiohttp = "*"
 altair = "*"
+bokeh_sampledata = "*"
 croniter = "*"
 dask-expr = "*"
 datashader = "*"
@@ -111,6 +116,7 @@ pytest-xdist = "*"
 [feature.test.dependencies]
 altair = "*"
 anywidget = "*"
+bokeh_sampledata = "*"
 diskcache = "*"
 fastapi = "*"
 folium = "*"
@@ -121,6 +127,7 @@ numba = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+watchfiles = "*"
 
 [feature.test.pypi-dependencies]
 bokeh-fastapi = "~=0.1.0a0"
