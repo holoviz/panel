@@ -22,7 +22,7 @@ The best practices described on this page serve as a checklist of items to keep 
 
 ### Good
 
-Be sure to bind on `obj.param.{parameter}`, not just `{parameter}`.
+Be sure to bind `obj.param.{parameter}` (the Parameter object), not just `{parameter}` (the current Parameter value).
 
 ```{pyodide}
 def show_clicks(clicks):
@@ -35,7 +35,7 @@ pn.Row(button, clicks)
 
 ### Wrong
 
-If only on `{parameter}`, it will not trigger an update on change.
+Binding to `{parameter}` will bind to the single current value of the parameter, _not_ to the underlying object, and so it will not trigger an update on change.
 
 ```{pyodide}
 def show_clicks(clicks):
@@ -50,11 +50,11 @@ pn.Row(button, clicks)
 
 ### Good
 
-Instead of inheriting from `param.Parameterized`, using `pn.viewable.Viewer` allows direct invocation of the class, resembling a native Panel object.
+`param.Parameterized` is a very general class that can be used separately from Panel for working with Parameters. But if you want a Parameterized class to use with Panel, it is usually appropriate to inherit from the Panel-specific class `pn.viewable.Viewer` instead, because `Viewer` allows direct invocation of the class, resembling a native Panel object.
 
 For example, it's possible to use `ExampleApp().servable()` instead of `ExampleApp().view().servable()`.
 
-```{pyodide}
+```python
 class ExampleApp(pn.viewable.Viewer):
 
     ...
@@ -65,14 +65,14 @@ class ExampleApp(pn.viewable.Viewer):
             sidebar=[...],
         )
 
-ExampleApp().servable();  # semi-colon to suppress output in notebook
+ExampleApp().servable();
 ```
 
 ### Okay
 
-This method works, but should be reserved for cases where there's no Panel output.
+Inheriting from `param.Parameterized` also works, but should be reserved for cases where there's no Panel output.
 
-```{pyodide}
+```python
 class ExampleApp(param.Parameterized):
 
     ...
@@ -83,14 +83,14 @@ class ExampleApp(param.Parameterized):
             sidebar=[...],
         )
 
-ExampleApp().view().servable();  # semi-colon to suppress output in notebook
+ExampleApp().view().servable();
 ```
 
 ## Build widgets from parameters
 
 ### Good
 
-To translate multiple parameters into widgets, use `pn.Param`.
+To translate multiple Parameters into widgets, use `pn.Param`.
 
 ```{pyodide}
 class ExampleApp(pn.viewable.Viewer):
@@ -225,7 +225,7 @@ ExampleApp()
 
 ### Wrong
 
-Widgets should not be used as parameters since all instances of the class will share the widget class:
+Widgets should not be used as if they were Parameters, because then all instances of your new class will share a single set of instantiated widgets, confusing everyone:
 
 ```{pyodide}
 class ExampleApp(pn.viewable.Viewer):
@@ -312,7 +312,7 @@ pn.Row(slider, output)
 
 ### Good
 
-For functions that trigger side effects, i.e. do not return anything (or returns None), be sure to set `watch=True` on `pn.bind` or `pn.depends`.
+For functions that trigger side effects, i.e. do not return anything (or return None), be sure to set `watch=True` on `pn.bind` or `pn.depends`.
 
 ```{pyodide}
 def print_clicks(clicks):

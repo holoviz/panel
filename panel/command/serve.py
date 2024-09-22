@@ -249,7 +249,7 @@ class Serve(_BkServe):
         ('--setup', dict(
             action  = 'store',
             type    = str,
-            help    = "Path to a setup script to run before server starts.",
+            help    = "Path to a setup script to run before server starts. If --num-procs is enabled it will be run in each process after the server has started.",
             default = None
         )),
         ('--liveness', dict(
@@ -369,6 +369,21 @@ class Serve(_BkServe):
             module = ModuleType(module_name)
             module.__dict__['__file__'] = fullpath(args.setup)
             state._setup_module = module
+
+            def setup_file():
+                setup_path = state._setup_module.__dict__['__file__']
+                with open(setup_path) as f:
+                    setup_source = f.read()
+                nodes = ast.parse(setup_source, os.fspath(setup_path))
+                code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
+                exec(code, state._setup_module.__dict__)
+
+            if args.num_procs > 1:
+                # We will run the setup_file for each process
+                state._setup_file_callback = setup_file
+            else:
+                state._setup_file_callback = None
+                setup_file()
 
         if args.warm or config.autoreload:
             argvs = {f: args.args for f in files}
