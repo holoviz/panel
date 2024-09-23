@@ -238,7 +238,7 @@ class Serve(_BkServe):
         )),
         ('--autoreload', dict(
             action  = 'store_true',
-            help    = "Whether to autoreload source when script changes."
+            help    = "Whether to autoreload source when script changes. We recommend using --dev instead."
         )),
         ('--num-threads', dict(
             action  = 'store',

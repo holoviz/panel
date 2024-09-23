@@ -48,7 +48,7 @@ template.servable();
 Now, we can activate this app on the command line:
 
 ``` bash
-panel serve app.py --show --autoreload
+panel serve app.py --show --dev
 ```
 
 <img src="../../_static/images/template_arrange.png" alt="example panel app">
