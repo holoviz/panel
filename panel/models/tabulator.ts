@@ -859,7 +859,6 @@ export class DataTabulatorView extends HTMLBoxView {
     let viewEl
     if (prev_child != null && prev_child.className == "row-content") {
       viewEl = prev_child
-      console.log(prev_child)
       if (viewEl.children.length && viewEl.children[0] === view.el) {
         return
       }
