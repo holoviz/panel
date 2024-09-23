@@ -15,7 +15,7 @@ test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-
 test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
-test-core = ["py312", "test-core", "test-unit-task"]
+test-core = ["py313", "test-core", "test-unit-task"]
 test-type = ["py311", "type"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
@@ -41,15 +41,6 @@ pyviz_comms = ">=2.0.0"
 requests = "*"
 tqdm = ">=4.48.0"
 typing_extensions = "*"
-# Recommended
-holoviews = ">=1.16.0"
-jupyterlab = "*"
-matplotlib-base = "*"
-pillow = "*"
-plotly = ">=4.0"
-# Standard
-watchfiles = "*"
-bokeh_sampledata = "*"
 
 [feature.py310.dependencies]
 python = "3.10.*"
@@ -60,9 +51,23 @@ python = "3.11.*"
 [feature.py312.dependencies]
 python = "3.12.*"
 
+[feature.py313]
+channels = ["pyviz/label/dev", "conda-forge/label/python_rc", "conda-forge"]
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
 [feature.example.dependencies]
+# Optional dependencies - recommended
+holoviews = ">=1.16.0"
+jupyterlab = "*"
+matplotlib-base = "*"
+pillow = "*"
+plotly = ">=4.0"
+# Example dependencies
 aiohttp = "*"
 altair = "*"
+bokeh_sampledata = "*"
 croniter = "*"
 dask-expr = "*"
 datashader = "*"
@@ -109,8 +114,18 @@ pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
 [feature.test.dependencies]
+# Optional dependencies - recommended
+holoviews = ">=1.16.0"
+jupyterlab = "*"
+matplotlib-base = "*"
+pillow = "*"
+plotly = ">=4.0"
+# Optional dependencies - dev
+watchfiles = "*"
+# Test dependencies
 altair = "*"
 anywidget = "*"
+bokeh_sampledata = "*"
 diskcache = "*"
 fastapi = "*"
 folium = "*"
