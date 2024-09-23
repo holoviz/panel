@@ -392,7 +392,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.download(ftype, this.model.filename)
     })
 
-    this.on_change(children, () => this.renderChildren())
+    this.on_change(children, () => this.renderChildren(false))
 
     this.on_change(expanded, () => {
       // The first cell is the cell of the frozen _index column.
@@ -502,25 +502,27 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     if (rows && (this.tabulator.rowManager.renderer != null)) {
       this.tabulator.rowManager.redraw(true)
-      this.renderChildren()
       this.setStyles()
     }
     this._redrawing = false
     this._restore_scroll = true
   }
 
+  get is_drawing(): boolean {
+    return this._building || this._redrawing || !this.root.has_finished()
+  }
+
   override after_layout(): void {
     super.after_layout()
-    const finished = this.root.has_finished()
-    if (this.tabulator != null && this._initializing && !this._building && finished) {
+    if (this.tabulator != null && this._initializing && !this.is_drawing) {
       this._initializing = false
-      this.redraw()
+      this._resize_redraw()
     }
   }
 
   override after_resize(): void {
     super.after_resize()
-    if (!this._is_scrolling && !this._redrawing) {
+    if (!this._is_scrolling && !this._initializing && !this.is_drawing) {
       this._debounced_redraw()
     }
   }
@@ -699,7 +701,11 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     this._building = false
     schedule_when(() => {
+      const initializing = this._initializing
       this._initializing = false
+      if (initializing) {
+        this._resize_redraw()
+      }
     }, () => this.root.has_finished())
   }
 
@@ -766,6 +772,7 @@ export class DataTabulatorView extends HTMLBoxView {
       frozenRows: (row: any) => {
         return (this.model.frozen_rows.length > 0) ? this.model.frozen_rows.includes(row._row.data._index) : false
       },
+      rowFormatter: (row: any) => this._render_row(row),
     }
     if (this.model.pagination === "remote") {
       configuration.ajaxURL = "http://panel.pyviz.org"
@@ -796,19 +803,27 @@ export class DataTabulatorView extends HTMLBoxView {
     return children
   }
 
-  renderChildren(): void {
+  get row_index(): Map<number, any> {
+    const rows = this.tabulator.getRows()
+    const lookup = new Map()
+    for (const row of rows) {
+      const index = row._row?.data._index
+      if (index != null) {
+        lookup.set(index, row)
+      }
+    }
+    return lookup
+  }
+
+  renderChildren(all: boolean = true): void {
     new Promise(async (resolve: any) => {
-      const new_children = await this.build_child_views()
+      let new_children = await this.build_child_views()
+      if (all) {
+        new_children = this.child_views
+      }
       resolve(new_children)
     }).then((new_children) => {
-      const rows = this.tabulator.getRows()
-      const lookup = new Map()
-      for (const row of rows) {
-        const index = row._row?.data._index
-        if (index != null) {
-          lookup.set(index, row)
-        }
-      }
+      const lookup = this.row_index
       for (const index of this.model.expanded) {
         const model = this.get_child(index)
         const row = lookup.get(index)
@@ -844,16 +859,20 @@ export class DataTabulatorView extends HTMLBoxView {
     let viewEl
     if (prev_child != null && prev_child.className == "row-content") {
       viewEl = prev_child
+      console.log(prev_child)
+      if (viewEl.children.length && viewEl.children[0] === view.el) {
+        return
+      }
     } else {
       viewEl = div({class: "row-content", style: {background_color: bg, margin_left: neg_margin, max_width: "100%", overflow_x: "hidden"}})
+      rowEl.appendChild(viewEl)
     }
     viewEl.appendChild(view.el)
-    rowEl.appendChild(viewEl)
     if (render) {
       schedule_when(() => {
         view.render()
         view.after_render()
-      }, () => view.has_finished())
+      }, () => this.root.has_finished())
     }
     if (resize) {
       this._update_children()
@@ -1254,7 +1273,6 @@ export class DataTabulatorView extends HTMLBoxView {
   setPage(): void {
     this.tabulator.setPage(Math.min(this.model.max_page, this.model.page))
     if (this.model.pagination === "local") {
-      this.renderChildren()
       this.setStyles()
     }
   }
@@ -1262,7 +1280,6 @@ export class DataTabulatorView extends HTMLBoxView {
   setPageSize(): void {
     this.tabulator.setPageSize(this.model.page_size)
     if (this.model.pagination === "local") {
-      this.renderChildren()
       this.setStyles()
     }
   }
