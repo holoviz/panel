@@ -1343,10 +1343,10 @@ class Tabulator(BaseTable):
         self._validate_iloc(idx, iloc)
         event.row = iloc
         if event_col not in self.buttons:
-            if event_col not in self.value.columns:
-                event.value = self.value.index[event.row]
-            else:
+            if event_col in self.value.columns:
                 event.value = self.value[event_col].iloc[event.row]
+            else:
+                event.value = self.value.index[event.row]
 
         # Set the old attribute on a table edit event
         if event.event_name == 'table-edit':
@@ -1403,7 +1403,7 @@ class Tabulator(BaseTable):
 
         import pandas as pd
         df = pd.DataFrame(data)
-        filters = self._get_header_filters(df)
+        filters = self._get_header_filters(df) if self.pagination == 'remote' else []
         if filters:
             mask = filters[0]
             for f in filters:
