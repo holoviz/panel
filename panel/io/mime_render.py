@@ -104,12 +104,11 @@ class WriteCallbackStream(io.StringIO):
 
 def _convert_expr(expr: ast.Expr) -> ast.Expression:
     """
-    Converts an ast.Expr to and ast.Expression that can be compiled
+    Converts an ast.Expr to an ast.Expression that can be compiled
     and evaled.
     """
-    expr.lineno = 0
-    expr.col_offset = 0
-    return ast.Expression(expr.value, lineno=0, col_offset = 0)
+    expr.lineno, expr.col_offset = 0, 0
+    return ast.Expression(expr.value)
 
 _OUT_BUFFER = []
 
