@@ -2,7 +2,7 @@
 
 Panel generally runs on the Bokeh server, which itself runs on [Tornado](https://tornadoweb.org/en/stable/). However, it is also often useful to embed a Panel app in an existing web application, such as a [FastAPI](https://fastapi.tiangolo.com/) web server.
 
-Since Panel 1.5.0 it is possible to run Panel application(s) natively on a FastAPI and uvicorn based server via . Therefore this how-to guide will explain how to add Panel application(s) directly to an existing FastAPI application. This functionality is new and experimental so we also provide a [how-to guide to embed a Tornado based Panel server application inside a FastAPI application](./FastAPI_Tornado).
+Since Panel 1.5.0 it is possible to run Panel application(s) natively on a FastAPI based server. Therefore this how-to guide will explain how to add Panel application(s) directly to an existing FastAPI application. This functionality is new and experimental so we also provide the original [how-to guide to embed a Tornado based Panel server application inside a FastAPI application](./FastAPI_Tornado).
 
 By the end of this guide, you'll be able to run a FastAPI application that serves a simple interactive Panel app. The Panel app will consist of a slider widget that dynamically updates a string of stars (⭐) based on the slider's value.
 
