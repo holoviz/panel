@@ -2,32 +2,26 @@
 
 Panel generally runs on the Bokeh server, which itself runs on [Tornado](https://tornadoweb.org/en/stable/). However, it is also often useful to embed a Panel app in an existing web application, such as a [FastAPI](https://fastapi.tiangolo.com/) web server.
 
-Since Panel 1.5.0 it is possible to run Panel application(s) natively on a FastAPI and uvicorn based server. Therefore this how-to guide will explain how to add Panel application(s) directly to an existing FastAPI application. This functionality is new and experimental so we also provide a [how-to guide to embed a Tornado based Panel server application inside a FastAPI application](./FastAPI_Tornado).
+Since Panel 1.5.0 it is possible to run Panel application(s) natively on a FastAPI and uvicorn based server via . Therefore this how-to guide will explain how to add Panel application(s) directly to an existing FastAPI application. This functionality is new and experimental so we also provide a [how-to guide to embed a Tornado based Panel server application inside a FastAPI application](./FastAPI_Tornado).
 
 By the end of this guide, you'll be able to run a FastAPI application that serves a simple interactive Panel app. The Panel app will consist of a slider widget that dynamically updates a string of stars (⭐) based on the slider's value.
 
 ## Setup
 
-Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutorial/) make sure you first have FastAPI installed using:
+Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutorial/) make sure you first have [FastAPI](https://fastapi.tiangolo.com/) and [bokeh-fastapi] installed using:
 
 ::::{tab-set}
 
-:::{tab-item} `conda`
-```bash
-conda install fastapi
-```
-:::
-
 :::{tab-item} `pip`
-```bash
-pip install fastapi
-```
-:::
-
-:::{tab-item} `panel`
 ```bash
 pip install panel[fastapi]
 ```
+:::
+
+:::{tab-item} `conda`
+
+Currently not supported
+
 :::
 
 ::::
@@ -92,7 +86,7 @@ fastapi dev main.py
 
 You should see the following output:
 
-```
+```bash
 INFO     Using path main.py
 INFO     Resolved absolute path /home/user/code/awesomeapp/main.py
 INFO     Searching for package file structure from directories with __init__.py files
@@ -164,6 +158,16 @@ add_applications({
     "/panel_app3": "my_panel_app.py"
 }, app=app)
 ```
+
+## Tips & Tricks
+
+### Running Behind a Proxy
+
+In some cases, you might be running your FastAPI app behind a reverse proxy, which adds an extra path prefix that your application doesn't directly handle. This is common when working in environments like JupyterHub or deploying to Kubernetes.
+
+For instance, if your FastAPI `/` endpoint is accessed at `https://some.domain/some/path/`, you will need to specify the path prefix when starting your FastAPI server. To do this, use the flag `--root-path /some/path/`. This ensures you can access the OpenAPI docs at `https://some.domain/some/path/docs`.
+
+For more details, refer to the [Behind a Proxy](https://fastapi.tiangolo.com/advanced/behind-a-proxy/) guide.
 
 ## Conclusion
 
