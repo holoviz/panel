@@ -1440,6 +1440,7 @@ class Tabulator(BaseTable):
             indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             page_df = page_df.reset_index()
+            df = df.reset_index()
         data = ColumnDataSource.from_df(page_df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
 
