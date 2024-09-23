@@ -15,6 +15,7 @@ import {debounce} from "debounce"
 import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
 import {HTMLBox, HTMLBoxView} from "./layout"
+import {schedule_when} from "./util"
 
 export class TableEditEvent extends ModelEvent {
   constructor(readonly column: string, readonly row: number, readonly pre: boolean) {
@@ -697,19 +698,9 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.setPage(this.model.page)
     }
     this._building = false
-    if (this._initializing && this.root.has_finished()) {
+    schedule_when(() => {
       this._initializing = false
-      this.redraw()
-    } else if (!this.root.has_finished()) {
-      const finalize = () => {
-        if (this.root.has_finished()) {
-          this._initializing = false
-        } else {
-          setTimeout(finalize, 10)
-        }
-      }
-      setTimeout(finalize, 10)
-    }
+    }, () => this.root.has_finished())
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
@@ -858,9 +849,11 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     viewEl.appendChild(view.el)
     rowEl.appendChild(viewEl)
-    if (!view.has_finished() && render) {
-      view.render()
-      view.after_render()
+    if (render) {
+      schedule_when(() => {
+        view.render()
+        view.after_render()
+      }, () => view.has_finished())
     }
     if (resize) {
       this._update_children()
