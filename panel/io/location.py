@@ -31,8 +31,10 @@ def _get_location_params(protocol: str|None, host: str| None, uri: str| None)->d
     if protocol:
         params['protocol'] = href = f'{protocol}:'
     if host:
-        if host.startswith("::ffff:"):
-            host = host.replace("::ffff:", "")
+        if host.startswith('::ffff:'):
+            host = host.replace('::ffff:', '')
+        elif host == '::1':
+            host = host.replace('::1', 'localhost')
 
         href += f'//{host}'
         if ':' in host:
