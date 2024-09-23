@@ -147,3 +147,14 @@ export function find_attributes(text: string, obj: string, ignored: string[]) {
 
   return uniq(matches)
 }
+
+export function schedule_when(func: () => void, predicate: () => boolean, timeout: number = 10): void {
+  const scheduled = () => {
+    if (predicate()) {
+      func()
+    } else {
+      setTimeout(scheduled, timeout)
+    }
+  }
+  scheduled()
+}

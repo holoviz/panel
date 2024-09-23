@@ -423,7 +423,7 @@ class BaseTable(ReactiveData, Widget):
         df_sorted.drop(columns=['_index_'], inplace=True)
         return df_sorted
 
-    def _filter_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _filter_dataframe(self, df: pd.DataFrame, header_filters: bool = True, internal_filters: bool = True) -> pd.DataFrame:
         """
         Filter the DataFrame.
 
@@ -438,7 +438,7 @@ class BaseTable(ReactiveData, Widget):
             The filtered DataFrame
         """
         filters = []
-        for col_name, filt in self._filters:
+        for col_name, filt in (self._filters if internal_filters else []):
             if col_name is not None and col_name not in df.columns:
                 continue
             if isinstance(filt, (FunctionType, MethodType, partial)):
@@ -477,7 +477,8 @@ class BaseTable(ReactiveData, Widget):
                                  "tuple or list.")
             filters.append(mask)
 
-        filters.extend(self._get_header_filters(df))
+        if header_filters:
+            filters.extend(self._get_header_filters(df))
 
         if filters:
             mask = filters[0]
@@ -624,8 +625,13 @@ class BaseTable(ReactiveData, Widget):
         return self._process_df_and_convert_to_cds(self.value)
 
     def _process_df_and_convert_to_cds(self, df: pd.DataFrame) -> tuple[pd.DataFrame, DataDict]:
+        # By default we potentially have two distinct views of the data
+        # locally we hold the fully filtered data, i.e. with header filters
+        # applied but since header filters are applied on the frontend
+        # we send the unfiltered data
+
         import pandas as pd
-        df = self._filter_dataframe(df)
+        df = self._filter_dataframe(df, header_filters=False)
         if df is None:
             return [], {}
         if isinstance(self.value.index, pd.MultiIndex):
@@ -1337,10 +1343,10 @@ class Tabulator(BaseTable):
         self._validate_iloc(idx, iloc)
         event.row = iloc
         if event_col not in self.buttons:
-            if event_col not in self.value.columns:
-                event.value = self.value.index[event.row]
-            else:
+            if event_col in self.value.columns:
                 event.value = self.value[event_col].iloc[event.row]
+            else:
+                event.value = self.value.index[event.row]
 
         # Set the old attribute on a table edit event
         if event.event_name == 'table-edit':
@@ -1397,7 +1403,7 @@ class Tabulator(BaseTable):
 
         import pandas as pd
         df = pd.DataFrame(data)
-        filters = self._get_header_filters(df)
+        filters = self._get_header_filters(df) if self.pagination == 'remote' else []
         if filters:
             mask = filters[0]
             for f in filters:
@@ -1414,6 +1420,9 @@ class Tabulator(BaseTable):
     def _get_data(self):
         if self.pagination != 'remote' or self.value is None:
             return super()._get_data()
+
+        # If data is paginated the current view on the frontend
+        # and locally are identical and both paginated
         import pandas as pd
         df = self._filter_dataframe(self.value)
         df = self._sort_df(df)
@@ -1431,6 +1440,7 @@ class Tabulator(BaseTable):
             indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             page_df = page_df.reset_index()
+            df = df.reset_index()
         data = ColumnDataSource.from_df(page_df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
 
@@ -2139,4 +2149,5 @@ class Tabulator(BaseTable):
         df = self._processed
         if self.pagination == 'remote':
             return df
+        df = self._filter_dataframe(df, header_filters=True, internal_filters=False)
         return self._sort_df(df)

@@ -15,6 +15,7 @@ import {debounce} from "debounce"
 import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
 import {HTMLBox, HTMLBoxView} from "./layout"
+import {schedule_when} from "./util"
 
 export class TableEditEvent extends ModelEvent {
   constructor(readonly column: string, readonly row: number, readonly pre: boolean) {
@@ -391,7 +392,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.download(ftype, this.model.filename)
     })
 
-    this.on_change(children, () => this.renderChildren())
+    this.on_change(children, () => this.renderChildren(false))
 
     this.on_change(expanded, () => {
       // The first cell is the cell of the frozen _index column.
@@ -501,25 +502,27 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     if (rows && (this.tabulator.rowManager.renderer != null)) {
       this.tabulator.rowManager.redraw(true)
-      this.renderChildren()
       this.setStyles()
     }
     this._redrawing = false
     this._restore_scroll = true
   }
 
+  get is_drawing(): boolean {
+    return this._building || this._redrawing || !this.root.has_finished()
+  }
+
   override after_layout(): void {
     super.after_layout()
-    const finished = this.root.has_finished()
-    if (this.tabulator != null && this._initializing && !this._building && finished) {
+    if (this.tabulator != null && this._initializing && !this.is_drawing) {
       this._initializing = false
-      this.redraw()
+      this._resize_redraw()
     }
   }
 
   override after_resize(): void {
     super.after_resize()
-    if (!this._is_scrolling && !this._redrawing) {
+    if (!this._is_scrolling && !this._initializing && !this.is_drawing) {
       this._debounced_redraw()
     }
   }
@@ -550,6 +553,7 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     super.render()
     this._initializing = true
+    this._building = true
     const container = div({style: {display: "contents"}})
     const el = div({style: {width: "100%", height: "100%", visibility: "hidden"}})
     this.container = el
@@ -602,7 +606,9 @@ export class DataTabulatorView extends HTMLBoxView {
     }, 50, false))
 
     // Sync state with model
-    this.tabulator.on("rowSelectionChanged", (data: any, rows: any, selected: any, deselected: any) => this.rowSelectionChanged(data, rows, selected, deselected))
+    this.tabulator.on("rowSelectionChanged", (data: any, rows: any, selected: any, deselected: any) => {
+      this.rowSelectionChanged(data, rows, selected, deselected)
+    })
     this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
     this.tabulator.on("cellEdited", (cell: any) => this.cellEdited(cell))
     this.tabulator.on("dataFiltering", (filters: any) => {
@@ -694,19 +700,13 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.setPage(this.model.page)
     }
     this._building = false
-    if (this._initializing && this.root.has_finished()) {
+    schedule_when(() => {
+      const initializing = this._initializing
       this._initializing = false
-      this.redraw()
-    } else if (!this.root.has_finished()) {
-      const finalize = () => {
-        if (this.root.has_finished()) {
-          this._initializing = false
-        } else {
-          setTimeout(finalize, 10)
-        }
+      if (initializing) {
+        this._resize_redraw()
       }
-      setTimeout(finalize, 10)
-    }
+    }, () => this.root.has_finished())
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
@@ -772,21 +772,13 @@ export class DataTabulatorView extends HTMLBoxView {
       frozenRows: (row: any) => {
         return (this.model.frozen_rows.length > 0) ? this.model.frozen_rows.includes(row._row.data._index) : false
       },
+      rowFormatter: (row: any) => this._render_row(row),
     }
     if (this.model.pagination === "remote") {
       configuration.ajaxURL = "http://panel.pyviz.org"
       configuration.sortMode = "remote"
     }
-    const cds: any = this.model.source
-    let data: any[]
-    if (cds === null || (cds.columns().length === 0)) {
-      data = []
-    } else {
-      data = transform_cds_to_records(cds, true)
-    }
-    if (configuration.dataTree) {
-      data = group_data(data, this.model.columns, this.model.indexes, this.model.aggregators)
-    }
+    const data = this.getData()
     return {
       ...configuration,
       data,
@@ -811,19 +803,27 @@ export class DataTabulatorView extends HTMLBoxView {
     return children
   }
 
-  renderChildren(): void {
+  get row_index(): Map<number, any> {
+    const rows = this.tabulator.getRows()
+    const lookup = new Map()
+    for (const row of rows) {
+      const index = row._row?.data._index
+      if (index != null) {
+        lookup.set(index, row)
+      }
+    }
+    return lookup
+  }
+
+  renderChildren(all: boolean = true): void {
     new Promise(async (resolve: any) => {
-      const new_children = await this.build_child_views()
+      let new_children = await this.build_child_views()
+      if (all) {
+        new_children = this.child_views
+      }
       resolve(new_children)
     }).then((new_children) => {
-      const rows = this.tabulator.getRows()
-      const lookup = new Map()
-      for (const row of rows) {
-        const index = row._row?.data._index
-        if (index != null) {
-          lookup.set(index, row)
-        }
-      }
+      const lookup = this.row_index
       for (const index of this.model.expanded) {
         const model = this.get_child(index)
         const row = lookup.get(index)
@@ -859,14 +859,19 @@ export class DataTabulatorView extends HTMLBoxView {
     let viewEl
     if (prev_child != null && prev_child.className == "row-content") {
       viewEl = prev_child
+      if (viewEl.children.length && viewEl.children[0] === view.el) {
+        return
+      }
     } else {
       viewEl = div({class: "row-content", style: {background_color: bg, margin_left: neg_margin, max_width: "100%", overflow_x: "hidden"}})
+      rowEl.appendChild(viewEl)
     }
     viewEl.appendChild(view.el)
-    rowEl.appendChild(viewEl)
-    if (!view.has_finished() && render) {
-      view.render()
-      view.after_render()
+    if (render) {
+      schedule_when(() => {
+        view.render()
+        view.after_render()
+      }, () => this.root.has_finished())
     }
     if (resize) {
       this._update_children()
@@ -914,7 +919,13 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   getData(): any[] {
-    let data = transform_cds_to_records(this.model.source, true)
+    const cds = this.model.source
+    let data: any[]
+    if (cds === null || (cds.columns().length === 0)) {
+      data = []
+    } else {
+      data = transform_cds_to_records(cds, true)
+    }
     if (this.model.configuration.dataTree) {
       data = group_data(data, this.model.columns, this.model.indexes, this.model.aggregators)
     }
@@ -1261,7 +1272,6 @@ export class DataTabulatorView extends HTMLBoxView {
   setPage(): void {
     this.tabulator.setPage(Math.min(this.model.max_page, this.model.page))
     if (this.model.pagination === "local") {
-      this.renderChildren()
       this.setStyles()
     }
   }
@@ -1269,7 +1279,6 @@ export class DataTabulatorView extends HTMLBoxView {
   setPageSize(): void {
     this.tabulator.setPageSize(this.model.page_size)
     if (this.model.pagination === "local") {
-      this.renderChildren()
       this.setStyles()
     }
   }
