@@ -157,8 +157,9 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "internet: mark test as requiring an internet connection")
 
 def pytest_generate_tests(metafunc):
-    if metafunc.config.option.repeat is not None:
-        count = int(metafunc.config.option.repeat)
+    repeat = getattr(metafunc.config.option, 'repeat', None)
+    if repeat is not None:
+        count = int(repeat)
 
         # We're going to duplicate these tests by parametrizing them,
         # which requires that each test has a fixture to accept the parameter.
