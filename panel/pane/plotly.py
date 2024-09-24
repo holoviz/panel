@@ -132,8 +132,10 @@ class Plotly(ModelPane):
         for key, value in list(json.items()):
             full_path = key if not parent_path else f"{parent_path}.{key}"
             if isinstance(value, np.ndarray):
-                # Extract numpy array
-                data[full_path] = [json.pop(key)]
+                array = json.pop(key)
+                if array.dtype.kind == 'O' and isdatetime(array[0]):
+                    array = array.astype(str)
+                data[full_path] = [array]
             elif isinstance(value, dict):
                 # Recurse into dictionaries:
                 Plotly._get_sources_for_trace(value, data=data, parent_path=full_path)
