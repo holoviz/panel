@@ -123,10 +123,11 @@ class Application(BkApplication):
         super().add(handler)
 
     def _set_session_prefix(self, doc):
-        if not doc.session_context and doc.session_context.server_context:
+        session_context = doc.session_context
+        if not (session_context and session_context.server_context):
             return
-        request = doc.session_context.request
-        app_context = doc.session_context.server_context.application_context
+        request = session_context.request
+        app_context = session_context.server_context.application_context
         prefix = request.uri.replace(app_context._url, '')
         if not prefix.endswith('/'):
             prefix += '/'
