@@ -12,6 +12,7 @@ from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING, Any, Callable, Mapping,
 )
+from urllib.parse import urljoin
 
 import bokeh.command.util
 
@@ -121,8 +122,29 @@ class Application(BkApplication):
             handler._on_session_destroyed = _on_session_destroyed
         super().add(handler)
 
+    def _set_session_prefix(self, doc):
+        if not doc.session_context:
+            return
+        request = doc.session_context.request
+        app_context = doc.session_context.server_context.application_context
+        prefix = request.uri.replace(app_context._url, '')
+        if not prefix.endswith('/'):
+            prefix += '/'
+        base_url = urljoin('/', prefix)
+        rel_path = '/'.join(['..'] * app_context._url.strip('/').count('/'))
+
+        with set_curdoc(doc):
+            # Handle autoload.js absolute paths
+            abs_url = None#self.get_argument('bokeh-absolute-url', default=None)
+            if abs_url is not None:
+                rel_path = abs_url.replace(app_context._url, '')
+
+            state.base_url = base_url
+            state.rel_path = rel_path
+
     def initialize_document(self, doc):
         logger.info(LOG_SESSION_LAUNCHING, id(doc))
+        self._set_session_prefix(doc)
         super().initialize_document(doc)
         if doc in state._templates and doc not in state._templates[doc]._documents:
             template = state._templates[doc]

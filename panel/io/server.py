@@ -14,13 +14,12 @@ import signal
 import sys
 import uuid
 
-from contextlib import contextmanager
 from functools import partial, wraps
 from html import escape
 from typing import (
     TYPE_CHECKING, Any, Callable, Mapping, Optional,
 )
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 import bokeh
 import param
@@ -56,7 +55,7 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from ..config import config
-from ..util import edit_readonly, fullpath
+from ..util import fullpath
 from ..util.warnings import warn
 from .application import build_applications
 from .document import (  # noqa
@@ -325,32 +324,6 @@ class Server(BokehServer):
 
 bokeh.server.server.Server = Server
 
-class SessionPrefixHandler:
-
-    @contextmanager
-    def _session_prefix(self):
-        prefix = self.request.uri.replace(self.application_context._url, '')
-        if not prefix.endswith('/'):
-            prefix += '/'
-        base_url = urljoin('/', prefix)
-        rel_path = '/'.join(['..'] * self.application_context._url.strip('/').count('/'))
-        old_url, old_rel = state.base_url, state.rel_path
-
-        # Handle autoload.js absolute paths
-        abs_url = self.get_argument('bokeh-absolute-url', default=None)
-        if abs_url is not None:
-            rel_path = abs_url.replace(self.application_context._url, '')
-
-        with edit_readonly(state):
-            state.base_url = base_url
-            state.rel_path = rel_path
-        try:
-            yield
-        finally:
-            with edit_readonly(state):
-                state.base_url = old_url
-                state.rel_path = old_rel
-
 class LoginUrlMixin:
     """
     Overrides the AuthRequestHandler.get_login_url implementation to
@@ -369,7 +342,7 @@ class LoginUrlMixin:
         raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
 
 
-class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
+class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated
     async def get_session(self):
@@ -488,42 +461,41 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
                 return
 
         app = self.application
-        with self._session_prefix():
-            key_func = state._session_key_funcs.get(self.request.path, lambda r: r.path)
-            old_request = key_func(self.request) in state._sessions
-            session = await self.get_session()
-            if old_request and state._sessions.get(key_func(self.request)) is session:
-                session_id = generate_session_id(
-                    secret_key=self.application.secret_key,
-                    signed=self.application.sign_sessions
+        key_func = state._session_key_funcs.get(self.request.path, lambda r: r.path)
+        old_request = key_func(self.request) in state._sessions
+        session = await self.get_session()
+        if old_request and state._sessions.get(key_func(self.request)) is session:
+            session_id = generate_session_id(
+                secret_key=self.application.secret_key,
+                signed=self.application.sign_sessions
+            )
+            payload = get_token_payload(session.token)
+            payload.update(payload)
+            del payload['session_expiry']
+            token = generate_jwt_token(
+                session_id,
+                secret_key=app.secret_key,
+                signed=app.sign_sessions,
+                expiration=app.session_token_expiration,
+                extra_payload=payload
+            )
+        else:
+            token = session.token
+        logger.info(LOG_SESSION_CREATED, id(session.document))
+        with set_curdoc(session.document):
+            resources = Resources.from_bokeh(self.application.resources())
+            # Session authorization callback
+            authorized, auth_error = self._authorize(session=True)
+            if authorized:
+                page = server_html_page_for_session(
+                    session, resources=resources, title=session.document.title,
+                    token=token, template=session.document.template,
+                    template_variables=session.document.template_variables,
                 )
-                payload = get_token_payload(session.token)
-                payload.update(payload)
-                del payload['session_expiry']
-                token = generate_jwt_token(
-                    session_id,
-                    secret_key=app.secret_key,
-                    signed=app.sign_sessions,
-                    expiration=app.session_token_expiration,
-                    extra_payload=payload
-                )
+            elif authorized is None:
+                return
             else:
-                token = session.token
-            logger.info(LOG_SESSION_CREATED, id(session.document))
-            with set_curdoc(session.document):
-                resources = Resources.from_bokeh(self.application.resources())
-                # Session authorization callback
-                authorized, auth_error = self._authorize(session=True)
-                if authorized:
-                    page = server_html_page_for_session(
-                        session, resources=resources, title=session.document.title,
-                        token=token, template=session.document.template,
-                        template_variables=session.document.template_variables,
-                    )
-                elif authorized is None:
-                    return
-                else:
-                    page = self._render_auth_error(auth_error)
+                page = self._render_auth_error(auth_error)
 
         self.set_header("Content-Type", 'text/html')
         self.write(page)
@@ -531,7 +503,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
 per_app_patterns[0] = (r'/?', DocHandler)
 
 # Patch Bokeh Autoload handler
-class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
+class AutoloadJsHandler(BkAutoloadJsHandler):
     ''' Implements a custom Tornado handler for the autoload JS chunk
 
     '''
@@ -550,16 +522,15 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
         else:
             server_url = None
 
-        with self._session_prefix():
-            session = await self.get_session()
-            with set_curdoc(session.document):
-                resources = Resources.from_bokeh(
-                    self.application.resources(server_url), absolute=True
-                )
-                js = autoload_js_script(
-                    session.document, resources, session.token, element_id,
-                    app_path, absolute_url, absolute=True
-                )
+        session = await self.get_session()
+        with set_curdoc(session.document):
+            resources = Resources.from_bokeh(
+                self.application.resources(server_url), absolute=True
+            )
+            js = autoload_js_script(
+                session.document, resources, session.token, element_id,
+                app_path, absolute_url, absolute=True
+            )
 
         self.set_header("Content-Type", 'application/javascript')
         self.write(js)
