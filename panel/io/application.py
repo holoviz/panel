@@ -123,7 +123,7 @@ class Application(BkApplication):
         super().add(handler)
 
     def _set_session_prefix(self, doc):
-        if not doc.session_context:
+        if not doc.session_context and doc.session_context.server_context:
             return
         request = doc.session_context.request
         app_context = doc.session_context.server_context.application_context
