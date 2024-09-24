@@ -150,6 +150,19 @@ pn.state.onload(onload)
 
 ### Good
 
+Set `loading=pn.state.param.busy` to overlay a spinner while processing to let the user know it's working.
+
+```{pyodide}
+def process_load(event):
+    time.sleep(3)
+
+button = pn.widgets.Button(name="Click me", on_click=process_load)
+widget_box = pn.WidgetBox(button, loading=pn.state.param.busy, height=300, width=300)
+widget_box
+```
+
+### Good
+
 Set `loading=True` to show a spinner while processing to let the user know it's working.
 
 ```{pyodide}
@@ -193,8 +206,6 @@ Use:
 - `finally` block to update values regardless
 
 ```{pyodide}
-import time
-
 def compute(divisor):
     try:
         busy.value = True
