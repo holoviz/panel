@@ -133,8 +133,6 @@ class Plotly(ModelPane):
             full_path = key if not parent_path else f"{parent_path}.{key}"
             if isinstance(value, np.ndarray):
                 array = json.pop(key)
-                if array.dtype.kind == 'O' and isdatetime(array[0]):
-                    array = array.astype(str)
                 data[full_path] = [array]
             elif isinstance(value, dict):
                 # Recurse into dictionaries:
@@ -253,17 +251,21 @@ class Plotly(ModelPane):
         For #382: Map datetime elements to strings.
         """
         json = fig.to_plotly_json()
+        layout = json['layout']
         data = json['data']
-
-        for idx in range(len(data)):
-            for key in data[idx]:
-                if isdatetime(data[idx][key]):
-                    arr = data[idx][key]
-                    if isinstance(arr, np.ndarray):
-                        arr = arr.astype(str)
-                    else:
-                        arr = [str(v) for v in arr]
-                    data[idx][key] = arr
+        shapes = layout.get('shapes', [])
+        for trace in data+shapes:
+            for key in trace:
+                if not isdatetime(trace[key]):
+                    continue
+                arr = trace[key]
+                if isinstance(arr, np.ndarray):
+                    arr = arr.astype(str)
+                elif isinstance(arr, list):
+                    arr = [str(v) for v in arr]
+                else:
+                    arr = str(arr)
+                trace[key] = arr
         return json
 
     def _init_params(self):
