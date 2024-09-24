@@ -134,12 +134,12 @@ class Application(BkApplication):
         base_url = urljoin('/', prefix)
         rel_path = '/'.join(['..'] * app_context._url.strip('/').count('/'))
 
-        with set_curdoc(doc):
-            # Handle autoload.js absolute paths
-            abs_url = request.arguments.get('bokeh-absolute-url')
-            if abs_url:
-                rel_path = abs_url[0].decode('utf-8').replace(app_context._url, '')
+        # Handle autoload.js absolute paths
+        abs_url = request.arguments.get('bokeh-absolute-url')
+        if abs_url:
+            rel_path = abs_url[0].decode('utf-8').replace(app_context._url, '')
 
+        with set_curdoc(doc):
             state.base_url = base_url
             state.rel_path = rel_path
 
