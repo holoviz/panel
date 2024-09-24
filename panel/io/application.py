@@ -135,9 +135,9 @@ class Application(BkApplication):
 
         with set_curdoc(doc):
             # Handle autoload.js absolute paths
-            abs_url = None#self.get_argument('bokeh-absolute-url', default=None)
-            if abs_url is not None:
-                rel_path = abs_url.replace(app_context._url, '')
+            abs_url = request.arguments.get('bokeh-absolute-url')
+            if abs_url:
+                rel_path = abs_url[0].decode('utf-8').replace(app_context._url, '')
 
             state.base_url = base_url
             state.rel_path = rel_path
