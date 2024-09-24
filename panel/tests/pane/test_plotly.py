@@ -248,7 +248,7 @@ def test_plotly_swap_traces(document, comm):
 @plotly_available
 def test_plotly_shape_datetime_converted(document, comm):
     # see https://github.com/holoviz/panel/issues/5252
-    start = pd.Timestamp('2022-05-11 0:00:00', tz=dt.UTC)
+    start = pd.Timestamp('2022-05-11 0:00:00', tz=dt.timezone.utc)
     date_range = pd.date_range(start=start, periods=20, freq='h')
 
     df = pd.DataFrame({
@@ -257,7 +257,7 @@ def test_plotly_shape_datetime_converted(document, comm):
     })
 
     fig = px.scatter(df, x="x", y="y")
-    fig.add_vline(x=pd.Timestamp('2022-05-11 9:00:00', tz=dt.UTC))
+    fig.add_vline(x=pd.Timestamp('2022-05-11 9:00:00', tz=dt.timezone.utc))
 
     p = Plotly(fig)
 
