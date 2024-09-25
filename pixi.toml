@@ -116,7 +116,7 @@ pytest-xdist = "*"
 
 [feature.test-minimal.dependencies]
 # Lower pin required dependencies
-bokeh = { version = "3.5.*", channel = "conda-forge" }
+bokeh = "3.5.*"
 
 [feature.test.dependencies]
 # Optional dependencies - recommended
