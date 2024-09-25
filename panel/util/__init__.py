@@ -44,6 +44,7 @@ from .parameters import (  # noqa
 log = logging.getLogger('panel.util')
 
 bokeh_version = Version(Version(bokeh.__version__).base_version)
+BOKEH_GE_3_6 = bokeh_version >= Version('3.6')
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
