@@ -115,8 +115,12 @@ pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
 [feature.test-minimum.dependencies]
-# Lower pin required dependencies
+# Lower pin of required dependencies
 bokeh = "3.5.*"
+pandas = "1.2.*"
+param = "2.1.*"
+pyviz_comms = "2.0.*"
+tqdm = "4.48.*"
 
 [feature.test.dependencies]
 # Optional dependencies - recommended
