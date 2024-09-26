@@ -81,7 +81,7 @@ function summarize(grouped: any[], columns: any[], aggregators: string[], depth:
     const subsummary = summarize(group._children, columns, aggregators, depth+1)
     for (const col in subsummary) {
       if (isArray(subsummary[col])) {
-        group[col] = sum(subsummary[col]) / subsummary[col].length
+        group[col] = sum(subsummary[col] as number[]) / subsummary[col].length
       } else {
         group[col] = subsummary[col]
       }
