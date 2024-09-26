@@ -77,8 +77,8 @@ recommended = [
     'plotly',
 ]
 fastapi = [
-    'bokeh-fastapi == 0.1.0',
-    'uvicorn',
+    'bokeh-fastapi >= 0.1.0',
+    'fastapi[standard]',
 ]
 dev = [
     'watchfiles',

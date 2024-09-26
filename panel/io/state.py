@@ -89,9 +89,6 @@ class _state(param.Parameterized):
     apps to indicate their state to a user.
     """
 
-    base_url = param.String(default='/', readonly=True, doc="""
-       Base URL for all server paths.""")
-
     busy = param.Boolean(default=False, readonly=True, doc="""
        Whether the application is currently busy processing a user
        callback.""")
@@ -104,11 +101,6 @@ class _state(param.Parameterized):
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
-    rel_path = param.String(default='', readonly=True, doc="""
-       Relative path from the current app being served to the root URL.
-       If application is embedded in a different server via autoload.js
-       this will instead reflect an absolute path.""")
-
     session_info = param.Dict(default={'total': 0, 'live': 0,
                                        'sessions': {}}, doc="""
        Tracks information and statistics about user sessions.""")
@@ -116,11 +108,19 @@ class _state(param.Parameterized):
     webdriver = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
 
+    _base_url = param.String(default='/', readonly=True, doc="""
+       Base URL for all server paths.""")
+
     _busy_counter = param.Integer(default=0, doc="""
        Count of active callbacks current being processed.""")
 
     _memoize_cache = param.Dict(default={}, doc="""
        A dictionary used by the cache decorator.""")
+
+    _rel_path = param.String(default='', readonly=True, doc="""
+       Relative path from the current app being served to the root URL.
+       If application is embedded in a different server via autoload.js
+       this will instead reflect an absolute path.""")
 
     # Holds temporary curdoc overrides per thread
     _curdoc = ContextVar('curdoc', default=None)
@@ -219,6 +219,10 @@ class _state(param.Parameterized):
     # Override user info
     _oauth_user_overrides = {}
     _active_users = Counter()
+
+    # Paths
+    _rel_paths: ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
+    _base_urls: ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
 
     # Watchers
     _watch_events: list[asyncio.Event] = []
@@ -1018,6 +1022,34 @@ class _state(param.Parameterized):
         Returns the header associated with the request that started the session.
         """
         return self.curdoc.session_context.request.headers if self.curdoc and self.curdoc.session_context else {}
+
+    @property
+    def base_url(self) -> str:
+        base_url = self._base_url
+        if self.curdoc:
+            return self._base_urls.get(self.curdoc, base_url)
+        return base_url
+
+    @base_url.setter
+    def base_url(self, value: str):
+        if self.curdoc:
+            self._base_urls[self.curdoc] = value
+        else:
+            self._base_url = value
+
+    @property
+    def rel_path(self) -> str | None:
+        rel_path = self._rel_path
+        if self.curdoc:
+            return self._rel_paths.get(self.curdoc, rel_path)
+        return rel_path
+
+    @rel_path.setter
+    def rel_path(self, value: str | None):
+        if self.curdoc:
+            self._rel_paths[self.curdoc] = value
+        else:
+            self._rel_path = value
 
     @property
     def loaded(self) -> bool:
