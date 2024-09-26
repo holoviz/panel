@@ -134,6 +134,7 @@ watchfiles = "*"
 # Test dependencies
 altair = "*"
 anywidget = "*"
+bokeh-fastapi = "*"
 bokeh_sampledata = "*"
 diskcache = "*"
 fastapi = "*"
@@ -145,10 +146,6 @@ numba = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
-
-[feature.test.pypi-dependencies]
-bokeh-fastapi = "~=0.1.0a0"
-bokeh = ">=3.6.0rc1"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
