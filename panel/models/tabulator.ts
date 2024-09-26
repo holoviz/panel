@@ -1,4 +1,5 @@
 import {undisplay} from "@bokehjs/core/dom"
+import {sum} from "@bokehjs/core/util/arrayable"
 import {isArray, isBoolean, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
@@ -80,7 +81,7 @@ function summarize(grouped: any[], columns: any[], aggregators: string[], depth:
     const subsummary = summarize(group._children, columns, aggregators, depth+1)
     for (const col in subsummary) {
       if (isArray(subsummary[col])) {
-        group[col] = subsummary[col].reduce((a: any, b: any) => a + b, 0) / subsummary[col].length
+        group[col] = sum(subsummary[col]) / subsummary[col].length
       } else {
         group[col] = subsummary[col]
       }
