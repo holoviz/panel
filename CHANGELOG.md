@@ -24,6 +24,10 @@ This release primarily focuses on a number of tweaks and enhancements for the do
 
 - Only postpone `--setup` script until after server startup if `--num-procs` is greater than 1 ([#7289](https://github.com/holoviz/panel/pull/7289))
 
+### Compatibility
+
+- Support for Bokeh 3.6.x releases ([#7322](https://github.com/holoviz/panel/pull/7322))
+
 ### Documentation
 
 - Fix and improve JupyterLite pyodide distribution ([#7286](https://github.com/holoviz/panel/pull/7286))
