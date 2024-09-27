@@ -15,7 +15,6 @@ GREEN, RED, RESET = "\033[0;32m", "\033[0;31m", "\033[0m"
 
 def build_models():
     from bokeh.ext import build
-    sys.exit(1)
 
     print(f"{GREEN}[PANEL]{RESET} Starting building custom models", flush=True)
     panel_dir = BASE_DIR / "panel"
