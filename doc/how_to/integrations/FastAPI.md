@@ -22,8 +22,6 @@ pip install panel[fastapi]
 ```bash
 conda install -c conda-forge bokeh-fastapi
 ```
-
-Note: As of September 24th 2024 this is waiting on [conda-forge/staged-recipes#27575](https://github.com/conda-forge/staged-recipes/pull/27575).
 :::
 
 ::::

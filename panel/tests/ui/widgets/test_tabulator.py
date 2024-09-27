@@ -24,6 +24,7 @@ from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
+from panel.util import BOKEH_GE_3_6
 from panel.widgets import Select, Tabulator, TextInput
 
 pytestmark = pytest.mark.ui
@@ -366,10 +367,12 @@ def test_tabulator_formatters_bokeh_string(page, df_mixed):
 
     serve_component(page, widget)
 
-    expect(page.locator('text="A"')).to_have_attribute(
-        "style",
-        "font-weight: bold; text-align: center; color: rgb(255, 0, 0);"
-    )
+    if BOKEH_GE_3_6:
+        style = "font-weight: bold; text-align: center; color: red;"
+    else:
+        style = "font-weight: bold; text-align: center; color: rgb(255, 0, 0);"
+
+    expect(page.locator('text="A"')).to_have_attribute("style", style)
 
 
 def test_tabulator_formatters_bokeh_html_multiple_columns(page, df_mixed):
