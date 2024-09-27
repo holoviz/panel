@@ -1,5 +1,43 @@
 # Releases
 
+## Version 1.5.1
+
+This release primarily focuses on a number of tweaks and enhancements for the documentation and also resolves a number of bugs related to `Tabulator` rendering and the new `FastAPI` integration. As always, many thanks to our contributors including our new contributors @dennisjlee and @alexcjohnson, our returning contributors @thuydotm and @jbednar and the core maintainer team @hoxbro, @maximlt, @ahuang11, @MarcSkovMadsen and @philippjfr.
+
+### Enhancements
+
+- Add mapboxgl CSS to `Plotly` ([#7320](https://github.com/holoviz/panel/pull/7320))
+- Tweak margins of icons in `ChatMessage` ([#7310](https://github.com/holoviz/panel/pull/7310))
+
+### Bug fixes
+
+- Fix langchain import in `panel.chat.langchain` ([#7297](https://github.com/holoviz/panel/pull/7297))
+- Ensure Tabulator is consistently redrawn after render and resize ([#7305](https://github.com/holoviz/panel/pull/7305))
+- Filter out empty plotly_selected events ([#7312](https://github.com/holoviz/panel/pull/7312))
+- Improve parameter validation on `Timepicker` ([#7308](https://github.com/holoviz/panel/pull/7308))
+- Ensure `Tabulator.selection` consistency when `pagination='local'` ([#7304](https://github.com/holoviz/panel/pull/7304))
+- Correctly handle ipv6 localhost URI in `Location` ([#7316](https://github.com/holoviz/panel/pull/7316))
+- Ensure resource URLs are handled correctly in all server implementations ([#7318](https://github.com/holoviz/panel/pull/7318))
+- Ensure `Plotly` datetime are correctly converted from timestamp to date string ([#7319](https://github.com/holoviz/panel/pull/7319))
+
+### Regressions
+
+- Only postpone `--setup` script until after server startup if `--num-procs` is greater than 1 ([#7289](https://github.com/holoviz/panel/pull/7289))
+
+### Documentation
+
+- Fix and improve JupyterLite pyodide distribution ([#7286](https://github.com/holoviz/panel/pull/7286))
+- Document how to apply gradient styling o `Tabulator` cells ([#7291](https://github.com/holoviz/panel/pull/7291))
+- Clarified wording in best practices docs ([#7290](https://github.com/holoviz/panel/pull/7290))
+- Minor tweaks for the `FileDropper` ([#7307](https://github.com/holoviz/panel/pull/7307))
+- Ensure docs consistently recommend `--dev` over `--autoreload` ([#7285](https://github.com/holoviz/panel/pull/7285))
+- Tweaks for Tabulator docs ([#7315](https://github.com/holoviz/panel/pull/7315))
+- Improve fastapi docs ([#7317](https://github.com/holoviz/panel/pull/7317))
+- Add note about Tabulator font-size ([#7321](https://github.com/holoviz/panel/pull/7321))
+- Tweak best practices ([#7301](https://github.com/holoviz/panel/pull/7301))
+- Fix typo in JPG component docs ([#7323](https://github.com/holoviz/panel/pull/7323))
+
+
 ## Version 1.5.0
 
 This release, while technically a minor release hugely expands the scope of what is possible in Panel. In particular the introduction of the new `panel.custom` module makes it trivially easy to create new JS and React based components using modern tooling, a first-class developer experience and support for compilation and bundling. We are incredibly excited to see which new components you build using this approach. This release also includes native integration with FastAPI, such that you can now run Panel apps natively on an existing FastAPI server. We also introduce a number of new components, improved the developer experience, and squashed a huge number of bugs, particularly for the `Tabulator` component.
