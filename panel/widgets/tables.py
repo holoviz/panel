@@ -1738,8 +1738,7 @@ class Tabulator(BaseTable):
         else:
             start = 0
         ilocs = list(existing)
-        df = self._processed
-        index = df.iloc[[start+ind for ind in indexes]].index
+        index = self._processed.iloc[[start+ind for ind in indexes]].index
         for v in index.values:
             try:
                 iloc = self.value.index.get_loc(v)
