@@ -1449,6 +1449,8 @@ class Tabulator(BaseTable):
         if self.value is None or self.style is None or self.value.empty:
             return {}
         df = self._processed
+        if len(self.indexes) > 1:
+            df = df.reset_index()
         if recompute:
             try:
                 self._computed_styler = styler = df.style
