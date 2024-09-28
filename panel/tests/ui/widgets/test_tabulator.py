@@ -1543,6 +1543,23 @@ def test_tabulator_selection_selectable_rows(page, df_mixed):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
+@pytest.mark.parametrize('pagination', ['remote', 'local', None])
+def test_tabulator_selection_on_multi_index(page, pagination):
+    index = pd.MultiIndex.from_tuples([(i, j) for i in range(10) for j in range(10)], names=["A", "B"])
+    df = pd.DataFrame(index=index, data={"C": range(100)})
+
+    widget = Tabulator(df, pagination=pagination, selectable='checkbox')
+
+    serve_component(page, widget)
+
+    checkboxes = page.locator('input[type="checkbox"]')
+    expect(checkboxes).to_have_count(widget.initial_page_size+1 if pagination else len(df)+1)
+    checkboxes.nth(1).check()
+    checkboxes.nth(17).check()
+
+    wait_until(lambda: widget.selection == [0, 16], page)
+
+
 def test_tabulator_row_content(page, df_mixed):
     widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
 

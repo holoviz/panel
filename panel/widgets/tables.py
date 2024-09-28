@@ -643,8 +643,10 @@ class BaseTable(ReactiveData, Widget):
             default_index = ('level_0' if 'index' in df.columns else 'index')
             indexes = [df.index.name or default_index]
         if len(indexes) > 1:
-            df = df.reset_index()
-        data = ColumnDataSource.from_df(df)
+            flat_df = df.reset_index()
+        else:
+            flat_df = df
+        data = ColumnDataSource.from_df(flat_df)
         if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
         return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
@@ -1440,7 +1442,6 @@ class Tabulator(BaseTable):
             indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             page_df = page_df.reset_index()
-            df = df.reset_index()
         data = ColumnDataSource.from_df(page_df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
 
@@ -1735,7 +1736,8 @@ class Tabulator(BaseTable):
         else:
             start = 0
         ilocs = list(existing)
-        index = self._processed.iloc[[start+ind for ind in indexes]].index
+        df = self._processed
+        index = df.iloc[[start+ind for ind in indexes]].index
         for v in index.values:
             try:
                 iloc = self.value.index.get_loc(v)
