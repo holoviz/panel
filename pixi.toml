@@ -201,6 +201,7 @@ test-type = 'mypy panel'
 MOZ_HEADLESS = "1"
 PANEL_IPYWIDGET = "1"
 OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES"
+PYTHONWARNINGS="ignore"
 
 [feature.doc.dependencies]
 lxml = "*"
