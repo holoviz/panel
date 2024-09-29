@@ -2,7 +2,7 @@
 
 This guide demonstrates how to style Plotly plots using the [Plotly pane](../../reference/panes/Plotly). You can customize your plots with Plotly's built-in templates, available in `plotly.io.templates`. For more details, refer to the [Plotly Templates Guide](https://plotly.com/python/templates/).
 
-The GIF below illustrates the possibilities when you style a Plotly plot with `FastListTemplate`.
+The GIF below illustrates the possibilities when you style a Plotly plot with `FastGridTemplate`.
 
 ![PlotlyStyle.gif](https://assets.holoviews.org/panel/thumbnails/gallery/styles/plotly-styles.gif)
 
