@@ -2,6 +2,10 @@
   --track-width: 2;
 }
 
+#header-design-provider fast-switch::part(checked-indicator) {
+  --neutral-foreground-rest: #181818;
+}
+
 html {
   scrollbar-face-color: var(--neutral-fill-rest);
   scrollbar-base-color: var(--neutral-fill-rest);
