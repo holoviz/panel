@@ -484,7 +484,11 @@ class _state(param.Parameterized):
 
         Note: Keyword arguments must be hashable.
 
-        Example:
+        Pandas Example:
+
+        >>> data = pn.state.as_cached('data', pd.read_csv, filepath_or_buffer=DATA_URL)
+
+        Function Example:
 
         >>> def load_dataset(name):
         >>>     # some slow operation that uses name to load a dataset....
