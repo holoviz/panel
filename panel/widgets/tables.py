@@ -642,9 +642,7 @@ class BaseTable(ReactiveData, Widget):
         else:
             default_index = ('level_0' if 'index' in df.columns else 'index')
             indexes = [df.index.name or default_index]
-        if len(indexes) > 1:
-            df = df.reset_index()
-        data = ColumnDataSource.from_df(df)
+        data = ColumnDataSource.from_df(df.reset_index() if len(indexes) > 1 else df)
         if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
         return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
@@ -1440,7 +1438,6 @@ class Tabulator(BaseTable):
             indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             page_df = page_df.reset_index()
-            df = df.reset_index()
         data = ColumnDataSource.from_df(page_df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
 
@@ -1448,6 +1445,8 @@ class Tabulator(BaseTable):
         if self.value is None or self.style is None or self.value.empty:
             return {}
         df = self._processed
+        if len(self.indexes) > 1:
+            df = df.reset_index()
         if recompute:
             try:
                 self._computed_styler = styler = df.style

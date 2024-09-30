@@ -1817,8 +1817,8 @@ def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm, p
 
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
 def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, comm, pagination):
-    df = makeMixedDataFrame()
-    table = Tabulator(df.set_index(['A', 'C']), pagination=pagination)
+    df = makeMixedDataFrame().set_index(['A', 'C'])
+    table = Tabulator(df, pagination=pagination)
 
     table.filters = [
         {'field': 'A', 'sorter': 'number', 'type': '=', 'value': 2},
@@ -1831,9 +1831,9 @@ def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, c
         'B': np.array([0.]),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
-    })
+    }).set_index(['A', 'C'])
     pd.testing.assert_frame_equal(
-        table._processed, expected if pagination == 'remote' else df[['A', 'C', 'B', 'D']]
+        table._processed, expected if pagination == 'remote' else df
     )
 
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
