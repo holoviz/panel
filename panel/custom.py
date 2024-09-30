@@ -48,14 +48,41 @@ if TYPE_CHECKING:
 
 
 class PyComponent(Viewable, Layoutable):
-    """
+    '''
     The `PyComponent` combines the convenience of `Viewer` components
     that allow creating custom components by declaring a `__panel__`
     method with the ability of controlling layout and styling
     related parameters directly on the class. Internally the
     `PyComponent` will forward layout parameters to the underlying
     object, which is created lazily on render.
-    """
+
+    Reference: https://panel.holoviz.org/reference/custom_components/PyComponent.html
+
+    ```python
+    import panel as pn
+    import param
+
+    pn.extension()
+
+    class CounterButton(pn.custom.PyComponent, pn.widgets.WidgetBase):
+
+        value = param.Integer(default=0)
+
+        def __panel__(self):
+            return pn.widgets.Button(
+                name=self._button_name, on_click=self._on_click
+            )
+
+        def _on_click(self, event):
+            self.value += 1
+
+        @param.depends("value")
+        def _button_name(self):
+            return f"count is {self.value}"
+
+    CounterButton().servable()
+    ```
+    '''
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -156,26 +183,26 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     variable. Use this to define a `render` function as shown in the
     example below.
 
-    ```
+    ```python
     import panel as pn
     import param
 
     pn.extension()
 
-    class CounterButton(pn.ReactiveESM):
+    class CounterButton(pn.custom.ReactiveESM):
 
         value = param.Integer()
 
         _esm = """
-        export function render({ data }) {
+        export function render({ model }) {
             let btn = document.createElement("button");
-            btn.innerHTML = `count is ${data.value}`;
+            btn.innerHTML = `count is ${model.value}`;
             btn.addEventListener("click", () => {
-                data.value += 1
+                model.value += 1
             });
-            data.watch(() => {
-                btn.innerHTML = `count is ${data.value}`;
-            }, 'value')
+            model.on('value', () => {
+                btn.innerHTML = `count is ${model.value}`;
+            })
             return btn
         }
         """
@@ -503,26 +530,28 @@ class JSComponent(ReactiveESM):
     variable. Use this to define a `render` function as shown in the
     example below.
 
-    ```
+    Reference: https://panel.holoviz.org/reference/custom_components/JSComponent.html
+
+    ```python
     import panel as pn
     import param
 
     pn.extension()
 
-    class CounterButton(JSComponent):
+    class CounterButton(pn.custom.JSComponent):
 
         value = param.Integer()
 
         _esm = """
-        export function render({ data }) {
+        export function render({ model }) {
             let btn = document.createElement("button");
-            btn.innerHTML = `count is ${data.value}`;
+            btn.innerHTML = `count is ${model.value}`;
             btn.addEventListener("click", () => {
-                data.value += 1
+                model.value += 1
             });
-            data.watch(() => {
-                btn.innerHTML = `count is ${data.value}`;
-            }, 'value')
+            model.on('value', () => {
+                btn.innerHTML = `count is ${model.value}`;
+            })
             return btn
         }
         """
@@ -545,23 +574,24 @@ class ReactComponent(ReactiveESM):
     variable. Use this to define a `render` function as shown in the
     example below.
 
-    ```
+    Reference: https://panel.holoviz.org/reference/custom_components/ReactComponent.html
+
+    ```python
     import panel as pn
     import param
 
-    pn.extension()
-
-    class CounterButton(ReactComponent):
+    class CounterButton(pn.custom.ReactComponent):
 
         value = param.Integer()
 
         _esm = """
-        export function render({ data, state }) {
-          return (
-            <>
-              <button onClick={() => { data.value += 1 }}>{state.value}</button>
-            </>
-          )
+        export function render({model}) {
+        const [value, setValue] = model.useState("value");
+        return (
+            <button onClick={e => setValue(value+1)}>
+            count is {value}
+            </button>
+        )
         }
         """
 
@@ -631,12 +661,42 @@ class ReactComponent(ReactiveESM):
         }
 
 class AnyWidgetComponent(ReactComponent):
-    """
+    '''
     The `AnyWidgetComponent` allows you to create custom Panel components
     in the style of an AnyWidget component. Specifically this component
     type creates shims that make it possible to reuse AnyWidget ESM code
     as is, without having to adapt the callbacks to use Bokeh APIs.
-    """
+
+    Reference: https://panel.holoviz.org/reference/custom_components/AnyWidgetComponent.html
+
+    ```python
+    import param
+    import panel as pn
+
+    pn.extension()
+
+    class CounterWidget(pn.custom.AnyWidgetComponent):
+        _esm = """
+        function render({ model, el }) {
+        let count = () => model.get("value");
+        let btn = document.createElement("button");
+        btn.innerHTML = `count is ${count()}`;
+        btn.addEventListener("click", () => {
+            model.set("value", count() + 1);
+            model.save_changes();
+        });
+        model.on("change:value", () => {
+            btn.innerHTML = `count is ${count()}`;
+        });
+        el.appendChild(btn);
+        }
+        export default { render };
+        """
+        value = param.Integer()
+
+    CounterWidget().servable()
+    ```
+    '''
 
     __abstract = True
 
