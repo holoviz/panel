@@ -1,6 +1,7 @@
 function clone(node) {
   var new_element = node.cloneNode(true);
   node.parentNode.replaceChild(new_element, node);
+  return new_element
 }
 
 function documentReady(callback) {
@@ -39,8 +40,8 @@ function setupMobileSidebarKeyboardHandlers() {
     if (!clickTransmitter) {
       return;
     }
-    clone(clickTransmitter)
-    clickTransmitter.addEventListener("click", (event) => {
+    const cloned = clone(clickTransmitter)
+    cloned.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
       toggle.checked = !toggle.checked;
