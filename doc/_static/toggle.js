@@ -1,14 +1,10 @@
-export function documentReady(callback) {
-  if (document.readyState != "loading") callback();
-  else document.addEventListener("DOMContentLoaded", callback);
-}
-
 function clone(node) {
   var new_element = node.cloneNode(true);
   node.parentNode.replaceChild(new_element, node);
+  return new_element
 }
 
-export function documentReady(callback) {
+function documentReady(callback) {
   if (document.readyState != "loading") callback();
   else document.addEventListener("DOMContentLoaded", callback);
 }
@@ -44,8 +40,8 @@ function setupMobileSidebarKeyboardHandlers() {
     if (!clickTransmitter) {
       return;
     }
-    clone(clickTransmitter)
-    clickTransmitter.addEventListener("click", (event) => {
+    const cloned = clone(clickTransmitter)
+    cloned.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
       toggle.checked = !toggle.checked;
