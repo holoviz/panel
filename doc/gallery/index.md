@@ -182,7 +182,7 @@ Interactively apply a XGBoost classifier on the Iris dataset.
 
 Interact with an LLM running in your browser using the `ChatInterface`.
 +++
-[See source](WebLLM)
+[See source](webllm)
 :::
 
 
@@ -293,7 +293,7 @@ streaming_videostream
 vtk_interactive
 vtk_slicer
 vtk_warp
-WebLLM
+webllm
 windturbines
 xgboost_classifier
 ```
