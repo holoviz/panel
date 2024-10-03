@@ -34,6 +34,7 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from .base import CompositeWidget, Widget, WidgetBase  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
+from .calendar import Calendar  # noqa
 from .codeeditor import CodeEditor  # noqa
 from .debugger import Debugger  # noqa
 from .file_selector import FileSelector  # noqa
@@ -74,6 +75,7 @@ __all__ = (
     "BooleanStatus",
     "Button",
     "ButtonIcon",
+    "Calendar",
     "Checkbox",
     "CheckBoxGroup",
     "CheckButtonGroup",
