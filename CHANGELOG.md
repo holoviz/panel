@@ -1,6 +1,28 @@
 # Releases
 
+## Version 1.5.2
+
+Date: 2024-10-03
+
+This release is a small patch release primarily addressing a regression handling selections on multi-indexed data on the Tabulator widget along with a number of documentation improvements. Many thanks to @jrycw along with @MarcSkovMadsen, @Hoxbro and @philippjfr for their contributions to this release.
+
+### Bug fixes
+
+- Fix regression handling selection on multi-indexed `Tabulator` data ([#7336](https://github.com/holoviz/panel/pull/7336))
+- Fix Fast template theme toggle color ([#7341](https://github.com/holoviz/panel/pull/7341))
+
+### Documentation
+
+- Fix typo for FastListTemplate reference example ([#7339](https://github.com/holoviz/panel/pull/7339))
+- Fix custom component docstrings ([#7342](https://github.com/holoviz/panel/pull/7342))
+- Improve plotly style guide ([#7346](https://github.com/holoviz/panel/pull/7346))
+- Ensure sidebar toggle patch is loaded correctly ([#7349](https://github.com/holoviz/panel/pull/7349))
+- Fix and update WebLLM example ([#7351](https://github.com/holoviz/panel/pull/7351))
+- Correctly document step unit on `DateSlider` ([#7353](https://github.com/holoviz/panel/pull/7353))
+
 ## Version 1.5.1
+
+Date: 2024-09-27
 
 This release primarily focuses on a number of tweaks and enhancements for the documentation and also resolves a number of bugs related to `Tabulator` rendering and the new `FastAPI` integration. As always, many thanks to our contributors including our new contributors @dennisjlee and @alexcjohnson, our returning contributors @thuydotm and @jbednar and the core maintainer team @hoxbro, @maximlt, @ahuang11, @MarcSkovMadsen and @philippjfr.
 
@@ -41,8 +63,9 @@ This release primarily focuses on a number of tweaks and enhancements for the do
 - Tweak best practices ([#7301](https://github.com/holoviz/panel/pull/7301))
 - Fix typo in JPG component docs ([#7323](https://github.com/holoviz/panel/pull/7323))
 
-
 ## Version 1.5.0
+
+Date: 2024-09-13
 
 This release, while technically a minor release hugely expands the scope of what is possible in Panel. In particular the introduction of the new `panel.custom` module makes it trivially easy to create new JS and React based components using modern tooling, a first-class developer experience and support for compilation and bundling. We are incredibly excited to see which new components you build using this approach. This release also includes native integration with FastAPI, such that you can now run Panel apps natively on an existing FastAPI server. We also introduce a number of new components, improved the developer experience, and squashed a huge number of bugs, particularly for the `Tabulator` component.
 
