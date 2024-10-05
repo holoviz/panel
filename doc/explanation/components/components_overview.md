@@ -377,7 +377,57 @@ pn.Row(
     styles={'background': 'lightgrey'},
 )
 ```
+## Templates
 
+A template is the HTML document that ends up being served by your app. It defines what resources (Javascript, CSS) need to be loaded, the page title, where the Panel objects are supposed to be rendered on the page, etc.
+
+When you serve an app without defining a particular template Panel serves it with its default template, which is pretty much a blank canvas where the served objects, if there are a few of them, will be rendered vertically one after the other.
+
+Try saving the following snippet in a `app.py` file and serving it with `panel serve app.py --show`
+
+```python
+import panel as pn
+
+pn.panel('# Title').servable()
+pn.panel('Some text').servable()
+pn.panel('More text').servable()
+```
+
+When developing an app, someone (possibly you!) will be required at some point to make it prettier! A quick way to achieve that is to wrap your app in one of the templates that Panel provides, that are defined by declaring four main content areas on the page, which can be populated as desired:
+
+- `header`: The header area of the HTML page
+- `sidebar`: A collapsible sidebar
+- `main`: The main area of the application
+- `modal`: A modal, i.e. a dialog box/popup window
+
+These four areas behave very similarly to layouts that have list-like semantics. This means we can easily append new components into these areas. Unlike other layout components however, the contents of the areas is fixed once rendered. If you need a dynamic layout you should therefore insert a regular layout (e.g. a `Column` or `Row`) and modify it in place once added to one of the content areas.
+
+<img src="../../_static/images/template_areas.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
+
+:::{warning}
+The templates provided by Panel should not be rendered in a notebook, as their CSS styling usually doesn't play well with the CSS styling of the notebook itself.
+:::
+
+Since an app can only have one template, Panel allows to declare the app template via `pn.extension(template='..')`. Of course you can also explicitly instantiate a template and manipulate it as you would do with other Panel objects. Try serving the content of this snippet.
+
+```python
+import panel as pn
+
+
+template = pn.template.BootstrapTemplate(title='Loving Panel!')
+
+
+def compute(i):
+    return '❤️' * i
+
+
+w_number = pn.widgets.IntSlider(value=5, start=1, end=5)
+p_hearts = pn.panel(pn.bind(compute, w_number))
+
+template.sidebar.append(w_number)
+template.main.append(p_hearts)
+template.show()
+```
 ## Notifications
 
 The web apps you end up building with Panel are often quite interactive. Therefore you will be interested in finding a way to let your users know what's going on, when their operations succeed or abort, etc. This is exactly what notifications are for! Contrary to the components we have just covered, notifications are objects you don't manipulate directly, instead you just call `pn.state.notifications` with one the following methods: `success`, `info`, `warning` and `error`.
