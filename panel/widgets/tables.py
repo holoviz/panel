@@ -1536,10 +1536,14 @@ class Tabulator(BaseTable):
             start = (self.page-1)*nrows
             df = df.iloc[start:(start+nrows)]
         indexed_children, children = {}, {}
-        expanded = []
         if self.embed_content:
-            for i in range(len(df)):
-                expanded.append(i)
+            indexes = list(range(len(df)))
+            mapped = self._map_indexes(indexes)
+            expanded = [
+                i for i, m in zip(indexes, mapped)
+                if m in self.expanded
+            ]
+            for i in indexes:
                 idx = df.index[i]
                 if idx in self._indexed_children:
                     child = self._indexed_children[idx]
@@ -1547,6 +1551,7 @@ class Tabulator(BaseTable):
                     child = panel(self.row_content(df.iloc[i]))
                 indexed_children[idx] = children[i] = child
         else:
+            expanded = []
             for i in self.expanded:
                 idx = self.value.index[i]
                 if idx in self._indexed_children:
