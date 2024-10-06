@@ -439,9 +439,3 @@ pn.state.notifications.success('Your first notification!')
 ```{pyodide}
 pn.state.notifications.error('Oops!', duration=5000)
 ```
-irst notification!')
-```
-
-```{pyodide}
-pn.state.notifications.error('Oops!', duration=5000)
-```
