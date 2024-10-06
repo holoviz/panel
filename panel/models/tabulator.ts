@@ -407,12 +407,7 @@ export class DataTabulatorView extends HTMLBoxView {
       for (const row of this.tabulator.rowManager.getRows()) {
         if (row.cells.length > 0) {
           const index = row.data._index
-          let icon
-          if (this.model.expanded.includes(index)) {
-            icon = "▼"
-          } else {
-            icon = "►"
-          }
+          const icon = this.model.expanded.includes(index) ? "▼" : "►"
           row.cells[1].element.innerText = icon
         }
       }
