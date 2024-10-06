@@ -1584,7 +1584,8 @@ class Tabulator(BaseTable):
         return models
 
     def _update_children(self, *events):
-        if all(e.name in ('page', 'page_size', 'pagination', 'sorters') for e in events) and self.pagination != 'remote':
+        page_event = all(e.name in ('page', 'page_size', 'pagination', 'sorters') for e in events)
+        if (page_event and self.pagination != 'remote') or (all(e.name == 'expanded' for e in events) and self.embed_content):
             return
         for event in events:
             if event.name == 'value' and self._indexes_changed(event.old, event.new):
