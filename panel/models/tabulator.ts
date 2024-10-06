@@ -1,4 +1,4 @@
-import {undisplay} from "@bokehjs/core/dom"
+import {display, undisplay} from "@bokehjs/core/dom"
 import {sum} from "@bokehjs/core/util/arrayable"
 import {isArray, isBoolean, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
@@ -816,11 +816,13 @@ export class DataTabulatorView extends HTMLBoxView {
     return lookup
   }
 
-  renderChildren(all: boolean = true): void {
+  renderChildren(all: boolean | number = true): void {
     new Promise(async (resolve: any) => {
       let new_children = await this.build_child_views()
-      if (all) {
+      if (all === true) {
         new_children = this.child_views
+      } else if (typeof all === 'number') {
+        new_children = [this.child_views[all]]
       }
       resolve(new_children)
     }).then((new_children) => {
@@ -870,8 +872,12 @@ export class DataTabulatorView extends HTMLBoxView {
     viewEl.appendChild(view.el)
     if (render) {
       schedule_when(() => {
-        view.render()
-        view.after_render()
+        display(view.el)
+        if (view.shadow_el.children.length === 0) {
+          view.render()
+          view.after_render()
+        }
+        viewEl.appendChild(view.el)
       }, () => this.root.has_finished())
     }
     if (resize) {
@@ -915,7 +921,7 @@ export class DataTabulatorView extends HTMLBoxView {
       }
     }
     if (ready) {
-      this.renderChildren()
+      this.renderChildren(index)
     }
   }
 
