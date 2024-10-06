@@ -821,7 +821,7 @@ export class DataTabulatorView extends HTMLBoxView {
       let new_children = await this.build_child_views()
       if (all === true) {
         new_children = this.child_views
-      } else if (typeof all === 'number') {
+      } else if (typeof all === "number") {
         new_children = [this.child_views[all]]
       }
       resolve(new_children)
