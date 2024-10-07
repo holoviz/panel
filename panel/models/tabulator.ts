@@ -823,7 +823,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   renderChildren(): void {
-    new Promise(async () => {
+    void new Promise(async () => {
       await this.build_child_views()
       const lookup = this.row_index
       const expanded = this.model.expanded
