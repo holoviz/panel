@@ -15,12 +15,6 @@ export class DatetimeSliderView extends NumericalSliderView {
   override behaviour = "tap" as const
   override connected = [true, false]
 
-  protected override _calc_to(): SliderSpec<number> {
-    const spec = super._calc_to()
-    spec.step *= 3_600_000
-    return spec
-  }
-
   protected _formatter(value: number, format: string | TickFormatter): string {
     console.log("DatetimeSlider")
     if (isString(format)) {
