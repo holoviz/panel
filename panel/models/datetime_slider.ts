@@ -16,7 +16,6 @@ export class DatetimeSliderView extends NumericalSliderView {
   override connected = [true, false]
 
   protected _formatter(value: number, format: string | TickFormatter): string {
-    console.log("DatetimeSlider")
     if (isString(format)) {
       return tz(value, format)
     } else {
