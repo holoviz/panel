@@ -57,7 +57,7 @@ from .select import (  # noqa
     RadioButtonGroup, Select, ToggleGroup,
 )
 from .slider import (  # noqa
-    DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
+    DateRangeSlider, DateSlider, DatetimeSlider, DatetimeRangeSlider, DiscreteSlider,
     EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatSlider,
     IntRangeSlider, IntSlider, RangeSlider,
 )
@@ -87,6 +87,7 @@ __all__ = (
     "DateRangeSlider",
     "DatetimeRangeSlider",
     "DateSlider",
+    "DatetimeSlider",
     "DatetimeInput",
     "DatetimePicker",
     "DatetimeRangeInput",

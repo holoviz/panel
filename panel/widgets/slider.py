@@ -25,6 +25,8 @@ from bokeh.models.widgets import (
 from bokeh.models.widgets.sliders import NumericalSlider as _BkNumericalSlider
 from param.parameterized import resolve_value
 
+from panel.models.datetime_slider import DatetimeSlider as _PnDatetimeSlider
+
 from ..config import config
 from ..io import state
 from ..io.resources import CDN_DIST
@@ -317,6 +319,36 @@ class DateSlider(_SliderBase):
         if 'value_throttled' in msg:
             msg['value_throttled'] = transform(msg['value_throttled'])
         return msg
+
+
+class DatetimeSlider(DateSlider):
+    """
+    The DatetimeSlider widget allows selecting a value within a set of
+    bounds using a slider.  Supports datetime.datetime
+    and np.datetime64 values. The step size is fixed at 1 day.
+
+    Reference: https://panel.holoviz.org/reference/widgets/DatetimeSlider.html
+
+    :Example:
+
+    >>> import datetime as dt
+    >>> DatetimeSlider(
+    ...     value=dt.datetime(2025, 1, 1),
+    ...     start=dt.datetime(2025, 1, 1),
+    ...     end=dt.datetime(2025, 1, 7),
+    ...     name="A datetime value"
+    ... )
+    """
+
+    as_datetime = param.Boolean(default=True, doc="""
+        Whether to store the date as a datetime.""")
+
+    step = param.Number(default=3_600_000, doc="""
+        The step size in ms. Default is 1 hour.""")
+
+    _property_conversion = staticmethod(value_as_datetime)
+
+    _widget_type: ClassVar[type[Model]] = _PnDatetimeSlider
 
 
 class DiscreteSlider(CompositeWidget, _SliderBase):
