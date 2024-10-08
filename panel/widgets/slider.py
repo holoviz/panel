@@ -281,8 +281,8 @@ class DateSlider(_SliderBase):
     as_datetime = param.Boolean(default=False, doc="""
         Whether to store the date as a datetime.""")
 
-    step = param.Number(default=None, doc="""
-        The step parameter in milliseconds.""")
+    step = param.Integer(default=1, bounds=(1, None), doc="""
+        The step parameter in days.""")
 
     format = param.String(default=None, doc="""
         Datetime format used for parsing and formatting the date.""")
