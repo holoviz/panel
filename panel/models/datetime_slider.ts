@@ -1,3 +1,6 @@
+// adapted from bokeh
+// https://github.com/bokeh/bokeh/blob/branch-3.7/bokehjs/src/lib/models/widgets/sliders/date_slider.ts
+
 import tz from "timezone"
 
 import type {SliderSpec} from "@bokehjs/models/widgets/sliders/abstract_slider"
@@ -19,7 +22,7 @@ export class DatetimeSliderView extends NumericalSliderView {
   }
 
   protected _formatter(value: number, format: string | TickFormatter): string {
-    console.log("DatetimeSliderrrrrrrrrr")
+    console.log("DatetimeSlider")
     if (isString(format)) {
       return tz(value, format)
     } else {
