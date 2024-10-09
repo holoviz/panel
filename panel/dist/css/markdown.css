@@ -317,7 +317,8 @@ h2:hover a.header-anchor::before {
   visibility: visible;
 }
 
-.codehilite {
+.codehilite,
+pre > code.hljs {
   padding: 1rem 1.25rem;
   margin-top: 1rem;
   margin-bottom: 1rem;
@@ -341,6 +342,7 @@ pre {
 }
 
 .codehilite > pre > code,
-.codehilite > code {
+.codehilite > code,
+pre > code.hljs {
   white-space: break-spaces;
 }
