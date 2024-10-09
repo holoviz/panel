@@ -1,0 +1,41 @@
+/* 
+https://m3.material.io/components/checkbox/specs
+*/
+
+:host {
+    --checkbox-height: 18px;
+    --checkbox-state-layer-size: 40px;
+}
+
+:host(.bk-Checkbox) input[type='checkbox'], :host(.bk-CheckboxGroup) input[type='checkbox']  {
+    accent-color: var(--md-sys-color-primary);
+    width: var(--checkbox-height);
+    height: var(--checkbox-height);
+    margin-left: var(--md-sys-layout-horizontal-space);
+    margin-right: var(--md-sys-layout-horizontal-space);
+    margin-top: calc( (var(--checkbox-state-layer-size) - var(--checkbox-height)) / 2  );
+    margin-bottom: calc( (var(--checkbox-state-layer-size) - var(--checkbox-height)) / 2  );
+
+}
+
+:host(.bk-Checkbox) input[type='checkbox']:hover, :host(.bk-CheckboxGroup) input[type='checkbox']:hover  {
+    box-shadow: 0 0 0 var(--checkbox-state-layer-size) var(--md-sys-color-surface-container-high);
+    clip-path: circle(100%);
+}
+
+:host(.bk-Checkbox) span, :host(.bk-CheckboxGroup) span {
+
+    color: var(--md-sys-color-on-surface);
+
+    padding-right: calc(var(--md-sys-layout-horizontal-space) * 2);
+
+    /* copied from typography -> .label-large */
+    font-family: var(--md-sys-typescale-label-large-font-family-name);
+    font-style: var(--md-sys-typescale-label-large-font-family-style);
+    font-weight: var(--md-sys-typescale-label-large-font-weight);
+    font-size: var(--md-sys-typescale-label-large-font-size);
+    letter-spacing: var(--md-sys-typescale-label-large-tracking);
+    line-height: var(--md-sys-typescale-label-large-height);
+    text-transform: var(--md-sys-typescale-label-large-text-transform);
+    text-decoration: var(--md-sys-typescale-label-large-text-decoration);
+}

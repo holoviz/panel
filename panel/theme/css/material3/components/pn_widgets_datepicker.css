@@ -1,0 +1,182 @@
+/* https://m3.material.io/components/date-pickers/specs
+
+*/
+
+:host {
+    --date-picker-row-height: 48px;
+}
+
+.bk-input-group label {
+
+    color: var(--md-sys-color-primary);  
+    transform: translate(var(--md-sys-layout-horizontal-space), 9px);
+    background: var(--md-sys-color-surface);
+    z-index: 1;
+    padding: 0 4px;
+
+    /* copied from .body_small */
+    font-family: var(--md-sys-typescale-body-small-font-family-name);
+    font-style: var(--md-sys-typescale-body-small-font-family-style);
+    font-weight: var(--md-sys-typescale-body-small-font-weight);
+    font-size: var(--md-sys-typescale-body-small-font-size);
+    letter-spacing: var(--md-sys-typescale-body-small-tracking);
+    line-height: var(--md-sys-typescale-body-small-height);
+    text-transform: var(--md-sys-typescale-body-small-text-transform);
+    text-decoration: var(--md-sys-typescale-body-small-text-decoration);
+}
+
+
+input.bk-input.form-control.input {
+
+    padding-left: var(--md-sys-layout-horizontal-space);
+    padding-right: var(--md-sys-layout-horizontal-space);
+
+    padding-top: calc( var( --md-sys-layout-horizontal-space ) / 2 );
+    padding-bottom: calc( var( --md-sys-layout-horizontal-space ) / 2 );
+
+
+    /* Copied from M3 body large */
+    font-family: var(--md-sys-typescale-body-large-font-family-name);
+    font-style: var(--md-sys-typescale-body-large-font-family-style);
+    font-weight: var(--md-sys-typescale-body-large-font-weight);
+    font-size: var(--md-sys-typescale-body-large-font-size);
+    letter-spacing: var(--md-sys-typescale-body-large-tracking);
+    line-height: var(--md-sys-typescale-body-large-height);
+    text-transform: var(--md-sys-typescale-body-large-text-transform);
+    text-decoration: var(--md-sys-typescale-body-large-text-decoration);
+
+    border: 2px solid var(--md-sys-color-primary);
+    border-radius: 4px;
+
+    color: var(--md-sys-color-on-surface);
+    background: var(--md-sys-color-surface);
+
+}
+
+.flatpickr-calendar {
+    background: var(--md-sys-color-surface-container-high);
+    border-radius: 20px;
+    overflow:hidden;
+    width: calc( 7 * var(--date-picker-row-height));
+    max-width: calc( 7 * var(--date-picker-row-height));
+    transform: translate(0px, 10px);
+}
+
+.flatpickr-days, .dayContainer {
+    width: calc( 7 * var(--date-picker-row-height));
+    max-width: calc( 7 * var(--date-picker-row-height));
+}
+
+span {
+    width: var(--date-picker-row-height) !important;
+    max-width: var(--date-picker-row-height) !important;
+}
+
+.dayContainer span {
+    width: var(--date-picker-row-height) !important;
+    max-width: var(--date-picker-row-height) !important;
+}
+
+
+
+.flatpickr-calendar *, .flatpickr-month, .flatpickr-month * {
+    background: none !important;
+
+    /* Copied from M3 body large */
+    font-family: var(--md-sys-typescale-body-large-font-family-name) !important;
+    font-style: var(--md-sys-typescale-body-large-font-family-style) !important;
+    font-weight: var(--md-sys-typescale-body-large-font-weight) !important;
+    font-size: var(--md-sys-typescale-body-large-font-size) !important;
+    /* letter-spacing: var(--md-sys-typescale-body-large-tracking) !important;
+    line-height: var(--md-sys-typescale-body-large-height) !important;
+    text-transform: var(--md-sys-typescale-body-large-text-transform) !important;
+    text-decoration: var(--md-sys-typescale-body-large-text-decoration) !important; */
+
+}
+
+
+.flatpickr-calendar span.flatpickr-day, 
+.flatpickr-calendar span.flatpickr-weekday,
+.flatpickr-calendar select.flatpickr-monthDropdown-months,
+.flatpickr-calendar input.numInput
+{
+    color: var(--md-sys-color-on-surface);
+    
+}
+
+.flatpickr-calendar span.flatpickr-day.prevMonthDay, .flatpickr-calendar span.flatpickr-day.nextMonthDay {
+    /* 
+    Technically, we should use the following color property : 
+    color: var(--md-sys-color-on-surface-variant); 
+
+    but the color is too close from the "current month days" color, so we use the following instead :
+    */
+    color: var(--md-sys-color-outline);
+}
+
+.flatpickr-calendar span.selected {
+  background: var(--md-sys-color-primary) !important;
+  border-color: var(--md-sys-color-primary) !important;
+  color: var(--md-sys-color-on-primary) !important;
+}
+
+
+.flatpickr-day, .flatpickr-months, .flatpickr-month, .flatpickr-weekdays,  .flatpickr-weekdaycontainer {
+    height: var(--date-picker-row-height);
+}
+
+
+.flatpickr-months > * {
+    /* padding-top:8px !important; */
+    /* Using a translation here because the padding has no
+     effect on the span with the month < > arrows */
+    transform: translateY(8px);
+}
+
+.flatpickr-weekdaycontainer span.flatpickr-weekday, span.flatpickr-day{
+    line-height: 3;
+}
+
+.flatpickr-days, .flatpickr-innerContainer {
+    border:none;
+}
+
+
+
+/* Calendar icon */
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}
+
+
+/* This adds the Calendar icon at the right of the input.
+Really hacky but works :) */
+.bk-input-group::after {
+    content: "today";
+
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+
+    color: var(--md-sys-color-on-surface);
+    padding: 5px 5px;
+    border-radius: 20px;   
+    background: var(--md-sys-color-surface-container-high);
+    transform: translate(0, -38px);
+    margin-left: calc(100% - 40px)
+}

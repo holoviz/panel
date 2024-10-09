@@ -1,0 +1,43 @@
+:root {
+    --md-sys-state-hover-state-layer-opacity: 0.08;
+    
+    /* light */
+    --md-sys-color-shadow-light-rgb: 0,0,0;
+    --md-sys-color-primary-light-rgb: 104,74,183;
+    --md-sys-color-secondary-light-rgb: 156, 51, 136;
+
+    /* dark */
+    --md-sys-color-shadow-dark-rgb: 0,0,0;
+    --md-sys-color-primary-dark-rgb: 207,189,255;
+    --md-sys-color-secondary-dark-rgb: 255, 173, 230;
+
+    
+    /* spacing */
+
+    /* 
+    Represents the standard horizontal space between elements as found in the following components : 
+        https://m3.material.io/components/lists/specs
+        https://m3.material.io/components/text-fields/specs 
+    */
+    --md-sys-layout-horizontal-space: 16px;
+
+
+    /* elevation */
+    /* These are custom tokens that reflect real Material 3 tokens. 
+    They're split by property (background, box-shadow ...) so they can be easily reused in the custom CSS for Panel components.
+    To get their values : take the Figma, right click, copy as CSS, and keep only the
+    relevant properties (background and box-shadow).
+
+    Replace hardcoded colors with their corresponding tokens, you should have them in the comments
+        in the CSS you paste.
+    */
+    
+    /* --md-sys-elevation-1 */
+    --md-sys-elevation-1-background-light: var(--md-sys-color-surface-container-low-light);
+    --md-sys-elevation-1-box-shadow-light: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+
+    --md-sys-elevation-1-background-dark: var(--md-sys-color-surface-container-low-dark);
+    --md-sys-elevation-1-box-shadow-dark: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px rgba(0, 0, 0, 0.3);
+
+
+}

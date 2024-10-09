@@ -1,0 +1,10 @@
+:root {
+    --md-sys-color-primary-rgb: var(--md-sys-color-primary-light-rgb);
+    --md-sys-color-shadow-rgb: var(--md-sys-color-shadow-light-rgb);
+
+    --md-sys-elevation-1-background: var(--md-sys-elevation-1-background-light);
+    --md-sys-elevation-1-box-shadow: var(--md-sys-elevation-1-box-shadow-light);
+
+    --md-sys-color-secondary-rgb: var(--md-sys-color-secondary-light-rgb);
+    
+}

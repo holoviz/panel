@@ -1,0 +1,8 @@
+:host {
+    color: var(--md-sys-color-on-surface);
+}
+
+
+* {
+    font-family: var(--md-sys-typescale-label-large-font-family-name);
+}
