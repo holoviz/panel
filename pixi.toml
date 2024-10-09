@@ -52,9 +52,6 @@ python = "3.11.*"
 [feature.py312.dependencies]
 python = "3.12.*"
 
-[feature.py313]
-channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge/label/python_rc", "conda-forge"]
-
 [feature.py313.dependencies]
 python = "3.13.*"
 
@@ -160,7 +157,7 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 nbval = "*"
 
 [feature.test-ui]
-channels = ["pyviz/label/dev", "bokeh/label/rc", "microsoft", "conda-forge"]
+channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
 playwright = { version = "*", channel = "microsoft" }
