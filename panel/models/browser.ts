@@ -9,8 +9,8 @@ export class BrowserInfoView extends View {
     super.initialize()
 
     if (window.matchMedia != null) {
-      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      darkModeMediaQuery.addEventListener('change', (e) => {
+      const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+      darkModeMediaQuery.addEventListener("change", (e) => {
 	this.model.dark_mode = e.matches
       })
       this.model.dark_mode = darkModeMediaQuery.matches
