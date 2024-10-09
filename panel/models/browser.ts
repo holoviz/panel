@@ -4,12 +4,17 @@ import {Model} from "@bokehjs/model"
 
 export class BrowserInfoView extends View {
   declare model: BrowserInfo
+  _dark_mode_listener: 
 
   override initialize(): void {
     super.initialize()
 
     if (window.matchMedia != null) {
-      this.model.dark_mode = window.matchMedia("(prefers-color-scheme: dark)").matches
+      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      darkModeMediaQuery.addEventListener('change', (e) => {
+	this.model.dark_mode = e.matches
+      });
+      this.model.dark_mode = darkModeMediaQuery.matches
     }
     this.model.device_pixel_ratio = window.devicePixelRatio
     if (navigator != null) {
