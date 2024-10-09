@@ -17,7 +17,7 @@ import uuid
 from functools import partial, wraps
 from html import escape
 from typing import (
-    TYPE_CHECKING, Any, Callable, Mapping, Optional, List
+    TYPE_CHECKING, Any, Callable, Mapping, Optional,
 )
 from urllib.parse import urlparse
 
@@ -825,7 +825,7 @@ def get_server(
     oauth_encryption_key: Optional[str] = None,
     oauth_jwt_user: Optional[str] = None,
     oauth_refresh_tokens: Optional[bool] = None,
-    oauth_guest_endpoints: Optional[List[str]] = None,
+    oauth_guest_endpoints: Optional[list[str]] = None,
     oauth_optional: Optional[bool] = None,
     login_endpoint: Optional[str] = None,
     logout_endpoint: Optional[str] = None,
