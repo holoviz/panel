@@ -1021,7 +1021,8 @@ def get_server(
             logout_endpoint=logout_endpoint,
             login_template=login_template,
             logout_template=logout_template,
-            error_template=oauth_error_template
+            error_template=oauth_error_template,
+            guest_endpoints=oauth_guest_endpoints,
         )
     if oauth_key:
         config.oauth_key = oauth_key # type: ignore
