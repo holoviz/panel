@@ -358,12 +358,11 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 params.pop(k)
             data_params[k] = v
         bundle_path = self._bundle_path
+        importmap = self._process_importmap()
         if bundle_path:
             bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
-            importmap = {}
         else:
             bundle_hash = None
-            importmap = self._process_importmap()
         data_props = self._process_param_change(data_params)
         params.update({
             'bundle': bundle_hash,
@@ -614,8 +613,8 @@ class ReactComponent(ReactiveESM):
         }
         if any('@mui' in v for v in imports.values()):
             exports.update({
-                "@emotion/cache": "createCache",
-                "@emotion/react": ("CacheProvider",)
+                "@emotion/cache": ["createCache"],
+                "@emotion/react": [("CacheProvider",)],
             })
         return exports
 
