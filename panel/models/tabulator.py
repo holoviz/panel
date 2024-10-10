@@ -129,6 +129,8 @@ class DataTabulator(HTMLBox):
 
     editable = Bool(default=True)
 
+    embed_content = Bool(default=False)
+
     expanded = List(Int)
 
     filename = String(default="table.csv")
