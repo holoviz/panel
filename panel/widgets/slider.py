@@ -343,8 +343,8 @@ class DatetimeSlider(DateSlider):
     as_datetime = param.Boolean(default=True, readonly=True, doc="""
         Whether to store the date as a datetime.""")
 
-    step = param.Number(default=60_000, doc="""
-        The step size in ms. Default is 1 min.""")
+    step = param.Number(default=60, doc="""
+        The step size in seconds. Default is 1 min, i.e 60 seconds.""")
 
     _property_conversion = staticmethod(value_as_datetime)
 

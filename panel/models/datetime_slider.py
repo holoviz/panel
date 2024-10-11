@@ -9,6 +9,6 @@ class DatetimeSlider(DateSlider):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    step = Override(default=60_000)
+    step = Override(default=60)
 
     format = Override(default="%d %b %Y %H:%M:%S")

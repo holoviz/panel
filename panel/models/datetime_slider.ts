@@ -3,6 +3,7 @@
 
 import tz from "timezone"
 
+import type {SliderSpec} from "@bokehjs/models/widgets/sliders/abstract_slider"
 import {NumericalSlider, NumericalSliderView} from "@bokehjs/models/widgets/sliders/numerical_slider"
 import type {TickFormatter} from "@bokehjs/models/formatters/tick_formatter"
 import type * as p from "@bokehjs/core/properties"
@@ -13,6 +14,12 @@ export class DatetimeSliderView extends NumericalSliderView {
 
   override behaviour = "tap" as const
   override connected = [true, false]
+
+  protected override _calc_to(): SliderSpec<number> {
+    const spec = super._calc_to()
+    spec.step *= 1_000  // step size is in seconds
+    return spec
+  }
 
   protected _formatter(value: number, format: string | TickFormatter): string {
     if (isString(format)) {
