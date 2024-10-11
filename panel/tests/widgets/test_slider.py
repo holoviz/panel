@@ -205,7 +205,7 @@ def test_datetime_slider_instantiate_from_datetime(document, comm):
         name='DatetimeSlider',
         value=datetime(2018, 9, 4),
         start=datetime(2018, 9, 1),
-        end=datetime(2018, 9, 10)
+        end=datetime(2018, 9, 10),
     )
 
     widget = datetime_slider.get_root(document, comm=comm)

@@ -340,7 +340,7 @@ class DatetimeSlider(DateSlider):
     ... )
     """
 
-    as_datetime = param.Boolean(default=True, doc="""
+    as_datetime = param.Boolean(default=True, readonly=True, doc="""
         Whether to store the date as a datetime.""")
 
     step = param.Number(default=60_000, doc="""
