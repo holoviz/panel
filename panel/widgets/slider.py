@@ -25,12 +25,11 @@ from bokeh.models.widgets import (
 from bokeh.models.widgets.sliders import NumericalSlider as _BkNumericalSlider
 from param.parameterized import resolve_value
 
-from panel.models.datetime_slider import DatetimeSlider as _BkDatetimeSlider
-
 from ..config import config
 from ..io import state
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
+from ..models.datetime_slider import DatetimeSlider as _BkDatetimeSlider
 from ..util import (
     datetime_as_utctimestamp, edit_readonly, param_reprs, value_as_date,
     value_as_datetime,
