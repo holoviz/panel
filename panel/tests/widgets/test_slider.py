@@ -244,6 +244,29 @@ def test_datetime_slider_instantiate_from_datetime(document, comm):
         assert widget.value == 1620777600000
 
 
+def test_datetime_slider_modify_as_datetime():
+    with pytest.raises(TypeError):
+        DatetimeSlider.as_datetime = False
+
+    with pytest.raises(TypeError):
+        datetime_slider = DatetimeSlider(
+            name='DatetimeSlider',
+            value=datetime(2018, 9, 4),
+            start=datetime(2018, 9, 1),
+            end=datetime(2018, 9, 10),
+            as_datetime=False,
+        )
+
+    with pytest.raises(TypeError):
+        datetime_slider = DatetimeSlider(
+            name='DatetimeSlider',
+            value=datetime(2018, 9, 4),
+            start=datetime(2018, 9, 1),
+            end=datetime(2018, 9, 10),
+        )
+        datetime_slider.as_datetime = False
+
+
 def test_date_range_slider(document, comm):
     date_slider = DateRangeSlider(name='DateRangeSlider',
                                   value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
