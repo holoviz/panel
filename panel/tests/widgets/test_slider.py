@@ -156,57 +156,19 @@ def test_date_slider(document, comm):
         assert widget.value == 1620777600000
 
 
-def test_datetime_slider_instantiate_from_date(document, comm):
+@pytest.mark.parametrize("start", [date(2018, 9, 1), datetime(2018, 9, 1)])
+@pytest.mark.parametrize("end", [date(2018, 9, 10), datetime(2018, 9, 10)])
+@pytest.mark.parametrize("value", [date(2018, 9, 4), datetime(2018, 9, 4)])
+def test_datetime_slider(document, comm, value, start, end):
     datetime_slider = DatetimeSlider(
         name='DatetimeSlider',
-        value=date(2018, 9, 4),
-        start=date(2018, 9, 1),
-        end=date(2018, 9, 10)
+        value=value,
+        start=start,
+        end=end,
     )
-
-    widget = datetime_slider.get_root(document, comm=comm)
-
-    assert isinstance(widget, datetime_slider._widget_type)
-    assert widget.title == 'DatetimeSlider'
-    assert widget.value == 1536019200000
-    assert widget.start == 1535760000000.0
-    assert widget.end == 1536537600000.0
-
-    epoch = datetime(1970, 1, 1)
-    widget.value = (datetime(2018, 9, 3)-epoch).total_seconds()*1000
-    datetime_slider._process_events({'value': widget.value})
-    assert datetime_slider.value == datetime(2018, 9, 3)
-    datetime_slider._process_events({'value_throttled': (datetime(2018, 9, 3)-epoch).total_seconds()*1000})
-    assert datetime_slider.value_throttled == datetime(2018, 9, 3)
-
-    # Test raw timestamp value:
-    datetime_slider._process_events({'value': (datetime(2018, 9, 4)-epoch).total_seconds()*1000.0})
-    assert datetime_slider.value == datetime(2018, 9, 4)
-    datetime_slider._process_events({'value_throttled': (datetime(2018, 9, 4)-epoch).total_seconds()*1000.0})
-    assert datetime_slider.value_throttled == datetime(2018, 9, 4)
-
-    datetime_slider.value = datetime(2018, 9, 6)
-    assert widget.value == 1536192000000
-
-    # Testing throttled mode
-    epoch_time = lambda dt: (dt - epoch).total_seconds() * 1000
-    with config.set(throttled=True):
-        datetime_slider._process_events({'value': epoch_time(datetime(2021, 5, 15))})
-        assert datetime_slider.value == datetime(2018, 9, 6)  # no change
-        datetime_slider._process_events({'value_throttled': epoch_time(datetime(2021, 5, 15))})
-        assert datetime_slider.value == datetime(2021, 5, 15)
-
-        datetime_slider.value = datetime(2021, 5, 12)
-        assert widget.value == 1620777600000
-
-
-def test_datetime_slider_instantiate_from_datetime(document, comm):
-    datetime_slider = DatetimeSlider(
-        name='DatetimeSlider',
-        value=datetime(2018, 9, 4),
-        start=datetime(2018, 9, 1),
-        end=datetime(2018, 9, 10),
-    )
+    assert datetime_slider.start == start
+    assert datetime_slider.end == end
+    assert datetime_slider.value == value
 
     widget = datetime_slider.get_root(document, comm=comm)
 
