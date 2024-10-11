@@ -50,6 +50,7 @@ export class DatetimeSlider extends NumericalSlider {
     this.prototype.default_view = DatetimeSliderView
 
     this.override<DatetimeSlider.Props>({
+      step: 60,
       format: "%d %b %Y %H:%M:%S",
     })
   }
