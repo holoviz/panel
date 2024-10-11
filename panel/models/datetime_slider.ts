@@ -3,7 +3,6 @@
 
 import tz from "timezone"
 
-import type {SliderSpec} from "@bokehjs/models/widgets/sliders/abstract_slider"
 import {NumericalSlider, NumericalSliderView} from "@bokehjs/models/widgets/sliders/numerical_slider"
 import type {TickFormatter} from "@bokehjs/models/formatters/tick_formatter"
 import type * as p from "@bokehjs/core/properties"
