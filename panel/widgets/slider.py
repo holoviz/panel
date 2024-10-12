@@ -323,7 +323,7 @@ class DateSlider(_SliderBase):
 class DatetimeSlider(DateSlider):
     """
     The DatetimeSlider widget allows selecting a value within a set of
-    bounds using a slider.  Supports datetime.datetime
+    bounds using a slider. Supports datetime.date, datetime.datetime
     and np.datetime64 values. The step size is fixed at 1 minute.
 
     Reference: https://panel.holoviz.org/reference/widgets/DatetimeSlider.html

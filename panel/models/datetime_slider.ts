@@ -1,8 +1,7 @@
 // adapted from bokeh
 // https://github.com/bokeh/bokeh/blob/branch-3.7/bokehjs/src/lib/models/widgets/sliders/date_slider.ts
 
-import tz from "timezone"
-
+import {DEFAULT_FORMATTERS} from "@bokehjs/core/util/templating"
 import type {SliderSpec} from "@bokehjs/models/widgets/sliders/abstract_slider"
 import {NumericalSlider, NumericalSliderView} from "@bokehjs/models/widgets/sliders/numerical_slider"
 import type {TickFormatter} from "@bokehjs/models/formatters/tick_formatter"
@@ -23,7 +22,7 @@ export class DatetimeSliderView extends NumericalSliderView {
 
   protected _formatter(value: number, format: string | TickFormatter): string {
     if (isString(format)) {
-      return tz(value, format)
+      return DEFAULT_FORMATTERS.datetime(value, format, {})
     } else {
       return format.compute(value)
     }
