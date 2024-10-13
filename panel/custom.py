@@ -223,7 +223,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     # 3. Named export (`{ <export>, ... }`): ("<export>", ...)
     _exports__: ClassVar[ExportSpec] = {}
 
-    _importmap: ClassVar[dict[Literal['imports', 'scopes'], str]] = {}
+    _importmap: ClassVar[dict[Literal['imports', 'scopes'], dict[str,str]]] = {}
 
     __abstract = True
 
