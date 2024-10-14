@@ -388,7 +388,8 @@ class Serve(_BkServe):
         if args.warm or config.autoreload:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
-            initialize_session = not args.num_procs or sys.version_info < (3, 12)
+            nprocs = args.num_procs
+            initialize_session = not ((nprocs == 0 or nprocs > 1) and sys.version_info < (3, 12))
             if config.autoreload:
                 with record_modules(list(applications.values())):
                     self.warm_applications(
