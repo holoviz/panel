@@ -1,6 +1,7 @@
 import os
 import re
 import tempfile
+import time
 
 import pytest
 import requests
@@ -48,6 +49,8 @@ def test_autoreload_app_local_module(py_files):
         assert "<title>A</title>" in r.content.decode('utf-8')
 
         write_file("title = 'B'", py_file2.file)
+        py_file2.file.close()
+        time.sleep(1)
 
         r2 = requests.get(f"http://localhost:{port}/{app_name}")
         assert r2.status_code == 200
