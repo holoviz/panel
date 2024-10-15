@@ -781,6 +781,9 @@ export class DataTabulatorView extends HTMLBoxView {
       },
       rowFormatter: (row: any) => this._render_row(row, false),
     }
+    if (this.model.max_height != null) {
+      configuration.maxHeight = this.model.max_height
+    }
     if (this.model.pagination === "remote") {
       configuration.ajaxURL = "http://panel.pyviz.org"
       configuration.sortMode = "remote"
