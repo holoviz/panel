@@ -1228,8 +1228,8 @@ class Tabulator(BaseTable):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
-        'text_align': None, 'embed_content': None, 'header_align': None,
-        'header_filters': None, 'header_tooltips': None, 'styles': 'cell_styles',
+        'text_align': None, 'header_align': None, 'header_filters': None,
+        'header_tooltips': None, 'styles': 'cell_styles',
         'title_formatters': None, 'sortable': None, 'initial_page_size': None
     }
 
@@ -1536,10 +1536,14 @@ class Tabulator(BaseTable):
             start = (self.page-1)*nrows
             df = df.iloc[start:(start+nrows)]
         indexed_children, children = {}, {}
-        expanded = []
         if self.embed_content:
-            for i in range(len(df)):
-                expanded.append(i)
+            indexes = list(range(len(df)))
+            mapped = self._map_indexes(indexes)
+            expanded = [
+                i for i, m in zip(indexes, mapped)
+                if m in self.expanded
+            ]
+            for i in indexes:
                 idx = df.index[i]
                 if idx in self._indexed_children:
                     child = self._indexed_children[idx]
@@ -1547,6 +1551,7 @@ class Tabulator(BaseTable):
                     child = panel(self.row_content(df.iloc[i]))
                 indexed_children[idx] = children[i] = child
         else:
+            expanded = []
             for i in self.expanded:
                 idx = self.value.index[i]
                 if idx in self._indexed_children:
@@ -1579,7 +1584,8 @@ class Tabulator(BaseTable):
         return models
 
     def _update_children(self, *events):
-        if all(e.name in ('page', 'page_size', 'pagination', 'sorters') for e in events) and self.pagination != 'remote':
+        page_event = all(e.name in ('page', 'page_size', 'pagination', 'sorters') for e in events)
+        if (page_event and self.pagination != 'remote'):
             return
         for event in events:
             if event.name == 'value' and self._indexes_changed(event.old, event.new):
@@ -1590,11 +1596,12 @@ class Tabulator(BaseTable):
                 self._indexed_children.clear()
         self._child_panels, removed, expanded = self._get_children()
         for ref, (m, _) in self._models.copy().items():
-            root, doc, comm = state._views[ref][1:]
-            for child_panel in removed:
-                child_panel._cleanup(root)
-            children = self._get_model_children(doc, root, m, comm)
-            msg = {'expanded': expanded, 'children': children}
+            msg = {'expanded': expanded}
+            if not self.embed_content or any(e.name == 'row_content' for e in events):
+                root, doc, comm = state._views[ref][1:]
+                for child_panel in removed:
+                    child_panel._cleanup(root)
+                msg['children'] = self._get_model_children(doc, root, m, comm)
             self._apply_update([], msg, m, ref)
 
     @updating
