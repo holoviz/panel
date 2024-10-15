@@ -881,7 +881,7 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this.tabulator.rowManager.renderer != null) {
       try {
         this.tabulator.rowManager.adjustTableSize()
-      } catch(e) {}
+      } catch (e) {}
     }
     this.invalidate_layout()
   }
