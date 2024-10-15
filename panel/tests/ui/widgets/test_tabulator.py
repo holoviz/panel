@@ -1181,7 +1181,7 @@ def test_tabulator_max_height_unset(page):
     serve_component(page, widget)
 
     table = page.locator('.pnx-tabulator')
-    expect(table).not_to_have_css('max-height', '200px')
+    expect(table).to_have_css('max-height', 'none')
     assert table.bounding_box()['height'] >= 200
 
 
