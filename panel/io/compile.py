@@ -385,8 +385,8 @@ def compile_components(
             if result.stdout and out:
                 print(f"npm output:\n{GREEN}{result.stdout}{RESET}")  # noqa
             if result.stderr:
-                print("npm errors:\n{RED}{result.stderr}{RESET}")  # noqa
-                return None
+                print(f"npm errors:\n{RED}{result.stderr}{RESET}")  # noqa
+
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while running npm install:\n{RED}{e.stderr}{RESET}")  # noqa
             return None
