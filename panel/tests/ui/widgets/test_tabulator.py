@@ -1159,7 +1159,7 @@ def test_tabulator_patch_no_height_resize(page):
     wait_until(lambda: page.locator('.pnx-tabulator').evaluate(at_bottom_script), page)
 
 
-def test_tabulator_max_height_not_overlap(page):
+def test_tabulator_max_height_set(page):
     df = pd.DataFrame({'col': np.random.random(100)})
     widget = Tabulator(df, max_height=200)
 
@@ -1168,6 +1168,21 @@ def test_tabulator_max_height_not_overlap(page):
     table = page.locator('.pnx-tabulator')
     expect(table).to_have_css('max-height', '200px')
     assert table.bounding_box()['height'] <= 200
+
+
+def test_tabulator_max_height_unset(page):
+    """
+    If max_height is not set, Tabulator should not set it to null;
+    else there's some recursion issues in the console and lag
+    """
+    df = pd.DataFrame({'col': np.random.random(100)})
+    widget = Tabulator(df)
+
+    serve_component(page, widget)
+
+    table = page.locator('.pnx-tabulator')
+    expect(table).not_to_have_css('max-height', '200px')
+    assert table.bounding_box()['height'] >= 200
 
 
 @pytest.mark.parametrize(

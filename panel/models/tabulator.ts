@@ -562,7 +562,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this._initializing = true
     this._building = true
     const container = div({style: {display: "contents"}})
-    const el = div({style: {width: "100%", height: "100%", maxHeight: this.model.max_height ? `${this.model.max_height}px` : "100%", visibility: "hidden"}})
+    const el = div({style: {width: "100%", height: "100%", visibility: "hidden"}})
     this.container = el
     this.setCSSClasses(el)
     container.appendChild(el)
@@ -780,6 +780,9 @@ export class DataTabulatorView extends HTMLBoxView {
         return (this.model.frozen_rows.length > 0) ? this.model.frozen_rows.includes(row._row.data._index) : false
       },
       rowFormatter: (row: any) => this._render_row(row, false),
+    }
+    if (this.model.max_height != null) {
+      configuration.maxHeight = this.model.max_height
     }
     if (this.model.pagination === "remote") {
       configuration.ajaxURL = "http://panel.pyviz.org"
