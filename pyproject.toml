@@ -210,7 +210,7 @@ write-changes = true
 addopts = "--pyargs --doctest-ignore-import-errors --color=yes"
 norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
 asyncio_mode = "auto"
-# asyncio_default_fixture_loop_scope = "function"
+asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true
 minversion = "7"
 log_cli_level = "INFO"
