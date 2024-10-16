@@ -5,6 +5,7 @@ defined as pairs of Python classes and TypeScript models defined in .ts
 files.
 """
 from .browser import BrowserInfo  # noqa
+from .chartjs import ChartJS  # noqa
 from .datetime_picker import DatetimePicker  # noqa
 from .esm import AnyWidgetComponent, ReactComponent, ReactiveESM  # noqa
 from .feed import Feed  # noqa
