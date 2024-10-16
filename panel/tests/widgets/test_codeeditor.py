@@ -29,9 +29,13 @@ def test_ace_input(document, comm):
 
 def test_code_editor_theme():
     assert CodeEditor(value="My theme is appropriate").theme == CodeEditor.param.theme.default
+    assert CodeEditor(value="My theme is appropriate", theme="dracula").theme == "dracula"
 
     with patch('panel.config._config.theme', new_callable=lambda: "default"):
         assert CodeEditor(value="My theme is appropriate").theme == CodeEditor.param.theme.default
 
     with patch('panel.config._config.theme', new_callable=lambda: "dark"):
         assert CodeEditor(value="My theme is appropriate").theme == CodeEditor.THEME_CONFIGURATION[config.theme]
+
+    with patch('panel.config._config.theme', new_callable=lambda: "dark"):
+        assert CodeEditor(value="My theme is appropriate", theme="chrome").theme == "chrome"

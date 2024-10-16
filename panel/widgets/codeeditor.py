@@ -67,7 +67,7 @@ class CodeEditor(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
 
-    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"dark": "clouds_midnight"}
+    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"dark": "chaos"}
 
     def __init__(self, **params):
         if 'readonly' in params:

@@ -320,9 +320,13 @@ def test_json_pane_rerenders_on_depth_change(document, comm):
 
 def test_json_theme():
     assert JSON({"x": 1}).theme == JSON.param.theme.default
+    assert JSON({"x": 1}, theme="dark").theme == "dark"
 
     with patch('panel.config._config.theme', new_callable=lambda: "default"):
         assert JSON({"x": 1}).theme == JSON.param.theme.default
 
     with patch('panel.config._config.theme', new_callable=lambda: "dark"):
         assert JSON({"x": 1}).theme == JSON.THEME_CONFIGURATION[config.theme]
+
+    with patch('panel.config._config.theme', new_callable=lambda: "dark"):
+        assert JSON({"x": 1}, theme="light").theme == "light"
