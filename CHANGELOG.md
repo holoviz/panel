@@ -1,5 +1,27 @@
 # Releases
 
+## Version 1.5.3
+
+### Enhancements
+
+- Sync dark mode on `browser_info` object ([#7382](https://github.com/holoviz/panel/pull/7382))
+
+### Bug fixes
+
+- Address issues with Tabulator embed_content and optimize row expansion ([#7364](https://github.com/holoviz/panel/pull/7364))
+- Prevent pipeline network plot from linking with other plots ([#7372](https://github.com/holoviz/panel/pull/7372))
+- Various fixes for custom component compilation ([#7381](https://github.com/holoviz/panel/pull/7381))
+- Fix OAuth guest endpoint ([#7385](https://github.com/holoviz/panel/pull/7385))
+- Fix `ReactiveESM._importmap` typing ([#7392](https://github.com/holoviz/panel/pull/7392))
+- Ensure that autoreload records modules to watch before startup ([#7399](https://github.com/holoviz/panel/pull/7399))
+- Prevent `Tabulator` from overlapping when `max_height` is set ([#7403](https://github.com/holoviz/panel/pull/7403))
+
+### Documentation
+
+- Update components_overview.md with text fixes ([#7335](https://github.com/holoviz/panel/pull/7335))
+- Corrected styles in doc ([#7371](https://github.com/holoviz/panel/pull/7371))
+- Fix typo in `panel.io.server` docstring ([#7405](https://github.com/holoviz/panel/pull/7405))
+
 ## Version 1.5.2
 
 Date: 2024-10-03
