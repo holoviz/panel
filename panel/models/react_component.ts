@@ -67,7 +67,7 @@ import { CacheProvider } from "@emotion/react"`
       render_code = `
   if (rendered) {
     const cache = createCache({
-      key: 'css-${btoa(this.model.id).replace("=", "-").toLowerCase()}',
+      key: 'css-${btoa(this.model.id).replace("=", "").toLowerCase()}',
       prepend: true,
       container: view.style_cache,
     })
