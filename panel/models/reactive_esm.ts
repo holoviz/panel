@@ -635,19 +635,19 @@ export class ReactiveESM extends HTMLBox {
     if (!this.dev && MODULE_CACHE.has(cache_key)) {
       esm_module = Promise.resolve(MODULE_CACHE.get(cache_key))
     } else {
-      if (!this.dev) {
+      if (!this.dev && this.bundle !== "url") {
         MODULE_CACHE.set(cache_key, new Promise((res) => { resolve = res }))
       }
       let url
       if (this.bundle === "url") {
-	const parts = location.pathname.split("/")
-	let path = parts.slice(0, parts.length-1).join("/")
-	if (path.length) {
-	  path += "/"
-	}
-	url = `${location.origin}/${path}${this.esm}`
+        const parts = location.pathname.split("/")
+        let path = parts.slice(0, parts.length-1).join("/")
+        if (path.length) {
+          path += "/"
+        }
+        url = `${location.origin}/${path}${this.esm}`
       } else {
-	url = URL.createObjectURL(new Blob([this.compiled], {type: "text/javascript"}))
+        url = URL.createObjectURL(new Blob([this.compiled], {type: "text/javascript"}))
       }
       esm_module = (window as any).importShim(url)
     }
