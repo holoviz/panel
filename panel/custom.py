@@ -20,6 +20,7 @@ from param.parameterized import ParameterizedMetaclass
 
 from .config import config
 from .io.datamodel import construct_data_model
+from .io.resources import component_resource_path
 from .io.state import state
 from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
@@ -295,8 +296,12 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classmethod
     def _render_esm(cls, compiled: bool | Literal['compiling'] = True):
-        if (esm_path:= cls._esm_path(compiled=compiled is True)):
-            esm = esm_path.read_text(encoding='utf-8')
+        esm_path = cls._esm_path(compiled=compiled is True)
+        if esm_path:
+            if esm_path == cls._bundle_path and cls.__module__ in sys.modules:
+                esm = component_resource_path(cls, '_bundle_path', esm_path)
+            else:
+                esm = esm_path.read_text(encoding='utf-8')
         else:
             esm = cls._esm
         esm = textwrap.dedent(esm)
@@ -359,7 +364,9 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             data_params[k] = v
         bundle_path = self._bundle_path
         importmap = self._process_importmap()
-        if bundle_path:
+        if bundle_path == self._esm_path(not config.autoreload) and cls.__module__ in sys.modules:
+            bundle_hash = 'url'
+        elif bundle_path:
             bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
         else:
             bundle_hash = None
