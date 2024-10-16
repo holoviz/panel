@@ -235,7 +235,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classproperty
     def _bundle_path(cls) -> os.PathLike | None:
-        if config.autoreload:
+        if config.autoreload and cls._esm:
             return
         try:
             mod_path = pathlib.Path(inspect.getfile(cls)).parent
