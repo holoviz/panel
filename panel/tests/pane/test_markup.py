@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from panel import config
 from panel.pane import (
@@ -320,13 +319,10 @@ def test_json_pane_rerenders_on_depth_change(document, comm):
     assert model.depth is None
 
 def test_json_theme():
-    # Given
-    assert JSON.param.theme.default == JSON.THEME_CONFIGURATION["default"]
-    # When
     assert JSON({"x": 1}).theme == JSON.param.theme.default
 
-@pytest.mark.parametrize("theme", ["default", "dark"])
-def test_json_theme_with_theme_config(theme):
-    with patch('panel.config._config.theme', new_callable=lambda: theme):
-        assert config.theme == theme
+    with patch('panel.config._config.theme', new_callable=lambda: "default"):
+        assert JSON({"x": 1}).theme == JSON.param.theme.default
+
+    with patch('panel.config._config.theme', new_callable=lambda: "dark"):
         assert JSON({"x": 1}).theme == JSON.THEME_CONFIGURATION[config.theme]

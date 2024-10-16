@@ -508,9 +508,10 @@ class JSON(HTMLBasePane):
         Whether to display a hover preview for collapsed nodes.""")
 
     theme = param.ObjectSelector(default="light", objects=["light", "dark"], doc="""
-        Specifies the theme, either "light" or "dark". If no value is provided,
-        it defaults to the current theme set by pn.config.theme,
-        as defined in the JSON.THEME_CONFIGURATION dictionary.""")
+        If no value is provided, it defaults to the current theme
+        set by pn.config.theme, as specified in the
+        JSON.THEME_CONFIGURATION dictionary. If not defined there, it
+        falls back to the default parameter value.""")
 
     priority: ClassVar[float | bool | None] = None
 

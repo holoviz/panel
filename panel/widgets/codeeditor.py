@@ -11,6 +11,7 @@ import param
 
 from pyviz_comms import JupyterComm
 
+from ..config import config
 from ..models.enums import ace_themes
 from ..util import lazy_load
 from .base import Widget
@@ -20,6 +21,8 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+def _get_theme(config_theme)->str:
+    return CodeEditor.THEME_CONFIGURATION.get(config_theme, CodeEditor.param.theme.default)
 
 class CodeEditor(Widget):
     """
@@ -50,7 +53,10 @@ class CodeEditor(Widget):
         Define if editor content can be modified. Alias for disabled.""")
 
     theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
-                                 doc="Theme of the editor")
+                                 doc="""If no value is provided, it defaults to the current theme
+                                 set by pn.config.theme, as specified in the
+                                 CodeEditor.THEME_CONFIGURATION dictionary. If not defined there, it
+                                 falls back to the default parameter value.""")
 
     value = param.String(default="", doc="""
         State of the current code in the editor if `on_keyup`. Otherwise, only upon loss of focus,
@@ -61,11 +67,15 @@ class CodeEditor(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
 
+    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"dark": "clouds_midnight"}
+
     def __init__(self, **params):
         if 'readonly' in params:
             params['disabled'] = params['readonly']
         elif 'disabled' in params:
             params['readonly'] = params['disabled']
+        if "theme" not in params:
+            params["theme"]=_get_theme(config.theme)
         super().__init__(**params)
         self._internal_callbacks.append(
             self.param.watch(self._update_disabled, ['disabled', 'readonly'])
