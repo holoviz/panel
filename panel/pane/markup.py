@@ -14,6 +14,7 @@ from typing import (
 
 import param  # type: ignore
 
+from ..config import config
 from ..io.resources import CDN_DIST
 from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
 from ..util import HTML_SANITIZER, escape, prefix_length
@@ -482,7 +483,8 @@ class Markdown(HTMLBasePane):
             params['css_classes'] = ['markdown'] + params['css_classes']
         return super()._process_param_change(params)
 
-
+def _get_theme(config_theme)->str:
+    return JSON.THEME_CONFIGURATION.get(config_theme, JSON.param.theme.default)
 
 class JSON(HTMLBasePane):
     """
@@ -505,8 +507,10 @@ class JSON(HTMLBasePane):
     hover_preview = param.Boolean(default=False, doc="""
         Whether to display a hover preview for collapsed nodes.""")
 
-    theme = param.ObjectSelector(default="dark", objects=["light", "dark"], doc="""
-        Whether the JSON tree view is expanded by default.""")
+    theme = param.ObjectSelector(default="light", objects=["light", "dark"], doc="""
+        Specifies the theme, either "light" or "dark". If no value is provided,
+        it defaults to the current theme set by pn.config.theme,
+        as defined in the JSON.THEME_CONFIGURATION dictionary.""")
 
     priority: ClassVar[float | bool | None] = None
 
@@ -525,6 +529,13 @@ class JSON(HTMLBasePane):
     _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/json.css'
     ]
+
+    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"default": "light", "dark": "dark"}
+
+    def __init__(self, object=None, **params):
+        if "theme" not in params:
+            params["theme"]=_get_theme(config.theme)
+        super().__init__(object=object, **params)
 
     @classmethod
     def applies(cls, obj: Any, **params) -> float | bool | None:
