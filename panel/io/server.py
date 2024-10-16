@@ -703,7 +703,7 @@ def serve(
 
     Arguments
     ---------
-    panel: Viewable, function or {str: Viewable or function}
+    panels: Viewable, function or {str: Viewable or function}
       A Panel object, a function returning a Panel object or a
       dictionary mapping from the URL slug to either.
     port: int (optional, default=0)
