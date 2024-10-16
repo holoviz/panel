@@ -1,10 +1,12 @@
 import base64
 import json
+import sys
 
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from panel import config
 from panel.pane import (
@@ -318,6 +320,7 @@ def test_json_pane_rerenders_on_depth_change(document, comm):
 
     assert model.depth is None
 
+@pytest.mark.skipif(sys.version_info <= (3, 10), reason="Patch dot import resolution does not work for Python <=3.10")
 def test_json_theme():
     assert JSON({"x": 1}).theme == JSON.param.theme.default
     assert JSON({"x": 1}, theme="dark").theme == "dark"
