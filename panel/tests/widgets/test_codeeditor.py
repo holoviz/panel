@@ -31,7 +31,7 @@ def test_ace_input(document, comm):
     assert editor.value == ""
     assert editor.value_input == ""
 
-@pytest.mark.skipif(sys.version_info <= (3, 10), reason="Patch dot import resolution does not work for Python <=3.10")
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="Patch dot import resolution does not work for Python <=3.10")
 def test_code_editor_theme():
     assert CodeEditor(value="My theme is appropriate").theme == CodeEditor.param.theme.default
     assert CodeEditor(value="My theme is appropriate", theme="dracula").theme == "dracula"

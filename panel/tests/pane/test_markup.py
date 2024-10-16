@@ -320,7 +320,7 @@ def test_json_pane_rerenders_on_depth_change(document, comm):
 
     assert model.depth is None
 
-@pytest.mark.skipif(sys.version_info <= (3, 10), reason="Patch dot import resolution does not work for Python <=3.10")
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="Patch dot import resolution does not work for Python <=3.10")
 def test_json_theme():
     assert JSON({"x": 1}).theme == JSON.param.theme.default
     assert JSON({"x": 1}, theme="dark").theme == "dark"
