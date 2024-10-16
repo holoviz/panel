@@ -483,9 +483,6 @@ class Markdown(HTMLBasePane):
             params['css_classes'] = ['markdown'] + params['css_classes']
         return super()._process_param_change(params)
 
-def _get_theme(config_theme)->str:
-    return JSON.THEME_CONFIGURATION.get(config_theme, JSON.param.theme.default)
-
 class JSON(HTMLBasePane):
     """
     The `JSON` pane allows rendering arbitrary JSON strings, dicts and other
@@ -535,7 +532,7 @@ class JSON(HTMLBasePane):
 
     def __init__(self, object=None, **params):
         if "theme" not in params:
-            params["theme"]=_get_theme(config.theme)
+            params["theme"]=self._get_theme(config.theme)
         super().__init__(object=object, **params)
 
     @classmethod
@@ -571,3 +568,7 @@ class JSON(HTMLBasePane):
         if 'depth' in params:
             params['depth'] = None if params['depth'] < 0 else params['depth']
         return params
+
+    @classmethod
+    def _get_theme(cls, config_theme: str)->str:
+        return cls.THEME_CONFIGURATION.get(config_theme, cls.param.theme.default)

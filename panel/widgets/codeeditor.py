@@ -21,9 +21,6 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-def _get_theme(config_theme)->str:
-    return CodeEditor.THEME_CONFIGURATION.get(config_theme, CodeEditor.param.theme.default)
-
 class CodeEditor(Widget):
     """
     The CodeEditor widget allows displaying and editing code in the
@@ -75,7 +72,7 @@ class CodeEditor(Widget):
         elif 'disabled' in params:
             params['readonly'] = params['disabled']
         if "theme" not in params:
-            params["theme"]=_get_theme(config.theme)
+            params["theme"]=self._get_theme(config.theme)
         super().__init__(**params)
         self._internal_callbacks.append(
             self.param.watch(self._update_disabled, ['disabled', 'readonly'])
@@ -103,3 +100,7 @@ class CodeEditor(Widget):
                 self.readonly = event.new
             elif event.name == 'readonly':
                 self.disabled = event.new
+
+    @classmethod
+    def _get_theme(cls, config_theme: str)->str:
+        return cls.THEME_CONFIGURATION.get(config_theme, cls.param.theme.default)
