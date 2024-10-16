@@ -1159,6 +1159,32 @@ def test_tabulator_patch_no_height_resize(page):
     wait_until(lambda: page.locator('.pnx-tabulator').evaluate(at_bottom_script), page)
 
 
+def test_tabulator_max_height_set(page):
+    df = pd.DataFrame({'col': np.random.random(100)})
+    widget = Tabulator(df, max_height=200)
+
+    serve_component(page, widget)
+
+    table = page.locator('.pnx-tabulator')
+    expect(table).to_have_css('max-height', '200px')
+    assert table.bounding_box()['height'] <= 200
+
+
+def test_tabulator_max_height_unset(page):
+    """
+    If max_height is not set, Tabulator should not set it to null;
+    else there's some recursion issues in the console and lag
+    """
+    df = pd.DataFrame({'col': np.random.random(100)})
+    widget = Tabulator(df)
+
+    serve_component(page, widget)
+
+    table = page.locator('.pnx-tabulator')
+    expect(table).to_have_css('max-height', 'none')
+    assert table.bounding_box()['height'] >= 200
+
+
 @pytest.mark.parametrize(
     'pagination', ('local', 'remote', None)
 )
@@ -1560,8 +1586,13 @@ def test_tabulator_selection_on_multi_index(page, pagination):
     wait_until(lambda: widget.selection == [0, 16], page)
 
 
-def test_tabulator_row_content(page, df_mixed):
-    widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
+@pytest.mark.parametrize('embed_content', [False, True])
+def test_tabulator_row_content(page, df_mixed, embed_content):
+    widget = Tabulator(
+        df_mixed,
+        row_content=lambda i: f"{i['str']}-row-content",
+        embed_content=embed_content
+    )
 
     serve_component(page, widget)
 
@@ -1586,17 +1617,22 @@ def test_tabulator_row_content(page, df_mixed):
         closables.first.click()
 
         row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
-        expect(row_content).to_have_count(0)
+        if embed_content:
+            expect(row_content).not_to_be_visible()
+        else:
+            expect(row_content).to_have_count(0)
 
         expected_expanded.remove(i)
         wait_until(lambda: widget.expanded == expected_expanded, page)
 
 
-def test_tabulator_row_content_expand_from_python_init(page, df_mixed):
+@pytest.mark.parametrize('embed_content', [False, True])
+def test_tabulator_row_content_expand_from_python_init(page, df_mixed, embed_content):
     widget = Tabulator(
         df_mixed,
         row_content=lambda i: f"{i['str']}-row-content",
         expanded = [0, 2],
+        embed_content=embed_content
     )
 
     serve_component(page, widget)
@@ -1614,8 +1650,13 @@ def test_tabulator_row_content_expand_from_python_init(page, df_mixed):
     expect(openables).to_have_count(len(df_mixed) - len(widget.expanded))
 
 
-def test_tabulator_row_content_expand_from_python_after(page, df_mixed):
-    widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
+@pytest.mark.parametrize('embed_content', [False, True])
+def test_tabulator_row_content_expand_from_python_after(page, df_mixed, embed_content):
+    widget = Tabulator(
+        df_mixed,
+        row_content=lambda i: f"{i['str']}-row-content",
+        embed_content=embed_content
+    )
 
     serve_component(page, widget)
 
@@ -1638,8 +1679,14 @@ def test_tabulator_row_content_expand_from_python_after(page, df_mixed):
     expect(page.locator('text="►"')).to_have_count(len(df_mixed))
 
 
-def test_tabulator_row_content_expand_after_filtered(page, df_mixed):
-    table = Tabulator(df_mixed, row_content=lambda e: f"Hello {e.int}", header_filters=True)
+@pytest.mark.parametrize('embed_content', [False, True])
+def test_tabulator_row_content_expand_after_filtered(page, df_mixed, embed_content):
+    table = Tabulator(
+        df_mixed,
+        row_content=lambda e: f"Hello {e.int}",
+        header_filters=True,
+        embed_content=embed_content
+    )
 
     serve_component(page, table)
 
