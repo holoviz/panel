@@ -346,8 +346,9 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         for ref, (model, _) in self._models.copy().items():
             if ref not in state._views:
                 continue
-            _, _, doc, comm = state._views[ref][2]
-            esm = self._render_esm(not config.autoreload, server=doc.session_context and not comm)
+            doc = state._views[ref][2]
+            is_session = doc.session_context and doc.session_context.server_context
+            esm = self._render_esm(not config.autoreload, server=is_session)
             if esm == model.esm:
                 continue
             self._apply_update({}, {'esm': esm}, model, ref)
@@ -373,8 +374,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             data_params[k] = v
         bundle_path = self._bundle_path
         importmap = self._process_importmap()
+        is_session = False
         if bundle_path:
-            if bundle_path == self._esm_path(not config.autoreload) and cls.__module__ in sys.modules and doc.session_context:
+            is_session = (doc.session_context and doc.session_context.server_context)
+            if bundle_path == self._esm_path(not config.autoreload) and cls.__module__ in sys.modules and is_session:
                 bundle_hash = 'url'
             else:
                 bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
@@ -386,7 +389,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             'class_name': camel_to_kebab(cls.__name__),
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload or getattr(self, '_debug', False),
-            'esm': self._render_esm(not config.autoreload, server=bool(doc.session_context)),
+            'esm': self._render_esm(not config.autoreload, server=is_session),
             'importmap': importmap,
             'name': cls.__name__
         })
