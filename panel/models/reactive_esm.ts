@@ -630,12 +630,13 @@ export class ReactiveESM extends HTMLBox {
     this.compiled = compiled
     this._declare_importmap()
     let esm_module
-    const cache_key = this.bundle || `${this.class_name}-${this.esm.length}`
+    const use_cache = (!this.dev || this.bundle)
+    const cache_key = (this.bundle === "url") ? this.esm : (this.bundle || `${this.class_name}-${this.esm.length}`)
     let resolve: (value: any) => void
-    if (!this.dev && MODULE_CACHE.has(cache_key)) {
+    if (use_cache && MODULE_CACHE.has(cache_key)) {
       esm_module = Promise.resolve(MODULE_CACHE.get(cache_key))
     } else {
-      if (!this.dev && this.bundle !== "url") {
+      if (use_cache) {
         MODULE_CACHE.set(cache_key, new Promise((res) => { resolve = res }))
       }
       let url
