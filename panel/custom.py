@@ -295,10 +295,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return
 
     @classmethod
-    def _render_esm(cls, compiled: bool | Literal['compiling'] = True):
+    def _render_esm(cls, compiled: bool | Literal['compiling'] = True, server: bool = False):
         esm_path = cls._esm_path(compiled=compiled is True)
         if esm_path:
-            if esm_path == cls._bundle_path and cls.__module__ in sys.modules:
+            if esm_path == cls._bundle_path and cls.__module__ in sys.modules and server:
                 base_cls = cls
                 for scls in cls.__mro__[1:][::-1]:
                     if not issubclass(scls, ReactiveESM):
@@ -343,8 +343,11 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             self._update_esm()
 
     def _update_esm(self):
-        esm = self._render_esm(not config.autoreload)
         for ref, (model, _) in self._models.copy().items():
+            if ref not in state._views:
+                continue
+            _, _, doc, comm = state._views[ref][2]
+            esm = self._render_esm(not config.autoreload, server=doc.session_context and not comm)
             if esm == model.esm:
                 continue
             self._apply_update({}, {'esm': esm}, model, ref)
@@ -353,44 +356,41 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     def _linked_properties(self) -> list[str]:
         return [p for p in self._data_model.properties() if p not in ('js_property_callbacks',)]
 
-    def _init_params(self) -> dict[str, Any]:
+    def _get_properties(self, doc: Document) -> dict[str, Any]:
+        props = super()._get_properties(doc)
         cls = type(self)
-        ignored = [p for p in Reactive.param if not issubclass(cls.param[p].owner, ReactiveESM)]
-        params = {
-            p : getattr(self, p) for p in list(Layoutable.param)
-            if getattr(self, p) is not None and p != 'name'
-        }
         data_params = {}
+        ignored = [p for p in Reactive.param if not issubclass(cls.param[p].owner, ReactiveESM)]
         for k, v in self.param.values().items():
-            if (
-                (k in ignored and k != 'name') or
-                (((p:= self.param[k]).precedence or 0) < 0) or
-                is_viewable_param(p)
-            ):
+            p = self.param[k]
+            is_viewable = is_viewable_param(p)
+            if (k in ignored and k != 'name') or ((p.precedence or 0) < 0) or is_viewable:
+                if is_viewable and k in props:
+                    props.pop(k)
                 continue
-            if k in params:
-                params.pop(k)
+            if k in props:
+                props.pop(k)
             data_params[k] = v
         bundle_path = self._bundle_path
         importmap = self._process_importmap()
         if bundle_path:
-            if bundle_path == self._esm_path(not config.autoreload) and cls.__module__ in sys.modules:
+            if bundle_path == self._esm_path(not config.autoreload) and cls.__module__ in sys.modules and doc.session_context:
                 bundle_hash = 'url'
             else:
                 bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
         else:
             bundle_hash = None
         data_props = self._process_param_change(data_params)
-        params.update({
+        props.update({
             'bundle': bundle_hash,
             'class_name': camel_to_kebab(cls.__name__),
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload or getattr(self, '_debug', False),
-            'esm': self._render_esm(not config.autoreload),
+            'esm': self._render_esm(not config.autoreload, server=bool(doc.session_context)),
             'importmap': importmap,
             'name': cls.__name__
         })
-        return params
+        return props
 
     @classmethod
     def _process_importmap(cls):
@@ -636,8 +636,8 @@ class ReactComponent(ReactiveESM):
         return exports
 
     @classmethod
-    def _render_esm(cls, compiled: bool | Literal['compiling'] = True):
-        esm = super()._render_esm(compiled=compiled)
+    def _render_esm(cls, compiled: bool | Literal['compiling'] = True, server: bool = False):
+        esm = super()._render_esm(compiled=compiled, server=server)
         if compiled == 'compiling':
             esm = 'import * as React from "react"\n' + esm
         return esm
