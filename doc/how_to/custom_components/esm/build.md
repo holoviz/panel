@@ -252,6 +252,7 @@ panel compile my_package.my_module my_package.subpackage.other_module
 
 you will end up with a single `custom.bundle.js` file placed in the `my_package/dist` directory.
 
+(build-dir)=
 #### Using the `--build-dir` Option
 
 The `--build-dir` option allows you to specify a custom directory where the `package.json` and raw JavaScript/JSX modules will be written. This is useful if you need to manually modify the dependencies before the bundling process and/or debug issues while bundling. To use this feature, follow these steps:
@@ -348,6 +349,8 @@ export function render() {
 
 ::::
 
+#### Build
+
 Once you have set up these three files you have to install the packages with `npm`:
 
 ```bash
@@ -361,3 +364,55 @@ esbuild confetti.js --bundle --format=esm --minify --outfile=ConfettiButton.bund
 ```
 
 This will create a new file called `ConfettiButton.bundle.js`, which includes all the dependencies (even CSS, image files and other static assets if you have imported them).
+
+
+#### Complex Bundles
+
+If you want to bundle multiple components into a singular bundle and do not want to leverage the built-in compilation you can make do without specifying the `_esm` class variable entirely and always load the bundle directly. If you organize your Javascript/TypeScript/React code in the same way as described in the [--build-dir](#build-dir) section you can have a manual compilation workflow with all the benefits of automatic reload.
+
+As an example let's say you have a module with multiple components:
+
+```
+panel_custom/
+├── build/
+    ├── index.js
+    ├── package.json
+    ├── <Component>.js<x>
+    └── <OtherComponent>.js<x>
+├── __init__.py
+├── components.py
+```
+
+Ensure that the `index.js` file exports each component:
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+```javascript
+import * as Component from "./Component"
+import * as OtherComponent from "./OtherComponent"
+export default {Component, OtherComponent}
+```
+:::
+
+:::{tab-item} `ReactComponent`
+A `ReactComponent` library MUST also export `React` and `createRoot`:
+
+```javascript
+import * as Component from "./Component"
+import * as OtherComponent from "./OtherComponent"
+import * as React from "react"
+import {createRoot} from "react-dom/client"
+export default {Component, OtherComponent, React, createRoot}
+```
+:::
+
+::::
+
+You can now develop your JS components as if it were a normal JS library. During the build step you would then run:
+
+```bash
+esbuild panel-custom/build/index.js --bundle --format=esm --minify --outfile=panel_custom/panel_custom.components.bundle.js
+```
+
+or replace `panel_custom.components.bundle.js` with the path specified on your component's `_bundle` attribute.
