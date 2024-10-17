@@ -2,13 +2,16 @@
 
 ## Version 1.5.3
 
+This release fixes a number of smaller regressions related to `Tabulator` `row_content`, ensures `--dev`/`--autoreload` picks up on external modules correctly and resolves OAuth guest endpoints correctly. Additionally it introduces some enhancements and bug fixes for custom components, such as adding support for loading custom components ESM Javascript bundles from the inbuilt endpoint ensuring that the bundle can be cached by the browser. Many thanks and welcome to our new contributors @chryshumble and @haojungc, our returning contributors @TheoMathurin, @aktech and @Coderambling and the core maintainer team @Hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr for their contributions to this release.
+
 ### Enhancements
 
 - Sync dark mode on `browser_info` object ([#7382](https://github.com/holoviz/panel/pull/7382))
+- Allow loading custom component ESM bundles from URL ([#7410](https://github.com/holoviz/panel/pull/7410))
 
 ### Bug fixes
 
-- Address issues with Tabulator embed_content and optimize row expansion ([#7364](https://github.com/holoviz/panel/pull/7364))
+- Address issues with `Tabulator` embed_content and optimize row expansion ([#7364](https://github.com/holoviz/panel/pull/7364))
 - Prevent pipeline network plot from linking with other plots ([#7372](https://github.com/holoviz/panel/pull/7372))
 - Various fixes for custom component compilation ([#7381](https://github.com/holoviz/panel/pull/7381))
 - Fix OAuth guest endpoint ([#7385](https://github.com/holoviz/panel/pull/7385))
