@@ -596,7 +596,7 @@ class ComponentResourceHandler(StaticFileHandler):
 
     _resource_attrs = [
         '__css__', '__javascript__', '__js_module__', '__javascript_modules__',  '_resources',
-        '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers'
+        '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path'
     ]
 
     def initialize(self, path: Optional[str] = None, default_filename: Optional[str] = None):

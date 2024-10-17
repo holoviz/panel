@@ -20,6 +20,7 @@ from param.parameterized import ParameterizedMetaclass
 
 from .config import config
 from .io.datamodel import construct_data_model
+from .io.resources import component_resource_path
 from .io.state import state
 from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
@@ -235,7 +236,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classproperty
     def _bundle_path(cls) -> os.PathLike | None:
-        if config.autoreload:
+        if config.autoreload and cls._esm:
             return
         try:
             mod_path = pathlib.Path(inspect.getfile(cls)).parent
@@ -272,7 +273,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classmethod
     def _esm_path(cls, compiled: bool = True) -> os.PathLike | None:
-        if compiled:
+        if compiled or not cls._esm:
             bundle_path = cls._bundle_path
             if bundle_path:
                 return bundle_path
@@ -295,8 +296,21 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classmethod
     def _render_esm(cls, compiled: bool | Literal['compiling'] = True):
-        if (esm_path:= cls._esm_path(compiled=compiled is True)):
-            esm = esm_path.read_text(encoding='utf-8')
+        esm_path = cls._esm_path(compiled=compiled is True)
+        if esm_path:
+            if esm_path == cls._bundle_path and cls.__module__ in sys.modules:
+                base_cls = cls
+                for scls in cls.__mro__[1:][::-1]:
+                    if not issubclass(scls, ReactiveESM):
+                        continue
+                    if esm_path == scls._esm_path(compiled=compiled is True):
+                        base_cls = scls
+                esm = component_resource_path(base_cls, '_bundle_path', esm_path)
+                if config.autoreload:
+                    modified = hashlib.sha256(str(esm_path.stat().st_mtime).encode('utf-8')).hexdigest()
+                    esm += f'?{modified}'
+            else:
+                esm = esm_path.read_text(encoding='utf-8')
         else:
             esm = cls._esm
         esm = textwrap.dedent(esm)
@@ -360,7 +374,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         bundle_path = self._bundle_path
         importmap = self._process_importmap()
         if bundle_path:
-            bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
+            if bundle_path == self._esm_path(not config.autoreload) and cls.__module__ in sys.modules:
+                bundle_hash = 'url'
+            else:
+                bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
         else:
             bundle_hash = None
         data_props = self._process_param_change(data_params)
