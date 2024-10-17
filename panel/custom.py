@@ -273,7 +273,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classmethod
     def _esm_path(cls, compiled: bool = True) -> os.PathLike | None:
-        if compiled:
+        if compiled or not cls._esm:
             bundle_path = cls._bundle_path
             if bundle_path:
                 return bundle_path
@@ -299,7 +299,16 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         esm_path = cls._esm_path(compiled=compiled is True)
         if esm_path:
             if esm_path == cls._bundle_path and cls.__module__ in sys.modules:
-                esm = component_resource_path(cls, '_bundle_path', esm_path)
+                base_cls = cls
+                for scls in cls.__mro__[1:][::-1]:
+                    if not issubclass(scls, ReactiveESM):
+                        continue
+                    if esm_path == scls._esm_path(compiled=compiled is True):
+                        base_cls = scls
+                esm = component_resource_path(base_cls, '_bundle_path', esm_path)
+                if config.autoreload:
+                    modified = hashlib.sha256(str(esm_path.stat().st_mtime).encode('utf-8')).hexdigest()
+                    esm += f'?{modified}'
             else:
                 esm = esm_path.read_text(encoding='utf-8')
         else:
