@@ -1149,7 +1149,7 @@ class Children(param.List):
     def _transform_value(self, val):
         if isinstance(val, list) and val:
             from .pane import panel
-            val[:] = [
+            val = [
                 v if isinstance(v, Viewable) else panel(v)
                 for v in val
             ]
