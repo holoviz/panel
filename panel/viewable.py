@@ -1152,11 +1152,9 @@ class Children(param.List):
             new = []
             mutated = False
             for v in val:
-                if not isinstance(v, Viewable):
-                    n = panel(v)
-                    mutated |= v is not n
-                    v = n
-                new.append(v)
+                n = panel(v)
+                mutated |= v is not n
+                new.append(n)
             if mutated:
                 val = new
         return val
@@ -1179,10 +1177,14 @@ class ChildDict(param.Dict):
     def _transform_value(self, val):
         if isinstance(val, dict) and val:
             from .pane import panel
-            val.update({
-                k: v if isinstance(v, Viewable) else panel(v)
-                for k, v in val.items()
-            })
+            new = {}
+            mutated = False
+            for k, v in val.items():
+                n = panel(v)
+                mutated |= v is not n
+                new[k] = n
+            if mutated:
+                val = new
         return val
 
     @instance_descriptor
