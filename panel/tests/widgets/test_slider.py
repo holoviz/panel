@@ -1,5 +1,6 @@
 from datetime import date, datetime
 
+import numpy as np
 import pytest
 
 from bokeh.models import (
@@ -8,9 +9,9 @@ from bokeh.models import (
 
 from panel import config
 from panel.widgets import (
-    DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
-    EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatSlider,
-    IntSlider, RangeSlider, StaticText,
+    DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider,
+    DiscreteSlider, EditableFloatSlider, EditableIntSlider,
+    EditableRangeSlider, FloatSlider, IntSlider, RangeSlider, StaticText,
 )
 
 
@@ -154,6 +155,117 @@ def test_date_slider(document, comm):
 
         date_slider.value = date(2021, 5, 12)
         assert widget.value == 1620777600000
+
+
+@pytest.mark.parametrize("start", [date(2018, 9, 1), datetime(2018, 9, 1)])
+@pytest.mark.parametrize("end", [date(2018, 9, 10), datetime(2018, 9, 10)])
+@pytest.mark.parametrize("value", [date(2018, 9, 4), datetime(2018, 9, 4)])
+def test_datetime_slider(document, comm, value, start, end):
+    datetime_slider = DatetimeSlider(
+        name='DatetimeSlider',
+        value=value,
+        start=start,
+        end=end,
+    )
+    assert datetime_slider.start == start
+    assert datetime_slider.end == end
+    assert datetime_slider.value == value
+
+    widget = datetime_slider.get_root(document, comm=comm)
+
+    assert isinstance(widget, datetime_slider._widget_type)
+    assert widget.title == 'DatetimeSlider'
+    assert widget.value == 1536019200000
+    assert widget.start == 1535760000000.0
+    assert widget.end == 1536537600000.0
+
+    epoch = datetime(1970, 1, 1)
+    epoch_time = lambda dt: (dt - epoch).total_seconds() * 1000
+    widget.value = epoch_time(datetime(2018, 9, 3))
+    datetime_slider._process_events({'value': widget.value})
+    assert datetime_slider.value == datetime(2018, 9, 3)
+    datetime_slider._process_events({'value_throttled': epoch_time(datetime(2018, 9, 3))})
+    assert datetime_slider.value_throttled == datetime(2018, 9, 3)
+
+    # Test raw timestamp value:
+    datetime_slider._process_events({'value': epoch_time(datetime(2018, 9, 4))})
+    assert datetime_slider.value == datetime(2018, 9, 4)
+    datetime_slider._process_events({'value_throttled': epoch_time(datetime(2018, 9, 4))})
+    assert datetime_slider.value_throttled == datetime(2018, 9, 4)
+
+    datetime_slider.value = datetime(2018, 9, 6)
+    assert widget.value == 1536192000000
+
+    # Testing throttled mode
+    with config.set(throttled=True):
+        datetime_slider._process_events({'value': epoch_time(datetime(2021, 5, 15))})
+        assert datetime_slider.value == datetime(2018, 9, 6)  # no change
+        datetime_slider._process_events({'value_throttled': epoch_time(datetime(2021, 5, 15))})
+        assert datetime_slider.value == datetime(2021, 5, 15)
+
+        datetime_slider.value = datetime(2021, 5, 12)
+        assert widget.value == 1620777600000
+
+
+def test_datetime_slider_np_datetime64(document, comm):
+    start = np.datetime64('2018-09-01')
+    end = np.datetime64('2018-09-10')
+    value = np.datetime64('2018-09-04')
+
+    datetime_slider = DatetimeSlider(
+        name='DatetimeSlider',
+        value=value,
+        start=start,
+        end=end,
+    )
+    assert datetime_slider.start == start
+    assert datetime_slider.end == end
+    assert datetime_slider.value == value
+
+    widget = datetime_slider.get_root(document, comm=comm)
+
+    assert isinstance(widget, datetime_slider._widget_type)
+    assert widget.title == 'DatetimeSlider'
+    assert widget.value == value
+    assert widget.start == start
+    assert widget.end == end
+
+    widget.value = np.datetime64('2018-09-03')
+    datetime_slider._process_events({'value': widget.value})
+    assert datetime_slider.value == np.datetime64('2018-09-03')
+    datetime_slider._process_events({'value_throttled': np.datetime64('2018-09-03')})
+    assert datetime_slider.value_throttled == np.datetime64('2018-09-03')
+
+    # Test raw timestamp value:
+    datetime_slider._process_events({'value': np.datetime64('2018-09-04')})
+    assert datetime_slider.value == np.datetime64('2018-09-04')
+    datetime_slider._process_events({'value_throttled': np.datetime64('2018-09-04')})
+    assert datetime_slider.value_throttled == np.datetime64('2018-09-04')
+
+    datetime_slider.value = np.datetime64('2018-09-06')
+    assert widget.value == np.datetime64('2018-09-06')
+
+    # Testing throttled mode
+    with config.set(throttled=True):
+        datetime_slider._process_events({'value': np.datetime64('2021-05-15')})
+        assert datetime_slider.value == np.datetime64('2018-09-06')  # no change
+        datetime_slider._process_events({'value_throttled': np.datetime64('2021-05-15')})
+        assert datetime_slider.value == np.datetime64('2021-05-15')
+
+        datetime_slider.value = np.datetime64('2021-05-12')
+        assert widget.value == np.datetime64('2021-05-12')
+
+
+def test_datetime_slider_param_as_datetime_is_readonly():
+    assert DatetimeSlider.param.as_datetime.readonly
+    assert DatetimeSlider().param.as_datetime.readonly
+    datetime_slider = DatetimeSlider(
+        name='DatetimeSlider',
+        value=datetime(2018, 9, 4),
+        start=datetime(2018, 9, 1),
+        end=datetime(2018, 9, 10),
+    )
+    assert datetime_slider.param.as_datetime.readonly
 
 
 def test_date_range_slider(document, comm):
