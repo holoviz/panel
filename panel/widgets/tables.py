@@ -28,7 +28,7 @@ from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
-    clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
+    BOKEH_GE_3_6, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
 from ..util.warnings import warn
@@ -241,7 +241,10 @@ class BaseTable(ReactiveData, Widget):
                         date_format = '%Y-%m-%d %H:%M:%S'
                     formatter = DateFormatter(format=date_format, text_align='right')
                 else:
-                    formatter = StringFormatter()
+                    params = {}
+                    if BOKEH_GE_3_6:
+                        params['null_format'] = ''
+                    formatter = StringFormatter(**params)
 
                 default_text_align = True
             else:
