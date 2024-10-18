@@ -7,7 +7,7 @@ This release fixes a number of smaller regressions related to `Tabulator` `row_c
 ### Enhancements
 
 - Sync dark mode on `browser_info` object ([#7382](https://github.com/holoviz/panel/pull/7382))
-- Allow loading custom component ESM bundles from URL ([#7410](https://github.com/holoviz/panel/pull/7410))
+- Allow loading custom component ESM bundles from URL ([#7410](https://github.com/holoviz/panel/pull/7410), [#7412](https://github.com/holoviz/panel/pull/7412))
 
 ### Bug fixes
 
@@ -18,6 +18,12 @@ This release fixes a number of smaller regressions related to `Tabulator` `row_c
 - Fix `ReactiveESM._importmap` typing ([#7392](https://github.com/holoviz/panel/pull/7392))
 - Ensure that autoreload records modules to watch before startup ([#7399](https://github.com/holoviz/panel/pull/7399))
 - Prevent `Tabulator` from overlapping when `max_height` is set ([#7403](https://github.com/holoviz/panel/pull/7403))
+- Do not mutate layout `Children` inplace ([#7417](https://github.com/holoviz/panel/pull/7403))
+- Set `Tabulator` null formatter to empty string ([#7421](https://github.com/holoviz/panel/pull/7421))
+
+### Compatibility
+
+- Upgraded `Tabulator` version to 6.3 ([#7419](https://github.com/holoviz/panel/pull/7419))
 
 ### Documentation
 
