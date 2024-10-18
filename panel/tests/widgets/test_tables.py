@@ -165,6 +165,24 @@ def test_dataframe_process_data_event(dataframe):
     pd.testing.assert_frame_equal(table.value, df)
 
 
+@pytest.mark.parametrize('widget', [DataFrame, Tabulator])
+def test_dataframe_process_data_no_unsync(dataframe, widget):
+    df = dataframe.copy()
+
+    table1 = widget(dataframe.copy())
+    table2 = widget(table1.param.value.rx().copy())
+    table1._process_events({'data': {'int': [5, 7, 9]}})
+    df['int'] = [5, 7, 9]
+    pd.testing.assert_frame_equal(table1.value, df)
+    pd.testing.assert_frame_equal(table2.value, df)
+
+    # Simulate edit to unsync
+    table2._process_events({'data': {'int': [3, 2, 4]}})
+
+    table1.value = dataframe.copy()
+    pd.testing.assert_frame_equal(table2.value, dataframe)
+
+
 def test_dataframe_duplicate_column_name(document, comm):
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['col', 'col'])
     with pytest.raises(ValueError):
