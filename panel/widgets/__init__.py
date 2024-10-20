@@ -36,7 +36,7 @@ from .base import CompositeWidget, Widget, WidgetBase  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
 from .codeeditor import CodeEditor  # noqa
 from .debugger import Debugger  # noqa
-from .example_picker import ExamplePicker  # noqa
+from .examples import Example, Examples  # noqa
 from .file_selector import FileSelector  # noqa
 from .icon import ButtonIcon, ToggleIcon  # noqa
 from .indicators import (  # noqa
@@ -99,6 +99,8 @@ __all__ = (
     "EditableFloatSlider",
     "EditableIntSlider",
     "EditableRangeSlider",
+    "Example",
+    "Examples",
     "FileDownload",
     "FileDropper",
     "FileInput",
