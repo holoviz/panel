@@ -54,8 +54,8 @@ audio_output = pn.pane.Audio(name="Audio Output")
 def update_name(name, text_input=text_input):
     text_input.name=name
 
-examples = pn.widgets.Examples(("Stanford", "https://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3", "TEXT INPUT"), ("Beat Boxing", "https://assets.holoviz.org/panel/samples/beatboxing.mp3", "text input"), targets=[text_input, audio_output, update_name], name="🎵 Audio Examples", layout=pn.Row)
-pn.FlexBox(examples, text_input, audio_output).servable()
+examples = pn.widgets.Examples(("Stanford", "https://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3", "TEXT INPUT"), ("Beat Boxing", "https://assets.holoviz.org/panel/samples/beatboxing.mp3", "text input"), targets=[text_input, audio_output, update_name], name="🎵 Audio Examples", layout=pn.Row, sizing_mode="fixed", width=600)
+pn.Column(examples, text_input, audio_output).servable()
 ```
 
 ```python
@@ -66,6 +66,8 @@ def update_name(name, text_input=text_input):
 
 samples = [pn.widgets.Example((f"Beat Boxing {index}", "https://assets.holoviz.org/panel/samples/beatboxing.mp3", "text input"), name=f"Beat Boxing {index}", targets=[text_input, audio_output, update_name], layout=None) for index in range(0,100)]
 # Todo: support height and scroll parameters
-examples = pn.widgets.Examples(*samples, targets=[text_input, audio_output, update_name], name="🎵 Audio Examples", layout=pn.Row)
-pn.FlexBox(examples, text_input, audio_output).servable()
+examples = pn.widgets.Examples(*samples, targets=[text_input, audio_output, update_name], name="🎵 Audio Examples", layout=pn.Row, height=400, sizing_mode="stretch_width")
+pn.Column(examples, pn.Row(text_input, audio_output, margin=(50,5,10,5))).servable()
 ```
+
+FIGURE OUT WHY TOP MARGIN OF 50 IS NEEDED.

@@ -200,10 +200,12 @@ class Example(ExampleMixin, PyComponent):
         if self.layout:
             if isinstance(self.targets, list):
                 values = (panel(item, align="center") for item in self.value)
+            elif not self.targets and isinstance(self.value, (list, tuple)):
+                values = (panel(item, align="center") for item in self.value)
             else:
                 values = (panel(str(self.value), align="center"),)
             return self.layout(
-                self._button, *values, styles={"border-bottom": "1px solid black"},
+                self._button, *values, styles={"border-bottom": "1px solid black"}, sizing_mode="stretch_width"
             )
 
         return self._button
@@ -233,7 +235,7 @@ class Example(ExampleMixin, PyComponent):
         return {"name": self.name, "value": self.value, "thumbnail": self.thumbnail}
 
     def __panel__(self):
-        return self._get_layout()
+        return Column(self._get_layout())
 
     def _set_value(self, item, value):
         if hasattr(item, "value"):
@@ -263,7 +265,7 @@ class Example(ExampleMixin, PyComponent):
 class Examples(ExampleMixin, NamedListLike, PyComponent, WidgetBase):
     # Todo: Figure out `value` should be Example or Example.value
     value = param.Parameter()
-    name = param.String(default="📝 Examples", constant=True)
+    name = param.String(default="📝 Examples")
 
     def __init__(self,
         *examples: list,
@@ -286,10 +288,15 @@ class Examples(ExampleMixin, NamedListLike, PyComponent, WidgetBase):
     def _update_self_value(self, example, event):
         self.value = example.value
 
+    @param.depends("layout")
+    def _content(self):
+        if not self.layout:
+            return FlexBox(*self, margin=(-10, 0, 0, 0))
+        return Column(*self, margin=(0, 0, 0, 0), scroll=True)
+
     def __panel__(self):
         return Column(
             Markdown(self.name, margin=(0, 5, 0, 5)),
-            # Todo: FlexBox if button layout and Feed otherwise
-            FlexBox(*self, margin=(-10, 0, 0, 0)),
-            margin=(0,5)
+            self._content,
+            # Figure out why there is overflow
         )

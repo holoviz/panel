@@ -150,3 +150,10 @@ def test_special_image():
     assert example.name=="Hello World"
     assert example.value=="Hello World"
     assert example.thumbnail=="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSLZf31OpU0zqzpDS-IwNBp7lF1eejh9YJHHA&s"
+
+def test_defaults_to_multivalue_if_no_targets():
+    example = Example(["a", "b"], layout=pn.Row)
+    row = example.__panel__()[0]
+    assert len(row)==3
+    assert row[1].object=="a"
+    assert row[2].object=="b"
