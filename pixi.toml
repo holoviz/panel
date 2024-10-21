@@ -161,7 +161,7 @@ channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
 playwright = { version = "*", channel = "microsoft" }
-pytest-playwright = "*"
+pytest-playwright = { version = "*", channel = "microsoft" }
 pytest-asyncio = "*"
 jupyter_server = "*"
 esbuild = "*"
