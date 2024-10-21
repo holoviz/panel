@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import base64
 import concurrent.futures
-import dataclasses
 import json
 import os
 import pathlib
@@ -12,7 +11,6 @@ from typing import IO, Any, Literal
 
 import bokeh
 
-from bokeh.application.application import SessionContext
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import FILE, MACROS, get_env
@@ -25,6 +23,7 @@ from bokeh.util.serialization import make_id
 from .. import __version__, config
 from ..util import base_version, escape
 from .application import Application, build_single_handler_application
+from .document import MockSessionContext
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import find_requirements
 from .resources import (
@@ -120,32 +119,6 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 """
-
-@dataclasses.dataclass
-class Request:
-    headers : dict
-    cookies : dict
-    arguments : dict
-
-
-class MockSessionContext(SessionContext):
-
-    def __init__(self, *args, document=None, **kwargs):
-        self._document = document
-        super().__init__(*args, server_context=None, session_id=None, **kwargs)
-
-    def with_locked_document(self, *args):
-        return
-
-    @property
-    def destroyed(self) -> bool:
-        return False
-
-    @property
-    def request(self):
-        return Request(headers={}, cookies={}, arguments={})
-
-
 
 def make_index(files, title=None, manifest=True):
     if manifest:
@@ -548,7 +521,7 @@ def convert_apps(
     compiled: bool
         Whether to use the compiled and faster version of Pyodide.
     """
-    if isinstance(apps, str):
+    if isinstance(apps, (str, os.PathLike)):
         apps = [apps]
     if dest_path is None:
         dest_path = pathlib.Path('./')
@@ -563,7 +536,7 @@ def convert_apps(
         for app in apps:
             matches = [
                 deps for name, deps in requirements.items()
-                if app.endswith(name.replace(os.path.sep, '/'))
+                if str(app).endswith(name.replace(os.path.sep, '/'))
             ]
             app_requirements[app] = matches[0] if matches else 'auto'
     else:

@@ -21,14 +21,14 @@ from bokeh.models.widgets.tables import (
     StringEditor, StringFormatter, SumAggregator, TableColumn,
 )
 from bokeh.util.serialization import convert_datetime_array
+from param.parameterized import transform_reference
 from pyviz_comms import JupyterComm
 
-from ..depends import transform_reference
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
-    clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
+    BOKEH_GE_3_6, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
 from ..util.warnings import warn
@@ -154,7 +154,7 @@ class BaseTable(ReactiveData, Widget):
         have to reset various settings including expanded rows,
         scroll position, pagination etc.
         """
-        if type(old) != type(new) or isinstance(new, dict) or len(old) != len(new):
+        if type(old) is not type(new) or isinstance(new, dict) or len(old) != len(new):
             return True
         return (old.index != new.index).any()
 
@@ -241,7 +241,10 @@ class BaseTable(ReactiveData, Widget):
                         date_format = '%Y-%m-%d %H:%M:%S'
                     formatter = DateFormatter(format=date_format, text_align='right')
                 else:
-                    formatter = StringFormatter()
+                    params = {}
+                    if BOKEH_GE_3_6:
+                        params['null_format'] = ''
+                    formatter = StringFormatter(**params)
 
                 default_text_align = True
             else:
@@ -423,7 +426,7 @@ class BaseTable(ReactiveData, Widget):
         df_sorted.drop(columns=['_index_'], inplace=True)
         return df_sorted
 
-    def _filter_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _filter_dataframe(self, df: pd.DataFrame, header_filters: bool = True, internal_filters: bool = True) -> pd.DataFrame:
         """
         Filter the DataFrame.
 
@@ -438,11 +441,15 @@ class BaseTable(ReactiveData, Widget):
             The filtered DataFrame
         """
         filters = []
-        for col_name, filt in self._filters:
+        for col_name, filt in (self._filters if internal_filters else []):
             if col_name is not None and col_name not in df.columns:
                 continue
             if isinstance(filt, (FunctionType, MethodType, partial)):
-                df = filt(df)
+                res = filt(df)
+                if type(res) is type(df): #function returned filtered dataframe
+                    df = res
+                else: #assume boolean mask
+                    filters.append(res)
                 continue
             if isinstance(filt, param.Parameter):
                 val = getattr(filt.owner, filt.name)
@@ -473,7 +480,8 @@ class BaseTable(ReactiveData, Widget):
                                  "tuple or list.")
             filters.append(mask)
 
-        filters.extend(self._get_header_filters(df))
+        if header_filters:
+            filters.extend(self._get_header_filters(df))
 
         if filters:
             mask = filters[0]
@@ -509,7 +517,8 @@ class BaseTable(ReactiveData, Widget):
                 elif not val:
                     continue
 
-            val = col.dtype.type(val)
+            if col.dtype.kind != 'O':
+                val = col.dtype.type(val)
             if op == '=':
                 filters.append(col == val)
             elif op == '!=':
@@ -619,8 +628,13 @@ class BaseTable(ReactiveData, Widget):
         return self._process_df_and_convert_to_cds(self.value)
 
     def _process_df_and_convert_to_cds(self, df: pd.DataFrame) -> tuple[pd.DataFrame, DataDict]:
+        # By default we potentially have two distinct views of the data
+        # locally we hold the fully filtered data, i.e. with header filters
+        # applied but since header filters are applied on the frontend
+        # we send the unfiltered data
+
         import pandas as pd
-        df = self._filter_dataframe(df)
+        df = self._filter_dataframe(df, header_filters=False)
         if df is None:
             return [], {}
         if isinstance(self.value.index, pd.MultiIndex):
@@ -631,9 +645,7 @@ class BaseTable(ReactiveData, Widget):
         else:
             default_index = ('level_0' if 'index' in df.columns else 'index')
             indexes = [df.index.name or default_index]
-        if len(indexes) > 1:
-            df = df.reset_index()
-        data = ColumnDataSource.from_df(df)
+        data = ColumnDataSource.from_df(df.reset_index() if len(indexes) > 1 else df)
         if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
         return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
@@ -1125,6 +1137,10 @@ class Tabulator(BaseTable):
         Whether to enable filters in the header or dictionary
         configuring filters for each column.""")
 
+    header_tooltips = param.Dict(default={}, doc="""
+        Dictionary mapping from column name to a tooltip to show when
+        hovering over the column header.""")
+
     hidden_columns = param.List(default=[], nested_refs=True, doc="""
         List of columns to hide.""")
 
@@ -1215,8 +1231,8 @@ class Tabulator(BaseTable):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
-        'text_align': None, 'embed_content': None, 'header_align': None,
-        'header_filters': None, 'styles': 'cell_styles',
+        'text_align': None, 'header_align': None, 'header_filters': None,
+        'header_tooltips': None, 'styles': 'cell_styles',
         'title_formatters': None, 'sortable': None, 'initial_page_size': None
     }
 
@@ -1328,10 +1344,10 @@ class Tabulator(BaseTable):
         self._validate_iloc(idx, iloc)
         event.row = iloc
         if event_col not in self.buttons:
-            if event_col not in self.value.columns:
-                event.value = self.value.index[event.row]
-            else:
+            if event_col in self.value.columns:
                 event.value = self.value[event_col].iloc[event.row]
+            else:
+                event.value = self.value.index[event.row]
 
         # Set the old attribute on a table edit event
         if event.event_name == 'table-edit':
@@ -1388,7 +1404,7 @@ class Tabulator(BaseTable):
 
         import pandas as pd
         df = pd.DataFrame(data)
-        filters = self._get_header_filters(df)
+        filters = self._get_header_filters(df) if self.pagination == 'remote' else []
         if filters:
             mask = filters[0]
             for f in filters:
@@ -1405,6 +1421,9 @@ class Tabulator(BaseTable):
     def _get_data(self):
         if self.pagination != 'remote' or self.value is None:
             return super()._get_data()
+
+        # If data is paginated the current view on the frontend
+        # and locally are identical and both paginated
         import pandas as pd
         df = self._filter_dataframe(self.value)
         df = self._sort_df(df)
@@ -1429,6 +1448,8 @@ class Tabulator(BaseTable):
         if self.value is None or self.style is None or self.value.empty:
             return {}
         df = self._processed
+        if len(self.indexes) > 1:
+            df = df.reset_index()
         if recompute:
             try:
                 self._computed_styler = styler = df.style
@@ -1518,10 +1539,14 @@ class Tabulator(BaseTable):
             start = (self.page-1)*nrows
             df = df.iloc[start:(start+nrows)]
         indexed_children, children = {}, {}
-        expanded = []
         if self.embed_content:
-            for i in range(len(df)):
-                expanded.append(i)
+            indexes = list(range(len(df)))
+            mapped = self._map_indexes(indexes)
+            expanded = [
+                i for i, m in zip(indexes, mapped)
+                if m in self.expanded
+            ]
+            for i in indexes:
                 idx = df.index[i]
                 if idx in self._indexed_children:
                     child = self._indexed_children[idx]
@@ -1529,6 +1554,7 @@ class Tabulator(BaseTable):
                     child = panel(self.row_content(df.iloc[i]))
                 indexed_children[idx] = children[i] = child
         else:
+            expanded = []
             for i in self.expanded:
                 idx = self.value.index[i]
                 if idx in self._indexed_children:
@@ -1561,7 +1587,8 @@ class Tabulator(BaseTable):
         return models
 
     def _update_children(self, *events):
-        if all(e.name in ('page', 'page_size', 'pagination', 'sorters') for e in events) and self.pagination != 'remote':
+        page_event = all(e.name in ('page', 'page_size', 'pagination', 'sorters') for e in events)
+        if (page_event and self.pagination != 'remote'):
             return
         for event in events:
             if event.name == 'value' and self._indexes_changed(event.old, event.new):
@@ -1572,11 +1599,12 @@ class Tabulator(BaseTable):
                 self._indexed_children.clear()
         self._child_panels, removed, expanded = self._get_children()
         for ref, (m, _) in self._models.copy().items():
-            root, doc, comm = state._views[ref][1:]
-            for child_panel in removed:
-                child_panel._cleanup(root)
-            children = self._get_model_children(doc, root, m, comm)
-            msg = {'expanded': expanded, 'children': children}
+            msg = {'expanded': expanded}
+            if not self.embed_content or any(e.name == 'row_content' for e in events):
+                root, doc, comm = state._views[ref][1:]
+                for child_panel in removed:
+                    child_panel._cleanup(root)
+                msg['children'] = self._get_model_children(doc, root, m, comm)
             self._apply_update([], msg, m, ref)
 
     @updating
@@ -1981,6 +2009,9 @@ class Tabulator(BaseTable):
                 col_dict['width'] = self.widths[field]
             col_dict.update(self._get_filter_spec(column))
 
+            if field in self.header_tooltips:
+                col_dict["headerTooltip"] = self.header_tooltips[field]
+
             if isinstance(index, tuple):
                 if columns:
                     children = columns
@@ -2025,7 +2056,11 @@ class Tabulator(BaseTable):
         if self.groups and 'columns' in configuration:
             raise ValueError("Groups must be defined either explicitly "
                              "or via the configuration, not both.")
-        configuration['columns'] = self._config_columns(columns)
+        user_columns = {v["field"]: v for v in configuration.get('columns', {})}
+        configuration["columns"] = self._config_columns(columns)
+        for idx, col in enumerate(columns):
+            if (name := col.field) in user_columns:
+                configuration["columns"][idx] |= user_columns[name]
         configuration['dataTree'] = self.hierarchical
         if self.sizing_mode in ('stretch_height', 'stretch_both'):
             configuration['maxHeight'] = '100%'
@@ -2123,4 +2158,5 @@ class Tabulator(BaseTable):
         df = self._processed
         if self.pagination == 'remote':
             return df
+        df = self._filter_dataframe(df, header_filters=True, internal_filters=False)
         return self._sort_df(df)

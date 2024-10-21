@@ -6,7 +6,7 @@ In this tutorial you will learn more advanced techniques to serve Panel apps:
 - list the configuration options of `panel serve` by adding the flag `--help`.
 
 :::{note}
-This guide builds upon the [Serve Panel Apps (beginner)](../basic/) tutorial.
+This guide builds upon the [Serve Panel Apps (beginner)](../basic/serve.md) tutorial.
 :::
 
 ## Serve a multi-page app
@@ -37,12 +37,12 @@ pn.panel("Hello Notebook World").servable()
 
 Run the cells and save the notebook if you have not already done it.
 
-Run `panel serve app.py app2.ipynb --autoreload`.
+Run `panel serve app.py app2.ipynb --dev`.
 
 It should look like
 
 ```bash
-$ panel serve app.py app2.ipynb --autoreload
+$ panel serve app.py app2.ipynb --dev
 2024-01-17 21:14:43,502 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
 2024-01-17 21:14:43,503 User authentication hooks NOT provided (default user enabled)
 2024-01-17 21:14:43,506 Bokeh app running at: http://localhost:5006/app
@@ -250,7 +250,7 @@ You can
 - [Launch a server on the commandline](../../how_to/server/commandline.md)
 - [Serve multiple applications with `pn.serve`](../../how_to/server/multiple.md)
 - [Serve static files with `--static-dirs`](../../how_to/server/static_files.md)
-- [Serve with Django](../../how_to/integrations/django.md)
+- [Serve with Django](../../how_to/integrations/Django.md)
 - [Serve with FastAPI](../../how_to/integrations/FastAPI.md)
 - [Serve with Flask](../../how_to/integrations/flask.md)
 - [Write and serve apps in Markdown](../../how_to/editor/markdown.md)

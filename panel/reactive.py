@@ -63,7 +63,7 @@ if TYPE_CHECKING:
     from bokeh.models.sources import DataDict, Patches
     from pyviz_comms import Comm
 
-    from .layout.base import Panel
+    from .layout.base import Panel as BasePanel
     from .links import Callback, JSLinkTarget, Link
 
 log = logging.getLogger('panel.reactive')
@@ -390,6 +390,8 @@ class Syncable(Renderable):
             model._event_callbacks = {}
         if not self._models and self._watching_stylesheets:
             self._watching_stylesheets.set()
+            if self._watching_stylesheets in state._watch_events:
+                state._watch_events.remove(self._watching_stylesheets)
             self._watching_stylesheets = False
         comm, client_comm = self._comms.pop(ref, (None, None))
         if comm:
@@ -414,7 +416,8 @@ class Syncable(Renderable):
         paths = [sts for sts in self._stylesheets if isinstance(sts, pathlib.PurePath)]
         if (self._watching_stylesheets or not (config.autoreload and paths and import_available('watchfiles'))):
             return
-        self._watching_stylesheets = asyncio.Event()
+        self._watching_stylesheets = event = asyncio.Event()
+        state._watch_events.append(event)
         state.execute(self._watch_stylesheets)
 
     async def _watch_stylesheets(self):
@@ -724,7 +727,7 @@ class Reactive(Syncable, Viewable):
           Maps from a parameter in the source object to a callback.
         bidirectional: bool
           Whether to link source and target bi-directionally
-        **links: dict
+        links: dict
           Maps between parameters on this object to the parameters
           on the supplied object.
         """
@@ -778,7 +781,7 @@ class Reactive(Syncable, Viewable):
         self._links.append(link)
         return cb
 
-    def controls(self, parameters: list[str] = [], jslink: bool = True, **kwargs) -> 'Panel':
+    def controls(self, parameters: list[str] = [], jslink: bool = True, **kwargs) -> BasePanel:
         """
         Creates a set of widgets which allow manipulating the parameters
         on this instance. By default all parameters which support
@@ -848,7 +851,7 @@ class Reactive(Syncable, Viewable):
         ----------
         args: dict
           A mapping of objects to make available to the JS callback
-        **callbacks: dict
+        callbacks: dict
           A mapping between properties on the source model and the code
           to execute when that property changes
 
@@ -885,7 +888,7 @@ class Reactive(Syncable, Viewable):
           A mapping of objects to make available to the JS callback
         bidirectional: boolean
           Whether to link source and target bi-directionally
-        **links: dict
+        links: dict
           A mapping between properties on the source model and the
           target model property to link it to.
 
@@ -1402,9 +1405,10 @@ class ReactiveData(SyncableData):
         old_data = getattr(self, self._data_params[0])
         try:
             if old_data is self.value: # type: ignore
-                with param.discard_events(self):
-                    self.value = old_raw
-                self.value = old_data
+                with _syncing(self, ['value']):
+                    with param.discard_events(self):
+                        self.value = old_raw
+                    self.value = old_data
             else:
                 self.param.trigger('value')
         finally:

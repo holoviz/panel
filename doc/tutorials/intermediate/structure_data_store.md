@@ -241,7 +241,7 @@ App(
 ).servable()
 ```
 
-Once saved, run `panel serve app.py --autoreload` in your terminal to launch the app.
+Once saved, run `panel serve app.py --dev` in your terminal to launch the app.
 
 The app will look something like
 

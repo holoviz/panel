@@ -254,7 +254,7 @@ class ChatMessage(Pane):
 
         reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
         if isinstance(reaction_icons, dict):
-            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons, default_layout=Row)
+            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons, default_layout=Row, sizing_mode=None)
         self._internal = True
         super().__init__(object=object, **params)
         self.chat_copy_icon = ChatCopyIcon(
@@ -266,8 +266,6 @@ class ChatMessage(Pane):
         self._build_layout()
 
     def _build_layout(self):
-        self._icon_divider = HTML(" | ", width=1, css_classes=["divider"])
-
         self._left_col = left_col = Column(
             self._render_avatar(),
             max_width=60,
@@ -294,18 +292,20 @@ class ChatMessage(Pane):
             self.param.user, height=20,
             css_classes=["name"],
             visible=self.param.show_user,
+            sizing_mode=None,
         )
 
         self._activity_dot = HTML(
             "●",
             css_classes=["activity-dot"],
+            margin=(5, 0),
+            sizing_mode=None,
             visible=self.param.show_activity_dot,
         )
 
         meta_row = Row(
             self._user_html,
             self._activity_dot,
-            sizing_mode="stretch_width",
             css_classes=["meta"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
@@ -332,7 +332,6 @@ class ChatMessage(Pane):
 
         self._icons_row = Row(
             self.chat_copy_icon,
-            self._icon_divider,
             self._render_reaction_icons(),
             css_classes=["icons"],
             sizing_mode="stretch_width",
@@ -344,8 +343,8 @@ class ChatMessage(Pane):
             header_col,
             self._center_row,
             footer_col,
-            self._timestamp_html,
             self._icons_row,
+            self._timestamp_html,
             css_classes=["right"],
             sizing_mode=None,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
@@ -598,11 +597,9 @@ class ChatMessage(Pane):
         if isinstance(object_panel, str) and self.show_copy_icon:
             self.chat_copy_icon.value = object_panel
             self.chat_copy_icon.visible = True
-            self._icon_divider.visible = True
         else:
             self.chat_copy_icon.value = ""
             self.chat_copy_icon.visible = False
-            self._icon_divider.visible = False
 
     def _cleanup(self, root=None) -> None:
         """

@@ -4,7 +4,6 @@ SymPy objects.
 """
 from __future__ import annotations
 
-import re
 import sys
 
 from typing import (
@@ -24,22 +23,13 @@ if TYPE_CHECKING:
     from bokeh.model import Model
 
 
-def is_sympy_expr(obj: Any) -> bool:
-    """Test for sympy.Expr types without usually needing to import sympy"""
-    if 'sympy' in sys.modules and 'sympy' in str(type(obj).__class__):
-        import sympy  # type: ignore
-        if isinstance(obj, sympy.Expr):
-            return True
-    return False
-
-
 class LaTeX(ModelPane):
     r"""
     The `LaTeX` pane allows rendering LaTeX equations. It uses either
-    `MathJax` or `KaTeX` depending on the defined renderer.
+    `KaTeX` or `MathJax` depending on the defined renderer.
 
     By default it will use the renderer loaded in the extension
-    (e.g. `pn.extension('katex')`), defaulting to `KaTeX`.
+    (e.g. `pn.extension('katex')`), defaulting to `KaTeX` if both are loaded.
 
     Reference: https://panel.holoviz.org/reference/panes/LaTeX.html
 
@@ -54,7 +44,7 @@ class LaTeX(ModelPane):
 
     renderer = param.ObjectSelector(default=None, allow_None=True,
                                     objects=['katex', 'mathjax'], doc="""
-        The JS renderer used to render the LaTeX expression.""")
+        The JS renderer used to render the LaTeX expression. Defaults to katex.""")
 
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None
@@ -71,19 +61,12 @@ class LaTeX(ModelPane):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        if is_sympy_expr(obj) or hasattr(obj, '_repr_latex_'):
+        if hasattr(obj, '_repr_latex_'):
             return 0.05
         elif isinstance(obj, str):
             return None
         else:
             return False
-
-    def _process_param_change(self, params) -> dict[str, Any]:
-        if self.renderer == "mathjax":
-            # Replace $$math$$ with \[math\] and $math$ with \(math\)
-            msg = re.sub(r"(\$\$)(.*?)(\$\$)", r"\[\2\]", params["object"])
-            params["object"] = re.sub(r"(\$)(.*?)(\$)", r"\(\2\)", msg)
-        return super()._process_param_change(params)
 
     def _get_model_type(self, root: Model, comm: Comm | None) -> type[Model]:
         module = self.renderer
@@ -92,6 +75,7 @@ class LaTeX(ModelPane):
                 module = 'mathjax'
             else:
                 module = 'katex'
+            self.renderer = module
         model = 'KaTeX' if module == 'katex' else 'MathJax'
         return lazy_load(f'panel.models.{module}', model, isinstance(comm, JupyterComm), root)
 
@@ -110,7 +94,6 @@ class LaTeX(ModelPane):
             obj = ''
         elif hasattr(obj, '_repr_latex_'):
             obj = obj._repr_latex_()
-        elif is_sympy_expr(obj):
-            import sympy
-            obj = r'$'+sympy.latex(obj)+'$'
+        if self.renderer == 'mathjax' and obj.startswith('$') and not obj.startswith('$$'):
+            obj = f'${obj}$'
         return dict(object=obj)

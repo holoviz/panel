@@ -44,6 +44,7 @@ from .parameters import (  # noqa
 log = logging.getLogger('panel.util')
 
 bokeh_version = Version(Version(bokeh.__version__).base_version)
+BOKEH_GE_3_6 = bokeh_version >= Version('3.6')
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
@@ -521,3 +522,11 @@ def prefix_length(a: str, b: str) -> int:
         else:
             right = mid - 1
     return left
+
+
+def camel_to_kebab(name):
+    # Use regular expressions to insert a hyphen before each uppercase letter not at the start,
+    # and between a lowercase and uppercase letter.
+    kebab_case = re.sub(r'([a-z0-9])([A-Z])', r'\1-\2', name)
+    kebab_case = re.sub(r'([A-Z]+)([A-Z][a-z0-9])', r'\1-\2', kebab_case)
+    return kebab_case.lower()

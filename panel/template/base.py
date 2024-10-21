@@ -57,7 +57,7 @@ if TYPE_CHECKING:
     from jinja2 import Template as _Template
     from pyviz_comms import Comm
 
-    from ..io.location import Location
+    from ..io.location.base import Location
     from ..io.resources import ResourcesType
 
 
@@ -188,7 +188,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     def _init_doc(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
         title: Optional[str] = None, notebook: bool = False,
-        location: bool | Location=True
+        location: bool | Location = True
     ):
         # Initialize document
         document: Document = doc or curdoc_locked()
@@ -484,7 +484,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         location: bool | Location = True
     ) -> Document:
         """
-        Returns a servable bokeh Document with the panel attached
+        Returns a servable Document with the template attached.
 
         Arguments
         ---------
@@ -500,14 +500,14 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         Returns
         -------
         doc : bokeh.Document
-          The Bokeh document the panel was attached to
+          The Bokeh document the panel was attached to.
         """
         return self._init_doc(doc, title=title, location=location)
 
     def servable(
-        self, title: Optional[str] = None, location: bool | 'Location' = True,
+        self, title: Optional[str] = None, location: bool | Location = True,
         area: str = 'main', target: Optional[str] = None
-    ) -> 'BaseTemplate':
+    ) -> BaseTemplate:
         """
         Serves the template and returns self to allow it to display
         itself in a notebook context.
@@ -530,7 +530,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
         Returns
         -------
-        The template
+        The template object
         """
         if curdoc_locked().session_context and config.template:
             raise RuntimeError(

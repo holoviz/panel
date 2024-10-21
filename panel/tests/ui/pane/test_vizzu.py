@@ -6,6 +6,7 @@ import numpy as np
 
 from playwright.sync_api import expect
 
+from panel.models.vizzu import VIZZU_VERSION
 from panel.pane import Vizzu
 from panel.tests.util import serve_component, wait_until
 
@@ -54,3 +55,6 @@ def test_vizzu_click(page):
     wait_until(lambda: len(clicks) == 1, page)
 
     assert clicks[0]['categories'] == {'Name': 'Patrick'}
+
+def test_can_import_version():
+    assert VIZZU_VERSION

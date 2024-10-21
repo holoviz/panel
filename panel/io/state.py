@@ -7,6 +7,7 @@ import asyncio
 import datetime as dt
 import inspect
 import logging
+import os
 import shutil
 import sys
 import threading
@@ -14,7 +15,7 @@ import time
 
 from collections import Counter, defaultdict
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
@@ -65,7 +66,9 @@ def set_curdoc(doc: Document):
     try:
         yield
     finally:
-        state._curdoc.reset(token)
+        # If _curdoc has been reset it will raise a ValueError
+        with suppress(ValueError):
+            state._curdoc.reset(token)
 
 def curdoc_locked() -> Document:
     try:
@@ -86,9 +89,6 @@ class _state(param.Parameterized):
     apps to indicate their state to a user.
     """
 
-    base_url = param.String(default='/', readonly=True, doc="""
-       Base URL for all server paths.""")
-
     busy = param.Boolean(default=False, readonly=True, doc="""
        Whether the application is currently busy processing a user
        callback.""")
@@ -101,11 +101,6 @@ class _state(param.Parameterized):
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
-    rel_path = param.String(default='', readonly=True, doc="""
-       Relative path from the current app being served to the root URL.
-       If application is embedded in a different server via autoload.js
-       this will instead reflect an absolute path.""")
-
     session_info = param.Dict(default={'total': 0, 'live': 0,
                                        'sessions': {}}, doc="""
        Tracks information and statistics about user sessions.""")
@@ -113,11 +108,19 @@ class _state(param.Parameterized):
     webdriver = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
 
+    _base_url = param.String(default='/', readonly=True, doc="""
+       Base URL for all server paths.""")
+
     _busy_counter = param.Integer(default=0, doc="""
        Count of active callbacks current being processed.""")
 
     _memoize_cache = param.Dict(default={}, doc="""
        A dictionary used by the cache decorator.""")
+
+    _rel_path = param.String(default='', readonly=True, doc="""
+       Relative path from the current app being served to the root URL.
+       If application is embedded in a different server via autoload.js
+       this will instead reflect an absolute path.""")
 
     # Holds temporary curdoc overrides per thread
     _curdoc = ContextVar('curdoc', default=None)
@@ -216,6 +219,13 @@ class _state(param.Parameterized):
     # Override user info
     _oauth_user_overrides = {}
     _active_users = Counter()
+
+    # Paths
+    _rel_paths: ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
+    _base_urls: ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
+
+    # Watchers
+    _watch_events: list[asyncio.Event] = []
 
     def __repr__(self) -> str:
         server_info = []
@@ -474,7 +484,11 @@ class _state(param.Parameterized):
 
         Note: Keyword arguments must be hashable.
 
-        Example:
+        Pandas Example:
+
+        >>> data = pn.state.as_cached('data', pd.read_csv, filepath_or_buffer=DATA_URL)
+
+        Function Example:
 
         >>> def load_dataset(name):
         >>>     # some slow operation that uses name to load a dataset....
@@ -844,6 +858,7 @@ class _state(param.Parameterized):
           Whether the callback should be run on a thread (requires
           config.nthreads to be set).
         """
+        name = f"{os.getpid()}_{name}"
         if name in self._scheduled:
             if callback is not self._scheduled[name][1]:
                 self.param.warning(
@@ -1013,6 +1028,34 @@ class _state(param.Parameterized):
         return self.curdoc.session_context.request.headers if self.curdoc and self.curdoc.session_context else {}
 
     @property
+    def base_url(self) -> str:
+        base_url = self._base_url
+        if self.curdoc:
+            return self._base_urls.get(self.curdoc, base_url)
+        return base_url
+
+    @base_url.setter
+    def base_url(self, value: str):
+        if self.curdoc:
+            self._base_urls[self.curdoc] = value
+        else:
+            self._base_url = value
+
+    @property
+    def rel_path(self) -> str | None:
+        rel_path = self._rel_path
+        if self.curdoc:
+            return self._rel_paths.get(self.curdoc, rel_path)
+        return rel_path
+
+    @rel_path.setter
+    def rel_path(self, value: str | None):
+        if self.curdoc:
+            self._rel_paths[self.curdoc] = value
+        else:
+            self._rel_path = value
+
+    @property
     def loaded(self) -> bool:
         """
         Whether the application has been fully loaded.
@@ -1047,20 +1090,25 @@ class _state(param.Parameterized):
 
     @property
     def notifications(self) -> NotificationArea | None:
-        from ..config import config
-        if config.notifications and self.curdoc and self.curdoc.session_context and self.curdoc not in self._notifications:
-            from .notifications import NotificationArea
-            js_events = {}
-            if config.ready_notification:
-                js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
-            if config.disconnect_notification:
-                js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
-            self._notifications[self.curdoc] = notifications = NotificationArea(js_events=js_events)
-            return notifications
-        elif self.curdoc is None or self.curdoc.session_context is None:
+        if self.curdoc is None:
             return self._notification
-        else:
-            return self._notifications.get(self.curdoc) if self.curdoc else None
+
+        is_session = (self.curdoc.session_context is not None or self._is_pyodide)
+        if self.curdoc in self._notifications:
+            return self._notifications[self.curdoc]
+
+        from panel.config import config
+        if not (config.notifications and is_session):
+            return None if is_session else self._notification
+
+        from panel.io.notifications import NotificationArea
+        js_events = {}
+        if config.ready_notification:
+            js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
+        if config.disconnect_notification:
+            js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
+        self._notifications[self.curdoc] = notifications = NotificationArea(js_events=js_events)
+        return notifications
 
     @property
     def refresh_token(self) -> str | None:

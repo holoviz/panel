@@ -139,3 +139,28 @@ def test_markdown_codeblocks(file, tmp_path):
         f.writelines(lines)
 
     runpy.run_path(str(mod))
+
+
+@doc_available
+@pytest.mark.parametrize(
+    "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
+)
+def test_colon_blocks_symmetric(file):
+    stack = []
+    for i, line in enumerate(file.read_text(encoding='utf-8').splitlines(), 1):
+        if ':::::' in line:
+            # Not checking triple nesting
+            stack.clear()
+            break
+        elif '::::' in line:
+            if stack:
+                assert stack[-1] == '::::', f'Expected ::: on line {i}, found ::::'
+                stack.pop()
+            else:
+                stack.append('::::')
+        elif ':::' in line:
+            if not stack or stack[-1] == '::::':
+                stack.append(':::')
+            else:
+                stack.pop()
+    assert not stack, 'Colon blocks were not symmetric, ensure all blocks were closed'

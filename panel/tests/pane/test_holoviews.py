@@ -240,7 +240,7 @@ def test_holoviews_pane_inherits_design_stylesheets(document, comm):
 
     plotly_model = row.children[0]
 
-    assert len(plotly_model.stylesheets) == 5
+    assert len(plotly_model.stylesheets) == 6
 
 @hv_available
 def test_holoviews_widgets_from_dynamicmap(document, comm):

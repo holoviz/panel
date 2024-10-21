@@ -14,5 +14,6 @@ Apply Templates<templates/index>
 Improve Performance<performance/index>
 Cache Data<caching/index>
 Improve Scalability<concurrency/index>
+Best Practices <best_practices/index>
 Add Authentication<authentication/index>
 ```

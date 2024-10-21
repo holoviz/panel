@@ -1,6 +1,6 @@
 # Set Up Manual Threading
 
-Enabling threading in Panel, as demonstrated in the [automatic threading guide](threading.md), provides a simple method to achieve concurrency. However, there are situations where greater control is necessary.
+Enabling threading in Panel, as demonstrated in the [automatic threading guide](threading), provides a simple method to achieve concurrency. However, there are situations where greater control is necessary.
 
 Below, we will demonstrate how to safely implement threads either per session or globally across multiple sessions.
 
@@ -140,7 +140,7 @@ To use threading efficiently:
 
 When we need to share data periodically across all sessions, it is often inefficient to fetch and process this data separately for each session.
 
-Instead, we can utilize a single thread. When initiating global threads, it's crucial to avoid starting them multiple times, especially in sessions or modules subject to `--autoreload`. To circumvent this issue, we can globally share a worker or thread through the Panel cache (`pn.state.cache`).
+Instead, we can utilize a single thread. When initiating global threads, it's crucial to avoid starting them multiple times, especially in sessions or modules subject to the `--dev` flag. To circumvent this issue, we can globally share a worker or thread through the Panel cache (`pn.state.cache`).
 
 Let's create a `GlobalTaskRunner` that accepts a function (`worker`) and executes it repeatedly, pausing for `sleep` seconds between each execution.
 

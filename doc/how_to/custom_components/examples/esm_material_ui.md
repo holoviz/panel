@@ -53,16 +53,16 @@ class Rating(MaterialComponent):
     _esm = """
     import Rating from '@mui/material/Rating'
 
-	export function render({model}) {
+    export function render({model}) {
       const [value, setValue] = model.useState("value")
       return (
-	    <Rating
-		  value={value}
+        <Rating
+          value={value}
           onChange={(event, newValue) => setValue(newValue) }
         />
-	  )
-	}
-	"""
+      )
+    }
+    """
 
 class DiscreteSlider(MaterialComponent):
 
@@ -88,7 +88,7 @@ class DiscreteSlider(MaterialComponent):
             aria-label="Restricted values"
             defaultValue={value}
             marks={marks}
-			onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => setValue(e.target.value)}
             step={null}
             valueLabelDisplay="auto"
           />
@@ -103,7 +103,7 @@ slider = DiscreteSlider()
 
 pn.Row(
     pn.Column(button.controls(['disabled', 'label', 'variant']), button),
-	pn.Column(rating.controls(['value']), rating),
-	pn.Column(slider.controls(['value']), slider),
+    pn.Column(rating.controls(['value']), rating),
+    pn.Column(slider.controls(['value']), slider),
 ).servable()
 ```

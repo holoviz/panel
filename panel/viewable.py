@@ -313,7 +313,7 @@ class ServableMixin:
         """
         Callback to handle FunctionHandler document creation.
         """
-        if server_id:
+        if server_id and server_id in state._servers:
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location) # type: ignore
 
@@ -1149,10 +1149,14 @@ class Children(param.List):
     def _transform_value(self, val):
         if isinstance(val, list) and val:
             from .pane import panel
-            val[:] = [
-                v if isinstance(v, Viewable) else panel(v)
-                for v in val
-            ]
+            new = []
+            mutated = False
+            for v in val:
+                n = panel(v)
+                mutated |= v is not n
+                new.append(n)
+            if mutated:
+                val = new
         return val
 
     @instance_descriptor
@@ -1173,10 +1177,14 @@ class ChildDict(param.Dict):
     def _transform_value(self, val):
         if isinstance(val, dict) and val:
             from .pane import panel
-            val.update({
-                k: v if isinstance(v, Viewable) else panel(v)
-                for k, v in val.items()
-            })
+            new = {}
+            mutated = False
+            for k, v in val.items():
+                n = panel(v)
+                mutated |= v is not n
+                new[k] = n
+            if mutated:
+                val = new
         return val
 
     @instance_descriptor

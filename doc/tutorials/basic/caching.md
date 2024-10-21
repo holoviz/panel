@@ -7,7 +7,7 @@ Caching is a powerful technique that not only accelerates your applications but 
 With `pn.cache`, you can effortlessly cache function results, unlocking a plethora of performance benefits for your Panel apps.
 
 :::{note}
-As you proceed through the sections below, feel free to execute the code directly in the Panel docs using the handy green *run* button, in a notebook cell, or within a Python file `app.py` served with `panel serve app.py --autoreload`.
+As you proceed through the sections below, feel free to execute the code directly in the Panel docs using the handy green *run* button, in a notebook cell, or within a Python file `app.py` served with `panel serve app.py --dev`.
 :::
 
 ## Grasp Panel Application Execution
@@ -65,19 +65,19 @@ It should look like
 
 :::
 
-### Exercise: Enable `--autoreload`
+### Exercise: Enable `--dev`
 
-Try repeating the aforementioned steps with `--autoreload`.
+Try repeating the aforementioned steps with `--dev`.
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 Observe the changes.
 
 :::{dropdown} Solution
 
-With `--autoreload`, both files are executed when the server starts and before the page is loaded for the first time.
+With `--dev`, both files are executed when the server starts and before the page is loaded for the first time.
 
 <img src="https://assets.holoviz.org/panel/tutorials/page_load_end_autoreload.png"></img>
 

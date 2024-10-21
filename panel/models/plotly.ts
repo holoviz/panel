@@ -299,6 +299,10 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     //  - plotly_selected
     this.container.on("plotly_selected", (eventData: any) => {
+      if (eventData === undefined || eventData === null) {
+        // filter out the empty events that come from single-click
+        return
+      }
       const data = filterEventData(this.container, eventData, "selected")
       this.model.trigger_event(new PlotlyEvent({type: "selected", data}))
     })
