@@ -6,6 +6,7 @@ files.
 """
 from .browser import BrowserInfo  # noqa
 from .datetime_picker import DatetimePicker  # noqa
+from .datetime_slider import DatetimeSlider  # noqa
 from .esm import AnyWidgetComponent, ReactComponent, ReactiveESM  # noqa
 from .feed import Feed  # noqa
 from .icon import ButtonIcon, ToggleIcon, _ClickableIcon  # noqa
