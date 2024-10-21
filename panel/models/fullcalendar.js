@@ -1,7 +1,9 @@
 import {Calendar} from "@fullcalendar/core"
+import interactionPlugin from "@fullcalendar/interaction" // for selectable
 
 export function render({model, el}) {
   function createCalendar(plugins) {
+    const defaultPlugins = [interactionPlugin]
     const calendar = new Calendar(el, {
       businessHours: model.business_hours,
       buttonIcons: model.button_icons,
@@ -16,7 +18,7 @@ export function render({model, el}) {
       initialView: model.current_view,
       navLinks: model.nav_links,
       nowIndicator: model.now_indicator,
-      plugins,
+      plugins: defaultPlugins.concat(plugins),
       showNonCurrentDates: model.show_non_current_dates,
       stickyFooterScrollbar: model.sticky_footer_scrollbar,
       stickyHeaderDates: model.sticky_header_dates,
@@ -24,6 +26,11 @@ export function render({model, el}) {
       titleRangeSeparator: model.title_range_separator,
       validRange: model.valid_range,
       windowResizeDelay: model.window_resize_delay,
+      selectable: true,
+      selectMirror: true,
+      dateClick(info) {
+        alert(`Clicked on: ${  JSON.stringify(info)}`)
+      },
       datesSet(info) {
         model.send_msg({current_date: calendar.getDate().toISOString()})
       },

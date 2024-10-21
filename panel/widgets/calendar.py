@@ -176,6 +176,7 @@ class Calendar(JSComponent):
             "@fullcalendar/timegrid": "https://cdn.skypack.dev/@fullcalendar/timegrid@6.1.15",
             "@fullcalendar/list": "https://cdn.skypack.dev/@fullcalendar/list@6.1.15",
             "@fullcalendar/multimonth": "https://cdn.skypack.dev/@fullcalendar/multimonth@6.1.15",
+            "@fullcalendar/interaction": "https://cdn.skypack.dev/@fullcalendar/interaction@6.1.15",
         }
     }
 
