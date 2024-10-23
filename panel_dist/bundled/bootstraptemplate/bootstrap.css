@@ -1,0 +1,198 @@
+:root,
+:host {
+  --bs-primary-color: var(
+    --design-primary-text-color,
+    var(--panel-on-primary-color)
+  );
+  --bs-primary-bg: var(--design-primary-color, var(--panel-primary-color));
+  --bs-secondary-color: var(
+    --design-secondary-text-color,
+    var(--panel-on-secondary-color)
+  );
+  --bs-secondary-bg: var(--design-primary-color, var(--panel-secondary-color));
+  --bs-form-control-bg: var(
+    --design-background-color,
+    var(--panel-background-color)
+  );
+  --bs-body-bg: var(--design-background-color, var(--panel-background-color));
+  --bs-body-color: var(
+    --design-background-text-color,
+    var(--panel-on-background-color)
+  );
+  --bs-surface-bg: var(--design-surface-color, var(--panel-surface-color));
+  --bs-surface-color: var(
+    --design-surface-text-color,
+    var(--panel-on-surface-color)
+  );
+  --bokeh-base-font: system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', 'Noto Sans', 'Liberation Sans', Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+html {
+  scrollbar-face-color: var(--bs-surface-bg);
+  scrollbar-base-color: var(--bs-surface-bg);
+  scrollbar-3dlight-color: var(--bs-surface-bg);
+  scrollbar-highlight-color: var(--bs-surface-bg);
+  scrollbar-track-color: var(--bs-body-bg);
+  scrollbar-arrow-color: var(--bs-body-bg);
+  scrollbar-shadow-color: var(--bs-surface-bg);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--bs-body-bg);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--bs-surface-bg);
+}
+
+::-webkit-scrollbar-corner {
+  background-color: var(--bs-surface-bg);
+}
+
+body {
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
+  height: 100vh;
+}
+
+#container {
+  padding: 0px;
+}
+
+/* Header */
+
+#header {
+  background-color: var(--bs-primary-bg);
+  color: var(--bs-primary-color);
+}
+
+.navbar {
+  --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath stroke='rgba(255, 255, 255, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+.navbar-toggle {
+  background: none;
+  border: none;
+  margin-left: 10px;
+}
+
+a.navbar-brand {
+  padding-left: 10px;
+  display: flex;
+  align-items: center;
+  font-size: 1.5em;
+}
+
+#header .title {
+  color: var(--header-color);
+  text-decoration: none;
+  text-decoration-line: none;
+  text-decoration-style: initial;
+  text-decoration-color: initial;
+  font-weight: 400;
+  font-size: 1.5em;
+  padding-left: 0.5em;
+  line-height: 2em;
+  white-space: nowrap;
+}
+
+#header-items {
+  align-items: center;
+  display: flex;
+  flex-grow: 1;
+  margin-left: 15px;
+  white-space: nowrap;
+}
+
+.app-header {
+  display: contents;
+  padding-left: 10px;
+}
+
+.app-header a.title:hover {
+  color: var(--bs-primary-color);
+  text-decoration: none;
+}
+
+img.app-logo {
+  padding-right: 10px;
+  font-size: 28px;
+  height: 30px;
+  max-width: inherit;
+}
+
+/* Sidebar */
+
+#sidebar {
+  border-right: 1px solid var(--bs-border-color);
+  height: 100%;
+  overflow: hidden auto;
+  padding: 15px 10px 15px 5px;
+}
+
+#sidebar.collapsing {
+  display: block;
+  width: 0;
+}
+
+/* Main Area */
+
+#content {
+  height: 100%;
+  margin: 0px;
+}
+
+#main {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  overflow-y: auto;
+  padding: 10px 20px 20px 10px;
+}
+
+/* Modal */
+
+.pn-modal {
+  overflow-y: auto;
+}
+
+.pn-modal-content {
+  display: block;
+  min-height: 42px;
+  overflow-x: auto;
+}
+
+.pn-modal-close {
+  height: 40px;
+  float: right;
+  padding: 0px;
+  position: relative;
+  width: 40px;
+  z-index: 100;
+}
+
+.pn-modal-close:hover,
+.pn-modal-close:focus {
+  cursor: pointer;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.pn-busy-container {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  margin-left: auto;
+}
+
+@media (min-width: 576px) {
+  .modal-dialog {
+    max-width: 80%;
+  }
+}
