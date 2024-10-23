@@ -23,6 +23,7 @@ from panel.depends import bind
 from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
+from panel.pane import Markdown
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
 from panel.util import BOKEH_GE_3_6
 from panel.widgets import Select, Tabulator, TextInput
@@ -4079,3 +4080,17 @@ def test_tabulator_header_tooltips(page):
     page.wait_for_timeout(200)
 
     expect(page.locator('.tabulator-tooltip')).to_have_text("Test")
+
+
+def test_tabulator_row_content_markup_wrap(page):
+    # https://github.com/holoviz/panel/issues/7388
+
+    df = pd.DataFrame({"col": ["foo"]})
+    long_markdown = Markdown("xxxx " * 50)
+    widget = Tabulator(df, row_content=lambda row: long_markdown, expanded=[0], width=200)
+
+    serve_component(page, widget)
+
+    md = page.locator('.row-content .bk-panel-models-markup-HTML')
+
+    assert md.bounding_box()['height'] >= 130
