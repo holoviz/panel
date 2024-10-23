@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 import param
 
 from panel.custom import PyComponent, ReactiveESM
@@ -42,6 +44,25 @@ def test_py_component_cleanup(document, comm):
 
     assert not spy._models
     assert not spy._view__._models
+
+
+class ESMDataFrame(ReactiveESM):
+
+    df = param.DataFrame()
+
+
+def test_reactive_esm_sync_dataframe(document, comm):
+    esm_df = ESMDataFrame()
+
+    model = esm_df.get_root(document, comm)
+
+    esm_df.df = pd.DataFrame({"1": [2]})
+
+    assert isinstance(model.data.df, dict)
+    assert len(model.data.df) == 2
+    expected = {"index": np.array([0]), "1": np.array([2])}
+    for col, values in model.data.df.items():
+        np.testing.assert_array_equal(values, expected.get(col))
 
 
 class ESMWithChildren(ReactiveESM):
