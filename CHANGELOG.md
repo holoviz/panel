@@ -20,6 +20,8 @@ This release fixes a number of smaller regressions related to `Tabulator` `row_c
 - Prevent `Tabulator` from overlapping when `max_height` is set ([#7403](https://github.com/holoviz/panel/pull/7403))
 - Do not mutate layout `Children` inplace ([#7417](https://github.com/holoviz/panel/pull/7403))
 - Set `Tabulator` null formatter to empty string ([#7421](https://github.com/holoviz/panel/pull/7421))
+- Ensure Tabulator table content does not overflow ([#7425](https://github.com/holoviz/panel/pull/7425))
+
 
 ### Compatibility
 

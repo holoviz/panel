@@ -71,13 +71,13 @@ HoloViz = "https://holoviz.org/"
 [project.optional-dependencies]
 recommended = [
     'jupyterlab',
-    'holoviews >=1.16.0',
+    'holoviews >=1.18.0',
     'matplotlib',
     'pillow',
     'plotly',
 ]
 fastapi = [
-    'bokeh-fastapi >= 0.1.0',
+    'bokeh-fastapi >= 0.1.2',
     'fastapi[standard]',
 ]
 dev = [
