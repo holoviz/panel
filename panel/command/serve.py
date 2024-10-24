@@ -670,5 +670,10 @@ class Serve(_BkServe):
         # Empty layout are valid and the Bokeh warning is silenced as usually
         # not relevant to Panel users.
         silence(EMPTY_LAYOUT, True)
+        # dask.distributed changes the logging level of Bokeh, we will overwrite it
+        # if the environment variable is not set to the default Bokeh level
+        # See https://github.com/holoviz/panel/issues/2302
+        if "DASK_DISTRIBUTED__LOGGING__BOKEH" not in os.environ:
+            os.environ["DASK_DISTRIBUTED__LOGGING__BOKEH"] = "info"
         args.dev = None
         super().invoke(args)

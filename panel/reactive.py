@@ -1582,16 +1582,32 @@ class ReactiveCustomBase(Reactive):
     def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
         if not msg:
             return
-        old = self._changing.get(root.ref['id'], [])
-        self._changing[root.ref['id']] = [
-            attr for attr, value in msg.items()
-            if not model.lookup(attr).property.matches(getattr(model, attr), value)
-        ]
+        prev_changing = self._changing.get(root.ref['id'], [])
+        changing = []
+        transformed = {}
+        for attr, value in msg.items():
+            prop = model.lookup(attr).property
+            old = getattr(model, attr)
+            try:
+                matches = bool(prop.matches(old, value))
+            except Exception:
+                for tp, converter in prop.alternatives:
+                    if tp.is_valid(value):
+                        value = converter(value)
+                        break
+                try:
+                    matches = bool(prop.matches(old, value))
+                except Exception:
+                    matches = False
+            if not matches:
+                transformed[attr] = value
+                changing.append(attr)
+        self._changing[root.ref['id']] = changing
         try:
-            model.update(**msg)
+            model.update(**transformed)
         finally:
             if old:
-                self._changing[root.ref['id']] = old
+                self._changing[root.ref['id']] = prev_changing
             else:
                 del self._changing[root.ref['id']]
 
