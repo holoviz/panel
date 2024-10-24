@@ -1,9 +1,9 @@
 import {Calendar} from "@fullcalendar/core"
-import interactionPlugin from "@fullcalendar/interaction" // for selectable
 
 export function render({model, el}) {
-  function createCalendar(plugins) {
-    const defaultPlugins = [interactionPlugin]
+  function createCalendar(plugins, interactionPlugin = null) {
+    const defaultPlugins = interactionPlugin ? [interactionPlugin] : []
+
     const calendar = new Calendar(el, {
       businessHours: model.business_hours,
       buttonIcons: model.button_icons,
@@ -22,15 +22,62 @@ export function render({model, el}) {
       showNonCurrentDates: model.show_non_current_dates,
       stickyFooterScrollbar: model.sticky_footer_scrollbar,
       stickyHeaderDates: model.sticky_header_dates,
+      timeZone: model.time_zone,
       titleFormat: model.title_format,
       titleRangeSeparator: model.title_range_separator,
       validRange: model.valid_range,
       windowResizeDelay: model.window_resize_delay,
-      selectable: true,
-      selectMirror: true,
-      dateClick(info) {
-        alert(`Clicked on: ${  JSON.stringify(info)}`)
-      },
+      ...(interactionPlugin && {
+        droppable: model.droppable,
+        editable: model.editable,
+        eventDurationEditable: model.event_duration_editable,
+        eventResizableFromStart: model.event_resizable_from_start,
+        eventResourceEditable: model.event_resource_editable,
+        eventStartEditable: model.event_start_editable,
+        selectable: model.selectable,
+        selectMirror: model.select_mirror,
+        unselectAuto: model.unselect_auto,
+        unselectCancel: model.unselect_cancel,
+        selectAllow: model.select_allow,
+        selectMinDistance: model.select_min_distance,
+        dateClick(info) {
+          model.send_msg({date_click: JSON.stringify(info)})
+        },
+        drop(info) {
+          model.send_msg({drop: JSON.stringify(info)})
+        },
+        eventDragStart(info) {
+          model.send_msg({event_drag_start: JSON.stringify(info)})
+        },
+        eventDragStop(info) {
+          model.send_msg({event_drag_stop: JSON.stringify(info)})
+        },
+        eventDrop(info) {
+          model.send_msg({event_drop: JSON.stringify(info)})
+        },
+        eventLeave(info) {
+          model.send_msg({event_leave: JSON.stringify(info)})
+        },
+        eventReceive(info) {
+          model.send_msg({event_receive: JSON.stringify(info)})
+        },
+        eventResize(info) {
+          model.send_msg({event_resize: JSON.stringify(info)})
+        },
+        eventResizeStart(info) {
+          model.send_msg({event_resize_start: JSON.stringify(info)})
+        },
+        eventResizeStop(info) {
+          model.send_msg({event_resize_stop: JSON.stringify(info)})
+        },
+        select(info) {
+          model.send_msg({select: JSON.stringify(info)})
+        },
+        unselect(info) {
+          model.send_msg({unselect: JSON.stringify(info)})
+        },
+
+      }),
       datesSet(info) {
         model.send_msg({current_date: calendar.getDate().toISOString()})
       },
@@ -44,12 +91,10 @@ export function render({model, el}) {
       },
     })
 
-    // there's initialDate, but if it's set, there's buggy behavior on re-renders
     if (model.current_date) {
       calendar.gotoDate(model.current_date)
     }
 
-    // these cannot be set in the constructor if null
     if (model.dateAlignment) {
       calendar.setOption("dateAlignment", model.dateAlignment)
     }
@@ -99,13 +144,20 @@ export function render({model, el}) {
     return Promise.resolve(null)
   }
 
-  Promise.all([
+  const pluginPromises = [
     loadPluginIfNeeded("dayGrid", "daygrid"),
     loadPluginIfNeeded("timeGrid", "timegrid"),
     loadPluginIfNeeded("list", "list"),
     loadPluginIfNeeded("multiMonth", "multimonth"),
-  ]).then(loadedPlugins => {
-    const filteredPlugins = loadedPlugins.filter(plugin => plugin !== null)
-    createCalendar(filteredPlugins)
-  })
+  ]
+
+  const interactionPromise = (model.selectable || model.editable)
+    ? import("@fullcalendar/interaction").then(module => module.default)
+    : Promise.resolve(null)
+
+  Promise.all([...pluginPromises, interactionPromise])
+    .then(([interactionPlugin, ...loadedPlugins]) => {
+      const filteredPlugins = loadedPlugins.filter(plugin => plugin !== null)
+      createCalendar(filteredPlugins, interactionPlugin)
+    })
 }
