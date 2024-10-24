@@ -14,6 +14,7 @@ from typing import (
 
 import param  # type: ignore
 
+from ..config import config
 from ..io.resources import CDN_DIST
 from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
 from ..util import HTML_SANITIZER, escape, prefix_length
@@ -482,8 +483,6 @@ class Markdown(HTMLBasePane):
             params['css_classes'] = ['markdown'] + params['css_classes']
         return super()._process_param_change(params)
 
-
-
 class JSON(HTMLBasePane):
     """
     The `JSON` pane allows rendering arbitrary JSON strings, dicts and other
@@ -505,8 +504,11 @@ class JSON(HTMLBasePane):
     hover_preview = param.Boolean(default=False, doc="""
         Whether to display a hover preview for collapsed nodes.""")
 
-    theme = param.ObjectSelector(default="dark", objects=["light", "dark"], doc="""
-        Whether the JSON tree view is expanded by default.""")
+    theme = param.ObjectSelector(default="light", objects=["light", "dark"], doc="""
+        If no value is provided, it defaults to the current theme
+        set by pn.config.theme, as specified in the
+        JSON.THEME_CONFIGURATION dictionary. If not defined there, it
+        falls back to the default parameter value.""")
 
     priority: ClassVar[float | bool | None] = None
 
@@ -525,6 +527,13 @@ class JSON(HTMLBasePane):
     _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/json.css'
     ]
+
+    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"default": "light", "dark": "dark"}
+
+    def __init__(self, object=None, **params):
+        if "theme" not in params:
+            params["theme"]=self._get_theme(config.theme)
+        super().__init__(object=object, **params)
 
     @classmethod
     def applies(cls, obj: Any, **params) -> float | bool | None:
@@ -559,3 +568,7 @@ class JSON(HTMLBasePane):
         if 'depth' in params:
             params['depth'] = None if params['depth'] < 0 else params['depth']
         return params
+
+    @classmethod
+    def _get_theme(cls, config_theme: str)->str:
+        return cls.THEME_CONFIGURATION.get(config_theme, cls.param.theme.default)
