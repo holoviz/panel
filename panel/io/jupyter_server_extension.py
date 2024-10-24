@@ -389,6 +389,9 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         self.session_id = get_session_id(token)
         if self.session_id not in state._kernels:
             self.close()
+            msg = f"Session ID '{self.session_id}' does not correspond to any active kernel."
+            raise RuntimeError(msg)
+
         kernel_info = state._kernels[self.session_id]
         self.kernel, self.comm_id, self.kernel_id, _ = kernel_info
         state._kernels[self.session_id] = kernel_info[:-1] + (True,)
