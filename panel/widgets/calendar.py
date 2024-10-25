@@ -58,10 +58,6 @@ class Calendar(JSComponent):
         doc="Text that will be displayed on buttons of the header/footer toolbar.",
     )
 
-    content_height = param.String(
-        default=None, doc="Sets the height of the view area of the calendar."
-    )
-
     current_date = param.String(
         default=None,
         constant=True,
@@ -244,7 +240,7 @@ class Calendar(JSComponent):
     )
 
     event_resizable_from_start = param.Boolean(
-        default=False,
+        default=True,
         doc="Whether the user can resize an event from its starting edge.",
     )
 
@@ -281,7 +277,7 @@ class Calendar(JSComponent):
         default={
             "left": "prev,next today",
             "center": "title",
-            "right": "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
+            "right": "dayGridMonth,timeGridWeek,timeGridDay",
         },
         doc="Defines the buttons and title at the top of the calendar.",
     )
@@ -420,6 +416,7 @@ class Calendar(JSComponent):
     _syncing = param.Boolean(default=False)
 
     _rename = {
+        # callbacks are handled in _handle_msg getattr
         "current_date_callback": None,
         "current_view_callback": None,
         "date_click_callback": None,
@@ -450,14 +447,13 @@ class Calendar(JSComponent):
         if self.event_keys_auto_camel_case:
             self.value = [self._to_camel_case_keys(event) for event in self.value]
         self.param.watch(
-            self._update_option,
+            self._update_options,
             [
                 "all_day_maintain_duration",
                 "aspect_ratio",
                 "business_hours",
                 "button_icons",
                 "button_text",
-                "content_height",
                 "date_alignment",
                 "date_increment",
                 "day_max_event_rows",
@@ -647,15 +643,17 @@ class Calendar(JSComponent):
 
     def _handle_msg(self, msg):
         if "current_date" in msg:
+            current_date_info = json.loads(msg["current_date"])
             with param.edit_constant(self):
-                self.current_date = msg["current_date"]
+                self.current_date = current_date_info["startStr"]
             if self.current_date_callback:
-                self.current_date_callback(json.loads(msg["current_date"]))
+                self.current_date_callback(current_date_info)
         elif "current_view" in msg:
+            current_view_info = json.loads(msg["current_view"])
             with param.edit_constant(self):
-                self.current_view = msg["current_view"]
+                self.current_view = current_view_info["view"]["type"]
             if self.current_view_callback:
-                self.current_view_callback(json.loads(msg["current_view"]))
+                self.current_view_callback(current_view_info)
         else:
             key = list(msg.keys())[0]
             callback_name = f"{key}_callback"
@@ -663,11 +661,19 @@ class Calendar(JSComponent):
             if callback:
                 callback(json.loads(msg[key]))
 
-    def _update_option(self, event):
-        key = self._to_camel_case(event.name)
-        if key == "value":
-            key = "events"
-        self._send_msg({"type": "updateOption", "key": key, "value": event.new})
+    def _update_options(self, *events):
+        updates = [
+            {
+                "key": (
+                    "events"
+                    if self._to_camel_case(event.name) == "value"
+                    else self._to_camel_case(event.name)
+                ),
+                "value": event.new,
+            }
+            for event in events
+        ]
+        self._send_msg({"type": "updateOptions", "updates": updates})
 
     @staticmethod
     def _to_camel_case(string):

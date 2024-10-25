@@ -9,10 +9,7 @@ export function render({model, el}) {
       businessHours: model.business_hours,
       buttonIcons: model.button_icons,
       buttonText: model.button_text,
-      contentHeight: model.content_height,
       dateIncrement: model.date_increment,
-      dayMaxEventRows: model.day_max_event_rows,
-      dayMaxEvents: model.day_max_events,
       displayEventEnd: model.display_event_end,
       displayEventTime: model.display_event_time,
       dragRevertDuration: model.drag_revert_duration,
@@ -24,7 +21,6 @@ export function render({model, el}) {
       eventDisplay: model.event_display,
       eventDragMinDistance: model.event_drag_min_distance,
       eventDurationEditable: model.event_duration_editable,
-      eventMaxStack: model.event_max_stack,
       eventOrder: model.event_order,
       eventOrderStrict: model.event_order_strict,
       eventResizableFromStart: model.event_resizable_from_start,
@@ -57,13 +53,13 @@ export function render({model, el}) {
       validRange: model.valid_range,
       windowResizeDelay: model.window_resize_delay,
       datesSet(info) {
-        model.send_msg({current_date: calendar.getDate().toISOString()})
+        model.send_msg({current_date: JSON.stringify(info)})
       },
       eventClick(info) {
         model.send_msg({event_click: JSON.stringify(info)})
       },
       viewClassNames(info) {
-        model.send_msg({current_view: info.view.type})
+        model.send_msg({current_view: JSON.stringify(info)})
       },
       navLinkDayClick(date, jsEvent) {
         calendar.changeView("timeGridDay", date)
@@ -113,6 +109,18 @@ export function render({model, el}) {
       calendar.gotoDate(model.current_date)
     }
 
+    if (model.day_max_event_rows) {
+      calendar.setOption("dayMaxEventRows", model.day_max_event_rows)
+    }
+
+    if (model.day_max_events) {
+      calendar.setOption("dayMaxEvents", model.day_max_events)
+    }
+
+    if (model.event_max_stack) {
+      calendar.setOption("eventMaxStack", model.event_max_stack)
+    }
+
     if (model.dateAlignment) {
       calendar.setOption("dateAlignment", model.dateAlignment)
     }
@@ -151,8 +159,12 @@ export function render({model, el}) {
         calendar.gotoDate(event.date)
       } else if (event.type === "incrementDate") {
         calendar.incrementDate(event.increment)
-      } else if (event.type === "updateOption") {
-        calendar.setOption(event.key, event.value)
+      } else if (event.type === "updateOptions") {
+        calendar.pauseRendering()
+        event.updates.forEach(({key, value}) => {
+          calendar.setOption(key, value)
+        })
+        calendar.resumeRendering()
       } else if (event.type === "changeView") {
         calendar.changeView(event.view, event.date)
       } else if (event.type === "scrollToTime") {
