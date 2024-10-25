@@ -446,10 +446,9 @@ class Calendar(JSComponent):
     }
 
     def __init__(self, **params):
-        if params.get("event_keys_auto_camel_case", True):
-            value = params.get("value", [])
-            params["value"] = [self._to_camel_case_keys(event) for event in value]
         super().__init__(**params)
+        if self.event_keys_auto_camel_case:
+            self.value = [self._to_camel_case_keys(event) for event in self.value]
         self.param.watch(
             self._update_option,
             [
@@ -611,8 +610,8 @@ class Calendar(JSComponent):
         self,
         start: str | datetime.datetime | datetime.date | int | None = None,
         end: str | datetime.datetime | datetime.date | int | None = None,
-        title: str = "(no title)",
-        all_day: bool = False,
+        title: str | None = "(no title)",
+        all_day: bool | None = None,
         display: Literal["background", "inverse-background"] | None = None,
         **kwargs,
     ) -> None:
@@ -627,19 +626,23 @@ class Calendar(JSComponent):
                 If None, the event will be all-day.
             title: The title of the event.
             all_day: Whether the event is an all-day event.
-            **kwargs: Additional properties to set on the event
+            **kwargs: Additional properties to set on the event. Takes precedence over other arguments.
         """
         if self.event_keys_auto_camel_case:
             kwargs = self._to_camel_case_keys(kwargs)
 
-        event = {
-            "start": start,
-            "end": end,
-            "title": title,
-            "allDay": all_day,
-            "display": display,
-            **kwargs,
-        }
+        event = {}
+        if start is not None:
+            event["start"] = start
+        if end is not None:
+            event["end"] = end
+        if title is not None:
+            event["title"] = title
+        if all_day is not None:
+            event["allDay"] = all_day
+        if display is not None:
+            event["display"] = display
+        event.update(kwargs)
         self.value = self.value + [event]
 
     def _handle_msg(self, msg):
