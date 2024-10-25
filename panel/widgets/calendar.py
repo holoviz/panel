@@ -2,6 +2,7 @@ import datetime
 import json
 
 from pathlib import Path
+from typing import Literal
 
 import param
 
@@ -34,6 +35,11 @@ class Calendar(JSComponent):
     >>> pn.widgets.Calendar(value=[{"date": "2024-10-01", "type": "event"}])
     """
 
+    all_day_maintain_duration = param.Boolean(
+        default=False,
+        doc="Determines how an event's duration should be mutated when it is dragged from a timed section to an all-day section and vice versa.",
+    )
+
     aspect_ratio = param.Number(
         default=None, doc="Sets the width-to-height aspect ratio of the calendar."
     )
@@ -56,11 +62,15 @@ class Calendar(JSComponent):
         default=None, doc="Sets the height of the view area of the calendar."
     )
 
-    # using String instead of Date because fullcalendar supports fuzzy dates
     current_date = param.String(
         default=None,
         constant=True,
         doc="The onload or current date of the calendar view. Use go_to_date() to change the date.",
+    )
+
+    current_date_callback = param.Callable(
+        default=None,
+        doc="A callback that will be called when the current date changes.",
     )
 
     current_view = param.Selector(
@@ -80,6 +90,11 @@ class Calendar(JSComponent):
         doc="The onload or current view of the calendar. Use change_view() to change the view.",
     )
 
+    current_view_callback = param.Callable(
+        default=None,
+        doc="A callback that will be called when the current view changes.",
+    )
+
     date_alignment = param.String(
         default=None, doc="Determines how certain views should be initially aligned."
     )
@@ -94,19 +109,80 @@ class Calendar(JSComponent):
         doc="The duration to move forward/backward when prev/next is clicked.",
     )
 
-    drop_callback = param.Callable(
-        default=None,
-        doc="Called when an external draggable element or an event from another calendar has been dropped onto the calendar.",
+    day_max_event_rows = param.Integer(
+        default=False,
+        doc=(
+            "In dayGrid view, the max number of stacked event levels within a given day. "
+            "This includes the +more link if present. The rest will show up in a popover."
+        ),
     )
 
-    droppable = param.Boolean(
-        default=False,
-        doc="Determines if external draggable elements or events from other calendars can be dropped onto the calendar.",
+    day_max_events = param.Integer(
+        default=None,
+        doc=(
+            "In dayGrid view, the max number of events within a given day, not counting the +more link. "
+            "The rest will show up in a popover."
+        ),
+    )
+
+    day_popover_format = param.Dict(
+        default=None,
+        doc="Determines the date format of title of the popover created by the moreLinkClick option.",
+    )
+
+    display_event_end = param.Boolean(
+        default=None,
+        doc="Whether or not to display an event's end time.",
+    )
+
+    display_event_time = param.Boolean(
+        default=True,
+        doc="Whether or not to display the text for an event's date/time.",
+    )
+
+    drag_revert_duration = param.Integer(
+        default=500,
+        doc="Time it takes for an event to revert to its original position after an unsuccessful drag.",
+    )
+
+    drag_scroll = param.Boolean(
+        default=True,
+        doc="Whether to automatically scroll the scroll-containers during event drag-and-drop and date selecting.",
     )
 
     editable = param.Boolean(
         default=False,
         doc="Determines whether the events on the calendar can be modified.",
+    )
+
+    event_background_color = param.Color(
+        default=None,
+        doc="Sets the background color for all events on the calendar.",
+    )
+
+    event_border_color = param.Color(
+        default=None,
+        doc="Sets the border color for all events on the calendar.",
+    )
+
+    event_color = param.Color(
+        default=None,
+        doc="Sets the background and border colors for all events on the calendar.",
+    )
+
+    event_click_callback = param.Callable(
+        default=None,
+        doc="A callback that will be called when an event is clicked.",
+    )
+
+    event_display = param.String(
+        default="auto",
+        doc="Controls which preset rendering style events use.",
+    )
+
+    event_drag_min_distance = param.Integer(
+        default=5,
+        doc="How many pixels the user's mouse/touch must move before an event drag activates.",
     )
 
     event_drag_start_callback = param.Callable(
@@ -125,18 +201,31 @@ class Calendar(JSComponent):
     )
 
     event_duration_editable = param.Boolean(
-        default=False,
+        default=True,
         doc="Allow events' durations to be editable through resizing.",
     )
 
-    event_leave_callback = param.Callable(
-        default=None,
-        doc="Triggered when on a calendar when one if its events is about to be dropped onto another calendar.",
+    event_keys_auto_camel_case = param.Boolean(
+        default=True,
+        doc=(
+            "Whether to automatically convert value and event keys to camelCase for convenience. "
+            "However, this can slow down the widget if there are many events or if the events are large."
+        ),
     )
 
-    event_receive_callback = param.Callable(
+    event_max_stack = param.Integer(
         default=None,
-        doc="Called when an external draggable element with associated event data was dropped onto the calendar. Or an event from another calendar.",
+        doc="For timeline view, the maximum number of events that stack top-to-bottom. For timeGrid view, the maximum number of events that stack left-to-right.",
+    )
+
+    event_order = param.String(
+        default="start,-duration,title,allDay",
+        doc="Determines the ordering events within the same day.",
+    )
+
+    event_order_strict = param.Boolean(
+        default=False,
+        doc="Ensures the eventOrder setting is strictly followed.",
     )
 
     event_resize_callback = param.Callable(
@@ -159,14 +248,19 @@ class Calendar(JSComponent):
         doc="Whether the user can resize an event from its starting edge.",
     )
 
-    event_resource_editable = param.Boolean(
-        default=False,
-        doc="Determines whether the user can drag events between resources.",
+    event_start_editable = param.Boolean(
+        default=True,
+        doc="Allow events' start times to be editable through dragging.",
     )
 
-    event_start_editable = param.Boolean(
-        default=False,
-        doc="Allow events' start times to be editable through dragging.",
+    event_text_color = param.Color(
+        default=None,
+        doc="Sets the text color for all events on the calendar.",
+    )
+
+    event_time_format = param.Dict(
+        default=None,
+        doc="Determines the time-text that will be displayed on each event.",
     )
 
     expand_rows = param.Boolean(
@@ -192,6 +286,11 @@ class Calendar(JSComponent):
         doc="Defines the buttons and title at the top of the calendar.",
     )
 
+    more_link_click = param.String(
+        default="popover",
+        doc='Determines the action taken when the user clicks on a "more" link created by the dayMaxEventRows or dayMaxEvents options.',
+    )
+
     multi_month_max_columns = param.Integer(
         default=1,
         doc="Determines the maximum number of columns in the multi-month view.",
@@ -202,8 +301,18 @@ class Calendar(JSComponent):
         doc="Turns various datetime text into clickable links that the user can use for navigation.",
     )
 
+    next_day_threshold = param.String(
+        default="00:00:00",
+        doc="When an event's end time spans into another day, the minimum time it must be in order for it to render as if it were on that day.",
+    )
+
     now_indicator = param.Boolean(
         default=True, doc="Whether to display an indicator for the current time."
+    )
+
+    progressive_event_rendering = param.Boolean(
+        default=False,
+        doc="When to render multiple asynchronous event sources in an individual or batched manner.",
     )
 
     selectable = param.Boolean(
@@ -246,6 +355,11 @@ class Calendar(JSComponent):
         doc="Whether to display dates in the current view that don't belong to the current month.",
     )
 
+    snap_duration = param.String(
+        default=None,
+        doc="The time interval at which a dragged event will snap to the time axis. Also affects the granularity at which selections can be made.",
+    )
+
     sticky_footer_scrollbar = param.Boolean(
         default=True,
         doc="Whether to fix the view's horizontal scrollbar to the bottom of the viewport while scrolling.",
@@ -261,7 +375,7 @@ class Calendar(JSComponent):
         doc="Determines the time zone the calendar will use to display dates.",
     )
 
-    title_format = param.String(
+    title_format = param.Dict(
         default=None,
         doc="Determines the text that will be displayed in the header toolbar's title.",
     )
@@ -276,14 +390,24 @@ class Calendar(JSComponent):
         doc="A callback that will be called when a selection is cleared.",
     )
 
-    valid_range = param.DateRange(
+    valid_range = param.Dict(
         default=None,
-        bounds=(None, None),
-        doc="Limits the range of time the calendar will display.",
+        doc=(
+            "Dates outside of the valid range will be grayed-out and inaccessible. "
+            "Can have `start` and `end` keys, but both do not need to be together."
+        ),
     )
 
     value = param.List(
         default=[], item_type=dict, doc="List of events to display on the calendar."
+    )
+
+    views = param.Dict(
+        default={},
+        doc=(
+            "Options to pass to only to specific calendar views. "
+            "Provide separate options objects within the views option, keyed by the name of your view."
+        ),
     )
 
     window_resize_delay = param.Integer(
@@ -294,6 +418,21 @@ class Calendar(JSComponent):
     _esm = MODELS_DIR / "fullcalendar.js"
 
     _syncing = param.Boolean(default=False)
+
+    _rename = {
+        "current_date_callback": None,
+        "current_view_callback": None,
+        "date_click_callback": None,
+        "event_click_callback": None,
+        "event_drag_start_callback": None,
+        "event_drag_stop_callback": None,
+        "event_drop_callback": None,
+        "event_resize_callback": None,
+        "event_resize_start_callback": None,
+        "event_resize_stop_callback": None,
+        "select_callback": None,
+        "unselect_callback": None,
+    }
 
     _importmap = {
         "imports": {
@@ -307,10 +446,14 @@ class Calendar(JSComponent):
     }
 
     def __init__(self, **params):
+        if params.get("event_keys_auto_camel_case", True):
+            value = params.get("value", [])
+            params["value"] = [self._to_camel_case_keys(event) for event in value]
         super().__init__(**params)
         self.param.watch(
             self._update_option,
             [
+                "all_day_maintain_duration",
                 "aspect_ratio",
                 "business_hours",
                 "button_icons",
@@ -318,28 +461,37 @@ class Calendar(JSComponent):
                 "content_height",
                 "date_alignment",
                 "date_increment",
-                "drop_callback",
-                "droppable",
+                "day_max_event_rows",
+                "day_max_events",
+                "day_popover_format",
+                "display_event_end",
+                "display_event_time",
+                "drag_revert_duration",
+                "drag_scroll",
                 "editable",
-                "event_drag_start_callback",
-                "event_drag_stop_callback",
-                "event_drop_callback",
+                "event_background_color",
+                "event_border_color",
+                "event_color",
+                "event_display",
+                "event_drag_min_distance",
                 "event_duration_editable",
-                "event_leave_callback",
-                "event_receive_callback",
-                "event_resize_callback",
-                "event_resize_start_callback",
-                "event_resize_stop_callback",
+                "event_max_stack",
+                "event_order",
+                "event_order_strict",
                 "event_resizable_from_start",
-                "event_resource_editable",
                 "event_start_editable",
+                "event_text_color",
+                "event_time_format",
                 "expand_rows",
                 "footer_toolbar",
                 "handle_window_resize",
                 "header_toolbar",
+                "more_link_click",
                 "multi_month_max_columns",
                 "nav_links",
+                "next_day_threshold",
                 "now_indicator",
+                "progressive_event_rendering",
                 "selectable",
                 "select_mirror",
                 "unselect_auto",
@@ -347,6 +499,7 @@ class Calendar(JSComponent):
                 "select_allow",
                 "select_min_distance",
                 "show_non_current_dates",
+                "snap_duration",
                 "sticky_footer_scrollbar",
                 "sticky_header_dates",
                 "time_zone",
@@ -444,12 +597,23 @@ class Calendar(JSComponent):
             increment = VIEW_DEFAULT_INCREMENTS[self.current_view]
         self._send_msg({"type": "incrementDate", "increment": increment})
 
+    def scroll_to_time(self, time: str | datetime.time | int) -> None:
+        """
+        Scroll the calendar to a specific time.
+
+        Args:
+            time: The time to scroll to.
+                Supports ISO 8601 time strings, datetime.time objects, and int in milliseconds.
+        """
+        self._send_msg({"type": "scrollToTime", "time": time})
+
     def add_event(
         self,
-        start: str | datetime.datetime | datetime.date | int,
+        start: str | datetime.datetime | datetime.date | int | None = None,
         end: str | datetime.datetime | datetime.date | int | None = None,
         title: str = "(no title)",
         all_day: bool = False,
+        display: Literal["background", "inverse-background"] | None = None,
         **kwargs,
     ) -> None:
         """
@@ -465,68 +629,51 @@ class Calendar(JSComponent):
             all_day: Whether the event is an all-day event.
             **kwargs: Additional properties to set on the event
         """
+        if self.event_keys_auto_camel_case:
+            kwargs = self._to_camel_case_keys(kwargs)
 
         event = {
             "start": start,
             "end": end,
             "title": title,
             "allDay": all_day,
+            "display": display,
             **kwargs,
         }
-        self.value.append(event)
+        self.value = self.value + [event]
 
     def _handle_msg(self, msg):
         if "current_date" in msg:
             with param.edit_constant(self):
                 self.current_date = msg["current_date"]
+            if self.current_date_callback:
+                self.current_date_callback(json.loads(msg["current_date"]))
         elif "current_view" in msg:
             with param.edit_constant(self):
                 self.current_view = msg["current_view"]
-        elif "date_click" in msg:
-            if self.date_click_callback:
-                self.date_click_callback(json.loads(msg["date_click"]))
-        elif "drop" in msg:
-            if self.drop_callback:
-                self.drop_callback(json.loads(msg["drop"]))
-        elif "event_drag_start" in msg:
-            if self.event_drag_start_callback:
-                self.event_drag_start_callback(json.loads(msg["event_drag_start"]))
-        elif "event_drag_stop" in msg:
-            if self.event_drag_stop_callback:
-                self.event_drag_stop_callback(json.loads(msg["event_drag_stop"]))
-        elif "event_drop" in msg:
-            if self.event_drop_callback:
-                self.event_drop_callback(json.loads(msg["event_drop"]))
-        elif "event_leave" in msg:
-            if self.event_leave_callback:
-                self.event_leave_callback(json.loads(msg["event_leave"]))
-        elif "event_receive" in msg:
-            if self.event_receive_callback:
-                self.event_receive_callback(json.loads(msg["event_receive"]))
-        elif "event_resize" in msg:
-            if self.event_resize_callback:
-                self.event_resize_callback(json.loads(msg["event_resize"]))
-        elif "event_resize_start" in msg:
-            if self.event_resize_start_callback:
-                self.event_resize_start_callback(json.loads(msg["event_resize_start"]))
-        elif "event_resize_stop" in msg:
-            if self.event_resize_stop_callback:
-                self.event_resize_stop_callback(json.loads(msg["event_resize_stop"]))
-        elif "select" in msg:
-            if self.select_callback:
-                self.select_callback(json.loads(msg["select"]))
-        elif "unselect" in msg:
-            if self.unselect_callback:
-                self.unselect_callback(json.loads(msg["unselect"]))
+            if self.current_view_callback:
+                self.current_view_callback(json.loads(msg["current_view"]))
         else:
-            raise NotImplementedError(f"Unhandled message: {msg}")
+            key = list(msg.keys())[0]
+            callback_name = f"{key}_callback"
+            callback = getattr(self, callback_name, None)
+            if callback:
+                callback(json.loads(msg[key]))
 
     def _update_option(self, event):
-        def to_camel_case(string):
-            return "".join(
-                word.capitalize() if i else word
-                for i, word in enumerate(string.split("_"))
-            )
-
-        key = to_camel_case(event.name)
+        key = self._to_camel_case(event.name)
+        if key == "value":
+            key = "events"
         self._send_msg({"type": "updateOption", "key": key, "value": event.new})
+
+    @staticmethod
+    def _to_camel_case(string):
+        return "".join(
+            word.capitalize() if i else word for i, word in enumerate(string.split("_"))
+        )
+
+    def _to_camel_case_keys(self, d):
+        return {
+            self._to_camel_case(key) if "_" in key else key: val
+            for key, val in d.items()
+        }

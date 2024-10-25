@@ -4,47 +4,81 @@ export function render({model, el}) {
   function createCalendar(plugins, interactionPlugin = null) {
     const defaultPlugins = interactionPlugin ? [interactionPlugin] : []
 
-    const calendar = new Calendar(el, {
+    const calendarConfig = {
+      allDayMaintainDuration: model.all_day_maintain_duration,
       businessHours: model.business_hours,
       buttonIcons: model.button_icons,
       buttonText: model.button_text,
       contentHeight: model.content_height,
       dateIncrement: model.date_increment,
+      dayMaxEventRows: model.day_max_event_rows,
+      dayMaxEvents: model.day_max_events,
+      displayEventEnd: model.display_event_end,
+      displayEventTime: model.display_event_time,
+      dragRevertDuration: model.drag_revert_duration,
+      dragScroll: model.drag_scroll,
+      editable: model.editable,
+      eventBackgroundColor: model.event_background_color,
+      eventBorderColor: model.event_border_color,
+      eventColor: model.event_color,
+      eventDisplay: model.event_display,
+      eventDragMinDistance: model.event_drag_min_distance,
+      eventDurationEditable: model.event_duration_editable,
+      eventMaxStack: model.event_max_stack,
+      eventOrder: model.event_order,
+      eventOrderStrict: model.event_order_strict,
+      eventResizableFromStart: model.event_resizable_from_start,
+      eventStartEditable: model.event_start_editable,
+      eventTextColor: model.event_text_color,
       events: model.value,
       expandRows: model.expand_rows,
       footerToolbar: model.footer_toolbar,
       handleWindowResize: model.handle_window_resize,
       headerToolbar: model.header_toolbar,
       initialView: model.current_view,
+      moreLinkClick: model.more_link_click,
       navLinks: model.nav_links,
+      nextDayThreshold: model.next_day_threshold,
       nowIndicator: model.now_indicator,
       plugins: defaultPlugins.concat(plugins),
+      progressiveEventRendering: model.progressive_event_rendering,
+      selectAllow: model.select_allow,
+      selectMinDistance: model.select_min_distance,
+      selectMirror: model.select_mirror,
+      selectable: model.selectable,
       showNonCurrentDates: model.show_non_current_dates,
+      snapDuration: model.snap_duration,
       stickyFooterScrollbar: model.sticky_footer_scrollbar,
       stickyHeaderDates: model.sticky_header_dates,
       timeZone: model.time_zone,
-      titleFormat: model.title_format,
       titleRangeSeparator: model.title_range_separator,
+      unselectAuto: model.unselect_auto,
+      unselectCancel: model.unselect_cancel,
       validRange: model.valid_range,
       windowResizeDelay: model.window_resize_delay,
-      ...(interactionPlugin && {
-        droppable: model.droppable,
+      datesSet(info) {
+        model.send_msg({current_date: calendar.getDate().toISOString()})
+      },
+      eventClick(info) {
+        model.send_msg({event_click: JSON.stringify(info)})
+      },
+      viewClassNames(info) {
+        model.send_msg({current_view: info.view.type})
+      },
+      navLinkDayClick(date, jsEvent) {
+        calendar.changeView("timeGridDay", date)
+      },
+      navLinkWeekClick(weekStart, jsEvent) {
+        calendar.changeView("timeGridWeek", weekStart)
+      },
+    }
+
+    if (model.editable || model.selectable) {
+      Object.assign(calendarConfig, {
         editable: model.editable,
-        eventDurationEditable: model.event_duration_editable,
-        eventResizableFromStart: model.event_resizable_from_start,
-        eventResourceEditable: model.event_resource_editable,
-        eventStartEditable: model.event_start_editable,
         selectable: model.selectable,
-        selectMirror: model.select_mirror,
-        unselectAuto: model.unselect_auto,
-        unselectCancel: model.unselect_cancel,
-        selectAllow: model.select_allow,
-        selectMinDistance: model.select_min_distance,
         dateClick(info) {
           model.send_msg({date_click: JSON.stringify(info)})
-        },
-        drop(info) {
-          model.send_msg({drop: JSON.stringify(info)})
         },
         eventDragStart(info) {
           model.send_msg({event_drag_start: JSON.stringify(info)})
@@ -54,12 +88,6 @@ export function render({model, el}) {
         },
         eventDrop(info) {
           model.send_msg({event_drop: JSON.stringify(info)})
-        },
-        eventLeave(info) {
-          model.send_msg({event_leave: JSON.stringify(info)})
-        },
-        eventReceive(info) {
-          model.send_msg({event_receive: JSON.stringify(info)})
         },
         eventResize(info) {
           model.send_msg({event_resize: JSON.stringify(info)})
@@ -76,20 +104,10 @@ export function render({model, el}) {
         unselect(info) {
           model.send_msg({unselect: JSON.stringify(info)})
         },
+      })
+    }
 
-      }),
-      datesSet(info) {
-        model.send_msg({current_date: calendar.getDate().toISOString()})
-      },
-      viewClassNames(info) {
-        model.send_msg({current_view: info.view.type})
-      },
-      navLinkDayClick(date, jsEvent) {
-        calendar.changeView("timeGridDay", date)
-      },
-      navLinkWeekClick(weekStart, jsEvent) {
-      },
-    })
+    const calendar = new Calendar(el, calendarConfig)
 
     if (model.current_date) {
       calendar.gotoDate(model.current_date)
@@ -97,6 +115,17 @@ export function render({model, el}) {
 
     if (model.dateAlignment) {
       calendar.setOption("dateAlignment", model.dateAlignment)
+    }
+    if (model.day_popover_format) {
+      calendar.setOption("dayPopoverFormat", model.day_popover_format)
+    }
+
+    if (model.event_time_format) {
+      calendar.setOption("eventTimeFormat", model.event_time_format)
+    }
+
+    if (model.title_format) {
+      calendar.setOption("titleFormat", model.title_format)
     }
 
     if (model.current_view == "multiMonth") {
@@ -126,6 +155,8 @@ export function render({model, el}) {
         calendar.setOption(event.key, event.value)
       } else if (event.type === "changeView") {
         calendar.changeView(event.view, event.date)
+      } else if (event.type === "scrollToTime") {
+        calendar.scrollToTime(event.time)
       }
     })
     calendar.render()
