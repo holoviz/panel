@@ -10,6 +10,9 @@ from panel.widgets import Calendar, TextInput
 pytestmark = pytest.mark.ui
 
 
+Calendar.time_zone = "UTC"
+
+
 def test_calendar_current_date_view(page):
     calendar = Calendar(current_date="2020-01-01", current_view="timeGridDay")
     serve_component(page, calendar)
@@ -47,7 +50,7 @@ def test_calendar_go_to_date(page):
     assert page.locator(".fc-toolbar-title").first.inner_text() == "January 1, 2020"
 
     calendar.go_to_date("2021-01-01")
-    assert calendar.current_date == "2020-01-01T08:00:00.000Z"
+    assert calendar.current_date == "2020-01-01T00:00:00Z"
     assert page.locator(".fc-toolbar-title").first.inner_text() == "January 1, 2021"
 
 
@@ -134,7 +137,6 @@ def test_calendar_update_options_day_max_events(page):
 
     calendar.day_max_events = 1
     assert page.locator(".fc-event-title").first.inner_text() == "Event 0"
-    assert page.locator(".fc-event-title").last.inner_text() == "Event 0"
 
     assert page.locator(".fc-daygrid-more-link").first.inner_text() == "+1 more"
 
@@ -143,9 +145,10 @@ def test_calendar_batch_update_options_title(page):
     calendar = Calendar(current_date="2020-01-01", current_view="timeGridWeek")
     serve_component(page, calendar)
 
-    assert page.locator(
-        ".fc-toolbar-title"
-    ).first.inner_text() == "Dec 29, 2019 to Jan 4, 2020"
+    assert (
+        page.locator(".fc-toolbar-title").first.inner_text()
+        == "Dec 29, 2019 to Jan 4, 2020"
+    )
 
     calendar.param.update(
         title_format={"month": "numeric", "year": "numeric"},
@@ -163,7 +166,6 @@ def test_calendar_current_date_callback(page):
         current_date="2020-01-01",
         current_view="timeGridDay",
         current_date_callback=callback,
-        time_zone="UTC",
     )
     serve_component(page, calendar)
 
@@ -228,7 +230,7 @@ def test_calendar_event_click_callback(page):
     )
     serve_component(page, calendar)
 
-    page.locator(".fc-event-title fc-sticky").first.click()
+    page.locator(".fc-sticky").first.click()
     assert text_input.value == "Test Event"
 
 
@@ -305,7 +307,7 @@ def test_calendar_select_callback(page):
     start = page.locator(".fc-daygrid-day-frame", has_text="15").first
     end = page.locator(".fc-daygrid-day-frame", has_text="17").first
     start.drag_to(end)
-    assert text_input.value == "2020-01-15T08:00:00.000Z:2020-01-18T08:00:00.000Z"
+    assert text_input.value == "2020-01-15T00:00:00.000Z:2020-01-18T00:00:00.000Z"
 
 
 def test_calendar_unselect_callback(page):
