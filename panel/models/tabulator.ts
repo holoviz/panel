@@ -2,6 +2,7 @@ import {display, undisplay} from "@bokehjs/core/dom"
 import {sum} from "@bokehjs/core/util/arrayable"
 import {isArray, isBoolean, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
@@ -16,6 +17,8 @@ import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
 import {HTMLBox, HTMLBoxView} from "./layout"
 import {schedule_when} from "./util"
+
+import tabulator_css from "styles/models/tabulator.css"
 
 export class TableEditEvent extends ModelEvent {
   constructor(readonly column: string, readonly row: number, readonly pre: boolean) {
@@ -545,6 +548,10 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     this.redraw(true, true)
     this.restore_scroll()
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), tabulator_css]
   }
 
   setCSSClasses(el: HTMLDivElement): void {
