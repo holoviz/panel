@@ -391,6 +391,8 @@ def compile_components(
             print(f"An error occurred while running npm install:\n{RED}{e.stderr}{RESET}")  # noqa
             return None
 
+        if any(issubclass(c, ReactComponent) for c in components):
+            extra_args.append('--loader:.js=jsx')
         if minify:
             extra_args.append('--minify')
         if out:
