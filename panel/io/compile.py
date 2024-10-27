@@ -297,7 +297,7 @@ def generate_project(
         name = component.__name__
         esm_path = component._esm_path(compiled=False)
         if esm_path:
-            ext = esm_path.suffix
+            ext = esm_path.suffix.lstrip('.')
         else:
             ext = 'jsx' if issubclass(component, ReactComponent) else 'js'
         code, component_deps = extract_dependencies(component)
@@ -391,6 +391,8 @@ def compile_components(
             print(f"An error occurred while running npm install:\n{RED}{e.stderr}{RESET}")  # noqa
             return None
 
+        if any(issubclass(c, ReactComponent) for c in components):
+            extra_args.append('--loader:.js=jsx')
         if minify:
             extra_args.append('--minify')
         if out:
