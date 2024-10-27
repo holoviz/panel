@@ -297,7 +297,7 @@ def generate_project(
         name = component.__name__
         esm_path = component._esm_path(compiled=False)
         if esm_path:
-            ext = esm_path.suffix
+            ext = esm_path.suffix.lstrip('.')
         else:
             ext = 'jsx' if issubclass(component, ReactComponent) else 'js'
         code, component_deps = extract_dependencies(component)
