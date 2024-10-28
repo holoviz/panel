@@ -260,20 +260,6 @@ def _get_pyodide_version():
     raise NotImplementedError(F"{PYODIDE_VERSION=} is not valid")
 
 def update_versions(app, docname, source):
-    from panel.models.tabulator import TABULATOR_VERSION
-    from panel.models.vizzu import VIZZU_VERSION
-
-    # Inspired by: https://stackoverflow.com/questions/8821511
-    version_replace = {
-        "{{PANEL_VERSION}}" : PY_VERSION,
-        "{{BOKEH_VERSION}}" : BOKEH_VERSION,
-        "{{PYSCRIPT_VERSION}}" : PYSCRIPT_VERSION,
-        "{{PYODIDE_VERSION}}" : _get_pyodide_version(),
-        "{{TABULATOR_VERSION}}" : TABULATOR_VERSION,
-        "{{VIZZU_VERSION}}" : VIZZU_VERSION,
-    }
-
-def update_versions(app, docname, source):
     from panel.models.deckgl import DECKGL_VERSION
     from panel.models.echarts import ECHARTS_VERSION
     from panel.models.katex import KATEX_VERSION
