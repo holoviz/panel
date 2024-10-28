@@ -269,7 +269,7 @@ def update_versions(app, docname, source):
     from panel.models.pydeck import PYDECK_VERSION
     from panel.models.pyecharts import PYECHARTS_VERSION
     from panel.models.tabulator import TABULATOR_VERSION
-    from panel.models.tabulator import TEXTUAL_VERSION
+    from panel.models.textual import TEXTUAL_VERSION
     from panel.models.vega import VEGA_VERSION
     from panel.models.vizzu import VIZZU_VERSION
     from panel.models.vtk import VTK_VERSION
