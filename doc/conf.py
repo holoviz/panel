@@ -264,12 +264,16 @@ def update_versions(app, docname, source):
     from panel.models.echarts import ECHARTS_VERSION
     from panel.models.katex import KATEX_VERSION
     from panel.models.mathjax import MATHJAX_VERSION
+    from panel.models.perspective import PERSPECTIVE_VERSION
     from panel.models.plotly import PLOTLY_VERSION
     from panel.models.pydeck import PYDECK_VERSION
     from panel.models.pyecharts import PYECHARTS_VERSION
     from panel.models.tabulator import TABULATOR_VERSION
+    from panel.models.tabulator import TEXTUAL_VERSION
     from panel.models.vega import VEGA_VERSION
     from panel.models.vizzu import VIZZU_VERSION
+    from panel.models.vtk import VTK_VERSION
+    from panel.models.vtkjs import VTKJS_VERSION
 
     # Inspired by: https://stackoverflow.com/questions/8821511
     version_replace = {
@@ -282,12 +286,16 @@ def update_versions(app, docname, source):
         "{{ECHARTS_VERSION}}": ECHARTS_VERSION,
         "{{KATEX_VERSION}}": KATEX_VERSION,
         "{{MATHJAX_VERSION}}": MATHJAX_VERSION,
+        "{{PERSPECTIVE_VERSION}}": PERSPECTIVE_VERSION,
         "{{PLOTLY_VERSION}}": PLOTLY_VERSION,
         "{{PYDECK_VERSION}}": PYDECK_VERSION,
         "{{PYECHARTS_VERSION}}": PYECHARTS_VERSION,
+        "{{TEXTUAL_VERSION}}": TEXTUAL_VERSION,
         "{{TABULATOR_VERSION}}": TABULATOR_VERSION,
         "{{VEGA_VERSION}}": VEGA_VERSION,
         "{{VIZZU_VERSION}}": VIZZU_VERSION,
+        "{{VTK_VERSION}}": VTK_VERSION,
+        "{{VTKJS_VERSION}}": VTKJS_VERSION,
     }
 
     for old, new in version_replace.items():
