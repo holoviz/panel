@@ -78,7 +78,6 @@ function summarize(grouped: any[], columns: any[], aggregators: string[], depth:
   if (grouped.length == 0) {
     return summary
   }
-  const agg = aggregators[depth]
   for (const group of grouped) {
     const subsummary = summarize(group._children, columns, aggregators, depth+1)
     for (const col in subsummary) {
@@ -90,6 +89,7 @@ function summarize(grouped: any[], columns: any[], aggregators: string[], depth:
     }
     for (const column of columns.slice(1)) {
       const val = group[column.field]
+      const agg = aggregators[column.field]
       if (column.field in summary) {
         const old_val = summary[column.field]
         if (agg === "min") {
@@ -143,9 +143,25 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
       subgroup[column.field] = record[column.field]
     }
   }
-  const aggs = []
+  const aggs: any = {}
+  let nested = false
   for (const index of indexes) {
-    aggs.push((index in aggregators) ? aggregators[index] : "sum")
+    if (index in aggregators) {
+      nested = true
+      const aggs_dict = aggregators[index]
+      for (const column of columns) {
+        if (column.field in aggs_dict) {
+          aggs[column.field] = aggs_dict[column.field]
+        }
+      }
+    }
+  }
+  if (!nested) {
+    for (const column of columns) {
+      if (column.field in aggregators) {
+        aggs[column.field] = aggregators[column.field]
+      }
+    }
   }
   summarize(grouped, columns, aggs)
   return grouped
