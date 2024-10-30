@@ -1,6 +1,5 @@
 {
   "tabWidth": 2,
   "semi": false,
-  "singleQuote": true,
-  "quotes": ["error", "double", { "allowTemplateLiterals": true }]
+  "singleQuote": true
 }

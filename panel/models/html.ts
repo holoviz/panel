@@ -168,9 +168,9 @@ export class HTMLView extends PanelMarkupView {
         const code = pre.innerText
         navigator.clipboard.writeText(code).then(() => {
           copy_button.innerHTML = CHECK_ICON
-	  setTimeout(() => {
-	    copy_button.innerHTML = COPY_ICON
-	  }, 300)
+          setTimeout(() => {
+            copy_button.innerHTML = COPY_ICON
+          }, 300)
         })
       })
       codeblock.insertBefore(copy_button, pre)
