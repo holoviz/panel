@@ -161,19 +161,19 @@ export class HTMLView extends PanelMarkupView {
     this._setup_event_listeners()
     for (const codeblock of this.container.querySelectorAll(".codehilite")) {
       const copy_button = document.createElement("button")
+      const pre = (codeblock.children[0] as HTMLPreElement)
       copy_button.className = "copybtn"
       copy_button.innerHTML = COPY_ICON
-      // Declare click listener that copies contents of `codeblock.children[0]` to the clipboard
       copy_button.addEventListener("click", () => {
-          const code = codeblock.children[0].innerText; // Get the text content
-          navigator.clipboard.writeText(code).then(() => {
-            copy_button.innerHTML = CHECK_ICON
-	    setTimeout(() => {
-	      copy_button.innerHTML = COPY_ICON
-	    }, 300)
-          });
-      });
-      codeblock.append(copy_button)
+        const code = pre.innerText
+        navigator.clipboard.writeText(code).then(() => {
+          copy_button.innerHTML = CHECK_ICON
+	  setTimeout(() => {
+	    copy_button.innerHTML = COPY_ICON
+	  }, 300)
+        })
+      })
+      codeblock.insertBefore(copy_button, pre)
     }
     for (const anchor of this.container.querySelectorAll("a")) {
       const link = anchor.getAttribute("href")
