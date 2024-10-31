@@ -143,3 +143,18 @@ def test_reactive_esm_children_models_cleanup_on_replace(document, comm):
     assert ref in md2._models
     md2_model, _ = md2._models[ref]
     assert model.data.children == [md2_model]
+
+class ESMOverride(ReactiveESM):
+
+    width = param.Integer(default=42)
+
+def test_esm_parameter_override(document, comm):
+    esm = ESMOverride()
+
+    model = esm.get_root(document, comm)
+
+    assert model.width == 42
+
+    esm.width = 84
+
+    assert model.width == 84
