@@ -57,9 +57,9 @@ from .select import (  # noqa
     RadioButtonGroup, Select, ToggleGroup,
 )
 from .slider import (  # noqa
-    DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
-    EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatSlider,
-    IntRangeSlider, IntSlider, RangeSlider,
+    DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider,
+    DiscreteSlider, EditableFloatSlider, EditableIntSlider,
+    EditableRangeSlider, FloatSlider, IntRangeSlider, IntSlider, RangeSlider,
 )
 from .speech_to_text import Grammar, GrammarList, SpeechToText  # noqa
 from .tables import DataFrame, Tabulator  # noqa
@@ -87,6 +87,7 @@ __all__ = (
     "DateRangeSlider",
     "DatetimeRangeSlider",
     "DateSlider",
+    "DatetimeSlider",
     "DatetimeInput",
     "DatetimePicker",
     "DatetimeRangeInput",
