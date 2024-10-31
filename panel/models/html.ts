@@ -1,10 +1,17 @@
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs, Dict} from "@bokehjs/core/types"
 import {entries} from "@bokehjs/core/util/object"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 import {serializeEvent} from "./event-to-object"
+
+import html_css from "styles/models/html.css"
+
+const COPY_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-clipboard"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/></svg>`
+
+const CHECK_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10"/></svg>`
 
 function searchAllDOMs(node: Element | ShadowRoot, selector: string): (Element | ShadowRoot)[] {
   let found: (Element | ShadowRoot)[] = []
@@ -134,6 +141,10 @@ export class HTMLView extends PanelMarkupView {
     })
   }
 
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), html_css]
+  }
+
   protected rerender() {
     this.render()
     this.invalidate_layout()
@@ -148,6 +159,22 @@ export class HTMLView extends PanelMarkupView {
       run_scripts(this.container)
     }
     this._setup_event_listeners()
+    for (const codeblock of this.container.querySelectorAll(".codehilite")) {
+      const copy_button = document.createElement("button")
+      const pre = (codeblock.children[0] as HTMLPreElement)
+      copy_button.className = "copybtn"
+      copy_button.innerHTML = COPY_ICON
+      copy_button.addEventListener("click", () => {
+        const code = pre.innerText
+        navigator.clipboard.writeText(code).then(() => {
+          copy_button.innerHTML = CHECK_ICON
+          setTimeout(() => {
+            copy_button.innerHTML = COPY_ICON
+          }, 300)
+        })
+      })
+      codeblock.insertBefore(copy_button, pre)
+    }
     for (const anchor of this.container.querySelectorAll("a")) {
       const link = anchor.getAttribute("href")
       if (link && link.startsWith("#")) {
