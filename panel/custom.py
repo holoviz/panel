@@ -361,7 +361,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         props = super()._get_properties(doc)
         cls = type(self)
         data_params = {}
-        ignored = [p for p in Reactive.param if not issubclass(cls.param[p].owner, ReactiveESM)]
+        ignored = [p for p in Reactive.param if not issubclass(cls.param[p].owner, ReactiveESM) or p in Viewable.param]
         for k, v in self.param.values().items():
             p = self.param[k]
             is_viewable = is_viewable_param(p)
