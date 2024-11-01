@@ -73,13 +73,13 @@ function find_group(key: any, value: string, records: any[]): any {
   return null
 }
 
-function summarize(grouped: any[], columns: any[], aggregators: string[], depth: number = 0): any {
+function summarize(grouped: any[], columns: any[], aggregators: string[]): any {
   const summary: any = {}
   if (grouped.length == 0) {
     return summary
   }
   for (const group of grouped) {
-    const subsummary = summarize(group._children, columns, aggregators, depth+1)
+    const subsummary = summarize(group._children, columns, aggregators)
     for (const col in subsummary) {
       if (isArray(subsummary[col])) {
         group[col] = sum(subsummary[col] as number[]) / subsummary[col].length
