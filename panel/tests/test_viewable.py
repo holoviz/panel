@@ -7,7 +7,7 @@ from panel import config
 from panel.interact import interactive
 from panel.pane import Markdown, Str, panel
 from panel.param import ParamMethod
-from panel.viewable import Viewable, Viewer
+from panel.viewable import Viewable, Viewer, is_viewable_param
 
 from .util import jb_available
 
@@ -117,3 +117,11 @@ def test_clone_with_non_defaults():
 
     assert ([(k, v) for k, v in sorted(v.param.values().items()) if k not in ('name')] ==
             [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])
+
+def test_is_viewable_parameter():
+    class Example(param.Parameterized):
+        value = param.ClassSelector(class_=(list, tuple))
+
+    example = Example()
+
+    assert not is_viewable_param(example.param.value)
