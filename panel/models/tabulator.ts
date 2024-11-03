@@ -84,25 +84,43 @@ function summarize(grouped: any[], columns: any[], aggregators: string[]): any {
       if (isArray(subsummary[col])) {
         group[col] = sum(subsummary[col] as number[]) / subsummary[col].length
       } else {
-        group[col] = subsummary[col]
+        if (col in aggregators) {
+          group[col] = subsummary[col]
+        }
+        else {
+          group[col] = NaN
+        }
       }
     }
     for (const column of columns.slice(1)) {
       const val = group[column.field]
       const agg = aggregators[column.field]
+
       if (column.field in summary) {
-        const old_val = summary[column.field]
+        const old_val = summary[column.field];
+        // Apply aggregation based on type
         if (agg === "min") {
-          summary[column.field] = Math.min(val, old_val)
-        } else if (agg === "max") {
-          summary[column.field] = Math.max(val, old_val)
-        } else if (agg === "sum") {
-          summary[column.field] = val + old_val
-        } else if (agg === "mean") {
-          if (isArray(summary[column.field])) {
-            summary[column.field].push(val)
+          if (val instanceof Date && old_val instanceof Date) {
+            summary[column.field] = new Date(Math.min(val.getTime(), old_val.getTime()));
           } else {
-            summary[column.field] = [old_val, val]
+            summary[column.field] = val < old_val ? val : old_val;
+          }
+        } else if (agg === "max") {
+          if (val instanceof Date && old_val instanceof Date) {
+            summary[column.field] = new Date(Math.max(val.getTime(), old_val.getTime()));
+          } else {
+            summary[column.field] = val > old_val ? val : old_val;
+          }
+        } else if (agg === "sum") {
+          if (typeof val === "boolean" && typeof old_val === "boolean") {
+            summary[column.field] = (val ? 1 : 0) + (old_val ? 1 : 0);
+          } else if (typeof val === "number" && typeof old_val === "number") {
+            summary[column.field] = val + old_val;
+        } else if (agg === "mean") {
+          if (Array.isArray(summary[column.field])) {
+            summary[column.field].push(val);
+          } else {
+            summary[column.field] = [old_val, val];
           }
         }
       } else {
