@@ -1272,6 +1272,64 @@ class Tabulator(BaseTable):
             self.style._todo = style._todo
         self.param.selection.callable = self._get_selectable
 
+    @param.depends('aggregators', 'value', watch=True, on_init=True)
+    def _validate_aggregators(self):
+
+        def _validate_aggs(
+            df: pd.DataFrame,
+            aggregators: dict,
+        ) -> list[str]:
+            import pandas as pd
+
+            aggs_by_types = {
+                'number': ['sum', 'mean', 'min', 'max'],
+                'datetime': ['min', 'max'],
+                'string': ['min', 'max'],
+                'boolean': ['sum', 'mean']  # sum and mean will treat True as 1 and False as 0
+            }
+
+            for key, value in aggregators.items():
+                # Check if value is a dictionary (nested)
+                if isinstance(value, dict):
+                    # Recursively validate nested dictionary
+                    _validate_aggs(df, value)
+                else:
+                    # Handle non-nested case (leaf node)
+                    if key not in df.columns:
+                        raise ValueError(
+                            f'Error validating `aggregators`, column {key} not found.'
+                        )
+
+                    # Determine the data type of the column
+                    dtype = df[key].dtype
+                    if pd.api.types.is_numeric_dtype(dtype):
+                        dtype_category = 'number'
+                    elif pd.api.types.is_datetime64_any_dtype(dtype):
+                        dtype_category = 'datetime'
+                    elif pd.api.types.is_bool_dtype(dtype):
+                        dtype_category = 'boolean'
+                    elif pd.api.types.is_string_dtype(dtype):
+                        dtype_category = 'string'
+                    else:
+                        dtype_category = None
+
+                    # Validate aggregator method based on data type
+                    if dtype_category:
+                        valid_aggregators = aggs_by_types[dtype_category]
+                        if value not in valid_aggregators:
+                            raise ValueError(
+                                f"Invalid aggregator '{value}' for column '{key}' "
+                                f"of type '{dtype_category}'. Valid options are: {valid_aggregators}."
+                            )
+                    else:
+                        raise ValueError(f"Unsupported aggregating on column '{key}' of type {dtype}.")
+
+        if self.value is None or self.value.empty:
+            pass
+        if not self.aggregators:
+            pass
+        _validate_aggs(self.value, self.aggregators)
+
     @param.depends('value', watch=True, on_init=True)
     def _apply_max_size(self):
         """
