@@ -1291,6 +1291,11 @@ class Tabulator(BaseTable):
             for key, value in aggregators.items():
                 # Check if value is a dictionary (nested)
                 if isinstance(value, dict):
+                    # check if key is an index of the df
+                    if key not in df.index.names:
+                        raise ValueError(
+                            f'Error validating `aggregators`, {key} is not an index of the dataframe.'
+                        )
                     # Recursively validate nested dictionary
                     _validate_aggs(df, value)
                 else:
