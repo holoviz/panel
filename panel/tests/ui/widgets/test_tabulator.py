@@ -4094,3 +4094,103 @@ def test_tabulator_row_content_markup_wrap(page):
     md = page.locator('.row-content .bk-panel-models-markup-HTML')
 
     assert md.bounding_box()['height'] >= 130
+
+
+@pytest.fixture(scope='session')
+def df_agg():
+    data = {
+        "employee_id": range(101, 111),
+        "name": [
+            "Alice", "Bob", "Charlie", "David", "Eve",
+            "Frank", "Grace", "Heidi", "Ivan", "Judy"
+        ],
+        "gender": [
+            "Female", "Male", "Male", "Male", "Female",
+            "Male", "Female", "Female", "Male", "Female"
+        ],
+        "salary": [
+            75000.0, 82000.5, np.nan, 64000.0, 91000.0,
+            54000.0, 67000.5, 71000.0, 95000.0, 78000.5
+        ],
+        "days_off_used": [
+            [2, 1, 3, 0],  # Alice's days off in the last 4 months
+            [1, 0, 2, 2],  # Bob's days off
+            [3, 2, 1, 1],  # Charlie's days off
+            [0, 1, 0, 0],  # Diana's days off
+            [1, 1, 2, 1],  # Evan's days off
+            [4, 3, 3, 4],  # Fay's days off
+            [2, 1, 1, 1],  # George's days off
+            [0, 0, 1, 2],  # Hana's days off
+            [3, 2, 2, 2],  # Ivy's days off
+            [1, 1, 0, 1]  # Jack's days off
+        ],
+        "active": [
+            True, False, True, np.nan, True,
+            True, False, True, True, False
+        ],
+        "department": [
+            "HR", "IT", "HR", "Finance", "HR",
+            "Finance", "IT", "HR", "Finance", "IT"
+        ],
+        "date_joined": [
+            dt.datetime(2020, 1, 10),  # Alice
+            dt.datetime(2019, 3, 15),  # Bob
+            np.nan,  # Charlie
+            dt.datetime(2021, 5, 20),  # David
+            dt.datetime(2022, 7, 30),  # Eve
+            dt.datetime(2020, 8, 25),  # Frank
+            dt.datetime(2021, 2, 10),  # Grace
+            dt.datetime(2023, 11, 5),  # Heidi
+            dt.datetime(2020, 12, 1),  # Ivan
+            dt.datetime(2021, 4, 22),  # Judy
+        ],
+        "region": [
+            "East", "West", "North", "West", "North",
+            "North", "West", "North", "North", "South"
+        ],
+    }
+    # Create DataFrame
+    df = pd.DataFrame(data).astype({
+        'name': 'string',
+        'gender': 'string',
+        'salary': 'float',
+        'active': 'bool',
+        'department': 'string',
+        'date_joined': 'datetime64[ns]',
+    }).set_index(["region", "employee_id"])
+    return df
+
+
+@pytest.fixture(scope='session')
+def nested_aggregators():
+    return {
+        'region': {
+            'name': 'min',
+            'gender': 'min',
+            'salary': 'sum',
+            'department': 'max',
+            'date_joined': 'max',
+        }
+    }
+
+
+@pytest.fixture(scope='session')
+def flat_aggregators():
+    return {
+        'name': 'min',
+        'gender': 'min',
+        'salary': 'sum',
+        'department': 'max',
+        'date_joined': 'max',
+    }
+
+
+def test_tabulator_flat_aggregators(page, df_agg, flat_aggregators):
+    widget = Tabulator(df_agg, hierarchical=True, aggregators=flat_aggregators)
+    serve_component(page, widget)
+
+
+def test_tabulator_flat_aggregators_group_data(page, df_agg, flat_aggregators):
+    widget = Tabulator(df_agg, hierarchical=True, aggregators=flat_aggregators)
+    serve_component(page, widget)
+    expect(page.locator('.tabulator-data-tree-control-expand')).to_have_count(4)
