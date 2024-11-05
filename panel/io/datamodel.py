@@ -115,7 +115,7 @@ PARAM_MAPPING = {
 }
 
 
-def construct_data_model(parameterized, name=None, ignore=[], types={}):
+def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={}):
     """
     Dynamically creates a Bokeh DataModel class from a Parameterized
     object.
@@ -132,6 +132,8 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}):
     types: dict
         A dictionary mapping from parameter name to a Parameter type,
         making it possible to override the default parameter types.
+    extras: dict
+        Additional properties to define on the DataModel.
 
     Returns
     -------
@@ -163,6 +165,10 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}):
         for bkp, convert in accepts:
             bk_prop = bk_prop.accepts(bkp, convert)
         properties[pname] = bk_prop
+    for pname, ptype in extras.items():
+        if issubclass(ptype, pm.Parameter):
+            ptype = PARAM_MAPPING.get(ptype)(None, {})
+        properties[pname] = ptype
     name = name or parameterized.name
     return type(name, (DataModel,), properties)
 

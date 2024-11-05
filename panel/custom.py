@@ -168,7 +168,7 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
         model_name = f'{name}{ReactiveMetaBase._name_counter[name]}'
         ignored = [p for p in Reactive.param if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)]
         mcs._data_model = construct_data_model(
-            mcs, name=model_name, ignore=ignored
+            mcs, name=model_name, ignore=ignored, extras={'esm_constants': param.Dict}
         )
 
 
@@ -215,6 +215,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     _bokeh_model = _BkReactiveESM
 
     _bundle: ClassVar[str | os.PathLike | None] = None
+
+    _constants: ClassVar[dict[str, Any]] = {}
 
     _esm: ClassVar[str | os.PathLike] = ""
 
@@ -401,6 +403,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         else:
             bundle_hash = None
         data_props = self._process_param_change(data_params)
+        data_props['esm_constants'] = self._constants
         props.update({
             'bundle': bundle_hash,
             'class_name': camel_to_kebab(cls.__name__),
