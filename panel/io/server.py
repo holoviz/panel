@@ -456,6 +456,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             if authorized is None:
                 return
             elif not authorized:
+                self.set_status(403)
                 page = self._render_auth_error(auth_error)
                 self.set_header("Content-Type", 'text/html')
                 self.write(page)

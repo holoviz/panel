@@ -196,5 +196,6 @@ def test_serve_authorize_callback_exception(tmp_path):
     with run_panel_serve(["--port", "0", py, "--setup", setup_py], cwd=tmp_path) as p:
         nsbr = NBSR(p.stdout)
         port = wait_for_port(nsbr)
-        requests.get(f"http://localhost:{port}/")
+        resp = requests.get(f"http://localhost:{port}/")
         wait_for_regex(nsbr, regex=regex)
+        assert resp.status_code == 403
