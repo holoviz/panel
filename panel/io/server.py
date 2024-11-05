@@ -426,6 +426,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
                 auth_error = None
         except Exception:
             auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
+            logger.warning(auth_error)
         return authorized, auth_error
 
     def _render_auth_error(self, auth_error):
