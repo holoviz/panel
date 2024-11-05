@@ -2,7 +2,7 @@
 
 This guide demonstrates how to deploy a Panel app on [PY.CAFE](https://py.cafe/).
 
-PY.CAFE is a platform for creating and sharing data apps online, powered by [Pyodide](https://pyodide.org/). It offers a free tier for users.
+PY.CAFE is a platform for creating and sharing data apps online, powered by [Pyodide](https://pyodide.org/). It offers a free tier for users. You can find the official PY.CAFE-Panel guide [here](https://py.cafe/docs/apps/panel).
 
 ## 1. Log In
 
@@ -89,3 +89,7 @@ Explore the [`panel-org`](https://py.cafe/panel-org) gallery examples below:
 - [Penguin Crossfilter](https://py.cafe/panel-org/penguin-crossfilter) from the [Penguin Crossfilter Tutorial](../../gallery/penguin_crossfilter)
 - [Portfolio Analyzer](https://py.cafe/panel-org/portfolio-analyzer) from the [Portfolio Analyzer Tutorial](../../gallery/portfolio_analyzer).
 - [VideoStream Interface](https://py.cafe/panel-org/videostream) from the [VideoStream Interface Tutorial](../../gallery/streaming_videostream).
+
+----
+
+For more examples check out [awesome-panel.org](https://py.cafe/awesome.panel.org).
