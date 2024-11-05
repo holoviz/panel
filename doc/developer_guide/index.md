@@ -116,7 +116,7 @@ pixi run lint
 Linting can also be set up to run automatically with each commit; this is the recommended way because if linting is not passing, the [Continuous Integration](https://en.wikipedia.org/wiki/Continuous_integration) (CI) will also fail.
 
 ```bash
-pixi run lint-install
+pixi run -e lint lint-install
 ```
 
 ## Testing
