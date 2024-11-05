@@ -438,7 +438,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             p = self.param[k]
             if not is_viewable_param(p):
                 continue
-            children[k] = self._get_child_model(k, v)
+            children[k] = self._get_child_model(v, doc, root, parent, comm)
         return children
 
     def _setup_autoreload(self):
