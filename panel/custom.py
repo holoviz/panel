@@ -688,6 +688,7 @@ class ReactComponent(ReactiveESM):
                 "react-is": f"https://esm.sh/react-is@{v_react}&external=react",
                 "@emotion/cache": f"https://esm.sh/@emotion/cache?deps=react@{v_react},react-dom@{v_react}",
                 "@emotion/react": f"https://esm.sh/@emotion/react?deps=react@{v_react},react-dom@{v_react}&external=react,react-is",
+                "@emotion/styled": f"https://esm.sh/@emotion/styled?deps=react@{v_react},react-dom@{v_react}&external=react,react-is",
             })
         for k, v in imports.items():
             if '?' not in v and 'esm.sh' in v:
