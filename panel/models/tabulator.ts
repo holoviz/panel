@@ -92,18 +92,18 @@ function summarize(grouped: any[], columns: any[], aggregators: string[]): any {
       const agg = aggregators[column.field]
 
       if (column.field in summary) {
-        const old_val = summary[column.field];
+        const old_val = summary[column.field]
         if (agg === "min") {
-            summary[column.field] = (val < old_val) ? val : old_val;
+          summary[column.field] = (val < old_val) ? val : old_val
         } else if (agg === "max") {
-            summary[column.field] = (val > old_val) ? val : old_val;
+          summary[column.field] = (val > old_val) ? val : old_val
         } else if (agg === "sum") {
-            summary[column.field] = val + old_val;
+          summary[column.field] = val + old_val
         } else if (agg === "mean") {
           if (Array.isArray(summary[column.field])) {
-            summary[column.field].push(val);
+            summary[column.field].push(val)
           } else {
-            summary[column.field] = [old_val, val];
+            summary[column.field] = [old_val, val]
           }
         }
       } else {
