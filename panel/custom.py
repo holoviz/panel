@@ -416,24 +416,26 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     def _process_importmap(cls):
         return cls._importmap
 
+    def _get_child_model(self, child, doc, root, parent, comm):
+        if child is None:
+            return None
+        ref = root.ref['id']
+        if isinstance(child, list):
+            return [
+                sv._models[ref][0] if ref in sv._models else sv._get_model(doc, root, parent, comm)
+                for sv in child
+            ]
+        elif ref in child._models:
+            return child._models[ref][0]
+        return child._get_model(doc, root, parent, comm)
+
     def _get_children(self, data_model, doc, root, parent, comm):
         children = {}
-        ref = root.ref['id']
         for k, v in self.param.values().items():
             p = self.param[k]
             if not is_viewable_param(p):
                 continue
-            if v is None:
-                children[k] = None
-            elif isinstance(v, list):
-                children[k] = [
-                    sv._models[ref][0] if ref in sv._models else sv._get_model(doc, root, parent, comm)
-                    for sv in v
-                ]
-            elif ref in v._models:
-                children[k] = v._models[ref][0]
-            else:
-                children[k] = v._get_model(doc, root, parent, comm)
+            children[k] = self._get_child_model(k, v)
         return children
 
     def _setup_autoreload(self):
