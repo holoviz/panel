@@ -235,15 +235,25 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._msg__callbacks = []
 
     @classproperty
-    def _bundle_path(cls) -> os.PathLike | None:
-        if config.autoreload and cls._esm:
-            return
+    def _module_path(cls):
         try:
-            mod_path = pathlib.Path(inspect.getfile(cls)).parent
+            return pathlib.Path(inspect.getfile(cls)).parent
         except (OSError, TypeError, ValueError):
             if not isinstance(cls._bundle, pathlib.PurePath):
                 return
+
+    @classproperty
+    def _bundle_path(cls) -> os.PathLike | None:
+        if config.autoreload and cls._esm:
+            return
+        mod_path = cls._module_path
+        if mod_path is None:
+            return
         if cls._bundle:
+            for scls in cls.__mro__:
+                if issubclass(scls, ReactiveESM) and cls._bundle == scls._bundle:
+                    cls = scls
+            mod_path = cls._module_path
             bundle = cls._bundle
             if isinstance(bundle, pathlib.PurePath):
                 return bundle
@@ -300,7 +310,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         if esm_path:
             if esm_path == cls._bundle_path and cls.__module__ in sys.modules and server:
                 base_cls = cls
-                for scls in cls.__mro__[1:][::-1]:
+                for scls in cls.__mro__[1:]:
                     if not issubclass(scls, ReactiveESM):
                         continue
                     if esm_path == scls._esm_path(compiled=compiled is True):
