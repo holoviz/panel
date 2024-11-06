@@ -2,7 +2,7 @@
 
 This guide demonstrates how to deploy a Panel app on [PY.CAFE](https://py.cafe/).
 
-PY.CAFE is a platform for creating and sharing data apps online, powered by [Pyodide](https://pyodide.org/). It offers a free tier for users. You can find the official PY.CAFE-Panel guide [here](https://py.cafe/docs/apps/panel).
+PyCafe is a platform for creating and sharing data apps online, powered by [Pyodide](https://pyodide.org/). It offers a free tier for users. You can find the official PyCafe-Panel guide [here](https://py.cafe/docs/apps/panel).
 
 ## 1. Log In
 
