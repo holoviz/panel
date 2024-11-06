@@ -113,7 +113,7 @@ class DataTabulator(HTMLBox):
     See http://tabulator.info/
     """
 
-    aggregators = Dict(String, Any)
+    aggregators = Dict(String, Either(String, Dict(String, String)))
 
     buttons = Dict(String, String)
 
