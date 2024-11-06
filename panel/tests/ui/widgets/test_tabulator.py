@@ -4167,3 +4167,20 @@ def test_tabulator_aggregators_data_grouping(page, df_agg, aggs):
     expect(expanded_group_members.nth(1)).to_contain_text("Alice")
     expect(expanded_group_members.nth(2)).to_contain_text("David")
     expect(expanded_group_members.nth(3)).to_contain_text("Eve")
+
+
+def test_tabulator_aggregators_numeric_data_aggregation(page, df_agg):
+    # TODO: parametrize agg_method and column
+    agg_method, column = "sum", "salary"
+    aggs = {column: agg_method}
+    widget = Tabulator(df_agg.set_index(["region", "employee_id"]), hierarchical=True, aggregators=aggs)
+    serve_component(page, widget)
+
+    column_titles = page.locator('.tabulator-col-title')
+    column_index = 3  # salary column is the 4th column displayed in the table (1st is not displayed)
+    expect(column_titles.nth(column_index + 1)).to_have_text("salary")
+    rows = page.locator('.tabulator-row')
+    expect(rows).to_have_count(2)
+    assert rows.nth(0).inner_text().split("\n")[column_index] == "75,000.0"
+    # sum with a NaN value
+    assert rows.nth(1).inner_text().split("\n")[column_index] == "-"
