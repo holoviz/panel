@@ -51,13 +51,10 @@ class Compile(Subcommand):
                 module = module_spec
                 cls = ''
             classes = cls.split(',') if cls else None
-            module_name, ext = os.path.splitext(os.path.basename(module))
-            if ext not in ('', '.py'):
-                print(  # noqa
-                    f'{RED} Can only compile ESM components defined in Python '
-                    'file or importable module.'
-                )
-                return 1
+            if module.endswith('.py'):
+                module_name, _ = os.path.splitext(os.path.basename(module))
+            else:
+                module_name = module
             try:
                 components = find_components(module, classes)
             except ValueError:
@@ -81,13 +78,15 @@ class Compile(Subcommand):
                         path = bundle_path.absolute()
                     bundles[str(path)].append(component)
                 elif len(components) > 1 and not classes:
-                    component_module = module_name if ext else component.__module__
+                    component_module = module_name or component.__module__
                     bundles[module_path / f'{component_module}.bundle.js'].append(component)
                 else:
                     bundles[module_path / f'{component.__name__}.bundle.js'].append(component)
 
         errors = 0
         for bundle, components in bundles.items():
+            component_names = '\n- '.join(c.name for c in components)
+            print(f"Building {bundle} containing the following components:\n\n- {component_names}")  # noqa
             out = compile_components(
                 components,
                 build_dir=args.build_dir,

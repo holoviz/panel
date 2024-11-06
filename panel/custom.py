@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import importlib
 import inspect
 import os
 import pathlib
@@ -263,21 +264,34 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 bundle_path = mod_path / bundle
                 if bundle_path.is_file():
                     return bundle_path
-                return
-            else:
-                raise ValueError(
-                    'Could not resolve {cls.__name__}._bundle. Ensure '
-                    'you provide either a string with a relative or absolute '
-                    'path or a Path object to a .js file extension.'
-                )
+            raise ValueError(
+                'Could not resolve {cls.__name__}._bundle: {cls._bundle}. Ensure '
+                'you provide either a string with a relative or absolute '
+                'path or a Path object to a .js file extension.'
+            )
+
+        # Attempt resolving bundle for this component specifically
         path = mod_path / f'{cls.__name__}.bundle.js'
         if path.is_file():
             return path
+
+        # Attempt to resolve bundle in current module and parent modules
         module = cls.__module__
-        path = mod_path / f'{module}.bundle.js'
-        if path.is_file():
-            return path
-        elif module in sys.modules:
+        modules = module.split('.')
+        for i in reversed(range(len(modules))):
+            submodule = '.'.join(modules[:i+1])
+            try:
+                mod = importlib.import_module(submodule)
+            except (ModuleNotFoundError, ImportError):
+                continue
+            if not hasattr(mod, '__file__'):
+                continue
+            submodule_path = pathlib.Path(mod.__file__).parent
+            path = submodule_path / f'{submodule}.bundle.js'
+            if path.is_file():
+                return path
+
+        if module in sys.modules:
             module = os.path.basename(sys.modules[module].__file__).replace('.py', '')
             path = mod_path / f'{module}.bundle.js'
             return path if path.is_file() else None
