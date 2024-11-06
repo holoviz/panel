@@ -86,12 +86,9 @@ def find_module_bundles(module_spec: str) -> dict[pathlib.PurePath, list[Reactiv
     -------
     Dictionary containing the bundle paths and list of components to bundle.
     """
-    if re.match(r'^[A-Za-z]:\\', module_spec):
-        # Handle windows paths
+    # Split module spec, while respecting Windows drive letters
+    if ':' in module_spec and (not re.match(r'^[A-Za-z]:\\', module_spec) or module_spec.count(':') > 1):
         module, cls = module_spec.rsplit(':', 1)
-    elif ':' in module_spec:
-        *parts, cls = module_spec.split(':')
-        module = ':'.join(parts)
     else:
         module = module_spec
         cls = ''
