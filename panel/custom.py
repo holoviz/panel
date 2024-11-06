@@ -267,7 +267,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 if bundle_path.is_file():
                     return bundle_path
             raise ValueError(
-                'Could not resolve {cls.__name__}._bundle: {cls._bundle}. Ensure '
+                f'Could not resolve {cls.__name__}._bundle: {cls._bundle}. Ensure '
                 'you provide either a string with a relative or absolute '
                 'path or a Path object to a .js file extension.'
             )
