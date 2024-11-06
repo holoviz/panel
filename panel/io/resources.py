@@ -258,7 +258,8 @@ def component_resource_path(component, attr, path):
     component_path = COMPONENT_PATH
     if state.rel_path:
         component_path = f"{state.rel_path}/{component_path}"
-    rel_path = str(resolve_custom_path(component, path, relative=True)).replace(os.path.sep, '/')
+    custom_path = resolve_custom_path(component, path, relative=True)
+    rel_path = os.fspath(custom_path).replace(os.path.sep, '/')
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
@@ -641,6 +642,8 @@ class Resources(BkResources):
             if not (getattr(model, resource_type, None) and model._loaded()):
                 continue
             for resource in getattr(model, resource_type, []):
+                if state.rel_path:
+                    resource = resource.lstrip(state.rel_path)
                 if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
                     resource = component_resource_path(model, resource_type, resource)
                 if resource not in resources:
