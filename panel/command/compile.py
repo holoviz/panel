@@ -81,12 +81,12 @@ class Compile(Subcommand):
                     component_module = module_name or component.__module__
                     bundles[module_path / f'{component_module}.bundle.js'].append(component)
                 else:
-                    bundles[module_path / f'{component.__name__}.bundle.js'].append(component)
+                    bundles[component._module_path / f'{component.__name__}.bundle.js'].append(component)
 
         errors = 0
         for bundle, components in bundles.items():
             component_names = '\n- '.join(c.name for c in components)
-            print(f"Building {bundle} containing the following components:\n\n- {component_names}")  # noqa
+            print(f"Building {bundle} containing the following components:\n\n- {component_names}\n")  # noqa
             out = compile_components(
                 components,
                 build_dir=args.build_dir,

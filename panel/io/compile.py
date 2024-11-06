@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fnmatch
 import importlib
 import json
 import os
@@ -94,6 +95,10 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
         runner = CodeRunner(source, module_or_file, [])
         module = runner.new_module()
         runner.run(module)
+        if runner.error:
+            raise RuntimeError(
+                f'Compilation failed because supplied module errored on import:\n\n{runner.error}'
+            )
     else:
         module = importlib.import_module(module_or_file)
     classes = classes or []
@@ -103,12 +108,12 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
             isinstance(v, type) and
             issubclass(v, ReactiveESM) and
             not v.abstract and
-            (not classes or v.__name__ in classes)
+            (not classes or any(fnmatch.fnmatch(v.__name__, p) for p in classes))
         ):
             if py_file:
                 v.__path__ = path_obj.parent.absolute()
             components.append(v)
-    not_found = set(classes) - set(c.__name__ for c in components)
+    not_found = {cls for cls in classes if '*' not in cls} - set(c.__name__ for c in components)
     if classes and not_found:
         clss = ', '.join(map(repr, not_found))
         raise ValueError(f'{clss} class(es) not found in {module_or_file!r}.')

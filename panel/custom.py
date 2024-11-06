@@ -239,6 +239,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classproperty
     def _module_path(cls):
+        if hasattr(cls, '__path__'):
+            return pathlib.Path(cls.__path__).parent
         try:
             return pathlib.Path(inspect.getfile(cls)).parent
         except (OSError, TypeError, ValueError):
