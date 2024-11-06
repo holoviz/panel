@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 
+from collections import defaultdict
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
@@ -70,6 +71,62 @@ def check_cli_tool(tool_name):
             return False
     except Exception:
         return False
+
+
+def find_module_bundles(module_spec: str) -> dict[pathlib.PurePath, list[ReactiveESM]]:
+    """
+    Takes module specifications and extracts a set of components to bundle.
+
+    Arguments
+    ---------
+    module_spec: str
+         Module specification either as a dotted module or a path to a module.
+
+    Returns
+    -------
+    Dictionary containing the bundle paths and list of components to bundle.
+    """
+    if ':' in module_spec:
+        *parts, cls = module_spec.split(':')
+        module = ':'.join(parts)
+    else:
+        module = module_spec
+        cls = ''
+    classes = cls.split(',') if cls else None
+    if module.endswith('.py'):
+        module_name, _ = os.path.splitext(os.path.basename(module))
+    else:
+        module_name = module
+    try:
+        components = find_components(module, classes)
+    except ValueError:
+        cls_error = f' and that class(es) {cls!r} are defined therein' if cls else ''
+        raise RuntimeError(  # noqa
+            f'Could not find any ESM components to compile, ensure '
+            f'you provided the right module{cls_error}.'
+        )
+    if module in sys.modules:
+        module_path = sys.modules[module].__file__
+    else:
+        module_path = module
+
+    bundles = defaultdict(list)
+    module_path = pathlib.Path(module_path).parent
+    for component in components:
+        if component._bundle:
+            bundle_path = component._bundle
+            if isinstance(bundle_path, str):
+                path = (module_path / bundle_path).absolute()
+            else:
+                path = bundle_path.absolute()
+            bundles[str(path)].append(component)
+        elif len(components) > 1 and not classes:
+            component_module = module_name or component.__module__
+            bundles[module_path / f'{component_module}.bundle.js'].append(component)
+        else:
+            bundles[component._module_path / f'{component.__name__}.bundle.js'].append(component)
+
+    return bundles
 
 
 def find_components(module_or_file: str | os.PathLike, classes: list[str] | None = None) -> list[type[ReactiveESM]]:

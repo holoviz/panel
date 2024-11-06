@@ -1,12 +1,6 @@
-import os
-import pathlib
-import sys
-
-from collections import defaultdict
-
 from bokeh.command.subcommand import Argument, Subcommand
 
-from ..io.compile import RED, compile_components, find_components
+from ..io.compile import RED, compile_components, find_module_bundles
 
 
 class Compile(Subcommand):
@@ -42,46 +36,23 @@ class Compile(Subcommand):
     )
 
     def invoke(self, args):
-        bundles = defaultdict(list)
-        for module_spec in args.modules:
-            if ':' in module_spec:
-                *parts, cls = module_spec.split(':')
-                module = ':'.join(parts)
-            else:
-                module = module_spec
-                cls = ''
-            classes = cls.split(',') if cls else None
-            if module.endswith('.py'):
-                module_name, _ = os.path.splitext(os.path.basename(module))
-            else:
-                module_name = module
+        bundles = {}
+        for module in args.modules:
             try:
-                components = find_components(module, classes)
-            except ValueError:
-                cls_error = f' and that class(es) {cls!r} are defined therein' if cls else ''
-                print(  # noqa
-                    f'{RED} Could not find any ESM components to compile, ensure '
-                    f'you provided the right module{cls_error}.'
-                )
+                module_bundles = find_module_bundles(module)
+            except RuntimeError as e:
+                print(f'{RED} {e}')  # noqa
                 return 1
-            if module in sys.modules:
-                module_path = sys.modules[module].__file__
-            else:
-                module_path = module
-            module_path = pathlib.Path(module_path).parent
-            for component in components:
-                if component._bundle:
-                    bundle_path = component._bundle
-                    if isinstance(bundle_path, str):
-                        path = (module_path / bundle_path).absolute()
-                    else:
-                        path = bundle_path.absolute()
-                    bundles[str(path)].append(component)
-                elif len(components) > 1 and not classes:
-                    component_module = module_name or component.__module__
-                    bundles[module_path / f'{component_module}.bundle.js'].append(component)
+            if not module_bundles:
+                print (  # noqa
+                    f'{RED} Could not find any ESM components to compile '
+                    f'in {module}, ensure you provided the right module.'
+                )
+            for bundle, components in module_bundles.items():
+                if bundle in bundles:
+                    bundles[bundle] = components
                 else:
-                    bundles[component._module_path / f'{component.__name__}.bundle.js'].append(component)
+                    bundles[bundle] += components
 
         errors = 0
         for bundle, components in bundles.items():
