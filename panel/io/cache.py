@@ -168,11 +168,15 @@ def _polars_hash(obj):
     if isinstance(obj, pl.Series):
         obj = obj.to_frame()
 
+    columns = obj.collect_schema().names()
+
     # LazyFrame does not support len and sample
     if type_hash != b"LazyFrame" and len(obj) >= _DATAFRAME_ROWS_LARGE:
         obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, seed=0)
-
-    columns = obj.collect_schema().names()
+    elif type_hash == b"LazyFrame":
+        count = obj.select(pl.col(columns[0]).count()).collect().item()
+        if count >= _DATAFRAME_ROWS_LARGE:
+            obj = obj.select(pl.all().sample(n=_DATAFRAME_SAMPLE_SIZE, seed=0))
 
     hash_expr = _polars_combine_hash_expr(columns)
     hash_data = obj.select(hash_expr).sum()
