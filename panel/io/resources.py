@@ -259,7 +259,7 @@ def component_resource_path(component, attr, path):
     if state.rel_path:
         component_path = f"{state.rel_path}/{component_path}"
     custom_path = resolve_custom_path(component, path, relative=True)
-    rel_path = os.fspath(custom_path).replace(os.path.sep, '/')
+    rel_path = os.fspath(custom_path).replace(os.path.sep, '/') if custom_path else ""
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
