@@ -58,13 +58,13 @@ _NATIVE_TYPES = (
     bytes, str, float, int, bool, bytearray, type(None)
 )
 
-_NP_SIZE_LARGE = 100_000
+_ARRAY_SIZE_LARGE = 100_000
 
-_NP_SAMPLE_SIZE = 100_000
+_ARRAY_SAMPLE_SIZE = 100_000
 
-_PANDAS_ROWS_LARGE = 100_000
+_DATAFRAME_ROWS_LARGE = 100_000
 
-_PANDAS_SAMPLE_SIZE = 100_000
+_DATAFRAME_SAMPLE_SIZE = 100_000
 
 if sys.platform == 'win32':
     _TIME_FN = time.perf_counter
@@ -125,8 +125,8 @@ def _pandas_hash(obj):
     if not isinstance(obj, (pd.Series, pd.DataFrame)):
         obj = pd.Series(obj)
 
-    if len(obj) >= _PANDAS_ROWS_LARGE:
-        obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
+    if len(obj) >= _DATAFRAME_ROWS_LARGE:
+        obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
     try:
         if isinstance(obj, pd.DataFrame):
             return ((b"%s" % pd.util.hash_pandas_object(obj).sum())
@@ -141,10 +141,10 @@ def _pandas_hash(obj):
 def _numpy_hash(obj):
     h = hashlib.new("md5")
     h.update(_generate_hash(obj.shape))
-    if obj.size >= _NP_SIZE_LARGE:
+    if obj.size >= _ARRAY_SIZE_LARGE:
         import numpy as np
         state = np.random.RandomState(0)
-        obj = state.choice(obj.flat, size=_NP_SAMPLE_SIZE)
+        obj = state.choice(obj.flat, size=_ARRAY_SAMPLE_SIZE)
     h.update(obj.tobytes())
     return h.digest()
 
