@@ -22,6 +22,7 @@ from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource, FlexBox, Model
 from bokeh.protocol.messages.patch_doc import patch_doc
 
+from ..util.warnings import deprecated
 from .state import state
 
 if TYPE_CHECKING:
@@ -174,7 +175,7 @@ def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = No
     return r
 
 @contextmanager
-def hold(doc: Document, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
+def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
     """
     Context manager that holds events on a particular Document
     allowing them all to be collected and dispatched when the context
@@ -192,22 +193,6 @@ def hold(doc: Document, policy: HoldPolicyType = 'combine', comm: Comm | None = 
     comm: Comm
         The Comm to dispatch events on when the context manager exits.
     """
-    doc = doc or state.curdoc
-    if doc is None:
-        yield
-        return
-    held = doc.callbacks.hold_value
-    try:
-        if policy is None:
-            doc.unhold()
-        else:
-            doc.hold(policy)
-        yield
-    finally:
-        if held:
-            doc.callbacks._hold = held
-        else:
-            if comm is not None:
-                from .notebook import push
-                push(doc, comm)
-            doc.unhold()
+    deprecated('1.7.0', 'panel.io.model.hold', 'panel.io.document.hold')
+    from .document import hold
+    hold(doc, policy, comm)
