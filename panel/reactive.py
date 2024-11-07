@@ -35,8 +35,7 @@ from param.parameterized import (
     resolve_ref, resolve_value,
 )
 
-from .io.document import unlocked
-from .io.model import hold
+from .io.document import hold, unlocked
 from .io.notebook import push
 from .io.resources import (
     CDN_DIST, loading_css, patch_stylesheet, process_raw_css,
