@@ -163,29 +163,29 @@ def _polars_combine_hash_expr(columns):
 def _polars_hash(obj):
     import polars as pl
 
-    type_hash = type(obj).__name__.encode()
+    hash_type = type(obj).__name__.encode()
 
     if isinstance(obj, pl.Series):
         obj = obj.to_frame()
 
     columns = obj.collect_schema().names()
+    hash_columns = _container_hash(columns)
 
     # LazyFrame does not support len and sample
-    if type_hash != b"LazyFrame" and len(obj) >= _DATAFRAME_ROWS_LARGE:
+    if hash_type != b"LazyFrame" and len(obj) >= _DATAFRAME_ROWS_LARGE:
         obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, seed=0)
-    elif type_hash == b"LazyFrame":
+    elif hash_type == b"LazyFrame":
         count = obj.select(pl.col(columns[0]).count()).collect().item()
         if count >= _DATAFRAME_ROWS_LARGE:
             obj = obj.select(pl.all().sample(n=_DATAFRAME_SAMPLE_SIZE, seed=0))
 
     hash_expr = _polars_combine_hash_expr(columns)
     hash_data = obj.select(hash_expr).sum()
-    if hasattr(hash_data, "collect"):  # LazyFrame
+    if hash_type == b"LazyFrame":
         hash_data = hash_data.collect()
     hash_data = _int_to_bytes(hash_data.item())
 
-    hash_columns = _container_hash(columns)
-    return type_hash + hash_data + hash_columns
+    return hash_type + hash_data + hash_columns
 
 def _numpy_hash(obj):
     h = hashlib.new("md5")
