@@ -433,11 +433,18 @@ def dispatch_django(
     return futures
 
 @contextmanager
-def unlocked() -> Iterator:
+def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
     """
     Context manager which unlocks a Document and dispatches
     ModelChangedEvents triggered in the context body to all sockets
     on current sessions.
+
+    Arguments
+    ---------
+    policy: Literal['combine' | 'collect']
+        One of 'combine' or 'collect' determining whether events
+        setting the same property are combined or accumulated to be
+        dispatched when the context manager exits.
     """
     curdoc = state.curdoc
     session_context = getattr(curdoc, 'session_context', None)
@@ -459,7 +466,7 @@ def unlocked() -> Iterator:
         monkeypatch_events(curdoc.callbacks._held_events)
         return
 
-    curdoc.hold()
+    curdoc.hold(policy=policy)
     try:
         yield
     finally:
@@ -520,7 +527,6 @@ def unlocked() -> Iterator:
             except RuntimeError:
                 curdoc.add_next_tick_callback(partial(retrigger_events, curdoc, retriggered_events))
 
-
 @contextmanager
 def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
     """
@@ -550,7 +556,9 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
             doc.unhold()
             yield
         else:
-            with unlocked():
+            with unlocked(policy=policy):
+                if not doc.callbacks.hold_value:
+                    doc.hold(policy)
                 yield
     finally:
         if held:
@@ -560,7 +568,6 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
                 from .notebook import push
                 push(doc, comm)
             doc.unhold()
-
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
