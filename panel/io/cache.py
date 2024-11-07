@@ -138,10 +138,33 @@ def _pandas_hash(obj):
         # it contains unhashable objects.
         return b"%s" % pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
 
+def _polars_combine_hash_expr(columns):
+    """
+    Inspired by pd.core.util.hashing.combine_hash_arrays,
+    rewritten to a Polars expression.
+    """
+    import polars as pl
+
+    mult = pl.lit(1000003, dtype=pl.UInt64)
+    initial_value = pl.lit(0x345678, dtype=pl.UInt64)
+    increment = pl.lit(82520, dtype=pl.UInt64)
+    final_addition = pl.lit(97531, dtype=pl.UInt64)
+
+    out = initial_value
+    num_items = len(columns)
+    for i, col_name in enumerate(columns):
+        col = pl.col(col_name).hash(seed=0)
+        inverse_i = pl.lit(num_items - i, dtype=pl.UInt64)
+        out = (out ^ col) * mult
+        mult = mult + (increment + inverse_i + inverse_i)
+
+    return out + final_addition
+
 def _polars_hash(obj):
     import polars as pl
 
     type_hash = type(obj).__name__.encode()
+
     if isinstance(obj, pl.Series):
         obj = obj.to_frame()
 
@@ -149,11 +172,15 @@ def _polars_hash(obj):
     if type_hash != b"LazyFrame" and len(obj) >= _DATAFRAME_ROWS_LARGE:
         obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, seed=0)
 
-    hash_per_column = obj.with_columns(pl.all().hash(0)).sum()
-    if hasattr(hash_per_column, "collect"):  # LazyFrame
-        hash_per_column = hash_per_column.collect()
-    hash_data = _int_to_bytes(hash_per_column.sum_horizontal().item())
-    hash_columns = _container_hash(list(obj.collect_schema()))
+    columns = obj.collect_schema().names()
+
+    hash_expr = _polars_combine_hash_expr(columns)
+    hash_data = obj.select(hash_expr).sum()
+    if hasattr(hash_data, "collect"):  # LazyFrame
+        hash_data = hash_data.collect()
+    hash_data = _int_to_bytes(hash_data.item())
+
+    hash_columns = _container_hash(columns)
     return type_hash + hash_data + hash_columns
 
 def _numpy_hash(obj):
