@@ -138,6 +138,24 @@ def _pandas_hash(obj):
         # it contains unhashable objects.
         return b"%s" % pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
 
+def _polars_hash(obj):
+    import polars as pl
+
+    type_hash = type(obj).__name__.encode()
+    if isinstance(obj, pl.Series):
+        obj = obj.to_frame()
+
+    # LazyFrame does not support len and sample
+    if type_hash != b"LazyFrame" and len(obj) >= _DATAFRAME_ROWS_LARGE:
+        obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, seed=0)
+
+    hash_per_column = obj.with_columns(pl.all().hash(0)).sum()
+    if hasattr(hash_per_column, "collect"):  # LazyFrame
+        hash_per_column = hash_per_column.collect()
+    hash_data = _int_to_bytes(hash_per_column.sum_horizontal().item())
+    hash_columns = _container_hash(list(obj.collect_schema()))
+    return type_hash + hash_data + hash_columns
+
 def _numpy_hash(obj):
     h = hashlib.new("md5")
     h.update(_generate_hash(obj.shape))
@@ -180,6 +198,9 @@ _hash_funcs = {
     'builtins.dict_items'        : lambda obj: _container_hash(dict(obj)),
     'builtins.getset_descriptor' : lambda obj: obj.__qualname__.encode(),
     "numpy.ufunc"                : lambda obj: obj.__name__.encode(),
+    "polars.series.series.Series": _polars_hash,
+    "polars.dataframe.frame.DataFrame": _polars_hash,
+    "polars.lazyframe.frame.LazyFrame": _polars_hash,
     # Functions
     inspect.isbuiltin          : lambda obj: obj.__name__.encode(),
     inspect.ismodule           : lambda obj: obj.__name__,
