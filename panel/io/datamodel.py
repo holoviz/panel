@@ -112,7 +112,9 @@ def bytes_param(p, kwargs):
 def df_to_dict(df):
     if 'polars' in sys.modules:
         import polars as pl
-        if isinstance(df, (pl.LazyFrame, pl.DataFrame)):
+        if isinstance(df, pl.LazyFrame):
+            df = df.collect()
+        if isinstance(df, pl.DataFrame):
             df = df.to_pandas()
     return ColumnDataSource._data_from_df(df)
 
