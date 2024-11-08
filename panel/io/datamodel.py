@@ -1,6 +1,8 @@
+import sys
 import weakref
 
 from functools import partial
+from typing import Any
 
 import bokeh
 import bokeh.core.properties as bp
@@ -31,6 +33,26 @@ class Parameterized(bokeh.core.property.bases.Property):
             return
 
         msg = "" if not detail else f"expected param.Parameterized, got {value!r}"
+        raise ValueError(msg)
+
+
+class PolarsDataFrame(bokeh.core.property.bases.Property):
+    """ Accept Polars DataFrame values.
+
+    This property only exists to support type validation, e.g. for "accepts"
+    clauses. It is not serializable itself, and is not useful to add to
+    Bokeh models directly.
+
+    """
+
+    def validate(self, value: Any, detail: bool = True) -> None:
+        super().validate(value, detail)
+
+        import polars as pl
+        if isinstance(value, (pl.DataFrame, pl.LazyFrame)):
+            return
+
+        msg = "" if not detail else f"expected Pandas DataFrame, got {value!r}"
         raise ValueError(msg)
 
 
@@ -87,6 +109,13 @@ def bytes_param(p, kwargs):
     kwargs['default'] = None
     return bp.Nullable(bp.Bytes, **kwargs)
 
+def df_to_dict(df):
+    if 'polars' in sys.modules:
+        import polars as pl
+        if isinstance(df, (pl.LazyFrame, pl.DataFrame)):
+            df = df.to_pandas()
+    return ColumnDataSource._data_from_df(df)
+
 PARAM_MAPPING = {
     pm.Array: lambda p, kwargs: bp.Array(bp.Any, **kwargs),
     pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
@@ -97,7 +126,7 @@ PARAM_MAPPING = {
     pm.Color: color_param_to_ppt,
     pm.DataFrame: lambda p, kwargs: (
         bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs),
-        [(bp.PandasDataFrame, lambda x: ColumnDataSource._data_from_df(x))]
+        [(bp.PandasDataFrame, df_to_dict), (PolarsDataFrame, df_to_dict)]
     ),
     pm.DateRange: lambda p, kwargs: bp.Tuple(bp.Datetime, bp.Datetime, **kwargs),
     pm.Date: lambda p, kwargs: bp.Datetime(**kwargs),
