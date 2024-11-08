@@ -563,8 +563,9 @@ class NamedListLike(param.Parameterized):
                     'as positional arguments or as a keyword, not both.'
                 )
             items = params.pop('objects')
-        params['objects'], self._names = self._to_objects_and_names(items)
+        params['objects'], names = self._to_objects_and_names(items)
         super().__init__(**params)
+        self._names = names
         self._panels = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be

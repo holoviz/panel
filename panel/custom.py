@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import importlib
 import inspect
 import os
 import pathlib
@@ -168,7 +169,7 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
         model_name = f'{name}{ReactiveMetaBase._name_counter[name]}'
         ignored = [p for p in Reactive.param if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)]
         mcs._data_model = construct_data_model(
-            mcs, name=model_name, ignore=ignored
+            mcs, name=model_name, ignore=ignored, extras={'esm_constants': param.Dict}
         )
 
 
@@ -216,6 +217,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _bundle: ClassVar[str | os.PathLike | None] = None
 
+    _constants: ClassVar[dict[str, Any]] = {}
+
     _esm: ClassVar[str | os.PathLike] = ""
 
     # Specifies exports to make available to JS in a bundled file
@@ -235,15 +238,27 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._msg__callbacks = []
 
     @classproperty
-    def _bundle_path(cls) -> os.PathLike | None:
-        if config.autoreload and cls._esm:
-            return
+    def _module_path(cls):
+        if hasattr(cls, '__path__'):
+            return pathlib.Path(cls.__path__)
         try:
-            mod_path = pathlib.Path(inspect.getfile(cls)).parent
+            return pathlib.Path(inspect.getfile(cls)).parent
         except (OSError, TypeError, ValueError):
             if not isinstance(cls._bundle, pathlib.PurePath):
                 return
+
+    @classproperty
+    def _bundle_path(cls) -> os.PathLike | None:
+        if config.autoreload and cls._esm:
+            return
+        mod_path = cls._module_path
+        if mod_path is None:
+            return
         if cls._bundle:
+            for scls in cls.__mro__:
+                if issubclass(scls, ReactiveESM) and cls._bundle == scls._bundle:
+                    cls = scls
+            mod_path = cls._module_path
             bundle = cls._bundle
             if isinstance(bundle, pathlib.PurePath):
                 return bundle
@@ -251,21 +266,34 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 bundle_path = mod_path / bundle
                 if bundle_path.is_file():
                     return bundle_path
-                return
-            else:
-                raise ValueError(
-                    'Could not resolve {cls.__name__}._bundle. Ensure '
-                    'you provide either a string with a relative or absolute '
-                    'path or a Path object to a .js file extension.'
-                )
+            raise ValueError(
+                f'Could not resolve {cls.__name__}._bundle: {cls._bundle}. Ensure '
+                'you provide either a string with a relative or absolute '
+                'path or a Path object to a .js file extension.'
+            )
+
+        # Attempt resolving bundle for this component specifically
         path = mod_path / f'{cls.__name__}.bundle.js'
         if path.is_file():
             return path
+
+        # Attempt to resolve bundle in current module and parent modules
         module = cls.__module__
-        path = mod_path / f'{module}.bundle.js'
-        if path.is_file():
-            return path
-        elif module in sys.modules:
+        modules = module.split('.')
+        for i in reversed(range(len(modules))):
+            submodule = '.'.join(modules[:i+1])
+            try:
+                mod = importlib.import_module(submodule)
+            except (ModuleNotFoundError, ImportError):
+                continue
+            if not hasattr(mod, '__file__'):
+                continue
+            submodule_path = pathlib.Path(mod.__file__).parent
+            path = submodule_path / f'{submodule}.bundle.js'
+            if path.is_file():
+                return path
+
+        if module in sys.modules:
             module = os.path.basename(sys.modules[module].__file__).replace('.py', '')
             path = mod_path / f'{module}.bundle.js'
             return path if path.is_file() else None
@@ -300,7 +328,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         if esm_path:
             if esm_path == cls._bundle_path and cls.__module__ in sys.modules and server:
                 base_cls = cls
-                for scls in cls.__mro__[1:][::-1]:
+                for scls in cls.__mro__[1:]:
                     if not issubclass(scls, ReactiveESM):
                         continue
                     if esm_path == scls._esm_path(compiled=compiled is True):
@@ -391,6 +419,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         else:
             bundle_hash = None
         data_props = self._process_param_change(data_params)
+        data_props['esm_constants'] = self._constants
         props.update({
             'bundle': bundle_hash,
             'class_name': camel_to_kebab(cls.__name__),
@@ -406,24 +435,26 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     def _process_importmap(cls):
         return cls._importmap
 
+    def _get_child_model(self, child, doc, root, parent, comm):
+        if child is None:
+            return None
+        ref = root.ref['id']
+        if isinstance(child, list):
+            return [
+                sv._models[ref][0] if ref in sv._models else sv._get_model(doc, root, parent, comm)
+                for sv in child
+            ]
+        elif ref in child._models:
+            return child._models[ref][0]
+        return child._get_model(doc, root, parent, comm)
+
     def _get_children(self, data_model, doc, root, parent, comm):
         children = {}
-        ref = root.ref['id']
         for k, v in self.param.values().items():
             p = self.param[k]
             if not is_viewable_param(p):
                 continue
-            if v is None:
-                children[k] = None
-            elif isinstance(v, list):
-                children[k] = [
-                    sv._models[ref][0] if ref in sv._models else sv._get_model(doc, root, parent, comm)
-                    for sv in v
-                ]
-            elif ref in v._models:
-                children[k] = v._models[ref][0]
-            else:
-                children[k] = v._get_model(doc, root, parent, comm)
+            children[k] = self._get_child_model(v, doc, root, parent, comm)
         return children
 
     def _setup_autoreload(self):
@@ -673,6 +704,7 @@ class ReactComponent(ReactiveESM):
                 "react-is": f"https://esm.sh/react-is@{v_react}&external=react",
                 "@emotion/cache": f"https://esm.sh/@emotion/cache?deps=react@{v_react},react-dom@{v_react}",
                 "@emotion/react": f"https://esm.sh/@emotion/react?deps=react@{v_react},react-dom@{v_react}&external=react,react-is",
+                "@emotion/styled": f"https://esm.sh/@emotion/styled?deps=react@{v_react},react-dom@{v_react}&external=react,react-is",
             })
         for k, v in imports.items():
             if '?' not in v and 'esm.sh' in v:
