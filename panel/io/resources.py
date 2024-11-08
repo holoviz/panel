@@ -259,7 +259,10 @@ def component_resource_path(component, attr, path):
     if state.rel_path:
         component_path = f"{state.rel_path}/{component_path}"
     custom_path = resolve_custom_path(component, path, relative=True)
-    rel_path = os.fspath(custom_path).replace(os.path.sep, '/') if custom_path else ""
+    if custom_path:
+        rel_path = os.fspath(custom_path).replace(os.path.sep, '/')
+    else:
+        rel_path = path
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
@@ -643,7 +646,7 @@ class Resources(BkResources):
                 continue
             for resource in getattr(model, resource_type, []):
                 if state.rel_path:
-                    resource = resource.lstrip(state.rel_path)
+                    resource = resource.lstrip(state.rel_path+'/')
                 if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
                     resource = component_resource_path(model, resource_type, resource)
                 if resource not in resources:
@@ -818,6 +821,8 @@ class Resources(BkResources):
             if not (getattr(model, '__javascript_modules__', None) and model._loaded()):
                 continue
             for js_module in model.__javascript_modules__:
+                if state.rel_path:
+                    js_module = js_module.lstrip(state.rel_path+'/')
                 if not isurl(js_module) and not js_module.startswith('static/extensions'):
                     js_module = component_resource_path(model, '__javascript_modules__', js_module)
                 if js_module not in modules:
