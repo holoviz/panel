@@ -193,6 +193,9 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
     comm: Comm
         The Comm to dispatch events on when the context manager exits.
     """
-    deprecated('1.7.0', 'panel.io.model.hold', 'panel.io.document.hold')
+    deprecated(
+        '1.7.0', 'panel.io.model.hold', 'panel.io.document.hold',
+        warn_version='1.6.0'
+    )
     from .document import hold
-    hold(doc, policy, comm)
+    yield hold(doc, policy, comm)
