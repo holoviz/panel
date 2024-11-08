@@ -15,8 +15,7 @@ import param
 from bokeh.models import Row as BkRow
 from param.parameterized import iscoroutinefunction, resolve_ref
 
-from ..io.document import freeze_doc
-from ..io.model import hold
+from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
 from ..models import Column as PnColumn
 from ..reactive import Reactive
