@@ -59,6 +59,7 @@ def deprecated(
     remove_version: Version | str,
     old: str,
     new: str | None = None,
+    *
     extra: str | None = None,
     warn_version: Version | str | None = None
 ) -> None:
