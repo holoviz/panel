@@ -4,6 +4,7 @@ object transforming it into a Bokeh model that can be rendered.
 """
 from __future__ import annotations
 
+import os
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, TypeVar,
@@ -251,8 +252,9 @@ class PaneBase(Layoutable):
 
         # the following hvplot test fail if this is not imported
         # test_interactive_pandas_series_plot_kind_attr
+        os.environ['EAGER_IMPORT'] = '1'
+        from panel import extension  # noqa: F401
         from .. import _interact  # noqa: F401
-        from . import no_lazy  # noqa: F401
         for p in param.concrete_descendents(PaneBase).values():
             if p.priority is None:
                 applies = True

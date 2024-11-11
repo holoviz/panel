@@ -19,7 +19,8 @@ import requests
 
 from bokeh.model import Model
 
-from . import no_lazy  # noqa: F401
+os.environ['EAGER_IMPORT'] = '1'
+
 from .config import config, panel_extension
 from .io.resources import RESOURCE_URLS
 from .reactive import ReactiveHTML
