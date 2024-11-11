@@ -6,6 +6,7 @@ import {entries} from "@bokehjs/core/util/object"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 import {serializeEvent} from "./event-to-object"
+import {throttle} from "./util"
 
 import html_css from "styles/models/html.css"
 
@@ -75,29 +76,6 @@ export function run_scripts(node: Element): void {
     const parent_node = old_script.parentNode
     if (parent_node != null) {
       parent_node.replaceChild(new_script, old_script)
-    }
-  }
-}
-
-function throttle(func: Function, limit: number): any {
-  let lastFunc: ReturnType<typeof setTimeout> | undefined
-  let lastRan: number
-
-  return function(...args: any) {
-    // @ts-ignore
-    const context = this
-
-    if (!lastRan) {
-      func.apply(context, args)
-      lastRan = Date.now()
-    } else {
-      clearTimeout(lastFunc)
-      lastFunc = setTimeout(function() {
-        if ((Date.now() - lastRan) >= limit) {
-          func.apply(context, args)
-          lastRan = Date.now()
-        }
-      }, limit - (Date.now() - lastRan))
     }
   }
 }
