@@ -29,6 +29,7 @@ pip = "*"
 # Required
 bleach = "*"
 bokeh = ">=3.5.0,<3.6.0"
+lazy-loader="*"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
