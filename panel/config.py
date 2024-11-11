@@ -1009,4 +1009,6 @@ panel_extension.add_delete_action(_cleanup_panel)
 if hasattr(panel_extension, 'add_server_delete_action'):
     panel_extension.add_server_delete_action(_cleanup_server)
 
-__all__ = ['config', 'panel_extension']
+extension = panel_extension  # For lazy load
+
+__all__ = ['config', 'panel_extension', 'extension']
