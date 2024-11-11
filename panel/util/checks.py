@@ -115,7 +115,7 @@ def isdatetime(value) -> bool:
         return (
             value.dtype.kind == "M" or
             (value.dtype.kind == "O" and len(value) != 0 and
-             isinstance(value[0], all_datetimes))
+             isinstance(np.take(value, 0), all_datetimes))
         )
     elif isinstance(value, list):
         return all(isinstance(d, all_datetimes) for d in value)

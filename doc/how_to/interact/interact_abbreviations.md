@@ -3,7 +3,7 @@
 This guide addresses how to use abbreviations to create widgets with Panel `interact`.
 
 ```{admonition} Prerequisites
-1. The [How to > Generate Widgets for Function Arguments](./interact_basics.md) guide provides an overview of how to generate widgets for function arguments with Panel interact.
+1. The [How to > Generate Widgets for Function Arguments](interact_basics) guide provides an overview of how to generate widgets for function arguments with Panel interact.
 ```
 
 ___

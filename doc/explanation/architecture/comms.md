@@ -1,4 +1,4 @@
-# Panel + Juypter, Servers, etc.
+# Communication Channels
 
 Panel lets you write Python code that corresponds to Javascript/HTML objects in a web browser, which requires some means of communication between the two languages. How this communication is achieved depends on the context in which Panel is used, i.e., whether it is being run in a notebook like Classic Jupyter, in JupyterLab, as a standalone web server, etc. Usually it all Just Works™, but in case it doesn't, or if you want to understand the details or limitations of a particular configuration, this page will explain which technologies are used in which contexts to achieve the required channels of communication.
 

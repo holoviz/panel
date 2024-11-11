@@ -30,7 +30,6 @@ pn.extension(sizing_mode="stretch_width", design="material")
 
 BUTTON_WIDTH = 125
 
-# We use intslider to avoid teaching users pn.rx. Is that a good thing?
 state_changed_count = pn.widgets.IntInput()
 tasks = pn.Column()
 

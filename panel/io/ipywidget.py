@@ -90,8 +90,8 @@ def _on_widget_constructed(widget, doc=None):
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
     try:
+        _IPyComm.kernel = kernel
         widget.comm = _IPyComm(**args)
-        widget.comm.kernel = kernel
     except Exception as e:
         if 'PANEL_IPYWIDGET' not in os.environ:
             raise e

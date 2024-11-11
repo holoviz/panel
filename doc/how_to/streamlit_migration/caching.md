@@ -16,7 +16,7 @@ In Panel
 
 Thus with Panel you *may use* caching to make the user experience nice and fast.
 
-In Panel you use `pn.cache` to speed up your apps. Check out the [Cache How-To Guides](../caching/index.md) for more details.
+In Panel you use `pn.cache` to speed up your apps. Check out the [Cache How-To Guides](../caching/index) for more details.
 
 ---
 

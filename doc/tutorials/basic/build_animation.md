@@ -214,7 +214,7 @@ def pause_player_at_max_year(value):
     if year.value==max_year:
         year.pause()
 
-pn.bind(pause_player_at_max_year, year, watch=True)
+pn.bind(pause_player_at_max_year, year, watch=True); # semi-colon is only needed when line is run at end of cell
 ```
 
 Let's make it interactive! We introduce a [`Player`](../../reference/widgets/Player.md) widget to loop continuously through the years.

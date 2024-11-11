@@ -19,6 +19,13 @@ Discover how to reuse sessions to improve the start render time.
 Discover how to enable throttling to reduce the number of events being processed.
 :::
 
+:::{grid-item-card} {octicon}`tab;2.5em;sd-mr-1 sd-animate-grow50` Batching Updates with `hold`
+:link: hold
+:link-type: doc
+
+Discover how to improve performance by using the `hold` context manager and decorator to batch updates to multiple components.
+:::
+
 ::::
 
 ```{toctree}
@@ -28,4 +35,5 @@ Discover how to enable throttling to reduce the number of events being processed
 
 reuse_sessions
 throttling
+hold
 ```

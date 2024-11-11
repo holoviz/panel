@@ -525,9 +525,10 @@ class Pipeline(Viewer):
             yoffset=-.30, default_tools=[], axiswise=True, backend='bokeh'
         )
         plot = (graph * labels * nodes) if self._linear else (graph * nodes)
+        xlim = (-0.25, depth + 0.25)
         plot.opts(
             xaxis=None, yaxis=None, min_width=400, responsive=True,
-            show_frame=False, height=height, xlim=(-0.25, depth+0.25),
+            show_frame=False, height=height, xlim=xlim, shared_axes=False,
             ylim=(0, 1), default_tools=['hover'], toolbar=None, backend='bokeh'
         )
         return plot

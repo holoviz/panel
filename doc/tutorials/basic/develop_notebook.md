@@ -67,7 +67,7 @@ The video shows how a larger app could be developed.
 Alternatively, you can serve your notebook externally with autoreload using the following command:
 
 ```bash
-panel serve app.ipynb --autoreload
+panel serve app.ipynb --dev
 ```
 
 This method provides a faster alternative to the *Jupyter Panel Preview*. Check out the video for inspiration.

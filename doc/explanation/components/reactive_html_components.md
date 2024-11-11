@@ -12,7 +12,7 @@ This page will walk you through using the `ReactiveHTML` class to craft custom c
 
 A *`ReactiveHTML` component* is essentially a class that you create by inheriting from the `ReactiveHTML` class. Within this custom class, you are required to define the `_template` attribute using HTML, which serves as the *design blueprint* for your custom component. You can use Javascript *template variables* `${...}` as well as Python [Jinja2](https://jinja.palletsprojects.com) syntax to make the template *dynamic*.
 
-Here is a basic `SlideShow` component
+Here is a basic `Slideshow` component
 
 ```{pyodide}
 import param
@@ -35,13 +35,13 @@ Slideshow(width=800, height=300)
 
 ## Alternatives
 
-If you're looking for **simpler** alternatives to `ReactiveHTML`, Panel provides a `Viewer` class that allows you to combine existing Panel components using Python only. This approach is a great choice if you want to quickly create custom components without the need for writing HTML, CSS, or JavaScript. You can learn more about creating custom `Viewer` components in our guide [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md).
+If you're looking for **simpler** alternatives to `ReactiveHTML`, Panel provides a `Viewer` class that allows you to combine existing Panel components using Python only. This approach is a great choice if you want to quickly create custom components without the need for writing HTML, CSS, or JavaScript. You can learn more about creating custom `Viewer` components in our guide [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer).
 
 On the other hand, if you're looking for a **more advanced** approach that gives you full control over the design and functionality of your custom components, you can use *Bokeh Models*. With Bokeh Models, you can leverage the full power of your IDE, TypeScript and modern JavaScript development tools to build advanced and performant custom components. Many of the built-in Panel components are built using this approach. It provides flexibility and extensibility, allowing you to create highly customized and interactive components tailored to your specific needs. We expect detailed documentation on writing custom Bokeh models will be added to the documentation in the future.
 
 ## The Name
 
-`ReactiveHTML` is named for its ability to enable reactive programming in HTML. Unlike the static HTML content that the [`HTML`](../../../examples/reference/panes/HTML.ipynb) pane displays, `ReactiveHTML` components can update their view dynamically in response to changes in parameter values and other events.
+`ReactiveHTML` is named for its ability to enable reactive programming in HTML. Unlike the static HTML content that the [`HTML`](../../reference/panes/HTML) pane displays, `ReactiveHTML` components can update their view dynamically in response to changes in parameter values and other events.
 
 We could also have called the `ReactiveHTML` class for example `BaseComponent`, `HTMLComponent`, `SimpleComponent` or `AnyComponent` to give you the right associations.
 
@@ -49,11 +49,11 @@ It's worth noting that the name `ReactiveHTML` is not related to the JavaScript 
 
 ## How-to Guides
 
-To see `ReactiveHTML` in action and discover how to create your custom components, check out our detailed guide: [How-to > Create Custom Components with ReactiveHTML](../../how_to/custom_components/reactive_html/index.md). It's packed with practical examples to help you get started quickly.
+To see `ReactiveHTML` in action and discover how to create your custom components, check out our detailed guide: [How-to > Create Custom Components with ReactiveHTML](../../how_to/custom_components/index.md#reactivehtml-components). It's packed with practical examples to help you get started quickly.
 
 ## API Guide
 
-You can find it here [API > ReactiveHTML](../../api/panel.reactive.html#panel.reactive.ReactiveHTML).
+You can find it here [API > ReactiveHTML](../../api/panel.reactive.rst#panel.reactive.ReactiveHTML).
 
 ## Class Attributes
 
@@ -198,7 +198,7 @@ class CustomComponent(ReactiveHTML):
 CustomComponent(value="A new value", width=500)
 ```
 
-Check out the [How-to > Create Layouts With ReactiveHTML](../../how_to/custom_components/reactive_html/reactive_html_layout.md) guide for lots of Jinja2 examples.
+Check out the [How-to > Create Layouts With ReactiveHTML](../../how_to/custom_components/reactive_html/reactive_html_layout) guide for lots of Jinja2 examples.
 
 ### Template variables vs Jinja2
 

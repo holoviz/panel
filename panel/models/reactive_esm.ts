@@ -19,21 +19,29 @@ import error_css from "styles/models/esm.css"
 
 const MODULE_CACHE = new Map()
 
-@server_event("esm_event")
-export class ESMEvent extends ModelEvent {
-  constructor(readonly model: ReactiveESM, readonly data: any) {
+export class DataEvent extends ModelEvent {
+
+  constructor(readonly data: unknown) {
     super()
-    this.data = data
-    this.origin = model
   }
 
   protected override get event_values(): Attrs {
     return {model: this.origin, data: this.data}
   }
 
+  static {
+    this.prototype.event_name = "data_event"
+  }
+}
+
+@server_event("esm_event")
+export class ESMEvent extends DataEvent {
+
   static override from_values(values: object) {
     const {model, data} = values as {model: ReactiveESM, data: any}
-    return new ESMEvent(model, data)
+    const event = new ESMEvent(data)
+    event.origin = model
+    return event
   }
 }
 
@@ -55,6 +63,10 @@ export function model_getter(target: ReactiveESMView, name: string) {
         return target.get_child_view(child_model)?.el
       }
       return null
+    }
+  } else if (name === "send_msg") {
+    return (data: any) => {
+      model.trigger_event(new DataEvent(data))
     }
   } else if (name === "send_event") {
     return (name: string, event: Event) => {
@@ -161,7 +173,7 @@ export class ReactiveESMView extends HTMLBoxView {
   _changing: boolean = false
   _child_callbacks: Map<string, ((new_views: UIElementView[]) => void)[]>
   _child_rendered: Map<UIElementView, boolean> = new Map()
-  _event_handlers: ((event: ESMEvent) => void)[] = []
+  _event_handlers: ((data: unknown) => void)[] = []
   _lifecycle_handlers: Map<string, (() => void)[]> =  new Map([
     ["after_layout", []],
     ["after_render", []],
@@ -220,11 +232,11 @@ export class ReactiveESMView extends HTMLBoxView {
     this.model.disconnect_watchers(this)
   }
 
-  on_event(callback: (event: ESMEvent) => void): void {
+  on_event(callback: (data: unknown) => void): void {
     this._event_handlers.push(callback)
   }
 
-  remove_on_event(callback: (event: ESMEvent) => void): boolean {
+  remove_on_event(callback: (data: unknown) => void): boolean {
     if (this._event_handlers.includes(callback)) {
       this._event_handlers = this._event_handlers.filter((item) => item !== callback)
       return true
@@ -618,17 +630,26 @@ export class ReactiveESM extends HTMLBox {
     this.compiled = compiled
     this._declare_importmap()
     let esm_module
-    const cache_key = this.bundle || `${this.class_name}-${this.esm.length}`
+    const use_cache = (!this.dev || this.bundle)
+    const cache_key = (this.bundle === "url") ? this.esm : (this.bundle || `${this.class_name}-${this.esm.length}`)
     let resolve: (value: any) => void
-    if (!this.dev && MODULE_CACHE.has(cache_key)) {
+    if (use_cache && MODULE_CACHE.has(cache_key)) {
       esm_module = Promise.resolve(MODULE_CACHE.get(cache_key))
     } else {
-      if (!this.dev) {
+      if (use_cache) {
         MODULE_CACHE.set(cache_key, new Promise((res) => { resolve = res }))
       }
-      const url = URL.createObjectURL(
-        new Blob([this.compiled], {type: "text/javascript"}),
-      )
+      let url
+      if (this.bundle === "url") {
+        const parts = location.pathname.split("/")
+        let path = parts.slice(0, parts.length-1).join("/")
+        if (path.length) {
+          path += "/"
+        }
+        url = `${location.origin}/${path}${this.esm}`
+      } else {
+        url = URL.createObjectURL(new Blob([this.compiled], {type: "text/javascript"}))
+      }
       esm_module = (window as any).importShim(url)
     }
     this.compiled_module = (esm_module as Promise<any>).then((mod: any) => {

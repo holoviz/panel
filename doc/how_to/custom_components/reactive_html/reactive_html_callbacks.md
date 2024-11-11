@@ -30,7 +30,7 @@ This approach lets you quickly build custom HTML components with complex interac
 
 ## Slideshow with Javascript Callback
 
-This example shows you how to create a `SlideShow` component that uses a Javascript *callback* function to update the `SlideShow` image when its clicked:
+This example shows you how to create a `Slideshow` component that uses a Javascript *callback* function to update the `Slideshow` image when its clicked:
 
 ```{pyodide}
 import param

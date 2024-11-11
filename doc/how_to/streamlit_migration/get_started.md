@@ -17,7 +17,7 @@ You will have to:
 - add `.servable` to the Panel objects you want to include in your apps *template* when served as
 a web app.
 
-For production you will also have to migrate some of your app configuration to `panel serve` [command line options](../server/commandline.md) or environment variables.
+For production you will also have to migrate some of your app configuration to `panel serve` [command line options](../server/commandline) or environment variables.
 
 ## Examples
 

@@ -184,7 +184,7 @@ panel compile confetti
 ```
 
 :::{hint}
-`panel compile` accepts file paths, e.g. `my_components/custom.py`, and dotted module name, e.g. `my_package.custom`. If you provide a module name it must be importable.
+`panel compile` accepts file paths, e.g. `my_components/custom.py`, or dotted module names, e.g. `my_package.custom`. If you provide a module name it must be importable.
 :::
 
 This will automatically discover the `ConfettiButton` but you can also explicitly request a single component by adding the class name:
@@ -216,7 +216,11 @@ esbuild output:
 ⚡ Done in 9ms
 ```
 
-The compiled JavaScript file will be automatically loaded if it remains alongside the component. If you rename the component or modify its code or `_importmap`, you must recompile the component. For ongoing development, consider using the `--autoreload` option to ignore the compiled file and automatically reload the development version when it changes.
+If the supplied module or package contains multiple components they will all be bundled together by default. If instead you want to generate bundles for each file explicitly you must list them with the `:` syntax, e.g. `panel compile package.module:Component1,Component2`. You may also provide a glob pattern to request multiple components to be built individually without listing them all out, e.g. `panel compile "package.module:Component*"`.
+
+During runtime the compiled bundles will be resolved automatically, where bundles compiled for a specific component (i.e. `<component-name>.bundle.js`) take highest precedence and we then search for module bundles up to the root package, e.g. for a component that lives in `package.module` we first search for `package.module.bundle.js` in the same directory as the component and then recursively search in parent directories until we reach the root of the package.
+
+If you rename the component or modify its code or `_importmap`, you must recompile the component. For ongoing development, consider using the `--dev` option to ignore the compiled file and automatically reload the development version when it changes.
 
 #### Compilation Steps
 
@@ -252,6 +256,7 @@ panel compile my_package.my_module my_package.subpackage.other_module
 
 you will end up with a single `custom.bundle.js` file placed in the `my_package/dist` directory.
 
+(build-dir)=
 #### Using the `--build-dir` Option
 
 The `--build-dir` option allows you to specify a custom directory where the `package.json` and raw JavaScript/JSX modules will be written. This is useful if you need to manually modify the dependencies before the bundling process and/or debug issues while bundling. To use this feature, follow these steps:
@@ -280,7 +285,7 @@ custom_build_dir/
 └── <OtherComponent>.js
 ```
 
-The compiled JS file will now be loaded automatically as long as it remains alongside the component. If you rename the component you will have to delete and recompile the JS file. If you make changes to the code or `_importmap` you also have to recompile. During development we recommend using `--autoreload`, which ignores the compiled file.
+The compiled JS file will now be loaded automatically as long as it remains alongside the component. If you rename the component you will have to delete and recompile the JS file. If you make changes to the code or `_importmap` you also have to recompile. During development we recommend using `--dev`, which ignores the compiled file.
 
 ```{caution}
 The `panel compile` CLI tool is still very new and experimental. In our testing it was able to compile and bundle most components but there are bound to be corner cases.
@@ -348,6 +353,8 @@ export function render() {
 
 ::::
 
+#### Build
+
 Once you have set up these three files you have to install the packages with `npm`:
 
 ```bash
@@ -361,3 +368,55 @@ esbuild confetti.js --bundle --format=esm --minify --outfile=ConfettiButton.bund
 ```
 
 This will create a new file called `ConfettiButton.bundle.js`, which includes all the dependencies (even CSS, image files and other static assets if you have imported them).
+
+
+#### Complex Bundles
+
+If you want to bundle multiple components into a singular bundle and do not want to leverage the built-in compilation you can make do without specifying the `_esm` class variable entirely and always load the bundle directly. If you organize your Javascript/TypeScript/React code in the same way as described in the [--build-dir](#build-dir) section you can have a manual compilation workflow with all the benefits of automatic reload.
+
+As an example let's say you have a module with multiple components:
+
+```
+panel_custom/
+├── build/
+    ├── index.js
+    ├── package.json
+    ├── <Component>.js<x>
+    └── <OtherComponent>.js<x>
+├── __init__.py
+├── components.py
+```
+
+Ensure that the `index.js` file exports each component:
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+```javascript
+import * as Component from "./Component"
+import * as OtherComponent from "./OtherComponent"
+export default {Component, OtherComponent}
+```
+:::
+
+:::{tab-item} `ReactComponent`
+A `ReactComponent` library MUST also export `React` and `createRoot`:
+
+```javascript
+import * as Component from "./Component"
+import * as OtherComponent from "./OtherComponent"
+import * as React from "react"
+import {createRoot} from "react-dom/client"
+export default {Component, OtherComponent, React, createRoot}
+```
+:::
+
+::::
+
+You can now develop your JS components as if it were a normal JS library. During the build step you would then run:
+
+```bash
+esbuild panel-custom/build/index.js --bundle --format=esm --minify --outfile=panel_custom/panel_custom.components.bundle.js
+```
+
+or replace `panel_custom.components.bundle.js` with the path specified on your component's `_bundle` attribute.

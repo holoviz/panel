@@ -23,7 +23,9 @@ from panel.depends import bind
 from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
+from panel.pane import Markdown
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
+from panel.util import BOKEH_GE_3_6
 from panel.widgets import Select, Tabulator, TextInput
 
 pytestmark = pytest.mark.ui
@@ -366,10 +368,12 @@ def test_tabulator_formatters_bokeh_string(page, df_mixed):
 
     serve_component(page, widget)
 
-    expect(page.locator('text="A"')).to_have_attribute(
-        "style",
-        "font-weight: bold; text-align: center; color: rgb(255, 0, 0);"
-    )
+    if BOKEH_GE_3_6:
+        style = "font-weight: bold; text-align: center; color: red;"
+    else:
+        style = "font-weight: bold; text-align: center; color: rgb(255, 0, 0);"
+
+    expect(page.locator('text="A"')).to_have_attribute("style", style)
 
 
 def test_tabulator_formatters_bokeh_html_multiple_columns(page, df_mixed):
@@ -726,6 +730,49 @@ def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumul
     page.locator('text="foo1"').click()
 
     assert not exception_handler_accumulator
+
+
+@pytest.mark.parametrize("opt0", ['A', 'B'])
+@pytest.mark.parametrize("opt1", ["1", "2"])
+def test_tabulator_editors_nested(page, opt0, opt1):
+    df = pd.DataFrame({"0": ["A"], "1": [1], "2": [None]})
+
+    options = {
+        "A": list(range(5)),
+        "B": { "1": list(range(5, 10)), "2": list(range(10, 15))},
+    }
+    tabulator_editors = {
+        "0": {"type": "list", "values": ["A", "B"]},
+        "1": {"type": "list", "values": [1, 2]},
+        "2": {"type": "nested", "options": options, "lookup_order": ["0", "1"]},
+    }
+
+    widget = Tabulator(df, editors=tabulator_editors, show_index=False)
+    serve_component(page, widget)
+
+    cells = page.locator('.tabulator-cell.tabulator-editable')
+    expect(cells).to_have_count(3)
+
+    # Change the 0th column
+    cells.nth(0).click()
+    item = page.locator('.tabulator-edit-list-item', has_text=opt0)
+    expect(item).to_have_count(1)
+    item.click()
+
+    # Change the 1th column
+    cells.nth(1).click()
+    item = page.locator('.tabulator-edit-list-item', has_text=opt1)
+    expect(item).to_have_count(1)
+    item.click()
+
+    # Check the last column matches
+    cells.nth(2).click()
+    items = page.locator('.tabulator-edit-list-item')
+    expect(items).to_have_count(5)
+
+    items_text = items.all_inner_texts()
+    expected = options[opt0][opt1] if opt0 == "B" else options[opt0]
+    assert items_text == list(map(str, expected))
 
 
 @pytest.mark.parametrize('layout', Tabulator.param['layout'].objects)
@@ -1113,6 +1160,32 @@ def test_tabulator_patch_no_height_resize(page):
     wait_until(lambda: page.locator('.pnx-tabulator').evaluate(at_bottom_script), page)
 
 
+def test_tabulator_max_height_set(page):
+    df = pd.DataFrame({'col': np.random.random(100)})
+    widget = Tabulator(df, max_height=200)
+
+    serve_component(page, widget)
+
+    table = page.locator('.pnx-tabulator')
+    expect(table).to_have_css('max-height', '200px')
+    assert table.bounding_box()['height'] <= 200
+
+
+def test_tabulator_max_height_unset(page):
+    """
+    If max_height is not set, Tabulator should not set it to null;
+    else there's some recursion issues in the console and lag
+    """
+    df = pd.DataFrame({'col': np.random.random(100)})
+    widget = Tabulator(df)
+
+    serve_component(page, widget)
+
+    table = page.locator('.pnx-tabulator')
+    expect(table).to_have_css('max-height', 'none')
+    assert table.bounding_box()['height'] >= 200
+
+
 @pytest.mark.parametrize(
     'pagination', ('local', 'remote', None)
 )
@@ -1497,8 +1570,30 @@ def test_tabulator_selection_selectable_rows(page, df_mixed):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-def test_tabulator_row_content(page, df_mixed):
-    widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
+@pytest.mark.parametrize('pagination', ['remote', 'local', None])
+def test_tabulator_selection_on_multi_index(page, pagination):
+    index = pd.MultiIndex.from_tuples([(i, j) for i in range(10) for j in range(10)], names=["A", "B"])
+    df = pd.DataFrame(index=index, data={"C": range(100)})
+
+    widget = Tabulator(df, pagination=pagination, selectable='checkbox')
+
+    serve_component(page, widget)
+
+    checkboxes = page.locator('input[type="checkbox"]')
+    expect(checkboxes).to_have_count(widget.initial_page_size+1 if pagination else len(df)+1)
+    checkboxes.nth(1).check()
+    checkboxes.nth(17).check()
+
+    wait_until(lambda: widget.selection == [0, 16], page)
+
+
+@pytest.mark.parametrize('embed_content', [False, True])
+def test_tabulator_row_content(page, df_mixed, embed_content):
+    widget = Tabulator(
+        df_mixed,
+        row_content=lambda i: f"{i['str']}-row-content",
+        embed_content=embed_content
+    )
 
     serve_component(page, widget)
 
@@ -1523,17 +1618,22 @@ def test_tabulator_row_content(page, df_mixed):
         closables.first.click()
 
         row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
-        expect(row_content).to_have_count(0)
+        if embed_content:
+            expect(row_content).not_to_be_visible()
+        else:
+            expect(row_content).to_have_count(0)
 
         expected_expanded.remove(i)
         wait_until(lambda: widget.expanded == expected_expanded, page)
 
 
-def test_tabulator_row_content_expand_from_python_init(page, df_mixed):
+@pytest.mark.parametrize('embed_content', [False, True])
+def test_tabulator_row_content_expand_from_python_init(page, df_mixed, embed_content):
     widget = Tabulator(
         df_mixed,
         row_content=lambda i: f"{i['str']}-row-content",
         expanded = [0, 2],
+        embed_content=embed_content
     )
 
     serve_component(page, widget)
@@ -1551,8 +1651,13 @@ def test_tabulator_row_content_expand_from_python_init(page, df_mixed):
     expect(openables).to_have_count(len(df_mixed) - len(widget.expanded))
 
 
-def test_tabulator_row_content_expand_from_python_after(page, df_mixed):
-    widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
+@pytest.mark.parametrize('embed_content', [False, True])
+def test_tabulator_row_content_expand_from_python_after(page, df_mixed, embed_content):
+    widget = Tabulator(
+        df_mixed,
+        row_content=lambda i: f"{i['str']}-row-content",
+        embed_content=embed_content
+    )
 
     serve_component(page, widget)
 
@@ -1575,8 +1680,14 @@ def test_tabulator_row_content_expand_from_python_after(page, df_mixed):
     expect(page.locator('text="►"')).to_have_count(len(df_mixed))
 
 
-def test_tabulator_row_content_expand_after_filtered(page, df_mixed):
-    table = Tabulator(df_mixed, row_content=lambda e: f"Hello {e.int}", header_filters=True)
+@pytest.mark.parametrize('embed_content', [False, True])
+def test_tabulator_row_content_expand_after_filtered(page, df_mixed, embed_content):
+    table = Tabulator(
+        df_mixed,
+        row_content=lambda e: f"Hello {e.int}",
+        header_filters=True,
+        embed_content=embed_content
+    )
 
     serve_component(page, table)
 
@@ -3954,3 +4065,32 @@ class Test_RemotePagination_CheckboxSelection(Test_RemotePagination):
             self.set_filtering(page, n)
             self.check_selected(page, list(range(10)), 0)
             expect(page.locator('.tabulator')).to_have_count(1)
+
+
+def test_tabulator_header_tooltips(page):
+    df = pd.DataFrame({"header": [True, False, True]})
+    widget = Tabulator(df, header_tooltips={"header": "Test"})
+
+    serve_component(page, widget)
+
+    header = page.locator('.tabulator-col-title', has_text="header")
+    expect(header).to_have_count(1)
+    header.hover()
+
+    page.wait_for_timeout(200)
+
+    expect(page.locator('.tabulator-tooltip')).to_have_text("Test")
+
+
+def test_tabulator_row_content_markup_wrap(page):
+    # https://github.com/holoviz/panel/issues/7388
+
+    df = pd.DataFrame({"col": ["foo"]})
+    long_markdown = Markdown("xxxx " * 50)
+    widget = Tabulator(df, row_content=lambda row: long_markdown, expanded=[0], width=200)
+
+    serve_component(page, widget)
+
+    md = page.locator('.row-content .bk-panel-models-markup-HTML')
+
+    assert md.bounding_box()['height'] >= 130

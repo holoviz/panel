@@ -1,14 +1,14 @@
-# Creating a `MarioButton` with `JSComponent`
+# Creating a `MarioButton` with `AnyWidgetComponent`
 
-In this tutorial we will build a *[Mario](https://mario.nintendo.com/) style button* with sounds and animations using the [`JSComponent`](../../reference/custom/JSComponent.md) feature in Panel. It aims to help you learn how to push the boundaries of what can be achieved with HoloViz Panel by creating advanced components using modern JavaScript and CSS technologies.
+In this tutorial we will build a *[Mario](https://mario.nintendo.com/) style button* with sounds and animations using the [`AnyWidgetComponent`](../../reference/custom_components/AnyWidgetComponent.md) feature in Panel. It aims to help you learn how to push the boundaries of what can be achieved with HoloViz Panel by creating advanced components using modern JavaScript and CSS technologies.
 
 ![Mario chime button](https://assets.holoviz.org/panel/tutorials/ipymario.gif)
 
-This tutorial draws heavily on the great [`ipymario` tutorial](https://youtu.be/oZhyilx3gqI?si=dFPFiHua4TuuqCpu) by [Trevor Manzt](https://github.com/manzt).
+This tutorial draws heavily on the great [`ipymario` video and tutorial](https://youtu.be/oZhyilx3gqI?si=dFPFiHua4TuuqCpu) by [Trevor Manz](https://github.com/manzt).
 
 ## Overview
 
-We'll build a `MarioButton` that displays a pixelated Mario icon and plays a chime sound when clicked. The button will also have customizable parameters for gain, duration, size, and animation, showcasing the powerful capabilities of `JSComponent`.
+We'll build a `MarioButton` that displays a pixelated Mario icon and plays a chime sound when clicked. The button will also have customizable parameters for gain, duration, size, and animation, showcasing the powerful capabilities of `AnyWidgetComponent`.
 
 ### Prerequisites
 
@@ -27,7 +27,7 @@ Create a file named `mario_button.py`:
 ```python
 import numpy as np
 import param
-from panel.custom import JSComponent
+from panel.custom import AnyWidgetComponent
 import panel as pn
 
 colors = {
@@ -60,7 +60,7 @@ box = [
 np_box = np.array([[colors[c] for c in row] for row in box], dtype=np.uint8)
 np_box_as_list = [[[int(z) for z in y] for y in x] for x in np_box.tolist()]
 
-class MarioButton(JSComponent):
+class MarioButton(AnyWidgetComponent):
 
     _esm = "mario_button.js"
     _stylesheets = ["mario_button.css"]
@@ -78,7 +78,7 @@ if pn.state.served:
     parameters = pn.Param(
         button, parameters=["gain", "duration", "size", "animate"]
     )
-    settings=pn.Column(parameters, "Credits: Trevor Mantz")
+    settings=pn.Column(parameters, "Credits: Trevor Manz")
     pn.FlexBox(settings, button).servable()
 ```
 
@@ -115,8 +115,8 @@ function chime({ gain, duration }) {
   o.stop(duration);
 }
 
-function createCanvas(data) {
-  let size = () => `${data.size}px`;
+function createCanvas(model) {
+  let size = () => `${model.get('size')}px`;
   let canvas = document.createElement("canvas");
   canvas.width = 16;
   canvas.height = 16;
@@ -135,13 +135,13 @@ function drawImageData(canvas, pixelData) {
   ctx.putImageData(imgData, 0, 0);
 }
 
-function addClickListener(canvas, data) {
+function addClickListener(canvas, model) {
   canvas.addEventListener("click", () => {
     chime({
-      gain: data.gain,
-      duration: data.duration,
+      gain: model.get('gain'),
+      duration: model.get('duration'),
     });
-    if (data.animate) {
+    if (model.get('animate')) {
       canvas.style.animation = "none";
       setTimeout(() => {
         canvas.style.animation = "ipymario-bounce 0.2s";
@@ -150,24 +150,24 @@ function addClickListener(canvas, data) {
   });
 }
 
-function addResizeWatcher(canvas, data) {
-  data.on('size', () => {
-    let size = () => `${data.size}px`;
+function addResizeWatcher(canvas, model) {
+  model.on('change:size', () => {
+    let size = () => `${model.get('size')}px`;
     canvas.style.width = size();
     canvas.style.height = size();
-    console.log("resized");
   });
 }
 
-export function render({ data, el }) {
-  let canvas = createCanvas(data);
-  drawImageData(canvas, data._box);
-  addClickListener(canvas, data);
-  addResizeWatcher(canvas, data);
+function render({ model, el }) {
+  let canvas = createCanvas(model);
+  drawImageData(canvas, model.get('_box'));
+  addClickListener(canvas, model);
+  addResizeWatcher(canvas, model);
 
   el.classList.add("ipymario");
-  return canvas;
+  el.appendChild(canvas)
 }
+export default {render};
 ```
 
 ### Explanation - JavaScript
@@ -226,13 +226,13 @@ Try clicking the button to see the button bounce more slowly.
 
 ## Conclusion
 
-You've now created a custom `MarioButton` component using  [`JSComponent`](../../reference/panes/JSComponent.md) in HoloViz Panel. This button features a pixelated Mario icon, plays a chime sound when clicked, and has customizable parameters for gain, duration, size, and animation.
+You've now created a custom `MarioButton` component using  [`AnyWidgetComponent`](../../reference/custom_components/AnyWidgetComponent.md) in HoloViz Panel. This button features a pixelated Mario icon, plays a chime sound when clicked, and has customizable parameters for gain, duration, size, and animation.
 
 ## References
 
 ### Tutorials
 
-- [Build Custom Components](../../how_to/custom_components/reactive_esm/reactive_esm_layout.md)
+- [Build Custom Components](../../how_to/custom_components/esm/custom_layout.md)
 
 ### How-To Guides
 
@@ -240,6 +240,6 @@ You've now created a custom `MarioButton` component using  [`JSComponent`](../..
 
 ### Reference Guides
 
-- [`JSComponent`](../../reference/panes/JSComponent.md)
-- [`ReactComponent`](../../reference/panes/ReactComponent.md)
-- [`PreactComponent`](../../reference/panes/PreactComponent.md)
+- [`AnyWidgetComponent`](../../reference/custom_components/AnyWidgetComponent.md)
+- [`JSComponent`](../../reference/custom_components/JSComponent.md)
+- [`ReactComponent`](../../reference/custom_components/ReactComponent.md)

@@ -6,6 +6,7 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
+from panel.layout import Row
 from panel.models import HTML
 from panel.pane import Markdown
 from panel.tests.util import serve_component, wait_until
@@ -115,3 +116,40 @@ def test_html_model_no_stylesheet(page):
     header_element = page.locator('h1:has-text("Header")')
     assert header_element.is_visible()
     assert header_element.text_content() == "Header"
+
+def test_anchor_scroll(page):
+    md = ''
+    for tag in ['tag1', 'tag2', 'tag3']:
+        md += f'# {tag}\n\n'
+        md += f'{tag} content\n' * 50
+
+    content = Markdown(md)
+    link = Markdown('<a id="link1" href="#tag1">Link1</a><a id="link3" href="#tag3">Link</a>')
+
+    serve_component(page, Row(link, content))
+
+    expect(page.locator('#tag1')).to_be_in_viewport()
+    expect(page.locator('#tag3')).not_to_be_in_viewport()
+
+    page.locator('#link3').click()
+
+    expect(page.locator('#tag1')).not_to_be_in_viewport()
+    expect(page.locator('#tag3')).to_be_in_viewport()
+
+    page.locator('#link1').click()
+
+    expect(page.locator('#tag1')).to_be_in_viewport()
+    expect(page.locator('#tag3')).not_to_be_in_viewport()
+
+def test_anchor_scroll_on_init(page):
+    md = ''
+    for tag in ['tag1', 'tag2', 'tag3']:
+        md += f'# {tag}\n\n'
+        md += f'{tag} content\n' * 50
+
+    content = Markdown(md)
+
+    serve_component(page, content, suffix='#tag3')
+
+    expect(page.locator('#tag1')).not_to_be_in_viewport()
+    expect(page.locator('#tag3')).to_be_in_viewport()

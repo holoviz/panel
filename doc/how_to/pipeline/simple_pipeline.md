@@ -164,4 +164,4 @@ pipeline
 
 ## Related Resources
 
-- The [How to > Param with Panel](../param/index.md) guides demonstrate how to set up classes that declare parameters and link them to some computation or visualization.
+- The [How to > Param with Panel](../param/index) guides demonstrate how to set up classes that declare parameters and link them to some computation or visualization.

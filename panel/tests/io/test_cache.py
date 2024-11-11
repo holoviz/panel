@@ -151,6 +151,34 @@ def test_series_hash():
     series2.iloc[0] = 3.14
     assert not hashes_equal(series1, series2)
 
+def test_polars_dataframe_hash():
+    pl = pytest.importorskip("polars")
+    data = {
+        "A": [0.0, 1.0, 2.0, 3.0, 4.0],
+        "B": [0.0, 1.0, 0.0, 1.0, 0.0],
+        "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
+    }
+    # DataFrame
+    df1, df2 = pl.DataFrame(data), pl.DataFrame(data)
+    assert hashes_equal(df1, df2)
+    df2 = df2.with_columns(A=pl.col("A").sort(descending=True))
+    assert not hashes_equal(df1, df2)
+
+    # Lazy DataFrame
+    df1, df2 = pl.LazyFrame(data), pl.LazyFrame(data)
+    assert hashes_equal(df1, df2)
+    df2 = df2.with_columns(A=pl.col("A").sort(descending=True))
+    assert not hashes_equal(df1, df2)
+
+def test_polars_series_hash():
+    pl = pytest.importorskip("polars")
+    ser1 = pl.Series([0.0, 1.0, 2.0, 3.0, 4.0])
+    ser2 = ser1.clone()
+
+    assert hashes_equal(ser1, ser2)
+    ser2 = ser2.replace(0.0, 3.14)
+    assert not hashes_equal(ser1, ser2)
+
 def test_ufunc_hash():
     assert hashes_equal(np.absolute, np.absolute)
     assert not hashes_equal(np.sin, np.cos)

@@ -1149,10 +1149,14 @@ class Children(param.List):
     def _transform_value(self, val):
         if isinstance(val, list) and val:
             from .pane import panel
-            val[:] = [
-                v if isinstance(v, Viewable) else panel(v)
-                for v in val
-            ]
+            new = []
+            mutated = False
+            for v in val:
+                n = panel(v)
+                mutated |= v is not n
+                new.append(n)
+            if mutated:
+                val = new
         return val
 
     @instance_descriptor
@@ -1173,10 +1177,14 @@ class ChildDict(param.Dict):
     def _transform_value(self, val):
         if isinstance(val, dict) and val:
             from .pane import panel
-            val.update({
-                k: v if isinstance(v, Viewable) else panel(v)
-                for k, v in val.items()
-            })
+            new = {}
+            mutated = False
+            for k, v in val.items():
+                n = panel(v)
+                mutated |= v is not n
+                new[k] = n
+            if mutated:
+                val = new
         return val
 
     @instance_descriptor
@@ -1185,34 +1193,42 @@ class ChildDict(param.Dict):
 
 
 
+def _is_viewable_class_selector(class_selector: param.ClassSelector) -> bool:
+    if not class_selector.class_:
+        return False
+    if isinstance(class_selector.class_, tuple):
+        return all(issubclass(cls, Viewable) for cls in class_selector.class_)
+    return issubclass(class_selector.class_, Viewable)
+
+def _is_viewable_list(param_list: param.List) -> bool:
+    if not param_list.item_type:
+        return False
+    if isinstance(param_list.item_type, tuple):
+        return all(issubclass(cls, Viewable) for cls in param_list.item_type)
+    return issubclass(param_list.item_type, Viewable)
+
+
 def is_viewable_param(parameter: param.Parameter) -> bool:
     """
-    Detects whether the Parameter uniquely identifies a Viewable
-    type.
+    Determines if a parameter uniquely identifies a Viewable type.
 
     Arguments
     ---------
-    parameter: param.Parameter
+    parameter : param.Parameter
+        The parameter to evaluate.
 
     Returns
     -------
-    Whether the Parameter specieis a Parameter type
+    bool
+        True if the parameter specifies a Viewable type, False otherwise.
     """
-    p = parameter
-    if (
-        isinstance(p, (Child, Children)) or
-        (isinstance(p, param.ClassSelector) and p.class_ and (
-            (isinstance(p.class_, tuple) and
-             all(issubclass(cls, Viewable) for cls in p.class_)) or
-            issubclass(p.class_, Viewable)
-        )) or
-        (isinstance(p, param.List) and p.item_type and (
-            (isinstance(p.item_type, tuple) and
-             all(issubclass(cls, Viewable) for cls in p.item_type)) or
-            issubclass(p.item_type, Viewable)
-        ))
-    ):
+    if isinstance(parameter, (Child, Children)):
         return True
+    if isinstance(parameter, param.ClassSelector) and _is_viewable_class_selector(parameter):
+        return True
+    if isinstance(parameter, param.List) and _is_viewable_list(parameter):
+        return True
+
     return False
 
 

@@ -1,4 +1,5 @@
 :host {
-  margin-top: 4px;
   width: fit-content;
+  margin-top: 4px;
+  margin-inline: 3px;
 }

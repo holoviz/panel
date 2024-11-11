@@ -7,7 +7,9 @@ from panel import config
 from panel._interact import interactive
 from panel.pane import Markdown, Str, panel
 from panel.param import ParamMethod
-from panel.viewable import Viewable, Viewer
+from panel.viewable import (
+    Child, Children, Viewable, Viewer, is_viewable_param,
+)
 
 from .util import jb_available
 
@@ -117,3 +119,48 @@ def test_clone_with_non_defaults():
 
     assert ([(k, v) for k, v in sorted(v.param.values().items()) if k not in ('name')] ==
             [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])
+
+def test_is_viewable_parameter():
+    class Example(param.Parameterized):
+        p_dict = param.Dict()
+        p_child = Child()
+        p_children = Children()
+
+        # ClassSelector
+        c_viewable = param.ClassSelector(class_=Viewable)
+        c_viewables = param.ClassSelector(class_=(Viewable,))
+        c_none = param.ClassSelector(class_=None)
+        c_tuple = param.ClassSelector(class_=tuple)
+        c_list_tuple = param.ClassSelector(class_=(list, tuple))
+
+        # List
+        l_no_item_type = param.List()
+        l_item_type_viewable = param.List(item_type=Viewable)
+        l_item_type_not_viewable = param.List(item_type=tuple)
+
+        l_item_types_viewable = param.List(item_type=(Viewable,))
+        l_item_types_not_viewable = param.List(item_type=(tuple,))
+        l_item_types_not_viewable2 = param.List(item_type=(list, tuple,))
+
+    example = Example()
+
+    assert not is_viewable_param(example.param.p_dict)
+    assert is_viewable_param(example.param.p_child)
+    assert is_viewable_param(example.param.p_children)
+
+    # ClassSelector
+    assert is_viewable_param(example.param.c_viewable)
+    assert is_viewable_param(example.param.c_viewables)
+    assert not is_viewable_param(example.param.c_none)
+    assert not is_viewable_param(example.param.c_tuple)
+    assert not is_viewable_param(example.param.c_list_tuple)
+
+    # List
+    assert not is_viewable_param(example.param.l_no_item_type)
+    assert not is_viewable_param(example.param.l_no_item_type)
+    assert is_viewable_param(example.param.l_item_type_viewable)
+    assert not is_viewable_param(example.param.l_item_type_not_viewable)
+
+    assert is_viewable_param(example.param.l_item_types_viewable)
+    assert not is_viewable_param(example.param.l_item_types_not_viewable)
+    assert not is_viewable_param(example.param.l_item_types_not_viewable2)

@@ -15,8 +15,7 @@ import param
 from bokeh.models import Row as BkRow
 from param.parameterized import iscoroutinefunction, resolve_ref
 
-from ..io.document import freeze_doc
-from ..io.model import hold
+from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
 from ..models import Column as PnColumn
 from ..reactive import Reactive
@@ -564,8 +563,9 @@ class NamedListLike(param.Parameterized):
                     'as positional arguments or as a keyword, not both.'
                 )
             items = params.pop('objects')
-        params['objects'], self._names = self._to_objects_and_names(items)
+        params['objects'], names = self._to_objects_and_names(items)
         super().__init__(**params)
+        self._names = names
         self._panels = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be

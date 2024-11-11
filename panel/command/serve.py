@@ -238,7 +238,7 @@ class Serve(_BkServe):
         )),
         ('--autoreload', dict(
             action  = 'store_true',
-            help    = "Whether to autoreload source when script changes."
+            help    = "Whether to autoreload source when script changes. We recommend using --dev instead."
         )),
         ('--num-threads', dict(
             action  = 'store',
@@ -249,7 +249,7 @@ class Serve(_BkServe):
         ('--setup', dict(
             action  = 'store',
             type    = str,
-            help    = "Path to a setup script to run before server starts.",
+            help    = "Path to a setup script to run before server starts. If --num-procs is enabled it will be run in each process after the server has started.",
             default = None
         )),
         ('--liveness', dict(
@@ -370,10 +370,25 @@ class Serve(_BkServe):
             module.__dict__['__file__'] = fullpath(args.setup)
             state._setup_module = module
 
+            def setup_file():
+                setup_path = state._setup_module.__dict__['__file__']
+                with open(setup_path) as f:
+                    setup_source = f.read()
+                nodes = ast.parse(setup_source, os.fspath(setup_path))
+                code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
+                exec(code, state._setup_module.__dict__)
+
+            if args.num_procs > 1:
+                # We will run the setup_file for each process
+                state._setup_file_callback = setup_file
+            else:
+                state._setup_file_callback = None
+                setup_file()
+
         if args.warm or config.autoreload:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
-            initialize_session = not (args.num_procs and sys.version_info < (3, 12))
+            initialize_session = not (args.num_procs != 1 and sys.version_info < (3, 12))
             if config.autoreload:
                 with record_modules(list(applications.values())):
                     self.warm_applications(
@@ -655,5 +670,10 @@ class Serve(_BkServe):
         # Empty layout are valid and the Bokeh warning is silenced as usually
         # not relevant to Panel users.
         silence(EMPTY_LAYOUT, True)
+        # dask.distributed changes the logging level of Bokeh, we will overwrite it
+        # if the environment variable is not set to the default Bokeh level
+        # See https://github.com/holoviz/panel/issues/2302
+        if "DASK_DISTRIBUTED__LOGGING__BOKEH" not in os.environ:
+            os.environ["DASK_DISTRIBUTED__LOGGING__BOKEH"] = "info"
         args.dev = None
         super().invoke(args)

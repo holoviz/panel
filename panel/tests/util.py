@@ -4,6 +4,7 @@ import http.server
 import os
 import platform
 import re
+import socket
 import subprocess
 import sys
 import time
@@ -272,15 +273,36 @@ def get_ctrl_modifier():
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
 
 
+def get_open_ports(n=1):
+    sockets,ports = [], []
+    for _ in range(n):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('127.0.0.1', 0))
+        ports.append(s.getsockname()[1])
+        sockets.append(s)
+    for s in sockets:
+        s.close()
+    return tuple(ports)
+
+
 def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
-    serve(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
+    if serve_and_wait.server_implementation == 'fastapi':
+        from panel.io.fastapi import serve as serve_app
+        port = port or get_open_ports()[0]
+    else:
+        serve_app = serve
+    serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
-    port = server.port
+    if serve_and_wait.server_implementation == 'fastapi':
+        port = port
+    else:
+        port = server.port
     wait_for_server(port, prefix=prefix)
     return port
 
+serve_and_wait.server_implementation = 'tornado'
 
 def serve_component(page, app, suffix='', wait=True, **kwargs):
     msgs = []
@@ -372,8 +394,11 @@ class NBSR:
         except Empty:
             return None
 
-def wait_for_regex(stdout, regex, count=1):
-    nbsr = NBSR(stdout)
+def wait_for_regex(stdout, regex, count=1, return_output=False):
+    if isinstance(stdout, NBSR):
+        nbsr = stdout
+    else:
+        nbsr = NBSR(stdout)
     m = None
     output, found = [], []
     for _ in range(20):
@@ -393,7 +418,7 @@ def wait_for_regex(stdout, regex, count=1):
             "No matching log line in process output, following output "
             f"was captured:\n\n   {output}"
         )
-    return found
+    return (found, output) if return_output else found
 
 def wait_for_port(stdout):
     return int(wait_for_regex(stdout, APP_PATTERN)[0])

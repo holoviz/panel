@@ -607,8 +607,11 @@ class DateRangePicker(Widget):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            msg['value'] = tuple(self._convert_date_to_string(v) for v in msg['value'])
+        if 'value' in msg and msg['value'] is not None:
+            msg['value'] = tuple(
+                v if v is None else self._convert_date_to_string(v)
+                for v in msg['value']
+            )
         if 'min_date' in msg:
             msg['min_date'] = self._convert_date_to_string(msg['min_date'])
         if 'max_date' in msg:
@@ -810,15 +813,15 @@ class DatetimeRangePicker(_DatetimePickerBase):
 
 class _TimeCommon(Widget):
 
-    hour_increment = param.Integer(default=1, doc="""
+    hour_increment = param.Integer(default=1, bounds=(1, None), doc="""
     Defines the granularity of hour value increments in the UI.
     """)
 
-    minute_increment = param.Integer(default=1, doc="""
+    minute_increment = param.Integer(default=1, bounds=(1, None), doc="""
     Defines the granularity of minute value increments in the UI.
     """)
 
-    second_increment = param.Integer(default=1, doc="""
+    second_increment = param.Integer(default=1, bounds=(1, None), doc="""
     Defines the granularity of second value increments in the UI.
     """)
 
@@ -827,7 +830,7 @@ class _TimeCommon(Widget):
     selectable, and AM/PM depending on the `clock` option.
     """)
 
-    clock = param.String(default='12h', doc="""
+    clock = param.Selector(default='12h', objects=['12h', '24h'], doc="""
         Whether to use 12 hour or 24 hour clock.""")
 
     __abstract = True

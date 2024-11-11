@@ -1,12 +1,4 @@
 """
-Panel widgets makes your data exploration and apps interactive
-==============================================================
-
-Panel provides a long range of basic and specialized widgets.
-
-Check out the widget gallery
-https://panel.holoviz.org/reference/index.html#widgets for inspiration.
-
 How to use Panel widgets in 4 simple steps
 ------------------------------------------
 
@@ -59,16 +51,16 @@ from .select import (
     RadioButtonGroup, Select, ToggleGroup,
 )
 from .slider import (
-    DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
-    EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatSlider,
-    IntRangeSlider, IntSlider, RangeSlider,
+    DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider,
+    DiscreteSlider, EditableFloatSlider, EditableIntSlider,
+    EditableRangeSlider, FloatSlider, IntRangeSlider, IntSlider, RangeSlider,
 )
 from .speech_to_text import Grammar, GrammarList, SpeechToText
 from .tables import DataFrame, Tabulator
 from .terminal import Terminal
 from .text_to_speech import TextToSpeech, Utterance, Voice
 from .texteditor import TextEditor
-from .widget import widget  # Matching filename and module name
+from .widget import widget
 
 __all__ = (
     "ArrayInput",
@@ -90,6 +82,7 @@ __all__ = (
     "DateRangeSlider",
     "DatetimeRangeSlider",
     "DateSlider",
+    "DatetimeSlider",
     "DatetimeInput",
     "DatetimePicker",
     "DatetimeRangeInput",

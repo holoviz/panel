@@ -14,7 +14,8 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..util import isdatetime, lazy_load
+from ..util import lazy_load
+from ..util.checks import datetime_types, isdatetime
 from ..viewable import Layoutable
 from .base import ModelPane
 
@@ -132,8 +133,8 @@ class Plotly(ModelPane):
         for key, value in list(json.items()):
             full_path = key if not parent_path else f"{parent_path}.{key}"
             if isinstance(value, np.ndarray):
-                # Extract numpy array
-                data[full_path] = [json.pop(key)]
+                array = json.pop(key)
+                data[full_path] = [array]
             elif isinstance(value, dict):
                 # Recurse into dictionaries:
                 Plotly._get_sources_for_trace(value, data=data, parent_path=full_path)
@@ -227,7 +228,7 @@ class Plotly(ModelPane):
             try:
                 old = cds.data.get(key)[0]
                 update_array = (
-                    (type(old) != type(new)) or
+                    (type(old) is not type(new)) or
                     (new.shape != old.shape) or
                     (new != old).any())
             except Exception:
@@ -251,17 +252,21 @@ class Plotly(ModelPane):
         For #382: Map datetime elements to strings.
         """
         json = fig.to_plotly_json()
+        layout = json['layout']
         data = json['data']
-
-        for idx in range(len(data)):
-            for key in data[idx]:
-                if isdatetime(data[idx][key]):
-                    arr = data[idx][key]
-                    if isinstance(arr, np.ndarray):
-                        arr = arr.astype(str)
-                    else:
-                        arr = [str(v) for v in arr]
-                    data[idx][key] = arr
+        shapes = layout.get('shapes', [])
+        for trace in data+shapes:
+            for key in trace:
+                if not isdatetime(trace[key]):
+                    continue
+                arr = trace[key]
+                if isinstance(arr, np.ndarray):
+                    arr = arr.astype(str)
+                elif isinstance(arr, datetime_types):
+                    arr = str(arr)
+                else:
+                    arr = [str(v) for v in arr]
+                trace[key] = arr
         return json
 
     def _init_params(self):

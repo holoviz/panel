@@ -59,13 +59,20 @@ def deprecated(
     remove_version: Version | str,
     old: str,
     new: str | None = None,
+    *,
     extra: str | None = None,
+    warn_version: Version | str | None = None
 ) -> None:
+    from .. import __version__
 
-    import panel as pn
-
-    current_version = Version(pn.__version__)
+    current_version = Version(__version__)
     base_version = Version(current_version.base_version)
+
+    if warn_version:
+        if isinstance(warn_version, str):
+            warn_version = Version(warn_version)
+        if base_version < warn_version:
+            return
 
     if isinstance(remove_version, str):
         remove_version = Version(remove_version)

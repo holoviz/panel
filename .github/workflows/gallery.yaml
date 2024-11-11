@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -e {0}
     steps:
       - name: Checkout
         uses: actions/checkout@v3

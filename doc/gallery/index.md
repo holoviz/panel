@@ -173,6 +173,19 @@ Interactively apply a XGBoost classifier on the Iris dataset.
 [See source](xgboost_classifier)
 :::
 
+:::{grid-item-card} WebLLM ChatInterface
+
+```{image} https://assets.holoviz.org/panel/gallery/webllm.png
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/webllm
+:width: 100%
+```
+
+Interact with an LLM running in your browser using the `ChatInterface`.
++++
+[See source](webllm)
+:::
+
+
 :::{grid-item-card} Altair Brushing
 
 ```{image} https://assets.holoviz.org/panel/gallery/altair_brushing.png
@@ -280,6 +293,7 @@ streaming_videostream
 vtk_interactive
 vtk_slicer
 vtk_warp
+webllm
 windturbines
 xgboost_classifier
 ```

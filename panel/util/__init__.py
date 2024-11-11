@@ -24,7 +24,10 @@ from html import escape  # noqa
 from importlib import import_module
 from typing import Any, AnyStr
 
+import bokeh
 import param
+
+from packaging.version import Version
 
 from .checks import (  # noqa
     datetime_types, is_dataframe, is_holoviews, is_number, is_parameterized,
@@ -37,6 +40,8 @@ from .parameters import (  # noqa
 
 log = logging.getLogger('panel.util')
 
+bokeh_version = Version(Version(bokeh.__version__).base_version)
+BOKEH_GE_3_6 = bokeh_version >= Version('3.6')
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 

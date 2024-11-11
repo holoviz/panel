@@ -40,13 +40,13 @@ alt: Portfolio Optimizer App
 ```
 :::
 
-:::{grid-item-card} MRI Slicer
-:link: https://|gallery-endpoint|.holoviz-demo.anaconda.com/vtk_slicer
+:::{grid-item-card} WebLLM Chat App
+:link: https://|gallery-endpoint|.holoviz-demo.anaconda.com/webllm
 :link-type: url
 
-```{image} https://assets.holoviz.org/panel/gallery/vtk_slicer.png
+```{image} https://assets.holoviz.org/panel/gallery/webllm.png
 ---
-alt: MRI Slicer App
+alt: WebLLM Application
 ---
 ```
 :::

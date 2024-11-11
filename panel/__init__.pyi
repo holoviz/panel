@@ -1,11 +1,4 @@
 """
-Panel is a high level app and dashboarding framework
-====================================================
-
-Panel is an open-source Python library that lets you create custom
-interactive web apps and dashboards by connecting user-defined widgets
-to plots, images, tables, or text.
-
 Panel works with the tools you know and ❤️.
 
 Check out https://panel.holoviz.org/
@@ -27,11 +20,11 @@ How to develop a Panel app in 3 simple steps
 
 - Run your app
 
-$ panel serve my_script.py --autoreload --show
+$ panel serve my_script.py --dev --show
 
 or
 
-$ panel serve my_notebook.ipynb --autoreload --show
+$ panel serve my_notebook.ipynb --dev --show
 
 The app will be available in your browser!
 
@@ -47,31 +40,34 @@ https://panel.holoviz.org/getting_started/index.html
 """
 
 from . import (
-    chat, custom, layout, links, pane, param, pipeline, reactive, template,
-    theme, viewable, widgets,
+    layout, links, pane, param, pipeline, reactive, template, theme, viewable,
+    widgets,
 )
 from ._interact import interact
-from ._version import __version__
-from .config import config, extension
-from .depends import bind, depends, rx
-from .io import serve, state
-from .io.cache import cache
-from .io.notebook import (  # noqa: F401
-    _jupyter_server_extension_paths, ipywidget,
+from .config import __version__, config, extension
+from .depends import bind, depends
+from .io import (  # noqa
+    _jupyter_server_extension_paths, cache, ipywidget, serve, state,
 )
 from .layout import (
     Accordion, Card, Column, Feed, FlexBox, FloatPanel, GridBox, GridSpec,
     GridStack, HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
 )
 from .pane import panel
-from .param import Param, ReactiveExpr
+from .param import Param, ReactiveExpr, rx
 from .template import Template
 from .widgets import indicators, widget
 
+from . import custom  # isort:skip noqa has to be after widgets
+from . import chat  # isort:skip noqa has to be after widgets
+
 __all__ = [
+    "__version__",
     "Accordion",
     "Card",
+    "chat",
     "Column",
+    "custom",
     "Feed",
     "FlexBox",
     "FloatPanel",
@@ -114,4 +110,5 @@ __all__ = [
     "viewable",
     "widget",
     "widgets",
+    "widget"
 ]
