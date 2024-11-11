@@ -73,7 +73,7 @@ function find_group(key: any, value: string, records: any[]): any {
   return null
 }
 
-function summarize(grouped: any[], columns: any[], aggregators: any, depth: number = 0): any {
+function summarize(grouped: any[], columns: any[], aggregators: any[], depth: number = 0): any {
   const summary: any = {}
   if (grouped.length == 0) {
     return summary
@@ -115,7 +115,7 @@ function summarize(grouped: any[], columns: any[], aggregators: any, depth: numb
         } else if (agg === "sum") {
           summary[column.field] = val + old_val
         } else if (agg === "mean") {
-          if (Array.isArray(summary[column.field])) {
+          if (isArray(summary[column.field])) {
             summary[column.field].push(val)
           } else {
             summary[column.field] = [old_val, val]
@@ -158,7 +158,7 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
     }
   }
   const aggs = []
-  for (const index of indexes.slice()) {
+  for (const index of indexes) {
     aggs.push((index in aggregators) ? aggregators[index] : "sum")
   }
   summarize(grouped, columns, aggs)
