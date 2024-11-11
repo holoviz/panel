@@ -4245,13 +4245,26 @@ def test_tabulator_aggregators_flat_data_aggregation(page, df_agg):
         "region2": rows.nth(1).inner_text().split("\n"),
     }
     region_agged = {
-        "region1": {
-            "salary": agged["region1"][col_mapping["salary"] - 1],
-            "date_joined": agged["region1"][col_mapping["date_joined"] - 1],
-        },
-        "region2": {
-            "salary": agged["region2"][col_mapping["salary"] - 1],
-            "date_joined": agged["region2"][col_mapping["date_joined"] - 1],
-        },
+        region: {col: agged[region][col_mapping[col] - 1] for col in col_mapping} for region in agged
     }
     assert region_agged == expected_results["region"]
+
+    regions = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
+    # expand all region groups and see the data there
+    regions.nth(0).click()
+    regions.nth(0).click()
+    rows = page.locator(".tabulator-row.tabulator-tree-level-1")
+    expect(rows).to_have_count(3)
+    # gender level
+    agged = {
+        "region1": {"Male": rows.nth(0).inner_text().split("\n")},
+        "region2": {
+            "Male": rows.nth(1).inner_text().split("\n"),
+            "Female": rows.nth(2).inner_text().split("\n"),
+        },
+    }
+    gender_agged = {
+        region: {
+            gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
+    }
+    assert gender_agged == expected_results["gender"]
