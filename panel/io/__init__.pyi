@@ -3,8 +3,6 @@ The io module contains utilities for loading JS components, embedding
 model state, and rendering panel objects.
 """
 
-from .state import state  # Matching filename and module name
-
 from .cache import cache
 from .callbacks import PeriodicCallback
 from .document import (  # noqa
@@ -20,6 +18,7 @@ from .notebook import (  # noqa
 from .profile import profile
 from .resources import Resources
 from .server import serve
+from .state import state  # Matching filename and module name
 
 __all__ = [
     "cache",

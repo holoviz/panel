@@ -34,9 +34,6 @@ https://panel.holoviz.org/getting_started/index.html
 """
 
 from . import indicators
-
-from .widget import widget  # Matching filename and module name
-
 from .base import CompositeWidget, Widget, WidgetBase
 from .button import Button, MenuButton, Toggle
 from .codeeditor import CodeEditor
@@ -44,15 +41,15 @@ from .debugger import Debugger
 from .file_selector import FileSelector
 from .icon import ButtonIcon, ToggleIcon
 from .indicators import (
-    BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number,
-    Progress, TooltipIcon, Tqdm, Trend,
+    BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress,
+    TooltipIcon, Tqdm, Trend,
 )
 from .input import (
     ArrayInput, Checkbox, ColorPicker, DatePicker, DateRangePicker,
     DatetimeInput, DatetimePicker, DatetimeRangeInput, DatetimeRangePicker,
-    FileDropper, FileInput, FloatInput, IntInput, LiteralInput,
-    NumberInput, PasswordInput, Spinner, StaticText, Switch, TextAreaInput,
-    TextInput, TimePicker,
+    FileDropper, FileInput, FloatInput, IntInput, LiteralInput, NumberInput,
+    PasswordInput, Spinner, StaticText, Switch, TextAreaInput, TextInput,
+    TimePicker,
 )
 from .misc import FileDownload, JSONEditor, VideoStream
 from .player import DiscretePlayer, Player
@@ -63,14 +60,15 @@ from .select import (
 )
 from .slider import (
     DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
-    EditableFloatSlider, EditableIntSlider, EditableRangeSlider,
-    FloatSlider, IntRangeSlider, IntSlider, RangeSlider,
+    EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatSlider,
+    IntRangeSlider, IntSlider, RangeSlider,
 )
 from .speech_to_text import Grammar, GrammarList, SpeechToText
 from .tables import DataFrame, Tabulator
 from .terminal import Terminal
 from .text_to_speech import TextToSpeech, Utterance, Voice
 from .texteditor import TextEditor
+from .widget import widget  # Matching filename and module name
 
 __all__ = (
     "ArrayInput",

@@ -58,7 +58,6 @@ from .vega import Vega
 from .vizzu import Vizzu
 from .vtk import VTK, VTKVolume
 
-
 __all__ = [
     "Alert",
     "Audio",

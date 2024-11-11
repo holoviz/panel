@@ -46,15 +46,14 @@ To learn more about Panel check out
 https://panel.holoviz.org/getting_started/index.html
 """
 
-from ._version import __version__
-
-from .config import config, extension
-from .depends import bind, depends, rx
 from . import (
     chat, custom, layout, links, pane, param, pipeline, reactive, template,
     theme, viewable, widgets,
 )
 from ._interact import interact
+from ._version import __version__
+from .config import config, extension
+from .depends import bind, depends, rx
 from .io import serve, state
 from .io.cache import cache
 from .io.notebook import (  # noqa: F401

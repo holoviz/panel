@@ -4,7 +4,6 @@ from subprocess import check_output
 from textwrap import dedent
 
 
-
 def test_no_blocklist_imports():
     check = """\
     import sys
