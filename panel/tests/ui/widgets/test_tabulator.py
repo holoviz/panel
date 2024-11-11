@@ -4209,9 +4209,14 @@ def test_tabulator_aggregators(page, df_agg, aggs):
     serve_component(page, widget)
 
 
-def test_tabulator_aggregators_flat_data_aggregation(page, df_agg):
+@pytest.mark.parametrize("aggs", [
+    {"region": "min", "gender": "max"},
+    {"region": "min", "gender": {"salary": "max", "date_joined": "max"}},
+    {"region": {"salary": "min", "date_joined": "min"}, "gender": {"salary": "max", "date_joined": "max"}},
+    {"region": {"salary": "min", "date_joined": "min"}, "gender": "max"},
+])
+def test_tabulator_aggregators_data_aggregation(page, df_agg, aggs):
     # TODO: parametrize agg_method, index level and column
-    aggs = {"region": "min", "gender": "max"}
     widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True, aggregators=aggs)
     serve_component(page, widget)
 
