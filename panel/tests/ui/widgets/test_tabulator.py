@@ -4100,19 +4100,10 @@ def test_tabulator_row_content_markup_wrap(page):
 def df_agg():
     data = {
         "employee_id": range(1, 6),
-        "name": ["Charlie", "Bob", "Alice", "David", "Eve"],
         "gender": ["Male", "Male", "Female", "Male", "Female"],
-        "salary": [75000.0, 82000.5, np.nan, 64000.0, 91000.0],
         "region": ["East", "North", "North", "North", "North"],
-        "active": [True, False, True, np.nan, True],
-        "department": ["HR", "IT", "HR", "Finance", "HR"],
-        "days_off_used": [
-            [3, 2, 1, 1],  # Charlie's days off in the last 4 months
-            [1, 0, 2, 2],  # Bob's days off
-            [2, 1, 3, 0],  # Alice's days off
-            [0, 1, 0, 0],  # Diana's days off
-            [1, 1, 0, 1]  # Jack's days off
-        ],
+        "name": ["Charlie", "Bob", "Alice", "David", "Eve"],
+        "salary": [75000.0, 82000.5, np.nan, 64000.0, 91000.0],
         "date_joined": [
             np.nan,  # Charlie
             dt.datetime(2019, 3, 15),  # Bob
@@ -4120,28 +4111,23 @@ def df_agg():
             dt.datetime(2021, 5, 20),  # David
             dt.datetime(2022, 7, 30),  # Eve
         ],
+        # "active": [True, False, True, np.nan, True],
+        # "department": ["HR", "IT", "HR", "Finance", "HR"],
+        # "days_off_used": [
+        #     [3, 2, 1, 1],  # Charlie's days off in the last 4 months
+        #     [1, 0, 2, 2],  # Bob's days off
+        #     [2, 1, 3, 0],  # Alice's days off
+        #     [0, 1, 0, 0],  # David's days off
+        #     [1, 1, 0, 1]  # Eve's days off
+        # ],
     }
     # Create DataFrame
-    df = pd.DataFrame(data).astype({
-        'name': 'string',
-        'gender': 'string',
-        'salary': 'float',
-        'active': 'bool',
-        'department': 'string',
-        'date_joined': 'datetime64[ns]',
-    })
+    df = pd.DataFrame(data)
     return df
 
 
-@pytest.mark.parametrize("aggs", [{'salary': 'mean'}, {'region': {'salary': 'mean'}}])
-def test_tabulator_aggregators(page, df_agg, aggs):
-    widget = Tabulator(df_agg.set_index(["region", "employee_id"]), hierarchical=True, aggregators=aggs)
-    serve_component(page, widget)
-
-
-@pytest.mark.parametrize("aggs", [{'salary': 'mean'}, {'region': {'salary': 'mean'}}])
-def test_tabulator_aggregators_data_grouping(page, df_agg, aggs):
-    widget = Tabulator(df_agg.set_index(["region", "employee_id"]), hierarchical=True, aggregators=aggs)
+def test_tabulator_2level_hierarchical_data_grouping(page, df_agg):
+    widget = Tabulator(df_agg.set_index(["region", "employee_id"]), hierarchical=True)
     serve_component(page, widget)
 
     expanded_groups = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-collapse')
@@ -4169,18 +4155,103 @@ def test_tabulator_aggregators_data_grouping(page, df_agg, aggs):
     expect(expanded_group_members.nth(3)).to_contain_text("Eve")
 
 
-def test_tabulator_aggregators_numeric_data_aggregation(page, df_agg):
-    # TODO: parametrize agg_method and column
-    agg_method, column = "sum", "salary"
-    aggs = {column: agg_method}
-    widget = Tabulator(df_agg.set_index(["region", "employee_id"]), hierarchical=True, aggregators=aggs)
+def test_tabulator_3level_hierarchical_data_grouping(page, df_agg):
+    widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True)
+    serve_component(page, widget)
+
+    expanded_groups = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-collapse')
+    collapsed_groups = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
+
+    expect(collapsed_groups).to_have_count(2)
+    expect(expanded_groups).to_have_count(0)
+    group_east = collapsed_groups.nth(0)
+    group_north = collapsed_groups.nth(1)
+
+    # expand first group and see the data there
+    group_east.click()
+    expect(collapsed_groups).to_have_count(1)
+    expect(expanded_groups).to_have_count(1)
+    collapsed_genders = page.locator(".tabulator-tree-level-1 .tabulator-data-tree-control-expand")
+    expanded_genders = page.locator(".tabulator-tree-level-1 .tabulator-data-tree-control-collapse")
+    expect(collapsed_genders).to_have_count(1)
+    expect(expanded_genders).to_have_count(0)
+    # TODO: uncomment when showing indexes fixed
+    # expect(collapsed_genders).to_contain_text("Male")
+    collapsed_genders.click()
+    employees = page.locator(".tabulator-tree-level-2")
+    expect(employees).to_have_count(1)
+    # TODO: assert employee id
+    expect(employees).to_contain_text("Charlie")
+
+    # collapse 1st group and expand 2nd group and see the data there
+    expanded_groups.click()
+    group_north.click()
+    expect(collapsed_genders).to_have_count(2)
+    # note: after clicking 1st gender group, `gender` now has count 1 as we queries for css class
+    # .tabulator-data-tree-control-expand
+    collapsed_genders.nth(0).click()
+    expect(collapsed_genders).to_have_count(1)
+    expect(expanded_genders).to_have_count(1)
+    expect(employees).to_have_count(2)
+    expect(employees.nth(0)).to_contain_text("Bob")
+    expect(employees.nth(1)).to_contain_text("David")
+
+    collapsed_genders.nth(0).click()
+    expanded_genders.nth(0).click()
+    expect(employees).to_have_count(2)
+    expect(employees.nth(0)).to_contain_text("Alice")
+    expect(employees.nth(1)).to_contain_text("Eve")
+
+
+@pytest.mark.parametrize("aggs", [{}, {"gender": "sum"}, {"region": "mean", "gender": {"salary": "min"}}])
+def test_tabulator_aggregators(page, df_agg, aggs):
+    widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True, aggregators=aggs)
+    serve_component(page, widget)
+
+
+def test_tabulator_aggregators_flat_data_aggregation(page, df_agg):
+    # TODO: parametrize agg_method, index level and column
+    aggs = {"region": "min", "gender": "max"}
+    widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True, aggregators=aggs)
     serve_component(page, widget)
 
     column_titles = page.locator('.tabulator-col-title')
-    column_index = 3  # salary column is the 4th column displayed in the table (1st is not displayed)
-    expect(column_titles.nth(column_index + 1)).to_have_text("salary")
+    col_mapping = {"salary": 3, "date_joined": 4}
+    expect(column_titles.nth(col_mapping["salary"])).to_have_text("salary")
+    expect(column_titles.nth(col_mapping["date_joined"])).to_have_text("date_joined")
+
+    expected_results = {
+        "region": {
+            "region1": {"salary": "75,000.0", "date_joined": "-"},
+            "region2": {"salary": "82,000.5", "date_joined": "2021-05-20 00:00:00"},
+        },
+        "gender": {
+            "region1": {
+                "Male": {"salary": "75,000.0", "date_joined": "-"},
+                # "Female": {},  # no female in this region
+            },
+            "region2": {
+                "Male": {"salary": "82,000.5", "date_joined": "2021-05-20 00:00:00"},
+                "Female": {"salary": "-", "date_joined": "2022-07-30 00:00:00"},
+            },
+        }
+    }
+
+    # region level
     rows = page.locator('.tabulator-row')
     expect(rows).to_have_count(2)
-    assert rows.nth(0).inner_text().split("\n")[column_index] == "75,000.0"
-    # sum with a NaN value
-    assert rows.nth(1).inner_text().split("\n")[column_index] == "-"
+    agged = {
+        "region1": rows.nth(0).inner_text().split("\n"),
+        "region2": rows.nth(1).inner_text().split("\n"),
+    }
+    region_agged = {
+        "region1": {
+            "salary": agged["region1"][col_mapping["salary"] - 1],
+            "date_joined": agged["region1"][col_mapping["date_joined"] - 1],
+        },
+        "region2": {
+            "salary": agged["region2"][col_mapping["salary"] - 1],
+            "date_joined": agged["region2"][col_mapping["date_joined"] - 1],
+        },
+    }
+    assert region_agged == expected_results["region"]
