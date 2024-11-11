@@ -50,9 +50,9 @@ class Compile(Subcommand):
                 )
             for bundle, components in module_bundles.items():
                 if bundle in bundles:
-                    bundles[bundle] = components
-                else:
                     bundles[bundle] += components
+                else:
+                    bundles[bundle] = components
 
         errors = 0
         for bundle, components in bundles.items():
