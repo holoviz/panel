@@ -28,9 +28,9 @@ function throttle(func: Function, limit: number): any {
       lastRan = Date.now()
     } else {
       trailingCall = setTimeout(function() {
-	func.apply(context, args)
-	lastRan = Date.now()
-	trailingCall = null
+        func.apply(context, args)
+        lastRan = Date.now()
+        trailingCall = null
       }, limit - (now - lastRan))
     }
   }
