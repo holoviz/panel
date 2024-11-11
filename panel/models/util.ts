@@ -11,7 +11,7 @@ export const get = (obj: any, path: string, defaultValue: any = undefined) => {
   return result === undefined || result === obj ? defaultValue : result
 }
 
-function throttle(func: Function, limit: number): any {
+export function throttle(func: Function, limit: number): any {
   let lastRan: number = 0
   let trailingCall: ReturnType<typeof setTimeout> | null = null
 
