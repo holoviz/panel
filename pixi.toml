@@ -25,6 +25,7 @@ lite = ["py311", "lite"]
 
 [dependencies]
 nodejs = ">=18"
+esbbuild = "*"
 nomkl = "*"
 pip = "*"
 # Required
