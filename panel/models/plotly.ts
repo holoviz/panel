@@ -213,11 +213,11 @@ export class PlotlyPlotView extends HTMLBoxView {
     this._rendered = false
     this.watch_stylesheets()
     this.plot(true).then(() => {
-      this.shadow_el.appendChild(this.container);
+      this.shadow_el.appendChild(this.container)
       this._rendered = true
-      this.resize_layout();
+      this.resize_layout()
       if (this.model.relayout != null) {
-	(window as any).Plotly.relayout(this.container, this.model.relayout)
+        (window as any).Plotly.relayout(this.container, this.model.relayout)
       }
     })
   }
@@ -230,7 +230,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     if (!this._rendered || this.container == null) {
       return
     }
-    const width: number = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity);
+    const width: number = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity)
     const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity);
     (window as any).Plotly.relayout(this.container, {width, height})
   }
