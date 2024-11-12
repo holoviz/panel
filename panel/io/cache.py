@@ -266,7 +266,7 @@ def _generate_hash_inner(obj):
                 f'{obj!r} with following error: {type(e).__name__}("{e}").'
             ) from e
         return output
-    if hasattr(obj, '__reduce__'):
+    if hasattr(obj, '__reduce__') and inspect.isclass(obj):
         h = hashlib.new("md5")
         try:
             reduce_data = obj.__reduce__()
