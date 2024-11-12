@@ -21,7 +21,7 @@ This release fixes a number of smaller regressions related to `Tabulator` `row_c
 - Do not mutate layout `Children` inplace ([#7417](https://github.com/holoviz/panel/pull/7403))
 - Set `Tabulator` null formatter to empty string ([#7421](https://github.com/holoviz/panel/pull/7421))
 - Ensure Tabulator table content does not overflow ([#7425](https://github.com/holoviz/panel/pull/7425))
-
+- Ensure `cache` handles hashing of classes and instances correctly ([#7478](https://github.com/holoviz/panel/issues/7478))
 
 ### Compatibility
 
