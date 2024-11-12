@@ -159,7 +159,15 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
   }
   const aggs = []
   for (const index of indexes) {
-    aggs.push((index in aggregators) ? aggregators[index] : "sum")
+    if (index in aggregators) {
+      if (aggregators[index] instanceof Map) {
+        aggs.push(Object.fromEntries(aggregators[index]))
+      } else {
+        aggs.push(aggregators[index])
+      }
+    } else {
+      aggs.push("sum")
+    }
   }
   summarize(grouped, columns, aggs)
   return grouped
