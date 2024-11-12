@@ -52,6 +52,11 @@ def test_none_hash():
     assert hashes_equal(None, None)
     assert not hashes_equal(None, False)
 
+def test_object_hash():
+    obj1, obj2 = object(), object()
+    assert hashes_equal(obj1, obj1)
+    assert not hashes_equal(obj1, obj2)
+
 def test_bytes_hash():
     assert hashes_equal(b'0', b'0')
     assert not hashes_equal(b'0', b'1')
