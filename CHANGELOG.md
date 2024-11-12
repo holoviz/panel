@@ -1,5 +1,30 @@
 # Releases
 
+## Version 1.5.4
+
+This release primarily focuses on improving the ESM components including fixes for serialization of parameter values, improvements for compiling bundles, and building custom layouts. Additionally this release includes the new `DatetimeSlider`, adds a copy button to codeblocks in Markdown panes and starts adding better support for Polars. Many thanks and a warm welcome to our new contributor @MP-MaximilianLattka as well as our maintainer team, including @Hoxbro, @thuydotm, @ahuang11, @MarcSkovMadsen and @philippjfr.
+
+### Enhancements
+
+- Add `DatetimeSlider` widget ([#7374](https://github.com/holoviz/panel/pull/7374))
+- Improve Jupyter preview error handling ([#7434](https://github.com/holoviz/panel/pull/7434))
+- Add copy button to `Markdown` codeblocks ([#7451](https://github.com/holoviz/panel/pull/7451))
+- Various improvements for writing ESM components ([#7462](https://github.com/holoviz/panel/pull/7462))
+- Log authorization callback errors ([#7463](https://github.com/holoviz/panel/pull/7463))
+- Support polars in `pn.cache` ([#7472](https://github.com/holoviz/panel/pull/7472))
+- Improve and document `hold` utility ([#7474](https://github.com/holoviz/panel/pull/7474))
+- Improve how `panel compile` collects bundles ([#7477](https://github.com/holoviz/panel/pull/7477))
+
+### Bug fixes
+
+- Fix issues detecting changed property values during serialization ([#7432](https://github.com/holoviz/panel/pull/7432))
+- Ensure ESM compilation correctly detects file extension ([#7446](https://github.com/holoviz/panel/pull/7446))
+- Ensure parameter overrides are applied to ESM components ([#7452](https://github.com/holoviz/panel/pull/7452))
+- Ensure component `Children` parameter correctly resolves when multiple types are defined ([#7454](https://github.com/holoviz/panel/pull/7454))
+- Fix issues using Jupyter Preview with notifications enabled ([#7466](https://github.com/holoviz/panel/pull/7466))
+- Ensure `HTML`/`Markdown` streaming does not freeze during rapid updates ([#7480](https://github.com/holoviz/panel/pull/7480))
+- Ensure `Plotly` sizes correctly on initial render ([#7483](https://github.com/holoviz/panel/pull/7483))
+
 ## Version 1.5.3
 
 This release fixes a number of smaller regressions related to `Tabulator` `row_content`, ensures `--dev`/`--autoreload` picks up on external modules correctly and resolves OAuth guest endpoints correctly. Additionally it introduces some enhancements and bug fixes for custom components, such as adding support for loading custom components ESM Javascript bundles from the inbuilt endpoint ensuring that the bundle can be cached by the browser. Many thanks and welcome to our new contributors @chryshumble and @haojungc, our returning contributors @TheoMathurin, @aktech and @Coderambling and the core maintainer team @Hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr for their contributions to this release.
