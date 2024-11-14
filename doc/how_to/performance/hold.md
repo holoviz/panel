@@ -10,7 +10,9 @@ The `hold` function is a context manager and decorator that temporarily holds ev
 
 ## Using `hold`
 
-If you have a function that updates components and you want to ensure that all updates are held, you can use hold as a decorator, e.g. here we update 100 components at once. If you do not hold then each of these events is sent and applied in series, potentially resulting in visible updates.
+### As a decorator
+
+If you have a function that updates components and you want to ensure that all updates are held, you can use hold as a decorator. E.g. here we update 100 components at once. If you do not hold then each of these events is sent and applied in series, potentially resulting in visible updates.
 
 ```{pyodide}
 import panel as pn
@@ -29,7 +31,9 @@ pn.Column(column, button).servable()
 
 Applying the hold decorator means all the updates are sent in a single Websocket message and applied on the frontend simultaneously.
 
-Alternatively the `hold` function can be used as a context manager, potentially giving you finer grained control over which events are batched and which are not:
+### As a context manager
+
+Alternatively, the `hold` function can be used as a context manager, potentially giving you finer grained control over which events are batched and which are not:
 
 ```{pyodide}
 import time
