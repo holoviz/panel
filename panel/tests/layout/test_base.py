@@ -494,7 +494,7 @@ def test_widgetbox(document, comm):
 def test_layout_with_param_setitem(document, comm):
     import param
     class TestClass(param.Parameterized):
-        select = param.ObjectSelector(default=0, objects=[0,1])
+        select = param.Selector(default=0, objects=[0,1])
 
         def __init__(self, **params):
             super().__init__(**params)

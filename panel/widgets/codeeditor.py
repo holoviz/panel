@@ -49,7 +49,7 @@ class CodeEditor(Widget):
     readonly = param.Boolean(default=False, doc="""
         Define if editor content can be modified. Alias for disabled.""")
 
-    theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
+    theme = param.Selector(default="chrome", objects=list(ace_themes),
                                  doc="Theme of the editor")
 
     value = param.String(default="", doc="""

@@ -49,7 +49,7 @@ class _SliderBase(Widget):
 
     bar_color = param.Color(default="#e6e6e6", doc="""""")
 
-    direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'], doc="""
+    direction = param.Selector(default='ltr', objects=['ltr', 'rtl'], doc="""
         Whether the slider should go from left-to-right ('ltr') or
         right-to-left ('rtl').""")
 
@@ -57,7 +57,7 @@ class _SliderBase(Widget):
         The name of the widget. Also used as the label of the widget. If not set,
         the widget has no label.""")
 
-    orientation = param.ObjectSelector(default='horizontal', objects=['horizontal', 'vertical'],
+    orientation = param.Selector(default='horizontal', objects=['horizontal', 'vertical'],
         doc="""
         Whether the slider should be oriented horizontally or
         vertically.""")

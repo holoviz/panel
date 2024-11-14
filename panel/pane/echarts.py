@@ -44,10 +44,10 @@ class ECharts(ModelPane):
         the `objects` with a value containing a smaller number of series.
         """)
 
-    renderer = param.ObjectSelector(default="canvas", objects=["canvas", "svg"], doc="""
+    renderer = param.Selector(default="canvas", objects=["canvas", "svg"], doc="""
        Whether to render as HTML canvas or SVG""")
 
-    theme = param.ObjectSelector(default="default", objects=["default", "light", "dark"], doc="""
+    theme = param.Selector(default="default", objects=["default", "light", "dark"], doc="""
        Theme to apply to plots.""")
 
     priority: ClassVar[float | bool | None] = None

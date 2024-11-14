@@ -171,7 +171,7 @@ class TextAreaInput(_TextInputBase):
     rows = param.Integer(default=2, doc="""
         Number of rows in the text input field.""")
 
-    resizable = param.ObjectSelector(
+    resizable = param.Selector(
         objects=["both", "width", "height", False], doc="""
         Whether the layout is interactively resizable,
         and if so in which dimensions: `width`, `height`, or `both`.
@@ -1141,7 +1141,7 @@ class LiteralInput(Widget):
     placeholder = param.String(default='', doc="""
       Placeholder for empty input field.""")
 
-    serializer = param.ObjectSelector(default='ast', objects=['ast', 'json'], doc="""
+    serializer = param.Selector(default='ast', objects=['ast', 'json'], doc="""
        The serialization (and deserialization) method to use. 'ast'
        uses ast.literal_eval and 'json' uses json.loads and json.dumps.
     """)

@@ -260,7 +260,7 @@ class GridSpec(Panel):
     objects = ChildDict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
 
-    mode = param.ObjectSelector(default='warn', objects=['warn', 'error', 'override'], doc="""
+    mode = param.Selector(default='warn', objects=['warn', 'error', 'override'], doc="""
         Whether to warn, error or simply override on overlapping assignment.""")
 
     ncols = param.Integer(default=None, bounds=(0, None), doc="""

@@ -305,7 +305,7 @@ class Perspective(ModelPane, ReactiveData):
     sort = param.List(default=None, doc="""
       How to sort. For example[["x","desc"]]""")
 
-    plugin = param.ObjectSelector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
+    plugin = param.Selector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
       The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")
 
     plugin_config = param.Dict(default={}, nested_refs=True, doc="""
@@ -314,7 +314,7 @@ class Perspective(ModelPane, ReactiveData):
     settings = param.Boolean(default=True, doc="""
       Whether to show the settings menu.""")
 
-    theme = param.ObjectSelector(default='pro', objects=THEMES, doc="""
+    theme = param.Selector(default='pro', objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example pro-dark""")
 
     title = param.String(default=None, doc="""

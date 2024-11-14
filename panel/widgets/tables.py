@@ -934,7 +934,7 @@ class DataFrame(BaseTable):
     auto_edit = param.Boolean(default=False, doc="""
         Whether clicking on a table cell automatically starts edit mode.""")
 
-    autosize_mode = param.ObjectSelector(default='force_fit', objects=[
+    autosize_mode = param.Selector(default='force_fit', objects=[
         "none", "fit_columns", "fit_viewport", "force_fit"], doc="""
 
         Determines the column autosizing mode, as one of the following options:
@@ -1144,14 +1144,14 @@ class Tabulator(BaseTable):
     hidden_columns = param.List(default=[], nested_refs=True, doc="""
         List of columns to hide.""")
 
-    layout = param.ObjectSelector(default='fit_data_table', objects=[
+    layout = param.Selector(default='fit_data_table', objects=[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
         'fit_columns'])
 
     initial_page_size = param.Integer(default=20, bounds=(1, None), doc="""
         Initial page size if page_size is None and therefore automatically set.""")
 
-    pagination = param.ObjectSelector(default=None, allow_None=True,
+    pagination = param.Selector(default=None, allow_None=True,
                                       objects=['local', 'remote'])
 
     page = param.Integer(default=1, doc="""
@@ -1199,7 +1199,7 @@ class Tabulator(BaseTable):
         Can either be specified as a simple boolean toggling the behavior
         on and off or as a dictionary specifying the option per column.""")
 
-    theme = param.ObjectSelector(
+    theme = param.Selector(
         default="simple", objects=[
             'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
             'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast',

@@ -160,7 +160,7 @@ class Vega(ModelPane):
     show_actions = param.Boolean(default=False, doc="""
         Whether to show Vega actions.""")
 
-    theme = param.ObjectSelector(default=None, allow_None=True, objects=[
+    theme = param.Selector(default=None, allow_None=True, objects=[
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
         'latimes', 'urbaninstitute', 'googlecharts'])
 
