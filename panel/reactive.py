@@ -2036,7 +2036,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         return html, parser.nodes, p_attrs
 
     @property
-    def _linked_properties(self) -> list[str]:
+    def _linked_properties(self) -> tuple[str]:
         linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
         for scripts in self._scripts.values():
             if not isinstance(scripts, list):

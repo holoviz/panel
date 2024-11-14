@@ -819,7 +819,7 @@ class ListPanel(ListLike, Panel):
     __abstract = True
 
     @property
-    def _linked_properties(self):
+    def _linked_properties(self) -> tuple[str]:
         return tuple(
             self._property_mapping.get(p, p) for p in self.param
             if p not in ListPanel.param and self._property_mapping.get(p, p) is not None

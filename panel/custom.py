@@ -382,8 +382,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             self._apply_update({}, {'esm': esm}, model, ref)
 
     @property
-    def _linked_properties(self) -> list[str]:
-        return [p for p in self._data_model.properties() if p not in ('js_property_callbacks',)]
+    def _linked_properties(self) -> tuple[str]:
+        return tuple(p for p in self._data_model.properties() if p not in ('js_property_callbacks',))
 
     def _get_properties(self, doc: Document) -> dict[str, Any]:
         props = super()._get_properties(doc)
