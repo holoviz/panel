@@ -6,7 +6,8 @@ import uuid
 from functools import partial
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping, NotRequired,
+    Optional, TypedDict,
 )
 
 import numpy as np
@@ -46,6 +47,34 @@ if TYPE_CHECKING:
     from ..models.tabulator import (
         CellClickEvent, SelectionEvent, TableEditEvent,
     )
+
+    class FilterSpec(TypedDict):
+        headerFilter: NotRequired[str | bool]
+        headerFilterParams: NotRequired[dict[str, Any]]
+        headerFilterFunc: NotRequired[str]
+        headerFilterPlaceholder: NotRequired[str]
+
+    class ColumnSpec(TypedDict):
+        editable: NotRequired[bool]
+        editor: NotRequired[str | CellEditor]
+        editorParams: NotRequired[dict[str, Any]]
+        field: NotRequired[str]
+        frozen: NotRequired[bool]
+        headerHozAlign: NotRequired[Literal["center", "left", "right"]]
+        headerSort: NotRequired[bool]
+        headerTooltip: NotRequired[str]
+        hozAlign: NotRequired[Literal["center", "left", "right"]]
+        formatter: NotRequired[str | CellFormatter]
+        formatterParams: NotRequired[dict[str, Any]]
+        sorter: NotRequired[str]
+        title: NotRequired[str]
+        titleFormatter: NotRequired[str | CellFormatter]
+        titleFormatterParams: NotRequired[dict[str, Any]]
+        width: NotRequired[str | int]
+
+    class GroupSpec(TypedDict):
+        columns: list[ColumnSpec]
+        title: str
 
 
 def _convert_datetime_array_ignore_list(v):
@@ -250,12 +279,12 @@ class BaseTable(ReactiveData, Widget):
             else:
                 if isinstance(formatter, CellFormatter):
                     formatter = clone_model(formatter)
-                if hasattr(formatter, 'text_align'):
+                if formatter and hasattr(formatter, 'text_align'):
                     default_text_align = type(formatter).text_align.class_default(formatter) == formatter.text_align
                 else:
                     default_text_align = True
 
-            if not hasattr(formatter, 'text_align'):
+            if not formatter or not hasattr(formatter, 'text_align'):
                 pass
             elif isinstance(self.text_align, str):
                 formatter.text_align = self.text_align
@@ -1827,8 +1856,8 @@ class Tabulator(BaseTable):
         self._register_events('cell-click', 'table-edit', 'selection-change', model=model, doc=doc, comm=comm)
         return model
 
-    def _get_filter_spec(self, column: TableColumn) -> dict[str, Any]:
-        fspec = {}
+    def _get_filter_spec(self, column: TableColumn) -> FilterSpec:
+        fspec: FilterSpec = {}
         if not self.header_filters or (isinstance(self.header_filters, dict) and
                                        column.field not in self.header_filters):
             return fspec
@@ -1895,10 +1924,10 @@ class Tabulator(BaseTable):
             fspec['headerFilterPlaceholder'] = filter_placeholder
         return fspec
 
-    def _config_columns(self, column_objs: list[TableColumn]) -> list[dict[str, Any]]:
+    def _config_columns(self, column_objs: list[TableColumn]) -> list[ColumnSpec | GroupSpec]:
         column_objs = list(column_objs)
-        groups = {}
-        columns = []
+        groups: dict[str, GroupSpec] = {}
+        columns: list[ColumnSpec] = []
         selectable = self.selectable
         if self.row_content:
             columns.append({
@@ -1945,7 +1974,7 @@ class Tabulator(BaseTable):
                 group for group, group_cols in grouping.items()
                 if field in group_cols
             ]
-            col_dict = dict(field=field)
+            col_dict: ColumnSpec = dict(field=field)
             if isinstance(self.sortable, dict):
                 col_dict['headerSort'] = self.sortable.get(field, True)
             elif not self.sortable:
