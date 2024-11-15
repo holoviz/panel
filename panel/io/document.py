@@ -15,7 +15,7 @@ import weakref
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, Future, Iterator, Sequence, cast,
+    TYPE_CHECKING, Any, Callable, Iterator, Sequence, cast,
 )
 from weakref import WeakKeyDictionary
 
@@ -37,6 +37,8 @@ from .model import monkeypatch_events  # noqa: F401 API import
 from .state import curdoc_locked, state
 
 if TYPE_CHECKING:
+    from asyncio.futures import Future
+
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
     from bokeh.document import Document
@@ -55,7 +57,7 @@ DISPATCH_EVENTS = (
     ModelChangedEvent, MessageSentEvent
 )
 GC_DEBOUNCE = 5
-_WRITE_FUTURES: WeakKeyDictionary[Document, list[Awaitable]] = WeakKeyDictionary()
+_WRITE_FUTURES: WeakKeyDictionary[Document, list[Future]] = WeakKeyDictionary()
 _WRITE_MSGS: WeakKeyDictionary[Document, dict[ServerConnection, list[Message]]] = WeakKeyDictionary()
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
 

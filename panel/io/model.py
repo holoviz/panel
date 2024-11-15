@@ -15,7 +15,8 @@ import numpy as np
 from bokeh.core.serialization import Serializer
 from bokeh.document import Document
 from bokeh.document.events import (
-    ColumnDataChangedEvent, DocumentPatchedEvent, ModelChangedEvent,
+    ColumnDataChangedEvent, DocumentChangedEvent, DocumentPatchedEvent,
+    ModelChangedEvent,
 )
 from bokeh.document.json import PatchJson
 from bokeh.model import DataModel
@@ -66,7 +67,7 @@ def monkeypatch_events(events: list[DocumentPatchedEvent]) -> None:
 #---------------------------------------------------------------------
 
 def diff(
-    doc: Document, binary: bool = True, events: list[DocumentPatchedEvent] | None = None
+    doc: Document, binary: bool = True, events: list[DocumentChangedEvent] | None = None
 ) -> Message[Any] | None:
     """
     Returns a json diff required to update an existing plot with

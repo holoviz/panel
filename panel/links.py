@@ -8,7 +8,7 @@ import sys
 import weakref
 
 from typing import (
-    TYPE_CHECKING, Any, Iterable, Optional, Sequence, Union,
+    TYPE_CHECKING, Any, Iterable, Sequence,
 )
 
 import param
@@ -27,11 +27,11 @@ if TYPE_CHECKING:
 
     try:
         from holoviews.core.dimension import Dimensioned
-        JSLinkTarget = Union[Reactive, BkModel, 'Dimensioned']
+        JSLinkTarget = Reactive | BkModel | Dimensioned
     except Exception:
-        JSLinkTarget = Union[Reactive, BkModel] # type: ignore
-    SourceModelSpec = tuple[Optional[str], str]
-    TargetModelSpec = tuple[Optional[str], Optional[str]]
+        JSLinkTarget = Reactive | BkModel # type: ignore
+    SourceModelSpec = tuple[str | None, str]
+    TargetModelSpec = tuple[str | None, str | None]
 
 
 def assert_source_syncable(source: 'Reactive', properties: Iterable[str]) -> None:
@@ -121,8 +121,8 @@ class Callback(param.Parameterized):
     _requires_target: bool = False
 
     def __init__(
-        self, source: 'Reactive', target: 'JSLinkTarget' = None,
-        args: dict[str, Any] = None, code: dict[str, str] = None,
+        self, source: Reactive, target: JSLinkTarget = None,
+        args: dict[str, Any] | None = None, code: dict[str, str] = None,
         **params
     ):
         """
@@ -287,7 +287,7 @@ class Link(Callback):
     # Whether the link requires a target
     _requires_target = True
 
-    def __init__(self, source: 'Reactive', target: Optional['JSLinkTarget'] = None, **params):
+    def __init__(self, source: Reactive | None, target: JSLinkTarget | None = None, **params):
         if self._requires_target and target is None:
             raise ValueError(f'{type(self).__name__} must define a target.')
         # Source is stored as a weakref to allow it to be garbage collected
@@ -295,7 +295,7 @@ class Link(Callback):
         super().__init__(source, **params)
 
     @property
-    def target(self) -> 'JSLinkTarget' | None:
+    def target(self) -> JSLinkTarget | None:
         return self._target() if self._target else None
 
     def link(self) -> None:
@@ -341,8 +341,8 @@ class CallbackGenerator:
     error = True
 
     def __init__(
-        self, root_model: 'Model', link: 'Link', source: 'Reactive',
-        target: Optional['JSLinkTarget'] = None, arg_overrides: dict[str, Any] = {}
+        self, root_model: Model, link: Link, source: Reactive,
+        target: JSLinkTarget | None = None, arg_overrides: dict[str, Any] = {}
     ):
         self.root_model = root_model
         self.link = link
@@ -364,8 +364,8 @@ class CallbackGenerator:
 
     @classmethod
     def _resolve_model(
-        cls, root_model: 'Model', obj: 'JSLinkTarget', model_spec: str | None
-    ) -> 'Model' | None:
+        cls, root_model: Model, obj: JSLinkTarget, model_spec: str | None
+    ) -> Model | None:
         """
         Resolves a model given the supplied object and a model_spec.
 
@@ -412,9 +412,9 @@ class CallbackGenerator:
         return model
 
     def _init_callback(
-        self, root_model: 'Model', link: 'Link', source: 'Reactive',
-        src_spec: 'SourceModelSpec', target: 'JSLinkTarget' | None,
-        tgt_spec: 'TargetModelSpec', code: Optional[str]
+        self, root_model: Model, link: Link, source: Reactive,
+        src_spec: SourceModelSpec, target: JSLinkTarget | None,
+        tgt_spec: TargetModelSpec, code: str | None
     ) -> None:
         references = {k: v for k, v in link.param.values().items()
                       if k not in ('source', 'target', 'name', 'code', 'args')}

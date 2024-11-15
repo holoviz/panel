@@ -108,7 +108,7 @@ class Design(param.Parameterized, ResourceComponent):
         'dark': DarkTheme
     }
 
-    _cache = {}
+    _cache: ClassVar[dict[str, ImportedStyleSheet]] = {}
 
     def __init__(self, theme=None, **params):
         if isinstance(theme, type) and issubclass(theme, Theme):
@@ -119,8 +119,8 @@ class Design(param.Parameterized, ResourceComponent):
         super().__init__(theme=theme, **params)
 
     def _reapply(
-        self, viewable: Viewable, root: Model, old_models: list[Model] = None,
-        isolated: bool=True, cache=None, document=None
+        self, viewable: Viewable, root: Model, old_models: list[Model] | None = None,
+        isolated: bool = True, cache=None, document: Document | None = None
     ) -> None:
         ref = root.ref['id']
         seen = set()
@@ -139,7 +139,9 @@ class Design(param.Parameterized, ResourceComponent):
 
     def _apply_hooks(self, viewable: Viewable, root: Model, changed: Viewable, old_models=None) -> None:
         from ..io.state import state
-        if root.document in state._stylesheets:
+        if root.document is None:
+            cache: dict[str, ImportedStyleSheet] = {}
+        elif root.document in state._stylesheets:
             cache = state._stylesheets[root.document]
         else:
             state._stylesheets[root.document] = cache = {}
@@ -186,7 +188,7 @@ class Design(param.Parameterized, ResourceComponent):
 
     @classmethod
     def _get_modifiers(
-        cls, viewable: Viewable, theme: Theme = None, isolated: bool = True
+        cls, viewable: Viewable, theme: Theme | None = None, isolated: bool = True
     ):
         from ..io.resources import (
             CDN_DIST, component_resource_path, resolve_custom_path,
@@ -215,7 +217,7 @@ class Design(param.Parameterized, ResourceComponent):
         return modifiers, child_modifiers
 
     @classmethod
-    def _patch_modifiers(cls, doc, modifiers, cache):
+    def _patch_modifiers(cls, doc: Document, modifiers: dict[str, Any], cache: dict[str, ImportedStyleSheet]):
         if 'stylesheets' in modifiers:
             stylesheets = []
             for sts in modifiers['stylesheets']:
@@ -306,7 +308,7 @@ class Design(param.Parameterized, ResourceComponent):
     # Public API
     #----------------------------------------------------------------
 
-    def apply(self, viewable: Viewable, root: Model, isolated: bool=True):
+    def apply(self, viewable: Viewable, root: Model, isolated: bool = True):
         """
         Applies the Design to a Viewable and all it children.
 

@@ -660,7 +660,7 @@ class panel_extension(_pyviz_extension):
     will be using the `FastListTemplate`.
     """
 
-    _loaded: ClassVar[bool] = False
+    _loaded: bool = False
 
     _imports: ClassVar[dict[str, str]] = {
         'ace': 'panel.models.ace',
@@ -702,9 +702,9 @@ class panel_extension(_pyviz_extension):
         'vtk': ['vtk']
     }
 
-    _loaded_extensions: ClassVar[list[str]] = []
+    _loaded_extensions: list[str] = []
 
-    _comms_detected_before: ClassVar[bool] = False
+    _comms_detected_before: bool = False
 
     def __call__(self, *args, **params):
         from bokeh.core.has_props import _default_resolver

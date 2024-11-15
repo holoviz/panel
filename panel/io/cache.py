@@ -89,34 +89,34 @@ def _get_fqn(obj):
     name = the_type.__qualname__
     return f"{module}.{name}"
 
-def _int_to_bytes(i):
+def _int_to_bytes(i: int) -> bytes:
     num_bytes = (i.bit_length() + 8) // 8
     return i.to_bytes(num_bytes, "little", signed=True)
 
-def _is_native(obj):
+def _is_native(obj: Any) -> bool:
     return isinstance(obj, _NATIVE_TYPES)
 
-def _is_native_tuple(obj):
+def _is_native_tuple(obj: Any) -> bool:
     return isinstance(obj, tuple) and all(_is_native_tuple(v) for v in obj)
 
-def _container_hash(obj):
+def _container_hash(obj: Any) -> bytes:
     h = hashlib.new("md5")
     h.update(_generate_hash(f'__{type(obj).__name__}'))
     for item in (obj.items() if isinstance(obj, dict) else obj):
         h.update(_generate_hash(item))
     return h.digest()
 
-def _slice_hash(x):
+def _slice_hash(x: slice) -> bytes:
     return _container_hash([x.start, x.step, x.stop])
 
-def _partial_hash(obj):
+def _partial_hash(obj: Any) -> bytes:
     h = hashlib.new("md5")
     h.update(_generate_hash(obj.args))
     h.update(_generate_hash(obj.func))
     h.update(_generate_hash(obj.keywords))
     return h.digest()
 
-def _pandas_hash(obj):
+def _pandas_hash(obj: Any) -> bytes:
     import pandas as pd
 
     if not isinstance(obj, (pd.Series, pd.DataFrame)):
@@ -200,7 +200,7 @@ def _io_hash(obj):
     h.update(_generate_hash(obj.getvalue()))
     return h.digest()
 
-_hash_funcs = {
+_hash_funcs: dict[str | type[Any] | tuple[type, ...] | Callable[[Any], bool], bytes | Callable[[Any], bytes]] = {
     # Types
     int          : _int_to_bytes,
     str          : lambda obj: obj.encode(),

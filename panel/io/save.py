@@ -7,7 +7,7 @@ import io
 import os
 
 from typing import (
-    IO, TYPE_CHECKING, Any, Iterable, Optional,
+    IO, TYPE_CHECKING, Any, Iterable,
 )
 
 import bokeh
@@ -141,7 +141,7 @@ def _title_from_models(models: Iterable[Model], title: str) -> str:
 
 def file_html(
     models: Model | Document | list[Model], resources: Resources | None,
-    title: Optional[str] = None, template: Template | str = BASE_TEMPLATE,
+    title: str | None = None, template: Template | str = BASE_TEMPLATE,
     template_variables: dict[str, Any] = {}, theme: ThemeLike = None,
     _always_new: bool = False
 ):
@@ -171,11 +171,11 @@ def file_html(
 #---------------------------------------------------------------------
 
 def save(
-    panel: Viewable, filename: str | os.PathLike | IO, title: Optional[str]=None,
+    panel: Viewable | Document, filename: str | os.PathLike | IO, title: str | None = None,
     resources: BkResources | None = None, template: Template | str | None = None,
-    template_variables: dict[str, Any] = None, embed: bool = False,
+    template_variables: dict[str, Any] | None = None, embed: bool = False,
     max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
-    json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
+    json_prefix: str = '', save_path: str = './', load_path: str | None = None,
     progress: bool = True, embed_states={}, as_png=None,
     **kwargs
 ) -> None:

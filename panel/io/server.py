@@ -143,7 +143,7 @@ def async_execute(func: Callable[..., None]) -> None:
 
 param.parameterized.async_executor = async_execute
 
-def _initialize_session_info(session_context: 'BokehSessionContext'):
+def _initialize_session_info(session_context: BokehSessionContext):
     from ..config import config
     session_id = session_context.id
     sessions = state.session_info['sessions']
@@ -393,7 +393,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             del headers['Cookie']
 
         arguments = {} if self.request.arguments is None else self.request.arguments
-        payload = {'headers': headers, 'cookies': cookies, 'arguments': arguments}
+        payload: TokenPayload = {'headers': headers, 'cookies': cookies, 'arguments': arguments}
         payload.update(self.application_context.application.process_request(self.request))
         return payload
 
