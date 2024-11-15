@@ -70,8 +70,8 @@ class ChatInterface(ChatFeed):
     >>>     yield contents
 
     >>> chat_interface = ChatInterface(
-        callback=repeat_contents, widgets=[TextInput(), FileInput()]
-    )
+    ...    callback=repeat_contents, widgets=[TextInput(), FileInput()]
+    ... )
     """
 
     auto_send_types = param.List(doc="""

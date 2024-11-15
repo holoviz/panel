@@ -133,7 +133,7 @@ class _state(param.Parameterized):
     _curdoc: ContextVar[Document | None] = ContextVar('curdoc', default=None)
 
     # Whether to hold comm events
-    _hold: ClassVar[bool] = False
+    _hold: bool = False
 
     # Used to ensure that events are not scheduled from the wrong thread
     _thread_id_: ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()

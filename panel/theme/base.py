@@ -100,7 +100,7 @@ class Design(param.Parameterized, ResourceComponent):
     modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
 
     # Defines the resources required to render this theme
-    _resources: ClassVar[dict[str, dict[str, str]]] = {}
+    _resources = {}
 
     # Declares valid themes for this Design
     _themes: ClassVar[dict[str, type[Theme]]] = {
@@ -145,8 +145,11 @@ class Design(param.Parameterized, ResourceComponent):
             cache = state._stylesheets[root.document]
         else:
             state._stylesheets[root.document] = cache = {}
-        with root.document.models.freeze():
-            self._reapply(changed, root, old_models, isolated=False, cache=cache, document=root.document)
+        if root.document:
+            with root.document.models.freeze():
+                self._reapply(changed, root, old_models, isolated=False, cache=cache, document=root.document)
+        else:
+            self._reapply(changed, root, old_models, isolated=False, cache=cache)
 
     def _wrapper(self, viewable):
         return viewable
@@ -195,7 +198,7 @@ class Design(param.Parameterized, ResourceComponent):
         )
         theme_type = type(theme) if isinstance(theme, Theme) else theme
         is_server = bool(state.curdoc.session_context) if not state._is_pyodide and state.curdoc else False
-        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme_type, is_server=is_server)
+        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme_type, is_server=is_server)  # type: ignore
         modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
             if isolated:
@@ -217,7 +220,7 @@ class Design(param.Parameterized, ResourceComponent):
         return modifiers, child_modifiers
 
     @classmethod
-    def _patch_modifiers(cls, doc: Document, modifiers: dict[str, Any], cache: dict[str, ImportedStyleSheet]):
+    def _patch_modifiers(cls, doc: Document | None, modifiers: dict[str, Any], cache: dict[str, ImportedStyleSheet]):
         if 'stylesheets' in modifiers:
             stylesheets = []
             for sts in modifiers['stylesheets']:

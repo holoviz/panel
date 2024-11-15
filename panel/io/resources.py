@@ -481,7 +481,6 @@ class ResourceComponent:
         'raw_css': [],
     }
 
-
     @classmethod
     def _resolve_resource(
         cls,
@@ -556,9 +555,9 @@ class ResourceComponent:
                 for name, url in res.items()
             }
             if rt in resources:
-                resources[rt] = dict(resources[rt], **res)
+                resources[rt] = dict(resources[rt], **res)  # type: ignore
             else:
-                resources[rt] = res
+                resources[rt] = res  # type: ignore
 
         resource_types: ResourcesType = {
             'js': {},
@@ -569,20 +568,20 @@ class ResourceComponent:
 
         cdn = use_cdn() if cdn == 'auto' else cdn
         for resource_type in resource_types:
-            if resource_type not in resources or resource_type == 'raw_css':
+            if resource_type not in resources or resource_type == 'raw_css':  # type: ignore
                 continue
-            resource_files = resource_types[resource_type]
-            for rname, resource in resources[resource_type].items():
+            resource_files = resource_types[resource_type]  # type: ignore
+            for rname, resource in resources[resource_type].items():  # type: ignore
                 resolved_resource = self._resolve_resource(
                     resource_type, resource, cdn=cdn
                 )
                 if resolved_resource:
-                    resource_files[rname] = resolved_resource
+                    resource_files[rname] = resolved_resource  # type: ignore
 
         version_suffix = f'?v={JS_VERSION}'
         dist_path = get_dist_path(cdn=cdn)
         for resource_type, extra_resources in (extras or {}).items():
-            resource_files = resource_types[resource_type]
+            resource_files = resource_types[resource_type]  # type: ignore
             for name, res in extra_resources.items():
                 if not cdn:
                     res = res.replace(CDN_DIST, dist_path)

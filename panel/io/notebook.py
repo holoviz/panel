@@ -197,7 +197,8 @@ def render_model(
         # ALERT: Replace with better approach before Bokeh 3.x compatible release
         dist_url = '/panel-preview/static/extensions/panel/'
         patch_model_css(model, dist_url=dist_url)
-        model.document._template_variables['dist_url'] = dist_url
+        if model.document:
+            model.document._template_variables['dist_url'] = dist_url
 
     (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], suppress_callback_warning=True)
     div = div_for_render_item(render_item)
@@ -479,7 +480,7 @@ def show_server(panel: Any, notebook_url: str, port: int = 0) -> 'Server':
     if callable(notebook_url):
         url = notebook_url(server.port)
     else:
-        url = _server_url(notebook_url, server.port)
+        url = _server_url(notebook_url, server.port or port)
 
     script = server_document(url, resources=None)
 
@@ -495,7 +496,7 @@ def render_embed(
     panel, max_states: int = 1000, max_opts: int = 3, json: bool = False,
     json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
     progress: bool = True, states: dict[Widget, list[Any]] = {}
-) -> None:
+) -> Mimebundle:
     """
     Renders a static version of a panel in a notebook by evaluating
     the set of states defined by the widgets in the model. Note

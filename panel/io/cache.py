@@ -562,7 +562,7 @@ def cache(
     except AttributeError:
         pass
 
-    return wrapped_func
+    return wrapped_func  # type: ignore
 
 def is_equal(value, other)->bool:
     """Returns True if value and other are equal
