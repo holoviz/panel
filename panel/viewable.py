@@ -60,7 +60,7 @@ if TYPE_CHECKING:
     from .theme import Design
 
 
-_tasks = set()
+_tasks: set[asyncio.Task] = set()
 
 
 class Layoutable(param.Parameterized):
@@ -308,7 +308,7 @@ class ServableMixin:
     """
 
     def _modify_doc(
-        self, server_id: str, title: str, doc: Document, location: Optional['Location']
+        self, server_id: str, title: str, doc: Document, location: Location | bool | None
     ) -> Document:
         """
         Callback to handle FunctionHandler document creation.
@@ -969,8 +969,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         )
 
     def server_doc(
-        self, doc: Optional[Document] = None, title: Optional[str] = None,
-        location: bool | 'Location' = True
+        self, doc: Document | None = None, title: str | None = None,
+        location: bool | Location = True
     ) -> Document:
         """
         Returns a serveable bokeh Document with the panel attached

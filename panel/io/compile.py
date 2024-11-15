@@ -13,14 +13,15 @@ import tempfile
 
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bokeh.application.handlers.code_runner import CodeRunner
 
 from ..custom import ReactComponent, ReactiveESM
 
 if TYPE_CHECKING:
-    from .custom import ExportSpec
+    from ..custom import ExportSpec
+
 
 GREEN, RED, RESET = "\033[0;32m", "\033[0;31m", "\033[0m"
 
@@ -52,7 +53,7 @@ def setup_build_dir(build_dir: str | os.PathLike | None = None):
         temp_dir = pathlib.Path(build_dir).absolute()
         temp_dir.mkdir(parents=True, exist_ok=True)
     else:
-        temp_dir = tempfile.mkdtemp()
+        temp_dir = pathlib.Path(tempfile.mkdtemp())
     try:
         os.chdir(temp_dir)
         yield temp_dir
@@ -73,7 +74,7 @@ def check_cli_tool(tool_name):
         return False
 
 
-def find_module_bundles(module_spec: str) -> dict[pathlib.PurePath, list[ReactiveESM]]:
+def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[ReactiveESM]]:
     """
     Takes module specifications and extracts a set of components to bundle.
 
@@ -106,12 +107,13 @@ def find_module_bundles(module_spec: str) -> dict[pathlib.PurePath, list[Reactiv
             f'you provided the right module{cls_error}.'
         )
     if module in sys.modules:
-        module_path = sys.modules[module].__file__
+        module_file = sys.modules[module].__file__
     else:
-        module_path = module
+        module_file = module
+    assert module_file is not None
 
     bundles = defaultdict(list)
-    module_path = pathlib.Path(module_path).parent
+    module_path = pathlib.Path(module_file).parent
     for component in components:
         if component._bundle:
             bundle_path = component._bundle
@@ -119,14 +121,14 @@ def find_module_bundles(module_spec: str) -> dict[pathlib.PurePath, list[Reactiv
                 path = (module_path / bundle_path).absolute()
             else:
                 path = bundle_path.absolute()
-            bundles[str(path)].append(component)
+            bundles[path].append(component)
         elif len(components) > 1 and not classes:
             component_module = module_name or component.__module__
             bundles[module_path / f'{component_module}.bundle.js'].append(component)
         else:
             bundles[component._module_path / f'{component.__name__}.bundle.js'].append(component)
 
-    return bundles
+    return dict(bundles)
 
 
 def find_components(module_or_file: str | os.PathLike, classes: list[str] | None = None) -> list[type[ReactiveESM]]:
@@ -145,19 +147,20 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
     -------
     List of ReactiveESM components defined in the module.
     """
-    py_file = module_or_file.endswith('.py')
+    py_file = str(module_or_file).endswith('.py')
     if py_file:
         path_obj = pathlib.Path(module_or_file)
         source = path_obj.read_text(encoding='utf-8')
         runner = CodeRunner(source, module_or_file, [])
         module = runner.new_module()
+        assert module is not None
         runner.run(module)
         if runner.error:
             raise RuntimeError(
                 f'Compilation failed because supplied module errored on import:\n\n{runner.error}'
             )
     else:
-        module = importlib.import_module(module_or_file)
+        module = importlib.import_module(str(module_or_file))
     classes = classes or []
     components = []
     for v in module.__dict__.values():
@@ -177,7 +180,7 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
     return components
 
 
-def packages_from_code(esm_code: str) -> dict[str, str]:
+def packages_from_code(esm_code: str) -> tuple[str, dict[str, str]]:
     """
     Extracts package version definitions from ESM code.
 
@@ -205,7 +208,7 @@ def packages_from_code(esm_code: str) -> dict[str, str]:
     return esm_code, packages
 
 
-def replace_imports(esm_code: str, replacements: dict[str, str]) -> dict[str, str]:
+def replace_imports(esm_code: str, replacements: dict[str, str]) -> str:
     """
     Replaces imports in the code which may be aliases with the actual
     package names.
@@ -239,7 +242,7 @@ def replace_imports(esm_code: str, replacements: dict[str, str]) -> dict[str, st
     return modified_code
 
 
-def packages_from_importmap(esm_code: str, imports: dict[str, str]) -> dict[str, str]:
+def packages_from_importmap(esm_code: str, imports: dict[str, str]) -> tuple[str, dict[str, str]]:
     """
     Extracts package version definitions from an import map.
 
@@ -270,7 +273,7 @@ def packages_from_importmap(esm_code: str, imports: dict[str, str]) -> dict[str,
     return esm_code, dependencies
 
 
-def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, any]]:
+def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, Any]]:
     """
     Extracts dependencies from a ReactiveESM component by parsing its
     importmap and the associated code and replaces URL import
@@ -345,7 +348,7 @@ def generate_index(imports: str, exports: list[str], export_spec: ExportSpec):
 def generate_project(
     components: list[type[ReactiveESM]],
     path: str | os.PathLike,
-    project_config: dict[str, any] = None
+    project_config: dict[str, Any] | None = None
 ):
     """
     Converts a set of ESM components into a Javascript project with
@@ -353,7 +356,8 @@ def generate_project(
     """
     path = pathlib.Path(path)
     component_names = []
-    dependencies, export_spec = {}, {}
+    dependencies = {}
+    export_spec: ExportSpec = {}
     index = ''
     for component in components:
         name = component.__name__
@@ -391,11 +395,11 @@ def generate_project(
 
 def compile_components(
     components: list[type[ReactiveESM]],
-    build_dir: str | os.PathLike = None,
-    outfile: str | os.PathLike = None,
+    build_dir: str | os.PathLike | None = None,
+    outfile: str | os.PathLike | None = None,
     minify: bool = True,
     verbose: bool = True
-) -> str | None:
+) -> int | str | None:
     """
     Compiles a list of ReactiveESM components into a single JavaScript bundle
     including their Javascript dependencies.
@@ -434,8 +438,8 @@ def compile_components(
         )
 
     out = str(pathlib.Path(outfile).absolute()) if outfile else None
-    with setup_build_dir(build_dir) as build_dir:
-        generate_project(components, build_dir)
+    with setup_build_dir(build_dir) as out_dir:
+        generate_project(components, out_dir)
         extra_args = []
         if verbose:
             extra_args.append('--log-level=debug')

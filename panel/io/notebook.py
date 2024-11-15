@@ -48,6 +48,7 @@ from .resources import (
 from .state import state
 
 if TYPE_CHECKING:
+    from bokeh.protocol.message import Message
     from bokeh.server.server import Server
     from jinja2 import Template
 
@@ -68,7 +69,7 @@ HTML_MIME: str = 'text/html'
 def _jupyter_server_extension_paths() -> list[dict[str, str]]:
     return [{"module": "panel.io.jupyter_server_extension"}]
 
-def push(doc: Document, comm: Comm, binary: bool = True, msg: any = None) -> None:
+def push(doc: Document, comm: Comm, binary: bool = True, msg: Message | None = None) -> None:
     """
     Pushes events stored on the document across the provided comm.
     """
@@ -89,7 +90,7 @@ def push(doc: Document, comm: Comm, binary: bool = True, msg: any = None) -> Non
     else:
         send(comm, msg)
 
-def send(comm: Comm, msg: any):
+def send(comm: Comm, msg: Message):
     """
     Sends a bokeh message across a pyviz_comms.Comm.
     """

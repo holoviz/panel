@@ -127,7 +127,6 @@ class PyComponent(Viewable, Layoutable):
             view = ParamMethod(self.__panel__, lazy=True)
         else:
             view = panel(self.__panel__())
-        self._view__ = view
         params = view.param.values()
         overrides, sync = {}, {}
         for p in Layoutable.param:
@@ -139,13 +138,14 @@ class PyComponent(Viewable, Layoutable):
         self.param.update(overrides)
         with param.parameterized._syncing(view, list(sync)):
             view.param.update(sync)
+        return view
 
     def _get_model(
         self, doc: Document, root: Optional['Model'] = None,
         parent: Optional['Model'] = None, comm: Optional[Comm] = None
     ) -> 'Model':
         if self._view__ is None:
-            self._create__view()
+            self._view__ = self._create__view()
         model = self._view__._get_model(doc, root, parent, comm)
         root = model if root is None else root
         self._models[root.ref['id']] = (model, parent)
@@ -523,7 +523,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)
 
-    def _handle_msg(self, data: any) -> None:
+    def _handle_msg(self, data: Any) -> None:
         """
         Message handler for messages sent from the frontend using the
         `model.send_msg` API.
@@ -534,7 +534,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             Data received from the frontend.
         """
 
-    def _send_msg(self, data: any) -> None:
+    def _send_msg(self, data: Any) -> None:
         """
         Sends data to the frontend which can be observed on the frontend
         with the `model.on_msg("msg:custom", callback)` API.
@@ -662,7 +662,7 @@ class ReactComponent(ReactiveESM):
 
     _react_version = '18.3.1'
 
-    @classproperty
+    @classproperty  # type: ignore
     def _exports__(cls) -> ExportSpec:
         imports = cls._importmap.get('imports', {})
         exports = {

@@ -7,7 +7,9 @@ import os
 import pathlib
 import uuid
 
-from typing import IO, Any, Literal
+from typing import (
+    IO, Any, Literal, Sequence,
+)
 
 import bokeh
 
@@ -133,7 +135,7 @@ def make_index(files, title=None, manifest=True):
         favicon=favicon, title=title, PANEL_CDN=CDN_DIST
     )
 
-def build_pwa_manifest(files, title=None, **kwargs):
+def build_pwa_manifest(files, title=None, **kwargs) -> str:
     if len(files) > 1:
         title = title or 'Panel Applications'
         path = 'index.html'
@@ -426,8 +428,8 @@ def convert_app(
 
 
 def _convert_process_pool(
-    apps: list[str],
-    dest_path: str | None = None,
+    apps: Sequence[str | os.PathLike],
+    dest_path: os.PathLike | str | None = None,
     max_workers: int = 4,
     requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
     **kwargs
@@ -460,7 +462,7 @@ def _convert_process_pool(
     return files
 
 def convert_apps(
-    apps: str | os.PathLike | list[str | os.PathLike],
+    apps: str | os.PathLike | Sequence[str | os.PathLike],
     dest_path: str | os.PathLike | None = None,
     title: str | None = None,
     runtime: Runtimes = 'pyodide-worker',
@@ -543,18 +545,18 @@ def convert_apps(
         app_requirements = requirements
 
     kwargs = {
-        'requirements': app_requirements, 'runtime': runtime,
-        'prerender': prerender, 'manifest': manifest,
-        'panel_version': panel_version, 'http_patch': http_patch,
-        'inline': inline, 'verbose': verbose, 'compiled': compiled,
+        'runtime': runtime, 'prerender': prerender,
+        'manifest': manifest, 'panel_version': panel_version,
+        'http_patch': http_patch, 'inline': inline,
+        'verbose': verbose, 'compiled': compiled,
         'local_prefix': local_prefix
     }
 
     if state._is_pyodide:
-        files = dict(convert_app(app, dest_path, **kwargs) for app in apps)
+        files = dict(convert_app(app, dest_path, requirements=app_requirements, **kwargs) for app in apps)
     else:
         files = _convert_process_pool(
-            apps, dest_path, max_workers=max_workers, **kwargs
+            apps, dest_path, max_workers=max_workers, requirements=app_requirements, **kwargs
         )
 
     if build_index and len(files) >= 1:

@@ -10,7 +10,7 @@ import os
 from functools import partial
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, Callable, Mapping,
+    TYPE_CHECKING, Any, Callable, Mapping, TypeAlias,
 )
 from urllib.parse import urljoin
 
@@ -40,8 +40,8 @@ if TYPE_CHECKING:
     from ..viewable import Viewable, Viewer
     from .location import Location
 
-    TViewable = Viewable | Viewer | BaseTemplate
-    TViewableFuncOrPath = TViewable | Callable[[], TViewable] | os.PathLike | str
+    TViewable: TypeAlias = Viewable | Viewer | BaseTemplate
+    TViewableFuncOrPath: TypeAlias = TViewable | Callable[[], TViewable] | os.PathLike | str
 
 
 logger = logging.getLogger('panel.io.application')

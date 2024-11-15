@@ -57,7 +57,7 @@ class Theme(param.Parameterized):
        A stylesheet that overrides variables specifically for the
        Theme subclass. In most cases, this is not necessary.""")
 
-    modifiers: ClassVar[dict[Viewable, dict[str, Any]]] = {}
+    modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
 
 
 BOKEH_DARK = dict(_dark_minimal.json)
@@ -97,7 +97,7 @@ class Design(param.Parameterized, ResourceComponent):
     theme = param.ClassSelector(class_=Theme, constant=True)
 
     # Defines parameter overrides to apply to each model
-    modifiers: ClassVar[dict[Viewable, dict[str, Any]]] = {}
+    modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
 
     # Defines the resources required to render this theme
     _resources: ClassVar[dict[str, dict[str, str]]] = {}

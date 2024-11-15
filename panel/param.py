@@ -36,14 +36,6 @@ from param.parameterized import (
 )
 from param.reactive import rx
 
-try:
-    from param import Skip
-except Exception:
-    class Skip(RuntimeError):
-        """
-        Exception that allows skipping an update for function-level updates.
-        """
-
 from .config import config
 from .io import state
 from .layout import (
@@ -214,7 +206,7 @@ class Param(Pane):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    mapping: ClassVar[Mapping[param.Parameter, Widget | Callable[[param.Parameter], Widget]]] = {
+    mapping: ClassVar[Mapping[param.Parameter, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
         param.Action:            Button,
         param.Array:             ArrayInput,
         param.Boolean:           Checkbox,

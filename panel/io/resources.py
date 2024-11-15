@@ -42,9 +42,11 @@ from .state import state
 if TYPE_CHECKING:
     from bokeh.resources import Urls
 
-    class ResourcesType(TypedDict):
+    # Make fields optional
+    class ResourcesType(TypedDict, total=False):
         css: dict[str, str]
-        js:  dict[str, str]
+        font: dict[str, str]
+        js: dict[str, str]
         js_modules: dict[str, str]
         raw_css: list[str]
 
@@ -145,7 +147,7 @@ JS_URLS = {
     'bootstrap5': f'{CDN_DIST}bundled/bootstrap5/js/bootstrap.bundle.min.js'
 }
 
-extension_dirs['panel'] = str(DIST_DIR)
+extension_dirs['panel'] = DIST_DIR
 
 bokeh.embed.wrappers._ONLOAD = """\
 (function() {
@@ -222,11 +224,13 @@ def resolve_custom_path(
     path: pathlib.Path | None
     """
     if not path:
-        return
+        return None
     if not isinstance(obj, type):
         obj = type(obj)
     try:
         mod = importlib.import_module(obj.__module__)
+        if mod.__file__ is None:
+            return None
         module_path = Path(mod.__file__).parent
         assert module_path.exists()
     except Exception:
@@ -244,7 +248,7 @@ def resolve_custom_path(
     abs_path = abs_path.resolve()
     if not relative:
         return abs_path
-    return os.path.relpath(abs_path, module_path)
+    return pathlib.Path(os.path.relpath(abs_path, module_path))
 
 def component_resource_path(component, attr, path):
     """
@@ -469,7 +473,7 @@ class ResourceComponent:
     that have to be resolved.
     """
 
-    _resources = {
+    _resources: ResourcesType = {
         'css': {},
         'font': {},
         'js': {},
@@ -477,8 +481,14 @@ class ResourceComponent:
         'raw_css': [],
     }
 
+
     @classmethod
-    def _resolve_resource(cls, resource_type: str, resource: str, cdn: bool = False):
+    def _resolve_resource(
+        cls,
+        resource_type: str,
+        resource: str,
+        cdn: bool = False
+    ) -> str:
         dist_path = get_dist_path(cdn=cdn)
         if resource.startswith(CDN_DIST):
             resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
@@ -508,6 +518,9 @@ class ResourceComponent:
             return component_resource_path(
                 cls, f'_resources/{resource_type}', resource
             )
+        raise FileNotFoundError(
+            f'Could not resolve resource {resource!r}'
+        )
 
     def resolve_resources(
         self,
@@ -532,7 +545,7 @@ class ResourceComponent:
         Dictionary containing JS and CSS resources.
         """
         cls = type(self)
-        resources = {}
+        resources: ResourcesType = {}
         for rt, res in self._resources.items():
             if not isinstance(res, dict):
                 continue

@@ -27,7 +27,6 @@ from .state import state
 
 if TYPE_CHECKING:
     from bokeh.core.enums import HoldPolicyType
-    from bokeh.document.events import DocumentChangedEvent
     from bokeh.protocol.message import Message
     from pyviz_comms import Comm
 
@@ -46,7 +45,7 @@ class comparable_array(np.ndarray):
     def __ne__(self, other: Any) -> bool:
         return not np.array_equal(self, other, equal_nan=True)
 
-def monkeypatch_events(events: list[DocumentChangedEvent]) -> None:
+def monkeypatch_events(events: list[DocumentPatchedEvent]) -> None:
     """
     Patch events applies patches to events that are to be dispatched
     avoiding various issues in Bokeh.
@@ -67,7 +66,7 @@ def monkeypatch_events(events: list[DocumentChangedEvent]) -> None:
 #---------------------------------------------------------------------
 
 def diff(
-    doc: Document, binary: bool = True, events: Optional[list[DocumentChangedEvent]] = None
+    doc: Document, binary: bool = True, events: list[DocumentPatchedEvent] | None = None
 ) -> Message[Any] | None:
     """
     Returns a json diff required to update an existing plot with
@@ -80,7 +79,7 @@ def diff(
 
     patch_events = [event for event in events if isinstance(event, DocumentPatchedEvent)]
     if not patch_events:
-        return
+        return None
     monkeypatch_events(patch_events)
     serializer = Serializer(references=doc.models.synced_references, deferred=binary)
     patch_json = PatchJson(events=serializer.encode(patch_events))
@@ -93,7 +92,7 @@ def diff(
             msg.add_buffer(buffer)
     return msg
 
-def remove_root(obj: Model, replace: Document | None = None, skip: set[Model] | None = None) -> None:
+def remove_root(obj: Model, replace: Document | None = None, skip: set[Model] | None = None) -> set[Model]:
     """
     Removes the document from any previously displayed bokeh object
     """

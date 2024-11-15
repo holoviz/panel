@@ -17,7 +17,7 @@ import uuid
 from functools import partial, wraps
 from html import escape
 from typing import (
-    TYPE_CHECKING, Any, Callable, Mapping, Optional,
+    TYPE_CHECKING, Any, Callable, Mapping, Optional, TypedDict,
 )
 from urllib.parse import urlparse
 
@@ -86,6 +86,11 @@ if TYPE_CHECKING:
     from .application import TViewableFuncOrPath
     from .location import Location
 
+    class TokenPayload(TypedDict):
+        headers: dict[str, Any]
+        cookies: dict[str, Any]
+        arguments: dict[str, Any]
+
 
 #---------------------------------------------------------------------
 # Private API
@@ -126,7 +131,7 @@ def async_execute(func: Callable[..., None]) -> None:
         unlock = not getattr(func, 'lock', False)
     curdoc = state.curdoc
     @wraps(func)
-    async def wrapper(*args, **kw):
+    async def wrapped(*args, **kw):
         with set_curdoc(curdoc):
             try:
                 return await func(*args, **kw)
@@ -134,7 +139,7 @@ def async_execute(func: Callable[..., None]) -> None:
                 state._handle_exception(e)
     if unlock:
         wrapper.nolock = True # type: ignore
-    state.curdoc.add_next_tick_callback(wrapper)
+    state.curdoc.add_next_tick_callback(wrapped)
 
 param.parameterized.async_executor = async_execute
 
@@ -345,7 +350,7 @@ class LoginUrlMixin:
 class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated
-    async def get_session(self):
+    async def get_session(self) -> ServerSession:
         from ..config import config
         path = self.request.path
         session = None
@@ -363,7 +368,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
                     session.block_expiration()
         return session
 
-    def _generate_token_payload(self):
+    def _generate_token_payload(self) -> TokenPayload:
         app = self.application
         if app.include_headers is None:
             excluded_headers = (app.exclude_headers or [])
@@ -392,8 +397,9 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
         payload.update(self.application_context.application.process_request(self.request))
         return payload
 
-    def _authorize(self, session=False):
+    def _authorize(self, session: bool = False) -> tuple[bool, str | None]:
         """
+        Determine if user is authorized to access this application.
         """
         auth_cb = config.authorize_callback
         # If inside a session ensure the authorize callback is not global
@@ -429,7 +435,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             logger.warning(auth_error)
         return authorized, auth_error
 
-    def _render_auth_error(self, auth_error):
+    def _render_auth_error(self, auth_error: str) -> str:
         if config.auth_template:
             with open(config.auth_template) as f:
                 template = _env.from_string(f.read())

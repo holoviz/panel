@@ -122,7 +122,7 @@ def _display(*objs, **kwargs):
 
 def exec_with_return(
     code: str,
-    global_context: dict[str, Any] = None,
+    global_context: dict[str, Any] | None = None,
     stdout: Any = None,
     stderr: Any = None
 ) -> Any:

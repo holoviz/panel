@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import http.server
@@ -31,10 +33,10 @@ pnv = Version(pn.__version__)
 
 try:
     import holoviews as hv
-    hv_version = Version(hv.__version__)
+    hv_version: Version | None = Version(hv.__version__)
 except Exception:
     hv, hv_version = None, None
-hv_available = pytest.mark.skipif(hv is None or hv_version < Version('1.13.0a23'),
+hv_available = pytest.mark.skipif(hv_version is None or hv_version < Version('1.13.0a23'),
                                   reason="requires holoviews")
 
 try:
@@ -370,7 +372,7 @@ class NBSR:
         '''
 
         self._s = stream
-        self._q = Queue()
+        self._q: Queue = Queue()
 
         def _populateQueue(stream, queue):
             '''

@@ -77,7 +77,7 @@ def deprecated(
     if isinstance(remove_version, str):
         remove_version = Version(remove_version)
 
-    if remove_version <= base_version and not (current_version.is_prerelease and current_version.pre[0] != 'rc'):
+    if remove_version <= base_version and not (current_version.pre and current_version.pre[0] != 'rc'):
         # This error is mainly for developers to remove the deprecated.
         raise ValueError(
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."

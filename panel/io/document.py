@@ -15,15 +15,17 @@ import weakref
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Any, Callable, Iterator,
+    TYPE_CHECKING, Any, Awaitable, Callable, Future, Iterator, Sequence, cast,
 )
+from weakref import WeakKeyDictionary
 
 from bokeh.application.application import SessionContext
 from bokeh.core.serialization import Serializable
 from bokeh.document.document import Document
 from bokeh.document.events import (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
-    DocumentChangedEvent, MessageSentEvent, ModelChangedEvent,
+    DocumentChangedEvent, DocumentPatchedEvent, MessageSentEvent,
+    ModelChangedEvent,
 )
 from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
@@ -37,6 +39,7 @@ from .state import curdoc_locked, state
 if TYPE_CHECKING:
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
+    from bokeh.document import Document
     from bokeh.protocol.message import Message
     from bokeh.server.connection import ServerConnection
     from pyviz_comms import Comm
@@ -52,14 +55,14 @@ DISPATCH_EVENTS = (
     ModelChangedEvent, MessageSentEvent
 )
 GC_DEBOUNCE = 5
-_WRITE_FUTURES = weakref.WeakKeyDictionary()
-_WRITE_MSGS = weakref.WeakKeyDictionary()
-_WRITE_BLOCK = weakref.WeakKeyDictionary()
+_WRITE_FUTURES: WeakKeyDictionary[Document, list[Awaitable]] = WeakKeyDictionary()
+_WRITE_MSGS: WeakKeyDictionary[Document, dict[ServerConnection, list[Message]]] = WeakKeyDictionary()
+_WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
 
 _panel_last_cleanup = None
-_write_tasks = []
+_write_tasks: list[asyncio.Task] = []
 
-extra_socket_handlers = {}
+extra_socket_handlers: dict[type, Callable[[Any], None]] = {}
 
 @dataclasses.dataclass
 class Request:
@@ -281,11 +284,11 @@ def retrigger_events(doc: Document, events: list[DocumentChangedEvent]):
 def write_events(
     doc: Document,
     connections: list[ServerConnection],
-    events: list[DocumentChangedEvent]
+    events: list[DocumentPatchedEvent]
 ):
     from tornado.websocket import WebSocketHandler
 
-    futures = []
+    futures: list[Future] = []
     for conn in connections:
         if isinstance(conn._socket, WebSocketHandler):
             futures += dispatch_tornado(conn, events)
@@ -307,7 +310,7 @@ def write_events(
 def schedule_write_events(
     doc: Document,
     connections: list[ServerConnection],
-    events: list[DocumentChangedEvent]
+    events: list[DocumentPatchedEvent]
 ):
     # Set up write locks
     _WRITE_BLOCK[doc] = True
@@ -386,16 +389,19 @@ def with_lock(func: Callable) -> Callable:
 
 def dispatch_tornado(
     conn: ServerConnection,
-    events: list[DocumentChangedEvent] | None = None,
+    events: list[DocumentPatchedEvent] | None = None,
     msg: Message | None = None
-):
+) -> Sequence[Future]:
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
     ws_conn = getattr(socket, 'ws_connection', False)
     if not ws_conn or ws_conn.is_closing(): # type: ignore
         return []
-    if msg is None:
-        msg = conn.protocol.create('PATCH-DOC', events)
+    elif msg is None:
+        if events:
+            msg = conn.protocol.create('PATCH-DOC', events)
+        else:
+            return []
     futures = [
         WebSocketHandler.write_message(socket, msg.header_json),
         WebSocketHandler.write_message(socket, msg.metadata_json),
@@ -412,12 +418,17 @@ def dispatch_tornado(
 
 def dispatch_django(
     conn: ServerConnection,
-    events: list[DocumentChangedEvent] | None = None,
+    events: list[DocumentPatchedEvent] | None = None,
     msg: Message | None = None
-):
+) -> Sequence[Future]:
     socket = conn._socket
     if msg is None:
-        msg = conn.protocol.create('PATCH-DOC', events)
+        return []
+    elif msg is None:
+        if events:
+            msg = conn.protocol.create('PATCH-DOC', events)
+        else:
+            return
     futures = [
         socket.send(text_data=msg.header_json),
         socket.send(text_data=msg.metadata_json),
@@ -496,7 +507,7 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
 
         try:
             if writeable_events:
-                write_events(curdoc, connections, writeable_events)
+                write_events(curdoc, connections, cast(list[DocumentPatchedEvent], writeable_events))
         except Exception:
             remaining_events = events
         finally:

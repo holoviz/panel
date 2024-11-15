@@ -1,7 +1,10 @@
 import argparse
 import json
+import os
 import pathlib
 import time
+
+from typing import Literal, cast
 
 from bokeh.command.subcommand import Argument, Subcommand
 
@@ -25,61 +28,61 @@ class Convert(Subcommand):
             help    = "The app directories or scripts to serve (serve empty document if not specified)",
             default = None,
         )),
-        ('--exclude', dict(
+        ('--exclude', Argument(
             nargs   = '*',
             help    = "A list of files to exclude.",
             default = None
         )),
-        ('--to', dict(
+        ('--to', Argument(
             action  = 'store',
             type    = str,
             help    = "The format to convert to, one of 'pyodide' (default), 'pyodide-worker', 'pyscript' or 'pyscript-worker'",
             default = 'pyodide'
         )),
-        ('--compiled', dict(
+        ('--compiled', Argument(
             default = False,
             action  = 'store_false',
             help    = "Whether to use the compiled and faster version of Pyodide."
         )),
-        ('--out', dict(
+        ('--out', Argument(
             action  = 'store',
             type    = str,
             help    = "The directory to write the file to.",
         )),
-        ('--title', dict(
+        ('--title', Argument(
             action  = 'store',
             type    = str,
             help    = "A custom title for the application(s).",
         )),
-        ('--skip-embed', dict(
+        ('--skip-embed', Argument(
             action  = 'store_true',
             help    = "Whether to skip embedding pre-rendered content in the converted file to display content while app is loading.",
         )),
-        ('--index', dict(
+        ('--index', Argument(
             action  = 'store_true',
             help    = "Whether to create an index if multiple files are served.",
         )),
-        ('--pwa', dict(
+        ('--pwa', Argument(
             action  = 'store_true',
             help    = "Whether to add files to serve applications as a Progressive Web App.",
         )),
-        ('--requirements', dict(
+        ('--requirements', Argument(
             nargs   = '+',
             help    = (
                 "Explicit requirements to add to the converted file, a single requirements.txt file or a "
                 "JSON file containing requirements per app. By default requirements are inferred from the code."
             )
         )),
-        ('--disable-http-patch', dict(
+        ('--disable-http-patch', Argument(
             default = False,
             action  = 'store_false',
             help    = "Whether to disable patching http requests using the pyodide-http library."
         )),
-        ('--watch', dict(
+        ('--watch', Argument(
             action  = 'store_true',
             help    = "Watch the files"
         )),
-        ('--num-procs', dict(
+        ('--num-procs', Argument(
             action  = 'store',
             type    = int,
             default = 1,
@@ -93,7 +96,7 @@ class Convert(Subcommand):
         runtime = args.to.lower()
         if runtime not in self._targets:
             raise ValueError(f'Supported conversion targets include: {self._targets!r}')
-        requirements = args.requirements or 'auto'
+        requirements: list[str] | Literal['auto'] | os.PathLike = args.requirements or 'auto'
         if (
             isinstance(requirements, list) and
             len(requirements) == 1 and
@@ -101,7 +104,7 @@ class Convert(Subcommand):
         ):
             req = requirements[0]
             if req.endswith('.txt'):
-                requirements = requirements[0]
+                requirements = pathlib.Path(requirements[0])
             elif req.endswith('.json'):
                 with open(req, encoding='utf-8') as req_file:
                     requirements = json.load(req_file)
@@ -115,7 +118,7 @@ class Convert(Subcommand):
             elif p not in excluded:
                 included.append(p)
 
-        prev_hashes = {}
+        prev_hashes: dict[pathlib.Path, int] = {}
         built = False
         while True:
             hashes = {f: hash(open(f).read()) for f in included}
@@ -127,7 +130,8 @@ class Convert(Subcommand):
             index = args.index and not built
             try:
                 convert_apps(
-                    files, dest_path=args.out, runtime=runtime, requirements=requirements,
+                    cast(list[os.PathLike], files),
+                    dest_path=args.out, runtime=runtime, requirements=requirements,
                     prerender=not args.skip_embed, build_index=index, build_pwa=args.pwa,
                     title=args.title, max_workers=args.num_procs,
                     http_patch=not args.disable_http_patch, compiled=args.compiled,

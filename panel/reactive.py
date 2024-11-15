@@ -19,7 +19,7 @@ from collections import Counter, defaultdict, namedtuple
 from functools import lru_cache, partial
 from pprint import pformat
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, Sequence, Union,
 )
 
 import jinja2
@@ -115,7 +115,7 @@ class Syncable(Renderable):
     _stylesheets: ClassVar[list[str]] = []
 
     # Property changes that should not trigger busy indicator
-    _busy__ignore = []
+    _busy__ignore: ClassVar[list[str]] = []
 
     __abstract = True
 
@@ -257,7 +257,7 @@ class Syncable(Renderable):
             self._internal_callbacks.append(watcher)
 
     def _link_props(
-        self, model: Model, properties: list[str] | list[tuple[str, str]],
+        self, model: Model, properties: Sequence[str] | Sequence[tuple[str, str]],
         doc: Document, root: Model, comm: Optional[Comm] = None
     ) -> None:
         from .config import config

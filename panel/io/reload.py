@@ -31,9 +31,9 @@ from .state import state
 
 _reload_logger = logging.getLogger('panel.io.reload')
 
-_watched_files = set()
-_modules = set()
-_local_modules = set()
+_watched_files: set[str] = set()
+_modules: set[str] = set()
+_local_modules: set[str] = set()
 
 # List of paths to ignore
 DEFAULT_FOLDER_DENYLIST = [
@@ -56,7 +56,8 @@ IGNORED_MODULES = [
     'bokeh_app',
     'geoviews.models.',
     'panel.',
-    'torch.'
+    'torch.',
+    'defusedxml'
 ]
 
 def in_denylist(filepath):

@@ -13,7 +13,9 @@ import urllib.parse as urlparse
 
 from contextlib import contextmanager
 from types import ModuleType
-from typing import IO, Any, Callable
+from typing import (
+    IO, TYPE_CHECKING, Any, Callable,
+)
 
 import bokeh.command.util
 
@@ -30,6 +32,9 @@ from .mime_render import MIME_RENDERERS
 from .profile import profile_ctx
 from .reload import record_modules
 from .state import state
+
+if TYPE_CHECKING:
+    from nbformat import NotebookNode
 
 log = logging.getLogger('panel.io.handlers')
 
@@ -261,7 +266,7 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
             raise RuntimeError(f"{handler._origin} at '{handler._runner.path}' replaced the output document")
 
     try:
-        state._launching.append(doc)
+        state._launching.add(doc)
         with _monkeypatch_io(handler._loggers):
             with patch_curdoc(doc):
                 with profile_ctx(config.profiler) as sessions:
@@ -297,7 +302,10 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
         if old_doc is not None:
             bk_set_curdoc(old_doc)
 
-def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None = None):
+def parse_notebook(
+    filename: str | os.PathLike | IO,
+    preamble: list[str] | None = None
+) -> tuple[NotebookNode, str, dict[str, Any]]:
     """
     Parses a notebook on disk and returns a script.
 
