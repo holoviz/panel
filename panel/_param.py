@@ -16,6 +16,8 @@ class AlignmentEnum(Enum):
     CENTER = 'center'
     END = 'end'
 
+_AlignmentValues = [item.value for item in AlignmentEnum]
+
 
 class Align(Parameter):
     """
@@ -36,8 +38,8 @@ class Align(Parameter):
         self._validate_value(val, self.allow_None)
 
     def _validate_value(self, val: Any, allow_None: bool) -> None:
-        if ((val is None and allow_None) or val in AlignmentEnum or
-            (isinstance(val, tuple) and len(val) == 2 and all(v in AlignmentEnum for v in val))):
+        if ((val is None and allow_None) or val in _AlignmentValues or
+            (isinstance(val, tuple) and len(val) == 2 and all(v in _AlignmentValues for v in val))):
             return
         raise ValueError(
             f"Align parameter {self.name!r} must be one of 'start', "
