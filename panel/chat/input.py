@@ -63,7 +63,7 @@ class ChatAreaInput(_PnTextAreaInput):
         of rows the input area can grow.""",
     )
 
-    resizable = param.ObjectSelector(
+    resizable = param.Selector(
         default="height",
         objects=["both", "width", "height", False],
         doc="""

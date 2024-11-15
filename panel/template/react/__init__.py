@@ -19,7 +19,7 @@ class ReactTemplate(BasicTemplate):
     ReactTemplate is built on top of React Grid Layout web components.
     """
 
-    compact = param.ObjectSelector(default=None, objects=[None, 'vertical', 'horizontal', 'both'])
+    compact = param.Selector(default=None, objects=[None, 'vertical', 'horizontal', 'both'])
 
     cols = param.Dict(default={'lg': 12, 'md': 10, 'sm': 6, 'xs': 4, 'xxs': 2})
 

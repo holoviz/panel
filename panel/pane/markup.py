@@ -168,7 +168,7 @@ class DataFrame(HTML):
     index_names = param.Boolean(default=True, doc="""
         Prints the names of the indexes.""")
 
-    justify = param.ObjectSelector(default=None, allow_None=True, objects=[
+    justify = param.Selector(default=None, allow_None=True, objects=[
         'left', 'right', 'center', 'justify', 'justify-all', 'start',
         'end', 'inherit', 'match-parent', 'initial', 'unset'], doc="""
         How to justify the column labels.""")
@@ -505,7 +505,7 @@ class JSON(HTMLBasePane):
     hover_preview = param.Boolean(default=False, doc="""
         Whether to display a hover preview for collapsed nodes.""")
 
-    theme = param.ObjectSelector(default="dark", objects=["light", "dark"], doc="""
+    theme = param.Selector(default="dark", objects=["light", "dark"], doc="""
         Whether the JSON tree view is expanded by default.""")
 
     priority: ClassVar[float | bool | None] = None

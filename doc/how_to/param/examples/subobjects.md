@@ -82,7 +82,7 @@ Having defined our basic domain model (of shapes in this case), we can now make 
 ```{pyodide}
 class ShapeViewer(param.Parameterized):
 
-    shape = param.ObjectSelector(default=shapes[0], objects=shapes)
+    shape = param.Selector(default=shapes[0], objects=shapes)
 
     @param.depends('shape', 'shape.param')
     def view(self):

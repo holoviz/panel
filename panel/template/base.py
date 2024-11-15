@@ -671,7 +671,7 @@ class BasicTemplate(BaseTemplate):
         Specifies the base URL for all relative URLs in a
         page. Default is '', i.e. not the domain.""")
 
-    base_target = param.ObjectSelector(default="_self",
+    base_target = param.Selector(default="_self",
         objects=["_blank", "_self", "_parent", "_top"], doc="""
         Specifies the base Target for all relative URLs in a page.""")
 
