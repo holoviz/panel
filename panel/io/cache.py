@@ -18,8 +18,8 @@ import unittest.mock
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Callable, Hashable, Literal, ParamSpec, Protocol,
-    TypeVar, overload,
+    TYPE_CHECKING, Any, Awaitable, Callable, Hashable, Literal, ParamSpec,
+    Protocol, TypeVar, cast, overload,
 )
 
 import param
@@ -519,7 +519,7 @@ def cache(
                     ret, ts, count, _ = func_cache[hash_value]
                     func_cache[hash_value] = (ret, ts, count+1, time)
             else:
-                ret = await func(*args, **kwargs)
+                ret = await cast(Awaitable[Any], func(*args, **kwargs))
                 with lock:
                     func_cache[hash_value] = (ret, time, 0, time)
             return ret
