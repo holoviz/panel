@@ -8,7 +8,7 @@ import sys
 import weakref
 
 from typing import (
-    TYPE_CHECKING, Any, Iterable, Sequence,
+    TYPE_CHECKING, Any, Iterable, Sequence, TypeAlias,
 )
 
 import param
@@ -27,9 +27,9 @@ if TYPE_CHECKING:
 
     try:
         from holoviews.core.dimension import Dimensioned
-        JSLinkTarget = Reactive | BkModel | Dimensioned
+        JSLinkTarget: TypeAlias = Reactive | BkModel | Dimensioned
     except Exception:
-        JSLinkTarget = Reactive | BkModel # type: ignore
+        JSLinkTarget: TypeAlias = Reactive | BkModel # type: ignore
     SourceModelSpec = tuple[str | None, str]
     TargetModelSpec = tuple[str | None, str | None]
 
@@ -111,18 +111,18 @@ class Callback(param.Parameterized):
         snippet to be executed if the source property changes.""")
 
     # Mapping from a source id to a Link instance
-    registry: weakref.WeakKeyDictionary[Reactive | BkModel, list['Callback']] = weakref.WeakKeyDictionary()
+    registry: weakref.WeakKeyDictionary[Reactive | BkModel, list[Callback]] = weakref.WeakKeyDictionary()
 
     # Mapping to define callbacks by backend and Link type.
     # e.g. Callback._callbacks[Link] = Callback
-    _callbacks: dict[type['Callback'], type['CallbackGenerator']] = {}
+    _callbacks: dict[type[Callback], type[CallbackGenerator]] = {}
 
     # Whether the link requires a target
     _requires_target: bool = False
 
     def __init__(
-        self, source: Reactive, target: JSLinkTarget = None,
-        args: dict[str, Any] | None = None, code: dict[str, str] = None,
+        self, source: Reactive, target: JSLinkTarget | None = None,
+        args: dict[str, Any] | None = None, code: dict[str, str] | None = None,
         **params
     ):
         """

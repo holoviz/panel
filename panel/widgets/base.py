@@ -185,6 +185,7 @@ class Widget(Reactive, WidgetBase):
         js_getter: string
           JS snippet that returns the state value given the model
         """
+        raise NotImplementedError()
 
 
 class CompositeWidget(Widget):
