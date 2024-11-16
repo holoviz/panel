@@ -16,13 +16,13 @@ from panel.tests.util import serve_component, wait_until
 try:
     import reacton
 except Exception:
-    reacton = None
+    reacton = None  # type: ignore
 requires_reacton = pytest.mark.skipif(reacton is None, reason="requires reaction")
 
 try:
     import anywidget
 except Exception:
-    anywidget = None
+    anywidget = None  # type: ignore
 requires_anywidget = pytest.mark.skipif(anywidget is None, reason="requires anywidget")
 
 pytestmark = pytest.mark.ui

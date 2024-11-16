@@ -41,7 +41,7 @@ class Convert(Subcommand):
         )),
         ('--compiled', Argument(
             default = False,
-            action  = 'store_false',
+            action  = 'store_true',
             help    = "Whether to use the compiled and faster version of Pyodide."
         )),
         ('--out', Argument(
@@ -75,7 +75,7 @@ class Convert(Subcommand):
         )),
         ('--disable-http-patch', Argument(
             default = False,
-            action  = 'store_false',
+            action  = 'store_true',
             help    = "Whether to disable patching http requests using the pyodide-http library."
         )),
         ('--watch', Argument(

@@ -5,9 +5,7 @@ import socket
 import uuid
 
 from functools import wraps
-from typing import (
-    TYPE_CHECKING, Any, Mapping, cast,
-)
+from typing import TYPE_CHECKING, Any, cast
 
 from ..config import config
 from .application import build_applications
@@ -78,7 +76,7 @@ def add_history_handler(app, endpoint):
 #---------------------------------------------------------------------
 
 def add_applications(
-    panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
+    panel: TViewableFuncOrPath | dict[str, TViewableFuncOrPath],
     app: FastAPI | None = None,
     title: str | dict[str, str] | None = None,
     location: bool | Location = True,
@@ -189,7 +187,7 @@ def add_application(
 
 
 def get_server(
-    panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
+    panel: TViewableFuncOrPath | dict[str, TViewableFuncOrPath],
     port: int | None = 0,
     show: bool = True,
     start: bool = False,
@@ -288,7 +286,7 @@ def get_server(
 
 
 def serve(
-    panels: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
+    panels: TViewableFuncOrPath | dict[str, TViewableFuncOrPath],
     port: int = 0,
     address: str | None = None,
     websocket_origin: str | list[str] | None = None,

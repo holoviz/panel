@@ -96,10 +96,10 @@ class Widget(Reactive, WidgetBase):
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     # Whether the widget supports embedding
-    _supports_embed: ClassVar[bool] = False
+    _supports_embed: bool = False
 
     # Declares the Bokeh model type of the widget
-    _widget_type: ClassVar[type[Model] | None] = None
+    _widget_type: ClassVar[type[Model]]
 
     __abstract = True
 
@@ -115,7 +115,7 @@ class Widget(Reactive, WidgetBase):
         super().__init__(**params)
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         props = list(super()._linked_properties)
         if 'description' in props:
             props.remove('description')
@@ -196,7 +196,7 @@ class CompositeWidget(Widget):
 
     _composite_type: ClassVar[type[ListPanel]] = Row
 
-    _linked_properties: ClassVar[tuple[str]] = ()
+    _linked_properties: tuple[str, ...] = ()
 
     __abstract = True
 

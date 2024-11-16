@@ -54,6 +54,7 @@ if TYPE_CHECKING:
     from ..template.base import BaseTemplate
     from ..viewable import Viewable
     from ..widgets.indicators import BooleanIndicator
+    from .application import TViewableFuncOrPath
     from .browser import BrowserInfo
     from .cache import _Stack
     from .callbacks import PeriodicCallback
@@ -144,7 +145,7 @@ class _state(param.Parameterized):
 
     # Jupyter communication
     _comm_manager: ClassVar[type[_CommManager]] = _CommManager
-    _jupyter_kernel_context: ClassVar[BokehSessionContext | None] = None
+    _jupyter_kernel_context: BokehSessionContext | None = None
     _kernels: ClassVar[dict[str, tuple[Any, str, str, bool]]] = {}
     _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
 
@@ -171,7 +172,7 @@ class _state(param.Parameterized):
     _fake_roots: ClassVar[list[str]] = []
 
     # An index of all currently active servers
-    _servers: ClassVar[dict[str, tuple[Server, Viewable | BaseTemplate, list[Document]]]] = {}
+    _servers: ClassVar[dict[str, tuple[Server, TViewableFuncOrPath | dict[str, TViewableFuncOrPath], list[Document]]]] = {}
     _threads: ClassVar[dict[str, StoppableThread]] = {}
     _server_config: ClassVar[WeakKeyDictionary[Any, dict[str, Any]]] = WeakKeyDictionary()
 
@@ -216,7 +217,7 @@ class _state(param.Parameterized):
 
     # Sessions
     _sessions: ClassVar[dict[Hashable, ServerSession]] = {}
-    _session_key_funcs: ClassVar[dict[str, Callable[[Any], None]]] = {}
+    _session_key_funcs: ClassVar[dict[str, Callable[[Any], Any]]] = {}
 
     # Layout editor
     _cell_outputs: ClassVar[defaultdict[Hashable, list[Any]]] = defaultdict(list)

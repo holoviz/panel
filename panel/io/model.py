@@ -7,7 +7,7 @@ import textwrap
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Iterable, Optional,
+    TYPE_CHECKING, Any, Iterable, Optional, Sequence,
 )
 
 import numpy as np
@@ -46,7 +46,7 @@ class comparable_array(np.ndarray):
     def __ne__(self, other: Any) -> bool:
         return not np.array_equal(self, other, equal_nan=True)
 
-def monkeypatch_events(events: list[DocumentPatchedEvent]) -> None:
+def monkeypatch_events(events: Sequence[DocumentChangedEvent]) -> None:
     """
     Patch events applies patches to events that are to be dispatched
     avoiding various issues in Bokeh.

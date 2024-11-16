@@ -58,7 +58,7 @@ PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
 PYODIDE_PYC_JS = f'<script src="{PYODIDE_PYC_URL}"></script>'
 LOCAL_PREFIX = './'
 
-MINIMUM_VERSIONS = {}
+MINIMUM_VERSIONS: dict[str, str] = {}
 
 ICON_DIR = DIST_DIR / 'images'
 PWA_IMAGES = [
@@ -150,7 +150,7 @@ def build_pwa_manifest(files, title=None, **kwargs) -> str:
 
 def script_to_html(
     filename: str | os.PathLike | IO,
-    requirements: Literal['auto'] | list[str] = 'auto',
+    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
     js_resources: Literal['auto'] | list[str] = 'auto',
     css_resources: Literal['auto'] | list[str] | None = 'auto',
     runtime: Runtimes = 'pyodide',
@@ -161,7 +161,7 @@ def script_to_html(
     http_patch: bool = True,
     inline: bool = False,
     compiled: bool = True
-) -> str:
+) -> tuple[str, str | None]:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
     application.
@@ -202,7 +202,7 @@ def script_to_html(
         app_name = '.'.join(path.name.split('.')[:-1])
         app = build_single_handler_application(str(path.absolute()))
     document = Document()
-    document._session_context = lambda: MockSessionContext(document=document)
+    document._session_context = lambda: MockSessionContext(document=document)  # type: ignore
     with set_curdoc(document):
         app.initialize_document(document)
         state._on_load(None)
@@ -416,11 +416,9 @@ def convert_app(
 
     with open(dest_path / filename, 'w', encoding="utf-8") as out:
         out.write(html)
-    if runtime == 'pyscript-worker':
-        with open(dest_path / f'{name}.py', 'w', encoding="utf-8") as out:
-            out.write(worker)
-    elif runtime == 'pyodide-worker':
-        with open(dest_path / f'{name}.js', 'w', encoding="utf-8") as out:
+    if 'worker' in runtime and worker:
+        ext = 'py' if runtime.startswith('pyscript') else 'js'
+        with open(dest_path / f'{name}.{ext}', 'w', encoding="utf-8") as out:
             out.write(worker)
     if verbose:
         print(f'Successfully converted {app} to {runtime} target and wrote output to {filename}.')
@@ -545,15 +543,19 @@ def convert_apps(
         app_requirements = requirements
 
     kwargs = {
-        'runtime': runtime, 'prerender': prerender,
-        'manifest': manifest, 'panel_version': panel_version,
-        'http_patch': http_patch, 'inline': inline,
-        'verbose': verbose, 'compiled': compiled,
+        'runtime': runtime,
+        'prerender': prerender,
+        'manifest': manifest,
+        'panel_version': panel_version,
+        'http_patch': http_patch,
+        'inline': inline,
+        'verbose': verbose,
+        'compiled': compiled,
         'local_prefix': local_prefix
     }
 
     if state._is_pyodide:
-        files = dict(convert_app(app, dest_path, requirements=app_requirements, **kwargs) for app in apps)
+        files = {app: convert_app(app, dest_path, requirements=app_requirements, **kwargs) for app in apps}
     else:
         files = _convert_process_pool(
             apps, dest_path, max_workers=max_workers, requirements=app_requirements, **kwargs

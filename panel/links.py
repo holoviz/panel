@@ -287,7 +287,7 @@ class Link(Callback):
     # Whether the link requires a target
     _requires_target = True
 
-    def __init__(self, source: Reactive | None, target: JSLinkTarget | None = None, **params):
+    def __init__(self, source: Reactive, target: JSLinkTarget | None = None, **params):
         if self._requires_target and target is None:
             raise ValueError(f'{type(self).__name__} must define a target.')
         # Source is stored as a weakref to allow it to be garbage collected
@@ -579,6 +579,7 @@ class JSCallbackGenerator(CallbackGenerator):
     ) -> Sequence[tuple['SourceModelSpec', 'TargetModelSpec', str | None]]:
         for spec in link.code:
             src_specs = spec.split('.')
+            src_spec: tuple[str | None, str]
             if spec.startswith('event:'):
                 src_spec = (None, spec)
             elif len(src_specs) > 1:
@@ -735,10 +736,10 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
         if isinstance(target, Reactive):
             tgt_reverse = {v: k for k, v in target._rename.items()}
             tgt_param = tgt_reverse.get(tgt_spec, tgt_spec)
-            if tgt_param is None:
+            if tgt_param is None or tgt_param not in target._target_transforms:
                 tgt_transform = 'value'
             else:
-                tgt_transform = target._target_transforms.get(tgt_param, 'value')
+                tgt_transform = target._target_transforms['value'] or 'value'
         else:
             tgt_transform = 'value'
         if tgt_spec == 'loading':

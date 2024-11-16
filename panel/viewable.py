@@ -34,7 +34,9 @@ from param import Undefined
 from param.parameterized import instance_descriptor
 from pyviz_comms import Comm  # type: ignore
 
-from ._param import Align, Aspect, Margin
+from ._param import (
+    Align, AlignmentEnum, Aspect, Margin,
+)
 from .config import config, panel_extension
 from .io import serve
 from .io.document import create_doc_if_none_exists, init_doc
@@ -56,6 +58,7 @@ if TYPE_CHECKING:
     from bokeh.server.server import Server
 
     from .io.location import Location
+    from .io.notebook import Mimebundle
     from .io.server import StoppableThread
     from .theme import Design
 
@@ -69,7 +72,7 @@ class Layoutable(param.Parameterized):
     for all Panel components with a visual representation.
     """
 
-    align = Align(default='start', doc="""
+    align = Align(default=AlignmentEnum.START.value, doc="""
         Whether the object should be aligned with the start, end or
         center of its container. If set as a tuple it will declare
         (vertical, horizontal) alignment.""")
@@ -308,7 +311,11 @@ class ServableMixin:
     """
 
     def _modify_doc(
-        self, server_id: str, title: str, doc: Document, location: Location | bool | None
+        self,
+        server_id: str | None,
+        title: str,
+        doc: Document,
+        location: Location | bool | None
     ) -> Document:
         """
         Callback to handle FunctionHandler document creation.
@@ -318,10 +325,13 @@ class ServableMixin:
         return self.server_doc(doc, title, location) # type: ignore
 
     def _add_location(
-        self, doc: Document, location: Optional['Location' | bool],
-        root: Optional['Model'] = None
-    ) -> 'Location':
+        self,
+        doc: Document,
+        location: Location | bool,
+        root: Model | None = None
+    ) -> Location | None:
         from .io.location import Location
+        loc: Location | None
         if isinstance(location, Location):
             loc = location
             state._locations[doc] = loc
@@ -330,6 +340,9 @@ class ServableMixin:
         else:
             with set_curdoc(doc):
                 loc = state.location
+        if loc is None:
+            return None
+
         if root is None:
             loc_model = loc.get_root(doc)
         else:
@@ -344,8 +357,8 @@ class ServableMixin:
     #----------------------------------------------------------------
 
     def servable(
-        self, title: Optional[str] = None, location: bool | 'Location' = True,
-        area: str = 'main', target: Optional[str] = None
+        self, title: str | None = None, location: bool | Location = True,
+        area: str = 'main', target: str | None = None
     ) -> 'ServableMixin':
         """
         Serves the object or adds it to the configured
@@ -373,7 +386,8 @@ class ServableMixin:
         -------
         The Panel object itself
         """
-        if curdoc_locked().session_context:
+        doc = curdoc_locked()
+        if doc and doc.session_context:
             logger = logging.getLogger('bokeh')
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
@@ -414,10 +428,10 @@ class ServableMixin:
         return self
 
     def show(
-        self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
-        websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
-        open: bool = True, location: bool | 'Location' = True, **kwargs
-    ) -> 'StoppableThread' | 'Server':
+        self, title: str | None = None, port: int = 0, address: str | None = None,
+        websocket_origin: str | None = None, threaded: bool = False, verbose: bool = True,
+        open: bool = True, location: bool | Location = True, **kwargs
+    ) -> StoppableThread | Server:
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -548,9 +562,9 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         getattr(self._logger, level)(f'Session %s {msg}', id(state.curdoc), *args)
 
     def _get_model(
-        self, doc: Document, root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional[Comm] = None
-    ) -> 'Model':
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         """
         Converts the objects being wrapped by the viewable into a
         bokeh model that can be composed in a bokeh layout.
@@ -605,7 +619,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
             except TypeError:
                 hook(self, root)
 
-    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
+    def _render_model(self, doc: Document | None = None, comm: Comm | None = None) -> Model:
         if doc is None:
             doc = Document()
         if comm is None:
@@ -626,7 +640,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
     def _init_params(self) -> Mapping[str, Any]:
         return {k: v for k, v in self.param.values().items() if v is not None}
 
-    def _server_destroy(self, session_context: 'BokehSessionContext') -> None:
+    def _server_destroy(self, session_context: BokehSessionContext) -> None:
         """
         Server lifecycle hook triggered when session is destroyed.
         """
@@ -645,7 +659,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
                                         params=', '.join(param_reprs(self)))
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         """
@@ -682,6 +696,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         ref = root.ref['id']
         state._views[ref] = (root_view, root, doc, comm)
         return root
+
 
 class Viewable(Renderable, Layoutable, ServableMixin):
     """
@@ -732,7 +747,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             stop_loading_spinner(self)
 
-    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
+    def _render_model(self, doc: Document | None = None, comm: Comm | None = None) -> Model:
         if doc is None:
             doc = Document()
         if comm is None:
@@ -857,8 +872,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         return type(self)(**dict(inherited, **params))
 
     def select(
-        self, selector: Optional[type | Callable[['Viewable'], bool]] = None
-    ) -> list['Viewable']:
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> list[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -882,9 +897,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def embed(
         self, max_states: int = 1000, max_opts: int = 3, json: bool = False,
-        json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
+        json_prefix: str = '', save_path: str = './', load_path: str | None = None,
         progress: bool = False, states={}
-    ) -> None:
+    ) -> Mimebundle:
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
@@ -1016,13 +1031,17 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if location:
             self._add_location(doc, location, model)
         if config.notifications and doc is state.curdoc:
-            notification_model = state.notifications.get_root(doc)
-            notification_model.name = 'notifications'
-            doc.add_root(notification_model)
+            notification = state.notifications
+            if notification:
+                notification_model = notification.get_root(doc)
+                notification_model.name = 'notifications'
+                doc.add_root(notification_model)
         if config.browser_info and doc is state.curdoc:
-            browser_model = state.browser_info._get_model(doc, model)
-            browser_model.name = 'browser_info'
-            doc.add_root(browser_model)
+            browser = state.browser_info
+            if browser:
+                browser_model = browser._get_model(doc, model)
+                browser_model.name = 'browser_info'
+                doc.add_root(browser_model)
         return doc
 
 
@@ -1083,7 +1102,7 @@ class Child(param.ClassSelector):
     by calling the `pn.panel` utility.
     """
 
-    @typing.overload
+    @typing.overload  # type: ignore
     def __init__(
         self,
         default=None, *, is_instance=True, allow_None=False, doc=None,

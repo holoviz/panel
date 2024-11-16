@@ -15,18 +15,13 @@ import weakref
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Any, Callable, Iterator, Sequence, cast,
+    TYPE_CHECKING, Any, Callable, Iterator, Sequence,
 )
 from weakref import WeakKeyDictionary
 
 from bokeh.application.application import SessionContext
-from bokeh.core.serialization import Serializable
 from bokeh.document.document import Document
-from bokeh.document.events import (
-    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
-    DocumentChangedEvent, DocumentPatchedEvent, MessageSentEvent,
-    ModelChangedEvent,
-)
+from bokeh.document.events import DocumentChangedEvent, DocumentPatchedEvent
 from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
 
@@ -52,10 +47,6 @@ logger = logging.getLogger(__name__)
 # Private API
 #---------------------------------------------------------------------
 
-DISPATCH_EVENTS = (
-    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
-    ModelChangedEvent, MessageSentEvent
-)
 GC_DEBOUNCE = 5
 _WRITE_FUTURES: WeakKeyDictionary[Document, list[Future]] = WeakKeyDictionary()
 _WRITE_MSGS: WeakKeyDictionary[Document, dict[ServerConnection, list[Message]]] = WeakKeyDictionary()
@@ -502,14 +493,14 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
         curdoc.callbacks._held_events = []
         monkeypatch_events(events)
         for event in events:
-            if isinstance(event, DISPATCH_EVENTS) and not locked:
+            if isinstance(event, DocumentPatchedEvent) and not locked:
                 writeable_events.append(event)
             else:
                 remaining_events.append(event)
 
         try:
             if writeable_events:
-                write_events(curdoc, connections, cast(list[DocumentPatchedEvent], writeable_events))
+                write_events(curdoc, connections, writeable_events)
         except Exception:
             remaining_events = events
         finally:
@@ -520,8 +511,8 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
             # the message reflects the event at the time it was generated
             # potentially avoiding issues serializing subsequent models
             # which assume the serializer has previously seen them.
-            serializable_events = [e for e in remaining_events if isinstance(e, Serializable)]
-            held_events = [e for e in remaining_events if not isinstance(e, Serializable)]
+            serializable_events = [e for e in remaining_events if isinstance(e, DocumentPatchedEvent)]
+            held_events = [e for e in remaining_events if not isinstance(e, DocumentPatchedEvent)]
             if serializable_events:
                 try:
                     schedule_write_events(curdoc, connections, serializable_events)

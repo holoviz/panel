@@ -103,7 +103,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     _js: ClassVar[Path | str | list[Path | str] | None] = None
 
     # External resources
-    _resources: ClassVar[dict[str, dict[str, str]]] = {
+    _resources = {
         'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}
     }
 

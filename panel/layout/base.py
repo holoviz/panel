@@ -566,7 +566,7 @@ class NamedListLike(param.Parameterized):
         params['objects'], names = self._to_objects_and_names(items)
         super().__init__(**params)
         self._names = names
-        self._panels = defaultdict(dict)
+        self._panels: defaultdict[str, dict[int, Viewable]] = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
@@ -819,7 +819,7 @@ class ListPanel(ListLike, Panel):
     __abstract = True
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return tuple(
             self._property_mapping.get(p, p) for p in self.param
             if p not in ListPanel.param and self._property_mapping.get(p, p) is not None

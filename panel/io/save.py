@@ -18,7 +18,8 @@ from bokeh.embed.util import (
     OutputDocumentFor, standalone_docs_json_and_render_items,
 )
 from bokeh.io.export import get_screenshot_as_png
-from bokeh.model import Model, UIElement
+from bokeh.model import Model
+from bokeh.models import UIElement
 from bokeh.resources import CDN, INLINE, Resources as BkResources
 from pyviz_comms import Comm
 

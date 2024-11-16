@@ -1,6 +1,8 @@
 """
 React template
 """
+from __future__ import annotations
+
 import json
 import math
 import pathlib
@@ -59,7 +61,7 @@ class ReactTemplate(BasicTemplate):
         super().__init__(**params)
         self._update_render_vars()
 
-    def _update_render_items(self, event):
+    def _update_render_items(self, event: param.parameterized.Event):
         super()._update_render_items(event)
         if event.obj is not self.main:
             return

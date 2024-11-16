@@ -255,7 +255,7 @@ class FileInput(Widget):
         return msg
 
     @property
-    def _linked_properties(self):
+    def _linked_properties(self) -> tuple[str, ...]:
         properties = super()._linked_properties
         return properties + ('filename',)
 
@@ -449,7 +449,7 @@ class StaticText(Widget):
     _widget_type: ClassVar[type[Model]] = _BkDiv
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return ()
 
     def _init_params(self) -> dict[str, Any]:
@@ -1004,7 +1004,7 @@ class _SpinnerBase(_NumericInputBase):
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return super()._linked_properties + ('value_throttled',)
 
     def _update_model(

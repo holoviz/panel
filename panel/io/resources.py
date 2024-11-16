@@ -18,7 +18,9 @@ import uuid
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import (
+    TYPE_CHECKING, ClassVar, Literal, TypedDict,
+)
 
 import bokeh.embed.wrappers
 import param
@@ -473,7 +475,7 @@ class ResourceComponent:
     that have to be resolved.
     """
 
-    _resources: ResourcesType = {
+    _resources: ClassVar[ResourcesType] = {
         'css': {},
         'font': {},
         'js': {},

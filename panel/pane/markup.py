@@ -36,7 +36,7 @@ class HTMLBasePane(ModelPane):
         Whether to enable streaming of text snippets. This is useful
         when updating a string step by step, e.g. in a chat message.""")
 
-    _bokeh_model: ClassVar[Model] = _BkHTML
+    _bokeh_model: ClassVar[type[Model]] = _BkHTML
 
     _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text', 'enable_streaming': None}
 

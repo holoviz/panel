@@ -119,6 +119,7 @@ class FileBase(HTMLBasePane):
             import requests
             r = requests.request(url=obj, method='GET')
             return r.content
+        return None
 
 
 class ImageBase(FileBase):
@@ -205,6 +206,8 @@ class ImageBase(FileBase):
     def _transform_object(self, obj: Any) -> dict[str, Any]:
         if self.embed or (isfile(obj) or not isinstance(obj, (str, PurePath))):
             data = self._data(obj)
+        elif isinstance(obj, PurePath):
+            raise ValueError(f"Could not find {type(self).__name__}.object {obj}.")
         else:
             w, h = self._img_dims(self.width, self.height)
             return dict(object=self._format_html(obj, w, h))
@@ -443,6 +446,8 @@ class SVG(ImageBase):
         if self.embed or (isfile(obj) or (isinstance(obj, str) and obj.lstrip().startswith('<svg'))
                           or not isinstance(obj, (str, PurePath))):
             data = self._data(obj)
+        elif isinstance(obj, PurePath):
+            raise ValueError(f"Could not find {type(self).__name__}.object {obj}.")
         else:
             return dict(object=self._format_html(obj, w, h))
 
@@ -478,7 +483,7 @@ class PDF(FileBase):
 
     filetype: ClassVar[str] = 'pdf'
 
-    _bokeh_model: ClassVar[Model] = _BkPDF
+    _bokeh_model: ClassVar[type[Model]] = _BkPDF
 
     _rename: ClassVar[Mapping[str, str | None]] = {'embed': 'embed'}
 

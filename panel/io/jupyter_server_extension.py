@@ -118,7 +118,7 @@ sys.path = [os.getcwd()] + sys.path
 
 from panel.io.jupyter_executor import PanelExecutor
 executor = PanelExecutor(app, '{{ token }}', '{{ root_url }}')
-executor.render()
+executor.render_mime()
 """
 
 def generate_executor(path: str, token: str, root_url: str) -> str:
@@ -321,19 +321,23 @@ class PanelJupyterHandler(PanelBaseHandler):
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
 
 
-class PanelWSProxy(WSHandler, JupyterHandler):
+class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
     """
     The PanelWSProxy serves as a proxy between the frontend and the
     Jupyter kernel that is running the Panel application. It send and
     receives Bokeh protocol messages via a Jupyter Comm.
     """
 
-    _tasks = set()
+    _tasks: set[asyncio.Task] = set()
 
     def __init__(self, tornado_app, *args, **kw) -> None:
         # Note: tornado_app is stored as self.application
         kw['application_context'] = None
         super().__init__(tornado_app, *args, **kw)
+        self.kernel: Any = None
+        self.comm_id: str | None = None
+        self.kernel_id: str | None = None
+        self.session_id: str | None = None
 
     def initialize(self, *args, **kwargs):
         self._ping_count = 0
@@ -346,10 +350,10 @@ class PanelWSProxy(WSHandler, JupyterHandler):
     async def prepare(self):
         pass
 
-    def get_current_user(self):
+    def get_current_user(self) -> str:
         return "default_user"
 
-    def check_origin(self, origin: str) -> bool:
+    def check_origin(self, origin_to_satisfy_tornado: str | None = None) -> bool:
         return True
 
     @tornado.web.authenticated
@@ -392,7 +396,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):
             msg = f"Session ID '{self.session_id}' does not correspond to any active kernel."
             raise RuntimeError(msg)
 
-        kernel_info = state._kernels[self.session_id]
+        kernel_info: tuple[Any, str, str, bool] = state._kernels[self.session_id]
         self.kernel, self.comm_id, self.kernel_id, _ = kernel_info
         state._kernels[self.session_id] = kernel_info[:-1] + (True,)
 
@@ -440,7 +444,11 @@ class PanelWSProxy(WSHandler, JupyterHandler):
                 await self.send_message(message)
 
     async def on_message(self, fragment: str | bytes) -> None:
-        content = dict(data=fragment, comm_id=self.comm_id, target_name=self.session_id)
+        content = {
+            'comm_id': self.comm_id,
+            'data': fragment,
+            'target_name': self.session_id
+        }
         msg = self.kernel.session.msg("comm_msg", content)
         self.kernel.shell_channel.send(msg)
 

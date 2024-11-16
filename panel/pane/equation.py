@@ -83,8 +83,8 @@ class LaTeX(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = self._get_model_type(root, comm)
-        model = self._bokeh_model(**self._get_properties(doc))
+        model_type = self._get_model_type(root, comm)
+        model = model_type(**self._get_properties(doc))
         root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model

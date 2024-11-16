@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Union
 
 import tornado
 
+from bokeh.application import ServerContext
 from bokeh.document import Document
 from bokeh.embed.bundle import extension_dirs
 from bokeh.protocol import Protocol
@@ -51,7 +52,7 @@ class Mimebundle:
 
 class JupyterServerSession(ServerSession):
 
-    _tasks = set()
+    _tasks: set[asyncio.Task] = set()
 
     def _document_patched(self, event: DocumentPatchedEvent) -> None:
         may_suppress = event.setter is self
@@ -71,7 +72,7 @@ class PanelExecutor(WSHandler):
     to send and receive messages to and from the frontend.
     """
 
-    _tasks = set()
+    _tasks: set[asyncio.Task] = set()
 
     def __init__(self, path, token, root_url, resources='server'):
         self.path = path
@@ -144,15 +145,15 @@ class PanelExecutor(WSHandler):
     def _protocol_error(self, msg: str) -> None:
         self.comm.send(msg, {'status': 'protocol_error'})
 
-    def _create_server_session(self) -> ServerSession:
+    def _create_server_session(self) -> tuple[ServerSession, str | None]:
         doc = Document()
 
         self._context = session_context = BokehSessionContext(
-            self.session_id, None, doc
+            self.session_id, ServerContext(), doc
         )
 
         # using private attr so users only have access to a read-only property
-        session_context._request = _RequestProxy(
+        session_context._request = _RequestProxy(  # type: ignore
             arguments={k: [v.encode('utf-8') for v in vs] for k, vs in self.payload.get('arguments', {}).items()},
             cookies=self.payload.get('cookies'),
             headers=self.payload.get('headers')
@@ -180,7 +181,7 @@ class PanelExecutor(WSHandler):
         session_context._set_session(session)
         return session, runner.error_detail
 
-    async def write_message(
+    async def write_message(  # type: ignore
         self, message: Union[bytes, str, dict[str, Any]],
         binary: bool = False, locked: bool = True
     ) -> None:
@@ -197,7 +198,7 @@ class PanelExecutor(WSHandler):
             else:
                 self.comm.send(message, metadata=metadata)
 
-    def render(self) -> Mimebundle:
+    def render_mime(self) -> Mimebundle:
         """
         Renders the application to an IPython.display.HTML object to
         be served by the `PanelJupyterHandler`.
