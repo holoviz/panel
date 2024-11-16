@@ -13,7 +13,8 @@ import signal
 import subprocess
 import sys
 
-from typing import ClassVar, Mapping
+from collections.abc import Mapping
+from typing import ClassVar
 
 import param
 

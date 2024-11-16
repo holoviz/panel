@@ -6,10 +6,9 @@ from __future__ import annotations
 import math
 
 from collections import namedtuple
+from collections.abc import Mapping
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param

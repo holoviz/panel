@@ -4,9 +4,8 @@ import json
 import sys
 
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping,
-)
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 

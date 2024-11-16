@@ -6,11 +6,12 @@ import re
 import tempfile
 import uuid
 
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from cProfile import Profile
 from functools import wraps
 from typing import (
-    TYPE_CHECKING, Callable, Iterator, Literal, ParamSpec, Sequence, TypeVar,
+    TYPE_CHECKING, Literal, ParamSpec, TypeVar,
 )
 
 from ..config import config

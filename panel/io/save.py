@@ -6,9 +6,8 @@ from __future__ import annotations
 import io
 import os
 
-from typing import (
-    IO, TYPE_CHECKING, Any, Iterable,
-)
+from collections.abc import Iterable
+from typing import IO, TYPE_CHECKING, Any
 
 import bokeh
 

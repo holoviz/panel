@@ -11,11 +11,10 @@ import sys
 import traceback
 import urllib.parse as urlparse
 
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from types import ModuleType
-from typing import (
-    IO, TYPE_CHECKING, Any, Callable, Iterator,
-)
+from typing import IO, TYPE_CHECKING, Any
 
 import bokeh.command.util
 

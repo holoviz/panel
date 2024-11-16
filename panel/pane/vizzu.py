@@ -3,9 +3,8 @@ from __future__ import annotations
 import datetime as dt
 import sys
 
-from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar,
-)
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param

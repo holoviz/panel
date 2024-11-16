@@ -9,8 +9,9 @@ import sys
 import zipfile
 
 from abc import abstractmethod
+from collections.abc import Mapping
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Mapping,
+    IO, TYPE_CHECKING, Any, ClassVar,
 )
 from urllib.request import urlopen
 

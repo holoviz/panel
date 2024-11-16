@@ -6,12 +6,11 @@ from __future__ import annotations
 import re
 import sys
 
+from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import partial
 from io import BytesIO
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 

@@ -10,9 +10,10 @@ import sys
 import textwrap
 
 from collections import defaultdict
+from collections.abc import Callable, Mapping
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping,
+    TYPE_CHECKING, Any, ClassVar, Literal,
 )
 
 import param

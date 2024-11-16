@@ -4,9 +4,10 @@ object transforming it into a Bokeh model that can be rendered.
 """
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, TypeVar,
+    TYPE_CHECKING, Any, ClassVar, TypeVar,
 )
 
 import numpy as np

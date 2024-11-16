@@ -5,9 +5,10 @@ in flexible ways to build complex dashboards.
 from __future__ import annotations
 
 from collections import defaultdict, namedtuple
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Generator, Iterable, Iterator, Mapping,
+from collections.abc import (
+    Generator, Iterable, Iterator, Mapping,
 )
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 

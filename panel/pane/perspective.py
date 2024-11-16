@@ -3,11 +3,10 @@ from __future__ import annotations
 import datetime as dt
 import sys
 
+from collections.abc import Callable, Mapping
 from enum import Enum
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Callable, ClassVar, Mapping,
-)
+from typing import TYPE_CHECKING, ClassVar
 
 import numpy as np
 import param

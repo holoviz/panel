@@ -14,11 +14,10 @@ import signal
 import sys
 import uuid
 
+from collections.abc import Callable, Mapping
 from functools import partial, wraps
 from html import escape
-from typing import (
-    TYPE_CHECKING, Any, Callable, Mapping, TypedDict,
-)
+from typing import TYPE_CHECKING, Any, TypedDict
 from urllib.parse import urlparse
 
 import bokeh

@@ -33,8 +33,9 @@ import pathlib
 import textwrap
 import time
 
+from collections.abc import Awaitable
 from queue import Empty
-from typing import Any, Awaitable
+from typing import Any
 from urllib.parse import urljoin
 
 import tornado

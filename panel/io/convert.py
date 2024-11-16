@@ -7,9 +7,8 @@ import os
 import pathlib
 import uuid
 
-from typing import (
-    IO, Any, Literal, Sequence,
-)
+from collections.abc import Sequence
+from typing import IO, Any, Literal
 
 import bokeh
 

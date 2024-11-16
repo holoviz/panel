@@ -7,8 +7,9 @@ from __future__ import annotations
 
 import math
 
+from collections.abc import Callable, Mapping
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, TypeVar,
+    TYPE_CHECKING, Any, ClassVar, TypeVar,
 )
 
 import param  # type: ignore

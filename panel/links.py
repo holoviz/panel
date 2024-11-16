@@ -7,9 +7,8 @@ import difflib
 import sys
 import weakref
 
-from typing import (
-    TYPE_CHECKING, Any, Iterable, Sequence, TypeAlias,
-)
+from collections.abc import Iterable, Sequence
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import param
 

@@ -12,11 +12,10 @@ import threading
 import time
 import weakref
 
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from functools import partial, wraps
-from typing import (
-    TYPE_CHECKING, Any, Callable, Iterator, Sequence,
-)
+from typing import TYPE_CHECKING, Any
 from weakref import WeakKeyDictionary
 
 from bokeh.application.application import SessionContext

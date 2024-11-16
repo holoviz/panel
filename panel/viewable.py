@@ -20,8 +20,9 @@ import traceback
 import typing
 import uuid
 
+from collections.abc import Callable, Mapping
 from typing import (
-    IO, TYPE_CHECKING, Any, Callable, ClassVar, Mapping,
+    IO, TYPE_CHECKING, Any, ClassVar,
 )
 
 import param  # type: ignore

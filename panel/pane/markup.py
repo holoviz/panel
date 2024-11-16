@@ -8,9 +8,8 @@ import functools
 import json
 import textwrap
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param  # type: ignore
 
@@ -397,7 +396,7 @@ class Markdown(HTMLBasePane):
             return False
 
     @classmethod
-    @functools.lru_cache(maxsize=None)
+    @functools.cache
     def _get_parser(cls, renderer, plugins, **renderer_options):
         if renderer == 'markdown':
             return None

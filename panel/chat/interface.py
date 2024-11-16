@@ -6,10 +6,11 @@ through a frontend input UI.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
-from typing import Any, Callable, ClassVar
+from typing import Any, ClassVar
 
 import param
 

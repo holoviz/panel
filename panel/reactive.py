@@ -16,10 +16,11 @@ import sys
 import textwrap
 
 from collections import Counter, defaultdict, namedtuple
+from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
 from pprint import pformat
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Sequence, Union,
+    TYPE_CHECKING, Any, ClassVar, TypeAlias,
 )
 
 import jinja2
@@ -65,7 +66,7 @@ if TYPE_CHECKING:
     from .layout.base import Panel as BasePanel
     from .links import Callback, JSLinkTarget, Link
 
-    TData = Union['pd.DataFrame', 'DataDict']
+    TData: TypeAlias = pd.DataFrame | DataDict
 
 log = logging.getLogger('panel.reactive')
 
@@ -1442,7 +1443,7 @@ class ReactiveData(SyncableData):
                 self._update_selection(events.pop('indices'))
             finally:
                 self._updating = False
-        super(ReactiveData, self)._process_events(events)
+        super()._process_events(events)  # noqa
 
 
 class ReactiveMetaBase(ParameterizedMetaclass):

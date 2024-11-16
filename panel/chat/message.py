@@ -6,13 +6,14 @@ from __future__ import annotations
 
 import datetime
 
+from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Union,
+    TYPE_CHECKING, Any, ClassVar, Union,
 )
 from zoneinfo import ZoneInfo
 

@@ -3,9 +3,8 @@ from __future__ import annotations
 import re
 import sys
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param

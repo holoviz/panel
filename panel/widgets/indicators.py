@@ -23,10 +23,9 @@ import os
 import sys
 import time
 
+from collections.abc import Mapping
 from math import pi
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param

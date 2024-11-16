@@ -4,8 +4,9 @@ Miscellaneous widgets which do not fit into the other main categories.
 from __future__ import annotations
 
 from base64 import b64encode
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 

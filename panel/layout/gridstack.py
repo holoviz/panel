@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import ClassVar, Mapping
+from collections.abc import Mapping
+from typing import ClassVar
 
 import param
 

@@ -6,8 +6,9 @@ from __future__ import annotations
 import os
 
 from base64 import b64encode
+from collections.abc import Mapping
 from io import BytesIO
-from typing import Any, ClassVar, Mapping
+from typing import Any, ClassVar
 
 import numpy as np
 import param

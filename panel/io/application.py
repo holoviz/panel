@@ -7,11 +7,10 @@ import json
 import logging
 import os
 
+from collections.abc import Callable, Sequence
 from functools import partial
 from types import FunctionType, MethodType
-from typing import (
-    TYPE_CHECKING, Any, Callable, Sequence, TypeAlias,
-)
+from typing import TYPE_CHECKING, Any, TypeAlias
 from urllib.parse import urljoin
 
 import bokeh.command.util

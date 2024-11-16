@@ -4,9 +4,8 @@ events or merely toggling between on-off states.
 """
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping,
-)
+from collections.abc import Awaitable, Callable, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 

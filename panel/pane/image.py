@@ -8,11 +8,10 @@ import asyncio
 import base64
 import struct
 
+from collections.abc import Mapping
 from io import BytesIO
 from pathlib import PurePath
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 

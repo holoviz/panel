@@ -14,13 +14,14 @@ import threading
 import time
 
 from collections import Counter, defaultdict
-from collections.abc import Iterator
+from collections.abc import (
+    Callable, Coroutine, Hashable, Iterator, Iterator as TIterator,
+)
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Hashable,
-    Iterator as TIterator, Literal, TypeVar, Union,
+    TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, TypeVar,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -89,7 +90,7 @@ def curdoc_locked() -> Document | None:
 
 class _Undefined: pass
 
-Tat = Union[dt.datetime, Callable[[dt.datetime], dt.datetime], TIterator[dt.datetime]]
+Tat: TypeAlias = dt.datetime | Callable[[dt.datetime], dt.datetime], TIterator[dt.datetime]
 
 class _state(param.Parameterized):
     """

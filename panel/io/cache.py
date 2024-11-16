@@ -16,10 +16,10 @@ import threading
 import time
 import unittest.mock
 
+from collections.abc import Awaitable, Callable, Hashable
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, Hashable, Literal, ParamSpec,
-    Protocol, TypeVar, cast, overload,
+    TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, TypeVar, cast, overload,
 )
 
 import param

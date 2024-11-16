@@ -3,11 +3,11 @@ from __future__ import annotations
 import datetime as dt
 import uuid
 
+from collections.abc import Callable, Mapping
 from functools import partial
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping, NotRequired,
-    TypedDict,
+    TYPE_CHECKING, Any, ClassVar, Literal, NotRequired, TypedDict,
 )
 
 import numpy as np

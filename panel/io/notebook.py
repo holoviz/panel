@@ -10,11 +10,10 @@ import sys
 import uuid
 import warnings
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, Iterator, Literal,
-)
+from typing import TYPE_CHECKING, Any, Literal
 
 import bokeh
 import bokeh.embed.notebook

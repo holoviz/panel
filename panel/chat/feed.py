@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import traceback
 
+from collections.abc import Callable
 from enum import Enum
 from inspect import (
     getfullargspec, isasyncgen, isasyncgenfunction, isawaitable,
@@ -15,7 +16,7 @@ from inspect import (
 )
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Literal,
+    TYPE_CHECKING, Any, ClassVar, Literal,
 )
 
 import param

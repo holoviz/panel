@@ -3,8 +3,9 @@ from __future__ import annotations
 import asyncio
 import unittest.mock
 
+from collections.abc import Mapping
 from functools import partial
-from typing import ClassVar, Mapping
+from typing import ClassVar
 
 import bokeh.core.properties as bp
 import param

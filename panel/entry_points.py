@@ -6,7 +6,7 @@ Hypothesis package https://github.com/HypothesisWorks/hypothesis.
 
 import importlib.metadata
 
-from typing import Iterator
+from collections.abc import Iterator
 
 
 def entry_points_for(group: str) -> Iterator[importlib.metadata.EntryPoint]:

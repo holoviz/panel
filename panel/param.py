@@ -14,12 +14,10 @@ import textwrap
 import types
 
 from collections import defaultdict, namedtuple
-from collections.abc import Callable
+from collections.abc import Callable, Generator, Mapping
 from contextlib import contextmanager
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Generator, Mapping,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
