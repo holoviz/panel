@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, TypeVar,
 )
 
 import numpy as np
@@ -231,7 +231,7 @@ class PaneBase(Layoutable):
         return None
 
     @classmethod
-    def get_pane_type(cls, obj: Any, **kwargs) -> type['PaneBase']:
+    def get_pane_type(cls, obj: Any, **kwargs) -> type[PaneBase]:
         """
         Returns the applicable Pane type given an object by resolving
         the precedence of all types whose applies method declares that
@@ -340,7 +340,7 @@ class Pane(PaneBase, Reactive):
         super()._param_change(*events)
 
     def _update_object(
-        self, ref: str, doc: 'Document', root: Model, parent: Model, comm: Comm | None
+        self, ref: str, doc: Document, root: Model, parent: Model, comm: Comm | None
     ) -> None:
         old_model = self._models[ref][0]
         if self._updates:
@@ -462,7 +462,7 @@ class Pane(PaneBase, Reactive):
     # Public API
     #----------------------------------------------------------------
 
-    def clone(self: T, object: Optional[Any] = None, **params) -> T:
+    def clone(self: T, object: Any | None = None, **params) -> T:
         """
         Makes a copy of the Pane sharing the same parameters.
 

@@ -5,7 +5,7 @@ bokeh model.
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import numpy as np
@@ -311,8 +311,8 @@ class Plotly(ModelPane):
         return props
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if not hasattr(self, '_bokeh_model'):
             self._bokeh_model = lazy_load(

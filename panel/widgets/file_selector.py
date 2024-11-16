@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 
 from fnmatch import fnmatch
-from typing import AnyStr, ClassVar, Optional
+from typing import AnyStr, ClassVar
 
 import param
 
@@ -200,7 +200,7 @@ class FileSelector(CompositeWidget):
         self._update_files(refresh=True)
 
     def _update_files(
-        self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
+        self, event: param.parameterized.Event | None = None, refresh: bool = False
     ):
         path = fullpath(self._directory.value)
         refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
@@ -293,7 +293,7 @@ class FileSelector(CompositeWidget):
         self._directory.value = self._stack[self._position]
         self._update_files()
 
-    def _go_up(self, event: Optional[param.parameterized.Event] = None):
+    def _go_up(self, event: param.parameterized.Event | None = None):
         path = self._cwd.split(os.path.sep)
         self._directory.value = os.path.sep.join(path[:-1]) or os.path.sep
         self._update_files(True)

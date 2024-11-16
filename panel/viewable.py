@@ -21,7 +21,7 @@ import typing
 import uuid
 
 from typing import (
-    IO, TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, Callable, ClassVar, Mapping,
 )
 
 import param  # type: ignore
@@ -359,7 +359,7 @@ class ServableMixin:
     def servable(
         self, title: str | None = None, location: bool | Location = True,
         area: str = 'main', target: str | None = None
-    ) -> 'ServableMixin':
+    ) -> ServableMixin:
         """
         Serves the object or adds it to the configured
         pn.state.template if in a `panel serve` context, writes to the
@@ -601,7 +601,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         if ref in state._handles:
             del state._handles[ref]
 
-    def _preprocess(self, root: 'Model', changed=None, old_models=None) -> None:
+    def _preprocess(self, root: Model, changed=None, old_models=None) -> None:
         """
         Applies preprocessing hooks to the root model.
 
@@ -712,7 +712,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Whether or not the Viewable is loading. If True a loading spinner
         is shown on top of the Viewable.""")
 
-    _preprocessing_hooks: ClassVar[list[Callable[['Viewable', 'Model'], None]]] = []
+    _preprocessing_hooks: ClassVar[list[Callable[[Viewable, Model], None]]] = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
@@ -856,7 +856,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     # Public API
     #----------------------------------------------------------------
 
-    def clone(self, **params) -> 'Viewable':
+    def clone(self, **params) -> Viewable:
         """
         Makes a copy of the object sharing the same parameters.
 
@@ -931,11 +931,11 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         )
 
     def save(
-        self, filename: str | os.PathLike | IO, title: Optional[str] = None,
+        self, filename: str | os.PathLike | IO, title: str | None = None,
         resources: Resources | None = None, template: str | Template | None = None,
         template_variables: dict[str, Any] = {}, embed: bool = False,
         max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
-        json_prefix: str='', save_path: str='./', load_path: Optional[str] = None,
+        json_prefix: str='', save_path: str='./', load_path: str | None = None,
         progress: bool = True, embed_states: dict[Any, Any] = {},
         as_png: bool | None = None, **kwargs
     ) -> None:
@@ -1071,18 +1071,18 @@ class Viewer(param.Parameterized):
         return view
 
     def servable(
-        self, title: Optional[str]=None, location: bool | 'Location' = True,
-        area: str = 'main', target: Optional[str] = None
+        self, title: str | None=None, location: bool | Location = True,
+        area: str = 'main', target: str | None = None
     ) -> Viewable:
         return self._create_view().servable(title, location, area, target)
 
     servable.__doc__ = ServableMixin.servable.__doc__
 
     def show(
-        self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
-        websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
-        open: bool = True, location: bool | 'Location' = True, **kwargs
-    ) -> threading.Thread | 'Server':
+        self, title: str | None = None, port: int = 0, address: str | None = None,
+        websocket_origin: str | None = None, threaded: bool = False, verbose: bool = True,
+        open: bool = True, location: bool | Location = True, **kwargs
+    ) -> threading.Thread | Server:
         return self._create_view().show(
             title, port, address, websocket_origin, threaded,
             verbose, open, location, **kwargs

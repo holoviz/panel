@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import os
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -71,8 +69,8 @@ class IPyWidget(Pane):
         return model
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if root is None:
             return self.get_root(doc, comm)
@@ -115,7 +113,7 @@ class Reacton(IPyWidget):
         super()._cleanup(root)
 
     def _get_ipywidget(
-        self, obj, doc: Document, root: Model, comm: Optional[Comm], **kwargs
+        self, obj, doc: Document, root: Model, comm: Comm | None, **kwargs
     ):
         if not isinstance(comm, JupyterComm) or "PANEL_IPYWIDGET" in os.environ:
             from ..io.ipywidget import Widget  # noqa

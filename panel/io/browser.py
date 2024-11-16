@@ -65,7 +65,7 @@ class BrowserInfo(Syncable):
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
-    ) -> 'Model':
+    ) -> Model:
         doc = create_doc_if_none_exists(doc)
         root = self._get_model(doc, comm=comm)
         ref = root.ref['id']

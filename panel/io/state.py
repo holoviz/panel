@@ -20,7 +20,7 @@ from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Hashable,
-    Iterator as TIterator, Literal, Optional, TypeVar, Union,
+    Iterator as TIterator, Literal, TypeVar, Union,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -762,7 +762,7 @@ class _state(param.Parameterized):
 
     def publish(
         self, endpoint: str, parameterized: param.Parameterized,
-        parameters: Optional[list[str]] = None
+        parameters: list[str] | None = None
     ) -> None:
         """
         Publish parameters on a Parameterized object as a REST API.

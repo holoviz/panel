@@ -13,7 +13,7 @@ import warnings
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Iterator, Literal, Optional,
+    TYPE_CHECKING, Any, Iterator, Literal,
 )
 
 import bokeh
@@ -167,7 +167,7 @@ def html_for_render_items(docs_json, render_items, template=None, template_varia
     return template.render(context)
 
 def render_template(
-    document: 'Document', comm: Optional['Comm'] = None, manager: Optional['CommManager'] = None
+    document: Document, comm: Comm | None = None, manager: CommManager | None = None
 ) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     ref = document.roots[0].ref['id']
     (docs_json, render_items) = standalone_docs_json_and_render_items(document, suppress_callback_warning=True)
@@ -185,7 +185,7 @@ def render_template(
     return ({'text/html': html, EXEC_MIME: ''}, {EXEC_MIME: {'id': ref}})
 
 def render_model(
-    model: 'Model', comm: Optional['Comm'] = None, resources: str = 'cdn'
+    model: Model, comm: Comm | None = None, resources: str = 'cdn'
 ) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     if not isinstance(model, Model):
         raise ValueError("notebook_content expects a single Model instance")
@@ -237,9 +237,9 @@ def mime_renderer(obj):
 
 
 def render_mimebundle(
-    model: 'Model', doc: 'Document', comm: 'Comm',
-    manager: Optional['CommManager'] = None,
-    location: Optional['Location'] = None,
+    model: Model, doc: Document, comm: Comm,
+    manager: CommManager | None = None,
+    location: Location | None = None,
     resources: str = 'cdn'
 ) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     """
@@ -444,7 +444,7 @@ def load_notebook(
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
 
 
-def show_server(panel: Any, notebook_url: str, port: int = 0) -> 'Server':
+def show_server(panel: Any, notebook_url: str, port: int = 0) -> Server:
     """
     Displays a bokeh server inline in the notebook.
 
@@ -494,7 +494,7 @@ def show_server(panel: Any, notebook_url: str, port: int = 0) -> 'Server':
 
 def render_embed(
     panel, max_states: int = 1000, max_opts: int = 3, json: bool = False,
-    json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
+    json_prefix: str = '', save_path: str = './', load_path: str | None = None,
     progress: bool = True, states: dict[Widget, list[Any]] = {}
 ) -> Mimebundle:
     """

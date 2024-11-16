@@ -17,7 +17,7 @@ import uuid
 from functools import partial, wraps
 from html import escape
 from typing import (
-    TYPE_CHECKING, Any, Callable, Mapping, Optional, TypedDict,
+    TYPE_CHECKING, Any, Callable, Mapping, TypedDict,
 )
 from urllib.parse import urlparse
 
@@ -238,12 +238,12 @@ def html_page_for_render_items(
     return html
 
 def server_html_page_for_session(
-    session: 'ServerSession',
-    resources: 'Resources',
+    session: ServerSession,
+    resources: Resources,
     title: str,
     token: str | None = None,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: Optional[dict[str, Any]] = None,
+    template_variables: dict[str, Any] | None = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
@@ -692,12 +692,12 @@ class ComponentResourceHandler(StaticFileHandler):
 def serve(
     panels: TViewableFuncOrPath | dict[str, TViewableFuncOrPath],
     port: int = 0,
-    address: Optional[str] = None,
-    websocket_origin: Optional[str | list[str]] = None,
-    loop: Optional[IOLoop] = None,
+    address: str | None = None,
+    websocket_origin: str | list[str] | None = None,
+    loop: IOLoop | None = None,
     show: bool = True,
     start: bool = True,
-    title: Optional[str] = None,
+    title: str | None = None,
     verbose: bool = True,
     location: bool = True,
     threaded: bool = False,

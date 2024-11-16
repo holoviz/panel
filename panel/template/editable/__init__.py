@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pathlib
 
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -123,8 +123,8 @@ class EditableTemplate(VanillaTemplate):
         super()._update_vars()
 
     def _init_doc(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
-        title: Optional[str] = None, notebook: bool = False,
+        self, doc: Document | None = None, comm: Comm | None = None,
+        title: str | None = None, notebook: bool = False,
         location: bool | Location = True
     ):
         doc = super()._init_doc(doc, comm, title, notebook, location)

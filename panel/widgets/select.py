@@ -10,7 +10,7 @@ import re
 from functools import partial
 from types import FunctionType
 from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping,
 )
 
 import numpy as np
@@ -798,8 +798,8 @@ class MultiSelect(_MultiSelectBase):
         self._dbl__click_handlers = [click_handler] if click_handler else []
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('dblclick_event', model=model, doc=doc, comm=comm)

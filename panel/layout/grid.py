@@ -8,7 +8,7 @@ import math
 from collections import namedtuple
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import numpy as np
@@ -196,7 +196,7 @@ class GridBox(ListPanel):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         from ..io import state
 

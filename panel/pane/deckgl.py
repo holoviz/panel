@@ -9,7 +9,7 @@ import sys
 
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import numpy as np
@@ -276,8 +276,8 @@ class DeckGL(ModelPane):
         return dict(data=data, tooltip=tooltip, configuration=configuration, mapbox_api_key=mapbox_api_key or "")
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         self._bokeh_model = DeckGLPlot = lazy_load(
             'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root

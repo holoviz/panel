@@ -465,7 +465,7 @@ class PanelCodeHandler(CodeHandler):
         # TODO should fix invalid URL characters
         return '/' + os.path.splitext(os.path.basename(self._runner.path))[0]
 
-    def modify_document(self, doc: 'Document'):
+    def modify_document(self, doc: Document):
         if config.autoreload:
             path = self._runner.path
             argv = self._runner._argv

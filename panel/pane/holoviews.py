@@ -10,7 +10,7 @@ import sys
 from collections import defaultdict
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import param
@@ -417,8 +417,8 @@ class HoloViews(Pane):
     #----------------------------------------------------------------
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         from holoviews.plotting.plot import Plot
         if root is None:
@@ -738,8 +738,8 @@ class Interactive(Pane):
         self._layout_panel.param.update(**{e.name: e.new for e in events})
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if root is None:
             return self.get_root(doc, comm)

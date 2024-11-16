@@ -5,7 +5,7 @@ events or merely toggling between on-off states.
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping,
 )
 
 import param
@@ -95,8 +95,8 @@ class _ClickButton(Widget):
     _event: ClassVar[str] = 'button_click'
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events(self._event, model=model, doc=doc, comm=comm)
@@ -200,8 +200,8 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
         return super()._linkable_params + ['value']
 
     def jslink(
-        self, target: JSLinkTarget, code: Optional[dict[str, str]] = None,
-        args: Optional[dict[str, Any]] = None, bidirectional: bool = False,
+        self, target: JSLinkTarget, code: dict[str, str] | None = None,
+        args: dict[str, Any] | None = None, bidirectional: bool = False,
         **links: str
     ) -> Link:
         """
@@ -342,8 +342,8 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
             self.on_click(click_handler)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('button_click', model=model, doc=doc, comm=comm)

@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from functools import partial
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import param
@@ -162,8 +162,8 @@ class Bokeh(Pane):
             self._syncing_props = False
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if root is None:
             return self.get_root(doc, comm)
@@ -319,8 +319,8 @@ class Matplotlib(Image, IPyWidget):
         return self._img_type._transform_object(self, obj)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if not self.interactive:
             return self._img_type._get_model(self, doc, root, parent, comm)

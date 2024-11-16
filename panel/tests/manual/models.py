@@ -118,7 +118,7 @@ json_editor = pn.widgets.JSONEditor(
 
 # Model: katex
 latex1 = pn.pane.LaTeX(
-    "The LaTeX pane supports two delimiters: $LaTeX$ and \(LaTeX\)",
+    r"The LaTeX pane supports two delimiters: $LaTeX$ and \(LaTeX\)",
     styles={"font-size": "18pt"},
     width=800,
 )
@@ -127,7 +127,7 @@ latex1 = pn.pane.LaTeX(
 
 # Model: mathjax
 latex2 = pn.pane.LaTeX(
-    "$\sum_{j}{\sum_{i}{a*w_{j, i}}}$", renderer="mathjax", styles={"font-size": "18pt"}
+    r"$\sum_{j}{\sum_{i}{a*w_{j, i}}}$", renderer="mathjax", styles={"font-size": "18pt"}
 )
 
 # Model: perspective

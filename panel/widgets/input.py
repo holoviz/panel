@@ -10,7 +10,7 @@ import json
 from base64 import b64decode
 from datetime import date, datetime, time as dt_time
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Iterable, Mapping,
 )
 
 import numpy as np
@@ -111,8 +111,8 @@ class TextInput(_TextInputBase):
     _rename = {'enter_pressed': None}
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('enter-pressed', model=model, doc=doc, comm=comm)
@@ -379,8 +379,8 @@ class FileDropper(Widget):
         self._file_buffer = {}
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         self._widget_type = lazy_load(
             'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root,
@@ -1009,7 +1009,7 @@ class _SpinnerBase(_NumericInputBase):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'value_throttled' in msg:
             del msg['value_throttled']

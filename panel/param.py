@@ -18,7 +18,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Generator, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Generator, Mapping,
 )
 
 import param
@@ -77,13 +77,13 @@ def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
 
 def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     if isinstance(pobj, param.Tuple):
-        return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
+        return type('TupleInput', (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
-        return type(str('NumberInput'), (LiteralInput,), {'type': (int, float)})
+        return type('NumberInput', (LiteralInput,), {'type': (int, float)})
     elif isinstance(pobj, param.Dict):
-        return type(str('DictInput'), (LiteralInput,), {'type': dict})
+        return type('DictInput', (LiteralInput,), {'type': dict})
     elif isinstance(pobj, param.List):
-        return type(str('ListInput'), (LiteralInput,), {'type': list})
+        return type('ListInput', (LiteralInput,), {'type': list})
     return LiteralInput
 
 
@@ -715,8 +715,8 @@ class Param(Pane):
         return dict(widgets)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self.layout._get_model(doc, root, parent, comm)
         self._models[root.ref['id']] = (model, parent)
@@ -750,7 +750,7 @@ class Param(Pane):
             return wtype
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Comm | None = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         root = super().get_root(doc, comm, preprocess)
@@ -912,8 +912,8 @@ class ParamRef(ReplacementPane):
         self._replace_pane()
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if not self._evaled:
             deferred = self.defer_load and not state.loaded
@@ -1229,9 +1229,9 @@ class ReactiveExpr(Pane):
         return self.widget_layout(*widgets)
 
     def _get_model(
-        self, doc: Document, root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional[Comm] = None
-    ) -> 'Model':
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         return self.layout._get_model(doc, root, parent, comm)
 
     def _generate_layout(self):
@@ -1304,7 +1304,7 @@ class JSONInit(param.Parameterized):
         if self.json_file or env_var.endswith('.json'):
             try:
                 fname = self.json_file if self.json_file else env_var
-                with open(fullpath(fname), 'r') as f:
+                with open(fullpath(fname)) as f:
                     spec = json.load(f)
             except Exception:
                 warnobj.warning(f'Could not load JSON file {spec!r}')

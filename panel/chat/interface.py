@@ -389,7 +389,7 @@ class ChatInterface(ChatFeed):
     def _click_send(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Send the input when the user presses Enter.
@@ -430,7 +430,7 @@ class ChatInterface(ChatFeed):
     def _click_stop(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> bool:
         """
         Cancel the callback when the user presses the Stop button.
@@ -479,7 +479,7 @@ class ChatInterface(ChatFeed):
     def _click_rerun(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Upon clicking the rerun button, rerun the last user message,
@@ -494,7 +494,7 @@ class ChatInterface(ChatFeed):
     def _click_undo(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Upon clicking the undo button, undo (remove) messages
@@ -518,7 +518,7 @@ class ChatInterface(ChatFeed):
     def _click_clear(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Upon clicking the clear button, clear the chat log.

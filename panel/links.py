@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     TargetModelSpec = tuple[str | None, str | None]
 
 
-def assert_source_syncable(source: 'Reactive', properties: Iterable[str]) -> None:
+def assert_source_syncable(source: Reactive, properties: Iterable[str]) -> None:
     for prop in properties:
         if prop.startswith('event:'):
             continue
@@ -69,7 +69,7 @@ def assert_source_syncable(source: 'Reactive', properties: Iterable[str]) -> Non
             )
 
 def assert_target_syncable(
-    source: 'Reactive', target: 'JSLinkTarget', properties: dict[str, str]
+    source: Reactive, target: JSLinkTarget, properties: dict[str, str]
 ) -> None:
     for k, p in properties.items():
         if k.startswith('event:'):
@@ -183,7 +183,7 @@ class Callback(param.Parameterized):
             self.registry[source] = [self]
 
     @classmethod
-    def register_callback(cls, callback: type['CallbackGenerator']) -> None:
+    def register_callback(cls, callback: type[CallbackGenerator]) -> None:
         """
         Register a LinkCallback providing the implementation for
         the Link for a particular backend.
@@ -526,8 +526,8 @@ class CallbackGenerator:
         """
 
     def _get_specs(
-        self, link: 'Link', source: 'Reactive', target: 'JSLinkTarget'
-    ) -> Sequence[tuple['SourceModelSpec', 'TargetModelSpec', str | None]]:
+        self, link: Link, source: Reactive, target: JSLinkTarget
+    ) -> Sequence[tuple[SourceModelSpec, TargetModelSpec, str | None]]:
         """
         Return a list of spec tuples that define source and target
         models.
@@ -535,8 +535,8 @@ class CallbackGenerator:
         return []
 
     def _get_code(
-        self, link: 'Link', source: 'JSLinkTarget', src_spec: str,
-        target: 'JSLinkTarget' | None, tgt_spec: str | None
+        self, link: Link, source: JSLinkTarget, src_spec: str,
+        target: JSLinkTarget | None, tgt_spec: str | None
     ) -> str:
         """
         Returns the code to be executed.
@@ -544,7 +544,7 @@ class CallbackGenerator:
         return ''
 
     def _get_triggers(
-        self, link: 'Link', src_spec: 'SourceModelSpec'
+        self, link: Link, src_spec: SourceModelSpec
     ) -> tuple[list[str], list[str]]:
         """
         Returns the changes and events that trigger the callback.
@@ -552,8 +552,8 @@ class CallbackGenerator:
         return [], []
 
     def _initialize_models(
-        self, link, source: 'Reactive', src_model: 'Model', src_spec: str,
-        target: 'JSLinkTarget' | None, tgt_model: 'Model' | None, tgt_spec: str | None
+        self, link, source: Reactive, src_model: Model, src_spec: str,
+        target: JSLinkTarget | None, tgt_model: Model | None, tgt_spec: str | None
     ) -> None:
         """
         Applies any necessary initialization to the source and target
@@ -568,15 +568,15 @@ class CallbackGenerator:
 class JSCallbackGenerator(CallbackGenerator):
 
     def _get_triggers(
-        self, link: 'Link', src_spec: 'SourceModelSpec'
+        self, link: Link, src_spec: SourceModelSpec
     ) -> tuple[list[str], list[str]]:
         if src_spec[1].startswith('event:'):
             return [], [src_spec[1].split(':')[1]]
         return [src_spec[1]], []
 
     def _get_specs(
-        self, link: 'Link', source: 'Reactive', target: 'JSLinkTarget'
-    ) -> Sequence[tuple['SourceModelSpec', 'TargetModelSpec', str | None]]:
+        self, link: Link, source: Reactive, target: JSLinkTarget
+    ) -> Sequence[tuple[SourceModelSpec, TargetModelSpec, str | None]]:
         for spec in link.code:
             src_specs = spec.split('.')
             src_spec: tuple[str | None, str]
@@ -659,8 +659,8 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
     """
 
     def _get_specs(
-        self, link: 'Link', source: 'Reactive', target: 'JSLinkTarget'
-    ) -> Sequence[tuple['SourceModelSpec', 'TargetModelSpec', str | None]]:
+        self, link: Link, source: Reactive, target: JSLinkTarget
+    ) -> Sequence[tuple[SourceModelSpec, TargetModelSpec, str | None]]:
         if link.code:
             return super()._get_specs(link, source, target)
 
@@ -686,8 +686,8 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
         return specs
 
     def _initialize_models(
-        self, link, source: 'Reactive', src_model: 'Model', src_spec: str,
-        target: 'JSLinkTarget' | None, tgt_model: 'Model' | None, tgt_spec: str | None
+        self, link, source: Reactive, src_model: Model, src_spec: str,
+        target: JSLinkTarget | None, tgt_model: Model | None, tgt_spec: str | None
     ) -> None:
         if tgt_model is not None and src_spec and tgt_spec:
             src_reverse = {v: k for k, v in getattr(source, '_rename', {}).items()}
@@ -722,8 +722,8 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
             references[k[7:]] = references.pop(k)
 
     def _get_code(
-        self, link: 'Link', source: 'JSLinkTarget', src_spec: str,
-        target: 'JSLinkTarget' | None, tgt_spec: str | None
+        self, link: Link, source: JSLinkTarget, src_spec: str,
+        target: JSLinkTarget | None, tgt_spec: str | None
     ) -> str:
         if isinstance(source, Reactive):
             src_reverse = {v: k for k, v in source._rename.items()}

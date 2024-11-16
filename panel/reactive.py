@@ -19,7 +19,7 @@ from collections import Counter, defaultdict, namedtuple
 from functools import lru_cache, partial
 from pprint import pformat
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, Sequence, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Sequence, Union,
 )
 
 import jinja2
@@ -263,7 +263,7 @@ class Syncable(Renderable):
 
     def _link_props(
         self, model: Model | DataModel, properties: Sequence[str] | Sequence[tuple[str, str]],
-        doc: Document, root: Model, comm: Optional[Comm] = None
+        doc: Document, root: Model, comm: Comm | None = None
     ) -> None:
         from .config import config
         ref = root.ref['id']
@@ -288,7 +288,7 @@ class Syncable(Renderable):
 
     def _manual_update(
         self, events: tuple[param.parameterized.Event, ...], model: Model, doc: Document,
-        root: Model, parent: Optional[Model], comm: Optional[Comm]
+        root: Model, parent: Model | None, comm: Comm | None
     ) -> None:
         """
         Method for handling any manual update events, i.e. events triggered
@@ -314,7 +314,7 @@ class Syncable(Renderable):
 
     def _scheduled_update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm],
+        root: Model, model: Model, doc: Document, comm: Comm | None,
         curdoc_events: dict[str, Any]
     ) -> None:
         #
@@ -345,7 +345,7 @@ class Syncable(Renderable):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         ref = root.ref['id']
         self._changing[ref] = attrs = []
@@ -695,7 +695,7 @@ class Reactive(Syncable, Viewable):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'stylesheets' in msg:
             if doc and 'dist_url' in doc._template_variables:
@@ -712,7 +712,7 @@ class Reactive(Syncable, Viewable):
     #----------------------------------------------------------------
 
     def link(
-        self, target: param.Parameterized, callbacks: Optional[dict[str, str | Callable]]=None,
+        self, target: param.Parameterized, callbacks: dict[str, str | Callable] | None=None,
         bidirectional: bool=False, **links: str
     ) -> Watcher:
         """
@@ -1027,7 +1027,7 @@ class SyncableData(Reactive):
 
     def _manual_update(
         self, events: tuple[param.parameterized.Event, ...], model: Model,
-        doc: Document, root: Model, parent: Optional[Model], comm: Comm
+        doc: Document, root: Model, parent: Model | None, comm: Comm
     ) -> None:
         for event in events:
             if event.type == 'triggered' and self._updating:
@@ -1219,7 +1219,7 @@ class SyncableData(Reactive):
         else:
             raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
 
-    def patch(self, patch_value: 'pd.DataFrame' | 'pd.Series' | dict) -> None:
+    def patch(self, patch_value: pd.DataFrame | pd.Series | dict) -> None:
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
@@ -1329,7 +1329,7 @@ class ReactiveData(SyncableData):
         self.selection = indices
 
     def _convert_column(
-        self, values: np.ndarray, old_values: np.ndarray | 'pd.Series'
+        self, values: np.ndarray, old_values: np.ndarray | pd.Series
     ) -> np.ndarray | list:
         dtype = old_values.dtype
         converted: list | np.ndarray | None = None
@@ -1442,7 +1442,7 @@ class ReactiveData(SyncableData):
                 self._update_selection(events.pop('indices'))
             finally:
                 self._updating = False
-        super(ReactiveData, self)._process_events(events)
+        super()._process_events(events)
 
 
 class ReactiveMetaBase(ParameterizedMetaclass):
@@ -1563,11 +1563,11 @@ class ReactiveHTMLMetaclass(ReactiveMetaBase):
 
 class ReactiveCustomBase(Reactive):
 
-    _extension_name: ClassVar[Optional[str]] = None
+    _extension_name: ClassVar[str | None] = None
 
-    __css__: ClassVar[Optional[list[str]]] = None
-    __javascript__: ClassVar[Optional[list[str]]] = None
-    __javascript_modules__: ClassVar[Optional[list[str]]] = None
+    __css__: ClassVar[list[str] | None] = None
+    __javascript__: ClassVar[list[str] | None] = None
+    __javascript_modules__: ClassVar[list[str] | None] = None
 
     @classmethod
     def _loaded(cls) -> bool:
@@ -1841,7 +1841,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         return {}
 
     def _process_children(
-        self, doc: Document, root: Model, model: Model, comm: Optional[Comm],
+        self, doc: Document, root: Model, model: Model, comm: Comm | None,
         children: dict[str, list[Model]]
     ) -> dict[str, list[Model]]:
         return children
@@ -1918,7 +1918,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         return events
 
     def _get_children(
-        self, doc: Document, root: Model, model: Model, comm: Optional[Comm]
+        self, doc: Document, root: Model, model: Model, comm: Comm | None
     ) -> dict[str, list[Model]]:
         from .pane import panel
         old_models = model.children
@@ -2082,8 +2082,8 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
             props.tags.append(f"__ref:{ref}")
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = _BkReactiveHTML(**self._get_properties(doc))
         if comm and not self._loaded():
@@ -2118,7 +2118,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _process_event(self, event: 'Event') -> None:
+    def _process_event(self, event: Event) -> None:
         if not isinstance(event, DOMEvent):
             return
         cb = getattr(self, f"_{event.node}_{event.data['type']}", None)
@@ -2148,7 +2148,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         child_params = self._parser.children.values()
         new_children, model_msg, data_msg  = {}, {}, {}

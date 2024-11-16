@@ -25,7 +25,7 @@ import time
 
 from math import pi
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import numpy as np
@@ -135,7 +135,7 @@ class BooleanIndicator(Indicator):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         events = self._throttle_events(events)
         if not events:
@@ -1350,8 +1350,8 @@ class Tqdm(Indicator):
             self._lock = params.pop('lock', None)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self.layout._get_model(doc, root, parent, comm)
         root = root or model

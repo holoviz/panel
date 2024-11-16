@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime as dt
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import numpy as np
@@ -97,7 +97,7 @@ class _SliderBase(Widget):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'value_throttled' in msg:
             del msg['value_throttled']

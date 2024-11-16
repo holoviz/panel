@@ -12,7 +12,7 @@ import textwrap
 from collections import defaultdict
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping,
 )
 
 import param
@@ -141,9 +141,9 @@ class PyComponent(Viewable, Layoutable):
         return view
 
     def _get_model(
-        self, doc: Document, root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional[Comm] = None
-    ) -> 'Model':
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         if self._view__ is None:
             self._view__ = self._create__view()
         model = self._view__._get_model(doc, root, parent, comm)
@@ -472,8 +472,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             state.execute(self._watch_esm)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._bokeh_model(**self._get_properties(doc))
         root = root or model
@@ -486,7 +486,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._setup_autoreload()
         return model
 
-    def _process_event(self, event: 'Event') -> None:
+    def _process_event(self, event: Event) -> None:
         if isinstance(event, DataEvent):
             for cb in self._msg__callbacks:
                 state.execute(partial(cb, event), schedule=False)
@@ -501,7 +501,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         model_msg, data_msg  = {}, {}
         for prop, v in list(msg.items()):

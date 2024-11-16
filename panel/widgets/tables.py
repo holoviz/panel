@@ -7,7 +7,7 @@ from functools import partial
 from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping, NotRequired,
-    Optional, TypedDict,
+    TypedDict,
 )
 
 import numpy as np
@@ -379,8 +379,8 @@ class BaseTable(ReactiveData, Widget):
         return properties
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         properties = self._get_properties(doc)
         model = self._widget_type(**properties)
@@ -399,7 +399,7 @@ class BaseTable(ReactiveData, Widget):
 
     def _manual_update(
         self, events: tuple[param.parameterized.Event, ...], model: Model, doc: Document,
-        root: Model, parent: Optional[Model], comm: Optional[Comm]
+        root: Model, parent: Model | None, comm: Comm | None
     ) -> None:
         for event in events:
             if event.type == 'triggered' and self._updating:
@@ -1841,8 +1841,8 @@ class Tabulator(BaseTable):
         return params
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         Tabulator._widget_type = lazy_load(
             'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
@@ -2160,7 +2160,7 @@ class Tabulator(BaseTable):
         """
         self._on_edit_callbacks.append(callback)
 
-    def on_click(self, callback: Callable[[CellClickEvent], None], column: Optional[str] = None):
+    def on_click(self, callback: Callable[[CellClickEvent], None], column: str | None = None):
         """
         Register a callback to be executed when any cell is clicked.
         The callback is given a CellClickEvent declaring the column

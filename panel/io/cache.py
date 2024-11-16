@@ -214,7 +214,7 @@ _hash_funcs: dict[str | type[Any] | tuple[type, ...] | Callable[[Any], bool], by
     functools.partial  : _partial_hash,
     unittest.mock.Mock : lambda obj: _int_to_bytes(id(obj)),
     (io.StringIO, io.BytesIO): _io_hash,
-    dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode('utf-8'),
+    dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode(),
     # Fully qualified type strings
     'numpy.ndarray'              : _numpy_hash,
     'pandas.core.series.Series'  : _pandas_hash,

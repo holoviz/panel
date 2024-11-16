@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import param
@@ -87,9 +87,9 @@ class ChatAreaInput(_PnTextAreaInput):
     def _get_model(
         self,
         doc: Document,
-        root: Optional[Model] = None,
-        parent: Optional[Model] = None,
-        comm: Optional[Comm] = None,
+        root: Model | None = None,
+        parent: Model | None = None,
+        comm: Comm | None = None,
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events("chat_message_event", model=model, doc=doc, comm=comm)

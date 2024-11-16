@@ -8,7 +8,7 @@ from __future__ import annotations
 import math
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, TypeVar,
 )
 
 import param  # type: ignore
@@ -145,8 +145,8 @@ class Widget(Reactive, WidgetBase):
         return params
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._widget_type(**self._get_properties(doc))
         root = root or model
@@ -155,8 +155,8 @@ class Widget(Reactive, WidgetBase):
         return model
 
     def _get_embed_state(
-        self, root: 'Model', values: Optional[list[Any]] = None, max_opts: int = 3
-    ) -> tuple['Widget', 'Model', list[Any], Callable[['Model'], Any], str, str]:
+        self, root: Model, values: list[Any] | None = None, max_opts: int = 3
+    ) -> tuple[Widget, Model, list[Any], Callable[[Model], Any], str, str]:
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -222,7 +222,7 @@ class CompositeWidget(Widget):
         self._composite.param.update(**updates)
 
     def select(
-        self, selector: Optional[type | Callable[['Viewable'], bool]] = None
+        self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
@@ -248,8 +248,8 @@ class CompositeWidget(Widget):
         super()._cleanup(root)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
         root = model if root is None else root

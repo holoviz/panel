@@ -6,7 +6,7 @@ import sys
 from enum import Enum
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Callable, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Callable, ClassVar, Mapping,
 )
 
 import numpy as np
@@ -364,7 +364,7 @@ class Perspective(ModelPane, ReactiveData):
                     k: v for k, v in kwargs.items()
                     if getattr(self, k) is None
                 })
-        cols = set(self._as_digit(c) for c in df)
+        cols = {self._as_digit(c) for c in df}
         if len(cols) != ncols:
             raise ValueError("Integer columns must be unique when "
                              "converted to strings.")
@@ -475,8 +475,8 @@ class Perspective(ModelPane, ReactiveData):
         return msg
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         self._bokeh_model = lazy_load(
             'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root

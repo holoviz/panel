@@ -12,7 +12,7 @@ from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Union,
 )
 from zoneinfo import ZoneInfo
 
@@ -667,7 +667,7 @@ class ChatMessage(Pane):
         self.param.update(**updates)
 
     def select(
-        self, selector: Optional[type | Callable[[Viewable], bool]] = None
+        self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
         return super().select(selector) + self._composite.select(selector)
 

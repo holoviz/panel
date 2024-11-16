@@ -7,7 +7,6 @@ from __future__ import annotations
 from collections import defaultdict, namedtuple
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Generator, Iterable, Iterator, Mapping,
-    Optional,
 )
 
 import param
@@ -89,7 +88,7 @@ class Panel(Reactive):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         msg = dict(msg)
         inverse = {v: k for k, v in self._property_mapping.items() if v is not None}
@@ -140,7 +139,7 @@ class Panel(Reactive):
 
     def _get_objects(
         self, model: Model, old_objects: list[Viewable], doc: Document,
-        root: Model, comm: Optional[Comm] = None
+        root: Model, comm: Comm | None = None
     ):
         """
         Returns new child models for the layout while reusing unchanged
@@ -171,8 +170,8 @@ class Panel(Reactive):
         return new_models, old_models
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if self._bokeh_model is None:
             raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
@@ -310,7 +309,7 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         root = super().get_root(doc, comm, preprocess)
@@ -370,18 +369,18 @@ class ListLike(param.Parameterized):
     def __iter__(self) -> Iterator[Viewable]:
         yield from self.objects
 
-    def __iadd__(self, other: Iterable[Any]) -> 'ListLike':
+    def __iadd__(self, other: Iterable[Any]) -> ListLike:
         self.extend(other)
         return self
 
-    def __add__(self, other: Iterable[Any]) -> 'ListLike':
+    def __add__(self, other: Iterable[Any]) -> ListLike:
         if isinstance(other, ListLike):
             other = other.objects
         else:
             other = list(other)
         return self.clone(*(self.objects+other))
 
-    def __radd__(self, other: Iterable[Any]) -> 'ListLike':
+    def __radd__(self, other: Iterable[Any]) -> ListLike:
         if isinstance(other, ListLike):
             other = other.objects
         else:
@@ -426,7 +425,7 @@ class ListLike(param.Parameterized):
 
         self.objects = new_objects
 
-    def clone(self, *objects: Any, **params: Any) -> 'ListLike':
+    def clone(self, *objects: Any, **params: Any) -> ListLike:
         """
         Makes a copy of the layout sharing the same parameters.
 
@@ -619,11 +618,11 @@ class NamedListLike(param.Parameterized):
     def __iter__(self) -> Iterator[Viewable]:
         yield from self.objects
 
-    def __iadd__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __iadd__(self, other: Iterable[Any]) -> NamedListLike:
         self.extend(other)
         return self
 
-    def __add__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __add__(self, other: Iterable[Any]) -> NamedListLike:
         if isinstance(other, NamedListLike):
             added = list(zip(other._names, other.objects))
         elif isinstance(other, ListLike):
@@ -633,7 +632,7 @@ class NamedListLike(param.Parameterized):
         objects = list(zip(self._names, self.objects))
         return self.clone(*(objects+added))
 
-    def __radd__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __radd__(self, other: Iterable[Any]) -> NamedListLike:
         if isinstance(other, NamedListLike):
             added = list(zip(other._names, other.objects))
         elif isinstance(other, ListLike):
@@ -678,7 +677,7 @@ class NamedListLike(param.Parameterized):
             new_objects[i], self._names[i] = self._to_object_and_name(pane)
         self.objects = new_objects
 
-    def clone(self, *objects: Any, **params: Any) -> 'NamedListLike':
+    def clone(self, *objects: Any, **params: Any) -> NamedListLike:
         """
         Makes a copy of the Tabs sharing the same parameters.
 

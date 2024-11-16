@@ -6,7 +6,7 @@ import os
 import weakref
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import tornado
 
@@ -182,7 +182,7 @@ class PanelExecutor(WSHandler):
         return session, runner.error_detail
 
     async def write_message(  # type: ignore
-        self, message: Union[bytes, str, dict[str, Any]],
+        self, message: bytes | str | dict[str, Any],
         binary: bool = False, locked: bool = True
     ) -> None:
         metadata = {'binary': binary}

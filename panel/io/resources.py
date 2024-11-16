@@ -731,7 +731,7 @@ class Resources(BkResources):
     def css_files(self):
         from ..config import config
 
-        files = super(Resources, self).css_files
+        files = super().css_files
         self.extra_resources(files, '__css__')
         css_files = self.adjust_paths([
             css for css in files if self.mode != 'inline' or not is_cdn_url(css)
@@ -747,7 +747,7 @@ class Resources(BkResources):
     @property
     def css_raw(self):
         from ..config import config
-        raw = super(Resources, self).css_raw
+        raw = super().css_raw
 
         # Inline local dist resources
         css_files = self._collect_external_resources("__css__")
@@ -782,7 +782,7 @@ class Resources(BkResources):
 
         # Gather JS files
         with set_resource_mode(self.mode):
-            files = super(Resources, self).js_files
+            files = super().js_files
             self.extra_resources(files, '__javascript__')
         files += [js for js in config.js_files.values()]
         if config.design:
@@ -854,7 +854,7 @@ class Resources(BkResources):
 
     @property
     def js_raw(self):
-        raw_js = super(Resources, self).js_raw
+        raw_js = super().js_raw
         if not self.mode == 'inline':
             return raw_js
 

@@ -57,7 +57,7 @@ def write_file(name, text, opts):
     """Write the output file for module/package <name>."""
     if opts.dryrun:
         return
-    fname = os.path.join(opts.destdir, "%s.%s" % (name, opts.suffix))
+    fname = os.path.join(opts.destdir, "{}.{}".format(name, opts.suffix))
     if not opts.force and os.path.isfile(fname):
         print('File %s already exists, skipping.' % fname)
     else:
@@ -69,7 +69,7 @@ def write_file(name, text, opts):
 def format_heading(level, text):
     """Create a heading of <level> [1, 2 or 3 supported]."""
     underlining = ['=', '-', '~', ][level-1] * len(text)
-    return '%s\n%s\n\n' % (text, underlining)
+    return '{}\n{}\n\n'.format(text, underlining)
 
 def format_directive(module, package=None):
     """Create the automodule directive and add the options."""
@@ -89,7 +89,7 @@ def create_module_file(package, module, opts):
 def create_package_file(root, master_package, subroot, py_files, opts, subs):
     """Build the text of the file and write the file."""
     package = os.path.split(root)[-1]
-    text = format_heading(1, '%s.%s Package' % (master_package, package))
+    text = format_heading(1, '{}.{} Package'.format(master_package, package))
     text += '\n---------\n\n'
     # add each package's module
     for py_file in py_files:
@@ -114,7 +114,7 @@ def create_package_file(root, master_package, subroot, py_files, opts, subs):
         text += format_heading(2, 'Subpackages')
         text += '.. toctree::\n\n'
         for sub in subs:
-            text += '    %s.%s\n' % (makename(master_package, subroot), sub)
+            text += '    {}.{}\n'.format(makename(master_package, subroot), sub)
         text += '\n'
 
     write_file(makename(master_package, subroot), text, opts)

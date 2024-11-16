@@ -7,7 +7,7 @@ import textwrap
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Iterable, Optional, Sequence,
+    TYPE_CHECKING, Any, Iterable, Sequence,
 )
 
 import numpy as np
@@ -138,7 +138,7 @@ def patch_cds_msg(model, msg):
 
 _DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])
 
-def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = None) -> str:
+def bokeh_repr(obj: Model, depth: int = 0, ignored: Iterable[str] | None = None) -> str:
     """
     Returns a string repr for a bokeh model, useful for recreating
     panel objects using pure bokeh.

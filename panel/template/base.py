@@ -11,7 +11,7 @@ import uuid
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Literal, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar, Literal,
 )
 
 import jinja2
@@ -111,7 +111,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
     def __init__(
         self, template: str | _Template, items=None,
-        nb_template: Optional[str | _Template] = None, **params
+        nb_template: str | _Template | None = None, **params
     ):
         config_params = {
             p: v for p, v in params.items() if p in _base_config.param
@@ -186,8 +186,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         self._documents.remove(doc)
 
     def _init_doc(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
-        title: Optional[str] = None, notebook: bool = False,
+        self, doc: Document | None = None, comm: Comm | None = None,
+        title: str | None = None, notebook: bool = False,
         location: bool | Location = True
     ):
         # Initialize document
@@ -439,10 +439,10 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         return resource_types
 
     def save(
-        self, filename: str | os.PathLike | IO, title: Optional[str] = None,
+        self, filename: str | os.PathLike | IO, title: str | None = None,
         resources=None, embed: bool = False, max_states: int = 1000,
         max_opts: int = 3, embed_json: bool = False, json_prefix: str='',
-        save_path: str='./', load_path: Optional[str] = None
+        save_path: str='./', load_path: str | None = None
     ) -> None:
         """
         Saves Panel objects to file.
@@ -480,7 +480,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         )
 
     def server_doc(
-        self, doc: Optional[Document] = None, title: str = None,
+        self, doc: Document | None = None, title: str = None,
         location: bool | Location = True
     ) -> Document:
         """
@@ -505,8 +505,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         return self._init_doc(doc, title=title, location=location)
 
     def servable(
-        self, title: Optional[str] = None, location: bool | Location = True,
-        area: str = 'main', target: Optional[str] = None
+        self, title: str | None = None, location: bool | Location = True,
+        area: str = 'main', target: str | None = None
     ) -> BaseTemplate:
         """
         Serves the template and returns self to allow it to display
@@ -751,8 +751,8 @@ class BasicTemplate(BaseTemplate):
         self.modal.param.trigger('objects')
 
     def _init_doc(
-        self, doc: Optional[Document] = None, comm: Optional['Comm'] = None,
-        title: Optional[str]=None, notebook: bool = False, location: bool | Location = True
+        self, doc: Document | None = None, comm: Comm | None = None,
+        title: str | None=None, notebook: bool = False, location: bool | Location = True
     ) -> Document:
         title = self.title if self.title != self.param.title.default else title
         if self.busy_indicator:
@@ -942,7 +942,7 @@ class Template(BaseTemplate):
 
     def __init__(
         self, template: str | _Template, nb_template: str | _Template | None = None,
-        items: Optional[dict[str, Any]] = None, **params
+        items: dict[str, Any] | None = None, **params
     ):
         super().__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items

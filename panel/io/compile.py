@@ -173,7 +173,7 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
             if py_file:
                 v.__path__ = path_obj.parent.absolute()
             components.append(v)
-    not_found = {cls for cls in classes if '*' not in cls} - set(c.__name__ for c in components)
+    not_found = {cls for cls in classes if '*' not in cls} - {c.__name__ for c in components}
     if classes and not_found:
         clss = ', '.join(map(repr, not_found))
         raise ValueError(f'{clss} class(es) not found in {module_or_file!r}.')

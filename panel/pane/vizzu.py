@@ -4,7 +4,7 @@ import datetime as dt
 import sys
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar,
 )
 
 import numpy as np
@@ -149,8 +149,8 @@ class Vizzu(ModelPane, SyncableData):
         return super()._process_param_change(params)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         self._bokeh_model = lazy_load(
             'panel.models.vizzu', 'VizzuChart', isinstance(comm, JupyterComm), root

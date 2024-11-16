@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
@@ -119,8 +117,8 @@ class Feed(Column):
             return (0, min(self.load_buffer, n))
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('scroll_button_click', model=model, doc=doc, comm=comm)
@@ -153,7 +151,7 @@ class Feed(Column):
 
     def _get_objects(
         self, model: Model, old_objects: list[Viewable], doc: Document,
-        root: Model, comm: Optional[Comm] = None
+        root: Model, comm: Comm | None = None
     ):
         from ..pane.base import RerenderError
         new_models, old_models = [], []

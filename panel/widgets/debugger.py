@@ -94,9 +94,9 @@ class CheckFilter(logging.Filter):
 
         if state.curdoc and state.curdoc.session_context:
             session_id = state.curdoc.session_context.id
-            widget_session_ids = set(m.document.session_context.id
+            widget_session_ids = {m.document.session_context.id
                                      for m in sum(self.debugger._models.values(),
-                                                  tuple()) if m.document.session_context)
+                                                  tuple()) if m.document.session_context}
 
             if session_id not in widget_session_ids:
                 return False
