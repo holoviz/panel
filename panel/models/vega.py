@@ -1,9 +1,13 @@
 """
 Defines custom VegaPlot bokeh model to render Vega json plots.
 """
+from __future__ import annotations
+
+from typing import Literal
+
 from bokeh.core.enums import enumeration
 from bokeh.core.properties import (
-    Any, Bool, Dict, Enum, Instance, Int, List, Literal, Nullable, String,
+    Any, Bool, Dict, Enum, Instance, Int, List, Nullable, String,
 )
 from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource, LayoutDOM

@@ -529,7 +529,7 @@ class ModelPane(Pane):
     `bokeh.model.Model` can consume.
     """
 
-    _bokeh_model: ClassVar[type[Model]]
+    _bokeh_model: ClassVar[type[Model]] | None = None
 
     __abstract = True
 

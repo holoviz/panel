@@ -1342,7 +1342,7 @@ class ReactiveData(SyncableData):
                     # timezone-aware, to UTC nanoseconds, to datetime64.
                     converted = (
                         pd.Series(pd.to_datetime(values, unit="ms"))
-                        .dt.tz_localize(dtype.tz).values
+                        .dt.tz_localize(dtype.tz)
                     )
                 else:
                     # Timestamps converted from milliseconds to nanoseconds,
@@ -1361,13 +1361,13 @@ class ReactiveData(SyncableData):
                 converted = new_values
         elif 'pandas' in sys.modules:
             import pandas as pd
-            tmp_values: np.ndarray | list[Any]
+            tmp_values = values
             if Version(pd.__version__) >= Version('1.1.0'):
                 from pandas.core.arrays.masked import BaseMaskedDtype
                 if isinstance(dtype, BaseMaskedDtype):
-                    tmp_values = [dtype.na_value if v == '<NA>' else v for v in values]
-            else:
-                tmp_values = values
+                    tmp_values: np.ndarray | list[Any] = [
+                        dtype.na_value if v == '<NA>' else v for v in values
+                    ]
             converted = pd.Series(tmp_values).astype(dtype).values
         else:
             converted = values.astype(dtype)
@@ -1442,7 +1442,7 @@ class ReactiveData(SyncableData):
                 self._update_selection(events.pop('indices'))
             finally:
                 self._updating = False
-        super()._process_events(events)
+        super(ReactiveData, self)._process_events(events)
 
 
 class ReactiveMetaBase(ParameterizedMetaclass):

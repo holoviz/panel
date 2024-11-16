@@ -739,7 +739,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
             if tgt_param is None or tgt_param not in target._target_transforms:
                 tgt_transform = 'value'
             else:
-                tgt_transform = target._target_transforms['value'] or 'value'
+                tgt_transform = target._target_transforms[tgt_param] or 'value'
         else:
             tgt_transform = 'value'
         if tgt_spec == 'loading':
