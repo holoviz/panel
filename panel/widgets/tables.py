@@ -43,35 +43,34 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.models.sources import DataDict
     from pyviz_comms import Comm
-    from typing_extensions import NotRequired
 
     from ..models.tabulator import (
         CellClickEvent, SelectionEvent, TableEditEvent,
     )
 
-    class FilterSpec(TypedDict):
-        headerFilter: NotRequired[str | bool]
-        headerFilterParams: NotRequired[dict[str, Any]]
-        headerFilterFunc: NotRequired[str]
-        headerFilterPlaceholder: NotRequired[str]
+    class FilterSpec(TypedDict, total=False):
+        headerFilter: str | bool
+        headerFilterParams: dict[str, Any]
+        headerFilterFunc: str
+        headerFilterPlaceholder: str
 
-    class ColumnSpec(TypedDict):
-        editable: NotRequired[bool]
-        editor: NotRequired[str | CellEditor]
-        editorParams: NotRequired[dict[str, Any]]
-        field: NotRequired[str]
-        frozen: NotRequired[bool]
-        headerHozAlign: NotRequired[Literal["center", "left", "right"]]
-        headerSort: NotRequired[bool]
-        headerTooltip: NotRequired[str]
-        hozAlign: NotRequired[Literal["center", "left", "right"]]
-        formatter: NotRequired[str | CellFormatter]
-        formatterParams: NotRequired[dict[str, Any]]
-        sorter: NotRequired[str]
-        title: NotRequired[str]
-        titleFormatter: NotRequired[str | CellFormatter]
-        titleFormatterParams: NotRequired[dict[str, Any]]
-        width: NotRequired[str | int]
+    class ColumnSpec(TypedDict, total=False):
+        editable: bool
+        editor: str | CellEditor
+        editorParams: dict[str, Any]
+        field: str
+        frozen: bool
+        headerHozAlign: Literal["center", "left", "right"]
+        headerSort: bool
+        headerTooltip: str
+        hozAlign: Literal["center", "left", "right"]
+        formatter: str | CellFormatter
+        formatterParams: dict[str, Any]
+        sorter: str
+        title: str
+        titleFormatter: str | CellFormatter
+        titleFormatterParams: dict[str, Any]
+        width: str | int
 
     class GroupSpec(TypedDict):
         columns: list[ColumnSpec]

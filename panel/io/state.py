@@ -90,7 +90,7 @@ def curdoc_locked() -> Document | None:
 
 class _Undefined: pass
 
-Tat: TypeAlias = dt.datetime | Callable[[dt.datetime], dt.datetime], TIterator[dt.datetime]
+Tat: TypeAlias = dt.datetime | Callable[[dt.datetime], dt.datetime] | TIterator[dt.datetime]
 
 class _state(param.Parameterized):
     """

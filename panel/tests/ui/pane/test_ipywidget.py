@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import pytest
-import traitlets
 
 pytest.importorskip("ipywidgets")
 pytest.importorskip("playwright")
+
+import traitlets
 
 from bokeh.core.has_props import _default_resolver
 from bokeh.model import Model
