@@ -313,7 +313,7 @@ class Plotly(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        if not hasattr(self, '_bokeh_model'):
+        if not self._bokeh_model:
             self._bokeh_model = lazy_load(
                 'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
             )

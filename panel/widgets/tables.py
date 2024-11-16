@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping
 from functools import partial
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, NotRequired, TypedDict,
+    TYPE_CHECKING, Any, ClassVar, Literal, TypedDict,
 )
 
 import numpy as np
@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.models.sources import DataDict
     from pyviz_comms import Comm
+    from typing_extensions import NotRequired
 
     from ..models.tabulator import (
         CellClickEvent, SelectionEvent, TableEditEvent,
@@ -455,7 +456,12 @@ class BaseTable(ReactiveData, Widget):
         df_sorted.drop(columns=['_index_'], inplace=True)
         return df_sorted
 
-    def _filter_dataframe(self, df: pd.DataFrame, header_filters: bool = True, internal_filters: bool = True) -> pd.DataFrame:
+    def _filter_dataframe(
+        self,
+        df: pd.DataFrame,
+        header_filters: bool = True,
+        internal_filters: bool = True
+    ) -> pd.DataFrame:
         """
         Filter the DataFrame.
 
@@ -522,7 +528,7 @@ class BaseTable(ReactiveData, Widget):
             df = df[mask]
         return df
 
-    def _get_header_filters(self, df):
+    def _get_header_filters(self, df: pd.DataFrame) -> pd.DataFrame:
         filters = []
         for filt in getattr(self, 'filters', []):
             col_name = filt['field']
@@ -587,7 +593,7 @@ class BaseTable(ReactiveData, Widget):
                 raise ValueError(f"Filter type {op!r} not recognized.")
         return filters
 
-    def add_filter(self, filter, column=None):
+    def add_filter(self, filter: Any, column: str | None = None):
         """
         Adds a filter to the table which can be a static value or
         dynamic parameter based object which will automatically
@@ -645,7 +651,7 @@ class BaseTable(ReactiveData, Widget):
                          if filt is not filter]
         self._update_cds()
 
-    def _process_column(self, values):
+    def _process_column(self, values: pd.DataFrame | list[Any] | pd.Series):
         if not isinstance(values, (list, np.ndarray)):
             return [str(v) for v in values]
         if isinstance(values, np.ndarray) and values.dtype.kind == "b":
@@ -679,7 +685,7 @@ class BaseTable(ReactiveData, Widget):
             data = {k: v for k, v in data.items() if k not in indexes}
         return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
 
-    def _update_column(self, column, array):
+    def _update_column(self, column: str, array: list[Any] | np.ndarray | pd.Series):
         import pandas as pd
 
         self.value[column] = array

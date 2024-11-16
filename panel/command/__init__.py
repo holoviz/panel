@@ -49,8 +49,7 @@ def transform_cmds(argv):
     return transformed
 
 
-def main(args=None):
-    """Mirrors bokeh CLI and adds additional Panel specific commands """
+def main(args: list[str] | None = None):
     from bokeh.command.subcommands import all as bokeh_commands
     bokeh_commands = bokeh_commands + [OAuthSecret, Compile, Convert, Bundle]
 

@@ -27,9 +27,11 @@ except ImportError:
     raise ImportError(msg) from None
 
 if TYPE_CHECKING:
+    from bokeh.document.events import DocumentPatchedEvent
+    from bokeh.protocol.message import Message
     from uvicorn import Server
 
-    from .application import TViewableFuncOrPath
+    from .application import Application, TViewableFuncOrPath
     from .location import Location
 
 #---------------------------------------------------------------------
@@ -39,7 +41,7 @@ if TYPE_CHECKING:
 DocHandler.render_session = server_html_page_for_session
 
 
-def dispatch_fastapi(conn, events=None, msg=None):
+def dispatch_fastapi(conn, events: list[DocumentPatchedEvent] | None = None, msg: Message | None = None):
     if msg is None:
         msg = conn.protocol.create("PATCH-DOC", events)
     return [conn._socket.send_message(msg)]
@@ -47,7 +49,7 @@ def dispatch_fastapi(conn, events=None, msg=None):
 extra_socket_handlers[WSHandler] = dispatch_fastapi
 
 
-def add_liveness_handler(app, endpoint, applications):
+def add_liveness_handler(app, endpoint: str, applications: dict[str, Application]):
     @app.get(endpoint, response_model=dict[str, bool])
     async def liveness_handler(request: Request, endpoint: str | None = Query(None)):
         if endpoint is not None:
