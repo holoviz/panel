@@ -469,8 +469,9 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         return model
 
     def _cleanup(self, root: Model | None = None) -> None:
-        ref = root.ref['id']
-        self._contexts.pop(ref, None)
+        if root:
+            ref = root.ref['id']
+            self._contexts.pop(ref, None)
         super()._cleanup(root)
 
     def _update(self, ref: str, model: Model) -> None:
@@ -639,7 +640,7 @@ class VTKVolume(AbstractVTK):
         Integer parameter to control the position of the slice normal
         to the Z direction.""")
 
-    _serializers = {}
+    _serializers: dict[type, Any] = {}
 
     _rename: ClassVar[Mapping[str, str | None]] = {'max_data_size': None, 'spacing': None, 'origin': None}
 
@@ -734,7 +735,7 @@ class VTKVolume(AbstractVTK):
         A serializer is a function which take an instance of `class_type`
         (like a vtk.vtkImageData) as input and return a numpy array of the data
         """
-        cls._serializers.update({class_type:serializer})
+        cls._serializers.update({class_type: serializer})
 
     def _volume_from_array(self, sub_array):
         return dict(
@@ -821,7 +822,7 @@ class VTKJS(AbstractVTK):
                  notebook context if they interact with already
                  bound keys.""")
 
-    _serializers = {}
+    _serializers: dict[type, Any] = {}
 
     _updates = True
 
@@ -833,6 +834,7 @@ class VTKJS(AbstractVTK):
     def applies(cls, obj: Any) -> float | bool | None:
         if isinstance(obj, str) and obj.endswith('.vtkjs'):
             return True
+        return None
 
     def _get_model(
         self, doc: Document, root: Model | None = None,

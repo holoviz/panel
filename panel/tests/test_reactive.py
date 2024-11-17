@@ -3,9 +3,7 @@ from __future__ import annotations
 import asyncio
 import unittest.mock
 
-from collections.abc import Mapping
 from functools import partial
-from typing import ClassVar
 
 import bokeh.core.properties as bp
 import param
@@ -68,7 +66,7 @@ def test_param_rename():
 
         a = param.Parameter()
 
-        _rename: ClassVar[Mapping[str, str | None]] = {'a': 'b'}
+        _rename = {'a': 'b'}
 
     obj = ReactiveRename()
 

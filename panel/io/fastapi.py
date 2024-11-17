@@ -27,11 +27,12 @@ except ImportError:
     raise ImportError(msg) from None
 
 if TYPE_CHECKING:
+    from bokeh.application import Application as BkApplication
     from bokeh.document.events import DocumentPatchedEvent
     from bokeh.protocol.message import Message
     from uvicorn import Server
 
-    from .application import Application, TViewableFuncOrPath
+    from .application import TViewableFuncOrPath
     from .location import Location
 
 #---------------------------------------------------------------------
@@ -49,7 +50,7 @@ def dispatch_fastapi(conn, events: list[DocumentPatchedEvent] | None = None, msg
 extra_socket_handlers[WSHandler] = dispatch_fastapi
 
 
-def add_liveness_handler(app, endpoint: str, applications: dict[str, Application]):
+def add_liveness_handler(app, endpoint: str, applications: dict[str, BkApplication]):
     @app.get(endpoint, response_model=dict[str, bool])
     async def liveness_handler(request: Request, endpoint: str | None = Query(None)):
         if endpoint is not None:

@@ -39,7 +39,7 @@ class ReactTemplate(BasicTemplate):
 
     save_layout = param.Boolean(default=False, doc="Save layout to local storage.")
 
-    _css = pathlib.Path(__file__).parent / 'react.css'
+    _css = [pathlib.Path(__file__).parent / 'react.css']
 
     _template = pathlib.Path(__file__).parent / 'react.html'
 

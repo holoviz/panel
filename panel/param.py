@@ -14,7 +14,7 @@ import textwrap
 import types
 
 from collections import defaultdict, namedtuple
-from collections.abc import Callable, Generator, Mapping
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -24,7 +24,7 @@ import param
 try:
     from param import Skip
 except Exception:
-    class Skip(Exception):
+    class Skip(Exception):  # type: ignore
         """
         Exception that allows skipping an update for function-level updates.
         """
@@ -204,7 +204,7 @@ class Param(Pane):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    mapping: ClassVar[Mapping[param.Parameter, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
+    mapping: ClassVar[dict[param.Parameter, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
         param.Action:            Button,
         param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
@@ -717,6 +717,7 @@ class Param(Pane):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self.layout._get_model(doc, root, parent, comm)
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 

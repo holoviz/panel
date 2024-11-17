@@ -61,12 +61,14 @@ if TYPE_CHECKING:
     from bokeh.events import Event
     from bokeh.model import Model, ModelEvent
     from bokeh.models.sources import DataDict, Patches
+    from pandas.api.extensions import ExtensionArray
     from pyviz_comms import Comm
 
     from .layout.base import Panel as BasePanel
     from .links import Callback, JSLinkTarget, Link
 
     TData: TypeAlias = pd.DataFrame | DataDict
+    TDataColumn: TypeAlias = np.ndarray | pd.Series | pd.Index | ExtensionArray | Sequence[Any]
 
 log = logging.getLogger('panel.reactive')
 
@@ -1006,7 +1008,7 @@ class SyncableData(Reactive):
         """
         raise NotImplementedError()
 
-    def _update_column(self, column: str, array: np.ndarray | list) -> None:
+    def _update_column(self, column: str, array: TDataColumn) -> None:
         """
         Implemented by subclasses converting changes in columns to
         changes in the data parameter.
@@ -1330,25 +1332,26 @@ class ReactiveData(SyncableData):
         self.selection = indices
 
     def _convert_column(
-        self, values: np.ndarray, old_values: np.ndarray | pd.Series
-    ) -> np.ndarray | list:
-        dtype = old_values.dtype
-        converted: list | np.ndarray | None = None
+        self, values: np.ndarray, old_values: TDataColumn
+    ) -> TDataColumn:
+        dtype = getattr(old_values, 'dtype', np.dtype('O'))
+        converted: TDataColumn | None = None
         if dtype.kind == 'M':
             if values.dtype.kind in 'if':
-                if getattr(dtype, 'tz', None):
+                tz = getattr(dtype, 'tz', None)
+                if tz:
                     import pandas as pd
 
                     # Using pandas to convert from milliseconds
                     # timezone-aware, to UTC nanoseconds, to datetime64.
                     converted = (
                         pd.Series(pd.to_datetime(values, unit="ms"))
-                        .dt.tz_localize(dtype.tz)
+                        .dt.tz_localize(tz)
                     )
                 else:
                     # Timestamps converted from milliseconds to nanoseconds,
                     # to datetime.
-                    converted = (values * 1e6).astype(dtype)
+                    converted = (values * 1e6).astype(dtype)  # type: ignore
         elif dtype.kind == 'O':
             if (all(isinstance(ov, dt.date) for ov in old_values) and
                 not all(isinstance(iv, dt.date) for iv in values)):
@@ -1362,16 +1365,16 @@ class ReactiveData(SyncableData):
                 converted = new_values
         elif 'pandas' in sys.modules:
             import pandas as pd
-            tmp_values = values
+            tmp_values: np.ndarray | list[Any] | pd.api.extensions.ExtensionArray = values
             if Version(pd.__version__) >= Version('1.1.0'):
                 from pandas.core.arrays.masked import BaseMaskedDtype
                 if isinstance(dtype, BaseMaskedDtype):
-                    tmp_values: np.ndarray | list[Any] = [
+                    tmp_values = [
                         dtype.na_value if v == '<NA>' else v for v in values
                     ]
             converted = pd.Series(tmp_values).astype(dtype).values
         else:
-            converted = values.astype(dtype)
+            converted = values.astype(dtype)  # type: ignore
         return values if converted is None else converted
 
     def _process_data(self, data: Mapping[str, list | dict[int, Any] | np.ndarray]) -> None:
@@ -1393,23 +1396,21 @@ class ReactiveData(SyncableData):
             if isinstance(values, dict):
                 sorted_values = sorted(values.items(), key=lambda it: int(it[0]))
                 values = [v for _, v in sorted_values]
-            values = self._convert_column(
-                np.asarray(values), old_raw[col]
-            )
+            converted = self._convert_column(np.asarray(values), old_raw[col])
 
             isequal = None
-            if hasattr(old_raw, 'columns') and isinstance(values, np.ndarray):
+            if hasattr(old_raw, 'columns') and isinstance(converted, np.ndarray):
                 try:
-                    isequal = np.array_equal(old_raw[col], values, equal_nan=True)
+                    isequal = np.array_equal(old_raw[col], converted, equal_nan=True)
                 except Exception:
                     pass
             if isequal is None:
                 try:
-                    isequal = (old_raw[col] == values).all() # type: ignore
+                    isequal = (old_raw[col] == converted).all() # type: ignore
                 except Exception:
                     isequal = False
             if not isequal:
-                self._update_column(col, values)
+                self._update_column(col, converted)
                 updated = True
 
         # If no columns were updated we don't have to sync data

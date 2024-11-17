@@ -476,13 +476,14 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        model = self._bokeh_model(**self._get_properties(doc))
+        props = self._get_properties(doc)
+        model = self._bokeh_model(**props)
         root = root or model
         children = self._get_children(model.data, doc, root, model, comm)
         model.data.update(**children)
         model.children = list(children)  # type: ignore
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model.data, self._linked_properties, doc, root, comm)
+        self._link_props(props['data'], self._linked_properties, doc, root, comm)
         self._register_events('dom_event', 'data_event', model=model, doc=doc, comm=comm)
         self._setup_autoreload()
         return model

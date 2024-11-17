@@ -78,7 +78,7 @@ class ChatAreaInput(_PnTextAreaInput):
         **_PnTextAreaInput._rename,
     }
 
-    def _get_properties(self, doc: Document) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None = None) -> dict[str, Any]:
         props = super()._get_properties(doc)
         props.update({"value_input": self.value, "value": self.value})
         return props

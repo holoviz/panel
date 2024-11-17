@@ -114,7 +114,7 @@ class ContinuousSlider(_SliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A custom format string or Bokeh TickFormatter.""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     __abstract = True
 
@@ -386,7 +386,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         'value': None, 'value_throttled': None, 'options': None
     }
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _style_params: ClassVar[list[str]] = [
         p for p in list(Layoutable.param) if p != 'name'

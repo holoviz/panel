@@ -589,7 +589,7 @@ class ChatInterface(ChatFeed):
         self,
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
-        default_role: str | None = "assistant",
+        default_role: str = "assistant",
         custom_serializer: Callable[[ChatMessage], Any] | None = None,
         **serialize_kwargs
     ) -> list[dict[str, Any]]:
@@ -626,7 +626,8 @@ class ChatInterface(ChatFeed):
                 "assistant": [self.callback_user],
             }
         return super()._serialize_for_transformers(
-            messages, role_names, default_role, custom_serializer, **serialize_kwargs)
+            messages, role_names, default_role, custom_serializer, **serialize_kwargs
+        )
 
     @param.depends("_callback_state", watch=True)
     async def _update_input_disabled(self):

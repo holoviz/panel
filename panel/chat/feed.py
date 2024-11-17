@@ -693,7 +693,7 @@ class ChatFeed(ListPanel):
                 "a ChatMessage. Set them directly on the ChatMessage."
             )
         elif message:
-            if isinstance(value, (str, dict)):
+            if isinstance(value, str):
                 message.stream(value, replace=replace)
                 if user:
                     message.user = user
@@ -961,7 +961,7 @@ class ChatFeed(ListPanel):
         self,
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
-        default_role: str | None = "assistant",
+        default_role: str = "assistant",
         custom_serializer: Callable | None = None,
         **serialize_kwargs
     ) -> list[dict[str, Any]]:

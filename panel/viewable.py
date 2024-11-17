@@ -35,9 +35,7 @@ from param import Undefined
 from param.parameterized import instance_descriptor
 from pyviz_comms import Comm  # type: ignore
 
-from ._param import (
-    Align, AlignmentEnum, Aspect, Margin,
-)
+from ._param import Align, Aspect, Margin
 from .config import config, panel_extension
 from .io import serve
 from .io.document import create_doc_if_none_exists, init_doc
@@ -73,7 +71,7 @@ class Layoutable(param.Parameterized):
     for all Panel components with a visual representation.
     """
 
-    align = Align(default=AlignmentEnum.START.value, doc="""
+    align = Align(default="start", doc="""
         Whether the object should be aligned with the start, end or
         center of its container. If set as a tuple it will declare
         (vertical, horizontal) alignment.""")

@@ -1,22 +1,17 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import (
     TYPE_CHECKING, Any, Literal, TypeAlias, cast,
 )
 
+from bokeh.core.enums import enumeration
 from param import Parameter, _is_number
 
 if TYPE_CHECKING:
     MarginType: TypeAlias = int | tuple[int, int] | tuple[int, int, int] | tuple[int, int, int, int]
 
-class AlignmentEnum(Enum):
-    AUTO = 'auto'
-    START = 'start'
-    CENTER = 'center'
-    END = 'end'
-
-_AlignmentValues = [item.value for item in AlignmentEnum]
+AlignmentType = Literal["auto", "start", "center", "end"]
+Alignment = enumeration(AlignmentType)
 
 
 class Align(Parameter):
@@ -28,7 +23,7 @@ class Align(Parameter):
 
     def __init__(
         self,
-        default: AlignmentEnum | tuple[AlignmentEnum, AlignmentEnum] = AlignmentEnum.START,
+        default: AlignmentType | tuple[AlignmentType, AlignmentType] = "start",
         **params: Any
     ):
         super().__init__(default=default, **params)
@@ -38,8 +33,8 @@ class Align(Parameter):
         self._validate_value(val, self.allow_None)
 
     def _validate_value(self, val: Any, allow_None: bool) -> None:
-        if ((val is None and allow_None) or val in _AlignmentValues or
-            (isinstance(val, tuple) and len(val) == 2 and all(v in _AlignmentValues for v in val))):
+        if ((val is None and allow_None) or val in Alignment or
+            (isinstance(val, tuple) and len(val) == 2 and all(v in Alignment for v in val))):
             return
         raise ValueError(
             f"Align parameter {self.name!r} must be one of 'start', "

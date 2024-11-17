@@ -138,7 +138,7 @@ class FileSelector(CompositeWidget):
 
         # Set up state
         self._stack: list[str] = []
-        self._cwd: str | None = None
+        self._cwd: str = str(self.directory)
         self._position = -1
         self._update_files(True)
 
@@ -263,10 +263,10 @@ class FileSelector(CompositeWidget):
         self._selector.options.update(prefix+[
             (k, v) for k, v in options.items() if k in paths or v in self.value
         ])
-        options = [o for o in denylist.options if o in paths]
+        option_list = [o for o in denylist.options if o in paths]
         if not self._up.disabled:
-            options.insert(0, '⬆ ..')
-        denylist.options = options
+            option_list.insert(0, '⬆ ..')
+        denylist.options = option_list
 
     def _select(self, event: param.parameterized.Event):
         if len(event.new) != 1:

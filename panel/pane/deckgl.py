@@ -289,7 +289,7 @@ class DeckGL(ModelPane):
         self._update_sources(data, sources)
         properties['layers'] = data.pop('layers', [])
         properties['initialViewState'] = data.pop('initialViewState', {})
-        model = self._bokeh_model(data=data, **properties)
+        model = DeckGL._bokeh_model(data=data, **properties)
         root = root or model
         self._link_props(model, ['clickState', 'hoverState', 'viewState'], doc, root, comm)
         self._models[root.ref["id"]] = (model, parent)

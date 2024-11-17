@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pathlib
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
 import param
 
@@ -100,7 +100,7 @@ class EditableTemplate(VanillaTemplate):
         pathlib.Path(__file__).parent / 'editable.css'
     ]
 
-    _resources: ClassVar[dict[str, dict[str, str]]] = {
+    _resources = {
         "css": {"lato": "https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext"},
         "js": {
             "interactjs": f"{config.npm_cdn}/interactjs@1.10.19/dist/interact.min.js",

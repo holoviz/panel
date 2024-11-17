@@ -57,7 +57,7 @@ if TYPE_CHECKING:
     from jinja2 import Template as _Template
     from pyviz_comms import Comm
 
-    from ..io.location.base import Location
+    from ..io.location import Location
     from ..io.resources import ResourcesType
 
 
@@ -97,10 +97,10 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     #############
 
     # pathlib.Path pointing to local CSS file(s)
-    _css: ClassVar[Path | str | list[Path | str] | None] = None
+    _css: ClassVar[list[os.PathLike | str]] = []
 
     # pathlib.Path pointing to local JS file(s)
-    _js: ClassVar[Path | str | list[Path | str] | None] = None
+    _js: ClassVar[os.PathLike | str | list[Path | str] | None] = None
 
     # External resources
     _resources = {
@@ -191,8 +191,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         location: bool | Location = True
     ):
         # Initialize document
-        document: Document = doc or curdoc_locked()
-        document = init_doc(document)
+        document = init_doc(doc or curdoc_locked())
 
         self._documents.append(document)
         if document not in state._templates:
@@ -217,7 +216,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         # Add all render items to the document
         objs, models = [], []
         stylesheets, sizing_modes = {}, {}
-        tracked_models = set()
+        tracked_models: set[Model] = set()
         for name, (obj, tags) in self._render_items.items():
             # Render root without pre-processing
             with config.set(design=self.design):
@@ -372,10 +371,10 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         )])
         for rname, res in self._design.resolve_resources(cdn).items():
             if isinstance(res, dict):
-                resource_types[rname].update(res)
+                resource_types[rname].update(res)  # type: ignore
             else:
-                resource_types[rname] += [
-                    r for r in res if res not in resource_types[rname]
+                resource_types[rname] += [  # type: ignore
+                    r for r in res if res not in resource_types[rname]  # type: ignore
                 ]
 
         for rname, js in self.config.js_files.items():
@@ -393,8 +392,6 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
         # CSS files
         base_css = self._css
-        if not isinstance(base_css, list):
-            base_css = [base_css] if base_css else []
         for css in base_css:
             tmpl_name = name
             for scls in cls.__mro__[1:]:
@@ -402,7 +399,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                     continue
                 elif scls._css is None:
                     break
-                tmpl_css = scls._css if isinstance(scls._css, list) else [scls._css]
+                tmpl_css = scls._css
                 if css in tmpl_css:
                     tmpl_name = scls.__name__.lower()
 
@@ -480,7 +477,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         )
 
     def server_doc(
-        self, doc: Document | None = None, title: str = None,
+        self, doc: Document | None = None, title: str | None = None,
         location: bool | Location = True
     ) -> Document:
         """
@@ -507,7 +504,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     def servable(
         self, title: str | None = None, location: bool | Location = True,
         area: str = 'main', target: str | None = None
-    ) -> BaseTemplate:
+    ) -> ServableMixin:
         """
         Serves the template and returns self to allow it to display
         itself in a notebook context.
@@ -532,7 +529,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         -------
         The template object
         """
-        if curdoc_locked().session_context and config.template:
+        doc = curdoc_locked()
+        if doc and doc.session_context and config.template:
             raise RuntimeError(
                 'Cannot mark template as servable if a global template '
                 'is defined. Either explicitly construct a template and '
@@ -782,14 +780,22 @@ class BasicTemplate(BaseTemplate):
             img = _panel(self.logo)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of logo: {self.logo}.")
-            logo = img._b64(img._data(img.object))
+            imgdata = img._data(img.object)
+            if imgdata:
+                logo = img._b64(imgdata)
+            else:
+                raise ValueError(f"Could not embed logo {self.logo}.")
         else:
             logo = self.logo
         if os.path.isfile(self.favicon):
             img = _panel(self.favicon)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
-            favicon = img._b64(img._data(img.object))
+            imgdata = img._data(img.object)
+            if imgdata:
+                favicon = img._b64(imgdata)
+            else:
+                raise ValueError(f"Could not embed favicon {self.favicon}.")
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
                 favicon = CDN_DIST + "images/favicon.ico"
@@ -953,7 +959,7 @@ class Template(BaseTemplate):
     # Public API
     #----------------------------------------------------------------
 
-    def add_panel(self, name: str, panel: Viewable, tags: list[str] = []) -> None:
+    def add_panel(self, name: str, panel: Any, tags: list[str] = []) -> None:
         """
         Add panels to the Template, which may then be referenced by
         the given name using the jinja2 embed macro.
@@ -970,7 +976,10 @@ class Template(BaseTemplate):
                              'another panel. Ensure each panel '
                              'has a unique name by which it can be '
                              'referenced in the template.')
-        self._render_items[name] = (_panel(panel), tags)
+        rendered = _panel(panel)
+        if not isinstance(rendered, Viewable):
+            raise ValueError(f"Cannot add {type(panel).__name__!r} type")
+        self._render_items[name] = (rendered, tags)
         self._layout[0].object = repr(self) # type: ignore
 
     def add_variable(self, name: str, value: Any) -> None:
