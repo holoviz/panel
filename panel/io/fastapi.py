@@ -254,6 +254,8 @@ def get_server(
     if loop:
         config_kwargs['loop'] = loop
         asyncio.set_event_loop(loop)
+    if port:
+        config_kwargs['port'] = port
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     application = add_applications(
         panel, title=title, location=location, admin=admin, **kwargs
@@ -269,8 +271,7 @@ def get_server(
             url = f"http://{address_string}:{config.port}{prefix}"
             from bokeh.util.browser import view
             view(url, new='tab')
-
-    config = uvicorn.Config(application.app, port=port, **config_kwargs)
+    config = uvicorn.Config(application.app, **config_kwargs)
     server = uvicorn.Server(config)
 
     state._servers[server_id] = (server, panel, [])

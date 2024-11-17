@@ -46,7 +46,6 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from bokeh.models import ImportedStyleSheet
     from bokeh.server.contexts import BokehSessionContext
-    from bokeh.server.server import Server
     from bokeh.server.session import ServerSession
     from IPython.display import DisplayHandle
     from pyviz_comms import Comm
@@ -173,7 +172,7 @@ class _state(param.Parameterized):
     _fake_roots: ClassVar[list[str]] = []
 
     # An index of all currently active servers
-    _servers: ClassVar[dict[str, tuple[Server, TViewableFuncOrPath | dict[str, TViewableFuncOrPath], list[Document]]]] = {}
+    _servers: ClassVar[dict[str, tuple[Any, TViewableFuncOrPath | dict[str, TViewableFuncOrPath], list[Document]]]] = {}
     _threads: ClassVar[dict[str, StoppableThread]] = {}
     _server_config: ClassVar[WeakKeyDictionary[Any, dict[str, Any]]] = WeakKeyDictionary()
 

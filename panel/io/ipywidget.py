@@ -192,7 +192,7 @@ class PanelKernel(Kernel):
     implementation_version = __version__
     banner = 'banner'
 
-    shell_stream = Any(ShellStream(), allow_none=True)
+    shell_stream = Any(ShellStream(), allow_none=True)  # type: ignore
 
     def __init__(self, key=None, document=None):
         super().__init__()
