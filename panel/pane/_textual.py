@@ -67,7 +67,10 @@ class PanelDriver(Driver):
 
     def _process_input(self, event):
         for parsed_event in self._parser.feed(event.new):
-            self.process_event(parsed_event)
+            if hasattr(self, 'process_event'):
+                self.process_event(parsed_event)
+            else:
+                self.process_message(parsed_event)
 
     def disable_input(self):
         if self._input_watcher is None:
