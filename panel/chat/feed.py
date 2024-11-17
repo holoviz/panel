@@ -868,7 +868,7 @@ class ChatFeed(ListPanel):
                 send_kwargs["user"] = "Input"
             self.send(form, respond=False, **send_kwargs)
 
-            for _1 in range(timeout * 10):  # sleeping for 0.1 seconds
+            for __ in range(timeout * 10):  # sleeping for 0.1 seconds
                 is_fulfilled = predicate(component) if predicate else True
                 submit_button.disabled = not is_fulfilled
                 if submit_button.clicks > 0:

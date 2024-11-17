@@ -540,7 +540,7 @@ class ModelPane(Pane):
     ) -> Model:
         if self._bokeh_model is None:
             raise NotImplementedError(
-                'Pane {type(self).__name__} did not define a _bokeh_model'
+                f'Pane {type(self).__name__} did not define a _bokeh_model'
             )
         model = self._bokeh_model(**self._get_properties(doc))
         if root is None:

@@ -112,6 +112,6 @@ class Margin(Parameter):
         elif isinstance(value, list):
             n = len(value)
             if (n < 2 or n > 5):
-                raise ValueError('Cannot deserialize list of length {n).')
+                raise ValueError(f'Cannot deserialize list of length {n}.')
             return cast(MarginType, tuple(value))
         return value
