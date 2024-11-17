@@ -55,9 +55,8 @@ class TextEditor(Widget):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        if self._widget_type is None:
-            TextEditor._widget_type = lazy_load(
-                'panel.models.quill', 'QuillInput', isinstance(comm, JupyterComm),
-                root, ext='texteditor'
-            )
+        TextEditor._widget_type = lazy_load(
+            'panel.models.quill', 'QuillInput', isinstance(comm, JupyterComm),
+            root, ext='texteditor'
+        )
         return super()._get_model(doc, root, parent, comm)

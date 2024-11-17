@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping
 from functools import partial
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, Sequence, TypedDict,
+    TYPE_CHECKING, Any, ClassVar, Literal, Sequence, TypedDict, cast,
 )
 
 import numpy as np
@@ -27,7 +27,7 @@ from pyviz_comms import JupyterComm
 
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
-from ..reactive import Reactive, ReactiveData, TDataColumn
+from ..reactive import Reactive, ReactiveData
 from ..util import (
     BOKEH_GE_3_6, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from ..models.tabulator import (
         CellClickEvent, SelectionEvent, TableEditEvent,
     )
+    from ..reactive import TDataColumn
 
     class FilterSpec(TypedDict, total=False):
         headerFilter: str | bool
@@ -54,27 +55,27 @@ if TYPE_CHECKING:
         headerFilterFunc: str
         headerFilterPlaceholder: str
 
-    class ColumnSpec(TypedDict, total=False):
-        editable: bool
-        editor: str | CellEditor
-        editorParams: dict[str, Any]
-        field: str
-        frozen: bool
-        headerHozAlign: Literal["center", "left", "right"]
-        headerSort: bool
-        headerTooltip: str
-        hozAlign: Literal["center", "left", "right"]
-        formatter: str | CellFormatter
-        formatterParams: dict[str, Any]
-        sorter: str
-        title: str
-        titleFormatter: str | CellFormatter
-        titleFormatterParams: dict[str, Any]
-        width: str | int
+class ColumnSpec(TypedDict, total=False):
+    editable: bool
+    editor: str | CellEditor
+    editorParams: dict[str, Any]
+    field: str
+    frozen: bool
+    headerHozAlign: Literal["center", "left", "right"]
+    headerSort: bool
+    headerTooltip: str
+    hozAlign: Literal["center", "left", "right"]
+    formatter: str | CellFormatter
+    formatterParams: dict[str, Any]
+    sorter: str
+    title: str
+    titleFormatter: str | CellFormatter
+    titleFormatterParams: dict[str, Any]
+    width: str | int
 
-    class GroupSpec(TypedDict):
-        columns: list[ColumnSpec]
-        title: str
+class GroupSpec(TypedDict):
+    columns: Sequence[ColumnSpec]
+    title: str
 
 
 def _convert_datetime_array_ignore_list(v):
@@ -1851,10 +1852,9 @@ class Tabulator(BaseTable):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        if self._widget_type is None:
-            Tabulator._widget_type = lazy_load(
-                'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
-            )
+        Tabulator._widget_type = lazy_load(
+            'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
+        )
         model = super()._get_model(doc, root, parent, comm)
         root = root or model
         self._child_panels, removed, expanded = self._get_children()
@@ -1935,7 +1935,7 @@ class Tabulator(BaseTable):
     def _config_columns(self, column_objs: list[TableColumn]) -> Sequence[ColumnSpec | GroupSpec]:
         column_objs = list(column_objs)
         groups: dict[str, GroupSpec] = {}
-        columns: list[ColumnSpec] = []
+        columns: Sequence[ColumnSpec | GroupSpec] = []
         selectable = self.selectable
         if self.row_content:
             columns.append({
@@ -1988,7 +1988,7 @@ class Tabulator(BaseTable):
             elif not self.sortable:
                 col_dict['headerSort'] = self.sortable
             if isinstance(self.text_align, str):
-                col_dict['hozAlign'] = self.text_align
+                col_dict['hozAlign'] = self.text_align  # type: ignore
             elif field in self.text_align:
                 col_dict['hozAlign'] = self.text_align[field]
             if isinstance(self.header_align, str):
@@ -2052,7 +2052,7 @@ class Tabulator(BaseTable):
             if isinstance(index, tuple):
                 if columns:
                     children = columns
-                    last = children[-1]
+                    last = cast(GroupSpec, children[-1])
                     for group in index[:-1]:
                         if 'title' in last and last['title'] == group:
                             new = False
@@ -2063,7 +2063,7 @@ class Tabulator(BaseTable):
                                 'columns': [],
                                 'title': group,
                             })
-                        last = children[-1]
+                        last = cast(GroupSpec, children[-1])
                         if new:
                             children = last['columns']
                     children.append(col_dict)
@@ -2073,7 +2073,7 @@ class Tabulator(BaseTable):
                 if group in groups:
                     groups[group]['columns'].append(col_dict)
                     continue
-                group_dict = {
+                group_dict: GroupSpec = {
                     'title': group,
                     'columns': [col_dict]
                 }
@@ -2083,7 +2083,7 @@ class Tabulator(BaseTable):
                 columns.append(col_dict)
         return columns
 
-    def _get_configuration(self, columns: list[dict[str, Any]]) -> dict[str, Any]:
+    def _get_configuration(self, columns: list[TableColumn]) -> dict[str, Any]:
         """
         Returns the Tabulator configuration.
         """

@@ -293,7 +293,7 @@ class Select(SingleSelectBase):
                         }
                     else:
                         options = {
-                            group: [str(v) for v in self.groups[group]]
+                            group: [str(v) for v in self.groups[group]]  # type: ignore
                             for group in groups.keys()
                         }
                     msg['options'] = options

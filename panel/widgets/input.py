@@ -383,11 +383,10 @@ class FileDropper(Widget):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        if self._widget_type is None:
-            FileDropper._widget_type = lazy_load(
-                'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root,
-                ext='filedropper'
-            )
+        FileDropper._widget_type = lazy_load(
+            'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root,
+            ext='filedropper'
+        )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('delete_event', 'upload_event', model=model, doc=doc, comm=comm)
         return model

@@ -278,10 +278,9 @@ class DeckGL(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        if self._bokeh_model is None:
-            DeckGL._bokeh_model = lazy_load(
-                'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root
-            )
+        DeckGL._bokeh_model = lazy_load(
+            'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root
+        )
         properties = self._get_properties(doc)
         data = properties.pop('data')
         sources: list[ColumnDataSource] = []

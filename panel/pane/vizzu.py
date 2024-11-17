@@ -151,10 +151,9 @@ class Vizzu(ModelPane, SyncableData):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        if self._bokeh_model is None:
-            Vizzu._bokeh_model = lazy_load(
-                'panel.models.vizzu', 'VizzuChart', isinstance(comm, JupyterComm), root
-            )
+        Vizzu._bokeh_model = lazy_load(
+            'panel.models.vizzu', 'VizzuChart', isinstance(comm, JupyterComm), root
+        )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('vizzu_event', model=model, doc=doc, comm=comm)
         return model

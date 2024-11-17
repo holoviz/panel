@@ -288,10 +288,9 @@ class Terminal(Widget):
         return len(self.output)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        if self._widget_type is None:
-            Terminal._widget_type = lazy_load(
-                'panel.models.terminal', 'Terminal', isinstance(comm, JupyterComm), root
-            )
+        Terminal._widget_type = lazy_load(
+            'panel.models.terminal', 'Terminal', isinstance(comm, JupyterComm), root
+        )
         model = super()._get_model(doc, root, parent, comm)
         model.output = self.output
         self._register_events('keystroke', model=model, doc=doc, comm=comm)

@@ -97,10 +97,10 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     #############
 
     # pathlib.Path pointing to local CSS file(s)
-    _css: ClassVar[list[os.PathLike | str]] = []
+    _css: ClassVar[list[Path | str]] = []
 
     # pathlib.Path pointing to local JS file(s)
-    _js: ClassVar[os.PathLike | str | list[Path | str] | None] = None
+    _js: ClassVar[Path | str | list[Path | str] | None] = None
 
     # External resources
     _resources = {
@@ -392,6 +392,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
         # CSS files
         base_css = self._css
+        if not isinstance(base_css, list):
+            base_css = [base_css] if base_css else []
         for css in base_css:
             tmpl_name = name
             for scls in cls.__mro__[1:]:
