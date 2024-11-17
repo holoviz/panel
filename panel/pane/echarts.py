@@ -126,9 +126,10 @@ class ECharts(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
-            'panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root
-        )
+        if self._bokeh_model is None:
+            ECharts._bokeh_model = lazy_load(
+                'panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root
+            )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('echarts_event', model=model, doc=doc, comm=comm)
         return model

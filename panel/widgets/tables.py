@@ -1849,9 +1849,10 @@ class Tabulator(BaseTable):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        Tabulator._widget_type = lazy_load(
-            'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
-        )
+        if self._widget_type is None:
+            Tabulator._widget_type = lazy_load(
+                'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
+            )
         model = super()._get_model(doc, root, parent, comm)
         root = root or model
         self._child_panels, removed, expanded = self._get_children()

@@ -100,7 +100,7 @@ class Widget(Reactive, WidgetBase):
     _supports_embed: bool = False
 
     # Declares the Bokeh model type of the widget
-    _widget_type: ClassVar[type[Model]] | None = None
+    _widget_type: ClassVar[type[Model] | None] = None
 
     __abstract = True
 
@@ -149,6 +149,10 @@ class Widget(Reactive, WidgetBase):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
+        if self._widget_type is None:
+            raise NotImplementedError(
+                'Widget {type(self).__name__} did not define a _widget_type'
+            )
         model = self._widget_type(**self._get_properties(doc))
         root = root or model
         self._models[root.ref['id']] = (model, parent)

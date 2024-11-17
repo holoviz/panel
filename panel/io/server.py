@@ -612,7 +612,7 @@ class ComponentResourceHandler(StaticFileHandler):
     ]
 
     def initialize(self, path: str | None = None, default_filename: str | None = None):
-        self.root = path
+        self.root = path or 'root'
         self.default_filename = default_filename
 
     def parse_url_path(self, path: str) -> str:

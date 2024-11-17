@@ -44,13 +44,20 @@ from .state import state
 if TYPE_CHECKING:
     from bokeh.resources import Urls
 
-    # Make fields optional
+    class TarballType(TypedDict, total=False):
+        tar: str
+        src: str
+        dest: str
+        exclude: list[str]
+
     class ResourcesType(TypedDict, total=False):
         css: dict[str, str]
         font: dict[str, str]
         js: dict[str, str]
         js_modules: dict[str, str]
         raw_css: list[str]
+        tarball: dict[str, TarballType]
+        bundle: bool
 
 logger = logging.getLogger(__name__)
 

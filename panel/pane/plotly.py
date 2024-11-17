@@ -314,7 +314,7 @@ class Plotly(ModelPane):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if not self._bokeh_model:
-            self._bokeh_model = lazy_load(
+            Plotly._bokeh_model = lazy_load(
                 'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
             )
         model = super()._get_model(doc, root, parent, comm)

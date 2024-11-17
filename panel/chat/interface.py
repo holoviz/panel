@@ -16,6 +16,7 @@ import param
 
 from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
+from ..layout.base import ListLike, NamedListLike
 from ..pane.image import ImageBase
 from ..viewable import Viewable
 from ..widgets.base import WidgetBase
@@ -189,7 +190,7 @@ class ChatInterface(ChatFeed):
         """
         for attr in ["disabled", "loading"]:
             setattr(obj, attr, getattr(self, attr))
-            self.link(obj, **{attr: attr})
+            self.link(obj, callbacks=None, bidirectional=False, **{attr: attr})
 
     @param.depends("width", watch=True)
     def _update_input_width(self):
@@ -549,7 +550,11 @@ class ChatInterface(ChatFeed):
         The active widget.
         """
         if isinstance(self._input_layout, Tabs):
-            return self._input_layout[self.active].objects[0]
+            current_tab = self._input_layout[self.active]
+            if isinstance(current_tab, (ListLike, NamedListLike)):
+                return current_tab.objects[0]
+            else:
+                return current_tab  # type: ignore
         return self._input_layout.objects[0]
 
     @property
@@ -585,7 +590,7 @@ class ChatInterface(ChatFeed):
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
         default_role: str | None = "assistant",
-        custom_serializer: Callable = None,
+        custom_serializer: Callable[[ChatMessage], Any] | None = None,
         **serialize_kwargs
     ) -> list[dict[str, Any]]:
         """

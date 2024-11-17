@@ -169,7 +169,7 @@ def script_to_html(
     ---------
     filename: str | Path | IO
         The filename of the Panel/Bokeh application to convert.
-    requirements: 'auto' | List[str]
+    requirements: 'auto' | List[str] | os.PathLike
         The list of requirements to include (in addition to Panel).
     js_resources: 'auto' | List[str]
         The list of JS resources to include in the exported HTML.
@@ -215,19 +215,23 @@ def script_to_html(
         )
 
     if requirements == 'auto':
-        requirements = find_requirements(source)
+        requirement_list = find_requirements(source)
     elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
-        requirements = pathlib.Path(requirements).read_text(encoding='utf-8').splitlines()
+        requirement_list = pathlib.Path(requirements).read_text(encoding='utf-8').splitlines()
         try:
             from packaging.requirements import Requirement
-            requirements = [
-                r2 for r in requirements
+            requirement_list = [
+                r2 for r in requirement_list
                 if (r2 := r.split("#")[0].strip()) and Requirement(r2)
             ]
         except Exception as e:
             raise ValueError(
                 f'Requirements parser raised following error: {e}'
             ) from e
+    elif isinstance(requirements, list):
+        requirement_list = requirements
+    else:
+        raise ValueError(f'Could not resolve requirements file {requirements}')
 
     # Environment
     if panel_version == 'local':
@@ -244,7 +248,7 @@ def script_to_html(
     if http_patch:
         base_reqs.append('pyodide-http==0.2.1')
     reqs = base_reqs + [
-        req for req in requirements if req not in ('panel', 'bokeh')
+        req for req in requirement_list if req not in ('panel', 'bokeh')
     ]
     for name, min_version in MINIMUM_VERSIONS.items():
         if any(name in req for req in reqs):
@@ -554,7 +558,10 @@ def convert_apps(
     }
 
     if state._is_pyodide:
-        files = {app: convert_app(app, dest_path, requirements=app_requirements, **kwargs) for app in apps}
+        files = {
+            app: convert_app(app, dest_path, requirements=app_requirements, **kwargs)  # type: ignore
+            for app in apps
+        }
     else:
         files = _convert_process_pool(
             apps, dest_path, max_workers=max_workers, requirements=app_requirements, **kwargs

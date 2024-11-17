@@ -288,9 +288,10 @@ class Vega(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
-            'panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root
-        )
+        if self._bokeh_model is None:
+            Vega._bokeh_model = lazy_load(
+                'panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root
+            )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('vega_event', model=model, doc=doc, comm=comm)
         return model

@@ -410,7 +410,7 @@ class ChatFeed(ListPanel):
         is_stopped = self._callback_future is not None and self._callback_future.cancelled()
         if value is None:
             # don't add new message if the callback returns None
-            return
+            return None
         elif is_stopping or is_stopped:
             raise StopCallback("Callback was stopped.")
 
@@ -492,12 +492,14 @@ class ChatFeed(ListPanel):
                 self._callback_state = CallbackState.GENERATING
                 async for token in response:
                     response_message = self._upsert_message(token, response_message)
-                    response_message.show_activity_dot = self.show_activity_dot
+                    if response_message is not None:
+                        response_message.show_activity_dot = self.show_activity_dot
             elif isgenerator(response):
                 self._callback_state = CallbackState.GENERATING
                 for token in response:
                     response_message = self._upsert_message(token, response_message)
-                    response_message.show_activity_dot = self.show_activity_dot
+                    if response_message is not None:
+                        response_message.show_activity_dot = self.show_activity_dot
             elif isawaitable(response):
                 response_message = self._upsert_message(await response, response_message)
             else:
@@ -528,7 +530,7 @@ class ChatFeed(ListPanel):
                 return
             await asyncio.sleep(0.1)
 
-    async def _handle_callback(self, message, loop: asyncio.BaseEventLoop):
+    async def _handle_callback(self, message, loop: asyncio.AbstractEventLoop):
         callback_args, callback_kwargs = self._gather_callback_args(message)
         if iscoroutinefunction(self.callback):
             response = await self.callback(*callback_args, **callback_kwargs)
@@ -562,16 +564,16 @@ class ChatFeed(ListPanel):
 
             num_entries = len(self._chat_log)
             loop = asyncio.get_event_loop()
-            future = loop.create_task(self._handle_callback(message, loop))
-            self._callback_future = future
+            task = loop.create_task(self._handle_callback(message, loop))
+            self._callback_future = task
             await asyncio.gather(
-                self._schedule_placeholder(future, num_entries), future,
+                self._schedule_placeholder(task, num_entries), task,
             )
         except StopCallback:
             # callback was stopped by user
             self._callback_state = CallbackState.STOPPED
         except Exception as e:
-            send_kwargs = dict(user="Exception", respond=False)
+            send_kwargs: dict[str, Any] = dict(user="Exception", respond=False)
             if self.callback_exception == "summary":
                 self.send(
                     f"Encountered `{e!r}`. "
@@ -634,7 +636,7 @@ class ChatFeed(ListPanel):
                     "Cannot set user or avatar when explicitly sending "
                     "a ChatMessage. Set them directly on the ChatMessage."
                 )
-            message = value
+            message: ChatMessage | None = value
         else:
             if not isinstance(value, dict):
                 value = {"object": value}
@@ -866,7 +868,7 @@ class ChatFeed(ListPanel):
                 send_kwargs["user"] = "Input"
             self.send(form, respond=False, **send_kwargs)
 
-            for _ in range(timeout * 10):  # sleeping for 0.1 seconds
+            for _1 in range(timeout * 10):  # sleeping for 0.1 seconds
                 is_fulfilled = predicate(component) if predicate else True
                 submit_button.disabled = not is_fulfilled
                 if submit_button.clicks > 0:

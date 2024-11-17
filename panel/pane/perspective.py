@@ -477,9 +477,10 @@ class Perspective(ModelPane, ReactiveData):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
-            'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root
-        )
+        if not self._bokeh_model:
+            Perspective._bokeh_model = lazy_load(
+                'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root
+            )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('perspective-click', model=model, doc=doc, comm=comm)
         return model

@@ -44,6 +44,9 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 if TYPE_CHECKING:
     from bokeh.core.types import ID
 
+    from ..template.base import TemplateBase
+    from ..viewable import Viewable
+
 try:
     from js import document as js_document  # noqa
     try:
@@ -166,20 +169,22 @@ def _doc_json(doc: Document, root_els=None) -> tuple[str, str, str]:
         })
     return json.dumps(docs_json), json.dumps(render_items_json), json.dumps(root_ids)
 
-def _model_json(model: Model, target: str) -> tuple[Document, str]:
+def _model_json(viewable: Viewable | TemplateBase, target: str) -> tuple[Document, str]:
     """
     Renders a Bokeh Model to JSON representation given a particular
     DOM target and returns the Document and the serialized JSON string.
 
     Arguments
     ---------
-    model: bokeh.model.Model
+    model: Viewable
         The bokeh model to render.
     target: str
         The id of the DOM node to render to.
 
     Returns
     -------
+    viewable: The Viewable to render to JSON
+        The viewable to render
     document: Document
         The bokeh Document containing the rendered Bokeh Model.
     model_json: str
@@ -187,7 +192,7 @@ def _model_json(model: Model, target: str) -> tuple[Document, str]:
     """
     doc = Document()
     doc.hold()
-    model.server_doc(doc=doc)
+    viewable.server_doc(doc=doc)
     model = doc.roots[0]
     docs_json, _ = standalone_docs_json_and_render_items(
         [model], suppress_callback_warning=True

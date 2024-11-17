@@ -77,20 +77,20 @@ For more information, see the documentation at: https://panel.holoviz.org """
     for cls in bokeh_commands:
         if cls is BkServe:
             subparser = subs.add_parser(Serve.name, help=Serve.help)
-            subcommand = Serve(parser=subparser)
-            subparser.set_defaults(invoke=subcommand.invoke)
+            serve_subcommand = Serve(parser=subparser)
+            subparser.set_defaults(invoke=serve_subcommand.invoke)
         elif cls is Compile:
             subparser = subs.add_parser(Compile.name, help=Compile.help)
-            subcommand = Compile(parser=subparser)
-            subparser.set_defaults(invoke=subcommand.invoke)
+            compile_subcommand = Compile(parser=subparser)
+            subparser.set_defaults(invoke=compile_subcommand.invoke)
         elif cls is Convert:
             subparser = subs.add_parser(Convert.name, help=Convert.help)
-            subcommand = Convert(parser=subparser)
-            subparser.set_defaults(invoke=subcommand.invoke)
+            convert_subcommand = Convert(parser=subparser)
+            subparser.set_defaults(invoke=convert_subcommand.invoke)
         elif cls is Bundle:
             subparser = subs.add_parser(Bundle.name, help=Bundle.help)
-            subcommand = Bundle(parser=subparser)
-            subparser.set_defaults(invoke=subcommand.invoke)
+            bundle_subcommand = Bundle(parser=subparser)
+            subparser.set_defaults(invoke=bundle_subcommand.invoke)
         else:
             subs.add_parser(cls.name, help=cls.help)
 
@@ -99,8 +99,8 @@ For more information, see the documentation at: https://panel.holoviz.org """
         die(f"ERROR: Must specify subcommand, one of: {nice_join(all_commands)}")
 
     if sys.argv[1] in ('--help', '-h'):
-        args = parser.parse_args(sys.argv[1:])
-        args.invoke(args)
+        parser = parser.parse_args(sys.argv[1:])
+        parser.invoke(args)
         sys.exit()
 
     if len(sys.argv) > 1 and any(sys.argv[1] == c.name for c in bokeh_commands):

@@ -80,7 +80,7 @@ class CodeEditor(Widget):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if self._widget_type is None:
-            self._widget_type = lazy_load(
+            CodeEditor._widget_type = lazy_load(
                 'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm),
                 root, ext='codeeditor'
             )

@@ -714,7 +714,7 @@ class Reactive(Syncable, Viewable):
 
     def link(
         self, target: param.Parameterized, callbacks: dict[str, str | Callable] | None=None,
-        bidirectional: bool=False, **links: str
+        bidirectional: bool = False, **links: str
     ) -> Watcher:
         """
         Links the parameters on this `Reactive` object to attributes on the

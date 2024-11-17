@@ -143,7 +143,7 @@ class PaneBase(Layoutable):
     # Whether applies requires full set of keywords
     _applies_kw: ClassVar[bool] = False
 
-    _skip_layoutable = ('css_classes', 'margin', 'name')
+    _skip_layoutable: ClassVar[tuple[str, ...]] = ('css_classes', 'margin', 'name')
 
     # Whether the Pane layout can be safely unpacked
     _unpack: ClassVar[bool] = True
@@ -530,7 +530,7 @@ class ModelPane(Pane):
     `bokeh.model.Model` can consume.
     """
 
-    _bokeh_model: ClassVar[type[Model]] | None = None
+    _bokeh_model: ClassVar[type[Model] | None] = None
 
     __abstract = True
 
@@ -538,6 +538,10 @@ class ModelPane(Pane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
+        if self._bokeh_model is None:
+            raise NotImplementedError(
+                'Pane {type(self).__name__} did not define a _bokeh_model'
+            )
         model = self._bokeh_model(**self._get_properties(doc))
         if root is None:
             root = model
