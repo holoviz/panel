@@ -86,7 +86,7 @@ class IPyLeaflet(IPyWidget):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    priority: float | bool | None = 0.7
+    priority: ClassVar[float | bool | None] = 0.7
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -123,7 +123,7 @@ class Reacton(IPyWidget):
         return super()._get_ipywidget(widget, doc, root, comm, **kwargs)
 
 
-_ipywidget_classes = {}
+_ipywidget_classes: dict[str, type[param.Parameterized]] = {}
 
 def _ipywidget_transform(obj):
     """

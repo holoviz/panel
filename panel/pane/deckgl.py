@@ -156,7 +156,7 @@ class DeckGL(ModelPane):
         return {col: np.asarray(vals) for col, vals in columns.items()}
 
     @classmethod
-    def _update_sources(cls, json_data, sources):
+    def _update_sources(cls, json_data, sources: list[ColumnDataSource]):
         layers = json_data.get('layers', [])
 
         # Create index of sources by columns
@@ -284,7 +284,8 @@ class DeckGL(ModelPane):
             )
         properties = self._get_properties(doc)
         data = properties.pop('data')
-        properties['data_sources'] = sources = []
+        sources: list[ColumnDataSource] = []
+        properties['data_sources'] = sources
         self._update_sources(data, sources)
         properties['layers'] = data.pop('layers', [])
         properties['initialViewState'] = data.pop('initialViewState', {})

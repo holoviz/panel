@@ -11,11 +11,24 @@ from bokeh.command.util import die
 from bokeh.util.strings import nice_join
 
 from .. import __version__
+from ..config import config
 from .bundle import Bundle
 from .compile import Compile
 from .convert import Convert
 from .oauth_secret import OAuthSecret
 from .serve import Serve
+
+description = """\
+Found a Bug or Have a Feature Request?
+Open an issue at: https://github.com/holoviz/panel/issues
+
+Have a Question?
+Ask on our Discord chat server: https://discord.gg/rb6gPXbdAr
+
+Need Help?
+Ask a question on our forum: https://discourse.holoviz.org
+
+For more information, see the documentation at: https://panel.holoviz.org """
 
 
 def transform_cmds(argv):
@@ -51,77 +64,36 @@ def transform_cmds(argv):
 
 def main(args: list[str] | None = None):
     from bokeh.command.subcommands import all as bokeh_commands
-    bokeh_commands = bokeh_commands + [OAuthSecret, Compile, Convert, Bundle]
-
-    description = """\
-Found a Bug or Have a Feature Request?
-Open an issue at: https://github.com/holoviz/panel/issues
-
-Have a Question?
-Ask on our Discord chat server: https://discord.gg/rb6gPXbdAr
-
-Need Help?
-Ask a question on our forum: https://discourse.holoviz.org
-
-For more information, see the documentation at: https://panel.holoviz.org """
-
     parser = argparse.ArgumentParser(
         prog="panel", epilog="See '<command> --help' to read about a specific subcommand.",
         description=description, formatter_class=argparse.RawTextHelpFormatter
     )
-
     parser.add_argument('-v', '--version', action='version', version=__version__)
-
     subs = parser.add_subparsers(help="Sub-commands")
 
-    for cls in bokeh_commands:
-        if cls is BkServe:
-            subparser = subs.add_parser(Serve.name, help=Serve.help)
-            serve_subcommand = Serve(parser=subparser)
-            subparser.set_defaults(invoke=serve_subcommand.invoke)
-        elif cls is Compile:
-            subparser = subs.add_parser(Compile.name, help=Compile.help)
-            compile_subcommand = Compile(parser=subparser)
-            subparser.set_defaults(invoke=compile_subcommand.invoke)
-        elif cls is Convert:
-            subparser = subs.add_parser(Convert.name, help=Convert.help)
-            convert_subcommand = Convert(parser=subparser)
-            subparser.set_defaults(invoke=convert_subcommand.invoke)
-        elif cls is Bundle:
-            subparser = subs.add_parser(Bundle.name, help=Bundle.help)
-            bundle_subcommand = Bundle(parser=subparser)
-            subparser.set_defaults(invoke=bundle_subcommand.invoke)
-        else:
-            subs.add_parser(cls.name, help=cls.help)
+    commands = list(bokeh_commands)
+    for command in commands:
+        if command is not BkServe:
+            subs.add_parser(command.name, help=command.help)
+    for extra in (Bundle, Compile, Convert, OAuthSecret, Serve):
+        commands.append(extra)
+        subparser = subs.add_parser(extra.name, help=extra.help)
+        subcommand = extra(parser=subparser)
+        subparser.set_defaults(invoke=subcommand.invoke)
 
     if len(sys.argv) == 1:
-        all_commands = sorted([c.name for c in bokeh_commands])
+        all_commands = sorted([c.name for c in commands])
         die(f"ERROR: Must specify subcommand, one of: {nice_join(all_commands)}")
-
-    if sys.argv[1] in ('--help', '-h'):
-        parser = parser.parse_args(sys.argv[1:])
-        parser.invoke(args)
-        sys.exit()
-
-    if len(sys.argv) > 1 and any(sys.argv[1] == c.name for c in bokeh_commands):
+    elif len(sys.argv) > 1 and any(sys.argv[1] == c.name for c in commands):
         sys.argv = transform_cmds(sys.argv)
-        if sys.argv[1] == 'serve':
-            args = parser.parse_args(sys.argv[1:])
+        if sys.argv[1] in ('bundle', 'compile', 'convert', 'serve', 'help'):
+            parsed_args = parser.parse_args(sys.argv[1:])
             try:
-                ret = args.invoke(args)
+                ret = parsed_args.invoke(parsed_args)
             except Exception as e:
+                if config.dev:
+                    raise e
                 die("ERROR: " + str(e))
-        elif sys.argv[1] == 'oauth-secret':
-            ret = OAuthSecret(parser).invoke(args)
-        elif sys.argv[1] == 'convert':
-            args = parser.parse_args(sys.argv[1:])
-            ret = Convert(parser).invoke(args)
-        elif sys.argv[1] == 'bundle':
-            args = parser.parse_args(sys.argv[1:])
-            ret = Bundle(parser).invoke(args)
-        elif sys.argv[1] == 'compile':
-            args = parser.parse_args(sys.argv[1:])
-            ret = Compile(parser).invoke(args)
         else:
             ret = bokeh_entry_point()
     else:

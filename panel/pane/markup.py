@@ -270,8 +270,8 @@ class DataFrame(HTML):
             if 'dask' in module:
                 html = obj.to_html(max_rows=self.max_rows).replace('border="1"', '')
             elif 'style' in module:
-                classes = ' '.join(classes)
-                html = obj.to_html(table_attributes=f'class="{classes}"')
+                class_string = ' '.join(classes)
+                html = obj.to_html(table_attributes=f'class="{class_string}"')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
                           if p not in HTMLBasePane.param and p not in ('_object', 'text_align')}
@@ -460,7 +460,7 @@ class Markdown(HTMLBasePane):
             html = markdown.markdown(
                 obj,
                 extensions=self.extensions,
-                output_format='html5',
+                output_format='xhtml',
                 **self.renderer_options
             )
         else:
@@ -511,7 +511,7 @@ class JSON(HTMLBasePane):
 
     _applies_kw: ClassVar[bool] = True
 
-    _bokeh_model: ClassVar[Model] = _BkJSON
+    _bokeh_model: ClassVar[type[Model]] = _BkJSON
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         "object": "text", "encoder": None, "style": "styles"

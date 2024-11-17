@@ -137,8 +137,8 @@ class FileSelector(CompositeWidget):
         self.link(self._selector, size='size')
 
         # Set up state
-        self._stack = []
-        self._cwd = None
+        self._stack: list[str] = []
+        self._cwd: str | None = None
         self._position = -1
         self._update_files(True)
 
@@ -203,7 +203,7 @@ class FileSelector(CompositeWidget):
         self, event: param.parameterized.Event | None = None, refresh: bool = False
     ):
         path = fullpath(self._directory.value)
-        refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
+        refresh = bool(refresh or (event and getattr(event, 'obj', None) is self._reload))
         if refresh:
             path = self._cwd
         elif not os.path.isdir(path):

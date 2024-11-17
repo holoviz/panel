@@ -670,7 +670,7 @@ class ReactComponent(ReactiveESM):
     @classproperty  # type: ignore
     def _exports__(cls) -> ExportSpec:
         imports = cls._importmap.get('imports', {})
-        exports = {
+        exports: dict[str, list[str | tuple[str, ...]]] = {
             "react": ["*React"],
             "react-dom/client": [("createRoot",)]
         }

@@ -408,8 +408,8 @@ class FileDropper(Widget):
             return
 
         buffers = self._file_buffer.pop(name)
-        file_buffer = b''.join(buffers)
-        if data['type'].startswith('text/'):
+        file_buffer: bytes | str = b''.join(buffers)
+        if data['type'].startswith('text/') and isinstance(file_buffer, bytes):
             try:
                 file_buffer = file_buffer.decode('utf-8')
             except UnicodeDecodeError:
@@ -1487,7 +1487,7 @@ class _BooleanWidget(Widget):
     value = param.Boolean(default=False, doc="""
         The current value""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
 

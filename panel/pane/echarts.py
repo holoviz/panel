@@ -115,7 +115,7 @@ class ECharts(ModelPane):
             props['sizing_mode'] = 'stretch_both'
         return props
 
-    def _get_properties(self, document: Document):
+    def _get_properties(self, document: Document | None) -> dict[str, Any]:
         props = super()._get_properties(document)
         props['event_config'] = {
             event: list(queries) for event, queries in self._py_callbacks.items()

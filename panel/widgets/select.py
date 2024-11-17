@@ -80,7 +80,7 @@ class SingleSelectBase(SelectBase):
 
     _allows_none: ClassVar[bool] = False
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     __abstract = True
 
@@ -275,7 +275,7 @@ class Select(SingleSelectBase):
         groups_provided = 'groups' in msg
         msg = super()._process_param_change(msg)
         if groups_provided or 'options' in msg and self.groups:
-            groups = self.groups
+            groups: dict[str, list[str | tuple[str, str]]] = self.groups
             if (all(isinstance(values, dict) for values in groups.values()) is False
                and  all(isinstance(values, list) for values in groups.values()) is False):
                 raise ValueError(
@@ -737,7 +737,7 @@ class _MultiSelectBase(SingleSelectBase):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
-    _supports_embed: ClassVar[bool] = False
+    _supports_embed: bool = False
 
     __abstract = True
 
@@ -1049,7 +1049,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
         'value': "source.labels[value]", 'button_style': None, 'description': None
     }
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _widget_type: ClassVar[type[Model]] = _BkRadioButtonGroup
 
@@ -1077,7 +1077,7 @@ class RadioBoxGroup(_RadioGroupBase):
         Whether the items be arrange vertically (``False``) or
         horizontally in-line (``True``).""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _widget_type: ClassVar[type[Model]] = _BkRadioBoxGroup
 

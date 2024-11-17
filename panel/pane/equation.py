@@ -67,7 +67,7 @@ class LaTeX(ModelPane):
         else:
             return False
 
-    def _get_model_type(self, root: Model, comm: Comm | None) -> type[Model]:
+    def _get_model_type(self, root: Model | None, comm: Comm | None) -> type[Model]:
         module = self.renderer
         if module is None:
             if 'panel.models.mathjax' in sys.modules and 'panel.models.katex' not in sys.modules:

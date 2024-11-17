@@ -72,7 +72,7 @@ class IconMixin(Widget):
     __abstract = True
 
     def __init__(self, **params) -> None:
-        self._rename = dict(self._rename, **IconMixin._rename)
+        type(self)._rename = dict(self._rename, **IconMixin._rename)
         super().__init__(**params)
 
     def _process_param_change(self, params):
@@ -289,7 +289,7 @@ class Toggle(_ButtonBase, IconMixin):
         'value': 'active', 'name': 'label',
     }
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _widget_type: ClassVar[type[Model]] = _BkToggle
 

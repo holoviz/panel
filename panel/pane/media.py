@@ -90,7 +90,7 @@ class _MediaBase(ModelPane):
             return True
         return False
 
-    def _to_np_int16(self, data: np.ndarray):
+    def _to_np_int16(self, data: np.ndarray) -> np.ndarray:
         dtype = data.dtype
 
         if dtype in (np.float32, np.float64):
@@ -98,10 +98,12 @@ class _MediaBase(ModelPane):
 
         return data
 
-    def _to_buffer(self, data: np.ndarray|TensorLike):
-        if isinstance(data, TensorLike):
-            data = data.numpy()
-        data = self._to_np_int16(data)
+    def _to_buffer(self, data: np.ndarray | TensorLike):
+        if isinstance(data, np.ndarray):
+            values = data
+        elif isinstance(data, TensorLike):
+            values = data.numpy()
+        data = self._to_np_int16(values)
 
         from scipy.io import wavfile
         buffer = BytesIO()

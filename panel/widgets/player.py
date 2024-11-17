@@ -120,7 +120,7 @@ class Player(PlayerBase):
     value_throttled = param.Integer(default=0, constant=True, doc="""
         Current throttled player value.""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     def __init__(self, **params):
         if 'length' in params:

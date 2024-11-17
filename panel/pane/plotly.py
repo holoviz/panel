@@ -380,7 +380,7 @@ class Plotly(ModelPane):
         except Exception:
             update_frames = True
 
-        updates = {}
+        updates: dict[str, Any] = {}
         if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
             autosize = layout.get('autosize')
             styles = dict(model.styles)

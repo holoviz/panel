@@ -54,7 +54,7 @@ if TYPE_CHECKING:
 try:
     from tqdm.asyncio import tqdm as _tqdm
 except ImportError:
-    _tqdm = None
+    _tqdm = None  # type: ignore
 
 RED   = "#d9534f"
 GREEN = "#5cb85c"
@@ -1221,7 +1221,7 @@ MARGIN = {
 
 
 
-class ptqdm(_tqdm or object):
+class ptqdm(_tqdm or object):  # type: ignore
 
     def __init__(self, *args, **kwargs):
         if _tqdm is None:
