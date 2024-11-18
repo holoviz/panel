@@ -66,8 +66,10 @@ class PanelDriver(Driver):
         self.flush()
 
     def _process_input(self, event):
+        # Textual 0.86 changed from `process_event` to `process_message`
+        fn = self.process_event if hasattr(self, 'process_event') else self.process_message
         for parsed_event in self._parser.feed(event.new):
-            self.process_event(parsed_event)
+            fn(parsed_event)
 
     def disable_input(self):
         if self._input_watcher is None:
