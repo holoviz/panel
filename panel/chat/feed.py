@@ -99,7 +99,7 @@ class ChatFeed(ListPanel):
         the previous message value `contents`, the previous `user` name,
         and the component `instance`.""")
 
-    callback_exception = param.ObjectSelector(
+    callback_exception = param.Selector(
         default="summary", objects=["raise", "summary", "verbose", "ignore"], doc="""
         How to handle exceptions raised by the callback.
         If "raise", the exception will be raised.
@@ -199,7 +199,7 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
-    _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
+    _callback_state = param.Selector(objects=list(CallbackState), doc="""
         The current state of the callback.""")
 
     _prompt_trigger = param.Event(doc="Triggers the prompt input.")

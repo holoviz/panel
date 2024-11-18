@@ -314,7 +314,7 @@ def test_integer_param(document, comm):
 
 def test_object_selector_param(document, comm):
     class Test(param.Parameterized):
-        a = param.ObjectSelector(default='b', objects=[1, 'b', 'c'])
+        a = param.Selector(default='b', objects=[1, 'b', 'c'])
 
     test = Test()
     test_pane = Param(test)
@@ -420,7 +420,7 @@ def test_number_param_overrides(document, comm):
 
 def test_object_selector_param_overrides(document, comm):
     class Test(param.Parameterized):
-        a = param.ObjectSelector(default='b', objects=[1, 'b', 'c'])
+        a = param.Selector(default='b', objects=[1, 'b', 'c'])
 
     test = Test()
     test_pane = Param(test, widgets={'a': {'options': ['b', 'c'], 'value': 'c'}})
@@ -953,7 +953,7 @@ def test_expand_param_subobject(document, comm):
 
 def test_switch_param_subobject(document, comm):
     class Test(param.Parameterized):
-        a = param.ObjectSelector()
+        a = param.Selector()
 
     o1 = Test(name='Subobject 1')
     o2 = Test(name='Subobject 2')

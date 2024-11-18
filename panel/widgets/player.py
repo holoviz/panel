@@ -30,7 +30,7 @@ class PlayerBase(Widget):
         Interval between updates, in milliseconds. Default is 500, i.e.
         two updates per second.""")
 
-    loop_policy = param.ObjectSelector(
+    loop_policy = param.Selector(
         default='once', objects=['once', 'loop', 'reflect'], doc="""
         Policy used when player hits last frame""")
 
@@ -49,7 +49,7 @@ class PlayerBase(Widget):
 
     height = param.Integer(default=80)
 
-    value_align = param.ObjectSelector(
+    value_align = param.Selector(
         objects=["start", "center", "end"], doc="""
         Location to display the value of the slider
         ("start", "center", "end")""")

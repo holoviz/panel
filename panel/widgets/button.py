@@ -33,12 +33,12 @@ BUTTON_STYLES: list[str] = ['solid', 'outline']
 
 class _ButtonBase(Widget):
 
-    button_type = param.ObjectSelector(default='default', objects=BUTTON_TYPES, doc="""
+    button_type = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
         or 'danger' (red).""")
 
-    button_style = param.ObjectSelector(default='solid', objects=BUTTON_STYLES, doc="""
+    button_style = param.Selector(default='solid', objects=BUTTON_STYLES, doc="""
         A button style to switch between 'solid', 'outline'.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'button_style': None}

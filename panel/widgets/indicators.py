@@ -66,7 +66,7 @@ class Indicator(Widget):
     Indicator is a baseclass for widgets which indicate some state.
     """
 
-    sizing_mode = param.ObjectSelector(default='fixed', objects=[
+    sizing_mode = param.Selector(default='fixed', objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
@@ -158,7 +158,7 @@ class BooleanStatus(BooleanIndicator):
     >>> BooleanStatus(value=True, color='primary', width=100, height=100)
     """
 
-    color = param.ObjectSelector(default='dark', objects=[
+    color = param.Selector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'light', 'dark'], doc="""
         The color of the circle, one of 'primary', 'secondary', 'success', 'info', 'danger',
         'warning', 'light', 'dark'""")
@@ -203,9 +203,9 @@ class LoadingSpinner(BooleanIndicator):
     >>> LoadingSpinner(value=True, color='primary', bgcolor='light', width=100, height=100)
     """
 
-    bgcolor = param.ObjectSelector(default='light', objects=['dark', 'light'])
+    bgcolor = param.Selector(default='light', objects=['dark', 'light'])
 
-    color = param.ObjectSelector(default='dark', objects=[
+    color = param.Selector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'])
 
@@ -284,13 +284,13 @@ class Progress(ValueIndicator):
         If no value is set the active property toggles animation of the
         progress bar on and off.""")
 
-    bar_color = param.ObjectSelector(default='success', objects=[
+    bar_color = param.Selector(default='success', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'])
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
@@ -1120,7 +1120,7 @@ class Trend(SyncableData, Indicator):
     data = param.Parameter(doc="""
       The plot data declared as a dictionary of arrays or a DataFrame.""")
 
-    layout = param.ObjectSelector(default="column", objects=["column", "row"])
+    layout = param.Selector(default="column", objects=["column", "row"])
 
     plot_x = param.String(default="x", doc="""
       The name of the key in the plot_data to use on the x-axis.""")
@@ -1131,7 +1131,7 @@ class Trend(SyncableData, Indicator):
     plot_color = param.String(default=BLUE, doc="""
       The color to use in the plot.""")
 
-    plot_type = param.ObjectSelector(default="bar", objects=["line", "step", "area", "bar"], doc="""
+    plot_type = param.Selector(default="bar", objects=["line", "step", "area", "bar"], doc="""
       The plot type to render the plot data as.""")
 
     pos_color = param.String(GREEN, doc="""
@@ -1140,7 +1140,7 @@ class Trend(SyncableData, Indicator):
     neg_color = param.String(RED, doc="""
       The color used to indicate a negative change.""")
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 

@@ -848,7 +848,7 @@ class NamedListPanel(NamedListLike, Panel):
     active = param.Integer(default=0, bounds=(0, None), doc="""
         Index of the currently displayed objects.""")
 
-    scroll = param.ObjectSelector(
+    scroll = param.Selector(
         default=False,
         objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
         doc="""Whether to add scrollbars if the content overflows the size

@@ -39,7 +39,7 @@ class VideoStream(Widget):
     >>> VideoStream(name='Video Stream', timeout=100)
     """
 
-    format = param.ObjectSelector(default='png', objects=['png', 'jpeg'],
+    format = param.Selector(default='png', objects=['png', 'jpeg'],
                                   doc="""
         The file format as which the video is returned.""")
 
@@ -86,12 +86,12 @@ class FileDownload(IconMixin):
         Whether to download on the initial click or allow for
         right-click save as.""")
 
-    button_type = param.ObjectSelector(default='default', objects=BUTTON_TYPES, doc="""
+    button_type = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
         or 'danger' (red).""")
 
-    button_style = param.ObjectSelector(default='solid', objects=BUTTON_STYLES, doc="""
+    button_style = param.Selector(default='solid', objects=BUTTON_STYLES, doc="""
         A button style to switch between 'solid', 'outline'.""")
 
     callback = param.Callable(default=None, allow_refs=False, doc="""
