@@ -79,11 +79,10 @@ class CodeEditor(Widget):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        if self._widget_type is None:
-            CodeEditor._widget_type = lazy_load(
-                'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm),
-                root, ext='codeeditor'
-            )
+        CodeEditor._widget_type = lazy_load(
+            'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm),
+            root, ext='codeeditor'
+        )
         return super()._get_model(doc, root, parent, comm)
 
     def _update_disabled(self, *events: param.parameterized.Event):

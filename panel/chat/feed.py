@@ -851,7 +851,7 @@ class ChatFeed(ListPanel):
         timeout_button_params : dict | None
             Additional parameters to pass to the timeout button.
         """
-        async def _prepare_prompt(*_) -> None:
+        async def _prepare_prompt(*args) -> None:
             input_button_params = button_params or {}
             if "name" not in input_button_params:
                 input_button_params["name"] = "Submit"
@@ -868,7 +868,7 @@ class ChatFeed(ListPanel):
                 send_kwargs["user"] = "Input"
             self.send(form, respond=False, **send_kwargs)
 
-            for __ in range(timeout * 10):  # sleeping for 0.1 seconds
+            for _ in range(timeout * 10):  # sleeping for 0.1 seconds
                 is_fulfilled = predicate(component) if predicate else True
                 submit_button.disabled = not is_fulfilled
                 if submit_button.clicks > 0:

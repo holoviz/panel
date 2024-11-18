@@ -188,9 +188,10 @@ class ChatInterface(ChatFeed):
         Link the disabled and loading attributes of the chat box to the
         given object.
         """
-        for attr in ["disabled", "loading"]:
-            setattr(obj, attr, getattr(self, attr))
-            self.link(obj, callbacks=None, bidirectional=False, **{attr: attr})
+        mapping: dict[str, Any] = {"disabled": "disabled", "loading": "loading"}
+        values = {p: getattr(self, p) for p in mapping}
+        self.param.update(values)
+        self.link(obj, **mapping)
 
     @param.depends("width", watch=True)
     def _update_input_width(self):

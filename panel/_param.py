@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, Literal, TypeAlias, cast,
+    Any, Literal, TypeAlias, cast,
 )
 
 from bokeh.core.enums import enumeration
 from param import Parameter, _is_number
 
-if TYPE_CHECKING:
-    MarginType: TypeAlias = int | tuple[int, int] | tuple[int, int, int] | tuple[int, int, int, int]
-
 AlignmentType = Literal["auto", "start", "center", "end"]
 Alignment = enumeration(AlignmentType)
+MarginType: TypeAlias = int | tuple[int, int] | tuple[int, int, int] | tuple[int, int, int, int]
 
 
 class Align(Parameter):
@@ -87,7 +85,7 @@ class Margin(Parameter):
             )
 
     def _validate_length(self, val: Any) -> None:
-        if not isinstance(val, tuple) or (1 < len(val) < 5):
+        if not isinstance(val, tuple) or len(val) in (2, 4):
             return
         raise ValueError(
             f'Margin parameter {self.name!r} only takes integer and '

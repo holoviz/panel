@@ -17,7 +17,9 @@ import uuid
 from collections.abc import Callable, Mapping
 from functools import partial, wraps
 from html import escape
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import (
+    TYPE_CHECKING, Any, Literal, TypedDict,
+)
 from urllib.parse import urlparse
 
 import bokeh
@@ -611,8 +613,8 @@ class ComponentResourceHandler(StaticFileHandler):
         '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path'
     ]
 
-    def initialize(self, path: str | None = None, default_filename: str | None = None):
-        self.root = path or 'root'
+    def initialize(self, path: str | Literal['root'] = 'root', default_filename: str | None = None):
+        self.root = path
         self.default_filename = default_filename
 
     def parse_url_path(self, path: str) -> str:

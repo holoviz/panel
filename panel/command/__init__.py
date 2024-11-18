@@ -18,7 +18,7 @@ from .convert import Convert
 from .oauth_secret import OAuthSecret
 from .serve import Serve
 
-description = """\
+_DESCRIPTION = """\
 Found a Bug or Have a Feature Request?
 Open an issue at: https://github.com/holoviz/panel/issues
 
@@ -66,7 +66,7 @@ def main(args: list[str] | None = None):
     from bokeh.command.subcommands import all as bokeh_commands
     parser = argparse.ArgumentParser(
         prog="panel", epilog="See '<command> --help' to read about a specific subcommand.",
-        description=description, formatter_class=argparse.RawTextHelpFormatter
+        description=_DESCRIPTION, formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('-v', '--version', action='version', version=__version__)
     subs = parser.add_subparsers(help="Sub-commands")

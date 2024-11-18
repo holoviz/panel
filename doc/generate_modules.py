@@ -57,11 +57,11 @@ def write_file(name, text, opts):
     """Write the output file for module/package <name>."""
     if opts.dryrun:
         return
-    fname = os.path.join(opts.destdir, "{}.{}".format(name, opts.suffix))
+    fname = os.path.join(opts.destdir, f"{name}.{opts.suffix}")
     if not opts.force and os.path.isfile(fname):
-        print('File %s already exists, skipping.' % fname)
+        print(f'File {fname} already exists, skipping.')
     else:
-        print('Creating file %s.' % fname)
+        print(f'Creating file {fname}.')
         f = open(fname, 'w')
         f.write(text)
         f.close()
@@ -69,27 +69,28 @@ def write_file(name, text, opts):
 def format_heading(level, text):
     """Create a heading of <level> [1, 2 or 3 supported]."""
     underlining = ['=', '-', '~', ][level-1] * len(text)
-    return '{}\n{}\n\n'.format(text, underlining)
+    return f'{text}\n{underlining}\n\n'
 
 def format_directive(module, package=None):
     """Create the automodule directive and add the options."""
-    directive = '.. automodule:: %s\n' % makename(package, module)
+    module_name = makename(package, module)
+    directive = f'.. automodule:: %s{module_name}'
     for option in OPTIONS:
-        directive += '    :%s:\n' % option
+        directive += f'    :{option}:\n'
     return directive
 
 def create_module_file(package, module, opts):
     """Build the text of the file and write the file."""
 
-    text = format_heading(1, '%s Module' % module)
-    text += format_heading(2, ':mod:`%s` Module' % module)
+    text = format_heading(1, f'{module} Module')
+    text += format_heading(2, f':mod:`{module}` Module')
     text += format_directive(module, package)
     write_file(makename(package, module), text, opts)
 
 def create_package_file(root, master_package, subroot, py_files, opts, subs):
     """Build the text of the file and write the file."""
     package = os.path.split(root)[-1]
-    text = format_heading(1, '{}.{} Package'.format(master_package, package))
+    text = format_heading(1, f'{master_package}.{package} Package')
     text += '\n---------\n\n'
     # add each package's module
     for py_file in py_files:
@@ -99,9 +100,9 @@ def create_package_file(root, master_package, subroot, py_files, opts, subs):
         py_file = os.path.splitext(py_file)[0]
         py_path = makename(subroot, py_file)
         if is_package:
-            heading = ':mod:`%s` Package' % package
+            heading = f':mod:`{package}` Package'
         else:
-            heading = ':mod:`%s` Module' % py_file
+            heading = f':mod:`{py_file}` Module'
         text += format_heading(2, heading)
         text += '\n\n'
         text += format_directive(is_package and subroot or py_path, master_package)
@@ -113,8 +114,9 @@ def create_package_file(root, master_package, subroot, py_files, opts, subs):
     if subs:
         text += format_heading(2, 'Subpackages')
         text += '.. toctree::\n\n'
+        subpackage_name = makename(master_package, subroot)
         for sub in subs:
-            text += '    {}.{}\n'.format(makename(master_package, subroot), sub)
+            text += f'    {subpackage_name}.{sub}\n'
         text += '\n'
 
     write_file(makename(master_package, subroot), text, opts)
@@ -123,9 +125,9 @@ def create_modules_toc_file(master_package, modules, opts, name='modules'):
     """
     Create the module's index.
     """
-    text = format_heading(1, '%s Modules' % opts.header)
+    text = format_heading(1, f'{opts.header} Modules')
     text += '.. toctree::\n'
-    text += '   :maxdepth: %s\n\n' % opts.maxdepth
+    text += f'   :maxdepth: {opts.maxdepth}\n\n'
 
     modules.sort()
     prev_module = ''
@@ -134,7 +136,7 @@ def create_modules_toc_file(master_package, modules, opts, name='modules'):
         if module.startswith(prev_module + '.'):
             continue
         prev_module = module
-        text += '   %s\n' % module
+        text += f'   {module}\n'
 
     write_file(name, text, opts)
 
@@ -261,9 +263,9 @@ Note: By default this script will not overwrite already created files.""")
                     excludes = normalize_excludes(rootpath, excludes)
                     recurse_tree(rootpath, excludes, opts)
                 else:
-                    print('%s is not a valid output destination directory.' % opts.destdir)
+                    print(f'{opts.destdir} is not a valid output destination directory.')
             else:
-                print('%s is not a valid directory.' % rootpath)
+                print(f'{rootpath} is not a valid directory.')
 
 
 if __name__ == '__main__':

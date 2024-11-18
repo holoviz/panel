@@ -270,8 +270,8 @@ def build_applications(
         slug = slug if slug.startswith('/') else '/'+slug
 
         # Handle other types of apps using a custom handler
-        for chandler in (custom_handlers or ()):
-            new_app = chandler(slug, app)
+        for custom_handler in (custom_handlers or ()):
+            new_app = custom_handler(slug, app)
             if app is not None:
                 break
         else:
