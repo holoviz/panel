@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 import tornado
 
-from bokeh.application import ServerContext
+from bokeh.application.application import ServerContext
 from bokeh.document import Document
 from bokeh.embed.bundle import extension_dirs
 from bokeh.protocol import Protocol
@@ -62,6 +62,15 @@ class JupyterServerSession(ServerSession):
             task = asyncio.ensure_future(connection.send_patch_document(event))
             self._tasks.add(task)
             task.add_done_callback(self._tasks.discard)
+
+
+class JupyterServerContext(ServerContext):
+
+    @property
+    def sessions(self) -> list[ServerSession]:
+        if state._jupyter_kernel_context is None or state._jupyter_kernel_context.session is None:
+            return []
+        return [state._jupyter_kernel_context.session]
 
 
 class PanelExecutor(WSHandler):
@@ -149,7 +158,7 @@ class PanelExecutor(WSHandler):
         doc = Document()
 
         self._context = session_context = BokehSessionContext(
-            self.session_id, ServerContext(), doc
+            self.session_id, JupyterServerContext(), doc
         )
 
         # using private attr so users only have access to a read-only property
