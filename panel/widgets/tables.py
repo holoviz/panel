@@ -1167,7 +1167,7 @@ class Tabulator(BaseTable):
     row_height = param.Integer(default=30, doc="""
         The height of each table row.""")
 
-    selection = _ListValidateWithCallable(default=[], doc="""
+    selection: list[int] = _ListValidateWithCallable(default=[], doc="""
         The currently selected rows of the table. It validates
         its values against 'selectable_rows' if used.""")
 
