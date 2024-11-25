@@ -608,6 +608,15 @@ class TestChatFeed:
         assert chat_feed._chat_log.scroll_button_threshold == 10
         assert chat_feed._chat_log.auto_scroll_limit == 10
 
+    def test_repr(self, chat_feed):
+        chat_feed.send("A")
+        chat_feed.send("B")
+        assert repr(chat_feed) == (
+            "ChatFeed(_placeholder=ChatMessage, sizing_mode='stretch_width')\n"
+            "    [0] ChatMessage(object='A', user='User', reactions=[])\n"
+            "    [1] ChatMessage(object='B', user='User', reactions=[])"
+        )
+
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedPromptUser:
