@@ -304,6 +304,34 @@ class TestChatFeed:
             raise ValueError("Testing")
         assert "Traceback" in step.objects[0].object
 
+    def test_add_step_last_messages(self, chat_feed):
+        # create steps
+        with chat_feed.add_step("Object 1", title="Step 1"):
+            assert len(chat_feed) == 1
+
+        # add a message in the middle
+        chat_feed.send("Message 1")
+        assert len(chat_feed) == 2
+
+        # last_messages=2 should make it connect with the last steps object
+        with chat_feed.add_step("Object 2", title="Step 2", last_messages=2):
+            assert len(chat_feed) == 2
+            message = chat_feed[0]
+            steps = message.object
+            assert len(steps) == 2
+            assert steps[0].objects[0].object == "Object 1"
+            assert steps[1].objects[0].object == "Object 2"
+
+        # add another message
+        chat_feed.send("Message 2")
+        assert len(chat_feed) == 3
+
+        # this should now not join with the last steps object because the steps is in the first message
+        with chat_feed.add_step("Object 3", title="Step 3", last_messages=2):
+            assert len(chat_feed) == 4
+            steps = chat_feed[-1].object
+            assert len(steps) == 1
+
     def test_stream_with_user_avatar(self, chat_feed):
         user = "Bob"
         avatar = "👨"

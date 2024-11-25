@@ -723,6 +723,7 @@ class ChatFeed(ListPanel):
         steps_layout: Column | Card | None = None,
         default_layout: Literal["column", "card"] = "card",
         layout_params: dict | None = None,
+        last_messages: int = 1,
         **step_params
     ) -> ChatStep:
         """
@@ -750,6 +751,8 @@ class ChatFeed(ListPanel):
             'card' will create a new Card layout.
         layout_params : dict | None
             Additional parameters to pass to the layout.
+        last_messages: int
+            The number of messages to go back to find the last message.
         step_params : dict
             Parameters to pass to the ChatStep.
         """
@@ -771,13 +774,19 @@ class ChatFeed(ListPanel):
             if "context_exception" not in step_params:
                 step_params["context_exception"] = self.callback_exception
             step = ChatStep(**step_params)
+
         if append:
-            last = self._chat_log[-1] if self._chat_log else None
-            if last is not None and isinstance(last.object, Column) and (
+            for i in range(1, last_messages + 1):
+                if not self._chat_log:
+                    break
+
+                last = self._chat_log[-i]
+                if last is not None and isinstance(last.object, Column) and (
                     all(isinstance(o, ChatStep) for o in last.object) or
                     last.object.css_classes == 'chat-steps'
-            ) and (user is None or last.user == user):
-                steps_layout = last.object
+                ) and (user is None or last.user == user):
+                    steps_layout = last.object
+
         if steps_layout is None:
             layout_params = layout_params or {}
             input_layout_params = dict(
