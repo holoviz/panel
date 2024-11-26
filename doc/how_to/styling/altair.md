@@ -53,5 +53,5 @@ pn.Column(
 ).servable()
 ```
 
-Please note that the line `alt.themes.enable(theme)` will set the theme of all future generated plots
+Please note that the line `alt.theme.enable(theme)` will set the theme of all future generated plots
 unless you specifically change it before usage in a `Vega` pane.
