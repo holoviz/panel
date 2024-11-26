@@ -21,7 +21,7 @@ from vega_datasets import data
 pn.extension("vega")
 
 def plot(theme, color):
-    alt.themes.enable(theme)
+    alt.theme.enable(theme)
 
     return (
         alt.Chart(data.cars())
@@ -41,7 +41,7 @@ def plot(theme, color):
         .interactive()
     )
 
-themes = sorted(alt.themes.names())
+themes = sorted(alt.theme.names())
 theme = pn.widgets.Select(value="dark", options=themes, name="Theme")
 color = pn.widgets.ColorPicker(value="#F08080", name="Color")
 
