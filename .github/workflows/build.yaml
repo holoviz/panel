@@ -24,25 +24,12 @@ jobs:
   waiting_room:
     name: Waiting Room
     runs-on: ubuntu-latest
-    needs: [conda_build, pip_install, npm_build, cdn_build, verify_sizes]
+    needs: [conda_build, pip_install, npm_build, cdn_build]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     environment:
       name: publish
     steps:
       - run: echo "All builds have finished, have been approved, and ready to publish"
-
-  verify_sizes:
-    name: Verify sizes
-    runs-on: ubuntu-latest
-    needs: [conda_build, pip_build, npm_build, cdn_build]
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
-      RUN_NUMBER: ${{ github.run_number }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: "1"
-      - run: pipx run scripts/verify_build_sizes.py $RUN_NUMBER
 
   pixi_lock:
     name: Pixi lock
@@ -68,6 +55,8 @@ jobs:
           name: conda
           path: dist/*tar.bz2
           if-no-files-found: error
+      - name: Verify size
+        run: python scripts/verify_build_size.py conda
 
   conda_publish:
     name: Publish Conda
@@ -119,6 +108,10 @@ jobs:
           name: pip
           path: dist/
           if-no-files-found: error
+      - name: Verify sizes
+        run: |
+          python scripts/verify_build_size.py sdist
+          python scripts/verify_build_size.py whl
 
   pip_install:
     name: Install PyPI
@@ -178,6 +171,8 @@ jobs:
           name: npm
           if-no-files-found: error
           path: ./${{ env.PACKAGE }}/${{ env.TARBALL }}
+      - name: Verify size
+        run: python scripts/verify_build_size.py npm
 
   npm_publish:
     name: Publish NPM
