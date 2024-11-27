@@ -2,8 +2,6 @@ import sys
 
 from pathlib import Path
 
-PACKAGE = "panel"
-
 EXPECTED_SIZES_MB = {
     "conda": 25,
     "npm": 25,
@@ -27,6 +25,7 @@ def main(build):
 
     size = files[0].stat().st_size / 1024**2
     assert size < EXPECTED_SIZES_MB[build], f"{build} file is too large: {size:.2f} MB"
+    print(f"{build} file size: {size:.2f} MB")
 
 
 if __name__ == "__main__":
