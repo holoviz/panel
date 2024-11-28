@@ -100,10 +100,8 @@ function summarize(grouped: any[], columns: any[], aggregators: any[], depth: nu
       let agg: string = ""
       if (typeof aggs === "string") {
         agg = aggs
-      } else {
-        if (column.field in aggs) {
+      } else if (column.field in aggs) {
           agg = aggs[column.field]
-        }
       }
       const val = group[column.field]
       if (column.field in summary) {
