@@ -8,7 +8,6 @@ import param
 
 from ..io.state import state
 from ..viewable import Viewable
-from ..widgets import Terminal
 from .base import Pane
 
 if TYPE_CHECKING:
@@ -43,6 +42,7 @@ class Textual(Pane):
 
     def __init__(self, object=None, **params):
         super().__init__(object=object, **params)
+        from ..widgets import Terminal
         self._terminal = Terminal(**{p: v for p, v in self.param.values().items() if p in Viewable.param})
         self._internal_callbacks.append(
             self.param.watch(self._link_terminal_params, list(Viewable.param))

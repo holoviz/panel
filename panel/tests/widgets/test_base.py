@@ -1,7 +1,7 @@
 import param
 import pytest
 
-from panel.io import block_comm
+from panel.io.notebook import block_comm
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.tests.util import check_layoutable_properties

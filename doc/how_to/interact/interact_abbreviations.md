@@ -14,7 +14,6 @@ To use `interact`, you need to define a function that you want to explore. Here 
 
 ```{pyodide}
 import panel as pn
-from panel.interact import interact
 from panel import widgets
 
 pn.extension() # for notebook
@@ -26,7 +25,7 @@ def f(x):
 When you pass this function to `interact` along with `x=10`, a slider is generated and bound to the function parameter, such that when you interact with the widget, the function is called.
 
 ```{pyodide}
-interact(f, x=10)
+pn.interact(f, x=10)
 ```
 
 When you pass an integer-valued keyword argument of `10` (`x=10`) to `interact`, it generates an integer-valued slider control with a range of `[-10,+3*10]`. In this case, `10` is an *abbreviation* for an actual slider widget:
@@ -38,7 +37,7 @@ slider_widget = widgets.IntSlider(start=-10,end=30,step=1,value=10)
 In fact, we can get the same result if we pass this `IntSlider` as the keyword argument for `x`:
 
 ```{pyodide}
-interact(f, x=slider_widget)
+pn.interact(f, x=slider_widget)
 ```
 
 This examples clarifies how `interact` processes its keyword arguments:
@@ -64,35 +63,35 @@ If a 2-tuple of integers is passed `(min,max)`, an integer-valued slider is prod
 
 
 ```{pyodide}
-interact(f, x=(0, 4))
+pn.interact(f, x=(0, 4))
 ```
 
 If a 3-tuple of integers is passed `(min,max,step)`, the step size can also be set.
 
 
 ```{pyodide}
-interact(f, x=(0, 8, 2))
+pn.interact(f, x=(0, 8, 2))
 ```
 
 A float-valued slider is produced if the elements of the tuples are floats. Here the minimum is `0.0`, the maximum is `10.0` and step size is `0.1` (the default).
 
 
 ```{pyodide}
-interact(f, x=(0.0, 10.0))
+pn.interact(f, x=(0.0, 10.0))
 ```
 
 The step size can be changed by passing a third element in the tuple.
 
 
 ```{pyodide}
-interact(f, x=(0.0, 10.0, 0.01))
+pn.interact(f, x=(0.0, 10.0, 0.01))
 ```
 
 For both integer and float-valued sliders, you can pick the initial value of the widget by supplying a default keyword argument when you define the underlying Python function. Here we set the initial value of a float slider to `5.5`.
 
 
 ```{pyodide}
-@interact(x=(0.0, 20.0, 0.5))
+@pn.interact(x=(0.0, 20.0, 0.5))
 def h(x=5.5):
     return x
 
@@ -103,28 +102,28 @@ You can also set the initial value by passing a fourth element in the tuple.
 
 
 ```{pyodide}
-interact(f, x=(0.0, 20.0, 0.5, 5.5))
+pn.interact(f, x=(0.0, 20.0, 0.5, 5.5))
 ```
 
 Use `None` as the third element to just set min, max, and value.
 
 
 ```{pyodide}
-interact(f, x=(0.0, 20.0, None, 5.5))
+pn.interact(f, x=(0.0, 20.0, None, 5.5))
 ```
 
 Dropdown menus are constructed by passing a list of strings. In this case, the strings are both used as the names in the dropdown menu UI and passed to the underlying Python function.
 
 
 ```{pyodide}
-interact(f, x=['apples', 'oranges'])
+pn.interact(f, x=['apples', 'oranges'])
 ```
 
 When working with numeric data ``interact`` will automatically add a discrete slider:
 
 
 ```{pyodide}
-interact(f, x=dict([('one', 10), ('two', 20)]))
+pn.interact(f, x=dict([('one', 10), ('two', 20)]))
 ```
 
 ## Related Resources

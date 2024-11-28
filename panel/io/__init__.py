@@ -1,47 +1,30 @@
-"""
-The io module contains utilities for loading JS components, embedding
-model state, and rendering panel objects.
-"""
-import sys
+import lazy_loader as lazy
 
-from .cache import cache  # noqa
-from .callbacks import PeriodicCallback  # noqa
-from .document import (  # noqa
-    hold, immediate_dispatch, init_doc, unlocked, with_lock,
-)
-from .embed import embed_state  # noqa
-from .logging import panel_logger  # noqa
-from .model import add_to_doc, diff, remove_root  # noqa
-from .notebook import (  # noqa
-    _jupyter_server_extension_paths, block_comm, ipywidget, load_notebook,
-    push, push_notebook,
-)
-from .profile import profile  # noqa
-from .resources import Resources  # noqa
-from .state import state  # noqa
+_lazy_getattr, __dir__, __all__ = lazy.attach_stub(__name__, __file__)
 
-if state._is_pyodide:
-    from .pyodide import serve
-else:
-    from .server import serve  # noqa
-    if 'django' in sys.modules:
-        try:
-            from . import django  # noqa
-        except ImportError:
-            pass
 
-__all__ = (
-    "PeriodicCallback",
-    "Resources",
-    "hold",
-    "immediate_dispatch",
-    "ipywidget",
-    "panel_logger",
-    "profile",
-    "push",
-    "push_notebook",
-    "serve",
-    "state",
-    "unlocked",
-    "with_lock"
-)
+def _serve_init():
+    import sys
+
+    if "_pyodide" in sys.modules:
+        from .pyodide import serve
+    else:
+        from .server import serve
+
+        if "django" in sys.modules:
+            try:
+                from . import django  # noqa
+            except ImportError:
+                pass
+    return serve
+
+
+def __getattr__(name):
+    if name == "serve":
+        return _serve_init()
+    return _lazy_getattr(name)
+
+
+del lazy
+
+from .state import state  # noqa: F401, Matching filename and module name

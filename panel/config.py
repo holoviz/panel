@@ -11,7 +11,6 @@ import os
 import sys
 import warnings
 
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from weakref import WeakKeyDictionary
 
@@ -22,13 +21,10 @@ from pyviz_comms import (
 )
 
 from .__version import __version__
-from .io.logging import panel_log_handler
-from .io.state import state
-from .util import param_watchers
 
 _LOCAL_DEV_VERSION = (
     any(v in __version__ for v in ('post', 'dirty'))
-    and not state._is_pyodide
+    and '_pyodide' in sys.modules
     and 'PANEL_DOC_BUILD' not in os.environ
 )
 
@@ -333,11 +329,15 @@ class _config(_base_config):
         for p in self._parameter_set:
             if p.startswith('_') and p[1:] not in _config._globals:
                 setattr(self, p+'_', None)
-        if self.log_level:
+        if self.log_level and self.log_level != "WARNING":
+            from .io.logging import panel_log_handler
             panel_log_handler.setLevel(self.log_level)
 
     @param.depends('_nthreads', watch=True, on_init=True)
     def _set_thread_pool(self):
+        if self.nthreads is None and _config_uninitialized:
+            return
+        from .io.state import state
         if self.nthreads is None:
             if state._thread_pool is not None:
                 state._thread_pool.shutdown(wait=False)
@@ -345,12 +345,15 @@ class _config(_base_config):
             return
         if state._thread_pool:
             raise RuntimeError("Thread pool already running")
+        from concurrent.futures import ThreadPoolExecutor
+
         threads = self.nthreads if self.nthreads else None
         state._thread_pool = ThreadPoolExecutor(max_workers=threads)
 
     @param.depends('notifications', watch=True)
     def _setup_notifications(self):
         from .io.notifications import NotificationArea
+        from .io.state import state
         from .reactive import ReactiveHTMLMetaclass
         if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
             ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
@@ -381,7 +384,11 @@ class _config(_base_config):
                 setattr(self, k+'_', v)
 
     def __setattr__(self, attr, value):
-        from .io.state import state
+        from .util import param_watchers
+
+        def _get_curdoc():
+            from .io.state import state
+            return state.curdoc
 
         # _param__private added in Param 2
         if hasattr(self, '_param__private'):
@@ -397,16 +404,16 @@ class _config(_base_config):
             or self.param._TRIGGER
         ):
             super().__setattr__(attr if attr in self.param else f'_{attr}', value)
-        elif state.curdoc is not None:
+        elif not _config_uninitialized and (curdoc := _get_curdoc()):
             if attr in _config._parameter_set:
                 validate_config(self, attr, value)
             elif f'_{attr}' in _config._parameter_set:
                 validate_config(self, f'_{attr}', value)
             else:
                 raise AttributeError(f'{attr!r} is not a valid config parameter.')
-            if state.curdoc not in self._session_config:
-                self._session_config[state.curdoc] = {}
-            self._session_config[state.curdoc][attr] = value
+            if curdoc not in self._session_config:
+                self._session_config[curdoc] = {}
+            self._session_config[curdoc][attr] = value
             watchers = param_watchers(self).get(attr, {}).get('value', [])
             for w in watchers:
                 w.fn()
@@ -418,6 +425,7 @@ class _config(_base_config):
 
     @param.depends('_log_level', watch=True)
     def _update_log_level(self):
+        from .util.logging import panel_log_handler
         panel_log_handler.setLevel(self._log_level)
 
     @param.depends('_admin_log_level', watch=True)
@@ -458,6 +466,7 @@ class _config(_base_config):
 
     def _template_hook(self, value):
         if isinstance(value, str):
+            import panel.template  # noqa: F401
             return self.param.template.names[value]
         return value
 
@@ -599,6 +608,7 @@ class _config(_base_config):
 
     @property
     def theme(self):
+        from .io.state import state
         curdoc = state.curdoc
         if curdoc and 'theme' in self._session_config.get(curdoc, {}):
             return self._session_config[curdoc]['theme']
@@ -705,6 +715,7 @@ class panel_extension(_pyviz_extension):
         from bokeh.model import Model
         from bokeh.settings import settings as bk_settings
 
+        from .io.state import state
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
@@ -855,6 +866,9 @@ class panel_extension(_pyviz_extension):
 
     @staticmethod
     def _display_globals():
+        from bokeh.document import Document
+
+        from .io.state import state
         if config.browser_info and state.browser_info:
             from bokeh.document import Document
             doc = Document()
@@ -968,6 +982,7 @@ def _cleanup_panel(msg_id):
     """
     A cleanup action which is called when a plot is deleted in the notebook
     """
+    from .io.state import state
     if msg_id not in state._views:
         return
     viewable, model, _, _ = state._views.pop(msg_id)
@@ -978,6 +993,7 @@ def _cleanup_server(server_id):
     """
     A cleanup action which is called when a server is deleted in the notebook
     """
+    from .io.state import state
     if server_id not in state._servers:
         return
     server, viewable, docs = state._servers.pop(server_id)
@@ -992,4 +1008,6 @@ panel_extension.add_delete_action(_cleanup_panel)
 if hasattr(panel_extension, 'add_server_delete_action'):
     panel_extension.add_server_delete_action(_cleanup_server)
 
-__all__ = ['config', 'panel_extension']
+extension = panel_extension  # For lazy load
+
+__all__ = ['config', 'panel_extension', 'extension']

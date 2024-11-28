@@ -35,7 +35,6 @@ from param.parameterized import (
     resolve_ref, resolve_value,
 )
 
-from .io.document import hold, unlocked
 from .io.notebook import push
 from .io.resources import (
     CDN_DIST, loading_css, patch_stylesheet, process_raw_css,
@@ -295,6 +294,7 @@ class Syncable(Renderable):
                 continue
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
+                from .io.document import unlocked
                 with unlocked():
                     self._manual_update(events, model, doc, root, parent, comm)
                 if comm and 'embedded' not in root.tags:
@@ -326,6 +326,7 @@ class Syncable(Renderable):
             return True
         viewable, root, doc, comm = state._views[ref]
         if comm or not doc.session_context or state._unblocked(doc):
+            from .io.document import unlocked
             with unlocked():
                 self._update_model(events, msg, root, model, doc, comm)
             if comm and 'embedded' not in root.tags:
@@ -524,6 +525,7 @@ class Syncable(Renderable):
             self._process_events(events)
 
     def _schedule_change(self, doc: Document, comm: Comm | None) -> None:
+        from .io.document import hold
         with hold(doc, comm=comm):
             self._change_event(doc)
 
@@ -935,6 +937,7 @@ class Reactive(Syncable, Viewable):
             event = Event(model=model, **event_kwargs)
             _viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc) or not doc.session_context:
+                from .io.document import unlocked
                 with unlocked():
                     doc.callbacks.send_event(event)
                 if comm and 'embedded' not in root.tags:
@@ -1059,6 +1062,7 @@ class SyncableData(Reactive):
                 continue
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
+                from .io.document import unlocked
                 with unlocked():
                     m.source.stream(stream, rollover)
                 if comm and 'embedded' not in root.tags:
@@ -1081,6 +1085,7 @@ class SyncableData(Reactive):
                 continue
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
+                from .io.document import unlocked
                 with unlocked():
                     m.source.patch(patch)
                 if comm and 'embedded' not in root.tags:

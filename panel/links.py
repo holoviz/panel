@@ -15,8 +15,6 @@ import param
 
 from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 
-from .io.datamodel import create_linked_datamodel
-from .io.loading import LOADING_INDICATOR_CSS_CLASS
 from .models import ReactiveESM, ReactiveHTML
 from .reactive import Reactive
 from .util.warnings import warn
@@ -404,6 +402,7 @@ class CallbackGenerator:
         elif isinstance(obj, BkModel):
             model = obj
         elif isinstance(obj, param.Parameterized):
+            from .io.datamodel import create_linked_datamodel
             model = create_linked_datamodel(obj, root_model)
         if model_spec is not None:
             for spec in model_spec.split('.'):
@@ -743,6 +742,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
             tgt_transform = 'value'
         if tgt_spec == 'loading':
             from .config import config
+            from .io.loading import LOADING_INDICATOR_CSS_CLASS
             return self._loading_link_template.format(
                 src_attr=src_spec, src_transform=src_transform,
                 loading_spinner=config.loading_spinner,

@@ -45,7 +45,7 @@ except Exception:
         """
 
 from .config import config
-from .io import state
+from .io.state import state
 from .layout import (
     Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
 )
@@ -53,30 +53,25 @@ from .pane import DataFrame as DataFramePane
 from .pane.base import Pane, ReplacementPane
 from .reactive import Reactive
 from .util import (
-    abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
-    param_name, recursive_parameterized, to_async_gen,
+    abbreviated_repr, classproperty, flatten, full_groupby, fullpath,
+    is_parameterized, param_name, recursive_parameterized, to_async_gen,
 )
 from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
-from .widgets import (
-    ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
-    DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
-    FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
-    LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
-    TextInput, Toggle, Widget, WidgetBase,
-)
-from .widgets.button import _ButtonBase
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    from .widgets import Widget
+
 
 def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
     """
     Determines whether to use a TextInput or Select widget for FileSelector
     """
+    from .widgets import Select, TextInput
     if pobj.path:
         return Select
     else:
@@ -84,6 +79,8 @@ def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
 
 
 def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
+    from .widgets import LiteralInput
+
     if isinstance(pobj, param.Tuple):
         return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
@@ -97,8 +94,10 @@ def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
 
 def DataFrameWidget(pobj: param.DataFrame) -> type[Widget]:
     if 'panel.models.tabulator' in sys.modules:
+        from .widgets import Tabulator
         return Tabulator
     else:
+        from .widgets import DataFrame
         return DataFrame
 
 
@@ -214,35 +213,43 @@ class Param(Pane):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    mapping: ClassVar[Mapping[param.Parameter, Widget | Callable[[param.Parameter], Widget]]] = {
-        param.Action:            Button,
-        param.Array:             ArrayInput,
-        param.Boolean:           Checkbox,
-        param.Bytes:             FileInput,
-        param.CalendarDate:      DatePicker,
-        param.Color:             ColorPicker,
-        param.Date:              DatetimeInput,
-        param.DateRange:         DatetimeRangeSlider,
-        param.CalendarDateRange: DateRangeSlider,
-        param.DataFrame:         DataFrameWidget,
-        param.Dict:              LiteralInputTyped,
-        param.FileSelector:      SingleFileSelector,
-        param.Filename:          TextInput,
-        param.Foldername:        TextInput,
-        param.Integer:           IntSlider,
-        param.List:              LiteralInputTyped,
-        param.MultiFileSelector: FileSelector,
-        param.ListSelector:      MultiSelect,
-        param.Number:            FloatSlider,
-        param.ObjectSelector:    Select,
-        param.Parameter:         LiteralInputTyped,
-        param.Range:             RangeSlider,
-        param.Selector:          Select,
-        param.String:            TextInput,
-    }
+    mapping: ClassVar[Mapping[param.Parameter, Widget | Callable[[param.Parameter], Widget]]] = {}
 
-    if hasattr(param, 'Event'):
-        mapping[param.Event] = Button
+    @classproperty
+    def _default_mapping(cls) -> Mapping[param.Parameter, Widget | Callable[[param.Parameter], Widget]]:
+        from .widgets import (
+            ArrayInput, Button, Checkbox, ColorPicker, DatePicker,
+            DateRangeSlider, DatetimeInput, DatetimeRangeSlider, FileInput,
+            FileSelector, FloatSlider, IntSlider, MultiSelect, RangeSlider,
+            Select, TextInput,
+        )
+        return {
+            param.Action:            Button,
+            param.Array:             ArrayInput,
+            param.Boolean:           Checkbox,
+            param.Bytes:             FileInput,
+            param.CalendarDate:      DatePicker,
+            param.Color:             ColorPicker,
+            param.Date:              DatetimeInput,
+            param.DateRange:         DatetimeRangeSlider,
+            param.CalendarDateRange: DateRangeSlider,
+            param.DataFrame:         DataFrameWidget,
+            param.Dict:              LiteralInputTyped,
+            param.FileSelector:      SingleFileSelector,
+            param.Filename:          TextInput,
+            param.Foldername:        TextInput,
+            param.Integer:           IntSlider,
+            param.List:              LiteralInputTyped,
+            param.MultiFileSelector: FileSelector,
+            param.ListSelector:      MultiSelect,
+            param.Number:            FloatSlider,
+            param.ObjectSelector:    Select,
+            param.Parameter:         LiteralInputTyped,
+            param.Range:             RangeSlider,
+            param.Selector:          Select,
+            param.String:            TextInput,
+            param.Event:             Button
+        }
 
     _ignored_refs: ClassVar[tuple[str,...]] = ('object',)
 
@@ -374,6 +381,7 @@ class Param(Pane):
             self._link_subobjects()
 
     def _link_subobjects(self):
+        from .widgets import Toggle, WidgetBase
         for pname, widget in self._widgets.items():
             widgets = [widget] if isinstance(widget, WidgetBase) else widget
             if not any(is_parameterized(getattr(w, 'value', None)) or
@@ -439,6 +447,10 @@ class Param(Pane):
 
     def widget(self, p_name):
         """Get widget for param_name"""
+        from .widgets import (
+            Button, FloatInput, IntInput, LiteralInput, Toggle, WidgetBase,
+        )
+        from .widgets.button import _ButtonBase
         p_obj = self.object.param[p_name]
         kw_widget = {}
 
@@ -713,6 +725,7 @@ class Param(Pane):
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
         # Format name specially
+        from .widgets import StaticText
         if self.expand_layout is Tabs:
             widgets = []
         elif self.show_name:
@@ -749,10 +762,11 @@ class Param(Pane):
     @classmethod
     def widget_type(cls, pobj):
         ptype = type(pobj)
+        mapping = cls._default_mapping | cls.mapping
         for t in classlist(ptype)[::-1]:
-            if t not in cls.mapping:
+            if t not in mapping:
                 continue
-            wtype = cls.mapping[t]
+            wtype = mapping[t]
             if isinstance(wtype, types.FunctionType):
                 return wtype(pobj)
             return wtype
@@ -1169,6 +1183,8 @@ class ReactiveExpr(Pane):
 
     @classmethod
     def _find_widgets(cls, op):
+        from .widgets import Widget
+
         widgets = []
         op_args = list(op['args']) + list(op['kwargs'].values())
         op_args = flatten(op_args)
@@ -1215,6 +1231,8 @@ class ReactiveExpr(Pane):
 
     @property
     def widgets(self):
+        from .widgets import Widget
+
         widgets = []
         if self.object is None:
             return []
@@ -1341,6 +1359,8 @@ def link_param_method(root_view, root_model):
     widgets generated from those parameters ensuring that the loading
     indicator is enabled client side.
     """
+    from .widgets import DiscreteSlider, Widget
+
     methods = root_view.select(lambda p: isinstance(p, ParamMethod) and p.loading_indicator)
     widgets = root_view.select(lambda w: isinstance(w, Widget) and getattr(w, '_param_pane', None) is not None)
 

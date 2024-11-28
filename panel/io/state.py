@@ -27,19 +27,14 @@ from weakref import WeakKeyDictionary
 
 import param
 
-from bokeh.document import Document
-from bokeh.document.locking import UnlockedDocumentProxy
-from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
-
-from ..util import decode_token, parse_timedelta
-from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
+    from bokeh.document import Document
     from bokeh.model import Model
     from bokeh.models import ImportedStyleSheet
     from bokeh.server.contexts import BokehSessionContext
@@ -71,6 +66,8 @@ def set_curdoc(doc: Document):
             state._curdoc.reset(token)
 
 def curdoc_locked() -> Document:
+    from bokeh.document.locking import UnlockedDocumentProxy
+    from bokeh.io import curdoc as _curdoc
     try:
         doc = _curdoc()
     except RuntimeError:
@@ -310,6 +307,7 @@ class _state(param.Parameterized):
         session_info = self.session_info['sessions'].get(session_id, {})
         if session_info.get('rendered') is not None:
             return
+        from .logging import LOG_SESSION_RENDERED
         logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
         self.session_info['live'] += 1
         session_info.update({
@@ -695,6 +693,8 @@ class _state(param.Parameterized):
         """
         args = ()
         if self.curdoc:
+            from .logging import LOG_USER_MSG
+
             args = (id(self.curdoc),)
             msg = LOG_USER_MSG.format(msg=msg)
         getattr(_state_logger, level.lower())(msg, *args)
@@ -879,6 +879,7 @@ class _state(param.Parameterized):
             )
         if cron is None:
             if isinstance(period, str):
+                from ..util import parse_timedelta
                 period = parse_timedelta(period)
             def dgen():
                 if isinstance(at, Iterator):
@@ -958,6 +959,7 @@ class _state(param.Parameterized):
         if not access_token:
             return
         try:
+            from ..util import decode_token
             decoded_token = decode_token(access_token)
         except Exception:
             return access_token
@@ -1121,6 +1123,7 @@ class _state(param.Parameterized):
         if not refresh_token:
             return
         try:
+            from ..util import decode_token
             decoded_token = decode_token(refresh_token)
         except ValueError:
             return refresh_token
@@ -1190,6 +1193,7 @@ class _state(param.Parameterized):
         id_token = self._decode_cookie('id_token')
         if id_token is None:
             return None
+        from ..util import decode_token
         return decode_token(id_token)
 
 state = _state()

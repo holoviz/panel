@@ -7,6 +7,7 @@ requires = [
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
+    "lazy-loader",
 ]
 build-backend = "hatchling.build"
 
@@ -51,6 +52,7 @@ dependencies = [
     'bokeh >=3.5.0,<3.7.0',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
+    'lazy-loader',
     'markdown',
     'markdown-it-py',
     'linkify-it-py',

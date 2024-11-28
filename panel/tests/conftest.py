@@ -429,6 +429,7 @@ def module_cleanup():
         if not any(model.__module__.startswith(tr) for tr in to_reset)
     }
     ReactiveMetaBase._loaded_extensions = set()
+    os.environ.pop("EAGER_IMPORT", None)
 
 @pytest.fixture(autouse=True)
 def server_cleanup():

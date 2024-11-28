@@ -4,9 +4,9 @@ Various general utilities used in the panel codebase.
 from __future__ import annotations
 
 import ast
-import asyncio
 import base64
 import datetime as dt
+import inspect
 import json
 import logging
 import numbers
@@ -25,11 +25,8 @@ from importlib import import_module
 from typing import Any, AnyStr
 
 import bokeh
-import numpy as np
 import param
 
-from bokeh.core.has_props import _default_resolver
-from bokeh.model import Model
 from packaging.version import Version
 
 from .checks import (  # noqa
@@ -144,6 +141,7 @@ def param_reprs(parameterized, skip=None):
         default = parameterized.param[p].default
         equal = v is default
         if not equal:
+            import numpy as np
             if isinstance(v, np.ndarray):
                 if isinstance(default, np.ndarray):
                     equal = np.array_equal(v, default, equal_nan=True)
@@ -280,6 +278,9 @@ def url_path(url: str) -> str:
 
 
 def lazy_load(module, model, notebook=False, root=None, ext=None):
+    from bokeh.core.has_props import _default_resolver
+    from bokeh.model import Model
+
     from ..config import panel_extension as extension
     from ..io.state import state
     external_modules = {
@@ -470,6 +471,7 @@ def styler_update(styler, new_df):
                 if isinstance(op[2], list):
                     applies = op[2]
                 else:
+                    import numpy as np
                     applies = np.array([
                         new_df[col].dtype.kind in 'uif' for col in new_df.columns
                     ])
@@ -483,6 +485,7 @@ def styler_update(styler, new_df):
 
 
 def try_datetime64_to_datetime(value):
+    import numpy as np
     if isinstance(value, np.datetime64):
         value = value.astype('datetime64[ms]').astype(datetime)
     return value
@@ -499,6 +502,7 @@ async def to_async_gen(sync_gen):
         except StopIteration:
             return done
 
+    import asyncio
     while True:
         value = await asyncio.to_thread(safe_next)
         if value is done:
@@ -530,3 +534,14 @@ def camel_to_kebab(name):
     kebab_case = re.sub(r'([a-z0-9])([A-Z])', r'\1-\2', name)
     kebab_case = re.sub(r'([A-Z]+)([A-Z][a-z0-9])', r'\1-\2', kebab_case)
     return kebab_case.lower()
+
+def anyinstance(obj, class_tuple_generator):
+    if inspect.isgeneratorfunction(class_tuple_generator):
+        return any(isinstance(obj, i) for i in class_tuple_generator())
+    return isinstance(obj, class_tuple_generator)
+
+
+def anysubclass(obj, class_tuple_generator):
+    if inspect.isgeneratorfunction(class_tuple_generator):
+        return any(issubclass(obj, i) for i in class_tuple_generator())
+    return issubclass(obj, class_tuple_generator)

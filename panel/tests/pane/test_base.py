@@ -3,9 +3,9 @@ import pytest
 
 import panel as pn
 
+from panel._interact import interactive
 from panel.chat import ChatMessage
 from panel.config import config
-from panel.interact import interactive
 from panel.io.loading import LOADING_INDICATOR_CSS_CLASS
 from panel.layout import Row
 from panel.links import CallbackGenerator

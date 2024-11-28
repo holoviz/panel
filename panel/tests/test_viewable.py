@@ -4,7 +4,7 @@ import pytest
 import panel.custom  # To get the custom Viewable
 
 from panel import config
-from panel.interact import interactive
+from panel._interact import interactive
 from panel.pane import Markdown, Str, panel
 from panel.param import ParamMethod
 from panel.viewable import (

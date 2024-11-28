@@ -19,3 +19,18 @@ def test_no_blocklist_imports():
     output = check_output([sys.executable, '-c', dedent(check)])
 
     assert output == b""
+
+
+def test_limited_panel_imports():
+    check = """\
+    import sys
+    import panel
+
+    mods = {k for k in sys.modules if k.startswith("panel.")}
+    if mods:
+        print(", ".join(mods), end="")
+    """
+
+    output = check_output([sys.executable, '-c', dedent(check)])
+
+    assert output == b""

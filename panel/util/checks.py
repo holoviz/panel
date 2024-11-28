@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import datetime as dt
-import importlib.util
 import os
 import sys
 
 from typing import Any, Iterable
 
-import numpy as np
 import param
 
 __all__ = (
@@ -24,7 +22,12 @@ __all__ = (
 )
 
 
-datetime_types = (np.datetime64, dt.datetime, dt.date)
+def datetime_types():
+    yield dt.datetime
+    yield dt.date
+    if "numpy" in sys.modules:
+        import numpy as np
+        yield np.datetime64
 
 
 def isfile(path: str) -> bool:
@@ -103,18 +106,21 @@ def isdatetime(value) -> bool:
     """
     Whether the array or scalar is recognized datetime type.
     """
+    import numpy as np
+    all_datetimes = tuple(datetime_types())
+
     if is_series(value) and len(value):
-        return isinstance(value.iloc[0], datetime_types)
+        return isinstance(value.iloc[0], all_datetimes)
     elif isinstance(value, np.ndarray):
         return (
             value.dtype.kind == "M" or
             (value.dtype.kind == "O" and len(value) != 0 and
-             isinstance(np.take(value, 0), datetime_types))
+             isinstance(np.take(value, 0), all_datetimes))
         )
     elif isinstance(value, list):
-        return all(isinstance(d, datetime_types) for d in value)
+        return all(isinstance(d, all_datetimes) for d in value)
     else:
-        return isinstance(value, datetime_types)
+        return isinstance(value, all_datetimes)
 
 
 def is_number(s: Any) -> bool:
@@ -138,5 +144,6 @@ def import_available(module: str):
     available: bool
       Whether the module is available to be imported
     """
+    import importlib.util
     spec = importlib.util.find_spec(module)
     return spec is not None

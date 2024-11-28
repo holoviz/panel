@@ -19,6 +19,8 @@ import requests
 
 from bokeh.model import Model
 
+os.environ['EAGER_IMPORT'] = '1'
+
 from .config import config, panel_extension
 from .io.resources import RESOURCE_URLS
 from .reactive import ReactiveHTML

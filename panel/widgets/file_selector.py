@@ -11,7 +11,7 @@ from typing import AnyStr, ClassVar, Optional
 
 import param
 
-from ..io import PeriodicCallback
+from ..io.callbacks import PeriodicCallback
 from ..layout import (
     Column, Divider, ListPanel, Row,
 )
