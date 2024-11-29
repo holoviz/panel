@@ -4111,19 +4111,8 @@ def df_agg():
             dt.datetime(2021, 5, 20),  # David
             dt.datetime(2022, 7, 30),  # Eve
         ],
-        # "active": [True, False, True, np.nan, True],
-        # "department": ["HR", "IT", "HR", "Finance", "HR"],
-        # "days_off_used": [
-        #     [3, 2, 1, 1],  # Charlie's days off in the last 4 months
-        #     [1, 0, 2, 2],  # Bob's days off
-        #     [2, 1, 3, 0],  # Alice's days off
-        #     [0, 1, 0, 0],  # David's days off
-        #     [1, 1, 0, 1]  # Eve's days off
-        # ],
     }
-    # Create DataFrame
-    df = pd.DataFrame(data)
-    return df
+    return pd.DataFrame(data)
 
 
 @pytest.fixture(scope='session')
@@ -4210,12 +4199,6 @@ def test_tabulator_3level_hierarchical_data_grouping(page, df, request):
     expect(employees).to_have_count(2)
     expect(employees.nth(0)).to_contain_text("Alice")
     expect(employees.nth(1)).to_contain_text("Eve")
-
-
-@pytest.mark.parametrize("aggs", [{}, {"gender": "sum"}, {"region": "mean", "gender": {"salary": "min"}}])
-def test_tabulator_aggregators(page, df_agg, aggs):
-    widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True, aggregators=aggs)
-    serve_component(page, widget)
 
 
 @pytest.mark.parametrize("aggs", [
