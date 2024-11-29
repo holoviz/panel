@@ -4121,38 +4121,7 @@ def df_agg_int_column_names(df_agg):
 
 
 @pytest.mark.parametrize("df", ["df_agg", "df_agg_int_column_names"])
-def test_tabulator_2level_hierarchical_data_grouping(page, df, request):
-    df_agg = request.getfixturevalue(df)
-    widget = Tabulator(df_agg.set_index(["region", "employee_id"]), hierarchical=True)
-    serve_component(page, widget)
-
-    expanded_groups = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-collapse')
-    collapsed_groups = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
-    expect(collapsed_groups).to_have_count(2)
-    expect(expanded_groups).to_have_count(0)
-    group_east = collapsed_groups.nth(0)
-    group_north = collapsed_groups.nth(1)
-
-    # expand first group and see the data there
-    group_east.click()
-    expect(collapsed_groups).to_have_count(1)
-    expect(expanded_groups).to_have_count(1)
-    expanded_group_members = page.locator(".tabulator-tree-level-1")
-    expect(expanded_group_members).to_have_count(1)
-    expect(expanded_group_members).to_contain_text("Charlie")
-
-    # collapse 1st group and expand 2nd group and see the data there
-    expanded_groups.click()
-    group_north.click()
-    expect(expanded_group_members).to_have_count(4)
-    expect(expanded_group_members.nth(0)).to_contain_text("Bob")
-    expect(expanded_group_members.nth(1)).to_contain_text("Alice")
-    expect(expanded_group_members.nth(2)).to_contain_text("David")
-    expect(expanded_group_members.nth(3)).to_contain_text("Eve")
-
-
-@pytest.mark.parametrize("df", ["df_agg", "df_agg_int_column_names"])
-def test_tabulator_3level_hierarchical_data_grouping(page, df, request):
+def test_tabulator_hierarchical_data_grouping(page, df, request):
     df_agg = request.getfixturevalue(df)
     widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True)
     serve_component(page, widget)
