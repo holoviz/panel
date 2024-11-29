@@ -101,7 +101,7 @@ function summarize(grouped: any[], columns: any[], aggregators: any[], depth: nu
       if (typeof aggs === "string") {
         agg = aggs
       } else if (column.field in aggs) {
-          agg = aggs[column.field]
+        agg = aggs[column.field]
       }
       const val = group[column.field]
       if (column.field in summary) {
