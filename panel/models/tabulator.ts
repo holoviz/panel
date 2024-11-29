@@ -78,7 +78,7 @@ function summarize(grouped: any[], columns: any[], aggregators: any[], depth: nu
   if (grouped.length == 0) {
     return summary
   }
-  // depth level 0 is leaves, do not aggregate data over this level
+  // depth level 0 is the root, finish here
   let aggs = ""
   if (depth > 0) {
     aggs = aggregators[depth-1]
@@ -159,6 +159,7 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
   for (const index of indexes) {
     if (index in aggregators) {
       if (aggregators[index] instanceof Map) {
+        // when some column names are numeric, need to convert that from a Map to an Object
         aggs.push(Object.fromEntries(aggregators[index]))
       } else {
         aggs.push(aggregators[index])
