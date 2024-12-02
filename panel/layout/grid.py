@@ -203,7 +203,7 @@ class GridBox(ListPanel):
         preprocess = any(self._rename.get(k, k) in self._preprocess_params for k in msg)
         update_children = self._rename['objects'] in msg
         child_name = self._rename['objects']
-        if (update_children or 'ncols' in msg or 'nrows' in msg) and child_name:
+        if child_name and (update_children or 'ncols' in msg or 'nrows' in msg):
             if 'objects' in events:
                 old = events['objects'].old
             else:

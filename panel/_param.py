@@ -9,7 +9,7 @@ from param import Parameter, _is_number
 
 AlignmentType = Literal["auto", "start", "center", "end"]
 Alignment = enumeration(AlignmentType)
-MarginType: TypeAlias = int | tuple[int, int] | tuple[int, int, int] | tuple[int, int, int, int]
+MarginType: TypeAlias = int | tuple[int, int] | tuple[int, int, int, int]
 
 
 class Align(Parameter):

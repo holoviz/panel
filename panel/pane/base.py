@@ -143,7 +143,7 @@ class PaneBase(Layoutable):
     # Whether applies requires full set of keywords
     _applies_kw: ClassVar[bool] = False
 
-    _skip_layoutable: ClassVar[tuple[str, ...]] = ('css_classes', 'margin', 'name')
+    _skip_layoutable: tuple[str, ...] = ('css_classes', 'margin', 'name')
 
     # Whether the Pane layout can be safely unpacked
     _unpack: ClassVar[bool] = True
