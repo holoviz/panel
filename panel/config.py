@@ -27,7 +27,6 @@ from pyviz_comms import (
 from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
-from .util import param_watchers
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -413,7 +412,7 @@ class _config(_base_config):
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
-            watchers = param_watchers(self).get(attr, {}).get('value', [])
+            watchers = self.param.watchers.get(attr, {}).get('value', [])
             for w in watchers:
                 w.fn()
         elif f'_{attr}' in _config._parameter_set and hasattr(self, f'_{attr}_'):

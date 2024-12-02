@@ -8,10 +8,6 @@ from typing import Any
 
 import param
 
-from packaging.version import Version
-
-_unset = object()
-
 
 def should_inherit(parameterized: param.Parameterized, p: str, v: Any) -> Any:
     pobj = parameterized.param[p]
@@ -84,19 +80,6 @@ def extract_dependencies(function):
         elif p not in params:
             params.append(p)
     return params
-
-
-def param_watchers(parameterized: param.Parameterized, value=_unset):
-    if Version(param.__version__) <= Version('2.0.0a2'):
-        if value is not _unset:
-            parameterized._param_watchers = value
-        else:
-            return parameterized._param_watchers
-    else:
-        if value is not _unset:
-            parameterized.param.watchers = value
-        else:
-            return parameterized.param.watchers
 
 
 def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> list[param.Parameterized]:

@@ -19,7 +19,7 @@ from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
 from ..models import Column as PnColumn
 from ..reactive import Reactive
-from ..util import param_name, param_reprs, param_watchers
+from ..util import param_name, param_reprs
 from ..viewable import Children
 
 if TYPE_CHECKING:
@@ -570,7 +570,7 @@ class NamedListLike(param.Parameterized):
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
-        param_watchers(self)['objects']['value'].reverse()
+        self.param.watchers['objects']['value'].reverse()
 
     def _to_object_and_name(self, item):
         from ..pane import panel

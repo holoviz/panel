@@ -25,7 +25,6 @@ from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
 
 from ..config import config
-from ..util import param_watchers
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .model import monkeypatch_events  # noqa: F401 API import
 from .state import curdoc_locked, state
@@ -115,10 +114,10 @@ def _cleanup_doc(doc, destroy=True):
                 pane._hooks = []
                 for p in pane.select():
                     p._hooks = []
-                    param_watchers(p, {})
+                    p.param.watchers = {}
                     p._documents = {}
                     p._internal_callbacks = {}
-            param_watchers(pane, {})
+            pane.param.watchers = {}
             pane._documents = {}
             pane._internal_callbacks = {}
         else:

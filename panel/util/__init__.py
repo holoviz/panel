@@ -37,7 +37,7 @@ from .checks import (  # noqa
     is_series, isdatetime, isfile, isIn, isurl,
 )
 from .parameters import (  # noqa
-    edit_readonly, extract_dependencies, get_method_owner, param_watchers,
+    edit_readonly, extract_dependencies, get_method_owner,
     recursive_parameterized,
 )
 

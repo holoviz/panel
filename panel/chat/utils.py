@@ -127,7 +127,7 @@ def get_obj_label(obj):
     Get the label for the object; defaults to specified object name;
     if unspecified, defaults to the type name.
     """
-    label = obj.name
+    label = obj.name if hasattr(obj, "name") else ""
     type_name = type(obj).__name__
     # If the name is just type + ID, simply use type
     # e.g. Column10241 -> Column

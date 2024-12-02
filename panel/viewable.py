@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import inspect
 import logging
 import os
 import sys
@@ -613,9 +614,9 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
         for hook in hooks:
-            try:
+            if len(inspect.signature(hook).parameters) >= 4:
                 hook(self, root, changed, old_models)
-            except TypeError:
+            else:
                 hook(self, root)
 
     def _render_model(self, doc: Document | None = None, comm: Comm | None = None) -> Model:
