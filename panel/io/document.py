@@ -29,15 +29,16 @@ from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
 
 from ..config import config
-from ..util import param_watchers
 from .loading import LOADING_INDICATOR_CSS_CLASS
-from .model import hold, monkeypatch_events  # noqa: F401 API import
+from .model import monkeypatch_events  # noqa: F401 API import
 from .state import curdoc_locked, state
 
 if TYPE_CHECKING:
+    from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
     from bokeh.protocol.message import Message
     from bokeh.server.connection import ServerConnection
+    from pyviz_comms import Comm
 
 logger = logging.getLogger(__name__)
 
@@ -118,10 +119,10 @@ def _cleanup_doc(doc, destroy=True):
                 pane._hooks = []
                 for p in pane.select():
                     p._hooks = []
-                    param_watchers(p, {})
+                    p.param.watchers = {}
                     p._documents = {}
                     p._internal_callbacks = {}
-            param_watchers(pane, {})
+            pane.param.watchers = {}
             pane._documents = {}
             pane._internal_callbacks = {}
         else:
@@ -431,11 +432,18 @@ def dispatch_django(
     return futures
 
 @contextmanager
-def unlocked() -> Iterator:
+def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
     """
     Context manager which unlocks a Document and dispatches
     ModelChangedEvents triggered in the context body to all sockets
     on current sessions.
+
+    Arguments
+    ---------
+    policy: Literal['combine' | 'collect']
+        One of 'combine' or 'collect' determining whether events
+        setting the same property are combined or accumulated to be
+        dispatched when the context manager exits.
     """
     curdoc = state.curdoc
     session_context = getattr(curdoc, 'session_context', None)
@@ -457,7 +465,7 @@ def unlocked() -> Iterator:
         monkeypatch_events(curdoc.callbacks._held_events)
         return
 
-    curdoc.hold()
+    curdoc.hold(policy=policy)
     try:
         yield
     finally:
@@ -518,6 +526,47 @@ def unlocked() -> Iterator:
             except RuntimeError:
                 curdoc.add_next_tick_callback(partial(retrigger_events, curdoc, retriggered_events))
 
+@contextmanager
+def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
+    """
+    Context manager that holds events on a particular Document
+    allowing them all to be collected and dispatched when the context
+    manager exits. This allows multiple events on the same object to
+    be combined if the policy is set to 'combine'.
+
+    Arguments
+    ---------
+    doc: Document
+        The Bokeh Document to hold events on.
+    policy: HoldPolicyType
+        One of 'combine', 'collect' or None determining whether events
+        setting the same property are combined or accumulated to be
+        dispatched when the context manager exits.
+    comm: Comm
+        The Comm to dispatch events on when the context manager exits.
+    """
+    doc = doc or state.curdoc
+    if doc is None:
+        yield
+        return
+    held = doc.callbacks.hold_value
+    try:
+        if policy is None:
+            doc.unhold()
+            yield
+        else:
+            with unlocked(policy=policy):
+                if not doc.callbacks.hold_value:
+                    doc.hold(policy)
+                yield
+    finally:
+        if held:
+            doc.callbacks._hold = held
+        else:
+            if comm is not None:
+                from .notebook import push
+                push(doc, comm)
+            doc.unhold()
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):

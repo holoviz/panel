@@ -25,6 +25,7 @@ lite = ["py311", "lite"]
 
 [dependencies]
 nodejs = ">=18"
+esbuild = "*"
 nomkl = "*"
 pip = "*"
 # Required
@@ -141,6 +142,7 @@ ipympl = "*"
 ipyvuetify = "*"
 ipywidgets_bokeh = "*"
 numba = "*"
+polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"

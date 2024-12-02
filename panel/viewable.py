@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import inspect
 import logging
 import os
 import sys
@@ -86,7 +87,7 @@ class Layoutable(param.Parameterized):
     css_classes = param.List(default=[], nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
 
-    design = param.ObjectSelector(default=None, objects=[], doc="""
+    design = param.Selector(default=None, objects=[], doc="""
         The design system to use to style components.""")
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
@@ -127,7 +128,7 @@ class Layoutable(param.Parameterized):
         The width of the component (in pixels). This can be either
         fixed or preferred width, depending on width sizing policy.""")
 
-    width_policy = param.ObjectSelector(
+    width_policy = param.Selector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its width.
 
@@ -159,7 +160,7 @@ class Layoutable(param.Parameterized):
             management and other factors.
     """)
 
-    height_policy = param.ObjectSelector(
+    height_policy = param.Selector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its height.
 
@@ -191,7 +192,7 @@ class Layoutable(param.Parameterized):
             management and other factors.
     """)
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         How the component should size itself.
@@ -600,9 +601,9 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
         for hook in hooks:
-            try:
+            if len(inspect.signature(hook).parameters) >= 4:
                 hook(self, root, changed, old_models)
-            except TypeError:
+            else:
                 hook(self, root)
 
     def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
@@ -1193,34 +1194,42 @@ class ChildDict(param.Dict):
 
 
 
+def _is_viewable_class_selector(class_selector: param.ClassSelector) -> bool:
+    if not class_selector.class_:
+        return False
+    if isinstance(class_selector.class_, tuple):
+        return all(issubclass(cls, Viewable) for cls in class_selector.class_)
+    return issubclass(class_selector.class_, Viewable)
+
+def _is_viewable_list(param_list: param.List) -> bool:
+    if not param_list.item_type:
+        return False
+    if isinstance(param_list.item_type, tuple):
+        return all(issubclass(cls, Viewable) for cls in param_list.item_type)
+    return issubclass(param_list.item_type, Viewable)
+
+
 def is_viewable_param(parameter: param.Parameter) -> bool:
     """
-    Detects whether the Parameter uniquely identifies a Viewable
-    type.
+    Determines if a parameter uniquely identifies a Viewable type.
 
     Arguments
     ---------
-    parameter: param.Parameter
+    parameter : param.Parameter
+        The parameter to evaluate.
 
     Returns
     -------
-    Whether the Parameter specieis a Parameter type
+    bool
+        True if the parameter specifies a Viewable type, False otherwise.
     """
-    p = parameter
-    if (
-        isinstance(p, (Child, Children)) or
-        (isinstance(p, param.ClassSelector) and p.class_ and (
-            (isinstance(p.class_, tuple) and
-             all(issubclass(cls, Viewable) for cls in p.class_)) or
-            issubclass(p.class_, Viewable)
-        )) or
-        (isinstance(p, param.List) and p.item_type and (
-            (isinstance(p.item_type, tuple) and
-             all(issubclass(cls, Viewable) for cls in p.item_type)) or
-            issubclass(p.item_type, Viewable)
-        ))
-    ):
+    if isinstance(parameter, (Child, Children)):
         return True
+    if isinstance(parameter, param.ClassSelector) and _is_viewable_class_selector(parameter):
+        return True
+    if isinstance(parameter, param.List) and _is_viewable_list(parameter):
+        return True
+
     return False
 
 

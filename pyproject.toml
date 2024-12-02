@@ -71,13 +71,13 @@ HoloViz = "https://holoviz.org/"
 [project.optional-dependencies]
 recommended = [
     'jupyterlab',
-    'holoviews >=1.16.0',
+    'holoviews >=1.18.0',
     'matplotlib',
     'pillow',
     'plotly',
 ]
 fastapi = [
-    'bokeh-fastapi >= 0.1.0',
+    'bokeh-fastapi >= 0.1.1',
     'fastapi[standard]',
 ]
 dev = [
@@ -111,6 +111,7 @@ raw-options = { version_scheme = "no-guess-dev" }
 
 [tool.hatch.build.targets.wheel]
 include = ["panel"]
+exclude = ["panel/node_modules"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "panel/dist" = "panel/dist"
@@ -121,7 +122,7 @@ include = ["panel"]
 
 [tool.hatch.build.targets.sdist]
 include = ["panel", "scripts", "examples"]
-exclude = ["scripts/jupyterlite"]
+exclude = ["scripts/jupyterlite", "panel/node_modules"]
 
 [tool.hatch.build.targets.sdist.force-include]
 "panel/dist" = "panel/dist"
@@ -224,6 +225,9 @@ filterwarnings = [
     "ignore:distutils Version classes are deprecated:DeprecationWarning:ipywidgets_bokeh.kernel", # OK
     "ignore:unclosed file <_io.TextIOWrapper name='(/dev/null|nul)' mode='w':ResourceWarning", # OK
     "ignore:Deprecated in traitlets 4.1, use the instance .metadata dictionary directly", # OK (ipywidgets internal)
+    # 2024-11
+    "ignore:websockets.legacy is deprecated:DeprecationWarning", # https://github.com/encode/uvicorn/issues/1908
+    "ignore:websockets.server.WebSocketServerProtocol is deprecated:DeprecationWarning", # https://github.com/encode/uvicorn/issues/1908
 ]
 
 [tool.mypy]

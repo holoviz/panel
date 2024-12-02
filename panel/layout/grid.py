@@ -16,8 +16,7 @@ import param
 
 from bokeh.models import FlexBox as BkFlexBox, GridBox as BkGridBox
 
-from ..io.document import freeze_doc
-from ..io.model import hold
+from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
 from ..viewable import ChildDict
 from .base import (
@@ -261,7 +260,7 @@ class GridSpec(Panel):
     objects = ChildDict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
 
-    mode = param.ObjectSelector(default='warn', objects=['warn', 'error', 'override'], doc="""
+    mode = param.Selector(default='warn', objects=['warn', 'error', 'override'], doc="""
         Whether to warn, error or simply override on overlapping assignment.""")
 
     ncols = param.Integer(default=None, bounds=(0, None), doc="""

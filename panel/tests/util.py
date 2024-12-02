@@ -395,7 +395,10 @@ class NBSR:
             return None
 
 def wait_for_regex(stdout, regex, count=1, return_output=False):
-    nbsr = NBSR(stdout)
+    if isinstance(stdout, NBSR):
+        nbsr = stdout
+    else:
+        nbsr = NBSR(stdout)
     m = None
     output, found = [], []
     for _ in range(20):

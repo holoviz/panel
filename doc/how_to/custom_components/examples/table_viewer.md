@@ -17,7 +17,7 @@ This example demonstrates Panel's reactive programming paradigm using the Param 
 ```{pyodide}
 class ReactiveTables(Viewer):
 
-    dataset = param.ObjectSelector(default='iris', objects=['iris', 'autompg', 'population'])
+    dataset = param.Selector(default='iris', objects=['iris', 'autompg', 'population'])
 
     rows = param.Integer(default=10, bounds=(0, 19))
 

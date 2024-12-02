@@ -58,13 +58,13 @@ _NATIVE_TYPES = (
     bytes, str, float, int, bool, bytearray, type(None)
 )
 
-_NP_SIZE_LARGE = 100_000
+_ARRAY_SIZE_LARGE = 100_000
 
-_NP_SAMPLE_SIZE = 100_000
+_ARRAY_SAMPLE_SIZE = 100_000
 
-_PANDAS_ROWS_LARGE = 100_000
+_DATAFRAME_ROWS_LARGE = 100_000
 
-_PANDAS_SAMPLE_SIZE = 100_000
+_DATAFRAME_SAMPLE_SIZE = 100_000
 
 if sys.platform == 'win32':
     _TIME_FN = time.perf_counter
@@ -125,8 +125,8 @@ def _pandas_hash(obj):
     if not isinstance(obj, (pd.Series, pd.DataFrame)):
         obj = pd.Series(obj)
 
-    if len(obj) >= _PANDAS_ROWS_LARGE:
-        obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
+    if len(obj) >= _DATAFRAME_ROWS_LARGE:
+        obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
     try:
         if isinstance(obj, pd.DataFrame):
             return ((b"%s" % pd.util.hash_pandas_object(obj).sum())
@@ -138,13 +138,62 @@ def _pandas_hash(obj):
         # it contains unhashable objects.
         return b"%s" % pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
 
+def _polars_combine_hash_expr(columns):
+    """
+    Inspired by pd.core.util.hashing.combine_hash_arrays,
+    rewritten to a Polars expression.
+    """
+    import polars as pl
+
+    mult = pl.lit(1000003, dtype=pl.UInt64)
+    initial_value = pl.lit(0x345678, dtype=pl.UInt64)
+    increment = pl.lit(82520, dtype=pl.UInt64)
+    final_addition = pl.lit(97531, dtype=pl.UInt64)
+
+    out = initial_value
+    num_items = len(columns)
+    for i, col_name in enumerate(columns):
+        col = pl.col(col_name).hash(seed=0)
+        inverse_i = pl.lit(num_items - i, dtype=pl.UInt64)
+        out = (out ^ col) * mult
+        mult = mult + (increment + inverse_i + inverse_i)
+
+    return out + final_addition
+
+def _polars_hash(obj):
+    import polars as pl
+
+    hash_type = type(obj).__name__.encode()
+
+    if isinstance(obj, pl.Series):
+        obj = obj.to_frame()
+
+    columns = obj.collect_schema().names()
+    hash_columns = _container_hash(columns)
+
+    # LazyFrame does not support len and sample
+    if hash_type != b"LazyFrame" and len(obj) >= _DATAFRAME_ROWS_LARGE:
+        obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, seed=0)
+    elif hash_type == b"LazyFrame":
+        count = obj.select(pl.col(columns[0]).count()).collect().item()
+        if count >= _DATAFRAME_ROWS_LARGE:
+            obj = obj.select(pl.all().sample(n=_DATAFRAME_SAMPLE_SIZE, seed=0))
+
+    hash_expr = _polars_combine_hash_expr(columns)
+    hash_data = obj.select(hash_expr).sum()
+    if hash_type == b"LazyFrame":
+        hash_data = hash_data.collect()
+    hash_data = _int_to_bytes(hash_data.item())
+
+    return hash_type + hash_data + hash_columns
+
 def _numpy_hash(obj):
     h = hashlib.new("md5")
     h.update(_generate_hash(obj.shape))
-    if obj.size >= _NP_SIZE_LARGE:
+    if obj.size >= _ARRAY_SIZE_LARGE:
         import numpy as np
         state = np.random.RandomState(0)
-        obj = state.choice(obj.flat, size=_NP_SAMPLE_SIZE)
+        obj = state.choice(obj.flat, size=_ARRAY_SAMPLE_SIZE)
     h.update(obj.tobytes())
     return h.digest()
 
@@ -180,6 +229,9 @@ _hash_funcs = {
     'builtins.dict_items'        : lambda obj: _container_hash(dict(obj)),
     'builtins.getset_descriptor' : lambda obj: obj.__qualname__.encode(),
     "numpy.ufunc"                : lambda obj: obj.__name__.encode(),
+    "polars.series.series.Series": _polars_hash,
+    "polars.dataframe.frame.DataFrame": _polars_hash,
+    "polars.lazyframe.frame.LazyFrame": _polars_hash,
     # Functions
     inspect.isbuiltin          : lambda obj: obj.__name__.encode(),
     inspect.ismodule           : lambda obj: obj.__name__,
@@ -214,7 +266,7 @@ def _generate_hash_inner(obj):
                 f'{obj!r} with following error: {type(e).__name__}("{e}").'
             ) from e
         return output
-    if hasattr(obj, '__reduce__'):
+    if hasattr(obj, '__reduce__') and inspect.isclass(obj):
         h = hashlib.new("md5")
         try:
             reduce_data = obj.__reduce__()

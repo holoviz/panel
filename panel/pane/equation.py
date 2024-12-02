@@ -42,7 +42,7 @@ class LaTeX(ModelPane):
     ... )
     """
 
-    renderer = param.ObjectSelector(default=None, allow_None=True,
+    renderer = param.Selector(default=None, allow_None=True,
                                     objects=['katex', 'mathjax'], doc="""
         The JS renderer used to render the LaTeX expression. Defaults to katex.""")
 

@@ -24,7 +24,6 @@ from pyviz_comms import (
 from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
-from .util import param_watchers
 
 _LOCAL_DEV_VERSION = (
     any(v in __version__ for v in ('post', 'dirty'))
@@ -203,12 +202,12 @@ class _config(_base_config):
         information about user sessions. A value of -1 indicates an
         unlimited history.""")
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         Specify the default sizing mode behavior of panels.""")
 
-    template = param.ObjectSelector(default=None, doc="""
+    template = param.Selector(default=None, doc="""
         The default template to render served applications into.""")
 
     throttled = param.Boolean(default=False, doc="""
@@ -222,12 +221,12 @@ class _config(_base_config):
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of the Admin Panel logger")
 
-    _comms = param.ObjectSelector(
+    _comms = param.Selector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
         extension or use the jupyter_bokeh ipywidget model.""")
 
-    _console_output = param.ObjectSelector(default='accumulate', allow_None=True,
+    _console_output = param.Selector(default='accumulate', allow_None=True,
                                  objects=['accumulate', 'replace', 'disable',
                                           False], doc="""
         How to log errors and stdout output triggered by callbacks
@@ -271,7 +270,7 @@ class _config(_base_config):
         or filepath containing JSON to use with the basic auth
         provider.""")
 
-    _oauth_provider = param.ObjectSelector(
+    _oauth_provider = param.Selector(
         default=None, allow_None=True, objects=[], doc="""
         Select between a list of authentication providers.""")
 
@@ -310,7 +309,7 @@ class _config(_base_config):
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
-    _theme = param.ObjectSelector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
+    _theme = param.Selector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
         The theme to apply to components.""")
 
     # Global parameters that are shared across all sessions
@@ -407,7 +406,7 @@ class _config(_base_config):
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
-            watchers = param_watchers(self).get(attr, {}).get('value', [])
+            watchers = self.param.watchers.get(attr, {}).get('value', [])
             for w in watchers:
                 w.fn()
         elif f'_{attr}' in _config._parameter_set and hasattr(self, f'_{attr}_'):

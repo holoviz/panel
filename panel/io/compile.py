@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fnmatch
 import importlib
 import json
 import os
@@ -10,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 
+from collections import defaultdict
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
@@ -71,6 +73,62 @@ def check_cli_tool(tool_name):
         return False
 
 
+def find_module_bundles(module_spec: str) -> dict[pathlib.PurePath, list[ReactiveESM]]:
+    """
+    Takes module specifications and extracts a set of components to bundle.
+
+    Arguments
+    ---------
+    module_spec: str
+         Module specification either as a dotted module or a path to a module.
+
+    Returns
+    -------
+    Dictionary containing the bundle paths and list of components to bundle.
+    """
+    # Split module spec, while respecting Windows drive letters
+    if ':' in module_spec and (module_spec[1:3] != ':\\' or module_spec.count(':') > 1):
+        module, cls = module_spec.rsplit(':', 1)
+    else:
+        module = module_spec
+        cls = ''
+    classes = cls.split(',') if cls else None
+    if module.endswith('.py'):
+        module_name, _ = os.path.splitext(os.path.basename(module))
+    else:
+        module_name = module
+    try:
+        components = find_components(module, classes)
+    except ValueError:
+        cls_error = f' and that class(es) {cls!r} are defined therein' if cls else ''
+        raise RuntimeError(  # noqa
+            f'Could not find any ESM components to compile, ensure '
+            f'you provided the right module{cls_error}.'
+        )
+    if module in sys.modules:
+        module_path = sys.modules[module].__file__
+    else:
+        module_path = module
+
+    bundles = defaultdict(list)
+    module_path = pathlib.Path(module_path).parent
+    for component in components:
+        if component._bundle:
+            bundle_path = component._bundle
+            if isinstance(bundle_path, str):
+                path = (module_path / bundle_path).absolute()
+            else:
+                path = bundle_path.absolute()
+            bundles[str(path)].append(component)
+        elif len(components) > 1 and not classes:
+            component_module = module_name or component.__module__
+            bundles[module_path / f'{component_module}.bundle.js'].append(component)
+        else:
+            bundles[component._module_path / f'{component.__name__}.bundle.js'].append(component)
+
+    return bundles
+
+
 def find_components(module_or_file: str | os.PathLike, classes: list[str] | None = None) -> list[type[ReactiveESM]]:
     """
     Creates a temporary module given a path-like object and finds all
@@ -94,6 +152,10 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
         runner = CodeRunner(source, module_or_file, [])
         module = runner.new_module()
         runner.run(module)
+        if runner.error:
+            raise RuntimeError(
+                f'Compilation failed because supplied module errored on import:\n\n{runner.error}'
+            )
     else:
         module = importlib.import_module(module_or_file)
     classes = classes or []
@@ -103,12 +165,12 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
             isinstance(v, type) and
             issubclass(v, ReactiveESM) and
             not v.abstract and
-            (not classes or v.__name__ in classes)
+            (not classes or any(fnmatch.fnmatch(v.__name__, p) for p in classes))
         ):
             if py_file:
                 v.__path__ = path_obj.parent.absolute()
             components.append(v)
-    not_found = set(classes) - set(c.__name__ for c in components)
+    not_found = {cls for cls in classes if '*' not in cls} - set(c.__name__ for c in components)
     if classes and not_found:
         clss = ', '.join(map(repr, not_found))
         raise ValueError(f'{clss} class(es) not found in {module_or_file!r}.')
@@ -297,7 +359,7 @@ def generate_project(
         name = component.__name__
         esm_path = component._esm_path(compiled=False)
         if esm_path:
-            ext = esm_path.suffix
+            ext = esm_path.suffix.lstrip('.')
         else:
             ext = 'jsx' if issubclass(component, ReactComponent) else 'js'
         code, component_deps = extract_dependencies(component)
@@ -391,6 +453,8 @@ def compile_components(
             print(f"An error occurred while running npm install:\n{RED}{e.stderr}{RESET}")  # noqa
             return None
 
+        if any(issubclass(c, ReactComponent) for c in components):
+            extra_args.append('--loader:.js=jsx')
         if minify:
             extra_args.append('--minify')
         if out:

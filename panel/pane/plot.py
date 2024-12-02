@@ -443,7 +443,7 @@ class Folium(HTML):
     The Folium pane wraps Folium map components.
     """
 
-    sizing_mode = param.ObjectSelector(default='stretch_width', objects=[
+    sizing_mode = param.Selector(default='stretch_width', objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 

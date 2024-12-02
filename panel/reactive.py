@@ -35,8 +35,7 @@ from param.parameterized import (
     resolve_ref, resolve_value,
 )
 
-from .io.document import unlocked
-from .io.model import hold
+from .io.document import hold, unlocked
 from .io.notebook import push
 from .io.resources import (
     CDN_DIST, loading_css, patch_stylesheet, process_raw_css,
@@ -215,7 +214,7 @@ class Syncable(Renderable):
             stylesheets += properties['stylesheets']
             wrapped = []
             for stylesheet in stylesheets:
-                if isinstance(stylesheet, str) and stylesheet.split('?')[0].endswith('.css'):
+                if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
                     cache = (state._stylesheets if state.curdoc else {}).get(state.curdoc, {})
                     if stylesheet in cache:
                         stylesheet = cache[stylesheet]
@@ -1582,16 +1581,32 @@ class ReactiveCustomBase(Reactive):
     def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
         if not msg:
             return
-        old = self._changing.get(root.ref['id'], [])
-        self._changing[root.ref['id']] = [
-            attr for attr, value in msg.items()
-            if not model.lookup(attr).property.matches(getattr(model, attr), value)
-        ]
+        prev_changing = self._changing.get(root.ref['id'], [])
+        changing = []
+        transformed = {}
+        for attr, value in msg.items():
+            prop = model.lookup(attr).property
+            old = getattr(model, attr)
+            try:
+                matches = bool(prop.matches(old, value))
+            except Exception:
+                for tp, converter in prop.alternatives:
+                    if tp.is_valid(value):
+                        value = converter(value)
+                        break
+                try:
+                    matches = bool(prop.matches(old, value))
+                except Exception:
+                    matches = False
+            if not matches:
+                transformed[attr] = value
+                changing.append(attr)
+        self._changing[root.ref['id']] = changing
         try:
-            model.update(**msg)
+            model.update(**transformed)
         finally:
             if old:
-                self._changing[root.ref['id']] = old
+                self._changing[root.ref['id']] = prev_changing
             else:
                 del self._changing[root.ref['id']]
 

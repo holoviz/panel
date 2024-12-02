@@ -184,7 +184,7 @@ panel compile confetti
 ```
 
 :::{hint}
-`panel compile` accepts file paths, e.g. `my_components/custom.py`, and dotted module name, e.g. `my_package.custom`. If you provide a module name it must be importable.
+`panel compile` accepts file paths, e.g. `my_components/custom.py`, or dotted module names, e.g. `my_package.custom`. If you provide a module name it must be importable.
 :::
 
 This will automatically discover the `ConfettiButton` but you can also explicitly request a single component by adding the class name:
@@ -216,7 +216,11 @@ esbuild output:
 ⚡ Done in 9ms
 ```
 
-The compiled JavaScript file will be automatically loaded if it remains alongside the component. If you rename the component or modify its code or `_importmap`, you must recompile the component. For ongoing development, consider using the `--dev` option to ignore the compiled file and automatically reload the development version when it changes.
+If the supplied module or package contains multiple components they will all be bundled together by default. If instead you want to generate bundles for each file explicitly you must list them with the `:` syntax, e.g. `panel compile package.module:Component1,Component2`. You may also provide a glob pattern to request multiple components to be built individually without listing them all out, e.g. `panel compile "package.module:Component*"`.
+
+During runtime the compiled bundles will be resolved automatically, where bundles compiled for a specific component (i.e. `<component-name>.bundle.js`) take highest precedence and we then search for module bundles up to the root package, e.g. for a component that lives in `package.module` we first search for `package.module.bundle.js` in the same directory as the component and then recursively search in parent directories until we reach the root of the package.
+
+If you rename the component or modify its code or `_importmap`, you must recompile the component. For ongoing development, consider using the `--dev` option to ignore the compiled file and automatically reload the development version when it changes.
 
 #### Compilation Steps
 
