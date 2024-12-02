@@ -54,12 +54,6 @@ export class ModalView extends BkColumnView {
     UIElementView.prototype.render.call(this)
     this.class_list.add(...this.css_classes())
     this.create_modal()
-
-    for (const child_view of this.child_views) {
-      this.modal_children.append(child_view.el)
-      child_view.render()
-      child_view.after_render()
-    }
   }
 
   override async update_children(): Promise<void> {
@@ -72,6 +66,7 @@ export class ModalView extends BkColumnView {
       id: "pnx_dialog",
       class: "dialog-container bk-root",
       "aria-hidden": "true",
+      style: {display: "none"},
     } as any)
 
     const dialog_overlay = div({class: "dialog-overlay"})
@@ -85,6 +80,11 @@ export class ModalView extends BkColumnView {
       class: "dialog-content",
       role: "document",
     } as any)
+    for (const child_view of this.child_views) {
+      const target = child_view.rendering_target() ?? content
+      child_view.render_to(target)
+    }
+
     this.close_button = button({
       id: "pnx_dialog_close",
       "data-a11y-dialog-hide": "",
@@ -100,11 +100,22 @@ export class ModalView extends BkColumnView {
     content.append(this.close_button)
     content.append(this.modal_children)
     this.shadow_el.append(container)
+    let first_open = false
 
     this.modal = new (window as any).A11yDialog(dialog)
     this.update_close_button()
-    this.modal.on("show", () => { this.model.open = true })
-    this.modal.on("hide", () => { this.model.open = false })
+    this.modal.on("show", () => {
+      this.model.open = true
+      dialog.style.display = ""
+      if (!first_open) {
+        requestAnimationFrame(() => { this.invalidate_layout() })
+        first_open = true
+      }
+    })
+    this.modal.on("hide", () => {
+      this.model.open = false
+      dialog.style.display = "none"
+    })
   }
 
   update_close_button(): void {
