@@ -401,7 +401,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                     continue
                 elif scls._css is None:
                     break
-                tmpl_css = scls._css
+                tmpl_css = scls._css if isinstance(scls._css) else [scls._css]
                 if css in tmpl_css:
                     tmpl_name = scls.__name__.lower()
 

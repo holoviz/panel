@@ -69,7 +69,7 @@ class Voice(param.Parameterized):
         if not voices:
             return {}
 
-        sorted_lang = sorted(list({voice.lang for voice in voices}))
+        sorted_lang = sorted({voice.lang for voice in voices})
         result = {lang: [] for lang in sorted_lang}
         for voice in voices:
             result[voice.lang].append(voice)

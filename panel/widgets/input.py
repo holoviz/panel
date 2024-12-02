@@ -10,9 +10,7 @@ import json
 from base64 import b64decode
 from collections.abc import Iterable, Mapping
 from datetime import date, datetime, time as dt_time
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Type,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -1169,7 +1167,7 @@ class LiteralInput(Widget):
         'value': """JSON.stringify(value).replace(/,/g, ",").replace(/:/g, ": ")"""
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkTextInput  # noqa
+    _widget_type: ClassVar[type[Model]] = _BkTextInput  # noqa
 
     def __init__(self, **params):
         super().__init__(**params)
