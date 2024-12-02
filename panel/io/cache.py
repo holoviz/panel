@@ -15,12 +15,11 @@ import sys
 import threading
 import time
 import unittest.mock
-import weakref
 
+from collections.abc import Awaitable, Callable, Hashable
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Callable, Hashable, Literal, ParamSpec, Protocol,
-    TypeVar, overload,
+    TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, TypeVar, cast, overload,
 )
 
 import param
@@ -49,8 +48,6 @@ _CYCLE_PLACEHOLDER = b"panel-93KZ39Q-floatingdangeroushomechose-CYCLE"
 _FFI_TYPE_NAMES = ("_cffi_backend.FFI", "builtins.CompiledFFI",)
 
 _HASH_MAP: dict[Hashable, str] = {}
-
-_HASH_STACKS = weakref.WeakKeyDictionary()
 
 _INDETERMINATE = type('INDETERMINATE', (object,), {})()
 
@@ -92,34 +89,34 @@ def _get_fqn(obj):
     name = the_type.__qualname__
     return f"{module}.{name}"
 
-def _int_to_bytes(i):
+def _int_to_bytes(i: int) -> bytes:
     num_bytes = (i.bit_length() + 8) // 8
     return i.to_bytes(num_bytes, "little", signed=True)
 
-def _is_native(obj):
+def _is_native(obj: Any) -> bool:
     return isinstance(obj, _NATIVE_TYPES)
 
-def _is_native_tuple(obj):
+def _is_native_tuple(obj: Any) -> bool:
     return isinstance(obj, tuple) and all(_is_native_tuple(v) for v in obj)
 
-def _container_hash(obj):
+def _container_hash(obj: Any) -> bytes:
     h = hashlib.new("md5")
     h.update(_generate_hash(f'__{type(obj).__name__}'))
     for item in (obj.items() if isinstance(obj, dict) else obj):
         h.update(_generate_hash(item))
     return h.digest()
 
-def _slice_hash(x):
+def _slice_hash(x: slice) -> bytes:
     return _container_hash([x.start, x.step, x.stop])
 
-def _partial_hash(obj):
+def _partial_hash(obj: Any) -> bytes:
     h = hashlib.new("md5")
     h.update(_generate_hash(obj.args))
     h.update(_generate_hash(obj.func))
     h.update(_generate_hash(obj.keywords))
     return h.digest()
 
-def _pandas_hash(obj):
+def _pandas_hash(obj: Any) -> bytes:
     import pandas as pd
 
     if not isinstance(obj, (pd.Series, pd.DataFrame)):
@@ -203,7 +200,7 @@ def _io_hash(obj):
     h.update(_generate_hash(obj.getvalue()))
     return h.digest()
 
-_hash_funcs = {
+_hash_funcs: dict[str | type[Any] | tuple[type, ...] | Callable[[Any], bool], bytes | Callable[[Any], bytes]] = {
     # Types
     int          : _int_to_bytes,
     str          : lambda obj: obj.encode(),
@@ -217,7 +214,7 @@ _hash_funcs = {
     functools.partial  : _partial_hash,
     unittest.mock.Mock : lambda obj: _int_to_bytes(id(obj)),
     (io.StringIO, io.BytesIO): _io_hash,
-    dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode('utf-8'),
+    dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode(),
     # Fully qualified type strings
     'numpy.ndarray'              : _numpy_hash,
     'pandas.core.series.Series'  : _pandas_hash,
@@ -522,7 +519,7 @@ def cache(
                     ret, ts, count, _ = func_cache[hash_value]
                     func_cache[hash_value] = (ret, ts, count+1, time)
             else:
-                ret = await func(*args, **kwargs)
+                ret = await cast(Awaitable[Any], func(*args, **kwargs))
                 with lock:
                     func_cache[hash_value] = (ret, time, 0, time)
             return ret
@@ -565,7 +562,7 @@ def cache(
     except AttributeError:
         pass
 
-    return wrapped_func
+    return wrapped_func  # type: ignore
 
 def is_equal(value, other)->bool:
     """Returns True if value and other are equal

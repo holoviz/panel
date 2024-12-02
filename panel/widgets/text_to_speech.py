@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import uuid
 
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -68,7 +69,7 @@ class Voice(param.Parameterized):
         if not voices:
             return {}
 
-        sorted_lang = sorted(list(set(voice.lang for voice in voices)))
+        sorted_lang = sorted({voice.lang for voice in voices})
         result = {lang: [] for lang in sorted_lang}
         for voice in voices:
             result[voice.lang].append(voice)

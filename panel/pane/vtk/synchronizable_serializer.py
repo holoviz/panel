@@ -5,6 +5,8 @@ import struct
 import time
 import zipfile
 
+from typing import Any
+
 from vtk.vtkCommonCore import vtkTypeInt32Array, vtkTypeUInt32Array
 from vtk.vtkCommonDataModel import vtkDataObject
 from vtk.vtkFiltersGeometry import (
@@ -410,7 +412,7 @@ def getReferenceId(ref):
 
 # -----------------------------------------------------------------------------
 
-dataArrayShaMapping = {}
+dataArrayShaMapping: dict[str, dict[str, Any]] = {}
 
 
 def digest(array):

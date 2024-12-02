@@ -8,9 +8,8 @@ import functools
 import json
 import textwrap
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param  # type: ignore
 
@@ -36,7 +35,7 @@ class HTMLBasePane(ModelPane):
         Whether to enable streaming of text snippets. This is useful
         when updating a string step by step, e.g. in a chat message.""")
 
-    _bokeh_model: ClassVar[Model] = _BkHTML
+    _bokeh_model: ClassVar[type[Model]] = _BkHTML
 
     _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text', 'enable_streaming': None}
 
@@ -271,8 +270,8 @@ class DataFrame(HTML):
             if 'dask' in module:
                 html = obj.to_html(max_rows=self.max_rows).replace('border="1"', '')
             elif 'style' in module:
-                classes = ' '.join(classes)
-                html = obj.to_html(table_attributes=f'class="{classes}"')
+                class_string = ' '.join(classes)
+                html = obj.to_html(table_attributes=f'class="{class_string}"')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
                           if p not in HTMLBasePane.param and p not in ('_object', 'text_align')}
@@ -397,7 +396,7 @@ class Markdown(HTMLBasePane):
             return False
 
     @classmethod
-    @functools.lru_cache(maxsize=None)
+    @functools.cache
     def _get_parser(cls, renderer, plugins, **renderer_options):
         if renderer == 'markdown':
             return None
@@ -461,7 +460,7 @@ class Markdown(HTMLBasePane):
             html = markdown.markdown(
                 obj,
                 extensions=self.extensions,
-                output_format='html5',
+                output_format='xhtml',
                 **self.renderer_options
             )
         else:
@@ -512,7 +511,7 @@ class JSON(HTMLBasePane):
 
     _applies_kw: ClassVar[bool] = True
 
-    _bokeh_model: ClassVar[Model] = _BkJSON
+    _bokeh_model: ClassVar[type[Model]] = _BkJSON
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         "object": "text", "encoder": None, "style": "styles"

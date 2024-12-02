@@ -4,9 +4,8 @@ bokeh model.
 """
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -311,13 +310,12 @@ class Plotly(ModelPane):
         return props
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        if not hasattr(self, '_bokeh_model'):
-            self._bokeh_model = lazy_load(
-                'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
-            )
+        Plotly._bokeh_model = lazy_load(
+            'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
+        )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('plotly_event', model=model, doc=doc, comm=comm)
         return model
@@ -381,7 +379,7 @@ class Plotly(ModelPane):
         except Exception:
             update_frames = True
 
-        updates = {}
+        updates: dict[str, Any] = {}
         if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
             autosize = layout.get('autosize')
             styles = dict(model.styles)

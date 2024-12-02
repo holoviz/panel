@@ -233,13 +233,15 @@ filterwarnings = [
 [tool.mypy]
 namespace_packages = true
 explicit_package_bases = true
+disable_error_code = "attr-defined"
 mypy_path = ""
 exclude = []
 
 [[tool.mypy.overrides]]
 module = [
-    "altair.*",
+    "anywidget.*",
     "bokeh_django.*",
+    "bokeh_fastapi.*",
     "bokeh.*",
     "cachecontrol.*",
     "cryptography.*",
@@ -247,12 +249,12 @@ module = [
     "flask.*",
     "fsspec.*",
     "holoviews.*",
+    "hvplot.*",
     "ipympl.*",
-    "ipywidgets_bokeh",
+    "ipywidgets_bokeh.*",
     "ipywidgets.*",
     "js.*",
     "jupyter_bokeh.*",
-    "jupyter_server.*",
     "langchain.*",
     "lumen.*",
     "magic.*",
@@ -260,25 +262,25 @@ module = [
     "mdit_py_emoji.*",
     "memray.*",
     "myst_parser.*",
-    "nbconvert.*",
-    "nbformat.*",
     "param.*",
     "playwright.*",
     "plotly.*",
     "pydeck.*",
     "pyecharts.*",
-    "pyinstrument.*",
     "pyodide_http.*",
     "pyodide.*",
+    "pyscript.*",
+    "pyvista.*",
     "pyviz_comms.*",
-    "reacton.*",
     "rpy2.*",
     "scipy.*",
     "setuptools_scm.*",
     "snakeviz.*",
     "streamz.*",
-    "textual.*",
+    "traitlets.*",
     "tranquilizer.*",
+    "uvicorn.*",
     "vtk.*",
+    "watchfiles.*"
 ]
 ignore_missing_imports = true

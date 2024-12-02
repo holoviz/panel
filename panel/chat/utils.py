@@ -79,7 +79,7 @@ def build_avatar_pane(
     return avatar_pane
 
 
-def stream_to(obj, token, replace=False, object_panel=None):
+def stream_to(obj, token: str, replace: bool = False, object_panel: Viewable | None = None):
     """
     Updates the message with the new token traversing the object to
     allow updating nested objects. When traversing a nested Panel

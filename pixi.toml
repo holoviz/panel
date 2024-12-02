@@ -17,7 +17,7 @@ test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py313", "test-core", "test-unit-task"]
 test-minimum = ["py310", "test-core", "test-unit-task", "test-minimum"]
-test-type = ["py311", "type"]
+test-type = ["py311", "type", "example", "test"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
@@ -181,6 +181,7 @@ depends_on = ["_install-ui"]
 # =============================================
 [feature.type.dependencies]
 mypy = "*"
+pytest = "*"
 pandas-stubs = "*"
 types-bleach = "*"
 types-croniter = "*"

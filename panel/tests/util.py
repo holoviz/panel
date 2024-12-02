@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import http.server
@@ -31,29 +33,29 @@ pnv = Version(pn.__version__)
 
 try:
     import holoviews as hv
-    hv_version = Version(hv.__version__)
+    hv_version: Version | None = Version(hv.__version__)
 except Exception:
-    hv, hv_version = None, None
-hv_available = pytest.mark.skipif(hv is None or hv_version < Version('1.13.0a23'),
+    hv, hv_version = None, None  # type: ignore
+hv_available = pytest.mark.skipif(hv_version is None or hv_version < Version('1.13.0a23'),
                                   reason="requires holoviews")
 
 try:
     import matplotlib as mpl
     mpl.use('Agg')
 except Exception:
-    mpl = None
+    mpl = None  # type: ignore
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 
 try:
     import streamz
 except Exception:
-    streamz = None
+    streamz = None  # type: ignore
 streamz_available = pytest.mark.skipif(streamz is None, reason="requires streamz")
 
 try:
     import jupyter_bokeh
 except Exception:
-    jupyter_bokeh = None
+    jupyter_bokeh = None  # type: ignore
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
 
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
@@ -370,7 +372,7 @@ class NBSR:
         '''
 
         self._s = stream
-        self._q = Queue()
+        self._q: Queue = Queue()
 
         def _populateQueue(stream, queue):
             '''

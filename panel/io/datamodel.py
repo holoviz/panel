@@ -1,6 +1,7 @@
-import weakref
+from __future__ import annotations
 
 from functools import partial
+from weakref import WeakKeyDictionary
 
 import bokeh
 import bokeh.core.properties as bp
@@ -53,7 +54,7 @@ class ParameterizedList(bokeh.core.property.bases.Property):
         raise ValueError(msg)
 
 
-_DATA_MODELS = weakref.WeakKeyDictionary()
+_DATA_MODELS: WeakKeyDictionary[type[pm.Parameterized], type[DataModel]] = WeakKeyDictionary()
 
 # The Bokeh Color property has `_default_help` set which causes
 # an error to be raise when Nullable is called on it. This converter

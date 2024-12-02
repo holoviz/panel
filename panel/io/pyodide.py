@@ -8,7 +8,8 @@ import os
 import sys
 import uuid
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import bokeh
 import js
@@ -39,6 +40,12 @@ from .state import state
 
 resources.RESOURCE_MODE = 'CDN'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
+
+if TYPE_CHECKING:
+    from bokeh.core.types import ID
+
+    from ..template.base import TemplateBase
+    from ..viewable import Viewable
 
 try:
     from js import document as js_document  # noqa
@@ -106,7 +113,7 @@ if pyodide_http is None:
     def _read_csv(*args, **kwargs):
         args, kwargs = _read_file(*args, **kwargs)
         return _read_csv_original(*args, **kwargs)
-    pandas.read_csv = _read_csv
+    pandas.read_csv = _read_csv  # type: ignore
 
     # Patch pandas.read_json
     _read_json_original = pandas.read_json
@@ -114,7 +121,7 @@ if pyodide_http is None:
     def _read_json(*args, **kwargs):
         args, kwargs = _read_file(*args, **kwargs)
         return _read_json_original(*args, **kwargs)
-    pandas.read_json = _read_json
+    pandas.read_json = _read_json  # type: ignore
 
 _tasks = set()
 
@@ -162,20 +169,22 @@ def _doc_json(doc: Document, root_els=None) -> tuple[str, str, str]:
         })
     return json.dumps(docs_json), json.dumps(render_items_json), json.dumps(root_ids)
 
-def _model_json(model: Model, target: str) -> tuple[Document, str]:
+def _model_json(viewable: Viewable | TemplateBase, target: str) -> tuple[Document, str]:
     """
     Renders a Bokeh Model to JSON representation given a particular
     DOM target and returns the Document and the serialized JSON string.
 
     Arguments
     ---------
-    model: bokeh.model.Model
+    model: Viewable
         The bokeh model to render.
     target: str
         The id of the DOM node to render to.
 
     Returns
     -------
+    viewable: The Viewable to render to JSON
+        The viewable to render
     document: Document
         The bokeh Document containing the rendered Bokeh Model.
     model_json: str
@@ -183,7 +192,7 @@ def _model_json(model: Model, target: str) -> tuple[Document, str]:
     """
     doc = Document()
     doc.hold()
-    model.server_doc(doc=doc)
+    viewable.server_doc(doc=doc)
     model = doc.roots[0]
     docs_json, _ = standalone_docs_json_and_render_items(
         [model], suppress_callback_warning=True
@@ -394,7 +403,7 @@ def fetch_binary(url):
     xhr.send()
     return io.BytesIO(xhr.response.to_py().tobytes())
 
-def render_script(obj: Any, target: str) -> str:
+def render_script(obj: Any, target: ID) -> str:
     """
     Generates a script to render the supplied object to the target.
 
@@ -437,7 +446,7 @@ def init_doc() -> None:
     doc = Document()
     set_curdoc(doc)
     doc.hold()
-    doc._session_context = lambda: MockSessionContext(document=doc)
+    doc._session_context = lambda: MockSessionContext(document=doc)  # type: ignore
     state.curdoc = doc
 
 async def show(obj: Any, target: str) -> None:
@@ -520,7 +529,9 @@ async def write_doc(doc: Document | None = None) -> tuple[str, str, str]:
     render_items: str
     root_ids: str
     """
-    pydoc: Document = doc or state.curdoc
+    pydoc: Document | None = doc or state.curdoc
+    if not pydoc:
+        raise ValueError('Cannot write contents of non-existent Document.')
     if pydoc in state._templates and pydoc not in state._templates[pydoc]._documents:
         template = state._templates[pydoc]
         template.server_doc(title=template.title, location=True, doc=pydoc)
@@ -573,12 +584,9 @@ def pyrender(
     from ..param import ReactiveExpr
     from ..viewable import Viewable, Viewer
     PANES = (HoloViews, Interactive, ReactiveExpr)
-    kwargs = {}
-    if stdout_callback:
-        kwargs['stdout'] = WriteCallbackStream(stdout_callback)
-    if stderr_callback:
-        kwargs['stderr'] = WriteCallbackStream(stderr_callback)
-    out = exec_with_return(code, **kwargs)
+    stdout = WriteCallbackStream(stdout_callback) if stdout_callback else None
+    stderr = WriteCallbackStream(stderr_callback) if stderr_callback else None
+    out = exec_with_return(code, stdout=stdout, stderr=stderr)
     ret = {}
     if isinstance(out, (Model, Viewable, Viewer)) or any(pane.applies(out) for pane in PANES):
         doc, model_json = _model_json(as_panel(out), target)

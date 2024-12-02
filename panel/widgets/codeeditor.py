@@ -3,9 +3,8 @@ Defines the CodeEditor widget based on Ace.
 """
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -77,14 +76,13 @@ class CodeEditor(Widget):
         self.value_input = self.value
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        if self._widget_type is None:
-            self._widget_type = lazy_load(
-                'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm),
-                root, ext='codeeditor'
-            )
+        CodeEditor._widget_type = lazy_load(
+            'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm),
+            root, ext='codeeditor'
+        )
         return super()._get_model(doc, root, parent, comm)
 
     def _update_disabled(self, *events: param.parameterized.Event):

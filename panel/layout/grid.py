@@ -6,10 +6,9 @@ from __future__ import annotations
 import math
 
 from collections import namedtuple
+from collections.abc import Mapping
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -54,7 +53,7 @@ class GridBox(ListPanel):
     ncols = param.Integer(default=None, bounds=(0, None),  doc="""
       Number of columns to reflow the layout into.""")
 
-    _bokeh_model: ClassVar[Model] = BkGridBox
+    _bokeh_model: ClassVar[type[Model]] = BkGridBox
 
     _linked_properties: ClassVar[tuple[str,...]] = ()
 
@@ -196,21 +195,22 @@ class GridBox(ListPanel):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         from ..io import state
 
         msg = dict(msg)
         preprocess = any(self._rename.get(k, k) in self._preprocess_params for k in msg)
         update_children = self._rename['objects'] in msg
-        if update_children or 'ncols' in msg or 'nrows' in msg:
+        child_name = self._rename['objects']
+        if child_name and (update_children or 'ncols' in msg or 'nrows' in msg):
             if 'objects' in events:
                 old = events['objects'].old
             else:
                 old = self.objects
             objects, old_models = self._get_objects(model, old, doc, root, comm)
             children = self._get_children(objects, self.nrows, self.ncols)
-            msg[self._rename['objects']] = children
+            msg[child_name] = children
         else:
             old_models = None
 
@@ -269,9 +269,9 @@ class GridSpec(Panel):
     nrows = param.Integer(default=None, bounds=(0, None), doc="""
         Limits the number of rows that can be assigned.""")
 
-    _bokeh_model: ClassVar[Model] = BkGridBox
+    _bokeh_model: ClassVar[type[Model]] = BkGridBox
 
-    _linked_properties: ClassVar[tuple[str]] = ()
+    _linked_properties: tuple[str, ...] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None

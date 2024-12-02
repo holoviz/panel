@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import param
 
@@ -10,6 +10,7 @@ from ..config import config
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
+from .document import create_doc_if_none_exists
 from .resources import CSS_URLS, bundled_files, get_dist_path
 from .state import state
 
@@ -78,9 +79,10 @@ class NotificationAreaBase(ReactiveHTML):
         self._notification_watchers = {}
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
-    ) -> 'Model':
+    ) -> Model:
+        doc = create_doc_if_none_exists(doc)
         root = super().get_root(doc, comm, preprocess)
         for event, notification in self.js_events.items():
             doc.js_on_event(event, CustomJS(code=f"""

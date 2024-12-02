@@ -9,9 +9,8 @@ from __future__ import annotations
 
 import datetime as dt
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -84,7 +83,7 @@ class _SliderBase(Widget):
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return super()._linked_properties + ('value_throttled',)
 
     def _process_property_change(self, msg):
@@ -97,7 +96,7 @@ class _SliderBase(Widget):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'value_throttled' in msg:
             del msg['value_throttled']
@@ -115,7 +114,7 @@ class ContinuousSlider(_SliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A custom format string or Bokeh TickFormatter.""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     __abstract = True
 
@@ -387,7 +386,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         'value': None, 'value_throttled': None, 'options': None
     }
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _style_params: ClassVar[list[str]] = [
         p for p in list(Layoutable.param) if p != 'name'

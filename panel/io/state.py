@@ -14,13 +14,14 @@ import threading
 import time
 
 from collections import Counter, defaultdict
-from collections.abc import Iterator
+from collections.abc import (
+    Callable, Coroutine, Hashable, Iterator, Iterator as TIterator,
+)
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Coroutine,
-    Iterator as TIterator, Literal, Optional, TypeVar, Union,
+    TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, TypeVar,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -30,6 +31,7 @@ import param
 from bokeh.document import Document
 from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
+from param.parameterized import Event, Parameterized
 from pyviz_comms import CommManager as _CommManager
 
 from ..util import decode_token, parse_timedelta
@@ -40,10 +42,11 @@ _state_logger = logging.getLogger('panel.state')
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
+    from bokeh.application.application import SessionContext
     from bokeh.model import Model
     from bokeh.models import ImportedStyleSheet
     from bokeh.server.contexts import BokehSessionContext
-    from bokeh.server.server import Server
+    from bokeh.server.session import ServerSession
     from IPython.display import DisplayHandle
     from pyviz_comms import Comm
     from tornado.ioloop import IOLoop
@@ -51,26 +54,31 @@ if TYPE_CHECKING:
     from ..template.base import BaseTemplate
     from ..viewable import Viewable
     from ..widgets.indicators import BooleanIndicator
+    from .application import TViewableFuncOrPath
     from .browser import BrowserInfo
+    from .cache import _Stack
     from .callbacks import PeriodicCallback
     from .location import Location
     from .notifications import NotificationArea
     from .server import StoppableThread
 
     T = TypeVar("T")
+    K = TypeVar('K', bound=Hashable)
 
 
 @contextmanager
-def set_curdoc(doc: Document):
-    token = state._curdoc.set(doc)
+def set_curdoc(doc: Document | None):
+    if doc:
+        token = state._curdoc.set(doc)
     try:
         yield
     finally:
-        # If _curdoc has been reset it will raise a ValueError
-        with suppress(ValueError):
-            state._curdoc.reset(token)
+        if doc:
+            # If _curdoc has been reset it will raise a ValueError
+            with suppress(ValueError):
+                state._curdoc.reset(token)
 
-def curdoc_locked() -> Document:
+def curdoc_locked() -> Document | None:
     try:
         doc = _curdoc()
     except RuntimeError:
@@ -81,7 +89,7 @@ def curdoc_locked() -> Document:
 
 class _Undefined: pass
 
-Tat = Union[dt.datetime, Callable[[dt.datetime], dt.datetime], TIterator[dt.datetime]]
+Tat: TypeAlias = dt.datetime | Callable[[dt.datetime], dt.datetime] | TIterator[dt.datetime]
 
 class _state(param.Parameterized):
     """
@@ -123,10 +131,10 @@ class _state(param.Parameterized):
        this will instead reflect an absolute path.""")
 
     # Holds temporary curdoc overrides per thread
-    _curdoc = ContextVar('curdoc', default=None)
+    _curdoc: ContextVar[Document | None] = ContextVar('curdoc', default=None)
 
     # Whether to hold comm events
-    _hold: ClassVar[bool] = False
+    _hold: bool = False
 
     # Used to ensure that events are not scheduled from the wrong thread
     _thread_id_: ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()
@@ -136,9 +144,9 @@ class _state(param.Parameterized):
     _admin_context = None
 
     # Jupyter communication
-    _comm_manager: ClassVar[type[_CommManager]] = _CommManager
-    _jupyter_kernel_context: ClassVar[BokehSessionContext | None] = None
-    _kernels = {}
+    _comm_manager: type[_CommManager] = _CommManager
+    _jupyter_kernel_context: BokehSessionContext | None = None
+    _kernels: ClassVar[dict[str, tuple[Any, str, str, bool]]] = {}
     _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
 
     # Locations
@@ -164,39 +172,39 @@ class _state(param.Parameterized):
     _fake_roots: ClassVar[list[str]] = []
 
     # An index of all currently active servers
-    _servers: ClassVar[dict[str, tuple[Server, Viewable | BaseTemplate, list[Document]]]] = {}
+    _servers: ClassVar[dict[str, tuple[Any, TViewableFuncOrPath | dict[str, TViewableFuncOrPath], list[Document]]]] = {}
     _threads: ClassVar[dict[str, StoppableThread]] = {}
     _server_config: ClassVar[WeakKeyDictionary[Any, dict[str, Any]]] = WeakKeyDictionary()
 
     # Jupyter display handles
-    _handles: ClassVar[dict[str, [DisplayHandle, list[str]]]] = {}
+    _handles: ClassVar[dict[str, tuple[DisplayHandle, list[str]]]] = {}
 
     # Stacks for hashing
-    _stacks = WeakKeyDictionary()
+    _stacks: WeakKeyDictionary[threading.Thread, _Stack] = WeakKeyDictionary()
 
     # Dictionary of callbacks to be triggered on app load
-    _onload: ClassVar[dict[Document, Callable[[], None]]] = WeakKeyDictionary()
-    _on_session_created: ClassVar[list[Callable[[BokehSessionContext], None]]] = []
-    _on_session_created_internal: ClassVar[list[Callable[[BokehSessionContext], None]]] = []
-    _on_session_destroyed: ClassVar[list[Callable[[BokehSessionContext], None]]] = []
+    _onload: ClassVar[WeakKeyDictionary[Document, list[tuple[Callable[[], None | Coroutine[Any, Any, None]], bool]]]] = WeakKeyDictionary()
+    _on_session_created: ClassVar[list[Callable[[SessionContext], None]]] = []
+    _on_session_created_internal: ClassVar[list[Callable[[SessionContext], None]]] = []
+    _on_session_destroyed: ClassVar[list[Callable[[SessionContext], None]]] = []
     _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
     # Module that was run during setup
     _setup_module = None
 
     # Scheduled callbacks
-    _scheduled: ClassVar[dict[str, tuple[Iterator[int], Callable[[], None]]]] = {}
+    _scheduled: ClassVar[dict[str, tuple[TIterator[int] | None, Callable[[], None]]]] = {}
     _periodic: ClassVar[WeakKeyDictionary[Document, list[PeriodicCallback]]] = WeakKeyDictionary()
 
     # Indicators listening to the busy state
     _indicators: ClassVar[list[BooleanIndicator]] = []
 
     # Profilers
-    _launching = []
+    _launching: ClassVar[set[Document]] = set()
     _profiles = param.Dict(default=defaultdict(list))
 
     # Endpoints
-    _rest_endpoints = {}
+    _rest_endpoints: ClassVar[dict[str, tuple[list[Parameterized], list[str], Callable[[Event], Any]]]] = {}
 
     # Style cache
     _stylesheets: ClassVar[WeakKeyDictionary[Document, dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
@@ -205,40 +213,40 @@ class _state(param.Parameterized):
     _extensions_: ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
 
     # Locks
-    _cache_locks: ClassVar[dict[str, threading.Lock]] = {'main': threading.Lock()}
+    _cache_locks: ClassVar[dict[str | tuple[Any, ...], threading.Lock]] = {'main': threading.Lock()}
 
     # Sessions
-    _sessions = {}
-    _session_key_funcs = {}
+    _sessions: ClassVar[dict[Hashable, ServerSession]] = {}
+    _session_key_funcs: ClassVar[dict[str, Callable[[Any], Any]]] = {}
 
     # Layout editor
-    _cell_outputs = defaultdict(list)
-    _cell_layouts = defaultdict(dict)
+    _cell_outputs: ClassVar[defaultdict[Hashable, list[Any]]] = defaultdict(list)
+    _cell_layouts: ClassVar[defaultdict[Hashable, dict[str, dict]]] = defaultdict(dict)
     _session_outputs: ClassVar[WeakKeyDictionary[Document, dict[str, Any]]] = WeakKeyDictionary()
 
     # Override user info
-    _oauth_user_overrides = {}
-    _active_users = Counter()
+    _oauth_user_overrides: ClassVar[dict[str, dict[str, Any]]] = {}
+    _active_users: ClassVar[Counter[str]] = Counter()
 
     # Paths
     _rel_paths: ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
     _base_urls: ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
 
     # Watchers
-    _watch_events: list[asyncio.Event] = []
+    _watch_events: ClassVar[list[asyncio.Event]] = []
 
     def __repr__(self) -> str:
         server_info = []
         for server, panel, _docs in self._servers.values():
             server_info.append(
-                "{}:{:d} - {!r}".format(server.address or "localhost", server.port, panel)
+                "{}:{:d} - {!r}".format(server.address or "localhost", server.port or 0, panel)
             )
         if not server_info:
             return "state(servers=[])"
         return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
 
     @property
-    def _ioloop(self) -> 'IOLoop':
+    def _ioloop(self) -> IOLoop | asyncio.AbstractEventLoop:
         if state._is_pyodide:
             return asyncio.get_running_loop()
         else:
@@ -253,7 +261,7 @@ class _state(param.Parameterized):
         return self._extensions_[doc]
 
     @property
-    def _current_thread(self) -> str | None:
+    def _current_thread(self) -> int | None:
         return threading.get_ident()
 
     @property
@@ -287,7 +295,7 @@ class _state(param.Parameterized):
         2. We are on the same thread that the Document was created on.
         3. The application has fully loaded and the Websocket is open.
         """
-        return (
+        return bool(
             doc is self.curdoc and
             self._thread_id in (self._current_thread, None) and
             (not (doc and doc.session_context and doc.session_context.session) or self._loaded.get(doc))
@@ -400,9 +408,11 @@ class _state(param.Parameterized):
         else:
             self._on_load(doc)
 
-    def _on_load(self, doc: Optional[Document] = None) -> None:
+    def _on_load(self, doc: Document | None = None) -> None:
         doc = doc or self.curdoc
-        if doc not in self._onload:
+        if not doc:
+            return
+        elif doc not in self._onload:
             self._loaded[doc] = True
             return
 
@@ -420,18 +430,23 @@ class _state(param.Parameterized):
                 while doc in self._onload:
                     for cb, threaded in self._onload.pop(doc):
                         self.execute(cb, schedule='thread' if threaded else False)
-            path = doc.session_context.request.path
-            self._profiles[(path+':on_load', config.profiler)] += sessions
-            self.param.trigger('_profiles')
+            if doc.session_context:
+                path = doc.session_context.request.path
+                self._profiles[(path+':on_load', config.profiler)] += sessions
+                self.param.trigger('_profiles')
         self._loaded[doc] = True
 
     async def _scheduled_cb(self, name: str, threaded: bool = False) -> None:
         if name not in self._scheduled:
             return
         diter, cb = self._scheduled[name]
-        try:
-            at = next(diter)
-        except Exception:
+        if diter:
+            try:
+                at = next(diter)
+            except Exception:
+                at = None
+                del self._scheduled[name]
+        else:
             at = None
             del self._scheduled[name]
         if at is not None:
@@ -452,7 +467,7 @@ class _state(param.Parameterized):
                 self._handle_exception(e)
         return wrapper
 
-    def _handle_future_exception(self, future: Future, doc: Document = None) -> None:
+    def _handle_future_exception(self, future: Future, doc: Document | None = None) -> None:
         exception = future.exception()
         if exception is None:
             return
@@ -460,7 +475,7 @@ class _state(param.Parameterized):
         with set_curdoc(doc):
             self._handle_exception(exception)
 
-    def _handle_exception(self, exception) -> None:
+    def _handle_exception(self, exception: BaseException) -> None:
         from ..config import config
         if config.exception_handler:
             config.exception_handler(exception)
@@ -469,7 +484,7 @@ class _state(param.Parameterized):
         else:
             self.log(f'Exception of unknown type raised: {exception}', level='error')
 
-    def _register_session_destroyed(self, session_context: BokehSessionContext):
+    def _register_session_destroyed(self, session_context: SessionContext):
         for cb in self._on_session_destroyed:
             session_context._document.on_session_destroyed(cb)
 
@@ -477,7 +492,7 @@ class _state(param.Parameterized):
     # Public Methods
     #----------------------------------------------------------------
 
-    def as_cached(self, key: str, fn: Callable[[], T], ttl: int = None, **kwargs) -> T:
+    def as_cached(self, key: str, fn: Callable[[], T], ttl: int | None = None, **kwargs) -> T:
         """
         Caches the return value of a function globally across user sessions, memoizing on the given
         key and supplied keyword arguments.
@@ -513,30 +528,30 @@ class _state(param.Parameterized):
         Returns the value returned by the cache or the value in
         the cache.
         """
-        key = (key,)+tuple((k, v) for k, v in sorted(kwargs.items()))
+        cache_key = (key,)+tuple((k, v) for k, v in sorted(kwargs.items()))
         new_expiry = time.monotonic() + ttl if ttl else None
         with self._cache_locks['main']:
-            if key in self._cache_locks:
-                lock = self._cache_locks[key]
+            if cache_key in self._cache_locks:
+                lock = self._cache_locks[cache_key]
             else:
-                self._cache_locks[key] = lock = threading.Lock()
+                self._cache_locks[cache_key] = lock = threading.Lock()
         try:
             with lock:
-                if key in self.cache:
-                    ret, expiry = self.cache.get(key)
+                if cache_key in self.cache:
+                    ret, expiry = self.cache.get(cache_key)
                 else:
                     ret, expiry = _Undefined, None
                 if ret is _Undefined or (expiry is not None and expiry < time.monotonic()):
-                    ret, _ = self.cache[key] = (fn(**kwargs), new_expiry)
+                    ret, _ = self.cache[cache_key] = (fn(**kwargs), new_expiry)
         finally:
-            if not lock.locked() and key in self._cache_locks:
-                del self._cache_locks[key]
+            if not lock.locked() and cache_key in self._cache_locks:
+                del self._cache_locks[cache_key]
         return ret
 
     def add_periodic_callback(
         self, callback: Callable[[], None] | Coroutine[Any, Any, None],
-        period: int=500, count: Optional[int] = None, timeout: int = None,
-        start: bool=True
+        period: int = 500, count: int | None = None, timeout: int | None = None,
+        start: bool = True
     ) -> PeriodicCallback:
         """
         Schedules a periodic callback to be run at an interval set by
@@ -613,7 +628,7 @@ class _state(param.Parameterized):
 
     def execute(
         self,
-        callback: Callable[[], None],
+        callback: Callable[[], None | Coroutine[Any, Any, None]],
         schedule: bool | Literal['auto', 'thread'] = 'auto'
     ) -> None:
         """
@@ -693,13 +708,13 @@ class _state(param.Parameterized):
         level: str
           Log level as a string, i.e. 'debug', 'info', 'warning' or 'error'.
         """
-        args = ()
+        args: tuple[()] | tuple[int] = ()
         if self.curdoc:
             args = (id(self.curdoc),)
             msg = LOG_USER_MSG.format(msg=msg)
         getattr(_state_logger, level.lower())(msg, *args)
 
-    def onload(self, callback: Callable[[], None | Awaitable[None]] | Coroutine[Any, Any, None], threaded: bool = False):
+    def onload(self, callback: Callable[[], None | Coroutine[Any, Any, None]], threaded: bool = False):
         """
         Callback that is triggered when a session has been served.
 
@@ -715,12 +730,12 @@ class _state(param.Parameterized):
                 self.execute(callback, schedule='threaded')
             else:
                 self.execute(callback, schedule=False)
-            return
-        elif self.curdoc not in self._onload:
-            self._onload[self.curdoc] = []
-        self._onload[self.curdoc].append((callback, threaded))
+        elif self.curdoc in self._onload:
+            self._onload[self.curdoc].append((callback, threaded))
+        else:
+            self._onload[self.curdoc] = [(callback, threaded)]
 
-    def on_session_created(self, callback: Callable[[BokehSessionContext], None]) -> None:
+    def on_session_created(self, callback: Callable[[SessionContext], None]) -> None:
         """
         Callback that is triggered when a session is created.
         """
@@ -733,7 +748,7 @@ class _state(param.Parameterized):
             )
         self._on_session_created.append(callback)
 
-    def on_session_destroyed(self, callback: Callable[[BokehSessionContext], None]) -> None:
+    def on_session_destroyed(self, callback: Callable[[SessionContext], None]) -> None:
         """
         Callback that is triggered when a session is destroyed.
         """
@@ -747,7 +762,7 @@ class _state(param.Parameterized):
 
     def publish(
         self, endpoint: str, parameterized: param.Parameterized,
-        parameters: Optional[list[str]] = None
+        parameters: list[str] | None = None
     ) -> None:
         """
         Publish parameters on a Parameterized object as a REST API.
@@ -804,8 +819,12 @@ class _state(param.Parameterized):
         self._periodic.clear()
 
     def schedule_task(
-        self, name: str, callback: Callable[[], None], at: Tat =None,
-        period: str | dt.timedelta = None, cron: Optional[str] = None,
+        self,
+        name: str,
+        callback: Callable[[], None],
+        at: Tat | None = None,
+        period: str | dt.timedelta | None = None,
+        cron: str | None = None,
         threaded : bool = False
     ) -> None:
         """
@@ -899,6 +918,11 @@ class _state(param.Parameterized):
                     yield new_time.timestamp()
                     new_time += period
             diter = dgen()
+        elif isinstance(at, Iterator) or callable(at):
+            raise ValueError(
+                "When scheduling a task with croniter the at value must "
+                "be a concrete datetime value."
+            )
         else:
             from croniter import croniter
             base = dt.datetime.now() if at is None else at
@@ -956,7 +980,7 @@ class _state(param.Parameterized):
             return self._oauth_user_overrides[self.user]['access_token']
         access_token = self._decode_cookie('access_token')
         if not access_token:
-            return
+            return None
         try:
             decoded_token = decode_token(access_token)
         except Exception:
@@ -970,8 +994,8 @@ class _state(param.Parameterized):
         """
         Returns the URL of the app that is currently being executed.
         """
-        if not self.curdoc:
-            return
+        if not (self.curdoc and self.curdoc.session_context):
+            return None
         app_url = self.curdoc.session_context.server_context.application_context.url
         app_url = app_url[1:] if app_url.startswith('/') else app_url
         return urljoin(self.base_url, app_url)
@@ -980,14 +1004,15 @@ class _state(param.Parameterized):
     def browser_info(self) -> BrowserInfo | None:
         from ..config import config
         from .browser import BrowserInfo
-        if config.browser_info and self.curdoc and self.curdoc.session_context and self.curdoc not in self._browsers:
+        if (config.browser_info and self.curdoc and self.curdoc.session_context and
+            self.curdoc not in self._browsers):
             browser = self._browsers[self.curdoc] = BrowserInfo()
         elif self.curdoc is None:
             if self._browser is None and config.browser_info:
-                self._browser = BrowserInfo()
-            browser = self._browser
+                _state._browser = BrowserInfo()
+            browser = self._browser  # type: ignore
         else:
-            browser = self._browsers.get(self.curdoc) if self.curdoc else None
+            browser = self._browsers.get(self.curdoc) if self.curdoc else None  # type: ignore
         return browser
 
     @property
@@ -1005,6 +1030,7 @@ class _state(param.Parameterized):
                 return doc
         except Exception:
             return None
+        return None
 
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:
@@ -1050,7 +1076,9 @@ class _state(param.Parameterized):
 
     @rel_path.setter
     def rel_path(self, value: str | None):
-        if self.curdoc:
+        if value is None:
+            return
+        elif self.curdoc:
             self._rel_paths[self.curdoc] = value
         else:
             self._rel_path = value
@@ -1119,7 +1147,7 @@ class _state(param.Parameterized):
             return self._oauth_user_overrides[self.user]['refresh_token']
         refresh_token = self._decode_cookie('refresh_token')
         if not refresh_token:
-            return
+            return None
         try:
             decoded_token = decode_token(refresh_token)
         except ValueError:
@@ -1149,7 +1177,7 @@ class _state(param.Parameterized):
     @property
     def template(self) -> BaseTemplate | None:
         from ..config import config
-        if self.curdoc in self._templates:
+        if self.curdoc and self.curdoc in self._templates:
             return self._templates[self.curdoc]
         elif self.curdoc is None and self._template:
             return self._template
@@ -1157,7 +1185,7 @@ class _state(param.Parameterized):
         if not config.design:
             config.design = template.design
         if self.curdoc is None:
-            self._template = template
+            _state._template = template
         else:
             self._templates[self.curdoc] = template
         return template
@@ -1177,7 +1205,8 @@ class _state(param.Parameterized):
         user = self.cookies.get('user')
         if user is None or config.cookie_secret is None:
             return None
-        return decode_signed_value(config.cookie_secret, 'user', user).decode('utf-8')
+        decoded = decode_signed_value(config.cookie_secret, 'user', user)
+        return None if decoded is None else decoded.decode('utf-8')
 
     @property
     def user_info(self) -> dict[str, Any] | None:

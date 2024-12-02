@@ -3,6 +3,8 @@ The config module supplies the global config object and the extension
 which provides convenient support for  loading and configuring panel
 components.
 """
+from __future__ import annotations
+
 import ast
 import copy
 import importlib
@@ -13,6 +15,7 @@ import warnings
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, ClassVar
 from weakref import WeakKeyDictionary
 
 import param
@@ -24,6 +27,9 @@ from pyviz_comms import (
 from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
 
 _LOCAL_DEV_VERSION = (
     any(v in __version__ for v in ('post', 'dirty'))
@@ -313,7 +319,7 @@ class _config(_base_config):
         The theme to apply to components.""")
 
     # Global parameters that are shared across all sessions
-    _globals = {
+    _globals: ClassVar[set[str]] = {
         'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
@@ -324,7 +330,7 @@ class _config(_base_config):
 
     _truthy = ['True', 'true', '1', True, 1]
 
-    _session_config = WeakKeyDictionary()
+    _session_config: ClassVar[WeakKeyDictionary[Document, dict[str, Any]]] = WeakKeyDictionary()
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -653,9 +659,9 @@ class panel_extension(_pyviz_extension):
     will be using the `FastListTemplate`.
     """
 
-    _loaded = False
+    _loaded: bool = False
 
-    _imports = {
+    _imports: ClassVar[dict[str, str]] = {
         'ace': 'panel.models.ace',
         'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
@@ -678,7 +684,7 @@ class panel_extension(_pyviz_extension):
     # Check whether these are loaded before rendering (if any item
     # in the list is available the extension will be confidered as
     # loaded)
-    _globals = {
+    _globals: ClassVar[dict[str, list[str]]] = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
         'filedropper': ['FilePond'],
@@ -695,9 +701,9 @@ class panel_extension(_pyviz_extension):
         'vtk': ['vtk']
     }
 
-    _loaded_extensions = []
+    _loaded_extensions: list[str] = []
 
-    _comms_detected_before = False
+    _comms_detected_before: bool = False
 
     def __call__(self, *args, **params):
         from bokeh.core.has_props import _default_resolver
