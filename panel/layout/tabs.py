@@ -4,7 +4,8 @@ Layout component to lay out objects in a set of tabs.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 

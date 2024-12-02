@@ -12,6 +12,7 @@ import uuid
 
 from base64 import urlsafe_b64encode
 from functools import partial
+from typing import ClassVar
 
 import tornado
 
@@ -101,13 +102,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         'grant_type':    'authorization_code'
     }
 
-    _access_token_header = None
+    _access_token_header: ClassVar[str | None] = None
 
-    _state_cookie = None
+    _state_cookie: ClassVar[str | None] = None
 
     _error_template = ERROR_TEMPLATE
 
-    _login_endpoint = '/login'
+    _login_endpoint: ClassVar[str] = '/login'
 
     @property
     def _SCOPE(self):

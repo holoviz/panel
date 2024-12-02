@@ -20,7 +20,8 @@ case is up to you to evaluate.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 

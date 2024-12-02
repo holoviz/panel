@@ -5,10 +5,10 @@ in flexible ways to build complex dashboards.
 from __future__ import annotations
 
 from collections import defaultdict, namedtuple
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Generator, Iterable, Iterator, Mapping,
-    Optional,
+from collections.abc import (
+    Generator, Iterable, Iterator, Mapping,
 )
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -19,7 +19,7 @@ from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
 from ..models import Column as PnColumn
 from ..reactive import Reactive
-from ..util import param_name, param_reprs, param_watchers
+from ..util import param_name, param_reprs
 from ..viewable import Children
 
 if TYPE_CHECKING:
@@ -89,7 +89,7 @@ class Panel(Reactive):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         msg = dict(msg)
         inverse = {v: k for k, v in self._property_mapping.items() if v is not None}
@@ -140,7 +140,7 @@ class Panel(Reactive):
 
     def _get_objects(
         self, model: Model, old_objects: list[Viewable], doc: Document,
-        root: Model, comm: Optional[Comm] = None
+        root: Model, comm: Comm | None = None
     ):
         """
         Returns new child models for the layout while reusing unchanged
@@ -171,8 +171,8 @@ class Panel(Reactive):
         return new_models, old_models
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if self._bokeh_model is None:
             raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
@@ -310,7 +310,7 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         root = super().get_root(doc, comm, preprocess)
@@ -370,18 +370,18 @@ class ListLike(param.Parameterized):
     def __iter__(self) -> Iterator[Viewable]:
         yield from self.objects
 
-    def __iadd__(self, other: Iterable[Any]) -> 'ListLike':
+    def __iadd__(self, other: Iterable[Any]) -> ListLike:
         self.extend(other)
         return self
 
-    def __add__(self, other: Iterable[Any]) -> 'ListLike':
+    def __add__(self, other: Iterable[Any]) -> ListLike:
         if isinstance(other, ListLike):
             other = other.objects
         else:
             other = list(other)
         return self.clone(*(self.objects+other))
 
-    def __radd__(self, other: Iterable[Any]) -> 'ListLike':
+    def __radd__(self, other: Iterable[Any]) -> ListLike:
         if isinstance(other, ListLike):
             other = other.objects
         else:
@@ -426,7 +426,7 @@ class ListLike(param.Parameterized):
 
         self.objects = new_objects
 
-    def clone(self, *objects: Any, **params: Any) -> 'ListLike':
+    def clone(self, *objects: Any, **params: Any) -> ListLike:
         """
         Makes a copy of the layout sharing the same parameters.
 
@@ -566,11 +566,11 @@ class NamedListLike(param.Parameterized):
         params['objects'], names = self._to_objects_and_names(items)
         super().__init__(**params)
         self._names = names
-        self._panels = defaultdict(dict)
+        self._panels: defaultdict[str, dict[int, Viewable]] = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
-        param_watchers(self)['objects']['value'].reverse()
+        self.param.watchers['objects']['value'].reverse()
 
     def _to_object_and_name(self, item):
         from ..pane import panel
@@ -619,11 +619,11 @@ class NamedListLike(param.Parameterized):
     def __iter__(self) -> Iterator[Viewable]:
         yield from self.objects
 
-    def __iadd__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __iadd__(self, other: Iterable[Any]) -> NamedListLike:
         self.extend(other)
         return self
 
-    def __add__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __add__(self, other: Iterable[Any]) -> NamedListLike:
         if isinstance(other, NamedListLike):
             added = list(zip(other._names, other.objects))
         elif isinstance(other, ListLike):
@@ -633,7 +633,7 @@ class NamedListLike(param.Parameterized):
         objects = list(zip(self._names, self.objects))
         return self.clone(*(objects+added))
 
-    def __radd__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __radd__(self, other: Iterable[Any]) -> NamedListLike:
         if isinstance(other, NamedListLike):
             added = list(zip(other._names, other.objects))
         elif isinstance(other, ListLike):
@@ -678,7 +678,7 @@ class NamedListLike(param.Parameterized):
             new_objects[i], self._names[i] = self._to_object_and_name(pane)
         self.objects = new_objects
 
-    def clone(self, *objects: Any, **params: Any) -> 'NamedListLike':
+    def clone(self, *objects: Any, **params: Any) -> NamedListLike:
         """
         Makes a copy of the Tabs sharing the same parameters.
 
@@ -819,7 +819,7 @@ class ListPanel(ListLike, Panel):
     __abstract = True
 
     @property
-    def _linked_properties(self):
+    def _linked_properties(self) -> tuple[str, ...]:
         return tuple(
             self._property_mapping.get(p, p) for p in self.param
             if p not in ListPanel.param and self._property_mapping.get(p, p) is not None

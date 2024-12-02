@@ -6,9 +6,8 @@ from __future__ import annotations
 import json
 import urllib.parse as urlparse
 
-from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
-)
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -125,9 +124,9 @@ class Location(Syncable):
         self.param.watch(self._update_synced, ['search'])
 
     def _get_model(
-        self, doc: 'Document', root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
-    ) -> 'Model':
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         model = _BkLocation(**self._process_param_change(self._init_params()))
         root = root or model
         self._models[root.ref['id']] = (model, parent)
@@ -135,9 +134,9 @@ class Location(Syncable):
         return model
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
-    ) -> 'Model':
+    ) -> Model:
         doc = create_doc_if_none_exists(doc)
         root = self._get_model(doc, comm=comm)
         ref = root.ref['id']
@@ -193,7 +192,7 @@ class Location(Syncable):
                     on_error(mapped)
 
     def _update_query(
-        self, *events: param.parameterized.Event, query: Optional[dict[str, Any]] = None
+        self, *events: param.parameterized.Event, query: dict[str, Any] | None = None
     ) -> None:
         if self._syncing:
             return
@@ -226,8 +225,8 @@ class Location(Syncable):
         self.search = '?' + urlparse.urlencode(query)
 
     def sync(
-        self, parameterized: param.Parameterized, parameters: Optional[list[str] | dict[str, str]] = None,
-        on_error: Optional[Callable[[dict[str, Any]], None]] = None
+        self, parameterized: param.Parameterized, parameters: list[str] | dict[str, str] | None = None,
+        on_error: Callable[[dict[str, Any]], None] | None = None
     ) -> None:
         """
         Syncs the parameters of a Parameterized object with the query
@@ -268,7 +267,7 @@ class Location(Syncable):
             query[name] = v
         self._update_query(query=query)
 
-    def unsync(self, parameterized: param.Parameterized, parameters: Optional[list[str]] = None) -> None:
+    def unsync(self, parameterized: param.Parameterized, parameters: list[str] | None = None) -> None:
         """
         Unsyncs the parameters of the Parameterized with the query
         params in the URL. If no parameters are supplied all

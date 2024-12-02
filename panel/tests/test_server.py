@@ -831,7 +831,7 @@ def test_server_async_onload(threads):
 
 class CustomBootstrapTemplate(BootstrapTemplate):
 
-    _css = './assets/custom.css'
+    _css = ['./assets/custom.css']
 
 
 def test_server_template_custom_resources(port):

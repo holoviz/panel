@@ -199,7 +199,7 @@ def test_module_hash():
 # Test caching #
 ################
 
-OFFSET = {}
+OFFSET: dict[tuple, int] = {}
 
 def function_with_args(a, b):
     global OFFSET

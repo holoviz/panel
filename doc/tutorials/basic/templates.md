@@ -91,9 +91,9 @@ ACCENT = "teal"
 image = pn.pane.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
 
 if pn.config.theme=="dark":
-    alt.themes.enable("dark")
+    alt.theme.enable("dark")
 else:
-    alt.themes.enable("default")
+    alt.theme.enable("default")
 
 @pn.cache # Add caching to only download data once
 def get_data():
@@ -153,7 +153,7 @@ Upon toggling, the app should switch to dark mode:
 In the code:
 
 - `pn.config.theme` determines the selected theme ("default" or "dark").
-- `alt.themes.enable("dark")` applies the "dark" theme to the plot. Panel doesn't do this automatically.
+- `alt.theme.enable("dark")` applies the "dark" theme to the plot. Panel doesn't do this automatically.
 - `accent` sets the primary or accent color for the template, allowing quick branding of the app.
 - `main_layout` specifies a layout to wrap each object in the main list. Choose from `"card"` (default) or `None`.
 

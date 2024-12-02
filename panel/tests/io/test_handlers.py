@@ -7,7 +7,7 @@ from panel.io.handlers import capture_code_cell, extract_code, parse_notebook
 try:
     import nbformat
 except Exception:
-    nbformat = None
+    nbformat = None  # type: ignore
 nbformat_available = pytest.mark.skipif(nbformat is None, reason="requires nbformat")
 
 
