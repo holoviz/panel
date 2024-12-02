@@ -698,3 +698,6 @@ class ChatMessage(Pane):
             prefix_with_viewable_label=prefix_with_viewable_label,
             prefix_with_container_label=prefix_with_container_label,
         )
+
+    def __repr__(self, depth: int = 0) -> str:
+        return f"ChatMessage(object={self.object!r}, user={self.user!r}, reactions={self.reactions!r})"
