@@ -44,19 +44,14 @@ class Modal(ListPanel):
         return super()._get_model(doc, root, parent, comm)
 
     def show(self):
-        self._send_event(ModalDialogEvent, open=True)
+        self.open = True
 
     def hide(self):
-        self._send_event(ModalDialogEvent, open=False)
+        self.open = False
 
     def toggle(self):
-        self._send_event(ModalDialogEvent, open=not self.open)
+        self.open = not self.open
 
     @param.depends("open", watch=True)
     def _open(self):
         self._send_event(ModalDialogEvent, open=self.open)
-
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        msg.pop("open", None)
-        return msg

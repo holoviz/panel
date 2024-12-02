@@ -124,6 +124,8 @@ export class ModalView extends BkColumnView {
       this.model.open = false
       dialog.style.display = "none"
     })
+
+    if (this.model.open) { this.modal.show() }
   }
 
   update_close_button(): void {
