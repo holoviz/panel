@@ -39,7 +39,6 @@ export class ModalView extends BkColumnView {
 
   modal: A11yDialogView
   close_button: HTMLButtonElement
-  modal_children: HTMLElement
 
   override connect_signals(): void {
     super.connect_signals()
@@ -92,13 +91,11 @@ export class ModalView extends BkColumnView {
       ariaLabel: "Close this dialog window",
     } as any)
     this.close_button.innerHTML = "&#x2715"
-    this.modal_children = div({id: "pnx_modal_object"})
 
     container.append(dialog)
     dialog.append(dialog_overlay)
     dialog.append(content)
     content.append(this.close_button)
-    content.append(this.modal_children)
     this.shadow_el.append(container)
     let first_open = false
 
