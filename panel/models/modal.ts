@@ -4,6 +4,7 @@ import {div, button} from "@bokehjs/core/dom"
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import type {Attrs} from "@bokehjs/core/types"
 import {UIElementView} from "@bokehjs/models/ui/ui_element"
+import {isNumber} from "@bokehjs/core/util/types"
 import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 
 type A11yDialogView = {
@@ -73,11 +74,21 @@ export class ModalView extends BkColumnView {
       dialog_overlay.setAttribute("data-a11y-dialog-hide", "")
     }
 
-    // TODO: Add width and height here
+    const {height, width, min_height, min_width, max_height, max_width} = this.model
+    const convert_fn = (size: any) => { return isNumber(size) ? `${size}px` : size }
     const content = div({
       id: "pnx_dialog_content",
       class: "dialog-content",
       role: "document",
+      style: {
+        height: convert_fn(height),
+        width: convert_fn(width),
+        min_height: convert_fn(min_height),
+        min_width: convert_fn(min_width),
+        max_height: convert_fn(max_height),
+        max_width: convert_fn(max_width),
+        overflow: "auto",
+      },
     } as any)
     for (const child_view of this.child_views) {
       const target = child_view.rendering_target() ?? content
