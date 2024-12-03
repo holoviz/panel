@@ -38,7 +38,7 @@ class Modal(ListPanel):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
+        Modal._bokeh_model = lazy_load(
             'panel.models.modal', 'Modal', isinstance(comm, JupyterComm), root
         )
         return super()._get_model(doc, root, parent, comm)

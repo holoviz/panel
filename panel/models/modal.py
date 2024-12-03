@@ -2,6 +2,7 @@ from typing import Any
 
 from bokeh.core.properties import Bool
 from bokeh.events import ModelEvent
+from bokeh.model import Model
 
 from ..io.resources import bundled_files
 from ..util import classproperty
@@ -44,7 +45,7 @@ class Modal(Column):
 class ModalDialogEvent(ModelEvent):
     event_name = 'modal-dialog-event'
 
-    def __init__(self, model: ModelEvent, open: bool):
+    def __init__(self, model: Model | None, open: bool):
         self.open = open
         super().__init__(model=model)
 
