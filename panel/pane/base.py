@@ -4,9 +4,10 @@ object transforming it into a Bokeh model that can be rendered.
 """
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, TypeVar,
+    TYPE_CHECKING, Any, ClassVar, TypeVar,
 )
 
 import numpy as np
@@ -40,7 +41,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-def panel(obj: Any, **kwargs) -> Viewable:
+def panel(obj: Any, **kwargs) -> Viewable | ServableMixin:
     """
     Creates a displayable Panel object given any valid Python object.
 
@@ -142,7 +143,7 @@ class PaneBase(Layoutable):
     # Whether applies requires full set of keywords
     _applies_kw: ClassVar[bool] = False
 
-    _skip_layoutable = ('css_classes', 'margin', 'name')
+    _skip_layoutable: tuple[str, ...] = ('css_classes', 'margin', 'name')
 
     # Whether the Pane layout can be safely unpacked
     _unpack: ClassVar[bool] = True
@@ -231,7 +232,7 @@ class PaneBase(Layoutable):
         return None
 
     @classmethod
-    def get_pane_type(cls, obj: Any, **kwargs) -> type['PaneBase']:
+    def get_pane_type(cls, obj: Any, **kwargs) -> type[PaneBase]:
         """
         Returns the applicable Pane type given an object by resolving
         the precedence of all types whose applies method declares that
@@ -317,7 +318,7 @@ class Pane(PaneBase, Reactive):
     #----------------------------------------------------------------
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return tuple(
             self._property_mapping.get(p, p) for p in self.param
             if p not in PaneBase.param and self._property_mapping.get(p, p) is not None
@@ -340,7 +341,7 @@ class Pane(PaneBase, Reactive):
         super()._param_change(*events)
 
     def _update_object(
-        self, ref: str, doc: 'Document', root: Model, parent: Model, comm: Comm | None
+        self, ref: str, doc: Document, root: Model, parent: Model, comm: Comm | None
     ) -> None:
         old_model = self._models[ref][0]
         if self._updates:
@@ -366,14 +367,14 @@ class Pane(PaneBase, Reactive):
 
         try:
             if isinstance(parent, _BkGridBox):
-                indexes = [
-                    i for i, child in enumerate(parent.children)
-                    if child[0] is old_model
-                ]
+                indexes: list[int] = []
+                for i, child in enumerate(parent.children):  # type: ignore
+                    if child[0] is old_model:
+                        indexes.append(i)
                 if indexes:
                     index = indexes[0]
-                    new_model = (new_model,) + parent.children[index][1:]
-                    parent.children[index] = new_model
+                    new_model = (new_model,) + parent.children[index][1:]  # type: ignore
+                    parent.children[index] = new_model  # type: ignore
                 else:
                     raise ValueError
             elif isinstance(parent, _BkReactiveHTML):
@@ -382,13 +383,13 @@ class Pane(PaneBase, Reactive):
                         index = children.index(old_model)
                         new_models = list(children)
                         new_models[index] = new_model
-                        parent.children[node] = new_models
+                        parent.children[node] = new_models  # type: ignore
                         break
             elif isinstance(parent, _BkTabs):
                 index = [tab.child for tab in parent.tabs].index(old_model)
-                old_tab = parent.tabs[index]
+                old_tab = parent.tabs[index]  # type: ignore
                 props = dict(old_tab.properties_with_values(), child=new_model)
-                parent.tabs[index] = _BkTabPanel(**props)
+                parent.tabs[index] = _BkTabPanel(**props)  # type: ignore
             else:
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
@@ -414,7 +415,7 @@ class Pane(PaneBase, Reactive):
             ))
 
         # If there is a fake root we run pre-processors on it
-        if fake_view is not None and view in fake_view:
+        if fake_view is not None and view in fake_view and fake_root:
             fake_view._preprocess(fake_root, self)
         else:
             view._preprocess(root, self)
@@ -445,7 +446,7 @@ class Pane(PaneBase, Reactive):
         raise NotImplementedError
 
     def _get_root_model(
-        self, doc: Optional[Document] = None, comm: Comm | None = None,
+        self, doc: Document, comm: Comm | None = None,
         preprocess: bool = True
     ) -> tuple[Viewable, Model]:
         if self._updates:
@@ -462,7 +463,7 @@ class Pane(PaneBase, Reactive):
     # Public API
     #----------------------------------------------------------------
 
-    def clone(self: T, object: Optional[Any] = None, **params) -> T:
+    def clone(self: T, object: Any | None = None, **params) -> T:
         """
         Makes a copy of the Pane sharing the same parameters.
 
@@ -483,7 +484,7 @@ class Pane(PaneBase, Reactive):
         return type(self)(object, **params)
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Comm | None = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         """
@@ -529,7 +530,7 @@ class ModelPane(Pane):
     `bokeh.model.Model` can consume.
     """
 
-    _bokeh_model: ClassVar[Model]
+    _bokeh_model: ClassVar[type[Model] | None] = None
 
     __abstract = True
 
@@ -537,6 +538,10 @@ class ModelPane(Pane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
+        if self._bokeh_model is None:
+            raise NotImplementedError(
+                f'Pane {type(self).__name__} did not define a _bokeh_model'
+            )
         model = self._bokeh_model(**self._get_properties(doc))
         if root is None:
             root = model
@@ -591,11 +596,11 @@ class ReplacementPane(Pane):
 
     _ignored_refs: ClassVar[tuple[str,...]] = ('object',)
 
-    _linked_properties: ClassVar[tuple[str,...]] = ()
+    _linked_properties: tuple[str,...] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None, 'inplace': None}
 
-    _updates: bool = True
+    _updates: ClassVar[bool] = True
 
     __abstract = True
 
@@ -651,7 +656,7 @@ class ReplacementPane(Pane):
           The new Reactive component that the old one is being updated
           or replaced with.
         """
-        ignored = ('name',)
+        ignored: tuple[str, ...] = ('name',)
         if isinstance(new, ListPanel):
             if len(old) == len(new):
                 for i, (sub_old, sub_new) in enumerate(zip(old, new)):

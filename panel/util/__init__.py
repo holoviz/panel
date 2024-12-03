@@ -258,7 +258,7 @@ def decode_token(token: str, signed: bool = True) -> dict[str, Any]:
         signing_input, _ = token.encode('utf-8').rsplit(b".", 1)
         _, payload_segment = signing_input.split(b".", 1)
     else:
-        payload_segment = token
+        payload_segment = token.encode('ascii')
     return json.loads(base64url_decode(payload_segment).decode('utf-8'))
 
 
@@ -377,7 +377,7 @@ def parse_timedelta(time_str: str) -> dt.timedelta | None:
     return dt.timedelta(**time_params)
 
 
-def fullpath(path: AnyStr | os.PathLike) -> AnyStr | os.PathLike:
+def fullpath(path: AnyStr | os.PathLike) -> AnyStr:
     """Expanduser and then abspath for a given path
     """
     return os.path.abspath(os.path.expanduser(path))

@@ -25,7 +25,7 @@ class GoldenTemplate(BasicTemplate):
     sidebar_width = param.Integer(default=20, constant=True, doc="""
         The width of the sidebar in percent.""")
 
-    _css = pathlib.Path(__file__).parent / 'golden.css'
+    _css = [pathlib.Path(__file__).parent / 'golden.css']
 
     _template = pathlib.Path(__file__).parent / 'golden.html'
 

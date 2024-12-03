@@ -14,10 +14,11 @@ import signal
 import sys
 import uuid
 
+from collections.abc import Callable, Mapping
 from functools import partial, wraps
 from html import escape
 from typing import (
-    TYPE_CHECKING, Any, Callable, Mapping, Optional,
+    TYPE_CHECKING, Any, Literal, TypedDict,
 )
 from urllib.parse import urlparse
 
@@ -76,15 +77,20 @@ from .threads import StoppableThread
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from bokeh.application.application import SessionContext
     from bokeh.bundle import Bundle
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson
-    from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.session import ServerSession
     from jinja2 import Template
 
     from .application import TViewableFuncOrPath
     from .location import Location
+
+    class TokenPayload(TypedDict):
+        headers: dict[str, Any]
+        cookies: dict[str, Any]
+        arguments: dict[str, Any]
 
 
 #---------------------------------------------------------------------
@@ -126,19 +132,19 @@ def async_execute(func: Callable[..., None]) -> None:
         unlock = not getattr(func, 'lock', False)
     curdoc = state.curdoc
     @wraps(func)
-    async def wrapper(*args, **kw):
+    async def wrapped(*args, **kw):
         with set_curdoc(curdoc):
             try:
                 return await func(*args, **kw)
             except Exception as e:
                 state._handle_exception(e)
     if unlock:
-        wrapper.nolock = True # type: ignore
-    state.curdoc.add_next_tick_callback(wrapper)
+        wrapped.nolock = True # type: ignore
+    state.curdoc.add_next_tick_callback(wrapped)
 
 param.parameterized.async_executor = async_execute
 
-def _initialize_session_info(session_context: 'BokehSessionContext'):
+def _initialize_session_info(session_context: SessionContext):
     from ..config import config
     session_id = session_context.id
     sessions = state.session_info['sessions']
@@ -151,12 +157,14 @@ def _initialize_session_info(session_context: 'BokehSessionContext'):
         old_history = list(sessions.items())
         sessions = dict(old_history[-(history-1):])
         state.session_info['sessions'] = sessions
+    request = session_context.request
+    user_agent = request.headers.get('User-Agent') if request else None
     sessions[session_id] = {
         'launched': dt.datetime.now().timestamp(),
         'started': None,
         'rendered': None,
         'ended': None,
-        'user_agent': session_context.request.headers.get('User-Agent')
+        'user_agent': user_agent
     }
     state.param.trigger('session_info')
 
@@ -221,20 +229,22 @@ def html_page_for_render_items(
         context["roots"] = context["doc"].roots
 
     if template is None:
-        template = BASE_TEMPLATE
+        tmpl = BASE_TEMPLATE
     elif isinstance(template, str):
-        template = _env.from_string("{% extends base %}\n" + template)
+        tmpl = _env.from_string("{% extends base %}\n" + template)
+    else:
+        tmpl = template
 
-    html = template.render(context)
+    html = tmpl.render(context)
     return html
 
 def server_html_page_for_session(
-    session: 'ServerSession',
-    resources: 'Resources',
+    session: ServerSession,
+    resources: Resources,
     title: str,
     token: str | None = None,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: Optional[dict[str, Any]] = None,
+    template_variables: dict[str, Any] | None = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
@@ -322,7 +332,7 @@ class Server(BokehServer):
         if state._admin_context:
             state._admin_context.run_unload_hook()
 
-bokeh.server.server.Server = Server
+bokeh.server.server.Server = Server  # type: ignore
 
 class LoginUrlMixin:
     """
@@ -344,8 +354,8 @@ class LoginUrlMixin:
 
 class DocHandler(LoginUrlMixin, BkDocHandler):
 
-    @authenticated
-    async def get_session(self):
+    @authenticated  # type: ignore
+    async def get_session(self) -> ServerSession:
         from ..config import config
         path = self.request.path
         session = None
@@ -353,7 +363,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             key = state._session_key_funcs[path](self.request)
             session = state._sessions.get(key)
         if session is None:
-            session = await super().get_session()
+            session = await super().get_session()  # type: ignore
             with set_curdoc(session.document):
                 if config.reuse_sessions:
                     key_func = config.session_key_func or (lambda r: (r.path, r.arguments.get('theme', [b'default'])[0].decode('utf-8')))
@@ -363,7 +373,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
                     session.block_expiration()
         return session
 
-    def _generate_token_payload(self):
+    def _generate_token_payload(self) -> TokenPayload:
         app = self.application
         if app.include_headers is None:
             excluded_headers = (app.exclude_headers or [])
@@ -388,12 +398,13 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             del headers['Cookie']
 
         arguments = {} if self.request.arguments is None else self.request.arguments
-        payload = {'headers': headers, 'cookies': cookies, 'arguments': arguments}
-        payload.update(self.application_context.application.process_request(self.request))
+        payload: TokenPayload = {'headers': headers, 'cookies': cookies, 'arguments': arguments}
+        payload.update(self.application_context.application.process_request(self.request))  # type: ignore
         return payload
 
-    def _authorize(self, session=False):
+    def _authorize(self, session: bool = False) -> tuple[bool, str | None]:
         """
+        Determine if user is authorized to access this application.
         """
         auth_cb = config.authorize_callback
         # If inside a session ensure the authorize callback is not global
@@ -401,6 +412,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             return True, None
         authorized = False
         auth_params = inspect.signature(auth_cb).parameters
+        auth_args: tuple[dict[str, Any] | None] | tuple[dict[str, Any] | None, str]
         if len(auth_params) == 1:
             auth_args = (state.user_info,)
         elif len(auth_params) == 2:
@@ -411,7 +423,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
                 'which is the user name or 2) two arguments which includes the '
                 'user name and the url path the user is trying to access.'
             )
-        auth_error = f'{state.user} is not authorized to access this application.'
+        auth_error: str | None = f'{state.user} is not authorized to access this application.'
         try:
             authorized = auth_cb(*auth_args)
             if isinstance(authorized, str):
@@ -429,7 +441,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             logger.warning(auth_error)
         return authorized, auth_error
 
-    def _render_auth_error(self, auth_error):
+    def _render_auth_error(self, auth_error: str) -> str:
         if config.auth_template:
             with open(config.auth_template) as f:
                 template = _env.from_string(f.read())
@@ -524,7 +536,7 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
         else:
             server_url = None
 
-        session = await self.get_session()
+        session = await self.get_session()  # type: ignore
         with set_curdoc(session.document):
             resources = Resources.from_bokeh(
                 self.application.resources(server_url), absolute=True
@@ -550,7 +562,7 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
         return super().render(*args, **kwargs)
 
 toplevel_patterns[0] = (r'/?', RootHandler)
-bokeh.server.tornado.RootHandler = RootHandler
+bokeh.server.tornado.RootHandler = RootHandler  # type: ignore
 
 # Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
 def create_static_handler(prefix, key, app):
@@ -601,7 +613,7 @@ class ComponentResourceHandler(StaticFileHandler):
         '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path'
     ]
 
-    def initialize(self, path: Optional[str] = None, default_filename: Optional[str] = None):
+    def initialize(self, path: str | Literal['root'] = 'root', default_filename: str | None = None):
         self.root = path
         self.default_filename = default_filename
 
@@ -679,14 +691,14 @@ class ComponentResourceHandler(StaticFileHandler):
 
 
 def serve(
-    panels: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
+    panels: TViewableFuncOrPath | dict[str, TViewableFuncOrPath],
     port: int = 0,
-    address: Optional[str] = None,
-    websocket_origin: Optional[str | list[str]] = None,
-    loop: Optional[IOLoop] = None,
+    address: str | None = None,
+    websocket_origin: str | list[str] | None = None,
+    loop: IOLoop | None = None,
     show: bool = True,
     start: bool = True,
-    title: Optional[str] = None,
+    title: str | None = None,
     verbose: bool = True,
     location: bool = True,
     threaded: bool = False,
@@ -804,11 +816,11 @@ def get_static_routes(static_dirs):
     return patterns
 
 def get_server(
-    panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
+    panel: TViewableFuncOrPath | dict[str, TViewableFuncOrPath],
     port: int = 0,
-    address: Optional[str] = None,
-    websocket_origin: Optional[str | list[str]] = None,
-    loop: Optional[IOLoop] = None,
+    address: str | None = None,
+    websocket_origin: str | list[str] | None = None,
+    loop: IOLoop | None = None,
     show: bool = False,
     start: bool = False,
     title: str | dict[str, str] | None = None,
@@ -816,24 +828,24 @@ def get_server(
     location: bool | Location = True,
     admin: bool = False,
     static_dirs: Mapping[str, str] = {},
-    basic_auth: str = None,
-    oauth_provider: Optional[str] = None,
-    oauth_key: Optional[str] = None,
-    oauth_secret: Optional[str] = None,
-    oauth_redirect_uri: Optional[str] = None,
+    basic_auth: str | None = None,
+    oauth_provider: str | None = None,
+    oauth_key: str | None = None,
+    oauth_secret: str | None = None,
+    oauth_redirect_uri: str | None = None,
     oauth_extra_params: Mapping[str, str] = {},
-    oauth_error_template: Optional[str] = None,
-    cookie_secret: Optional[str] = None,
-    oauth_encryption_key: Optional[str] = None,
-    oauth_jwt_user: Optional[str] = None,
-    oauth_refresh_tokens: Optional[bool] = None,
-    oauth_guest_endpoints: Optional[list[str]] = None,
-    oauth_optional: Optional[bool] = None,
-    login_endpoint: Optional[str] = None,
-    logout_endpoint: Optional[str] = None,
-    login_template: Optional[str] = None,
-    logout_template: Optional[str] = None,
-    session_history: Optional[int] = None,
+    oauth_error_template: str | None = None,
+    cookie_secret: str | None = None,
+    oauth_encryption_key: str | None = None,
+    oauth_jwt_user: str | None = None,
+    oauth_refresh_tokens: str | None = None,
+    oauth_guest_endpoints: list[str] | None = None,
+    oauth_optional: bool | None = None,
+    login_endpoint: str | None = None,
+    logout_endpoint: str | None = None,
+    login_template: str | None = None,
+    logout_template: str | None = None,
+    session_history: str | None = None,
     liveness: bool | str = False,
     warm: bool = False,
     **kwargs
@@ -1016,7 +1028,7 @@ def get_server(
             server_config['basic_auth'] = basic_auth
             provider = BasicAuthProvider
         else:
-            config.oauth_provider = oauth_provider
+            config.oauth_provider = oauth_provider  # type: ignore
             provider = OAuthProvider
         opts['auth_provider'] = provider(
             login_endpoint=login_endpoint,
@@ -1037,13 +1049,13 @@ def get_server(
     if oauth_redirect_uri:
         config.oauth_redirect_uri = oauth_redirect_uri # type: ignore
     if oauth_refresh_tokens is not None:
-        config.oauth_refresh_tokens = oauth_refresh_tokens
+        config.oauth_refresh_tokens = oauth_refresh_tokens  # type: ignore
     if oauth_optional is not None:
-        config.oauth_optional = oauth_optional
+        config.oauth_optional = oauth_optional  # type: ignore
     if oauth_guest_endpoints is not None:
-        config.oauth_guest_endpoints = oauth_guest_endpoints
+        config.oauth_guest_endpoints = oauth_guest_endpoints  # type: ignore
     if oauth_jwt_user is not None:
-        config.oauth_jwt_user = oauth_jwt_user
+        config.oauth_jwt_user = oauth_jwt_user  # type: ignore
     opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)

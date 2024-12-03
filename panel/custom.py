@@ -10,9 +10,10 @@ import sys
 import textwrap
 
 from collections import defaultdict
+from collections.abc import Callable, Mapping
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Literal,
 )
 
 import param
@@ -43,7 +44,7 @@ from .widgets.base import WidgetBase  # noqa
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.events import Event
-    from bokeh.model import Model
+    from bokeh.model import Model, UIElement
     from pyviz_comms import Comm
 
     ExportSpec = dict[str, list[str | tuple[str, ...]]]
@@ -127,7 +128,6 @@ class PyComponent(Viewable, Layoutable):
             view = ParamMethod(self.__panel__, lazy=True)
         else:
             view = panel(self.__panel__())
-        self._view__ = view
         params = view.param.values()
         overrides, sync = {}, {}
         for p in Layoutable.param:
@@ -139,20 +139,21 @@ class PyComponent(Viewable, Layoutable):
         self.param.update(overrides)
         with param.parameterized._syncing(view, list(sync)):
             view.param.update(sync)
+        return view
 
     def _get_model(
-        self, doc: Document, root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional[Comm] = None
-    ) -> 'Model':
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         if self._view__ is None:
-            self._create__view()
+            self._view__ = self._create__view()
         model = self._view__._get_model(doc, root, parent, comm)
         root = model if root is None else root
         self._models[root.ref['id']] = (model, parent)
         return model
 
     def select(
-        self, selector: Optional[type | Callable[Viewable, bool]] = None
+        self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
         return super().select(selector) + self._view__.select(selector)
 
@@ -250,19 +251,19 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     @classproperty
     def _bundle_path(cls) -> os.PathLike | None:
         if config.autoreload and cls._esm:
-            return
+            return None
         mod_path = cls._module_path
         if mod_path is None:
-            return
+            return None
         if cls._bundle:
             for scls in cls.__mro__:
                 if issubclass(scls, ReactiveESM) and cls._bundle == scls._bundle:
                     cls = scls
             mod_path = cls._module_path
             bundle = cls._bundle
-            if isinstance(bundle, pathlib.PurePath):
+            if isinstance(bundle, os.PathLike):
                 return bundle
-            elif bundle.endswith('.js'):
+            elif bundle and bundle.endswith('.js'):
                 bundle_path = mod_path / bundle
                 if bundle_path.is_file():
                     return bundle_path
@@ -286,16 +287,18 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 mod = importlib.import_module(submodule)
             except (ModuleNotFoundError, ImportError):
                 continue
-            if not hasattr(mod, '__file__'):
+            mod_file = getattr(mod, '__file__', None)
+            if not mod_file:
                 continue
-            submodule_path = pathlib.Path(mod.__file__).parent
+            submodule_path = pathlib.Path(mod_file).parent
             path = submodule_path / f'{submodule}.bundle.js'
             if path.is_file():
                 return path
 
         if module in sys.modules:
-            module = os.path.basename(sys.modules[module].__file__).replace('.py', '')
-            path = mod_path / f'{module}.bundle.js'
+            # Get module name from the module
+            module_obj = sys.modules[module]
+            path = mod_path / f'{module_obj.__name__}.bundle.js'
             return path if path.is_file() else None
         return None
 
@@ -306,10 +309,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             if bundle_path:
                 return bundle_path
         esm = cls._esm
-        if isinstance(esm, pathlib.PurePath):
+        if isinstance(esm, os.PathLike):
             return esm
-        elif not esm.endswith(('.js', '.jsx', '.ts', '.tsx')):
-            return
+        elif not esm or not esm.endswith(('.js', '.jsx', '.ts', '.tsx')):
+            return None
         try:
             if hasattr(cls, '__path__'):
                 mod_path = cls.__path__
@@ -320,7 +323,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 return esm_path
         except (OSError, TypeError, ValueError):
             pass
-        return
+        return None
 
     @classmethod
     def _render_esm(cls, compiled: bool | Literal['compiling'] = True, server: bool = False):
@@ -344,7 +347,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         esm = textwrap.dedent(esm)
         return esm
 
-    def _cleanup(self, root: Model | None) -> None:
+    def _cleanup(self, root: Model | None = None) -> None:
         if root:
             ref = root.ref['id']
             if ref in self._models:
@@ -382,10 +385,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             self._apply_update({}, {'esm': esm}, model, ref)
 
     @property
-    def _linked_properties(self) -> list[str]:
-        return [p for p in self._data_model.properties() if p not in ('js_property_callbacks',)]
+    def _linked_properties(self) -> tuple[str, ...]:
+        return tuple(p for p in self._data_model.properties() if p != 'js_property_callbacks')
 
-    def _get_properties(self, doc: Document) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
         props = super()._get_properties(doc)
         cls = type(self)
         data_params = {}
@@ -411,7 +414,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         importmap = self._process_importmap()
         is_session = False
         if bundle_path:
-            is_session = (doc.session_context and doc.session_context.server_context)
+            is_session = bool(doc and doc.session_context and doc.session_context.server_context)
             if bundle_path == self._esm_path(not config.autoreload) and cls.__module__ in sys.modules and is_session:
                 bundle_hash = 'url'
             else:
@@ -435,7 +438,9 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     def _process_importmap(cls):
         return cls._importmap
 
-    def _get_child_model(self, child, doc, root, parent, comm):
+    def _get_child_model(
+        self, child: Viewable, doc: Document, root: Model, parent: Model, comm: Comm | None
+    ) -> list[UIElement] | UIElement | None:
         if child is None:
             return None
         ref = root.ref['id']
@@ -448,7 +453,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             return child._models[ref][0]
         return child._get_model(doc, root, parent, comm)
 
-    def _get_children(self, data_model, doc, root, parent, comm):
+    def _get_children(self, data_model, doc, root, parent, comm) -> dict[str, list[UIElement] | UIElement | None]:
         children = {}
         for k, v in self.param.values().items():
             p = self.param[k]
@@ -468,21 +473,22 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             state.execute(self._watch_esm)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        model = self._bokeh_model(**self._get_properties(doc))
+        props = self._get_properties(doc)
+        model = self._bokeh_model(**props)
         root = root or model
         children = self._get_children(model.data, doc, root, model, comm)
         model.data.update(**children)
-        model.children = list(children)
+        model.children = list(children)  # type: ignore
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model.data, self._linked_properties, doc, root, comm)
+        self._link_props(props['data'], self._linked_properties, doc, root, comm)
         self._register_events('dom_event', 'data_event', model=model, doc=doc, comm=comm)
         self._setup_autoreload()
         return model
 
-    def _process_event(self, event: 'Event') -> None:
+    def _process_event(self, event: Event) -> None:
         if isinstance(event, DataEvent):
             for cb in self._msg__callbacks:
                 state.execute(partial(cb, event), schedule=False)
@@ -497,7 +503,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         model_msg, data_msg  = {}, {}
         for prop, v in list(msg.items()):
@@ -523,7 +529,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)
 
-    def _handle_msg(self, data: any) -> None:
+    def _handle_msg(self, data: Any) -> None:
         """
         Message handler for messages sent from the frontend using the
         `model.send_msg` API.
@@ -534,7 +540,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             Data received from the frontend.
         """
 
-    def _send_msg(self, data: any) -> None:
+    def _send_msg(self, data: Any) -> None:
         """
         Sends data to the frontend which can be observed on the frontend
         with the `model.on_msg("msg:custom", callback)` API.
@@ -662,10 +668,10 @@ class ReactComponent(ReactiveESM):
 
     _react_version = '18.3.1'
 
-    @classproperty
+    @classproperty  # type: ignore
     def _exports__(cls) -> ExportSpec:
         imports = cls._importmap.get('imports', {})
-        exports = {
+        exports: dict[str, list[str | tuple[str, ...]]] = {
             "react": ["*React"],
             "react-dom/client": [("createRoot",)]
         }

@@ -23,7 +23,7 @@ import traceback
 from contextlib import redirect_stderr, redirect_stdout
 from html import escape
 from textwrap import dedent
-from typing import Any
+from typing import IO, Any
 
 #---------------------------------------------------------------------
 # Import API
@@ -122,9 +122,9 @@ def _display(*objs, **kwargs):
 
 def exec_with_return(
     code: str,
-    global_context: dict[str, Any] = None,
-    stdout: Any = None,
-    stderr: Any = None
+    global_context: dict[str, Any] | None = None,
+    stdout: IO | None = None,
+    stderr: IO | None = None
 ) -> Any:
     """
     Executes a code snippet and returns the resulting output of the

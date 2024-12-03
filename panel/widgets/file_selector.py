@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 
 from fnmatch import fnmatch
-from typing import AnyStr, ClassVar, Optional
+from typing import AnyStr, ClassVar
 
 import param
 
@@ -137,8 +137,8 @@ class FileSelector(CompositeWidget):
         self.link(self._selector, size='size')
 
         # Set up state
-        self._stack = []
-        self._cwd = None
+        self._stack: list[str] = []
+        self._cwd: str = str(self.directory)
         self._position = -1
         self._update_files(True)
 
@@ -200,10 +200,10 @@ class FileSelector(CompositeWidget):
         self._update_files(refresh=True)
 
     def _update_files(
-        self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
+        self, event: param.parameterized.Event | None = None, refresh: bool = False
     ):
         path = fullpath(self._directory.value)
-        refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
+        refresh = bool(refresh or (event and getattr(event, 'obj', None) is self._reload))
         if refresh:
             path = self._cwd
         elif not os.path.isdir(path):
@@ -263,10 +263,10 @@ class FileSelector(CompositeWidget):
         self._selector.options.update(prefix+[
             (k, v) for k, v in options.items() if k in paths or v in self.value
         ])
-        options = [o for o in denylist.options if o in paths]
+        option_list = [o for o in denylist.options if o in paths]
         if not self._up.disabled:
-            options.insert(0, '⬆ ..')
-        denylist.options = options
+            option_list.insert(0, '⬆ ..')
+        denylist.options = option_list
 
     def _select(self, event: param.parameterized.Event):
         if len(event.new) != 1:
@@ -293,7 +293,7 @@ class FileSelector(CompositeWidget):
         self._directory.value = self._stack[self._position]
         self._update_files()
 
-    def _go_up(self, event: Optional[param.parameterized.Event] = None):
+    def _go_up(self, event: param.parameterized.Event | None = None):
         path = self._cwd.split(os.path.sep)
         self._directory.value = os.path.sep.join(path[:-1]) or os.path.sep
         self._update_files(True)

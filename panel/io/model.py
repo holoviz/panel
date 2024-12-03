@@ -5,17 +5,17 @@ from __future__ import annotations
 
 import textwrap
 
+from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING, Any, Iterable, Optional,
-)
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from bokeh.core.serialization import Serializer
 from bokeh.document import Document
 from bokeh.document.events import (
-    ColumnDataChangedEvent, DocumentPatchedEvent, ModelChangedEvent,
+    ColumnDataChangedEvent, DocumentChangedEvent, DocumentPatchedEvent,
+    ModelChangedEvent,
 )
 from bokeh.document.json import PatchJson
 from bokeh.model import DataModel
@@ -27,7 +27,6 @@ from .state import state
 
 if TYPE_CHECKING:
     from bokeh.core.enums import HoldPolicyType
-    from bokeh.document.events import DocumentChangedEvent
     from bokeh.protocol.message import Message
     from pyviz_comms import Comm
 
@@ -46,7 +45,7 @@ class comparable_array(np.ndarray):
     def __ne__(self, other: Any) -> bool:
         return not np.array_equal(self, other, equal_nan=True)
 
-def monkeypatch_events(events: list[DocumentChangedEvent]) -> None:
+def monkeypatch_events(events: Sequence[DocumentChangedEvent]) -> None:
     """
     Patch events applies patches to events that are to be dispatched
     avoiding various issues in Bokeh.
@@ -67,7 +66,7 @@ def monkeypatch_events(events: list[DocumentChangedEvent]) -> None:
 #---------------------------------------------------------------------
 
 def diff(
-    doc: Document, binary: bool = True, events: Optional[list[DocumentChangedEvent]] = None
+    doc: Document, binary: bool = True, events: list[DocumentChangedEvent] | None = None
 ) -> Message[Any] | None:
     """
     Returns a json diff required to update an existing plot with
@@ -80,7 +79,7 @@ def diff(
 
     patch_events = [event for event in events if isinstance(event, DocumentPatchedEvent)]
     if not patch_events:
-        return
+        return None
     monkeypatch_events(patch_events)
     serializer = Serializer(references=doc.models.synced_references, deferred=binary)
     patch_json = PatchJson(events=serializer.encode(patch_events))
@@ -93,7 +92,7 @@ def diff(
             msg.add_buffer(buffer)
     return msg
 
-def remove_root(obj: Model, replace: Document | None = None, skip: set[Model] | None = None) -> None:
+def remove_root(obj: Model, replace: Document | None = None, skip: set[Model] | None = None) -> set[Model]:
     """
     Removes the document from any previously displayed bokeh object
     """
@@ -138,7 +137,7 @@ def patch_cds_msg(model, msg):
 
 _DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])
 
-def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = None) -> str:
+def bokeh_repr(obj: Model, depth: int = 0, ignored: Iterable[str] | None = None) -> str:
     """
     Returns a string repr for a bokeh model, useful for recreating
     panel objects using pure bokeh.

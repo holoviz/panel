@@ -3,9 +3,8 @@ from __future__ import annotations
 import datetime as dt
 import sys
 
-from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Optional,
-)
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -149,10 +148,10 @@ class Vizzu(ModelPane, SyncableData):
         return super()._process_param_change(params)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
+        Vizzu._bokeh_model = lazy_load(
             'panel.models.vizzu', 'VizzuChart', isinstance(comm, JupyterComm), root
         )
         model = super()._get_model(doc, root, parent, comm)

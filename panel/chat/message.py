@@ -6,13 +6,14 @@ from __future__ import annotations
 
 import datetime
 
+from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union,
+    TYPE_CHECKING, Any, ClassVar, TypedDict, Union,
 )
 from zoneinfo import ZoneInfo
 
@@ -30,20 +31,26 @@ from ..pane.markup import (
 )
 from ..pane.media import Audio, Video
 from ..param import ParamFunction
-from ..viewable import Viewable
+from ..viewable import ServableMixin, Viewable
 from ..widgets.base import Widget
 from .icon import ChatCopyIcon, ChatReactionIcons
 from .utils import (
     avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
 )
 
+Avatar = Union[str, BytesIO, bytes, ImageBase]
+AvatarDict = dict[str, Avatar]
+
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-Avatar = Union[str, BytesIO, bytes, ImageBase]
-AvatarDict = dict[str, Avatar]
+    class MessageParams(TypedDict, total=False):
+        avatar: Avatar
+        user: str
+        object: Any
+        value: Any
 
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
@@ -384,11 +391,11 @@ class ChatMessage(Pane):
         self,
         contents: Any,
         mime_type: str,
-    ):
+    ) -> tuple[Any, type[Pane] | Callable[..., Pane | ServableMixin]]:
         """
         Determine the renderer to use based on the mime type.
         """
-        renderer = _panel
+        renderer: type[Pane] | Callable[..., Pane | ServableMixin] = _panel
         if mime_type == "application/pdf":
             contents = self._exit_stack.enter_context(BytesIO(contents))
             renderer = partial(PDF, embed=True)
@@ -627,7 +634,7 @@ class ChatMessage(Pane):
 
     def update(
         self,
-        value: dict | ChatMessage | Any,
+        value: MessageParams | ChatMessage | Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
     ):
@@ -643,9 +650,9 @@ class ChatMessage(Pane):
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message message's avatar if provided.
         """
-        updates = {}
+        updates: MessageParams = {}
         if isinstance(value, dict):
-            updates.update(value)
+            updates.update(value)  # type: ignore
             if user:
                 updates["user"] = user
             if avatar:
@@ -667,7 +674,7 @@ class ChatMessage(Pane):
         self.param.update(**updates)
 
     def select(
-        self, selector: Optional[type | Callable[[Viewable], bool]] = None
+        self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
         return super().select(selector) + self._composite.select(selector)
 

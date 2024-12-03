@@ -14,7 +14,7 @@ def _custom_repr(self):
     except Exception:
         return "ImportedStyleSheet(...)"
 
-ImportedStyleSheet.__repr__ = _custom_repr
+ImportedStyleSheet.__repr__ = _custom_repr  # type: ignore
 
 
 class DesignTest(Design):

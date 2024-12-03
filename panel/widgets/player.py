@@ -3,7 +3,8 @@ Defines Player widgets which offer media-player like controls.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -119,7 +120,7 @@ class Player(PlayerBase):
     value_throttled = param.Integer(default=0, constant=True, doc="""
         Current throttled player value.""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     def __init__(self, **params):
         if 'length' in params:

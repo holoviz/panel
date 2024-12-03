@@ -4,8 +4,9 @@ Miscellaneous widgets which do not fit into the other main categories.
 from __future__ import annotations
 
 from base64 import b64encode
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -334,9 +335,8 @@ class JSONEditor(Widget):
     }
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        if self._widget_type is None:
-            self._widget_type = lazy_load(
-                "panel.models.jsoneditor", "JSONEditor", isinstance(comm, JupyterComm)
-            )
+        JSONEditor._widget_type = lazy_load(
+            "panel.models.jsoneditor", "JSONEditor", isinstance(comm, JupyterComm)
+        )
         model = super()._get_model(doc, root, parent, comm)
         return model

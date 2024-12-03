@@ -10,7 +10,7 @@ try:
     from textual.app import App
     from textual.widgets import Button
 except Exception:
-    textual = None
+    textual = None  # type: ignore
 textual_available = pytest.mark.skipif(textual is None, reason="requires textual")
 
 from panel.pane import Textual

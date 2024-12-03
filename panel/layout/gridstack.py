@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import ClassVar, Mapping
+from collections.abc import Mapping
+from typing import ClassVar
 
 import param
 
@@ -11,7 +12,7 @@ from ..util import classproperty
 from .grid import GridSpec
 
 
-class GridStack(ReactiveHTML, GridSpec):
+class GridStack(ReactiveHTML, GridSpec):  # type: ignore[misc]
     """
     The `GridStack` layout allows arranging multiple Panel objects in a grid
     using a simple API to assign objects to individual grid cells or to a grid

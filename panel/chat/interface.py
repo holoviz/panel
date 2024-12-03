@@ -6,15 +6,17 @@ through a frontend input UI.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
-from typing import Any, Callable, ClassVar
+from typing import Any, ClassVar
 
 import param
 
 from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
+from ..layout.base import ListLike, NamedListLike
 from ..pane.image import ImageBase
 from ..viewable import Viewable
 from ..widgets.base import WidgetBase
@@ -70,8 +72,8 @@ class ChatInterface(ChatFeed):
     >>>     yield contents
 
     >>> chat_interface = ChatInterface(
-        callback=repeat_contents, widgets=[TextInput(), FileInput()]
-    )
+    ...    callback=repeat_contents, widgets=[TextInput(), FileInput()]
+    ... )
     """
 
     auto_send_types = param.List(doc="""
@@ -186,9 +188,10 @@ class ChatInterface(ChatFeed):
         Link the disabled and loading attributes of the chat box to the
         given object.
         """
-        for attr in ["disabled", "loading"]:
-            setattr(obj, attr, getattr(self, attr))
-            self.link(obj, **{attr: attr})
+        mapping: dict[str, Any] = {"disabled": "disabled", "loading": "loading"}
+        values = {p: getattr(self, p) for p in mapping}
+        self.param.update(values)
+        self.link(obj, **mapping)
 
     @param.depends("width", watch=True)
     def _update_input_width(self):
@@ -389,7 +392,7 @@ class ChatInterface(ChatFeed):
     def _click_send(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Send the input when the user presses Enter.
@@ -430,7 +433,7 @@ class ChatInterface(ChatFeed):
     def _click_stop(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> bool:
         """
         Cancel the callback when the user presses the Stop button.
@@ -479,7 +482,7 @@ class ChatInterface(ChatFeed):
     def _click_rerun(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Upon clicking the rerun button, rerun the last user message,
@@ -494,7 +497,7 @@ class ChatInterface(ChatFeed):
     def _click_undo(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Upon clicking the undo button, undo (remove) messages
@@ -518,7 +521,7 @@ class ChatInterface(ChatFeed):
     def _click_clear(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Upon clicking the clear button, clear the chat log.
@@ -548,7 +551,11 @@ class ChatInterface(ChatFeed):
         The active widget.
         """
         if isinstance(self._input_layout, Tabs):
-            return self._input_layout[self.active].objects[0]
+            current_tab = self._input_layout[self.active]
+            if isinstance(current_tab, (ListLike, NamedListLike)):
+                return current_tab.objects[0]
+            else:
+                return current_tab  # type: ignore
         return self._input_layout.objects[0]
 
     @property
@@ -583,8 +590,8 @@ class ChatInterface(ChatFeed):
         self,
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
-        default_role: str | None = "assistant",
-        custom_serializer: Callable = None,
+        default_role: str = "assistant",
+        custom_serializer: Callable[[ChatMessage], Any] | None = None,
         **serialize_kwargs
     ) -> list[dict[str, Any]]:
         """
@@ -620,7 +627,8 @@ class ChatInterface(ChatFeed):
                 "assistant": [self.callback_user],
             }
         return super()._serialize_for_transformers(
-            messages, role_names, default_role, custom_serializer, **serialize_kwargs)
+            messages, role_names, default_role, custom_serializer, **serialize_kwargs
+        )
 
     @param.depends("_callback_state", watch=True)
     async def _update_input_disabled(self):

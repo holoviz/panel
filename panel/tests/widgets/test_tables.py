@@ -200,7 +200,8 @@ def test_dataframe_duplicate_column_name(document, comm):
         table.value = table.value.rename(columns={'a': 'b'})
 
 
-def test_hierarchical_index(document, comm):
+@pytest.fixture
+def df_agg():
     df = pd.DataFrame([
         ('Germany', 2020, 9, 2.4, 'A'),
         ('Germany', 2021, 3, 7.3, 'C'),
@@ -209,8 +210,11 @@ def test_hierarchical_index(document, comm):
         ('UK', 2021, 1, 3.9, 'B'),
         ('UK', 2022, 9, 2.2, 'A')
     ], columns=['Country', 'Year', 'Int', 'Float', 'Str']).set_index(['Country', 'Year'])
+    return df
 
-    table = DataFrame(value=df, hierarchical=True,
+
+def test_hierarchical_index(document, comm, df_agg):
+    table = DataFrame(value=df_agg, hierarchical=True,
                       aggregators={'Year': {'Int': 'sum', 'Float': 'mean'}})
 
     model = table.get_root(document, comm)
@@ -2713,3 +2717,8 @@ def test_header_filters_categorial_dtype():
     widget = Tabulator(df, header_filters=True)
     widget.filters = [{'field': 'model', 'type': 'like', 'value': 'A'}]
     assert widget.current_view.size == 1
+
+@pytest.mark.parametrize('aggs', [{}, {'Country': 'sum'}, {'Country': {'Int': 'sum', 'Float': 'mean'}}])
+def test_tabulator_aggregators(document, comm, df_agg, aggs):
+    tabulator = Tabulator(df_agg, hierarchical=True, aggregators=aggs)
+    tabulator.get_root(document, comm)
