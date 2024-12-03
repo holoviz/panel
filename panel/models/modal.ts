@@ -64,7 +64,7 @@ export class ModalView extends BkColumnView {
     const dialog = div({
       id: "pnx_dialog",
       class: "dialog-container bk-root",
-      "aria-hidden": "true",
+      "aria-hidden": true,
       style: {display: "none"},
     } as any)
 
@@ -74,18 +74,17 @@ export class ModalView extends BkColumnView {
     }
 
     const {height, width, min_height, min_width, max_height, max_width} = this.model
-    const convert_fn = (size: any) => { return isNumber(size) ? `${size}px` : size }
     const content = div({
       id: "pnx_dialog_content",
       class: "dialog-content",
       role: "document",
       style: {
-        height: convert_fn(height),
-        width: convert_fn(width),
-        min_height: convert_fn(min_height),
-        min_width: convert_fn(min_width),
-        max_height: convert_fn(max_height),
-        max_width: convert_fn(max_width),
+        height: isNumber(height) ? `${height}px` : height,
+        width: isNumber(width) ? `${width}px` : width,
+        min_height: isNumber(min_height) ? `${min_height}px` : min_height,
+        min_width: isNumber(min_width) ? `${min_width}px` : min_width,
+        max_height: isNumber(max_height) ? `${max_height}px` : max_height,
+        max_width: isNumber(max_width) ? `${max_width}px` : max_width,
         overflow: "auto",
       },
     } as any)
