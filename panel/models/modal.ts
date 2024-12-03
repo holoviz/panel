@@ -61,7 +61,6 @@ export class ModalView extends BkColumnView {
   }
 
   create_modal(): void {
-    const container = div({style: {display: "contents"}})
     const dialog = div({
       id: "pnx_dialog",
       class: "dialog-container bk-root",
@@ -103,11 +102,10 @@ export class ModalView extends BkColumnView {
     } as any)
     this.close_button.innerHTML = "&#x2715"
 
-    container.append(dialog)
     dialog.append(dialog_overlay)
     dialog.append(content)
     content.append(this.close_button)
-    this.shadow_el.append(container)
+    this.shadow_el.append(dialog)
     let first_open = false
 
     this.modal = new (window as any).A11yDialog(dialog)
