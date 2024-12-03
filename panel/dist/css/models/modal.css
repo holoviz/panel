@@ -1,3 +1,8 @@
+:host(.bk-panel-models-modal-Modal) {
+  width: 0;
+  height: 0;
+}
+
 .dialog-container,
 .dialog-overlay {
   position: fixed;
@@ -10,7 +15,7 @@
   z-index: 100002;
   display: flex;
 }
-.dialog-container[aria-hidden='true'] {
+.dialog-container[aria-hidden="true"] {
   display: none;
 }
 .dialog-overlay {
