@@ -53,3 +53,20 @@ class Modal(ListPanel):
     @param.depends("open", watch=True)
     def _open(self):
         self._send_event(ModalDialogEvent, open=self.open)
+
+    def create_button(self, button_type: Literal["show", "hide", "toggle"], **kwargs):
+        """Create a button to show, hide or toggle the modal."""
+        from panel.widgets import Button
+
+        button = Button(**kwargs)
+        match button_type:
+            case "show":
+                button.on_click(lambda *e: self.show())
+            case "hide":
+                button.on_click(lambda *e: self.hide())
+            case "toggle":
+                button.on_click(lambda *e: self.toggle())
+            case _:
+                raise TypeError(f"Invalid button_type: {button_type}")
+
+        return button
