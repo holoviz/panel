@@ -23,7 +23,7 @@ import uuid
 
 from collections.abc import Callable, Mapping
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar,
+    IO, TYPE_CHECKING, Any, ClassVar, Self,
 )
 
 import param  # type: ignore
@@ -359,7 +359,7 @@ class ServableMixin:
     def servable(
         self, title: str | None = None, location: bool | Location = True,
         area: str = 'main', target: str | None = None
-    ) -> ServableMixin:
+    ) -> Self:
         """
         Serves the object or adds it to the configured
         pn.state.template if in a `panel serve` context, writes to the
