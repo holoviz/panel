@@ -7,14 +7,14 @@ import {UIElementView} from "@bokehjs/models/ui/ui_element"
 import {isNumber} from "@bokehjs/core/util/types"
 import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 
-type A11yDialogView = {
+declare type A11yDialogView = {
   on(event: string, listener: () => void): void
   show(): void
   hide(): void
 }
 
-type A11yDialog = (container: HTMLElement) => Promise<{view: A11yDialogView}>
-declare const A11yDialog: A11yDialog
+declare interface A11yDialogInterface { new (container: HTMLElement): A11yDialogView }
+declare const A11yDialog: A11yDialogInterface
 
 @server_event("modal-dialog-event")
 export class ModalDialogEvent extends ModelEvent {
@@ -108,7 +108,7 @@ export class ModalView extends BkColumnView {
     this.shadow_el.append(dialog)
     let first_open = false
 
-    this.modal = new (window as any).A11yDialog(dialog)
+    this.modal = new A11yDialog(dialog)
     this.update_close_button()
     this.modal.on("show", () => {
       this.model.open = true
