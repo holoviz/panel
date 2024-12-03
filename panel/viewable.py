@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
+    from typing_extensions import Self
 
     from .io.location import Location
     from .io.notebook import Mimebundle
@@ -359,7 +360,7 @@ class ServableMixin:
     def servable(
         self, title: str | None = None, location: bool | Location = True,
         area: str = 'main', target: str | None = None
-    ) -> ServableMixin:
+    ) -> Self:
         """
         Serves the object or adds it to the configured
         pn.state.template if in a `panel serve` context, writes to the
