@@ -23,7 +23,7 @@ import uuid
 
 from collections.abc import Callable, Mapping
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Self,
+    IO, TYPE_CHECKING, Any, ClassVar,
 )
 
 import param  # type: ignore
@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
+    from typing_extensions import Self
 
     from .io.location import Location
     from .io.notebook import Mimebundle
