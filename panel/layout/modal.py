@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, ClassVar, Literal, Mapping, Optional,
 )
 
 import param
@@ -20,9 +20,7 @@ if TYPE_CHECKING:
 
 
 class Modal(ListPanel):
-    height = param.Integer(default=None, bounds=(0, None))
-
-    width = param.Integer(default=None, bounds=(0, None))
+    """Create a modal dialog that can be opened and closed."""
 
     open = param.Boolean(default=False, doc="Whether to open the modal.")
 

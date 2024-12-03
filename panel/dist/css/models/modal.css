@@ -15,9 +15,6 @@
   z-index: 100002;
   display: flex;
 }
-.dialog-container[aria-hidden="true"] {
-  display: none;
-}
 .dialog-overlay {
   z-index: 100001;
   background-color: rgb(43 46 56 / 0.9);

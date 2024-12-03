@@ -64,9 +64,8 @@ export class ModalView extends BkColumnView {
     const dialog = div({
       id: "pnx_dialog",
       class: "dialog-container bk-root",
-      "aria-hidden": true,
       style: {display: "none"},
-    } as any)
+    })
 
     const dialog_overlay = div({class: "dialog-overlay"})
     if (this.model.background_close) {
