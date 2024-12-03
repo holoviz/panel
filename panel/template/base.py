@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     from bokeh.server.contexts import BokehSessionContext
     from jinja2 import Template as _Template
     from pyviz_comms import Comm
+    from typing_extensions import Self
 
     from ..io.location import Location
     from ..io.resources import ResourcesType
@@ -506,7 +507,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     def servable(
         self, title: str | None = None, location: bool | Location = True,
         area: str = 'main', target: str | None = None
-    ) -> ServableMixin:
+    ) -> Self:
         """
         Serves the template and returns self to allow it to display
         itself in a notebook context.
