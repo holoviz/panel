@@ -1587,6 +1587,35 @@ def test_tabulator_selection_on_multi_index(page, pagination):
     wait_until(lambda: widget.selection == [0, 16], page)
 
 
+def test_tabulator_selection_add_filter(page):
+    # https://github.com/holoviz/panel/issues/7505
+    df = pd.DataFrame(
+        {"col": ["a", "aa", "b", "bb", "bbb"]},
+        index=["idx0", "idx1", "idx2", "idx3", "idx4"],
+    )
+    w_col = Select(value="b", options=["a", "b"])
+    widget = Tabulator(df, selectable=1)
+
+    def f(df, pattern):
+        return df[df['col'].str.contains(pattern)]
+
+    widget.add_filter(bind(f, pattern=w_col))
+
+    serve_component(page, widget)
+
+    # Click on the first row of the index column to select the row
+    rows = page.locator('.tabulator-row')
+    c0 = page.locator('text="idx2"')
+    c0.wait_for()
+    c0.click()
+    wait_until(lambda: widget.selection == [2], page)
+    assert 'tabulator-selected' in rows.first.get_attribute('class')
+    for i in range(1, rows.count()):
+        assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
+    expected_selected = df.loc[['idx2'], :]
+    assert widget.selected_dataframe.equals(expected_selected)
+
+
 @pytest.mark.parametrize('embed_content', [False, True])
 def test_tabulator_row_content(page, df_mixed, embed_content):
     widget = Tabulator(
