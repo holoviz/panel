@@ -545,7 +545,7 @@ class NestedSelect(CompositeWidget):
         value = self._lookup_value(i, options, self.value, error=False)
         widget_kwargs["options"] = options
         widget_kwargs["value"] = value
-        widget_kwargs["disabled"] = self.disabled
+        widget_kwargs["disabled"] = self.param.disabled
         if "visible" not in widget_kwargs:
             # first select widget always visible
             widget_kwargs["visible"] = i == 0 or callable(options) or len(options) > 0
