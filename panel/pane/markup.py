@@ -13,9 +13,13 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import param  # type: ignore
 
+from pyviz_comms import JupyterComm
+
 from ..io.resources import CDN_DIST
 from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
-from ..util import HTML_SANITIZER, escape, prefix_length
+from ..util import (
+    HTML_SANITIZER, escape, lazy_load, prefix_length,
+)
 from .base import ModelPane
 
 if TYPE_CHECKING:
@@ -360,7 +364,7 @@ class Markdown(HTMLBasePane):
         Additional markdown-it-py plugins to use.""")
 
     renderer = param.Selector(default='markdown-it', objects=[
-        'markdown-it', 'myst', 'markdown'], doc="""
+        'markdown-it', 'myst', 'markdown', 'mystjs'], doc="""
         Markdown renderer implementation.""")
 
     renderer_options = param.Dict(default={}, nested_refs=True, doc="""
@@ -448,6 +452,8 @@ class Markdown(HTMLBasePane):
         return parser
 
     def _transform_object(self, obj: Any) -> dict[str, Any]:
+        if self.renderer == 'mystjs':
+            return dict(object=obj)
         import markdown
         if obj is None:
             obj = ''
@@ -481,6 +487,18 @@ class Markdown(HTMLBasePane):
             params['css_classes'] = ['markdown'] + params['css_classes']
         return super()._process_param_change(params)
 
+    def _get_model(
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
+        if self.renderer == 'mystjs':
+            self._bokeh_model = lazy_load(
+                'panel.models.myst', 'MyST', isinstance(comm, JupyterComm), root
+            )
+        else:
+            self._bokeh_model = _BkHTML
+        model = super()._get_model(doc, root, parent, comm)
+        return model
 
 
 class JSON(HTMLBasePane):

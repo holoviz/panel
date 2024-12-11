@@ -217,7 +217,7 @@ export class HTMLView extends PanelMarkupView {
     return processed_text.join("")
   }
 
-  private contains_tex(html: string): boolean {
+  contains_tex(html: string): boolean {
     if (!this.provider.MathJax) {
       return false
     }
