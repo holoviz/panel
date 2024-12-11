@@ -664,6 +664,7 @@ class panel_extension(_pyviz_extension):
     _imports: ClassVar[dict[str, str]] = {
         'ace': 'panel.models.ace',
         'codeeditor': 'panel.models.ace',
+        'chartjs': 'panel.models.chartjs',
         'deckgl': 'panel.models.deckgl',
         'echarts': 'panel.models.echarts',
         'filedropper': 'panel.models.file_dropper',
