@@ -107,6 +107,9 @@ class ChatInterface(ChatFeed):
     show_button_name = param.Boolean(default=None, doc="""
         Whether to show the button name.""")
 
+    show_button_tooltips = param.Boolean(default=False, doc="""
+        Whether to show the button tooltips.""")
+
     user = param.String(default="User", doc="""
         Name of the ChatInterface user.""")
 
@@ -303,12 +306,14 @@ class ChatInterface(ChatFeed):
                     visible = self.param[f'show_{action}'] if action != "stop" else False
                 except KeyError:
                     visible = True
-                show_expr = self.param.show_button_name.rx()
+                show_name_expr = self.param.show_button_name.rx()
+                show_tooltip_expr = self.param.show_button_tooltips.rx()
                 button = Button(
-                    name=show_expr.rx.where(button_data.name.title(), ""),
+                    name=show_name_expr.rx.where(button_data.name.title(), ""),
+                    description=show_tooltip_expr.rx.where(f"Click to {button_data.name.lower()}", ""),
                     icon=button_data.icon,
                     sizing_mode="stretch_width",
-                    max_width=show_expr.rx.where(90, 45),
+                    max_width=show_name_expr.rx.where(90, 45),
                     max_height=50,
                     margin=(0, 5, 0, 0),
                     align="center",

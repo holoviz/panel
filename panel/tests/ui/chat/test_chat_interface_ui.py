@@ -60,3 +60,14 @@ def test_chat_interface_custom_js_string(page):
         msg = msg_info.value
 
     assert msg.args[0].json_value() == "Clicked"
+
+
+
+def test_chat_interface_show_button_tooltips(page):
+    chat_interface = ChatInterface(show_button_tooltips=True)
+    serve_component(page, chat_interface)
+
+    help_button = page.locator("button", has_text="send")
+    help_button.hover()
+
+    expect(page.locator(".bk-Tooltip")).to_be_visible()
