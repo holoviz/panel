@@ -309,7 +309,7 @@ class ChatInterface(ChatFeed):
                 show_name_expr = self.param.show_button_name.rx()
                 show_tooltip_expr = self.param.show_button_tooltips.rx()
                 button = Button(
-                    name=show_name_expr.rx.where(button_data.name.title(), ""),
+                    name=show_name_expr.rx.where(button_data.name.title(), None),
                     description=show_tooltip_expr.rx.where(f"Click to {button_data.name.lower()}", ""),
                     icon=button_data.icon,
                     sizing_mode="stretch_width",
