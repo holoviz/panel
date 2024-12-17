@@ -23,7 +23,7 @@ LAYOUT_PARAMETERS = {
     "max_width": 201,
 }
 
-ChatFeed.callback_exception = "raise"
+ChatFeed.callback_exception = "raise"  # type: ignore
 
 
 @pytest.fixture
