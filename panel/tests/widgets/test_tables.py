@@ -165,6 +165,24 @@ def test_dataframe_process_data_event(dataframe):
     pd.testing.assert_frame_equal(table.value, df)
 
 
+@pytest.mark.parametrize('widget', [DataFrame, Tabulator])
+def test_dataframe_process_data_no_unsync(dataframe, widget):
+    df = dataframe.copy()
+
+    table1 = widget(dataframe.copy())
+    table2 = widget(table1.param.value.rx().copy())
+    table1._process_events({'data': {'int': [5, 7, 9]}})
+    df['int'] = [5, 7, 9]
+    pd.testing.assert_frame_equal(table1.value, df)
+    pd.testing.assert_frame_equal(table2.value, df)
+
+    # Simulate edit to unsync
+    table2._process_events({'data': {'int': [3, 2, 4]}})
+
+    table1.value = dataframe.copy()
+    pd.testing.assert_frame_equal(table2.value, dataframe)
+
+
 def test_dataframe_duplicate_column_name(document, comm):
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['col', 'col'])
     with pytest.raises(ValueError):
@@ -182,7 +200,8 @@ def test_dataframe_duplicate_column_name(document, comm):
         table.value = table.value.rename(columns={'a': 'b'})
 
 
-def test_hierarchical_index(document, comm):
+@pytest.fixture
+def df_agg():
     df = pd.DataFrame([
         ('Germany', 2020, 9, 2.4, 'A'),
         ('Germany', 2021, 3, 7.3, 'C'),
@@ -191,8 +210,11 @@ def test_hierarchical_index(document, comm):
         ('UK', 2021, 1, 3.9, 'B'),
         ('UK', 2022, 9, 2.2, 'A')
     ], columns=['Country', 'Year', 'Int', 'Float', 'Str']).set_index(['Country', 'Year'])
+    return df
 
-    table = DataFrame(value=df, hierarchical=True,
+
+def test_hierarchical_index(document, comm, df_agg):
+    table = DataFrame(value=df_agg, hierarchical=True,
                       aggregators={'Year': {'Int': 'sum', 'Float': 'mean'}})
 
     model = table.get_root(document, comm)
@@ -429,15 +451,14 @@ def test_tabulator_remote_sorted_paginated_expanded_content(document, comm):
     assert row0.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
 
 
-@pytest.mark.parametrize('pagination', ['local', 'remote', None])
-def test_tabulator_filtered_expanded_content(document, comm, pagination):
+def test_tabulator_filtered_expanded_content_remote_pagination(document, comm):
     df = makeMixedDataFrame()
 
     table = Tabulator(
         df,
         expanded=[0, 1, 2, 3],
         filters=[{'field': 'B', 'sorter': 'number', 'type': '=', 'value': '1.0'}],
-        pagination=pagination,
+        pagination='remote',
         row_content=lambda r: r.A,
     )
 
@@ -468,6 +489,59 @@ def test_tabulator_filtered_expanded_content(document, comm, pagination):
     assert 0 in model.children
     row0 = model.children[0]
     assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
+
+
+@pytest.mark.parametrize('pagination', ['local', None])
+def test_tabulator_filtered_expanded_content(document, comm, pagination):
+    df = makeMixedDataFrame()
+
+    table = Tabulator(
+        df,
+        expanded=[0, 1, 2, 3],
+        filters=[{'field': 'B', 'sorter': 'number', 'type': '=', 'value': '1.0'}],
+        pagination=pagination,
+        row_content=lambda r: r.A,
+    )
+
+    model = table.get_root(document, comm)
+
+    assert len(model.children) == 4
+
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
+
+    assert 1 in model.children
+    row1 = model.children[1]
+    assert row1.text == "&lt;pre&gt;1.0&lt;/pre&gt;"
+
+    assert 2 in model.children
+    row2 = model.children[2]
+    assert row2.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+    assert 3 in model.children
+    row3 = model.children[3]
+    assert row3.text == "&lt;pre&gt;3.0&lt;/pre&gt;"
+
+    model.expanded = [1]
+    assert table.expanded == [1]
+
+    table.filters = [{'field': 'B', 'sorter': 'number', 'type': '=', 'value': '0'}]
+
+    assert model.expanded == [1]
+    assert table.expanded == [1]
+
+    table.expanded = [0, 1]
+
+    assert len(model.children) == 2
+
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
+
+    assert 1 in model.children
+    row1 = model.children[1]
+    assert row1.text == "&lt;pre&gt;1.0&lt;/pre&gt;"
 
 
 def test_tabulator_index_column(document, comm):
@@ -1428,11 +1502,15 @@ def test_tabulator_patch_with_filters(document, comm):
                       dtype='datetime64[ns]')
     }
     expected_src = {
-        'index': np.array([3]),
-        'A': np.array([3]),
-        'B': np.array([1]),
-        'C': np.array(['foo4']),
-        'D': np.array(['2009-01-06T00:00:00.000000000'],
+        'index': np.array([0, 1, 2, 3, 4]),
+        'A': np.array([2., 1., 2., 3., 1.]),
+        'B': np.array([0., 1., 0., 1., 0.]),
+        'C': np.array(['foo0', 'foo2', 'foo3', 'foo4', 'foo5']),
+        'D': np.array(['2009-01-01T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
                       dtype='datetime64[ns]').astype(np.int64) / 10e5
     }
     for col, values in model.source.data.items():
@@ -1723,9 +1801,10 @@ def test_tabulator_stream_dataframe(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-def test_tabulator_constant_scalar_filter_client_side(document, comm):
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_tabulator_constant_scalar_filter_client_side(document, comm, pagination):
     df = makeMixedDataFrame()
-    table = Tabulator(df)
+    table = Tabulator(df, pagination=pagination)
 
     table.filters = [{'field': 'C', 'type': '=', 'value': 'foo3'}]
 
@@ -1736,11 +1815,14 @@ def test_tabulator_constant_scalar_filter_client_side(document, comm):
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
     }, index=[2])
-    pd.testing.assert_frame_equal(table._processed, expected)
+    pd.testing.assert_frame_equal(
+        table._processed, expected if pagination == 'remote' else df
+    )
 
-def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm):
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm, pagination):
     df = makeMixedDataFrame()
-    table = Tabulator(df)
+    table = Tabulator(df, pagination=pagination)
 
     table.filters = [{'field': 'index', 'sorter': 'number', 'type': '=', 'value': 2}]
 
@@ -1751,11 +1833,14 @@ def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm):
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
     }, index=[2])
-    pd.testing.assert_frame_equal(table._processed, expected)
+    pd.testing.assert_frame_equal(
+        table._processed, expected if pagination == 'remote' else df
+    )
 
-def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, comm):
-    df = makeMixedDataFrame()
-    table = Tabulator(df.set_index(['A', 'C']))
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, comm, pagination):
+    df = makeMixedDataFrame().set_index(['A', 'C'])
+    table = Tabulator(df, pagination=pagination)
 
     table.filters = [
         {'field': 'A', 'sorter': 'number', 'type': '=', 'value': 2},
@@ -1768,12 +1853,15 @@ def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, c
         'B': np.array([0.]),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
-    })
-    pd.testing.assert_frame_equal(table._processed, expected)
+    }).set_index(['A', 'C'])
+    pd.testing.assert_frame_equal(
+        table._processed, expected if pagination == 'remote' else df
+    )
 
-def test_tabulator_constant_list_filter_client_side(document, comm):
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_tabulator_constant_list_filter_client_side(document, comm, pagination):
     df = makeMixedDataFrame()
-    table = Tabulator(df)
+    table = Tabulator(df, pagination=pagination)
 
     table.filters = [{'field': 'C', 'type': 'in', 'value': ['foo3', 'foo5']}]
 
@@ -1785,11 +1873,14 @@ def test_tabulator_constant_list_filter_client_side(document, comm):
                        '2009-01-07T00:00:00.000000000'],
                       dtype='datetime64[ns]')
     }, index=[2, 4])
-    pd.testing.assert_frame_equal(table._processed, expected)
+    pd.testing.assert_frame_equal(
+        table._processed, expected if pagination == 'remote' else df
+    )
 
-def test_tabulator_constant_single_element_list_filter_client_side(document, comm):
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_tabulator_constant_single_element_list_filter_client_side(document, comm, pagination):
     df = makeMixedDataFrame()
-    table = Tabulator(df)
+    table = Tabulator(df, pagination=pagination)
 
     table.filters = [{'field': 'C', 'type': 'in', 'value': ['foo3']}]
 
@@ -1800,11 +1891,14 @@ def test_tabulator_constant_single_element_list_filter_client_side(document, com
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
     }, index=[2])
-    pd.testing.assert_frame_equal(table._processed, expected)
+    pd.testing.assert_frame_equal(
+        table._processed, expected if pagination == 'remote' else df
+    )
 
-def test_tabulator_keywords_filter_client_side(document, comm):
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_tabulator_keywords_filter_client_side(document, comm, pagination):
     df = makeMixedDataFrame()
-    table = Tabulator(df)
+    table = Tabulator(df, pagination=pagination)
 
     table.filters = [{'field': 'C', 'type': 'keywords', 'value': 'foo3 foo5'}]
 
@@ -1816,11 +1910,18 @@ def test_tabulator_keywords_filter_client_side(document, comm):
                        '2009-01-07T00:00:00.000000000'],
                       dtype='datetime64[ns]')
     }, index=[2, 4])
-    pd.testing.assert_frame_equal(table._processed, expected)
+    pd.testing.assert_frame_equal(
+        table._processed, expected if pagination == 'remote' else df
+    )
 
-def test_tabulator_keywords_match_all_filter_client_side(document, comm):
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_tabulator_keywords_match_all_filter_client_side(document, comm, pagination):
     df = makeMixedDataFrame()
-    table = Tabulator(df, header_filters={'C': {'type': 'input', 'func': 'keywords', 'matchAll': True}})
+    table = Tabulator(
+        df,
+        header_filters={'C': {'type': 'input', 'func': 'keywords', 'matchAll': True}},
+        pagination=pagination
+    )
 
     table.filters = [{'field': 'C', 'type': 'keywords', 'value': 'f oo 3'}]
 
@@ -1831,9 +1932,11 @@ def test_tabulator_keywords_match_all_filter_client_side(document, comm):
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
     }, index=[2])
-    pd.testing.assert_frame_equal(table._processed, expected)
+    pd.testing.assert_frame_equal(
+        table._processed, expected if pagination == 'remote' else df
+    )
 
-def test_tabulator_constant_scalar_filter_with_pagination_client_side(document, comm):
+def test_tabulator_constant_scalar_filter_client_side_with_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, pagination='remote')
 
@@ -1852,7 +1955,7 @@ def test_tabulator_constant_scalar_filter_with_pagination_client_side(document, 
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-def test_tabulator_constant_scalar_filter_on_index_with_pagination_client_side(document, comm):
+def test_tabulator_constant_scalar_filter_on_index_client_side_with_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, pagination='remote')
 
@@ -1871,7 +1974,7 @@ def test_tabulator_constant_scalar_filter_on_index_with_pagination_client_side(d
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-def test_tabulator_constant_scalar_filter_on_multi_index_with_pagination_client_side(document, comm):
+def test_tabulator_constant_scalar_filter_on_multi_index_client_side_with_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df.set_index(['A', 'C']), pagination='remote')
 
@@ -1893,7 +1996,7 @@ def test_tabulator_constant_scalar_filter_on_multi_index_with_pagination_client_
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-def test_tabulator_constant_list_filter_with_pagination_client_side(document, comm):
+def test_tabulator_constant_list_filter_client_side_with_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, pagination='remote')
 
@@ -1913,8 +2016,7 @@ def test_tabulator_constant_list_filter_with_pagination_client_side(document, co
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-
-def test_tabulator_keywords_filter_with_pagination_client_side(document, comm):
+def test_tabulator_keywords_filter_client_side_with_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, pagination='remote')
 
@@ -1934,8 +2036,7 @@ def test_tabulator_keywords_filter_with_pagination_client_side(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-
-def test_tabulator_keywords_match_all_filter_with_pagination_client_side(document, comm):
+def test_tabulator_keywords_match_all_filter_client_side_with_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(
         df, header_filters={'C': {'type': 'input', 'func': 'keywords', 'matchAll': True}},
@@ -2046,6 +2147,43 @@ def test_tabulator_function_filter(document, comm):
 
     def filter_c(df, value):
         return df[df.C.str.contains(value)]
+
+    table.add_filter(bind(filter_c, value=widget), 'C')
+
+    expected = {
+        'index': np.array([2]),
+        'A': np.array([2]),
+        'B': np.array([0]),
+        'C': np.array(['foo3']),
+        'D': np.array(['2009-01-05T00:00:00.000000000'],
+                      dtype='datetime64[ns]').astype(np.int64) / 10e5
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+    widget.value = 'foo1'
+
+    expected = {
+        'index': np.array([0]),
+        'A': np.array([0]),
+        'B': np.array([0]),
+        'C': np.array(['foo1']),
+        'D': np.array(['2009-01-01T00:00:00.000000000'],
+                      dtype='datetime64[ns]').astype(np.int64) / 10e5
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+def test_tabulator_function_mask_filter(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    widget = TextInput(value='foo3')
+
+    def filter_c(df, value):
+        return df.C.str.contains(value)
 
     table.add_filter(bind(filter_c, value=widget), 'C')
 
@@ -2560,3 +2698,27 @@ def test_selection_cleared_remote_pagination_new_values(document, comm):
 
     table.value = df.copy()
     assert table.selection == []
+
+
+def test_save_user_columns_configuration(document, comm):
+    df = pd.DataFrame({"header": [True, False, True]})
+    configuration={"columns": [{"field": "header", "headerTooltip": True}]}
+    tabulator = Tabulator(df, configuration=configuration, show_index=False)
+
+    expected = [{'field': 'header', 'sorter': 'boolean', 'headerTooltip': True}]
+    model = tabulator.get_root(document, comm)
+    assert model.configuration["columns"] == expected
+
+def test_header_filters_categorial_dtype():
+    # Test for https://github.com/holoviz/panel/issues/7234
+    df = pd.DataFrame({'model': ['A', 'B', 'C', 'D', 'E']})
+    df['model'] = df['model'].astype('category')
+
+    widget = Tabulator(df, header_filters=True)
+    widget.filters = [{'field': 'model', 'type': 'like', 'value': 'A'}]
+    assert widget.current_view.size == 1
+
+@pytest.mark.parametrize('aggs', [{}, {'Country': 'sum'}, {'Country': {'Int': 'sum', 'Float': 'mean'}}])
+def test_tabulator_aggregators(document, comm, df_agg, aggs):
+    tabulator = Tabulator(df_agg, hierarchical=True, aggregators=aggs)
+    tabulator.get_root(document, comm)

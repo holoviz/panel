@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import http.server
 import os
 import platform
 import re
+import socket
 import subprocess
 import sys
 import time
@@ -30,29 +33,29 @@ pnv = Version(pn.__version__)
 
 try:
     import holoviews as hv
-    hv_version = Version(hv.__version__)
+    hv_version: Version | None = Version(hv.__version__)
 except Exception:
-    hv, hv_version = None, None
-hv_available = pytest.mark.skipif(hv is None or hv_version < Version('1.13.0a23'),
+    hv, hv_version = None, None  # type: ignore
+hv_available = pytest.mark.skipif(hv_version is None or hv_version < Version('1.13.0a23'),
                                   reason="requires holoviews")
 
 try:
     import matplotlib as mpl
     mpl.use('Agg')
 except Exception:
-    mpl = None
+    mpl = None  # type: ignore
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 
 try:
     import streamz
 except Exception:
-    streamz = None
+    streamz = None  # type: ignore
 streamz_available = pytest.mark.skipif(streamz is None, reason="requires streamz")
 
 try:
     import jupyter_bokeh
 except Exception:
-    jupyter_bokeh = None
+    jupyter_bokeh = None  # type: ignore
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
 
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
@@ -272,15 +275,36 @@ def get_ctrl_modifier():
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
 
 
+def get_open_ports(n=1):
+    sockets,ports = [], []
+    for _ in range(n):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('127.0.0.1', 0))
+        ports.append(s.getsockname()[1])
+        sockets.append(s)
+    for s in sockets:
+        s.close()
+    return tuple(ports)
+
+
 def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
-    serve(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
+    if serve_and_wait.server_implementation == 'fastapi':
+        from panel.io.fastapi import serve as serve_app
+        port = port or get_open_ports()[0]
+    else:
+        serve_app = serve
+    serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
-    port = server.port
+    if serve_and_wait.server_implementation == 'fastapi':
+        port = port
+    else:
+        port = server.port
     wait_for_server(port, prefix=prefix)
     return port
 
+serve_and_wait.server_implementation = 'tornado'
 
 def serve_component(page, app, suffix='', wait=True, **kwargs):
     msgs = []
@@ -322,7 +346,7 @@ def run_panel_serve(args, cwd=None):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd, close_fds=ON_POSIX)
     try:
         yield p
-    except Exception as e:
+    except BaseException as e:
         p.terminate()
         p.wait()
         print("An error occurred: %s", e)  # noqa: T201
@@ -348,7 +372,7 @@ class NBSR:
         '''
 
         self._s = stream
-        self._q = Queue()
+        self._q: Queue = Queue()
 
         def _populateQueue(stream, queue):
             '''
@@ -372,8 +396,11 @@ class NBSR:
         except Empty:
             return None
 
-def wait_for_regex(stdout, regex, count=1):
-    nbsr = NBSR(stdout)
+def wait_for_regex(stdout, regex, count=1, return_output=False):
+    if isinstance(stdout, NBSR):
+        nbsr = stdout
+    else:
+        nbsr = NBSR(stdout)
     m = None
     output, found = [], []
     for _ in range(20):
@@ -393,7 +420,7 @@ def wait_for_regex(stdout, regex, count=1):
             "No matching log line in process output, following output "
             f"was captured:\n\n   {output}"
         )
-    return found
+    return (found, output) if return_output else found
 
 def wait_for_port(stdout):
     return int(wait_for_regex(stdout, APP_PATTERN)[0])

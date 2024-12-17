@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
       - name: Upload lock-file to S3
         if: '!github.event.pull_request.head.repo.fork'
         env:

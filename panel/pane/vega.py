@@ -3,12 +3,10 @@ from __future__ import annotations
 import re
 import sys
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
-import pandas as pd
 import param
 
 from bokeh.models import ColumnDataSource
@@ -27,12 +25,13 @@ def ds_as_cds(dataset):
     """
     Converts Vega dataset into Bokeh ColumnDataSource data
     """
+    import pandas as pd
     if isinstance(dataset, pd.DataFrame):
         return {k: dataset[k].values for k in dataset.columns}
     if len(dataset) == 0:
         return {}
     # create a list of unique keys from all items as some items may not include optional fields
-    keys = sorted(set(k for d in dataset for k in d.keys()))
+    keys = sorted({k for d in dataset for k in d.keys()})
     data = {k: [] for k in keys}
     for item in dataset:
         for k in keys:
@@ -160,7 +159,7 @@ class Vega(ModelPane):
     show_actions = param.Boolean(default=False, doc="""
         Whether to show Vega actions.""")
 
-    theme = param.ObjectSelector(default=None, allow_None=True, objects=[
+    theme = param.Selector(default=None, allow_None=True, objects=[
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
         'latimes', 'urbaninstitute', 'googlecharts'])
 
@@ -286,10 +285,10 @@ class Vega(ModelPane):
         return props
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
+        Vega._bokeh_model = lazy_load(
             'panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root
         )
         model = super()._get_model(doc, root, parent, comm)

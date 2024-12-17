@@ -44,6 +44,7 @@ def test_resources_cdn():
     resources = Resources(mode='cdn', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
+        f'https://cdn.holoviz.org/panel/{JS_VERSION}/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{bokeh_version}.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-gl-{bokeh_version}.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-widgets-{bokeh_version}.min.js',
@@ -55,6 +56,7 @@ def test_resources_server_absolute():
     resources = Resources(mode='server', absolute=True, minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
+        'http://localhost:5006/static/extensions/panel/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
         'http://localhost:5006/static/js/bokeh.min.js',
         'http://localhost:5006/static/js/bokeh-gl.min.js',
         'http://localhost:5006/static/js/bokeh-widgets.min.js',
@@ -66,6 +68,7 @@ def test_resources_server():
     resources = Resources(mode='server', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
+        'static/extensions/panel/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
         'static/js/bokeh.min.js',
         'static/js/bokeh-gl.min.js',
         'static/js/bokeh-widgets.min.js',
@@ -84,7 +87,7 @@ def test_resources_model_server(document):
     with set_resource_mode('server'):
         with set_curdoc(document):
             extension('tabulator')
-            assert resources.js_files[:2] == [
+            assert resources.js_files[1:3] == [
                 f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
                 'static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
@@ -97,7 +100,7 @@ def test_resources_model_cdn(document):
     with set_resource_mode('cdn'):
         with set_curdoc(document):
             extension('tabulator')
-            assert resources.js_files[:2] == [
+            assert resources.js_files[1:3] == [
                 f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
                 f'{CDN_DIST}bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]

@@ -33,6 +33,7 @@ from panel.io.reload import (
 )
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
+from panel.tests.util import get_open_ports
 from panel.theme import Design
 
 CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
@@ -67,7 +68,7 @@ def internet_available(host="8.8.8.8", port=53, timeout=3):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as conn:
             conn.connect((host, port))
         return True
-    except socket.error:
+    except OSError:
         return False
 
 def port_open(port):
@@ -143,7 +144,8 @@ def pytest_addoption(parser):
     for marker, info in optional_markers.items():
         parser.addoption(f"--{marker}", action="store_true",
                          default=False, help=info['help'])
-
+    parser.addoption('--repeat', action='store',
+        help='Number of times to repeat each test')
 
 def pytest_configure(config):
     for marker, info in optional_markers.items():
@@ -154,6 +156,20 @@ def pytest_configure(config):
 
     config.addinivalue_line("markers", "internet: mark test as requiring an internet connection")
 
+def pytest_generate_tests(metafunc):
+    repeat = getattr(metafunc.config.option, 'repeat', None)
+    if repeat is not None:
+        count = int(repeat)
+
+        # We're going to duplicate these tests by parametrizing them,
+        # which requires that each test has a fixture to accept the parameter.
+        # We can add a new fixture like so:
+        metafunc.fixturenames.append('tmp_ct')
+
+        # Now we parametrize. This is what happens when we do e.g.,
+        # @pytest.mark.parametrize('tmp_ct', range(count))
+        # def test_foo(): pass
+        metafunc.parametrize('tmp_ct', range(count))
 
 def pytest_collection_modifyitems(config, items):
     skipped, selected = [], []
@@ -246,11 +262,7 @@ async def watch_files():
 
 @pytest.fixture
 def port():
-    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
-    new_port = PORT[0] + int(re.sub(r"\D", "", worker_id))
-    PORT[0] += worker_count
-    return new_port
+    return get_open_ports()[0]
 
 
 @pytest.fixture

@@ -1,14 +1,10 @@
 # Using Panel in Pyodide & PyScript
 
-## Installing Panel in the browser
+## Pyodide
 
-To install Panel in the browser you merely have to use the installation mechanism provided by each supported runtime:
+### Creating a Basic Panel Pyodide Application
 
-### Pyodide
-
-Currently, the best supported mechanism for installing packages in Pyodide is `micropip`.
-
-To get started with Pyodide simply follow their [Getting started guide](https://pyodide.org/en/stable/usage/quickstart.html). Note that if you want to render Panel output you will also have to load [Bokeh.js](https://docs.bokeh.org/en/2.4.1/docs/first_steps/installation.html#install-bokehjs:~:text=Installing%20standalone%20BokehJS%C2%B6) and Panel.js from CDN. The most basic pyodide application therefore looks like this:
+Create a file called **script.html** with the following content:
 
 ```html
 <!DOCTYPE html>
@@ -16,32 +12,27 @@ To get started with Pyodide simply follow their [Getting started guide](https://
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/pyodide/v{{PYODIDE_VERSION}}/full/pyodide.js"></script>
-
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v{{PYODIDE_VERSION}}/full/pyodide.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-{{BOKEH_VERSION}}.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{BOKEH_VERSION}}.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-{{BOKEH_VERSION}}.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@holoviz/panel@{{PANEL_VERSION}}/dist/panel.min.js"></script>
-
   </head>
   <body>
     <div id="simple_app"></div>
     <script type="text/javascript">
-      async function main(){
+      async function main() {
         let pyodide = await loadPyodide();
         await pyodide.loadPackage("micropip");
         const micropip = pyodide.pyimport("micropip");
         await micropip.install([
           "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl",
-          "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"]
-        )
+          "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"
+        ]);
         pyodide.runPython(`
           import panel as pn
-
           pn.extension(sizing_mode="stretch_width")
-
           slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
-
           def callback(new):
               return f'Amplitude is: {new}'
 
@@ -54,24 +45,79 @@ To get started with Pyodide simply follow their [Getting started guide](https://
 </html>
 ```
 
-The app should look like this
+Serve the app with:
+
+```bash
+python -m http.server
+```
+
+Open the app in your browser at [http://localhost:8000/script.html](http://localhost:8000/script.html).
+
+The app should look like this:
 
 ![Panel Pyodide App](../../_static/images/pyodide_app_simple.png)
 
 :::{admonition} warn
-The default bokeh and panel packages are very large, therefore we recommend you pip install specialized wheels:
+The default Bokeh and Panel packages are very large. Therefore we recommend installing specialized wheels:
 
 ```javascript
-const bk_whl = "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl"
-const pn_whl = "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"
-await micropip.install(bk_whl, pn_whl)
+const bk_whl = "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl";
+const pn_whl = "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl";
+await micropip.install(bk_whl, pn_whl);
 ```
 
 :::
 
-### PyScript
+## PyScript
 
-A basic, single file pyscript example looks like
+### Creating a Basic Panel PyScript Application
+
+Create a file called **script.html** with the following content:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-{{BOKEH_VERSION}}.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{BOKEH_VERSION}}.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-{{BOKEH_VERSION}}.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@holoviz/panel@{{PANEL_VERSION}}/dist/panel.min.js"></script>
+    <link rel="stylesheet" href="https://pyscript.net/releases/{{PYSCRIPT_VERSION}}/core.css">
+    <script type="module" src="https://pyscript.net/releases/{{PYSCRIPT_VERSION}}/core.js"></script>
+  </head>
+  <body>
+    <div id="simple_app"></div>
+    <script type="py" config='{"packages": ["https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl", "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"]}'>
+      import panel as pn
+      pn.extension(sizing_mode="stretch_width")
+      slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
+      def callback(new):
+         return f'Amplitude is: {new}'
+      pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app')
+    </script>
+  </body>
+</html>
+```
+
+Serve the app with:
+
+```bash
+python -m http.server
+```
+
+Open the app in your browser at [http://localhost:8000/script.html](http://localhost:8000/script.html).
+
+The app should look like this:
+
+![Panel Pyodide App](../../_static/images/pyodide_app_simple.png)
+
+The [PyScript](https://docs.pyscript.net) documentation recommends separating your configuration and Python code into different files. Examples can be found in the [PyScript Examples Gallery](https://pyscript.com/@examples?q=panel).
+
+### Creating a Basic `py-editor` Example
+
+Create a file called **script.html** with the following content:
 
 ```html
 <!DOCTYPE html>
@@ -79,6 +125,7 @@ A basic, single file pyscript example looks like
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <script src="./mini-coi.js" scope="./"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-{{BOKEH_VERSION}}.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{BOKEH_VERSION}}.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-{{BOKEH_VERSION}}.min.js"></script>
@@ -88,8 +135,7 @@ A basic, single file pyscript example looks like
     <script type="module" src="https://pyscript.net/releases/{{PYSCRIPT_VERSION}}/core.js"></script>
   </head>
   <body>
-    <div id="simple_app"></div>
-    <script type="py" config='{"packages": ["https://cdn.holoviz.org/panel/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl", "https://cdn.holoviz.org/panel/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"]}'>
+    <script type="py-editor" config='{"packages": ["https://cdn.holoviz.org/panel/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl", "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/{{PANEL_VERSION}}-py3-none-any.whl"]}'>
       import panel as pn
 
       pn.extension(sizing_mode="stretch_width")
@@ -101,17 +147,30 @@ A basic, single file pyscript example looks like
 
       pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
     </script>
+    <div id="simple_app"></div>
   </body>
 </html>
 ```
 
-The app should look identical to the one above.
+Create a file called **mini-coi.js** with the content from [mini-coi.js](https://github.com/WebReflection/mini-coi/blob/main/mini-coi.js).
 
-The [PyScript](https://docs.pyscript.net) documentation recommends you put your configuration and python code into separate files. You can find such examples in the [PyScript Examples Gallery](https://pyscript.com/@examples?q=panel).
+Serve the app with:
 
-## Rendering Panel components in Pyodide or Pyscript
+```bash
+python -m http.server
+```
 
-Rendering Panel components into the DOM is quite straightforward. You can simply use the `.servable()` method on any component and provide a target that should match the `id` of a DOM node:
+Open the app in your browser at [http://localhost:8000/script.html](http://localhost:8000/script.html).
+
+Click the green *run* button that appears when you hover over the lower-right corner of the editor to see the application.
+
+:::note
+In the example, we included **mini-coi.js**. This is not necessary if the [appropriate HTTP headers](https://docs.pyscript.net/2024.7.1/user-guide/workers/) are set on your server, such as on [pyscript.com](https://pyscript.com) or in Github pages.
+:::
+
+## Rendering Panel Components in Pyodide or PyScript
+
+Rendering Panel components into the DOM is straightforward. Use the `.servable()` method on any component and provide a target that matches the `id` of a DOM node:
 
 ```python
 import panel as pn
@@ -121,16 +180,16 @@ slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
 def callback(new):
     return f'Amplitude is: {new}'
 
-pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
+pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app')
 ```
 
-This code will render this simple application into the `simple_app` DOM node:
+This code will render the application into the `simple_app` DOM node:
 
 ```html
 <div id="simple_app"></div>
 ```
 
-Alternatively you can also use the `panel.io.pyodide.write` function to write into a particular DOM node:
+Alternatively, you can use the `panel.io.pyodide.write` function to write into a specific DOM node:
 
 ```python
 await pn.io.pyodide.write('simple_app', component)

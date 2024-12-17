@@ -1,6 +1,6 @@
 # Export Apps
 
-While Panel is primarily a library for building applications [backed by server](../server/index.md) or a [Python process in the browser](../wasm/index.md) it is sometimes useful to export static output, with or without embedded state to add interactivity. This section focuses on exporting Panel as static snapshots, embedding state and accessing the underlying Bokeh models.
+While Panel is primarily a library for building applications [backed by server](../server/index) or a [Python process in the browser](../wasm/index) it is sometimes useful to export static output, with or without embedded state to add interactivity. This section focuses on exporting Panel as static snapshots, embedding state and accessing the underlying Bokeh models.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2

@@ -1,4 +1,4 @@
-from bokeh.command.subcommand import Subcommand
+from bokeh.command.subcommand import Argument, Subcommand
 
 from ..compiler import (
     bundle_icons, bundle_models, bundle_resource_urls, bundle_resources,
@@ -17,35 +17,35 @@ class Bundle(Subcommand):
     help = "Bundle resources"
 
     args = (
-        ('--all', dict(
+        ('--all', Argument(
             action  = 'store_true',
             help    = "Whether to bundle everything"
         )),
-        ('--resource-urls', dict(
+        ('--resource-urls', Argument(
             action  = 'store_true',
             help    = "Whether to bundle the global resources"
         )),
-        ('--templates', dict(
+        ('--templates', Argument(
             action  = 'store_true',
             help    = "Whether to bundle the template resources"
         )),
-        ('--themes', dict(
+        ('--themes', Argument(
             action  = 'store_true',
             help    = "Whether to bundle the theme resources"
         )),
-        ('--models', dict(
+        ('--models', Argument(
             action  = 'store_true',
             help    = "Whether to bundle the model resources"
         )),
-        ('--icons', dict(
+        ('--icons', Argument(
             action  = 'store_true',
             help    = "Whether to bundle icons."
         )),
-        ('--verbose', dict(
+        ('--verbose', Argument(
             action  = 'store_true',
             help    = "Whether to print progress"
         )),
-        ('--only-local', dict(
+        ('--only-local', Argument(
             action  = 'store_true',
             help    = "Whether to bundle only local resources"
         )),

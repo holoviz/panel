@@ -19,7 +19,7 @@ class StockScreener(param.Parameterized):
     def __init__(self, df, **params):
         start = dt.date(year=df.index[0].year, month=df.index[0].month, day=df.index[0].day)
         end = dt.date(year=df.index[-1].year, month=df.index[-1].month, day=df.index[-1].day)
-        super(StockScreener, self).__init__(df=df, start=start, **params)
+        super().__init__(df=df, start=start, **params)
         self.param.start.bounds = (start, end)
         columns = list(self.df.columns)
         self.param.index.objects = columns

@@ -3,7 +3,7 @@ requires = [
     "hatchling",
     "hatch-vcs",
     "param >=2.1.0",
-    "bokeh >=3.5.0,<3.6.0",
+    "bokeh >=3.5.0,<3.7.0",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
@@ -47,7 +48,7 @@ classifiers = [
 ]
 
 dependencies = [
-    'bokeh >=3.5.0,<3.6.0',
+    'bokeh >=3.5.0,<3.7.0',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
     'markdown',
@@ -70,12 +71,16 @@ HoloViz = "https://holoviz.org/"
 [project.optional-dependencies]
 recommended = [
     'jupyterlab',
-    'holoviews >=1.16.0',
+    'holoviews >=1.18.0',
     'matplotlib',
     'pillow',
     'plotly',
 ]
-standard = [
+fastapi = [
+    'bokeh-fastapi >= 0.1.1',
+    'fastapi[standard]',
+]
+dev = [
     'watchfiles',
 ]
 tests = [
@@ -106,6 +111,7 @@ raw-options = { version_scheme = "no-guess-dev" }
 
 [tool.hatch.build.targets.wheel]
 include = ["panel"]
+exclude = ["panel/node_modules"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "panel/dist" = "panel/dist"
@@ -116,7 +122,7 @@ include = ["panel"]
 
 [tool.hatch.build.targets.sdist]
 include = ["panel", "scripts", "examples"]
-exclude = ["scripts/jupyterlite"]
+exclude = ["scripts/jupyterlite", "panel/node_modules"]
 
 [tool.hatch.build.targets.sdist.force-include]
 "panel/dist" = "panel/dist"
@@ -205,6 +211,7 @@ write-changes = true
 addopts = "--pyargs --doctest-ignore-import-errors --color=yes"
 norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true
 minversion = "7"
 log_cli_level = "INFO"
@@ -218,18 +225,23 @@ filterwarnings = [
     "ignore:distutils Version classes are deprecated:DeprecationWarning:ipywidgets_bokeh.kernel", # OK
     "ignore:unclosed file <_io.TextIOWrapper name='(/dev/null|nul)' mode='w':ResourceWarning", # OK
     "ignore:Deprecated in traitlets 4.1, use the instance .metadata dictionary directly", # OK (ipywidgets internal)
+    # 2024-11
+    "ignore:websockets.legacy is deprecated:DeprecationWarning", # https://github.com/encode/uvicorn/issues/1908
+    "ignore:websockets.server.WebSocketServerProtocol is deprecated:DeprecationWarning", # https://github.com/encode/uvicorn/issues/1908
 ]
 
 [tool.mypy]
 namespace_packages = true
 explicit_package_bases = true
+disable_error_code = "attr-defined"
 mypy_path = ""
 exclude = []
 
 [[tool.mypy.overrides]]
 module = [
-    "altair.*",
+    "anywidget.*",
     "bokeh_django.*",
+    "bokeh_fastapi.*",
     "bokeh.*",
     "cachecontrol.*",
     "cryptography.*",
@@ -237,12 +249,12 @@ module = [
     "flask.*",
     "fsspec.*",
     "holoviews.*",
+    "hvplot.*",
     "ipympl.*",
-    "ipywidgets_bokeh",
+    "ipywidgets_bokeh.*",
     "ipywidgets.*",
     "js.*",
     "jupyter_bokeh.*",
-    "jupyter_server.*",
     "langchain.*",
     "lumen.*",
     "magic.*",
@@ -250,25 +262,25 @@ module = [
     "mdit_py_emoji.*",
     "memray.*",
     "myst_parser.*",
-    "nbconvert.*",
-    "nbformat.*",
     "param.*",
     "playwright.*",
     "plotly.*",
     "pydeck.*",
     "pyecharts.*",
-    "pyinstrument.*",
     "pyodide_http.*",
     "pyodide.*",
+    "pyscript.*",
+    "pyvista.*",
     "pyviz_comms.*",
-    "reacton.*",
     "rpy2.*",
     "scipy.*",
     "setuptools_scm.*",
     "snakeviz.*",
     "streamz.*",
-    "textual.*",
+    "traitlets.*",
     "tranquilizer.*",
+    "uvicorn.*",
     "vtk.*",
+    "watchfiles.*"
 ]
 ignore_missing_imports = true

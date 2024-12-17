@@ -3,11 +3,10 @@ from __future__ import annotations
 import datetime as dt
 import sys
 
+from collections.abc import Callable, Mapping
 from enum import Enum
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Callable, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, ClassVar
 
 import numpy as np
 import param
@@ -305,7 +304,7 @@ class Perspective(ModelPane, ReactiveData):
     sort = param.List(default=None, doc="""
       How to sort. For example[["x","desc"]]""")
 
-    plugin = param.ObjectSelector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
+    plugin = param.Selector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
       The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")
 
     plugin_config = param.Dict(default={}, nested_refs=True, doc="""
@@ -314,7 +313,7 @@ class Perspective(ModelPane, ReactiveData):
     settings = param.Boolean(default=True, doc="""
       Whether to show the settings menu.""")
 
-    theme = param.ObjectSelector(default='pro', objects=THEMES, doc="""
+    theme = param.Selector(default='pro', objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example pro-dark""")
 
     title = param.String(default=None, doc="""
@@ -364,7 +363,7 @@ class Perspective(ModelPane, ReactiveData):
                     k: v for k, v in kwargs.items()
                     if getattr(self, k) is None
                 })
-        cols = set(self._as_digit(c) for c in df)
+        cols = {self._as_digit(c) for c in df}
         if len(cols) != ncols:
             raise ValueError("Integer columns must be unique when "
                              "converted to strings.")
@@ -475,10 +474,10 @@ class Perspective(ModelPane, ReactiveData):
         return msg
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
+        Perspective._bokeh_model = lazy_load(
             'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root
         )
         model = super()._get_model(doc, root, parent, comm)

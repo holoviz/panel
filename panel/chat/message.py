@@ -6,13 +6,14 @@ from __future__ import annotations
 
 import datetime
 
+from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union,
+    TYPE_CHECKING, Any, ClassVar, TypedDict, Union,
 )
 from zoneinfo import ZoneInfo
 
@@ -30,20 +31,26 @@ from ..pane.markup import (
 )
 from ..pane.media import Audio, Video
 from ..param import ParamFunction
-from ..viewable import Viewable
+from ..viewable import ServableMixin, Viewable
 from ..widgets.base import Widget
 from .icon import ChatCopyIcon, ChatReactionIcons
 from .utils import (
     avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
 )
 
+Avatar = Union[str, BytesIO, bytes, ImageBase]
+AvatarDict = dict[str, Avatar]
+
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-Avatar = Union[str, BytesIO, bytes, ImageBase]
-AvatarDict = dict[str, Avatar]
+    class MessageParams(TypedDict, total=False):
+        avatar: Avatar
+        user: str
+        object: Any
+        value: Any
 
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
@@ -254,7 +261,7 @@ class ChatMessage(Pane):
 
         reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
         if isinstance(reaction_icons, dict):
-            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons, default_layout=Row)
+            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons, default_layout=Row, sizing_mode=None)
         self._internal = True
         super().__init__(object=object, **params)
         self.chat_copy_icon = ChatCopyIcon(
@@ -266,8 +273,6 @@ class ChatMessage(Pane):
         self._build_layout()
 
     def _build_layout(self):
-        self._icon_divider = HTML(" | ", width=1, css_classes=["divider"])
-
         self._left_col = left_col = Column(
             self._render_avatar(),
             max_width=60,
@@ -294,18 +299,20 @@ class ChatMessage(Pane):
             self.param.user, height=20,
             css_classes=["name"],
             visible=self.param.show_user,
+            sizing_mode=None,
         )
 
         self._activity_dot = HTML(
             "●",
             css_classes=["activity-dot"],
+            margin=(5, 0),
+            sizing_mode=None,
             visible=self.param.show_activity_dot,
         )
 
         meta_row = Row(
             self._user_html,
             self._activity_dot,
-            sizing_mode="stretch_width",
             css_classes=["meta"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
@@ -332,7 +339,6 @@ class ChatMessage(Pane):
 
         self._icons_row = Row(
             self.chat_copy_icon,
-            self._icon_divider,
             self._render_reaction_icons(),
             css_classes=["icons"],
             sizing_mode="stretch_width",
@@ -344,8 +350,8 @@ class ChatMessage(Pane):
             header_col,
             self._center_row,
             footer_col,
-            self._timestamp_html,
             self._icons_row,
+            self._timestamp_html,
             css_classes=["right"],
             sizing_mode=None,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
@@ -385,11 +391,11 @@ class ChatMessage(Pane):
         self,
         contents: Any,
         mime_type: str,
-    ):
+    ) -> tuple[Any, type[Pane] | Callable[..., Pane | ServableMixin]]:
         """
         Determine the renderer to use based on the mime type.
         """
-        renderer = _panel
+        renderer: type[Pane] | Callable[..., Pane | ServableMixin] = _panel
         if mime_type == "application/pdf":
             contents = self._exit_stack.enter_context(BytesIO(contents))
             renderer = partial(PDF, embed=True)
@@ -598,11 +604,9 @@ class ChatMessage(Pane):
         if isinstance(object_panel, str) and self.show_copy_icon:
             self.chat_copy_icon.value = object_panel
             self.chat_copy_icon.visible = True
-            self._icon_divider.visible = True
         else:
             self.chat_copy_icon.value = ""
             self.chat_copy_icon.visible = False
-            self._icon_divider.visible = False
 
     def _cleanup(self, root=None) -> None:
         """
@@ -630,7 +634,7 @@ class ChatMessage(Pane):
 
     def update(
         self,
-        value: dict | ChatMessage | Any,
+        value: MessageParams | ChatMessage | Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
     ):
@@ -646,9 +650,9 @@ class ChatMessage(Pane):
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message message's avatar if provided.
         """
-        updates = {}
+        updates: MessageParams = {}
         if isinstance(value, dict):
-            updates.update(value)
+            updates.update(value)  # type: ignore
             if user:
                 updates["user"] = user
             if avatar:
@@ -670,7 +674,7 @@ class ChatMessage(Pane):
         self.param.update(**updates)
 
     def select(
-        self, selector: Optional[type | Callable[[Viewable], bool]] = None
+        self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
         return super().select(selector) + self._composite.select(selector)
 
@@ -701,3 +705,6 @@ class ChatMessage(Pane):
             prefix_with_viewable_label=prefix_with_viewable_label,
             prefix_with_container_label=prefix_with_container_label,
         )
+
+    def __repr__(self, depth: int = 0) -> str:
+        return f"ChatMessage(object={self.object!r}, user={self.user!r}, reactions={self.reactions!r})"

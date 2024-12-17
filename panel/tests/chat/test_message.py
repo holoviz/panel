@@ -54,7 +54,7 @@ class TestChatMessage:
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "ABC"
 
-        icons = columns[1][5][2]
+        icons = columns[1][4][1]
         assert isinstance(icons, ChatReactionIcons)
 
         footer_col = columns[1][3]
@@ -65,22 +65,26 @@ class TestChatMessage:
         assert isinstance(footer_col[1], Markdown)
         assert footer_col[1].object == "Footer 2"
 
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
 
     def test_reactions_dynamic(self):
-        message = ChatMessage(reactions=["favorite"])
+        message = ChatMessage("hi", reactions=["favorite"])
         assert message.reaction_icons.value == ["favorite"]
 
         message.reactions = ["thumbs-up"]
         assert message.reaction_icons.value == ["thumbs-up"]
 
     def test_reaction_icons_dynamic(self):
-        message = ChatMessage(reaction_icons={"favorite": "heart"})
+        message = ChatMessage("hi", reaction_icons={"favorite": "heart"})
         assert message.reaction_icons.options == {"favorite": "heart"}
 
         message.reaction_icons = ChatReactionIcons(options={"like": "thumb-up"})
         assert message._icons_row[-1] == message.reaction_icons
+
+        message.reaction_icons = ChatReactionIcons(options={})
+
+        message = ChatMessage("hi", reaction_icons={})
 
     def test_reactions_link(self):
         # on init
@@ -171,39 +175,39 @@ class TestChatMessage:
     def test_update_timestamp(self):
         message = ChatMessage()
         columns = message._composite.objects
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now().strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="UTC")
         columns = message._composite.objects
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="US/Pacific")
         columns = message._composite.objects
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now(tz=ZoneInfo("US/Pacific")).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         special_dt = datetime.datetime(2023, 6, 24, 15)
         message.timestamp = special_dt
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         dt_str = special_dt.strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         mm_dd_yyyy = "%b %d, %Y"
         message.timestamp_format = mm_dd_yyyy
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         dt_str = special_dt.strftime(mm_dd_yyyy)
         assert timestamp_pane.object == dt_str
 
         message.show_timestamp = False
-        timestamp_pane = columns[1][4][0]
+        timestamp_pane = columns[1][5][0]
         assert not timestamp_pane.visible
 
     def test_does_not_turn_widget_into_str(self):
@@ -386,3 +390,11 @@ class TestChatMessage:
     def test_serialize_dataframe(self):
         message = ChatMessage(DataFrame(pd.DataFrame({'a': [1, 2, 3]})))
         assert message.serialize() == "DataFrame=   a\n0  1\n1  2\n2  3"
+
+    def test_repr(self):
+        message = ChatMessage(object="Hello", user="User", avatar="A", reactions=["favorite"])
+        assert repr(message) == "ChatMessage(object='Hello', user='User', reactions=['favorite'])"
+
+    def test_repr_dataframe(self):
+        message = ChatMessage(pd.DataFrame({'a': [1, 2, 3]}), avatar="D")
+        assert repr(message) == "ChatMessage(object=   a\n0  1\n1  2\n2  3, user='User', reactions=[])"

@@ -140,6 +140,12 @@ export class PlotlyPlotView extends HTMLBoxView {
   _end_relayouting = debounce(() => {
     this._relayouting = false
   }, 2000, false)
+  _throttled_resize: any
+
+  override initialize(): void {
+    super.initialize()
+    this._throttled_resize = throttle(() => this.resize_layout(), 25)
+  }
 
   override connect_signals(): void {
     super.connect_signals()
@@ -205,28 +211,33 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.container = div() as PlotlyHTMLElement
     set_size(this.container, this.model)
     this._rendered = false
-    this.shadow_el.appendChild(this.container)
     this.watch_stylesheets()
-    this.plot().then(() => {
+    this.plot(true).then(() => {
+      this.shadow_el.appendChild(this.container)
       this._rendered = true
+      this.resize_layout()
       if (this.model.relayout != null) {
         (window as any).Plotly.relayout(this.container, this.model.relayout)
       }
-      (window as any).Plotly.Plots.resize(this.container)
     })
   }
 
   override style_redraw(): void {
-    if (this._rendered && this.container != null) {
-      (window as any).Plotly.Plots.resize(this.container)
+    this.resize_layout()
+  }
+
+  resize_layout(): void {
+    if (!this._rendered || this.container == null) {
+      return
     }
+    const width: number = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity)
+    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity);
+    (window as any).Plotly.relayout(this.container, {width, height})
   }
 
   override after_layout(): void {
     super.after_layout()
-    if (this._rendered && this.container != null) {
-      (window as any).Plotly.Plots.resize(this.container)
-    }
+    this._throttled_resize()
   }
 
   _trace_data(): any {
@@ -299,6 +310,10 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     //  - plotly_selected
     this.container.on("plotly_selected", (eventData: any) => {
+      if (eventData === undefined || eventData === null) {
+        // filter out the empty events that come from single-click
+        return
+      }
       const data = filterEventData(this.container, eventData, "selected")
       this.model.trigger_event(new PlotlyEvent({type: "selected", data}))
     })

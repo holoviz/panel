@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -63,7 +62,7 @@ class ChatAreaInput(_PnTextAreaInput):
         of rows the input area can grow.""",
     )
 
-    resizable = param.ObjectSelector(
+    resizable = param.Selector(
         default="height",
         objects=["both", "width", "height", False],
         doc="""
@@ -79,7 +78,7 @@ class ChatAreaInput(_PnTextAreaInput):
         **_PnTextAreaInput._rename,
     }
 
-    def _get_properties(self, doc: Document) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None = None) -> dict[str, Any]:
         props = super()._get_properties(doc)
         props.update({"value_input": self.value, "value": self.value})
         return props
@@ -87,9 +86,9 @@ class ChatAreaInput(_PnTextAreaInput):
     def _get_model(
         self,
         doc: Document,
-        root: Optional[Model] = None,
-        parent: Optional[Model] = None,
-        comm: Optional[Comm] = None,
+        root: Model | None = None,
+        parent: Model | None = None,
+        comm: Comm | None = None,
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events("chat_message_event", model=model, doc=doc, comm=comm)

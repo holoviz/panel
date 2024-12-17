@@ -6,11 +6,12 @@ import re
 import tempfile
 import uuid
 
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from cProfile import Profile
 from functools import wraps
 from typing import (
-    TYPE_CHECKING, Callable, Iterator, Literal, ParamSpec, TypeVar,
+    TYPE_CHECKING, Literal, ParamSpec, TypeVar,
 )
 
 from ..config import config
@@ -18,6 +19,8 @@ from ..util import escape
 from .state import state
 
 if TYPE_CHECKING:
+    from pyinstrument.session import Session
+
     _P = ParamSpec("_P")
     _R = TypeVar("_R")
 
@@ -194,7 +197,7 @@ def profiling_tabs(state, allow=None, deny=[]):
 
 
 @contextmanager
-def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[list[Profile | bytes]]:
+def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[Sequence[Profile | bytes | Session]]:
     """
     A context manager which profiles the body of the with statement
     with the supplied profiling engine and returns the profiling object
@@ -219,8 +222,8 @@ def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[list[Profi
             prof = Profiler(async_mode='disabled')
             prof.start()
     elif engine == 'snakeviz':
-        prof = Profile()
-        prof.enable()
+        profile = Profile()
+        profile.enable()
     elif engine == 'memray':
         import memray
         tmp_file = f'{tempfile.gettempdir()}/tmp{uuid.uuid4().hex}'
@@ -228,13 +231,13 @@ def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[list[Profi
         tracker.__enter__()
     elif engine is None:
         pass
-    sessions: list[Profile | bytes] = []
+    sessions: Sequence[Profile | bytes | Session] = []
     yield sessions
     if engine == 'pyinstrument':
         sessions.append(prof.stop())
     elif engine == 'snakeviz':
-        prof.disable()
-        sessions.append(prof)
+        profile.disable()
+        sessions.append(profile)
     elif engine == 'memray':
         tracker.__exit__(None, None, None)
         sessions.append(open(tmp_file, 'rb').read())
@@ -262,7 +265,7 @@ def profile(name: str, engine: ProfilingEngine = 'pyinstrument') -> Callable[[Ca
                 return func(*args, **kwargs)
             with profile_ctx(engine) as sessions:
                 ret = func(*args, **kwargs)
-            state._profiles[(name, engine)] += sessions
+            state._profiles[(name, engine)] += list(sessions)
             state.param.trigger('_profiles')
             return ret
         return wrapped

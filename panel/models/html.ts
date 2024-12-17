@@ -1,10 +1,32 @@
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs, Dict} from "@bokehjs/core/types"
 import {entries} from "@bokehjs/core/util/object"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 import {serializeEvent} from "./event-to-object"
+import {throttle} from "./util"
+
+import html_css from "styles/models/html.css"
+
+const COPY_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-clipboard"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/></svg>`
+
+const CHECK_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10"/></svg>`
+
+function searchAllDOMs(node: Element | ShadowRoot, selector: string): (Element | ShadowRoot)[] {
+  let found: (Element | ShadowRoot)[] = []
+  if (node instanceof Element && node.matches(selector)) {
+    found.push(node)
+  }
+  node.children && Array.from(node.children).forEach(child => {
+    found = found.concat(searchAllDOMs(child, selector))
+  })
+  if (node instanceof Element && node.shadowRoot) {
+    found = found.concat(searchAllDOMs(node.shadowRoot, selector))
+  }
+  return found
+}
 
 @server_event("html_stream")
 export class HTMLStreamEvent extends ModelEvent {
@@ -58,30 +80,6 @@ export function run_scripts(node: Element): void {
   }
 }
 
-function throttle(func: Function, limit: number): any {
-  let lastFunc: number
-  let lastRan: number
-
-  return function(...args: any) {
-    // @ts-ignore
-    const context = this
-
-    if (!lastRan) {
-      func.apply(context, args)
-      lastRan = Date.now()
-    } else {
-      clearTimeout(lastFunc)
-
-      lastFunc = setTimeout(function() {
-        if ((Date.now() - lastRan) >= limit) {
-          func.apply(context, args)
-          lastRan = Date.now()
-        }
-      }, limit - (Date.now() - lastRan))
-    }
-  }
-}
-
 export class HTMLView extends PanelMarkupView {
   declare model: HTML
   _buffer: string | null = null
@@ -121,18 +119,56 @@ export class HTMLView extends PanelMarkupView {
     })
   }
 
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), html_css]
+  }
+
   protected rerender() {
     this.render()
     this.invalidate_layout()
   }
 
   set_html(html: string | null): void {
-    if (html !== null) {
-      this.container.innerHTML = html
-      if (this.model.run_scripts) {
-        run_scripts(this.container)
+    if (html === null) {
+      return
+    }
+    this.container.innerHTML = html
+    if (this.model.run_scripts) {
+      run_scripts(this.container)
+    }
+    this._setup_event_listeners()
+    for (const codeblock of this.container.querySelectorAll(".codehilite")) {
+      const copy_button = document.createElement("button")
+      const pre = (codeblock.children[0] as HTMLPreElement)
+      copy_button.className = "copybtn"
+      copy_button.innerHTML = COPY_ICON
+      copy_button.addEventListener("click", () => {
+        const code = pre.innerText
+        navigator.clipboard.writeText(code).then(() => {
+          copy_button.innerHTML = CHECK_ICON
+          setTimeout(() => {
+            copy_button.innerHTML = COPY_ICON
+          }, 300)
+        })
+      })
+      codeblock.insertBefore(copy_button, pre)
+    }
+    for (const anchor of this.container.querySelectorAll("a")) {
+      const link = anchor.getAttribute("href")
+      if (link && link.startsWith("#")) {
+        anchor.addEventListener("click", () => {
+          const found = searchAllDOMs(document.body, link)
+          if ((found.length > 0) && found[0] instanceof Element) {
+            found[0].scrollIntoView()
+          }
+        })
+        if (!this.root.has_finished() && this.model.document && window.location.hash === link) {
+          this.model.document.on_event("document_ready", () => {
+            anchor.scrollIntoView()
+            setTimeout(() => anchor.scrollIntoView(), 5)
+          })
+        }
       }
-      this._setup_event_listeners()
     }
   }
 

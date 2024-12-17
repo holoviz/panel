@@ -8,9 +8,10 @@ import ast
 import json
 
 from base64 import b64decode
+from collections.abc import Iterable, Mapping
 from datetime import date, datetime, time as dt_time
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Type,
 )
 
 import numpy as np
@@ -111,8 +112,8 @@ class TextInput(_TextInputBase):
     _rename = {'enter_pressed': None}
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('enter-pressed', model=model, doc=doc, comm=comm)
@@ -171,7 +172,7 @@ class TextAreaInput(_TextInputBase):
     rows = param.Integer(default=2, doc="""
         Number of rows in the text input field.""")
 
-    resizable = param.ObjectSelector(
+    resizable = param.Selector(
         objects=["both", "width", "height", False], doc="""
         Whether the layout is interactively resizable,
         and if so in which dimensions: `width`, `height`, or `both`.
@@ -255,7 +256,7 @@ class FileInput(Widget):
         return msg
 
     @property
-    def _linked_properties(self):
+    def _linked_properties(self) -> tuple[str, ...]:
         properties = super()._linked_properties
         return properties + ('filename',)
 
@@ -379,10 +380,10 @@ class FileDropper(Widget):
         self._file_buffer = {}
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._widget_type = lazy_load(
+        FileDropper._widget_type = lazy_load(
             'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root,
             ext='filedropper'
         )
@@ -408,8 +409,8 @@ class FileDropper(Widget):
             return
 
         buffers = self._file_buffer.pop(name)
-        file_buffer = b''.join(buffers)
-        if data['type'].startswith('text/'):
+        file_buffer: bytes | str = b''.join(buffers)
+        if data['type'].startswith('text/') and isinstance(file_buffer, bytes):
             try:
                 file_buffer = file_buffer.decode('utf-8')
             except UnicodeDecodeError:
@@ -449,7 +450,7 @@ class StaticText(Widget):
     _widget_type: ClassVar[type[Model]] = _BkDiv
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return ()
 
     def _init_params(self) -> dict[str, Any]:
@@ -607,8 +608,11 @@ class DateRangePicker(Widget):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            msg['value'] = tuple(self._convert_date_to_string(v) for v in msg['value'])
+        if 'value' in msg and msg['value'] is not None:
+            msg['value'] = tuple(
+                v if v is None else self._convert_date_to_string(v)
+                for v in msg['value']
+            )
         if 'min_date' in msg:
             msg['min_date'] = self._convert_date_to_string(msg['min_date'])
         if 'max_date' in msg:
@@ -810,15 +814,15 @@ class DatetimeRangePicker(_DatetimePickerBase):
 
 class _TimeCommon(Widget):
 
-    hour_increment = param.Integer(default=1, doc="""
+    hour_increment = param.Integer(default=1, bounds=(1, None), doc="""
     Defines the granularity of hour value increments in the UI.
     """)
 
-    minute_increment = param.Integer(default=1, doc="""
+    minute_increment = param.Integer(default=1, bounds=(1, None), doc="""
     Defines the granularity of minute value increments in the UI.
     """)
 
-    second_increment = param.Integer(default=1, doc="""
+    second_increment = param.Integer(default=1, bounds=(1, None), doc="""
     Defines the granularity of second value increments in the UI.
     """)
 
@@ -827,7 +831,7 @@ class _TimeCommon(Widget):
     selectable, and AM/PM depending on the `clock` option.
     """)
 
-    clock = param.String(default='12h', doc="""
+    clock = param.Selector(default='12h', objects=['12h', '24h'], doc="""
         Whether to use 12 hour or 24 hour clock.""")
 
     __abstract = True
@@ -1001,12 +1005,12 @@ class _SpinnerBase(_NumericInputBase):
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return super()._linked_properties + ('value_throttled',)
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'value_throttled' in msg:
             del msg['value_throttled']
@@ -1138,7 +1142,7 @@ class LiteralInput(Widget):
     placeholder = param.String(default='', doc="""
       Placeholder for empty input field.""")
 
-    serializer = param.ObjectSelector(default='ast', objects=['ast', 'json'], doc="""
+    serializer = param.Selector(default='ast', objects=['ast', 'json'], doc="""
        The serialization (and deserialization) method to use. 'ast'
        uses ast.literal_eval and 'json' uses json.loads and json.dumps.
     """)
@@ -1165,7 +1169,7 @@ class LiteralInput(Widget):
         'value': """JSON.stringify(value).replace(/,/g, ",").replace(/:/g, ": ")"""
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkTextInput
+    _widget_type: ClassVar[Type[Model]] = _BkTextInput  # noqa
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -1484,7 +1488,7 @@ class _BooleanWidget(Widget):
     value = param.Boolean(default=False, doc="""
         The current value""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
 

@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import sys
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param  # type: ignore
 
@@ -26,10 +25,10 @@ if TYPE_CHECKING:
 class LaTeX(ModelPane):
     r"""
     The `LaTeX` pane allows rendering LaTeX equations. It uses either
-    `MathJax` or `KaTeX` depending on the defined renderer.
+    `KaTeX` or `MathJax` depending on the defined renderer.
 
     By default it will use the renderer loaded in the extension
-    (e.g. `pn.extension('katex')`), defaulting to `KaTeX`.
+    (e.g. `pn.extension('katex')`), defaulting to `KaTeX` if both are loaded.
 
     Reference: https://panel.holoviz.org/reference/panes/LaTeX.html
 
@@ -42,9 +41,9 @@ class LaTeX(ModelPane):
     ... )
     """
 
-    renderer = param.ObjectSelector(default=None, allow_None=True,
+    renderer = param.Selector(default=None, allow_None=True,
                                     objects=['katex', 'mathjax'], doc="""
-        The JS renderer used to render the LaTeX expression.""")
+        The JS renderer used to render the LaTeX expression. Defaults to katex.""")
 
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None
@@ -68,7 +67,7 @@ class LaTeX(ModelPane):
         else:
             return False
 
-    def _get_model_type(self, root: Model, comm: Comm | None) -> type[Model]:
+    def _get_model_type(self, root: Model | None, comm: Comm | None) -> type[Model]:
         module = self.renderer
         if module is None:
             if 'panel.models.mathjax' in sys.modules and 'panel.models.katex' not in sys.modules:
@@ -83,8 +82,8 @@ class LaTeX(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = self._get_model_type(root, comm)
-        model = self._bokeh_model(**self._get_properties(doc))
+        model_type = self._get_model_type(root, comm)
+        model = model_type(**self._get_properties(doc))
         root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model

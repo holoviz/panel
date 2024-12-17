@@ -13,7 +13,7 @@ To migrate your app's input widgets to Panel:
 - Replace your Streamlit `st.some_widget` function with the corresponding Panel
 `pn.widgets.SomeWidget` class.
 
-You can identify the corresponding widget via the [Widgets Section](../../reference/index#widgets) of the [Component Gallery](../../reference/index.md).
+You can identify the corresponding widget via the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
 
 ## Example
 
@@ -51,4 +51,4 @@ pn.Column(bins, pn.pane.Str(bins)).servable()
 
 Please note that in Panel `bins` is an instance of `IntSlider` and not an integer value. To access the value of `bins` in Panel, you would need to call `bins.value`.
 
-Check out the [`IntSlider` Guide](../../reference/widgets/IntSlider.md) if you want to learn more about it.
+Check out the [`IntSlider` Guide](../../reference/widgets/IntSlider) if you want to learn more about it.

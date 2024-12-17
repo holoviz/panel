@@ -19,6 +19,7 @@ from bokeh.application.handlers.document_lifecycle import (
     DocumentLifecycleHandler,
 )
 from bokeh.application.handlers.function import FunctionHandler
+from bokeh.command.subcommand import Argument
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
 from bokeh.core.validation import silence
@@ -87,186 +88,191 @@ class AdminApplicationContext(ApplicationContext):
 
 class Serve(_BkServe):
 
-    args = _BkServe.args + (
-        ('--static-dirs', dict(
+    args = (
+        tuple((arg, arg_obj) for arg, arg_obj in _BkServe.args if arg != '--dev') + (
+        ('--static-dirs', Argument(
             metavar="KEY=VALUE",
             nargs='+',
             help=("Static directories to serve specified as key=value "
                   "pairs mapping from URL route to static file directory.")
         )),
-        ('--basic-auth', dict(
+        ('--basic-auth', Argument(
             action = 'store',
             type   = str,
             help   = "Password or filepath to use with Basic Authentication."
         )),
-        ('--oauth-provider', dict(
+        ('--oauth-provider', Argument(
             action = 'store',
             type   = str,
             help   = "The OAuth2 provider to use."
         )),
-        ('--oauth-key', dict(
+        ('--oauth-key', Argument(
             action  = 'store',
             type    = str,
             help    = "The OAuth2 key to use",
         )),
-        ('--oauth-secret', dict(
+        ('--oauth-secret', Argument(
             action  = 'store',
             type    = str,
             help    = "The OAuth2 secret to use",
         )),
-        ('--oauth-redirect-uri', dict(
+        ('--oauth-redirect-uri', Argument(
             action  = 'store',
             type    = str,
             help    = "The OAuth2 redirect URI",
         )),
-        ('--oauth-extra-params', dict(
+        ('--oauth-extra-params', Argument(
             action  = 'store',
             type    = str,
             help    = "Additional parameters to use.",
         )),
-        ('--oauth-jwt-user', dict(
+        ('--oauth-jwt-user', Argument(
             action  = 'store',
             type    = str,
             help    = "The key in the ID JWT token to consider the user.",
         )),
-        ('--oauth-encryption-key', dict(
+        ('--oauth-encryption-key', Argument(
             action = 'store',
             type    = str,
             help    = "A random string used to encode the user information."
         )),
-        ('--oauth-error-template', dict(
+        ('--oauth-error-template', Argument(
             action = 'store',
             type    = str,
             help    = "A random string used to encode the user information."
         )),
-        ('--oauth-expiry-days', dict(
+        ('--oauth-expiry-days', Argument(
             action  = 'store',
             type    = float,
             help    = "Expiry off the OAuth cookie in number of days.",
             default = 1
         )),
-        ('--oauth-refresh-tokens', dict(
+        ('--oauth-refresh-tokens', Argument(
             action  = 'store_true',
             help    = "Whether to automatically OAuth access tokens when they expire.",
         )),
-        ('--oauth-guest-endpoints', dict(
+        ('--oauth-guest-endpoints', Argument(
             action  = 'store',
             nargs   = '*',
             help    = "List of endpoints that can be accessed as a guest without authenticating.",
         )),
-        ('--oauth-optional', dict(
+        ('--oauth-optional', Argument(
             action  = 'store_true',
             help    = (
                 "Whether the user will be forced to go through login flow "
                 "or if they can access all applications as a guest."
             )
         )),
-        ('--login-endpoint', dict(
+        ('--login-endpoint', Argument(
             action  = 'store',
             type    = str,
             help    = "Endpoint to serve the authentication login page on."
         )),
-        ('--logout-endpoint', dict(
+        ('--logout-endpoint', Argument(
             action  = 'store',
             type    = str,
             help    = "Endpoint to serve the authentication logout page on."
         )),
-        ('--auth-template', dict(
+        ('--auth-template', Argument(
             action  = 'store',
             type    = str,
             help    = "Template to serve when user is unauthenticated."
         )),
-        ('--logout-template', dict(
+        ('--logout-template', Argument(
             action  = 'store',
             type    = str,
             help    = "Template to serve logout page."
         )),
-        ('--basic-login-template', dict(
+        ('--basic-login-template', Argument(
             action  = 'store',
             type    = str,
             help    = "Template to serve for Basic Authentication login page."
         )),
-        ('--rest-provider', dict(
+        ('--rest-provider', Argument(
             action = 'store',
             type   = str,
             help   = "The interface to use to serve REST API"
         )),
-        ('--rest-endpoint', dict(
+        ('--rest-endpoint', Argument(
             action  = 'store',
             type    = str,
             help    = "Endpoint to store REST API on.",
             default = 'rest'
         )),
-        ('--rest-session-info', dict(
+        ('--rest-session-info', Argument(
             action  = 'store_true',
             help    = "Whether to serve session info on the REST API"
         )),
-        ('--session-history', dict(
+        ('--session-history', Argument(
             action  = 'store',
             type    = int,
             help    = "The length of the session history to record.",
             default = 0
         )),
-        ('--warm', dict(
+        ('--warm', Argument(
             action  = 'store_true',
             help    = "Whether to execute scripts on startup to warm up the server."
         )),
-        ('--admin', dict(
+        ('--admin', Argument(
             action  = 'store_true',
             help    = "Whether to add an admin panel."
         )),
-        ('--admin-endpoint', dict(
+        ('--admin-endpoint', Argument(
             action = 'store',
             type    = str,
             help    = "Name to use for the admin endpoint.",
             default = None
         )),
-        ('--admin-log-level', dict(
+        ('--admin-log-level', Argument(
             action  = 'store',
             default = None,
             choices = ('debug', 'info', 'warning', 'error', 'critical'),
             help    = "One of: debug (default), info, warning, error or critical",
         )),
-        ('--profiler', dict(
+        ('--profiler', Argument(
             action  = 'store',
             type    = str,
             help    = "The profiler to use by default, e.g. pyinstrument, snakeviz or memray."
         )),
-        ('--autoreload', dict(
+        ('--dev', Argument(
             action  = 'store_true',
-            help    = "Whether to autoreload source when script changes."
+            help    = "Whether to enable dev mode. Equivalent to --autoreload."
         )),
-        ('--num-threads', dict(
+        ('--autoreload', Argument(
+            action  = 'store_true',
+            help    = "Whether to autoreload source when script changes. We recommend using --dev instead."
+        )),
+        ('--num-threads', Argument(
             action  = 'store',
             type    = int,
             help    = "Whether to start a thread pool which events are dispatched to.",
             default = None
         )),
-        ('--setup', dict(
+        ('--setup', Argument(
             action  = 'store',
             type    = str,
-            help    = "Path to a setup script to run before server starts.",
+            help    = "Path to a setup script to run before server starts. If --num-procs is enabled it will be run in each process after the server has started.",
             default = None
         )),
-        ('--liveness', dict(
+        ('--liveness', Argument(
             action  = 'store_true',
             help    = "Whether to add a liveness endpoint."
         )),
-        ('--liveness-endpoint', dict(
+        ('--liveness-endpoint', Argument(
             action  = 'store',
             type    = str,
             help    = "The endpoint for the liveness API.",
             default = "liveness"
         )),
-        ('--reuse-sessions', dict(
+        ('--reuse-sessions', Argument(
             action  = 'store_true',
             help    = "Whether to reuse sessions when serving the initial request.",
         )),
-        ('--global-loading-spinner', dict(
+        ('--global-loading-spinner', Argument(
             action  = 'store_true',
             help    = "Whether to add a global loading spinner to the application(s).",
         )),
-    )
+    )) # type: ignore[assignment]
 
     # Supported file extensions
     _extensions = ['.py', '.ipynb', '.md']
@@ -289,6 +295,8 @@ class Serve(_BkServe):
             except Exception as e:
                 if error:
                     raise e
+                else:
+                    continue
             with set_curdoc(session.document):
                 if config.session_key_func:
                     reuse_sessions = False
@@ -364,17 +372,36 @@ class Serve(_BkServe):
             module.__dict__['__file__'] = fullpath(args.setup)
             state._setup_module = module
 
-        if args.warm or args.autoreload:
+            def setup_file():
+                setup_path = state._setup_module.__dict__['__file__']
+                with open(setup_path) as f:
+                    setup_source = f.read()
+                nodes = ast.parse(setup_source, os.fspath(setup_path))
+                code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
+                exec(code, state._setup_module.__dict__)
+
+            if args.num_procs > 1:
+                # We will run the setup_file for each process
+                state._setup_file_callback = setup_file
+            else:
+                state._setup_file_callback = None
+                setup_file()
+
+        if args.warm or config.autoreload:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
-            initialize_session = not (args.num_procs and sys.version_info < (3, 12))
-            if args.autoreload:
+            initialize_session = not (args.num_procs != 1 and sys.version_info < (3, 12))
+            if config.autoreload:
                 with record_modules(list(applications.values())):
                     self.warm_applications(
                         applications, args.reuse_sessions, error=False, initialize_session=initialize_session
                     )
             else:
                 self.warm_applications(applications, args.reuse_sessions, initialize_session=initialize_session)
+
+        # Disable Tornado's autoreload
+        if args.dev:
+            del server_kwargs['autoreload']
 
         if args.liveness:
             argvs = {f: args.args for f in files}
@@ -641,8 +668,14 @@ class Serve(_BkServe):
     def invoke(self, args: argparse.Namespace):
         # Autoreload must be enabled before the application(s) are executed
         # to avoid erroring out
-        config.autoreload = args.autoreload
+        config.autoreload = args.autoreload or bool(args.dev)
         # Empty layout are valid and the Bokeh warning is silenced as usually
         # not relevant to Panel users.
         silence(EMPTY_LAYOUT, True)
+        # dask.distributed changes the logging level of Bokeh, we will overwrite it
+        # if the environment variable is not set to the default Bokeh level
+        # See https://github.com/holoviz/panel/issues/2302
+        if "DASK_DISTRIBUTED__LOGGING__BOKEH" not in os.environ:
+            os.environ["DASK_DISTRIBUTED__LOGGING__BOKEH"] = "info"
+        args.dev = None
         super().invoke(args)

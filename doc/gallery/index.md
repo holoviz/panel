@@ -173,6 +173,19 @@ Interactively apply a XGBoost classifier on the Iris dataset.
 [See source](xgboost_classifier)
 :::
 
+:::{grid-item-card} WebLLM ChatInterface
+
+```{image} https://assets.holoviz.org/panel/gallery/webllm.png
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/webllm
+:width: 100%
+```
+
+Interact with an LLM running in your browser using the `ChatInterface`.
++++
+[See source](webllm)
+:::
+
+
 :::{grid-item-card} Altair Brushing
 
 ```{image} https://assets.holoviz.org/panel/gallery/altair_brushing.png
@@ -193,6 +206,15 @@ Examples of Panel applications maintained by the [HoloViz](https://holoviz.org/)
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
+
+:::{grid-item-card} HoloViz Examples Gallery
+:img-top: https://assets.holoviz.org/panel/gallery/holoviz_examples.png
+:link: https://examples.holoviz.org
+:link-type: url
+
+Discover a curated collection of domain-specific narrative examples using
+Panel and various HoloViz projects.
+:::
 
 :::{grid-item-card} Panel Chat Examples
 :img-top: https://assets.holoviz.org/panel/gallery/panel_chat_examples.png
@@ -280,6 +302,7 @@ streaming_videostream
 vtk_interactive
 vtk_slicer
 vtk_warp
+webllm
 windturbines
 xgboost_classifier
 ```

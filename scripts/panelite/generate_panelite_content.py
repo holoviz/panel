@@ -19,7 +19,7 @@ DOC_DIR = PANEL_BASE / 'doc'
 BASE_DEPENDENCIES = []
 MINIMUM_VERSIONS = {}
 
-INLINE_DIRECTIVE = re.compile('\{.*\}`.*`\s*')
+INLINE_DIRECTIVE = re.compile(r'\{.*\}`.*`\s*')
 
 # Add piplite command to notebooks
 with open(DOC_DIR / 'pyodide_dependencies.json', encoding='utf8') as file:

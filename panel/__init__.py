@@ -27,11 +27,11 @@ How to develop a Panel app in 3 simple steps
 
 - Run your app
 
-$ panel serve my_script.py --autoreload --show
+$ panel serve my_script.py --dev --show
 
 or
 
-$ panel serve my_notebook.ipynb --autoreload --show
+$ panel serve my_notebook.ipynb --dev --show
 
 The app will be available in your browser!
 
