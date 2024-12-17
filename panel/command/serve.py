@@ -396,8 +396,6 @@ class Serve(_BkServe):
                 with add_sys_path('./'):
                     plugin_module = importlib.import_module(plugin)
             except ModuleNotFoundError:
-                import pdb
-                pdb.set_trace()
                 raise Exception(
                     f'Specified plugin module {plugin!r} could not be found. '
                     'Ensure the module exists and is in the right path. '
