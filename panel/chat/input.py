@@ -72,7 +72,7 @@ class ChatAreaInput(_PnTextAreaInput):
     )
 
     enter_pressed = param.Event(doc="""
-        Event when the enter key has been pressed.""")
+        Event when the Enter/Ctrl+Enter key has been pressed.""")
 
     _widget_type: ClassVar[type[Model]] = _bkChatAreaInput
 
