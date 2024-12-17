@@ -302,7 +302,6 @@ class ChatMessage(Pane):
             sizing_mode=None,
         )
         self._edit_area = ChatAreaInput(
-            value=self.object,
             css_classes=["edit-area"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx()
         )
