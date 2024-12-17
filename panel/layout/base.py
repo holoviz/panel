@@ -979,11 +979,6 @@ class Column(ListPanel):
         self._send_event(ScrollToEvent, index=index)
 
 
-    @param.depends("scroll_index", watch=True)
-    def _reset_scroll_index(self):
-        self.scroll_index = None
-
-
 class WidgetBox(ListPanel):
     """
     The `WidgetBox` layout allows arranging multiple panel objects in a
