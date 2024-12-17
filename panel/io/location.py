@@ -6,23 +6,65 @@ from __future__ import annotations
 import json
 import urllib.parse as urlparse
 
-from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-)
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
 from ..models.location import Location as _BkLocation
 from ..reactive import Syncable
-from ..util import parse_query
-from .document import init_doc
+from ..util import edit_readonly, parse_query
+from .cache import is_equal
+from .document import create_doc_if_none_exists
 from .state import state
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
+    from bokeh.server.contexts import BokehSessionContext
     from pyviz_comms import Comm
 
+def _get_location_params(protocol: str|None, host: str| None, uri: str| None)->dict:
+    params = {}
+    href = ''
+    if protocol:
+        params['protocol'] = href = f'{protocol}:'
+    if host:
+        if host.startswith('::ffff:'):
+            host = host.replace('::ffff:', '')
+        elif host == '::1':
+            host = host.replace('::1', 'localhost')
+
+        href += f'//{host}'
+        if ':' in host:
+            params['hostname'], params['port'] = host.split(':')
+        else:
+            params['hostname'] = host
+    if uri:
+        search = hash = None
+
+        if uri.startswith("https,"):
+            uri = uri.replace("https,", "")
+
+        if uri.startswith("http"):
+            uri = urlparse.urlparse(uri).path
+
+        href += uri
+        if '?' in uri and '#' in uri:
+            params['pathname'], query = uri.split('?')
+            search, hash = query.split('#')
+        elif '?' in uri:
+            params['pathname'], search = uri.split('?')
+        elif '#' in uri:
+            params['pathname'], hash = uri.split('#')
+        else:
+            params['pathname'] = uri
+        if search:
+            params['search'] = f'?{search}'
+        if hash:
+            params['hash'] = f'#{hash}'
+    params['href'] = href
+    return params
 
 class Location(Syncable):
     """
@@ -37,7 +79,7 @@ class Location(Syncable):
     hostname = param.String(readonly=True, doc="""
         hostname in window.location e.g. 'panel.holoviz.org'""")
 
-    pathname = param.String(regex=r"^$|[\/].*$", doc="""
+    pathname = param.String(regex=r"^$|[\/]|srcdoc$", doc="""
         pathname in window.location e.g. '/user_guide/Interact.html'""")
 
     protocol = param.String(readonly=True, doc="""
@@ -60,6 +102,21 @@ class Location(Syncable):
     # Mapping from parameter name to bokeh model property name
     _rename: ClassVar[Mapping[str, str | None]] = {"name": None}
 
+    @classmethod
+    def from_request(cls, request):
+        try:
+            from bokeh.server.contexts import _RequestProxy
+            if not isinstance(request, _RequestProxy) or request._request is None:
+                return cls()
+        except ImportError:
+            return cls()
+
+        params = _get_location_params(request.protocol, request.host, request.uri)
+        loc = cls()
+        with edit_readonly(loc):
+            loc.param.update(params)
+        return loc
+
     def __init__(self, **params):
         super().__init__(**params)
         self._synced = []
@@ -67,27 +124,33 @@ class Location(Syncable):
         self.param.watch(self._update_synced, ['search'])
 
     def _get_model(
-        self, doc: 'Document', root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
-    ) -> 'Model':
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         model = _BkLocation(**self._process_param_change(self._init_params()))
         root = root or model
-        values = self.param.values()
-        properties = list(self._process_param_change(values))
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, properties, doc, root, comm)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
-    ) -> 'Model':
-        doc = init_doc(doc)
+    ) -> Model:
+        doc = create_doc_if_none_exists(doc)
         root = self._get_model(doc, comm=comm)
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)
         self._documents[doc] = root
         return root
+
+    def _server_destroy(self, session_context: BokehSessionContext) -> None:
+        for p, ps, _, _ in self._synced:
+            try:
+                self.unsync(p, ps)
+            except Exception:
+                pass
+        super()._server_destroy(session_context)
 
     def _cleanup(self, root: Model | None = None) -> None:
         if root:
@@ -116,9 +179,10 @@ class Location(Syncable):
                 except Exception:
                     pass
                 try:
-                    equal = v == getattr(p, pname)
+                    equal = is_equal(v, getattr(p, pname))
                 except Exception:
                     equal = False
+
                 if not equal:
                     mapped[pname] = v
             try:
@@ -128,7 +192,7 @@ class Location(Syncable):
                     on_error(mapped)
 
     def _update_query(
-        self, *events: param.parameterized.Event, query: Optional[Dict[str, Any]] = None
+        self, *events: param.parameterized.Event, query: dict[str, Any] | None = None
     ) -> None:
         if self._syncing:
             return
@@ -152,7 +216,7 @@ class Location(Syncable):
             self._syncing = False
 
     @property
-    def query_params(self) -> Dict[str, Any]:
+    def query_params(self) -> dict[str, Any]:
         return parse_query(self.search)
 
     def update_query(self, **kwargs: Mapping[str, Any]) -> None:
@@ -161,8 +225,8 @@ class Location(Syncable):
         self.search = '?' + urlparse.urlencode(query)
 
     def sync(
-        self, parameterized: param.Parameterized, parameters: Optional[List[str] | Dict[str, str]] = None,
-        on_error: Optional[Callable[[Dict[str, Any]], None]] = None
+        self, parameterized: param.Parameterized, parameters: list[str] | dict[str, str] | None = None,
+        on_error: Callable[[dict[str, Any]], None] | None = None
     ) -> None:
         """
         Syncs the parameters of a Parameterized object with the query
@@ -176,7 +240,7 @@ class Location(Syncable):
         parameters (list or dict):
           A list or dictionary specifying parameters to sync.
           If a dictionary is supplied it should define a mapping from
-          the Parameterized's parameteres to the names of the query
+          the Parameterized's parameters to the names of the query
           parameters.
         on_error: (callable):
           Callback when syncing Parameterized with URL parameters
@@ -203,7 +267,7 @@ class Location(Syncable):
             query[name] = v
         self._update_query(query=query)
 
-    def unsync(self, parameterized: param.Parameterized, parameters: Optional[List[str]] = None) -> None:
+    def unsync(self, parameterized: param.Parameterized, parameters: list[str] | None = None) -> None:
         """
         Unsyncs the parameters of the Parameterized with the query
         params in the URL. If no parameters are supplied all

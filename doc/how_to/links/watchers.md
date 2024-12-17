@@ -1,11 +1,27 @@
-# Python links using the ``watch`` method
+# Create Low-Level Python Links Using ``.watch``
 
-The ``link`` method used above provides a high-level API to link to parameters, which is adequate in most cases. If we need more control, we can fall back to the underlying ``param.watch`` method, which is what Panel uses internally to make all reactive features work. The main differences are that ``watch`` 1) does not assume you are linking two objects, providing more control over what you are watching, 2) allows batched callbacks when multiple parameters change at once, and 3) allows you to specify that an event should be triggered every time the parameter is set (instead of the default of only when the parameter value actually changes). If you do not need this level of control, just skip to the [Linking objects in JS](#Linking-objects-in-JS) section below.
+This guide addresses how to use the low-level `.watch` API to trigger callbacks on parameters.
 
-To demonstrate ``param.watch``, let us set up three different models: 1) a `Markdown` pane to display the possible options, 2) a ``Markdown`` pane to display the _selected_ options, and 3) a ``ToggleGroup`` widget that allows us to toggle between a number of options:
+```{admonition} Prerequisites
+1. The [How to > Create High-Level Python Links with '.link'](./links) guide demonstrates a high-level API to link to parameters, which is adequate in most cases.
+```
+
+---
+
+If we need more control than what `.link` provides, we can fall back to the underlying `.watch` method. The main differences are that `.watch`:
+1) does not assume you are linking two objects (providing more control over what you are watching)
+2) allows batched callbacks when multiple parameters change at once
+3) allows you to specify that an event should be triggered every time the parameter is set (instead of the default of only when the parameter value actually changes)
+
+To demonstrate `.watch`, let us set up three different models:
+1) `Markdown` pane to display the possible options
+2) `Markdown` pane to display the _selected_ options
+3) `ToggleGroup` widget that allows us to toggle between a number of options
 
 ```{pyodide}
 import panel as pn
+
+pn.extension()
 
 selections = pn.pane.Markdown(object='')
 selected = pn.pane.Markdown(object='')
@@ -58,14 +74,14 @@ To initialize the `selections` and `selected` we can explicitly ``trigger`` opti
 toggle.param.trigger('options', 'value')
 ```
 
-We can also override the initial parameters using the ``set_param`` method:
+We can also override the initial parameters using the ``update`` method:
 
 ```{pyodide}
 options = ['A','B','C','D']
-toggle.param.set_param(options=dict(zip(options,options)), value=['D'])
+toggle.param.update(options=dict(zip(options,options)), value=['D'])
 ```
 
-Using `set_param` allows us to batch two separate changes (the options and the value) together, which you can see from the ``print`` output resulted into a single invocation of the callback.  You could instead have set them separately using the usual parameter-setting syntax `toggle.value=['D']; toggle.options=dict(zip(options,options))`, but batching them can be much more efficient for a non-trivial callback like a database query or a complex plot that needs updating.
+Using `update` allows us to batch two separate changes (the options and the value) together, which you can see from the ``print`` output resulted into a single invocation of the callback.  You could instead have set them separately using the usual parameter-setting syntax `toggle.value=['D']; toggle.options=dict(zip(options,options))`, but batching them can be much more efficient for a non-trivial callback like a database query or a complex plot that needs updating.
 
 Now that the widgets are visible, you can toggle the option values and see the selected pane update in response via the callback (if Python is running).
 
@@ -73,6 +89,12 @@ Now that the widgets are visible, you can toggle the option values and see the s
 
 If for whatever reason we want to stop watching parameter changes we can unsubscribe by passing our ``watcher`` (returned in the ``watch`` call above) to the ``unwatch`` method:
 
-```{pyodide}
-#toggle.param.unwatch(watcher)
+```python
+toggle.param.unwatch(watcher)
 ```
+
+---
+
+## Related Resources
+
+- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs

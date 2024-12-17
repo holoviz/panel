@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 import {Model} from "@bokehjs/model"
 import {mat4, vec3} from "gl-matrix"
@@ -15,9 +15,9 @@ export namespace VTKAxes {
 
   export type Props = Model.Props & {
     origin: p.Property<number[]>
-    xticker: p.Property<VTKTicker>
-    yticker: p.Property<VTKTicker>
-    zticker: p.Property<VTKTicker>
+    xticker: p.Property<VTKTicker | null>
+    yticker: p.Property<VTKTicker | null>
+    zticker: p.Property<VTKTicker | null>
     digits: p.Property<number>
     show_grid: p.Property<boolean>
     grid_opacity: p.Property<number>
@@ -29,63 +29,66 @@ export namespace VTKAxes {
 export interface VTKAxes extends VTKAxes.Attrs {}
 
 export class VTKAxes extends Model {
-  properties: VTKAxes.Props
+  declare properties: VTKAxes.Props
 
   constructor(attrs?: Partial<VTKAxes.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.vtk"
+  static override __module__ = "panel.models.vtk"
 
-  static init_VTKAxes(): void {
+  static {
     this.define<VTKAxes.Props>(({Any, Array, Boolean, Number}) => ({
-      origin: [Array(Number)],
-      xticker: [Any],
-      yticker: [Any],
-      zticker: [Any],
+      origin: [Array(Number), [0, 0, 0] ],
+      xticker: [Any, null],
+      yticker: [Any, null],
+      zticker: [Any, null],
       digits: [Number, 1],
       show_grid: [Boolean, true],
       grid_opacity: [Number, 0.1],
       axes_opacity: [Number, 1],
-      fontsize: [Number, 12]
+      fontsize: [Number, 12],
     }))
   }
 
   get xticks(): number[] {
-    if (this.xticker)
+    if (this.xticker) {
       return this.xticker.ticks
-    else
+    } else {
       return []
+    }
   }
 
   get yticks(): number[] {
-    if (this.yticker)
+    if (this.yticker) {
       return this.yticker.ticks
-    else
+    } else {
       return []
+    }
   }
 
   get zticks(): number[] {
-    if (this.zticker)
+    if (this.zticker) {
       return this.zticker.ticks
-    else
+    } else {
       return []
+    }
   }
 
   get xlabels(): string[] {
-    return this.xticker.labels
+    return this.xticker?.labels
       ? this.xticker.labels
       : this.xticks.map((elem) => elem.toFixed(this.digits))
   }
 
   get ylabels(): string[] {
-    return this.yticker.labels
+    return this.yticker?.labels
       ? this.yticker.labels
       : this.yticks.map((elem) => elem.toFixed(this.digits))
   }
 
   get zlabels(): string[] {
-    return this.zticker.labels
+    return this.zticker?.labels
       ? this.zticker.labels
       : this.zticks.map((elem) => elem.toFixed(this.digits))
   }
@@ -113,17 +116,11 @@ export class VTKAxes extends Model {
 
     const polys = []
     let offset = 0
-    polys.push(
-      this._make_grid_lines(this.xticks.length, this.yticks.length, offset)
-    ) //xy
+    polys.push(this._make_grid_lines(this.xticks.length, this.yticks.length, offset)) //xy
     offset += this.xticks.length * this.yticks.length
-    polys.push(
-      this._make_grid_lines(this.yticks.length, this.zticks.length, offset)
-    ) //yz
+    polys.push(this._make_grid_lines(this.yticks.length, this.zticks.length, offset)) //yz
     offset += this.yticks.length * this.zticks.length
-    polys.push(
-      this._make_grid_lines(this.xticks.length, this.zticks.length, offset)
-    ) //xz
+    polys.push(this._make_grid_lines(this.xticks.length, this.zticks.length, offset)) //xz
     const gridPolyData = (window as any).vtk({
       vtkClass: "vtkPolyData",
       points: {
@@ -150,8 +147,9 @@ export class VTKAxes extends Model {
   }
 
   create_axes(canvas: HTMLCanvasElement): any {
-    if (this.origin == null)
+    if (this.origin == null) {
       return {psActor: null, axesActor: null, gridActor: null}
+    }
     const points = ([this.xticks, this.yticks, this.zticks].map((arr, axis) => {
       let coords = null
       switch (axis) {
@@ -217,21 +215,23 @@ export class VTKAxes extends Model {
             textCtx.font = "30px serif"
             textCtx.textAlign = "center"
             textCtx.textBaseline = "alphabetic"
-            textCtx.fillText(`.`, xy[0], dims.height - xy[1] + 2)
+            textCtx.fillText(".", xy[0], dims.height - xy[1] + 2)
             textCtx.font = `${this.fontsize * window.devicePixelRatio}px serif`
             textCtx.textAlign = "right"
             textCtx.textBaseline = "top"
             let label
-            if (idx < this.xticks.length) label = this.xlabels[idx]
-            else if (
+            if (idx < this.xticks.length) {
+              label = this.xlabels[idx]
+            } else if (
               idx >= this.xticks.length &&
               idx < this.xticks.length + this.yticks.length
-            )
+            ) {
               label = this.ylabels[idx - this.xticks.length]
-            else
+            } else {
               label = this.zlabels[
                 idx - (this.xticks.length + this.yticks.length)
               ]
+            }
             textCtx.fillText(`${label}`, xy[0], dims.height - xy[1])
           }
         })

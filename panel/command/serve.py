@@ -4,6 +4,7 @@ ways.
 """
 from __future__ import annotations
 
+import argparse
 import ast
 import base64
 import contextlib
@@ -22,6 +23,7 @@ from bokeh.application.handlers.document_lifecycle import (
     DocumentLifecycleHandler,
 )
 from bokeh.application.handlers.function import FunctionHandler
+from bokeh.command.subcommand import Argument
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
 from bokeh.core.validation import silence
@@ -30,7 +32,7 @@ from bokeh.server.contexts import ApplicationContext
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
-from ..auth import OAuthProvider
+from ..auth import BasicAuthProvider, OAuthProvider
 from ..config import config
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
@@ -74,7 +76,7 @@ def parse_vars(items):
     """
     Parse a series of key-value pairs and return a dictionary
     """
-    return dict((parse_var(item) for item in items))
+    return dict(parse_var(item) for item in items)
 
 
 class AdminApplicationContext(ApplicationContext):
@@ -100,119 +102,177 @@ class AdminApplicationContext(ApplicationContext):
 
 class Serve(_BkServe):
 
-    args = _BkServe.args + (
-        ('--static-dirs', dict(
+    args = (
+        tuple((arg, arg_obj) for arg, arg_obj in _BkServe.args if arg != '--dev') + (
+        ('--static-dirs', Argument(
             metavar="KEY=VALUE",
             nargs='+',
             help=("Static directories to serve specified as key=value "
                   "pairs mapping from URL route to static file directory.")
         )),
-        ('--oauth-provider', dict(
+        ('--basic-auth', Argument(
+            action = 'store',
+            type   = str,
+            help   = "Password or filepath to use with Basic Authentication."
+        )),
+        ('--oauth-provider', Argument(
             action = 'store',
             type   = str,
             help   = "The OAuth2 provider to use."
         )),
-        ('--oauth-key', dict(
+        ('--oauth-key', Argument(
             action  = 'store',
             type    = str,
             help    = "The OAuth2 key to use",
         )),
-        ('--oauth-secret', dict(
+        ('--oauth-secret', Argument(
             action  = 'store',
             type    = str,
             help    = "The OAuth2 secret to use",
         )),
-        ('--oauth-redirect-uri', dict(
+        ('--oauth-redirect-uri', Argument(
             action  = 'store',
             type    = str,
             help    = "The OAuth2 redirect URI",
         )),
-        ('--oauth-extra-params', dict(
+        ('--oauth-extra-params', Argument(
             action  = 'store',
             type    = str,
             help    = "Additional parameters to use.",
         )),
-        ('--oauth-jwt-user', dict(
+        ('--oauth-jwt-user', Argument(
             action  = 'store',
             type    = str,
             help    = "The key in the ID JWT token to consider the user.",
         )),
-        ('--oauth-encryption-key', dict(
+        ('--oauth-encryption-key', Argument(
             action = 'store',
             type    = str,
             help    = "A random string used to encode the user information."
         )),
-        ('--oauth-error-template', dict(
+        ('--oauth-error-template', Argument(
             action = 'store',
             type    = str,
             help    = "A random string used to encode the user information."
         )),
-        ('--oauth-expiry-days', dict(
+        ('--oauth-expiry-days', Argument(
             action  = 'store',
             type    = float,
             help    = "Expiry off the OAuth cookie in number of days.",
             default = 1
         )),
-        ('--auth-template', dict(
+        ('--oauth-refresh-tokens', Argument(
+            action  = 'store_true',
+            help    = "Whether to automatically OAuth access tokens when they expire.",
+        )),
+        ('--oauth-guest-endpoints', Argument(
+            action  = 'store',
+            nargs   = '*',
+            help    = "List of endpoints that can be accessed as a guest without authenticating.",
+        )),
+        ('--oauth-optional', Argument(
+            action  = 'store_true',
+            help    = (
+                "Whether the user will be forced to go through login flow "
+                "or if they can access all applications as a guest."
+            )
+        )),
+        ('--login-endpoint', Argument(
+            action  = 'store',
+            type    = str,
+            help    = "Endpoint to serve the authentication login page on."
+        )),
+        ('--logout-endpoint', Argument(
+            action  = 'store',
+            type    = str,
+            help    = "Endpoint to serve the authentication logout page on."
+        )),
+        ('--auth-template', Argument(
             action  = 'store',
             type    = str,
             help    = "Template to serve when user is unauthenticated."
         )),
-        ('--rest-provider', dict(
+        ('--logout-template', Argument(
+            action  = 'store',
+            type    = str,
+            help    = "Template to serve logout page."
+        )),
+        ('--basic-login-template', Argument(
+            action  = 'store',
+            type    = str,
+            help    = "Template to serve for Basic Authentication login page."
+        )),
+        ('--rest-provider', Argument(
             action = 'store',
             type   = str,
             help   = "The interface to use to serve REST API"
         )),
-        ('--rest-endpoint', dict(
+        ('--rest-endpoint', Argument(
             action  = 'store',
             type    = str,
             help    = "Endpoint to store REST API on.",
             default = 'rest'
         )),
-        ('--rest-session-info', dict(
+        ('--rest-session-info', Argument(
             action  = 'store_true',
             help    = "Whether to serve session info on the REST API"
         )),
-        ('--session-history', dict(
+        ('--session-history', Argument(
             action  = 'store',
             type    = int,
             help    = "The length of the session history to record.",
             default = 0
         )),
-        ('--warm', dict(
+        ('--warm', Argument(
             action  = 'store_true',
             help    = "Whether to execute scripts on startup to warm up the server."
         )),
-        ('--admin', dict(
+        ('--admin', Argument(
             action  = 'store_true',
             help    = "Whether to add an admin panel."
         )),
-        ('--profiler', dict(
+        ('--admin-endpoint', Argument(
+            action = 'store',
+            type    = str,
+            help    = "Name to use for the admin endpoint.",
+            default = None
+        )),
+        ('--admin-log-level', Argument(
+            action  = 'store',
+            default = None,
+            choices = ('debug', 'info', 'warning', 'error', 'critical'),
+            help    = "One of: debug (default), info, warning, error or critical",
+        )),
+        ('--profiler', Argument(
             action  = 'store',
             type    = str,
             help    = "The profiler to use by default, e.g. pyinstrument, snakeviz or memray."
         )),
-        ('--autoreload', dict(
+        ('--dev', Argument(
             action  = 'store_true',
-            help    = "Whether to autoreload source when script changes."
+            help    = "Whether to enable dev mode. Equivalent to --autoreload."
         )),
-        ('--num-threads', dict(
+        ('--autoreload', Argument(
+            action  = 'store_true',
+            help    = "Whether to autoreload source when script changes. We recommend using --dev instead."
+        )),
+        ('--num-threads', Argument(
             action  = 'store',
             type    = int,
             help    = "Whether to start a thread pool which events are dispatched to.",
             default = None
         )),
-        ('--setup', dict(
+        ('--setup', Argument(
             action  = 'store',
             type    = str,
-            help    = "Path to a setup script to run before server starts.",
+            help    = "Path to a setup script to run before server starts. If --num-procs is enabled it will be run in each process after the server has started.",
             default = None
         )),
-        ('--liveness', dict(
+        ('--liveness', Argument(
             action  = 'store_true',
             help    = "Whether to add a liveness endpoint."
         )),
-        ('--liveness-endpoint', dict(
+        ('--liveness-endpoint', Argument(
             action  = 'store',
             type    = str,
             help    = "The endpoint for the liveness API.",
@@ -222,10 +282,18 @@ class Serve(_BkServe):
             action  = 'append',
             type    = str
         ))
-    )
+        ('--reuse-sessions', Argument(
+            action  = 'store_true',
+            help    = "Whether to reuse sessions when serving the initial request.",
+        )),
+        ('--global-loading-spinner', Argument(
+            action  = 'store_true',
+            help    = "Whether to add a global loading spinner to the application(s).",
+        )),
+    )) # type: ignore[assignment]
 
     # Supported file extensions
-    _extensions = ['.py']
+    _extensions = ['.py', '.ipynb', '.md']
 
     def customize_applications(self, args, applications):
         if args.index and not args.index.endswith('.html'):
@@ -237,6 +305,26 @@ class Serve(_BkServe):
                 applications['/'] = applications[f'/{index}']
         return super().customize_applications(args, applications)
 
+    def warm_applications(self, applications, reuse_sessions, error=True, initialize_session=True):
+        from ..io.session import generate_session
+        for path, app in applications.items():
+            try:
+                session = generate_session(app, initialize=initialize_session)
+            except Exception as e:
+                if error:
+                    raise e
+                else:
+                    continue
+            with set_curdoc(session.document):
+                if config.session_key_func:
+                    reuse_sessions = False
+                else:
+                    state._session_key_funcs[path] = lambda r: r.path
+                    state._sessions[path] = session
+                    session.block_expiration()
+                state._on_load(None)
+            _cleanup_doc(session.document, destroy=not reuse_sessions)
+
     def customize_kwargs(self, args, server_kwargs):
         '''Allows subclasses to customize ``server_kwargs``.
 
@@ -245,6 +333,8 @@ class Serve(_BkServe):
         kwargs = dict(server_kwargs)
         if 'index' not in kwargs:
             kwargs['index'] = INDEX_HTML
+        elif kwargs['index'].endswith('.html'):
+            kwargs['index'] = os.path.abspath(kwargs['index'])
 
         # Handle tranquilized functions in the supplied functions
         kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
@@ -285,63 +375,79 @@ class Serve(_BkServe):
             pattern = REST_PROVIDERS[args.rest_provider](files, args.rest_endpoint)
             patterns.extend(pattern)
         elif args.rest_provider is not None:
-            raise ValueError("rest-provider %r not recognized." % args.rest_provider)
+            raise ValueError(f"rest-provider {args.rest_provider!r} not recognized.")
 
-        config.autoreload = args.autoreload
+        config.global_loading_spinner = args.global_loading_spinner
+        config.reuse_sessions = args.reuse_sessions
 
         if config.autoreload:
             for f in files:
                 watch(f)
 
         if args.setup:
-            setup_path = args.setup
-            with open(setup_path) as f:
-                setup_source = f.read()
-            nodes = ast.parse(setup_source, os.fspath(setup_path))
-            code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
             module_name = 'panel_setup_module'
             module = ModuleType(module_name)
-            module.__dict__['__file__'] = fullpath(setup_path)
-            exec(code, module.__dict__)
+            module.__dict__['__file__'] = fullpath(args.setup)
             state._setup_module = module
 
-        if args.warm or args.autoreload:
+            def setup_file():
+                setup_path = state._setup_module.__dict__['__file__']
+                with open(setup_path) as f:
+                    setup_source = f.read()
+                nodes = ast.parse(setup_source, os.fspath(setup_path))
+                code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
+                exec(code, state._setup_module.__dict__)
+
+            if args.num_procs > 1:
+                # We will run the setup_file for each process
+                state._setup_file_callback = setup_file
+            else:
+                state._setup_file_callback = None
+                setup_file()
+
+        if args.warm or config.autoreload:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
-            if args.autoreload:
-                with record_modules():
-                    for app in applications.values():
-                        doc = app.create_document()
-                        with set_curdoc(doc):
-                            state._on_load(None)
-                        _cleanup_doc(doc)
+            initialize_session = not (args.num_procs != 1 and sys.version_info < (3, 12))
+            if config.autoreload:
+                with record_modules(list(applications.values())):
+                    self.warm_applications(
+                        applications, args.reuse_sessions, error=False, initialize_session=initialize_session
+                    )
             else:
-                for app in applications.values():
-                    doc = app.create_document()
-                    with set_curdoc(doc):
-                        state._on_load(None)
-                    _cleanup_doc(doc)
+                self.warm_applications(applications, args.reuse_sessions, initialize_session=initialize_session)
+
+        # Disable Tornado's autoreload
+        if args.dev:
+            del server_kwargs['autoreload']
 
         if args.liveness:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
-            patterns += [(r"/%s" % args.liveness_endpoint, LivenessHandler, dict(applications=applications))]
+            patterns += [(rf"/{args.liveness_endpoint}", LivenessHandler, dict(applications=applications))]
 
         config.profiler = args.profiler
         if args.admin:
             from ..io.admin import admin_panel
             from ..io.server import per_app_patterns
+
+            # If `--admin-endpoint` is not set, then we default to the `/admin` path.
+            admin_path = "/admin"
+            if args.admin_endpoint:
+                admin_path = args.admin_endpoint
+                admin_path = admin_path if admin_path.startswith('/') else f'/{admin_path}'
+
             config._admin = True
             app = Application(FunctionHandler(admin_panel))
             unused_timeout = args.check_unused_sessions or 15000
             state._admin_context = app_ctx = AdminApplicationContext(
-                app, unused_timeout=unused_timeout, url='/admin'
+                app, unused_timeout=unused_timeout, url=admin_path
             )
             if all(not isinstance(handler, DocumentLifecycleHandler) for handler in app._handlers):
                 app.add(DocumentLifecycleHandler())
             app_patterns = []
             for p in per_app_patterns:
-                route = '/admin' + p[0]
+                route = admin_path + p[0]
                 context = {"application_context": app_ctx}
                 app_patterns.append((route, p[1], context))
 
@@ -362,6 +468,15 @@ class Serve(_BkServe):
             except Exception:
                 pass
             patterns.extend(app_patterns)
+            if args.admin_log_level is not None:
+                if os.environ.get('PANEL_ADMIN_LOG_LEVEL'):
+                    raise ValueError(
+                        "admin_log_level supplied both using the environment variable "
+                        "PANEL_ADMIN_LOG_LEVEL and as an explicit argument, only the "
+                        "value supplied to the environment variable is used "
+                    )
+                else:
+                    config.admin_log_level = args.admin_log_level.upper()
 
         config.session_history = args.session_history
         if args.rest_session_info:
@@ -379,12 +494,72 @@ class Serve(_BkServe):
 
         if args.auth_template:
             authpath = pathlib.Path(args.auth_template)
-            if not authpath.isfile():
+            if not authpath.is_file():
                 raise ValueError(
-                    "The supplied auth-template {args.auth_template} does not "
+                    f"The supplied auth-template {args.auth_template} does not "
                     "exist, ensure you supply and existing Jinja2 template."
                 )
             config.auth_template = str(authpath.absolute())
+
+        if args.logout_template:
+            logout_template = str(pathlib.Path(args.logout_template).absolute())
+        else:
+            logout_template = None
+
+        if args.basic_auth and config.basic_auth:
+            raise ValueError(
+                "Turn on Basic authentication using environment variable "
+                "or via explicit argument, not both"
+            )
+
+        if args.basic_login_template:
+            login_template = args.basic_login_template
+            authpath = pathlib.Path(login_template)
+            if not authpath.is_file():
+                raise ValueError(
+                    f"The supplied auth-template {login_template} does not "
+                    "exist, ensure you supply and existing Jinja2 template."
+                )
+        else:
+            login_template = None
+
+        login_endpoint = args.login_endpoint or '/login'
+        login_endpoint = login_endpoint if login_endpoint.startswith('/') else f'/{login_endpoint}'
+        logout_endpoint = args.logout_endpoint or '/logout'
+        logout_endpoint = logout_endpoint if logout_endpoint.startswith('/') else f'/{logout_endpoint}'
+
+        if args.oauth_error_template:
+            error_template = str(pathlib.Path(args.oauth_error_template).absolute())
+        elif config.auth_template:
+            error_template = config.auth_template
+        else:
+            error_template = None
+
+        if args.oauth_guest_endpoints:
+            config.oauth_guest_endpoints = args.oauth_guest_endpoints
+        if args.oauth_optional:
+            config.oauth_optional = args.oauth_optional
+
+        if args.basic_auth:
+            config.basic_auth = args.basic_auth
+        if config.basic_auth:
+            kwargs['auth_provider'] = BasicAuthProvider(
+                login_endpoint=login_endpoint,
+                logout_endpoint=logout_endpoint,
+                login_template=login_template,
+                logout_template=logout_template,
+                guest_endpoints=config.oauth_guest_endpoints,
+            )
+
+        if args.cookie_secret and config.cookie_secret:
+            raise ValueError(
+                "Supply cookie secret either using environment "
+                "variable or via explicit argument, not both."
+            )
+        elif args.cookie_secret:
+            config.cookie_secret = args.cookie_secret
+
+        # Check only one auth is used.
         if args.oauth_provider and config.oauth_provider:
                 raise ValueError(
                     "Supply OAuth provider either using environment variable "
@@ -413,6 +588,7 @@ class Serve(_BkServe):
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
         if config.oauth_provider:
+            config.oauth_refresh_tokens = args.oauth_refresh_tokens
             config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
                 raise ValueError(
@@ -426,6 +602,14 @@ class Serve(_BkServe):
                     "When enabling an OAuth provider you must supply "
                     "a valid oauth_key either using the --oauth-key "
                     "CLI argument or PANEL_OAUTH_KEY environment "
+                    "variable."
+                )
+
+            if not config.cookie_secret:
+                raise ValueError(
+                    "When enabling an OAuth provider you must supply "
+                    "a valid cookie_secret either using the --cookie-secret "
+                    "CLI argument or the PANEL_COOKIE_SECRET environment "
                     "variable."
                 )
 
@@ -460,7 +644,7 @@ class Serve(_BkServe):
                     raise ValueError("OAuth encryption key was not a valid base64 "
                                      "string. Generate an encryption key with "
                                      "`panel oauth-secret` and ensure you did not "
-                                     "truncate the returned string.")
+                                     "truncate the returned string.") from None
                 if len(key) != 32:
                     raise ValueError(
                         "OAuth encryption key must be 32 url-safe "
@@ -468,7 +652,7 @@ class Serve(_BkServe):
                     )
                 config.oauth_encryption_key = encryption_key
             elif not config.oauth_encryption_key:
-                print("WARNING: OAuth has not been configured with an "
+                print("WARNING: OAuth has not been configured with an " # noqa: T201
                       "encryption key and will potentially leak "
                       "credentials in cookies and a JWT token embedded "
                       "in the served website. Use at your own risk or "
@@ -486,30 +670,17 @@ class Serve(_BkServe):
                         "Using OAuth2 provider with Panel requires the "
                         "cryptography library. Install it with `pip install "
                         "cryptography` or `conda install cryptography`."
-                    )
+                    ) from None
                 state.encryption = Fernet(config.oauth_encryption_key)
 
-            if args.cookie_secret and config.cookie_secret:
-                raise ValueError(
-                    "Supply cookie secret either using environment "
-                    "variable or via explicit argument, not both."
-                )
-            elif args.cookie_secret:
-                config.cookie_secret = args.cookie_secret
-            elif not config.cookie_secret:
-                raise ValueError(
-                    "When enabling an OAuth provider you must supply "
-                    "a valid cookie_secret either using the --cookie-secret "
-                    "CLI argument or the PANEL_COOKIE_SECRET environment "
-                    "variable."
-                )
-            if args.oauth_error_template:
-                error_template = str(pathlib.Path(args.oauth_error_template).absolute())
-            elif config.auth_template:
-                error_template = config.auth_template
-            else:
-                error_template = None
-            kwargs['auth_provider'] = OAuthProvider(error_template=error_template)
+            kwargs['auth_provider'] = OAuthProvider(
+                login_endpoint=login_endpoint,
+                logout_endpoint=logout_endpoint,
+                login_template=login_template,
+                logout_template=logout_template,
+                error_template=error_template,
+                guest_endpoints=config.oauth_guest_endpoints,
+            )
 
             if args.oauth_redirect_uri and config.oauth_redirect_uri:
                 raise ValueError(
@@ -532,8 +703,17 @@ class Serve(_BkServe):
 
         return kwargs
 
-    def invoke(self, args):
+    def invoke(self, args: argparse.Namespace):
+        # Autoreload must be enabled before the application(s) are executed
+        # to avoid erroring out
+        config.autoreload = args.autoreload or bool(args.dev)
         # Empty layout are valid and the Bokeh warning is silenced as usually
         # not relevant to Panel users.
         silence(EMPTY_LAYOUT, True)
+        # dask.distributed changes the logging level of Bokeh, we will overwrite it
+        # if the environment variable is not set to the default Bokeh level
+        # See https://github.com/holoviz/panel/issues/2302
+        if "DASK_DISTRIBUTED__LOGGING__BOKEH" not in os.environ:
+            os.environ["DASK_DISTRIBUTED__LOGGING__BOKEH"] = "info"
+        args.dev = None
         super().invoke(args)

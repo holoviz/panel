@@ -12,8 +12,11 @@ The first step in configuring a OAuth is to specify a specific OAuth provider. P
 * `gitlab`: GitLab
 * `google`: Google
 * `okta`: Okta
+* `generic`: Generic OAuth Provider with configurable endpoints
+* `password`: Generic password grant based OAuth Provider with configurable endpoints
+* `auth_code`: Generic code challenge grant based OAuth Provider with configurable endpoints
 
-We will go through the process of configuring each of these individually later but for now all we need to know that the `oauth_provider` can be set on the commandline using the `--oauth-provider` CLI argument to `panel serve` or the `PANEL_OAUTH_PROVIDER` environment variable.
+We will go through the process of configuring each of these individually in [Providers](providers) but for now all we need to know that the `oauth_provider` can be set on the commandline using the `--oauth-provider` CLI argument to `panel serve` or the `PANEL_OAUTH_PROVIDER` environment variable.
 
 Examples:
 
@@ -22,6 +25,29 @@ panel serve oauth_example.py --oauth-provider=...
 
 PANEL_OAUTH_PROVIDER=... panel serve oauth_example.py
 ```
+
+or in Python:
+
+```python
+pn.serve(app, oauth_provider=...)
+```
+
+## Endpoints
+
+The login and logout endpoints are configurable:
+
+```
+panel serve oauth_example.py --login-endpoint="/signin" --logout-endpoint="/signoff"
+```
+
+or in Python:
+
+```python
+pn.serve(app, login_endpoint="/signin", logout_endpoint="/signoff", ...)
+```
+
+or in Python:
+
 
 ## `oauth_key` and `oauth_secret`
 
@@ -40,6 +66,14 @@ panel serve oauth_example.py --oauth-key=... --oauth-secret=...
 PANEL_OAUTH_KEY=... PANEL_OAUTH_KEY=... panel serve oauth_example.py ...
 ```
 
+or in Python:
+
+```python
+pn.serve(app, oauth_key=..., oauth_secret=..., ...)
+```
+
+The only exception to authenticating with a `oauth_secret` are the generic password and code challenge based OAuth providers. If you picked one of these then you must only provide the client ID using the `--oauth-key` CLI argument or `PANEL_OAUTH_KEY` environment variable.
+
 ## `oauth_extra_params`
 
 Some OAuth providers will require some additional configuration options which will become part of the OAuth URLs. The `oauth_extra_params` configuration variable allows providing this additional information and can be set using the `--oauth-extra-params` CLI argument or `PANEL_OAUTH_EXTRA_PARAMS`.
@@ -51,6 +85,14 @@ panel serve oauth_example.py --oauth-extra-params={'tenant_id': ...}
 
 PANEL_OAUTH_EXTRA_PARAMS={'tenant_id': ...} panel serve oauth_example.py ...
 ```
+
+or in Python:
+
+```python
+pn.serve(app, oauth_extra_params={'tenant_id': ...}, ...)
+```
+
+The `oauth_extra_params` can also be used to provide the authentication URLs for the `'generic'`, `'password'`, and `'auth_code'` OAuth providers. Specifically you can provide a `'AUTHORIZE_URL'`, `'TOKEN_URL'` and `'USER_URL'` as extra parameters. Lastly it may be used to define the [scopes](#scopes).
 
 ## `cookie_secret`
 
@@ -64,6 +106,12 @@ Examples:
 panel serve oauth_example.py --cookie-secret=...
 
 PANEL_COOKIE_SECRET=... panel serve oauth_example.py ...
+```
+
+or in Python:
+
+```python
+pn.serve(app, cookie_secret="my-super-secret-secret", ...)
 ```
 
 ## `oauth_expiry`
@@ -94,6 +142,12 @@ panel serve oauth_example.py --oauth-encryption-key=...
 PANEL_OAUTH_ENCRYPTION=... panel serve oauth_example.py ...
 ```
 
+or in Python:
+
+```python
+pn.serve(app, oauth_encryption_key=...)
+```
+
 ## Redirect URI
 
 Once the OAuth provider has authenticated a user it has to redirect them back to the application, this is what is known as the redirect URI. For security reasons this has to match the URL registered with the OAuth provider exactly. By default Panel will redirect the user straight back to the original URL of your app, e.g. when you're hosting your app at `https://myapp.myprovider.com` Panel will use that as the redirect URI. However in certain scenarios you may override this to provide a specific redirect URI. This can be achieved with the `--oauth-redirect-uri` CLI argument or the `PANEL_OAUTH_REDIRECT_URI` environment variable.
@@ -106,6 +160,24 @@ panel serve oauth_example.py --oauth-redirect-uri=...
 PANEL_OAUTH_REDIRECT_URI=... panel serve oauth_example.py
 ```
 
+## Scopes
+
+OAuth allows the application to request specific scopes to perform certain actions when authenticating with the provider. To set the scopes you may set the `PANEL_OAUTH_SCOPE` environment variable or provide it as an argument using the `--oauth-extra-params {'scope': ...}` CLI argument.
+
+Examples:
+
+```
+panel serve oauth_example.py --oauth-extra-params {'scope': 'openid'}
+
+PANEL_OAUTH_SCOPE=openid panel serve oauth_example.py
+```
+
+or in Python:
+
+```python
+pn.serve(app, ..., oauth_extra_params={'scope': 'openid'})
+```
+
 ## Summary
 
 A fully configured OAuth configuration may look like this:
@@ -115,3 +187,11 @@ panel serve oauth_example.py --oauth-provider=github --oauth-key=... --oauth-sec
 
 PANEL_OAUTH_PROVIDER=... PANEL_OAUTH_KEY=... PANEL_OAUTH_SECRET=... PANEL_COOKIE_SECRET=... PANEL_OAUTH_ENCRYPTION=... panel serve oauth_example.py ...`
 ```
+
+or in Python:
+
+```python
+pn.serve(app, oauth_provider='github', oauth_key=..., oauth_secret=..., cookie_secret=..., oauth_encryption_key=...)
+```
+
+For a generic, password, or code provider you may also have to provide the `TOKEN_URL`, `AUTHORIZE_URL` and `USER_URL` via the `--oauth-extra-params` CLI argument, `OAUTH_EXTRA_PARAMS` environment variable or in Python using the `oauth_extra_params` keyword argument.

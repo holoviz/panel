@@ -1,4 +1,14 @@
-# Parameter subobjects
+# Create nested UIs
+
+This guide addresses how to structure `Parameterized` classes with subobjects to create nested UIs automatically.
+
+```{admonition} Prerequisites
+1. The [How to > Generate Widgets from Parameters](./uis) guide demonstrates the generation of widgets.
+2. The [How to > ](./dependencies) guide demonstrates how to use `@param.depends` to express dependencies between parameters and functions.
+
+```
+
+---
 
 ``Parameterized`` objects often have parameter values which are themselves ``Parameterized`` objects, forming a tree-like structure. Panel allows you to edit not just the main object's parameters but also lets you drill down to the subobject. Let us first define some classes declaring a hierarchy of Shape classes which draw a Bokeh plot of the selected shape:
 
@@ -8,6 +18,8 @@ import panel as pn
 import param
 
 from bokeh.plotting import figure
+
+pn.extension()
 
 class Shape(param.Parameterized):
 
@@ -57,7 +69,7 @@ shapes = [NGon(), Circle()]
 
 class ShapeViewer(param.Parameterized):
 
-    shape = param.ObjectSelector(default=shapes[0], objects=shapes)
+    shape = param.Selector(default=shapes[0], objects=shapes)
 
     @param.depends('shape')
     def view(self):
@@ -101,3 +113,9 @@ pn.Row(
         expand_layout),
     viewer.panel())
 ```
+
+---
+
+## Related Resources
+
+- See the [Explanation > APIs](../../explanation/api/index) for context on this and other Panel APIs

@@ -4,16 +4,18 @@ Defines custom VTKPlot bokeh model to render VTK objects.
 from bokeh.core.enums import enumeration
 from bokeh.core.has_props import abstract
 from bokeh.core.properties import (
-    Any, Bool, Dict, Enum, Float, Instance, Int, List, Nullable, Override,
-    PositiveInt, String,
+    Any, Bool, Bytes, Dict, Enum, Float, Instance, Int, List, Nullable,
+    Override, Positive, String,
 )
-from bokeh.models import ColorMapper, HTMLBox, Model
+from bokeh.models import ColorMapper, Model
 
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .layout import HTMLBox
 
-vtk_cdn = f"{config.npm_cdn}/vtk.js@20.0.1/vtk.js"
+vtk_cdn = f"{config.npm_cdn}/vtk.js@30.1.0/vtk.js"
+
 
 class VTKAxes(Model):
     """
@@ -24,7 +26,7 @@ class VTKAxes(Model):
 
     digits = Int(default=1)
 
-    fontsize = PositiveInt(default=12)
+    fontsize = Positive(Int, default=12)
 
     grid_opacity = Float(default=0.1)
 
@@ -69,13 +71,13 @@ class AbstractVTKPlot(HTMLBox):
 
     color_mappers = List(Instance(ColorMapper))
 
-    height = Override(default=300)
+    height = Override(default=300)  # type: ignore
 
     orientation_widget = Bool(default=False)
 
     interactive_orientation_widget = Bool(default=False)
 
-    width = Override(default=300)
+    width = Override(default=300)  # type: ignore
 
     annotations = List(Dict(String, Any))
 
@@ -86,7 +88,7 @@ class VTKSynchronizedPlot(AbstractVTKPlot):
     Bokeh model for plotting a VTK render window
     """
 
-    arrays = Dict(String, Any)
+    arrays = Dict(String, Bytes)
 
     arrays_processed = List(String)
 
@@ -104,7 +106,9 @@ class VTKJSPlot(AbstractVTKPlot):
     Bokeh model for plotting a 3D scene saved in the `.vtk-js` format
     """
 
-    data = Nullable(String, help="""The serialized vtk.js data""")
+    data = Nullable(Bytes, help="""The serialized vtk.js data""")
+
+    data_url = Nullable(String, help="The data URL")
 
     enable_keybindings = Bool(default=False)
 

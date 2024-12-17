@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 import logging
 import os
@@ -5,6 +7,7 @@ import sys
 import time
 
 from functools import partial
+from typing import TYPE_CHECKING
 
 import bokeh
 import numpy as np
@@ -14,7 +17,7 @@ import param
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
-from ..config import config
+from ..config import config, panel_extension as extension
 from ..depends import bind
 from ..layout import (
     Accordion, Column, FlexBox, Row, Tabs,
@@ -34,7 +37,11 @@ from .profile import profiling_tabs
 from .server import set_curdoc
 from .state import state
 
-PROCESSES = {}
+if TYPE_CHECKING:
+    from psutil import Process
+
+
+PROCESSES: dict[int, Process] = {}
 
 log_sessions = []
 
@@ -112,10 +119,15 @@ class _LogTabulator(Tabulator):
 
 
 # Set up logging
+session_filter = MultiSelect(name='Filter by session', options=[])
+message_filter = TextInput(name='Filter by message')
+level_filter = MultiSelect(name="Filter by level", options=["DEBUG", "INFO", "WARNING", "ERROR"])
+app_filter = TextInput(name='Filter by app')
+
 data = Data()
 log_data_handler = LogDataHandler(data)
 log_handler = logging.StreamHandler()
-log_handler.setLevel('DEBUG')
+log_handler.setLevel(config.admin_log_level)
 panel_logger.addHandler(log_handler)
 panel_logger.addHandler(log_data_handler)
 
@@ -126,11 +138,6 @@ formatter = logging.Formatter('%(asctime)s %(levelname)s: %(name)s - %(message)s
 log_handler.setFormatter(formatter)
 log_terminal = _LogTabulator(sizing_mode='stretch_both', min_height=400)
 log_handler.setStream(log_terminal)
-
-session_filter = MultiSelect(name='Filter by session', options=[])
-message_filter = TextInput(name='Filter by message')
-level_filter = MultiSelect(name="Filter by level", options=["DEBUG", "INFO", "WARNING", "ERROR"])
-app_filter = TextInput(name='Filter by app')
 
 def _textinput_filter(df, pattern, column):
     if not pattern or df.empty:
@@ -257,7 +264,7 @@ def get_timeline(doc=None):
         else:
             msg = new.getMessage()
             line_color = 'black'
-            if msg.startswith('Session %s logged' % sid):
+            if msg.startswith(f'Session {sid} logged'):
                 etype = 'logging'
                 line_color = EVENT_TYPES.get(etype)
             elif msg.startswith(LOG_SESSION_DESTROYED % sid):
@@ -337,11 +344,11 @@ def get_cpu():
 def get_process_info():
     memory = Trend(
         data=get_mem(), plot_x='time', plot_y='memory', plot_type='step',
-        title='Memory Usage (MB)', width=300, height=300
+        name='Memory Usage (MB)', width=300, height=300
     )
     cpu = Trend(
         data=get_cpu(), plot_x='time', plot_y='cpu', plot_type='step',
-        title='CPU Usage (%)', width=300, height=300
+        name='CPU Usage (%)', width=300, height=300
     )
     def update_stats():
         memory.stream(get_mem())
@@ -385,19 +392,19 @@ def get_session_info(doc=None):
     df = get_session_data()
     total = Trend(
         data=df[['time', 'total']], plot_x='time', plot_y='total', plot_type='step',
-        title='Total Sessions', width=300, height=300
+        name='Total Sessions', width=300, height=300
     )
     active = Trend(
         data=df[['time', 'live']], plot_x='time', plot_y='live', plot_type='step',
-        title='Active Sessions', width=300, height=300
+        name='Active Sessions', width=300, height=300
     )
     render = Trend(
         data=df[['time', 'render']], plot_x='time', plot_y='render', plot_type='step',
-        title='Avg. Time to Render (s)', width=300, height=300
+        name='Avg. Time to Render (s)', width=300, height=300
     )
     duration = Trend(
         data=df[['time', 'duration']], plot_x='time', plot_y='duration', plot_type='step',
-        title='Avg. Session Duration (s)', width=300, height=300
+        name='Avg. Session Duration (s)', width=300, height=300
     )
     # Set up callbacks
     def update_session_info(event):
@@ -452,6 +459,7 @@ def log_component():
     )
 
 def admin_template(doc):
+    extension('tabulator', 'terminal')
     log_sessions.append(id(doc))
     def _remove_log_session(session_context):
         log_sessions.remove(id(doc))

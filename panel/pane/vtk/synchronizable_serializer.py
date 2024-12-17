@@ -5,6 +5,8 @@ import struct
 import time
 import zipfile
 
+from typing import Any
+
 from vtk.vtkCommonCore import vtkTypeInt32Array, vtkTypeUInt32Array
 from vtk.vtkCommonDataModel import vtkDataObject
 from vtk.vtkFiltersGeometry import (
@@ -71,7 +73,7 @@ def getJSArrayType(dataArray):
 def zipCompression(name, data):
     with io.BytesIO() as in_memory:
         with zipfile.ZipFile(in_memory, mode="w") as zf:
-            zf.writestr('data/%s' % name,
+            zf.writestr(f'data/{name}',
                         data, zipfile.ZIP_DEFLATED)
         in_memory.seek(0)
         return in_memory.read()
@@ -156,7 +158,7 @@ def linspace(start, stop, num):
 # -----------------------------------------------------------------------------
 
 
-class SynchronizationContext():
+class SynchronizationContext:
 
     def __init__(self, id_root=None, serialize_all_data_arrays=False, debug=False):
         self.serializeAllDataArrays = serialize_all_data_arrays
@@ -293,8 +295,7 @@ def serializeInstance(parent, instance, instanceId, context, depth):
         return serializer(parent, instance, instanceId, context, depth)
 
     if context.debugSerializers:
-        print('%s!!!No serializer for %s with id %s' %
-              (pad(depth), instanceType, instanceId))
+        print(f'{pad(depth)}!!!No serializer for {instanceType} with id {instanceId}')
 
 # -----------------------------------------------------------------------------
 
@@ -327,7 +328,7 @@ def initializeSerializers():
         'vtkOpenGLGlyph3DMapper', glyph3DMapperSerializer)
 
     # LookupTables/TransferFunctions
-    registerInstanceSerializer('vtkLookupTable', lookupTableSerializer)
+    registerInstanceSerializer('vtkLookupTable', lookupTableSerializer2)
     registerInstanceSerializer(
         'vtkPVDiscretizableColorTransferFunction', colorTransferFunctionSerializer)
     registerInstanceSerializer(
@@ -394,7 +395,7 @@ def pad(depth):
 
 
 def wrapId(idStr):
-    return 'instance:${%s}' % idStr
+    return f'instance:${{{idStr}}}'
 
 # -----------------------------------------------------------------------------
 
@@ -405,13 +406,13 @@ def getReferenceId(ref):
             return ref.__this__[1:17]
         except Exception:
             idStr = str(ref)[-12:-1]
-            print('====> fallback ID %s for %s' % (idStr, ref))
+            print(f'====> fallback ID {idStr} for {ref}')
             return idStr
     return '0x0'
 
 # -----------------------------------------------------------------------------
 
-dataArrayShaMapping = {}
+dataArrayShaMapping: dict[str, dict[str, Any]] = {}
 
 
 def digest(array):
@@ -571,7 +572,7 @@ def extractRequiredFields(extractedFields, parent, dataset, context, requestedFi
 
 def annotationSerializer(parent, prop, propId, context, depth):
     if context.debugSerializers:
-        print('%s!!!Annotations are not handled directly by vtk.js but by bokeh model' % pad(depth))
+        print(f'{pad(depth)}!!!Annotations are not handled directly by vtk.js but by bokeh model')
 
     context.addAnnotation(parent, prop, propId)
 
@@ -579,7 +580,7 @@ def annotationSerializer(parent, prop, propId, context, depth):
 
 def genericPropSerializer(parent, prop, popId, context, depth):
     # This kind of actor has two "children" of interest, a property and a
-    # mapper (optionnaly a texture)
+    # mapper (optionally a texture)
     mapperInstance = None
     propertyInstance = None
     calls = []
@@ -774,7 +775,7 @@ def genericPolyDataMapperSerializer(parent, mapper, mapperId, context, depth):
     instance['properties'].update({
         'resolveCoincidentTopology': mapper.GetResolveCoincidentTopology(),
         'renderTime': mapper.GetRenderTime(),
-        'arrayAccessMode': 1, # since we can't set mapper arrayId on vtkjs, we force acess mode by name and use retrieve name function
+        'arrayAccessMode': 1, # since we can't set mapper arrayId on vtkjs, we force access mode by name and use retrieve name function
         'scalarRange': mapper.GetScalarRange(),
         'useLookupTableScalarRange': 1 if mapper.GetUseLookupTableScalarRange() else 0,
         'scalarVisibility': mapper.GetScalarVisibility(),
@@ -918,6 +919,11 @@ def lookupTableToColorTransferFunction(lookupTable):
         points = linspace(*tableRange, num=len(table))
         for x, rgba in zip(points, table):
             ctf.AddRGBPoint(x, *[x/255 for x in rgba[:3]])
+        ctf.SetAboveRangeColor(lookupTable.GetAboveRangeColor()[:3])
+        ctf.SetBelowRangeColor(lookupTable.GetBelowRangeColor()[:3])
+        ctf.SetUseAboveRangeColor(lookupTable.GetUseAboveRangeColor())
+        ctf.SetUseBelowRangeColor(lookupTable.GetUseBelowRangeColor())
+        ctf.SetNanColorRGBA(lookupTable.GetNanColor())
         return ctf
 
 # -----------------------------------------------------------------------------
@@ -1173,11 +1179,11 @@ def colorTransferFunctionSerializer(parent, instance, objId, context, depth):
             'clamping': 1 if instance.GetClamping() else 0,
             'colorSpace': instance.GetColorSpace(),
             'hSVWrap': 1 if instance.GetHSVWrap() else 0,
-            # 'nanColor': instance.GetNanColor(),                  # Breaks client
-            # 'belowRangeColor': instance.GetBelowRangeColor(),    # Breaks client
-            # 'aboveRangeColor': instance.GetAboveRangeColor(),    # Breaks client
-            # 'useAboveRangeColor': 1 if instance.GetUseAboveRangeColor() else 0,
-            # 'useBelowRangeColor': 1 if instance.GetUseBelowRangeColor() else 0,
+            'nanColor': instance.GetNanColor() + (instance.GetNanOpacity(),),
+            'belowRangeColor': instance.GetBelowRangeColor() + (1,),
+            'aboveRangeColor': instance.GetAboveRangeColor() + (1,),
+            'useAboveRangeColor': 1 if instance.GetUseAboveRangeColor() else 0,
+            'useBelowRangeColor': 1 if instance.GetUseBelowRangeColor() else 0,
             'allowDuplicateScalars': 1 if instance.GetAllowDuplicateScalars() else 0,
             'alpha': instance.GetAlpha(),
             'vectorComponent': instance.GetVectorComponent(),
@@ -1239,8 +1245,7 @@ def rendererSerializer(parent, instance, objId, context, depth):
             dependencies.append(viewPropInstance)
             viewPropIds.append(viewPropId)
 
-    calls += context.buildDependencyCallList('%s-props' %
-                                             objId, viewPropIds, 'addViewProp', 'removeViewProp')
+    calls += context.buildDependencyCallList(f'{objId}-props', viewPropIds, 'addViewProp', 'removeViewProp')
 
     return {
         'parent': context.getReferenceId(parent),

@@ -1,17 +1,19 @@
-import time
-
 import pytest
+
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
+
+from panel.config import config
+from panel.io.state import state
+from panel.pane import Markdown
+from panel.template import BootstrapTemplate
+from panel.tests.util import serve_component
+from panel.widgets import Button
 
 pytestmark = pytest.mark.ui
 
-from panel.config import config
-from panel.io.server import serve
-from panel.io.state import state
-from panel.template import BootstrapTemplate
-from panel.widgets import Button
-
-
-def test_notifications_no_template(page, port):
+def test_notifications_no_template(page):
     def callback(event):
         state.notifications.error('MyError')
 
@@ -21,20 +23,14 @@ def test_notifications_no_template(page, port):
         button.on_click(callback)
         return button
 
-    serve(app, port=port, threaded=True, show=False)
+    serve_component(page, app)
 
-    time.sleep(0.2)
+    page.click('.bk-btn')
 
-    page.goto(f"http://localhost:{port}")
-
-    page.click('.bk.bk-btn')
-
-    time.sleep(0.1)
-
-    assert page.text_content('.notyf__message') == 'MyError'
+    expect(page.locator('.notyf__message')).to_have_text('MyError')
 
 
-def test_notifications_with_template(page, port):
+def test_notifications_with_template(page):
     def callback(event):
         state.notifications.error('MyError')
 
@@ -43,14 +39,35 @@ def test_notifications_with_template(page, port):
         button.on_click(callback)
         tmpl = BootstrapTemplate()
         tmpl.main.append(button)
-        serve(tmpl, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
+    serve_component(page, tmpl)
 
-    page.goto(f"http://localhost:{port}")
+    page.click('.bk-btn')
 
-    page.click('.bk.bk-btn')
+    expect(page.locator('.notyf__message')).to_have_text('MyError')
 
-    time.sleep(0.1)
 
-    assert page.text_content('.notyf__message') == 'MyError'
+def test_ready_notification(page):
+    def app():
+        config.ready_notification = 'Ready!'
+        return Markdown('Ready app')
+
+    serve_component(page, app)
+
+    expect(page.locator('.notyf__message')).to_have_text('Ready!')
+
+
+def test_disconnect_notification(page):
+    def app():
+        config.disconnect_notification = 'Disconnected!'
+        button = Button(name='Stop server')
+        button.js_on_click(code="""
+        Bokeh.documents[0].event_manager.send_event({'event_name': 'connection_lost', 'publish': false})
+        """)
+        return button
+
+    serve_component(page, app)
+
+    page.click('.bk-btn')
+
+    expect(page.locator('.notyf__message')).to_have_text('Disconnected!')

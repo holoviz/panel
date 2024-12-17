@@ -16,10 +16,10 @@ class SineWave(param.Parameterized):
     y_range = param.Range(default=(-2.5,2.5),bounds=(-10,10))
 
     def __init__(self, **params):
-        super(SineWave, self).__init__(**params)
+        super().__init__(**params)
         x, y = self.sine()
         self.cds = ColumnDataSource(data=dict(x=x, y=y))
-        self.plot = figure(plot_height=400, plot_width=400,
+        self.plot = figure(height=400, width=400,
                       tools="crosshair,pan,reset,save,wheel_zoom",
                            x_range=self.x_range, y_range=self.y_range)
         self.plot.line('x', 'y', source=self.cds, line_width=3, line_alpha=0.6)

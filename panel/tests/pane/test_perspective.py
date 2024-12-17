@@ -10,13 +10,13 @@ data = {
  }
 
 
-def test_perspective_int_cols():
+def test_perspective_int_cols(document, comm):
     psp = Perspective(
         data, columns=[0], aggregates={0: 'mean'}, sort=[[0, 'desc']],
-        row_pivots=[0], column_pivots=[0], filters=[[0, '==', 'None']]
+        group_by=[0], split_by=[0], filters=[[0, '==', 'None']]
     )
 
-    model = psp.get_root()
+    model = psp.get_root(document, comm)
     assert '0' in model.source.data
     assert model.columns == ['0']
     assert model.group_by == ['0']
@@ -37,8 +37,8 @@ def test_perspective_int_cols():
     })
 
     assert psp2.columns == [0]
-    assert psp2.row_pivots == [0]
-    assert psp2.column_pivots == [0]
+    assert psp2.group_by == [0]
+    assert psp2.split_by == [0]
     assert psp2.aggregates == {0: 'mean'}
     assert psp2.sort == [[0, 'desc']]
     assert psp2.filters == [[0, '==', 'None']]

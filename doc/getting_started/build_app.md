@@ -1,175 +1,206 @@
-# Build an app
+# {octicon}`mortar-board;2em;sd-mr-1` Build an App
 
-At this point you should have [set up your environment and installed Panel](installation.md) so you should be ready to get going.
+By now, you should have [set up your environment and installed Panel](installation.md), so you're all set to dive in!
 
-In this section we're going to be building a basic application using a public dataset and add some interactivity.
+In this section, we'll walk through creating a basic interactive application using [NumPy](https://numpy.org/), [Pandas](https://pandas.pydata.org/), and [hvPlot](https://hvplot.holoviz.org/). If you haven't installed `hvPlot` yet, you can do so with `pip install hvplot` or `conda install -c conda-forge hvplot`.
+
+Let's envision what our app will look like:
+
+![Getting Started App](../_static/images/getting_started_app.png)
+
+If you're eager to roll up your sleeves and build this app alongside us, we recommend starting with a Jupyter notebook. You can also run the code directly in the docs or launch the Notebook with JupyterLite on the right.
 
 :::{important}
-This guide renders static output by default (denoted by the golden border) but you can execute the code cells below by clicking the play button. Only run this if you are willing to download ~40 MB.
+Initially, the code block outputs on this website offer limited interactivity, indicated by the <font color="darkgoldenrod">golden</font> border to the left of the output below. By clicking the play button (<svg class="pyodide-run-icon" style="width:32px;height:25px" viewBox="0 0 24 24"> <path stroke="none" fill="#28a745" d="M8,5.14V19.14L19,12.14L8,5.14Z"></path> </svg>), you can activate full interactivity, marked by a <font color="green">green</font> left-border.
 :::
 
-## Fetch some data
+## Configuring the Application
 
-Panel lets you add interactive controls for just about anything you can display in Python. Panel can help you build simple interactive apps, complex multi-page dashboards, or anything in between. As a simple example, let's say we have loaded the [UCI ML dataset measuring the environment in a meeting room](http://archive.ics.uci.edu/ml/datasets/Occupancy+Detection+):
-
+First, let's import the necessary dependencies and define some variables:
 
 ```{pyodide}
-import pandas as pd; import numpy as np; import matplotlib.pyplot as plt
+import hvplot.pandas
+import numpy as np
+import pandas as pd
+import panel as pn
 
-csv_file = 'https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv'
-data = pd.read_csv(csv_file, parse_dates=['date'], index_col='date')
+PRIMARY_COLOR = "#0072B5"
+SECONDARY_COLOR = "#B54300"
+CSV_FILE = (
+    "https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv"
+)
+```
+
+Next, we'll import the Panel JavaScript dependencies using `pn.extension(...)`. For a visually appealing and responsive user experience, we'll set the `design` to `"material"` and the `sizing_mode` to `stretch_width`:
+
+```{pyodide}
+pn.extension(design="material", sizing_mode="stretch_width")
+```
+
+## Fetching the Data
+
+Now, let's load the [UCI ML dataset](http://archive.ics.uci.edu/dataset/357/occupancy+detection) that measured the environment in a meeting room. We'll speed up our application by caching (`@pn.cache`) the data across users:
+
+```{pyodide}
+@pn.cache
+def get_data():
+  return pd.read_csv(CSV_FILE, parse_dates=["date"], index_col="date")
+
+data = get_data()
 
 data.tail()
 ```
 
-## Visualize the data
+## Visualizing a Subset of the Data
 
-And we've written some code that smooths a time series and plots it using Matplotlib with outliers highlighted:
-
+Before diving into Panel, let's create a function that smooths one of our time series and identifies outliers. Then, we'll plot the result using hvPlot:
 
 ```{pyodide}
-import matplotlib as mpl
-mpl.use('agg')
-
-from matplotlib.figure import Figure
-
-def mpl_plot(avg, highlight):
-    fig = Figure()
-    ax = fig.add_subplot()
-    avg.plot(ax=ax)
-    if len(highlight): highlight.plot(style='o', ax=ax)
-    return fig
-
-def find_outliers(variable='Temperature', window=30, sigma=10, view_fn=mpl_plot):
+def transform_data(variable, window, sigma):
+    """Calculates the rolling average and identifies outliers"""
     avg = data[variable].rolling(window=window).mean()
     residual = data[variable] - avg
     std = residual.rolling(window=window).std()
-    outliers = (np.abs(residual) > std * sigma)
-    return view_fn(avg, avg[outliers])
+    outliers = np.abs(residual) > std * sigma
+    return avg, avg[outliers]
+
+
+def get_plot(variable="Temperature", window=30, sigma=10):
+    """Plots the rolling average and the outliers"""
+    avg, highlight = transform_data(variable, window, sigma)
+    return avg.hvplot(
+        height=300, legend=False, color=PRIMARY_COLOR
+    ) * highlight.hvplot.scatter(color=SECONDARY_COLOR, padding=0.1, legend=False)
 ```
 
-We can call the function with parameters and get a plot:
+Now, we can call our `get_plot` function with specific parameters to obtain a plot with a single set of parameters:
 
 ```{pyodide}
-find_outliers(variable='Temperature', window=20, sigma=10)
+get_plot(variable='Temperature', window=20, sigma=10)
 ```
 
-It works! But exploring all these parameters by typing Python is slow and tedious. Plus we want our boss, or the boss's boss, to be able to try it out.
+Great! Now, let's explore how different values for `window` and `sigma` affect the plot. Instead of reevaluating the above cell multiple times, let's use Panel to add interactive controls and quickly visualize the impact of different parameter values.
 
-If we wanted to try out lots of combinations of these values to understand how the window and sigma affect the plot, we could reevaluate the above cell lots of times, but that would be a slow and painful process, and is only really appropriate for users who are comfortable with editing Python code. In the next few examples we will demonstrate how to use Panel to quickly add some interactive controls to some object and make a simple app.
+## Exploring the Parameter Space
 
-## Reactive functions
-
-Instead of editing code, it's much quicker and more straightforward to use sliders to adjust the values interactively. You can easily make a Panel app by binding some widgets to the arguments of a function using `pn.bind`:
-
+Let's create some Panel slider widgets to explore the range of parameter values:
 
 ```{pyodide}
-import panel as pn
-pn.extension()
-
-window = pn.widgets.IntSlider(name='window', value=30, start=1, end=60)
-sigma = pn.widgets.IntSlider(name='sigma', value=10, start=0, end=20)
-
-interactive = pn.bind(find_outliers, window=window, sigma=sigma)
+variable_widget = pn.widgets.Select(name="variable", value="Temperature", options=list(data.columns))
+window_widget = pn.widgets.IntSlider(name="window", value=30, start=1, end=60)
+sigma_widget = pn.widgets.IntSlider(name="sigma", value=10, start=0, end=20)
 ```
 
-Once you have bound the widgets to the function's arguments you can lay out the component being returned using Panel layout components such as `Row`, `Column`, or `FlexBox`:
-
+Now, let's link these widgets to our plotting function so that updates to the widgets rerun the function. We can achieve this easily in Panel using `pn.bind`:
 
 ```{pyodide}
-first_app = pn.Column(window, sigma, interactive)
-
-first_app
+bound_plot = pn.bind(
+    get_plot, variable=variable_widget, window=window_widget, sigma=sigma_widget
+)
 ```
 
-As long as you have a live Python process running, dragging these widgets will trigger a call to the `find_outliers` callback function, evaluating it for whatever combination of parameter values you select and displaying the results. A Panel like this makes it very easy to explore any function that produces a visual result of a [supported type](https://github.com/pyviz/panel/issues/2), such as Matplotlib (as above), Bokeh, Plotly, Altair, or various text and image types.
-
-## Deploying Panels
-
-The above panels all work in the notebook cell (if you have a live Jupyter kernel running), but unlike other approaches such as ipywidgets, Panel apps work just the same in a standalone server. For instance, the app above can be launched as its own web server on your machine by uncommenting and running the following cell:
-
+Once we've bound the widgets to the function's arguments, we can layout the resulting `bound_plot` component along with the `widgets` using a Panel layout such as `Column`:
 
 ```{pyodide}
-#first_app.show()
+widgets = pn.Column(variable_widget, window_widget, sigma_widget, sizing_mode="fixed", width=300)
+pn.Column(widgets, bound_plot)
 ```
 
-Or, you can simply mark whatever you want to be in the separate web page with `.servable()`, and then run the shell command `panel serve --show Create_App.ipynb` to launch a server containing that object. (Here, we've also added a semicolon to avoid getting another copy of the occupancy app here in the notebook.)
+As long as you have a live Python process running, dragging these widgets will trigger a call to the `get_plot` callback function, evaluating it for whatever combination of parameter values you select and displaying the results.
 
+## Serving the Notebook
 
-```{pyodide}
-first_app.servable();
+We'll organize our components in a nicely styled template (`MaterialTemplate`) and mark it `.servable()` to add it to our served app:
+
+```python
+pn.template.MaterialTemplate(
+    site="Panel",
+    title="Getting Started App",
+    sidebar=[variable_widget, window_widget, sigma_widget],
+    main=[bound_plot],
+).servable(); # The ; is needed in the notebook to not display the template. Its not needed in a script
 ```
 
-During development, particularly when working with a raw script using `panel serve --show --autoreload` can be very useful as the application will automatically update whenever the script or notebook or any of its imports change.
+Save the notebook with the name `app.ipynb`.
 
-## Declarative Panels
+Finally, we'll serve the app by running the command below in a terminal:
 
-The above compositional approach is very flexible, but it ties your domain-specific code (the parts about sine waves) with your widget display code. That's fine for small, quick projects or projects dominated by visualization code, but what about large-scale, long-lived projects, where the code is used in many different contexts over time, such as in large batch runs, one-off command-line usage, notebooks, and deployed dashboards?  For larger projects like that, it's important to be able to separate the parts of the code that are about the underlying domain (i.e. application or research area) from those that are tied to specific display technologies (such as Jupyter notebooks or web servers).
+```bash
+panel serve app.ipynb --dev
+```
 
-For such usages, Panel supports objects declared with the separate [Param](http://param.pyviz.org) library, which provides a GUI-independent way of capturing and declaring the parameters of your objects (and dependencies between your code and those parameters), in a way that's independent of any particular application or dashboard technology. For instance, the above code can be captured in an object that declares the ranges and values of all parameters, as well as how to generate the plot, independently of the Panel library or any other way of interacting with the object:
+Now, open the app in your browser at [http://localhost:5006/app](http://localhost:5006/app).
 
+It should look like this:
 
-```{pyodide}
-import param
+![Getting Started App](../_static/images/getting_started_app.png)
+
+::::{tip}
+
+If you prefer developing in a Python Script using an editor, you can copy the *code* into a file `app.py` and serve it.
+
+:::{dropdown} code
+
+```python
 import hvplot.pandas
+import numpy as np
+import pandas as pd
+import panel as pn
 
-def hvplot(avg, highlight):
-    return avg.hvplot(height=200) * highlight.hvplot.scatter(color='orange', padding=0.1)
+PRIMARY_COLOR = "#0072B5"
+SECONDARY_COLOR = "#B54300"
+CSV_FILE = (
+    "https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv"
+)
 
-class RoomOccupancy(param.Parameterized):
-    variable  = param.Selector(objects=list(data.columns))
-    window    = param.Integer(default=10, bounds=(1, 20))
-    sigma     = param.Number(default=10, bounds=(0, 20))
+pn.extension(design="material", sizing_mode="stretch_width")
 
-    def view(self):
-        return find_outliers(self.variable, self.window, self.sigma, view_fn=hvplot)
+@pn.cache
+def get_data():
+  return pd.read_csv(CSV_FILE, parse_dates=["date"], index_col="date")
 
-obj = RoomOccupancy()
-obj
+data = get_data()
+
+def transform_data(variable, window, sigma):
+    """Calculates the rolling average and identifies outliers"""
+    avg = data[variable].rolling(window=window).mean()
+    residual = data[variable] - avg
+    std = residual.rolling(window=window).std()
+    outliers = np.abs(residual) > std * sigma
+    return avg, avg[outliers]
+
+
+def get_plot(variable="Temperature", window=30, sigma=10):
+    """Plots the rolling average and the outliers"""
+    avg, highlight = transform_data(variable, window, sigma)
+    return avg.hvplot(
+        height=300, legend=False, color=PRIMARY_COLOR
+    ) * highlight.hvplot.scatter(color=SECONDARY_COLOR, padding=0.1, legend=False)
+
+variable_widget = pn.widgets.Select(name="variable", value="Temperature", options=list(data.columns))
+window_widget = pn.widgets.IntSlider(name="window", value=30, start=1, end=60)
+sigma_widget = pn.widgets.IntSlider(name="sigma", value=10, start=0, end=20)
+
+bound_plot = pn.bind(
+    get_plot, variable=variable_widget, window=window_widget, sigma=sigma_widget
+)
+
+pn.template.MaterialTemplate(
+    site="Panel",
+    title="Getting Started App",
+    sidebar=[variable_widget, window_widget, sigma_widget],
+    main=[bound_plot],
+).servable(); # The ; is needed in the notebook to not display the template. Its not needed in a script
 ```
 
-The `RoomOccupancy` class and the `obj` instance have no dependency on Panel, Jupyter, or any other GUI or web toolkit; they simply declare facts about a certain domain (such as that smoothing requires window and sigma parameters, and that window is an integer greater than 0 and sigma is a positive real number).  This information is then enough for Panel to create an editable and viewable representation for this object without having to specify anything that depends on the domain-specific details encapsulated in `obj`:
+:::
 
-
-```{pyodide}
-pn.Row(obj.param, obj.view)
+```bash
+panel serve app.py --dev
 ```
-
-To support a particular domain, you can create hierarchies of such classes encapsulating all the parameters and functionality you need across different families of objects, with both parameters and code inheriting across the classes as appropriate, all without any dependency on a particular GUI library or even the presence of a GUI at all.  This approach makes it practical to maintain a large codebase, all fully displayable and editable with Panel, in a way that can be maintained and adapted over time.
-
-## Get help
-
-Now that we have given you a taste of how easy it is to build a little application in Panel its time to introduce you to some of the [core concepts](core_concepts.md) behing Panel. Go to the next guide or visit some of the other resources to help you dive a little deeper:
-
-::::{grid} 1 2 2 4
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Core Concepts
-:link: core_concepts
-:link-type: doc
-
-Introduces you to some of the core concepts behind Panel, how to develop Panel applications effectively both in your IDE and in the notebook and some of the core features that make Panel such a powerful library.
-:::
-
-:::{grid-item-card} {octicon}`comment-discussion;2.5em;sd-mr-1` Discourse
-:link: https://discourse.holoviz.org/c/panel/5
-:link-type: url
-
-Visit our community Discourse where you can exchange ideas with the community and ask our helpful community members questions.
-:::
-
-:::{grid-item-card} {octicon}`mark-github;2.5em;sd-mr-1` GitHub
-:link: https://github.com/holoviz/panel/issues
-:link-type: url
-
-Visit us on GitHub and file issues and/or contribute.
-:::
-
-:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` User Guide
-:link: ../user_guide/index
-:link-type: doc
-
-For a more in-depth guide through a range of topics, starting from the various APIs of Panel, through to building custom components and authentication visit our user guide.
-:::
 
 ::::
+
+## What's Next?
+
+Now that you've experienced how easy it is to build a simple application in Panel, it's time to delve into some of the [core concepts](core_concepts.md) behind Panel.

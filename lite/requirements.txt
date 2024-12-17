@@ -1,9 +1,0 @@
-awscli
-bokeh<3.0
-ipywidgets
-jupyter_bokeh
-jupyterlab
-jupyterlite
-nbformat
-pkginfo
-pyviz_comms

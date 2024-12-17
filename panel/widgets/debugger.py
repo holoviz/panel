@@ -6,12 +6,12 @@ from __future__ import annotations
 
 import logging
 
-from typing import (
-    ClassVar, Dict, List, Mapping,
-)
+from collections.abc import Mapping
+from typing import ClassVar
 
 import param
 
+from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..layout import Card, HSpacer, Row
 from ..reactive import ReactiveHTML
@@ -30,13 +30,7 @@ class TermFormatter(logging.Formatter):
         only_last : BOOLEAN, optional
             Whether the full stack trace or only the last file should be shown.
             The default is True.
-
-        Returns
-        -------
-        None.
-
         """
-
         super().__init__(*args, **kwargs)
         self.only_last = only_last
 
@@ -101,9 +95,9 @@ class CheckFilter(logging.Filter):
 
         if state.curdoc and state.curdoc.session_context:
             session_id = state.curdoc.session_context.id
-            widget_session_ids = set(m.document.session_context.id
+            widget_session_ids = {m.document.session_context.id
                                      for m in sum(self.debugger._models.values(),
-                                                  tuple()) if m.document.session_context)
+                                                  tuple()) if m.document.session_context}
 
             if session_id not in widget_session_ids:
                 return False
@@ -120,18 +114,12 @@ class DebuggerButtons(ReactiveHTML):
     clears = param.Integer(default=0)
 
     _template: ClassVar[str] = """
-    <div class="bk" style="display: flex;">
-      <button class='special_btn clear_btn'
-         id="clear_btn"
-         onclick="${script('click_clear')}"
-         style="width: ${model.width}px;">
+    <div style="display: flex;">
+      <button class="special_btn clear_btn" id="clear_btn" onclick="${script('click_clear')}" style="width: ${model.width}px;">
         <span class="shown">☐</span>
         <span class="tooltiptext">Acknowledge logs and clear</span>
       </button>
-      <button class='special_btn'
-              id="save_btn"
-              onclick="${script('click')}"
-              style="width: ${model.width}px;">💾
+      <button class="special_btn" id="save_btn" onclick="${script('click')}" style="width: ${model.width}px;">💾
         <span class="tooltiptext">Save logs</span>
       </button>
     </div>
@@ -158,12 +146,12 @@ class DebuggerButtons(ReactiveHTML):
         }
         """
 
-    _scripts: ClassVar[Dict[str, str | List[str]]] = {
+    _scripts: ClassVar[dict[str, str | list[str]]] = {
         'click': js_cb,
         'click_clear': "data.clears += 1"
     }
 
-    _dom_events: ClassVar[Dict[str, List[str]]] = {'clear_btn': ['click']}
+    _dom_events: ClassVar[dict[str, list[str]]] = {'clear_btn': ['click']}
 
 
 class Debugger(Card):
@@ -181,7 +169,7 @@ class Debugger(Card):
         Number of logged warnings since last acknowledged.""")
 
     _number_of_infos = param.Integer(bounds=(0, None), precedence=-1, doc="""
-        Number of logged informations since last acknowledged.""")
+        Number of logged information since last acknowledged.""")
 
     only_last = param.Boolean(default=True, doc="""
         Whether only the last stack is printed or the full.""")
@@ -190,32 +178,27 @@ class Debugger(Card):
         Logging level to print in the debugger terminal.""")
 
     formatter_args = param.Dict(
-        default={'fmt':"%(asctime)s [%(name)s - %(levelname)s]: %(message)s"},
-        precedence=-1,
-        doc="""
-        Arguments to pass to the logging formatter. See
-        the standard python logging libraries."""
-        )
+        default={'fmt': "%(asctime)s [%(name)s - %(levelname)s]: %(message)s"},
+        precedence=-1, doc="""
+        Arguments to pass to the logging formatter. See the standard
+        python logging libraries.""")
 
-    logger_names = param.List(
-        default=['panel'],
-        item_type=str,
-        bounds=(1, None),
-        precedence=-1,
-        doc="""
-        Loggers which will be prompted in the debugger terminal."""
-    )
+    logger_names = param.List(default=['panel'], item_type=str,
+        bounds=(1, None), precedence=-1, doc="""
+        Loggers which will be prompted in the debugger terminal.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = dict(
-        Card._rename, **{
-        '_number_of_errors': None,
-        '_number_of_warnings': None,
-        '_number_of_infos': None,
-        'only_last': None,
-        'level': None,
-        'formatter_args': None,
-        'logger_names': None,
-    })
+        Card._rename,
+        _number_of_errors=None,
+        _number_of_warnings=None,
+        _number_of_infos=None,
+        only_last=None,
+        level=None,
+        formatter_args=None,
+        logger_names=None
+    )
+
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/debugger.css']
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -225,21 +208,11 @@ class Debugger(Card):
         self.header_css_classes = ['debugger-card-header']
         self.title_css_classes = ['debugger-card-title']
 
-        if self.width and self.height:
-            smode = 'fixed'
-        elif self.width:
-            smode = 'stretch_height'
-        elif self.height:
-            smode = 'stretch_width'
-        else:
-            smode = 'stretch_both'
+        smode = 'stretch_width' if self.height else 'stretch_both'
         height = self.height or self.min_height
-        width = self.width or self.min_width
         terminal = Terminal(
             min_height=200, sizing_mode=smode, name=self.name,
-            margin=5,
-            width=(width-10) if width else None,
-            height=(height-70) if height else None
+            margin=0, height=(height-70) if height else None
         )
 
         stream_handler = logging.StreamHandler(terminal)
@@ -270,20 +243,20 @@ class Debugger(Card):
         self.param.watch(self.update_log_counts,'_number_of_warnings')
         self.param.watch(self.update_log_counts,'_number_of_infos')
 
-        #buttons
-        self.btns = DebuggerButtons()
+        # Buttons
+        self.btns = DebuggerButtons(stylesheets=self._stylesheets)
         inc = """
         target.data.terminal_output += source.output
         """
         clr = """
         target.data.terminal_output = ''
         """
-        self.terminal.jslink(self.btns,code={'_output': inc})
-        self.terminal.jslink(self.btns,code={'_clears': clr})
-        self.btns.jslink(self.terminal,clears='_clears')
+        self.terminal.jslink(self.btns, code={'_output': inc})
+        self.terminal.jslink(self.btns, code={'_clears': clr})
+        self.btns.jslink(self.terminal, clears='_clears')
         self.terminal.param.watch(self.acknowledge_errors, ['_clears'])
 
-        self.jslink(self.btns,name='debug_name')
+        self.jslink(self.btns, name='debug_name')
 
         #set header
         self.title = ''
@@ -291,7 +264,7 @@ class Debugger(Card):
         #body
         self.append(
             Row(
-                self.name, HSpacer(), self.btns,
+                f'### {self.name}', HSpacer(), self.btns,
                 sizing_mode='stretch_width', align=('end','start')
             )
         )

@@ -1,24 +1,34 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 
 export class MathJaxView extends PanelMarkupView {
-  model: MathJax
-  private _hub: any
+  declare model: MathJax
 
-  initialize(): void {
-    super.initialize()
-    this._hub = (window as any).MathJax.Hub;
-    this._hub.Config({
-      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
-    });
+  override connect_signals(): void {
+    super.connect_signals()
+
+    const {text} = this.model.properties
+    this.on_change(text, () => this.render())
   }
 
-  render(): void {
-    super.render();
-    if (!this._hub) { return }
-    this.markup_el.innerHTML = this.model.text;
-    this._hub.Queue(["Typeset", this._hub, this.markup_el]);
+  override render(): void {
+    super.render()
+    const text = this.model.text
+    const tex_parts = this.provider.MathJax.find_tex(text)
+    const processed_text: string[] = []
+
+    let last_index: number | undefined = 0
+    for (const part of tex_parts) {
+      processed_text.push(text.slice(last_index, part.start.n))
+      processed_text.push(this.provider.MathJax.tex2svg(part.math, {display: part.display}).outerHTML)
+      last_index = part.end.n
+    }
+    if (last_index! < text.length) {
+      processed_text.push(text.slice(last_index))
+    }
+
+    this.container.innerHTML = processed_text.join("")
   }
 }
 
@@ -32,15 +42,15 @@ export namespace MathJax {
 export interface MathJax extends MathJax.Attrs {}
 
 export class MathJax extends Markup {
-  properties: MathJax.Props
+  declare properties: MathJax.Props
 
   constructor(attrs?: Partial<MathJax.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.mathjax"
+  static override __module__ = "panel.models.mathjax"
 
-  static init_MathJax(): void {
+  static {
     this.prototype.default_view = MathJaxView
   }
 }

@@ -1,5 +1,7 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {clone} from "@bokehjs/core/util/object"
+
+import {debounce} from  "debounce"
 
 import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 
@@ -10,56 +12,32 @@ import {vtkns} from "./util"
 const CONTEXT_NAME = "panel"
 
 export class VTKSynchronizedPlotView extends AbstractVTKView {
-  model: VTKSynchronizedPlot
+  declare model: VTKSynchronizedPlot
+
   protected _synchronizer_context: any
   protected _arrays: any
-  protected _decoded_arrays: any
-  protected _pending_arrays: any
-  protected _promises: Promise<any>[]
   public registerArray: CallableFunction
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
-    this._promises = []
     this._renderable = false
-    this._arrays = {}
-    this._decoded_arrays = {}
-    this._pending_arrays = {}
 
-
-    this.registerArray = (hash: string, array: any) => {
-      this._arrays[hash] = array
-      if (this._pending_arrays[hash]) {
-        this._pending_arrays[hash].resolve(array)
-      }
-      return true
-    }
-
-    // Context initialisation
+    // Context initialization
     this._synchronizer_context = vtkns.SynchronizableRenderWindow.getSynchronizerContext(
-      CONTEXT_NAME
+      `${CONTEXT_NAME}-{this.model.id}`,
     )
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.arrays.change, () =>
-      this._decode_arrays()
-    )
-    this.connect(this.model.properties.scene.change, () => {
-      if (this.model.rebuild) {
-        this._vtk_renwin = null
-        this.invalidate_render()
-      } else {
-        const state = clone(this.model.scene)
-        Promise.all(this._promises).then(() => {
-          this._sync_plot(state, () => {
-            this._on_scene_ready()
-          })
-        })
-      }
-    })
-    this.connect(this.model.properties.one_time_reset.change, () => {
+
+    const {arrays, scene, one_time_reset} = this.model.properties
+    this.on_change([arrays, scene], debounce(() => {
+      this._vtk_renwin.delete()
+      this._vtk_renwin = null
+      this.invalidate_render()
+    }, 20))
+    this.on_change(one_time_reset, () => {
       this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
     })
   }
@@ -72,56 +50,36 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     })
   }
 
-  plot(): void {
-    this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
-    this._decode_arrays()
-    const state = clone(this.model.scene)
-    Promise.all(this._promises).then(() => {
-      this._sync_plot(state, () => this._on_scene_ready()).then(() => {
-        this._set_camera_state()
-        this._get_camera_state()
-      })
-    })
+  override remove(): void {
+    if (this._vtk_renwin) {
+      this._vtk_renwin.delete()
+    }
+    super.remove()
   }
 
-  _decode_arrays(): void {
-    const jszip = new vtkns.ThirdParty.JSZip()
-    const arrays: any = this.model.arrays
-    const registerArray: any = this.registerArray
-    const arrays_processed = this.model.arrays_processed
-    const model = this.model
-
-    function load(key: string) {
-      return jszip
-        .loadAsync(atob(arrays[key]))
-        .then((zip: any) => zip.file("data/" + key))
-        .then((zipEntry: any) => zipEntry.async("arraybuffer"))
-        .then((arraybuffer: any) => registerArray(key, arraybuffer))
-        .then(() => {
-          arrays_processed.push(key)
-          model.properties.arrays_processed.change.emit()
-        })
-    }
-
-    Object.keys(arrays).forEach((key: string) => {
-      if (!this._decoded_arrays[key]) {
-        this._decoded_arrays[key] = true
-        this._promises.push(load(key))
-      }
+  plot(): void {
+    this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
+    const state = clone(this.model.scene)
+    this._sync_plot(state, () => this._on_scene_ready()).then(() => {
+      this._set_camera_state()
+      this._get_camera_state()
     })
   }
 
   _on_scene_ready(): void {
-    if (this._promises.length > 0) return
     this._renderable = true
     this._camera_callbacks.push(
       this._vtk_renwin
         .getRenderer()
         .getActiveCamera()
-        .onModified(() => this._vtk_render())
+        .onModified(() => this._vtk_render()),
     )
-    if (!this._orientationWidget) this._create_orientation_widget()
-    if (!this._axes) this._set_axes()
+    if (!this._orientationWidget) {
+      this._create_orientation_widget()
+    }
+    if (!this._axes) {
+      this._set_axes()
+    }
     this._vtk_renwin.resize()
     this._vtk_render()
   }
@@ -129,16 +87,16 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
   _sync_plot(state: any, onSceneReady: CallableFunction): any {
     // Need to ensure all promises are resolved before calling this function
     this._renderable = false
-    this._promises = []
     this._unsubscribe_camera_cb()
     this._synchronizer_context.setFetchArrayFunction((hash: string) => {
-      return Promise.resolve(this._arrays[hash])
+      return Promise.resolve(this.model.arrays[hash])
     })
     const renderer = this._synchronizer_context.getInstance(
-      this.model.scene.dependencies[0].id
+      this.model.scene.dependencies[0].id,
     )
-    if (renderer && !this._vtk_renwin.getRenderer())
+    if (renderer && !this._vtk_renwin.getRenderer()) {
       this._vtk_renwin.getRenderWindow().addRenderer(renderer)
+    }
     return this._vtk_renwin
       .getRenderWindow()
       .synchronize(state).then(onSceneReady)
@@ -159,23 +117,23 @@ export namespace VTKSynchronizedPlot {
 export interface VTKSynchronizedPlot extends VTKSynchronizedPlot.Attrs {}
 
 export class VTKSynchronizedPlot extends AbstractVTKPlot {
-  properties: VTKSynchronizedPlot.Props
+  declare properties: VTKSynchronizedPlot.Props
   outline: any
   outline_actor: any
 
-  static __module__ = "panel.models.vtk"
+  static override __module__ = "panel.models.vtk"
 
   constructor(attrs?: Partial<VTKSynchronizedPlot.Attrs>) {
     super(attrs)
     initialize_fullscreen_render()
-    this.outline = vtkns.OutlineFilter.newInstance() //use to display bouding box of a selected actor
+    this.outline = vtkns.OutlineFilter.newInstance() //use to display bounding box of a selected actor
     const mapper = vtkns.Mapper.newInstance()
     mapper.setInputConnection(this.outline.getOutputPort())
     this.outline_actor = vtkns.Actor.newInstance()
     this.outline_actor.setMapper(mapper)
   }
 
-  getActors(ptr_ref?: string): [any] {
+  override getActors(ptr_ref?: string): [any] {
     let actors = this.renderer_el.getRenderer().getActors()
     if (ptr_ref) {
       const context = this.renderer_el.getSynchronizerContext(CONTEXT_NAME)
@@ -187,14 +145,14 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
     return actors
   }
 
-  static init_VTKSynchronizedPlot(): void {
+  static {
     this.prototype.default_view = VTKSynchronizedPlotView
 
-    this.define<VTKSynchronizedPlot.Props>(({Any, Array, Boolean, String}) => ({
-      arrays:               [ Any,                {} ],
+    this.define<VTKSynchronizedPlot.Props>(({Any, Array, Boolean, Bytes, Dict, String}) => ({
+      arrays:               [ Dict(Bytes),        {} ],
       arrays_processed:     [ Array(String),      [] ],
       enable_keybindings:   [ Boolean,         false ],
-      one_time_reset:       [ Boolean                ],
+      one_time_reset:       [ Boolean,         false ],
       rebuild:              [ Boolean,         false ],
       scene:                [ Any,                {} ],
     }))

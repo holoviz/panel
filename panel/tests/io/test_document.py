@@ -1,22 +1,13 @@
-import time
-
-import requests
-
 from panel.io.document import unlocked
-from panel.io.server import serve
 from panel.io.state import set_curdoc
+from panel.tests.util import serve_and_request
 from panel.widgets import IntSlider
 
 
-def test_document_hold(port):
+def test_document_hold():
     slider = IntSlider()
 
-    serve(slider, port=port, threaded=True, show=False)
-
-    # Wait for server to start
-    time.sleep(1)
-
-    requests.get(f"http://localhost:{port}/")
+    serve_and_request(slider)
 
     doc, model = list(slider._documents.items())[0]
 

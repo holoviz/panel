@@ -1,42 +1,78 @@
-# Using Param with Panel
+# Declare UIs with Declarative API
 
-[Param](https://param.holoviz.org) is a library for handling all the user-modifiable parameters, arguments, and attributes that control your code. Panel is built on parameters, so to effectively learn to use Panel you should at least understand the basics about Param. Therefore we strongly recommend reading the first few sections of the [Param user guide](https://param.holoviz.org/user_guide/index.html).
+Panel is built on [Param](https://param.holoviz.org) - a library for handling all the user-modifiable parameters, arguments, and attributes that control your code. This section contains how-to guides for using `Param` objects and declared dependencies to generate user interfaces with Panel.
 
-Panel supports using parameters and dependencies between parameters as expressed by ``param`` in a simple way to encapsulate dashboards as declarative, self-contained classes.
-
-::::{grid} 1 2 2 4
+::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} Building UIs using Param
+:::{grid-item-card} {octicon}`single-select;2.5em;sd-mr-1 sd-animate-grow50` Generate Widgets from `Parameters`
 :link: uis
 :link-type: doc
 
-Discover how to generate UIs from Parameterized classes without writing any GUI related code.
+How to generate UIs from Parameterized classes without writing any GUI related code.
 :::
 
-:::{grid-item-card} Declare Custom Widgets
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1 sd-animate-grow50` Declare Custom Widgets
 :link: custom
 :link-type: doc
 
-Discover how to extend Param based UIs with custom widgets.
+How to extend Param based UIs with custom widgets.
 :::
 
-:::{grid-item-card} Declare Parameter dependencies
-:link: custom
+:::{grid-item-card} {octicon}`rss;2.5em;sd-mr-1 sd-animate-grow50` Declare Parameter dependencies
+:link: dependencies
 :link-type: doc
 
-Discover how to leverage `@param.depends` to express dependencies and trigger events based on UI interactions.
+How to leverage `@param.depends` to express dependencies and trigger events based on UI interactions.
 :::
 
-:::{grid-item-card} Param subobjects
+:::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1 sd-animate-grow50` Create nested UIs
 :link: subobjects
 :link-type: doc
 
-Discover how to structure Parameterized classes with subobjects to create nested UIs automatically.
+How to structure Parameterized classes with subobjects to create nested UIs automatically.
 :::
 
 ::::
 
+## Examples
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Action Button
+:img-top: https://assets.holoviz.org/panel/how_to/param/action_button.png
+:link: examples/action_button
+:link-type: doc
+
+Using `param.Action` to define a UI with a button.
+:::
+
+:::{grid-item-card} Automatic Loading Indicator
+:img-top: https://assets.holoviz.org/panel/how_to/param/loading.png
+:link: examples/loading
+:link-type: doc
+
+Automatically enable a loading indicator for components rendered dynamically.
+:::
+
+:::{grid-item-card} Param Subobjects
+:img-top: https://assets.holoviz.org/panel/how_to/param/subobjects.png
+:link: examples/subobjects
+:link-type: doc
+
+Using Param to express a nested UI using a hierarchy of classes.
+:::
+
+:::{grid-item-card} Precedence
+:img-top: https://assets.holoviz.org/panel/how_to/param/precedence.png
+:link: examples/precedence
+:link-type: doc
+
+Using Parameter precedence to control the visibility of components.
+:::
+
+::::
 
 ```{toctree}
 :titlesonly:

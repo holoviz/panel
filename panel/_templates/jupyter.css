@@ -1,5 +1,15 @@
-.bk-root, .bk-root .bk:before, .bk-root .bk:after {
-  font-family: var(--jp-ui-font-size1);
+*[data-root-id],
+*[data-root-id] > * {
+  box-sizing: border-box;
+  font-family: var(--jp-ui-font-family);
   font-size: var(--jp-ui-font-size1);
-  color: var(--jp-ui-font-color1);
+  color: var(--vscode-editor-foreground, var(--jp-ui-font-color1));
+}
+
+/* Override VSCode background color */
+.cell-output-ipywidget-background:has(
+    > .cell-output-ipywidget-background > .lm-Widget > *[data-root-id]
+  ),
+.cell-output-ipywidget-background:has(> .lm-Widget > *[data-root-id]) {
+  background-color: transparent !important;
 }

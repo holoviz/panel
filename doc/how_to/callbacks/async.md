@@ -1,8 +1,22 @@
-# Asynchronous callbacks
+# Use Asynchronous Callbacks
 
-Python has natively supported asynchronous functions since version 3.5, for a quick overview of some of the concepts involved see [the Python documentation](https://docs.python.org/3/library/asyncio-task.html). For full asyncio support in Panel you will have to use `python>=3.8`.
+This guide addresses how to leverage asynchronous callbacks to run I/O bound tasks in parallel. This technique is also beneficial for CPU bound tasks that release the GIL.
 
-## `.param.watch`
+You can use `async` function with event handlers like `on_click` as well as the reactive apis `.bind`, `.depends` and `.watch`.
+
+You can also schedule asynchronous periodic callbacks with `pn.state.add_periodic_callback` as well as run `async` functions directly with `pn.state.execute`.
+
+```{admonition} Asyncio
+For a quick overview of the most important `asyncio` concepts see [the Python documentation](https://docs.python.org/3/library/asyncio-task.html).
+```
+
+```{admonition} Bokeh Models
+It is important to note that asynchronous callbacks operate without locking the underlying Bokeh Document, which means Bokeh models cannot be safely modified by default. Usually this is not an issue because modifying Panel components appropriately schedules updates to underlying Bokeh models, however in cases where we want to modify a Bokeh model directly, e.g. when embedding and updating a Bokeh plot in a Panel application we explicitly have to decorate the asynchronous callback with `pn.io.with_lock` (see example below).
+```
+
+---
+
+## `on_click`
 
 One of the major benefits of leveraging async functions is that it is simple to write callbacks which will perform some longer running IO tasks in the background. Below we simulate this by creating a `Button` which will update some text when it starts and finishes running a long-running background task (here simulated using `asyncio.sleep`. If you are running this in the notebook you will note that you can start multiple tasks and it will update the text immediately but continue in the background:
 
@@ -25,9 +39,57 @@ button.on_click(run_async)
 pn.Row(button, text)
 ```
 
-Note that `on_click` is simple one way of registering an asynchronous callback, using `.param.watch` is also supported and so is scheduling asynchronous periodic callbacks with `pn.state.add_periodic_callback`.
+## `.bind`
 
-It is important to note that asynchronous callbacks operate without locking the underlying bokeh Document, which means Bokeh models cannot be safely modified by default. Usually this is not an issue because modifying Panel components appropriately schedules updates to underlying Bokeh models, however in cases where we want to modify a Bokeh model directly, e.g. when embedding and updating a Bokeh plot in a Panel application we explicitly have to decorate the asynchronous callback with `pn.io.with_lock`.
+```{pyodide}
+widget = pn.widgets.IntSlider(start=0, end=10)
+
+async def get_img(index):
+    url = f"https://picsum.photos/800/300?image={index}"
+    if pn.state._is_pyodide:
+        from pyodide.http import pyfetch
+        return pn.pane.JPG(await (await pyfetch(url)).bytes())
+
+    import aiohttp
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            return pn.pane.JPG(await resp.read())
+
+pn.Column(widget, pn.bind(get_img, widget))
+```
+
+In this example Panel will invoke the function and update the output when the function returns while leaving the process unblocked for the duration of the `aiohttp` request.
+
+## `.watch`
+
+The app from the section above can be written using `.param.watch` as:
+
+```{pyodide}
+widget = pn.widgets.IntSlider(start=0, end=10)
+
+image = pn.pane.JPG()
+
+async def update_img(event):
+    url = f"https://picsum.photos/800/300?image={event.new}"
+    if pn.state._is_pyodide:
+        from pyodide.http import pyfetch
+        image.object = await (await pyfetch(url)).bytes()
+        return
+
+    import aiohttp
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            image.object = await resp.read()
+
+widget.param.watch(update_img, 'value')
+widget.param.trigger('value')
+
+pn.Column(widget, image)
+```
+
+In this example Param will await the asynchronous function and the image will be updated when the request completes.
+
+## Bokeh models with `pn.io.with_lock`
 
 ```{pyodide}
 import numpy as np
@@ -54,39 +116,6 @@ button.param.watch(stream, 'clicks')
 pn.Row(button, pane)
 ```
 
-## `pn.bind`
+## Related Resources
 
-```{pyodide}
-import aiohttp
-
-widget = pn.widgets.IntSlider(start=0, end=10)
-
-async def get_img(index):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"https://picsum.photos/800/300?image={index}") as resp:
-            return pn.pane.JPG(await resp.read())
-
-pn.Column(widget, pn.bind(get_img, widget))
-```
-
-In this example Panel will invoke the function and update the output when the function returns while leaving the process unblocked for the duration of the `aiohttp` request.
-
-The equivalent can be written using `.param.watch` as:
-
-```{pyodide}
-widget = pn.widgets.IntSlider(start=0, end=10)
-
-image = pn.pane.JPG()
-
-async def update_img(event):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"https://picsum.photos/800/300?image={event.new}") as resp:
-            image.object = await resp.read()
-
-widget.param.watch(update_img, 'value')
-widget.param.trigger('value')
-
-pn.Column(widget, image)
-```
-
-In this example Param will await the asynchronous function and the image will be updated when the request completes.
+- See the related [How-to > Link Parameters with Callbacks API](../links/index) guides, including [How to > Create Low-Level Python Links Using `.watch`](../links/watchers).

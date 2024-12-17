@@ -20,9 +20,8 @@ case is up to you to evaluate.
 
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -248,7 +247,7 @@ class RecognitionResult(param.Parameterized):
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognitionResult
     """
 
-    alternatives = param.List(class_=RecognitionAlternative, constant=True, doc="""
+    alternatives = param.List(item_type=RecognitionAlternative, constant=True, doc="""
         The list of the n-best alternatives""")
 
     is_final = param.Boolean(constant=True, doc="""
@@ -320,7 +319,7 @@ class SpeechToText(Widget):
         incoming audio, and attempts to return a RecognitionResult
         using the audio captured so far.""")
 
-    lang = param.ObjectSelector(default="", objects=[""] + LANGUAGE_CODES,
+    lang = param.Selector(default="", objects=[""] + LANGUAGE_CODES,
                                 allow_None=True, label="Language", doc="""
         The language of the current SpeechRecognition in BCP 47
         format. For example 'en-US'. If not specified, this defaults
@@ -355,7 +354,7 @@ class SpeechToText(Widget):
     button_hide = param.Boolean(default=False, label="Hide the Button", doc="""
         If True no button is shown. If False a toggle Start/ Stop button is shown.""")
 
-    button_type = param.ObjectSelector(default="light", objects=BUTTON_TYPES, doc="""
+    button_type = param.Selector(default="light", objects=BUTTON_TYPES, doc="""
         The button styling.""")
 
     button_not_started = param.String(label="Button Text when not started", doc="""
@@ -384,7 +383,7 @@ class SpeechToText(Widget):
     results = param.List(constant=True, doc="""
         The `results` as a list of Dictionaries.""")
 
-    value = param.String(constant=True, label="Last Result", doc="""
+    value = param.String(default="", constant=True, label="Last Result", doc="""
         The transcipt of the highest confidence RecognitionAlternative
         of the last RecognitionResult. Please note we strip the
         transcript for leading spaces.""")
@@ -394,12 +393,10 @@ class SpeechToText(Widget):
         browser.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "value": None,
-        "grammars": None,
-        "_grammars": "grammars",
+        'grammars': None, '_grammars': 'grammars', 'name': None, 'value': None,
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkSpeechToText
+    _widget_type: ClassVar[type[Model]] = _BkSpeechToText
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -411,7 +408,7 @@ class SpeechToText(Widget):
         # multiple actions
         return f"SpeechToText(name='{self.name}')"
 
-    @param.depends("grammars", watch=True)
+    @param.depends('grammars', watch=True)
     def _update_grammars(self):
         with param.edit_constant(self):
             if self.grammars:
@@ -419,14 +416,14 @@ class SpeechToText(Widget):
             else:
                 self._grammars = []
 
-    @param.depends("results", watch=True)
+    @param.depends('results', watch=True)
     def _update_results(self):
         # pylint: disable=unsubscriptable-object
         with param.edit_constant(self):
-            if self.results and "alternatives" in self.results[-1]:
-                self.value = (self.results[-1]["alternatives"][0]["transcript"]).lstrip()
+            if self.results and 'alternatives' in self.results[-1]:
+                self.value = (self.results[-1]['alternatives'][0]['transcript']).lstrip()
             else:
-                self.value = ""
+                self.value = ''
 
     @property
     def results_deserialized(self):
@@ -443,16 +440,16 @@ class SpeechToText(Widget):
         Convenience method for ease of use
         """
         if not self.results:
-            return "No results"
-        html = "<div class='pn-speech-recognition-result'>"
+            return 'No results'
+        html = '<div class="pn-speech-recognition-result">'
         total = len(self.results) - 1
         for index, result in enumerate(reversed(self.results_deserialized)):
             if len(self.results) > 1:
-                html += f"<h3>Result {total-index}</h3>"
-            html += f"<span>Is Final: {result.is_final}</span><br/>"
+                html += f'<h3>Result {total-index}</h3>'
+            html += f'<span>Is Final: {result.is_final}</span><br/>'
             for index2, alternative in enumerate(result.alternatives):
                 if len(result.alternatives) > 1:
-                    html += f"<h4>Alternative {index2}</h4>"
+                    html += f'<h4>Alternative {index2}</h4>'
                 html += f"""
                 <span>Confidence: {alternative.confidence:.2f}</span>
                 </br>
@@ -460,5 +457,5 @@ class SpeechToText(Widget):
                   <strong>{alternative.transcript}</strong>
                 </p>
                 """
-        html += "</div>"
+        html += '</div>'
         return html

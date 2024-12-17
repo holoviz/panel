@@ -14,7 +14,7 @@ from panel.io.embed import embed_state
 from panel.pane import Str
 from panel.param import Param
 from panel.widgets import (
-    Checkbox, FloatSlider, IntSlider, Select, StaticText,
+    Checkbox, EditableFloatSlider, FloatSlider, IntSlider, Select, StaticText,
 )
 
 
@@ -34,7 +34,7 @@ def test_embed_param_jslink(document, comm):
     cb1, cb2 = (cb1, cb2) if select._models[ref][0] is cb1.args['target'] else (cb2, cb1)
     assert cb1.code == """
     var value = source['active'];
-    value = value.indexOf(0) >= 0;
+    value = value;
     value = value;
     try {
       var property = target.properties['disabled'];
@@ -53,7 +53,7 @@ def test_embed_param_jslink(document, comm):
     assert cb2.code == """
     var value = source['disabled'];
     value = value;
-    value = value ? [0] : [];
+    value = value;
     try {
       var property = target.properties['active'];
       if (property !== undefined) { property.validate(value); }
@@ -90,8 +90,7 @@ def test_embed_select_str_link(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
-
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 def test_embed_float_slider_explicit_values(document, comm):
     select = FloatSlider()
@@ -115,12 +114,50 @@ def test_embed_float_slider_explicit_values(document, comm):
         assert event1['kind'] == 'ModelChanged'
         assert event1['attr'] == 'text'
         assert event1['model'] == model.children[0].children[0].ref
-        assert event1['new'] == '<b>%s</b>' % states[k]
+        assert event1['new'] == f'<b>{states[k]}</b>'
 
         assert event2['kind'] == 'ModelChanged'
         assert event2['attr'] == 'text'
         assert event2['model'] == model.children[1].ref
-        assert event2['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % states[k]
+        assert event2['new'] == f'&lt;pre&gt;{states[k]}&lt;/pre&gt;'
+
+def test_embed_editable_float_slider_explicit_values(document, comm):
+    select = EditableFloatSlider()
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    select.link(string, callbacks={'value': link})
+    panel = Row(select, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    embed_state(panel, model, document, states={select: [0.1, 0.7, 1]})
+    _, state = document.roots
+    assert set(state.state) == {0, 1, 2}
+    states = {0: 0.1, 1: 0.7, 2: 1}
+    for (k, v) in state.state.items():
+        content = json.loads(v['content'])
+        assert 'events' in content
+        events = content['events']
+        assert len(events) == 4
+        event1, event2, event3, event4 = events
+        assert event1['kind'] == 'ModelChanged'
+        assert event1['attr'] == 'text'
+        assert event1['model'] == model.children[0].children[1].children[0].ref
+        assert event1['new'] == f'<b>{states[k]}</b>'
+
+        assert event2['kind'] == 'ModelChanged'
+        assert event2['attr'] == 'value'
+        assert event2['new'] == states[k]
+
+        assert event3['kind'] == 'ModelChanged'
+        assert event3['attr'] == 'value'
+        assert event3['model'] == model.children[0].children[0].children[1].ref
+        assert event3['new'] == states[k]
+
+        assert event4['kind'] == 'ModelChanged'
+        assert event4['attr'] == 'text'
+        assert event4['model'] == model.children[1].ref
+        assert event4['new'] == f'&lt;pre&gt;{states[k]}&lt;/pre&gt;'
 
 def test_embed_float_slider_default_value(document, comm):
     slider = FloatSlider(start=0, end=7.2, value=3.6)
@@ -135,6 +172,20 @@ def test_embed_float_slider_default_value(document, comm):
     layout, state = document.roots
     assert set(state.state) == {0, 1, 2}
     assert layout.children[0].children[1].value == 1
+
+def test_embed_editable_float_slider_default_value(document, comm):
+    slider = EditableFloatSlider(start=0, end=7.2, value=3.6)
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    slider.link(string, callbacks={'value': link})
+    panel = Row(slider, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    embed_state(panel, model, document)
+    layout, state = document.roots
+    assert set(state.state) == {0, 1, 2}
+    assert layout.children[0].children[1].children[1].value == 1
 
 def test_embed_select_explicit_values(document, comm):
     select = Select(options=['A', 'B', 'C'])
@@ -157,7 +208,7 @@ def test_embed_select_explicit_values(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 
 def test_embed_select_str_explicit_values_not_found(document, comm):
@@ -207,13 +258,13 @@ def test_embed_select_str_link_two_steps(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
         event = events[1]
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[2].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 
 def test_embed_select_str_link_with_secondary_watch(document, comm):
@@ -236,7 +287,7 @@ def test_embed_select_str_link_with_secondary_watch(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 
 def test_embed_select_str_jslink(document, comm):
@@ -303,7 +354,7 @@ def test_embed_checkbox_str_link(document, comm):
         model = panel.get_root(document, comm)
     embed_state(panel, model, document)
     _, state = document.roots
-    assert set(state.state) == {'false', 'true'}
+    assert set(state.state) == {False, True}
     for k, v in state.state.items():
         content = json.loads(v['content'])
         assert 'events' in content
@@ -313,7 +364,7 @@ def test_embed_checkbox_str_link(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k.title()
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 
 def test_embed_checkbox_str_jslink(document, comm):
@@ -334,7 +385,7 @@ def test_embed_checkbox_str_jslink(document, comm):
     cb1, cb2 = (cb1, cb2) if checkbox._models[ref][0] is cb1.args['source'] else (cb2, cb1)
     assert cb1.code == """
     var value = source['active'];
-    value = value.indexOf(0) >= 0;
+    value = value;
     value = JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ");
     try {
       var property = target.properties['text'];
@@ -353,7 +404,7 @@ def test_embed_checkbox_str_jslink(document, comm):
     assert cb2.code == """
     var value = source['text'];
     value = value;
-    value = value ? [0] : [];
+    value = value;
     try {
       var property = target.properties['active'];
       if (property !== undefined) { property.validate(value); }
@@ -396,7 +447,7 @@ def test_embed_slider_str_link(document, comm):
         assert event2['kind'] == 'ModelChanged'
         assert event2['attr'] == 'text'
         assert event2['model'] == model.children[1].ref
-        assert event2['new'] == '&lt;pre&gt;%.1f&lt;/pre&gt;' % values[k]
+        assert event2['new'] == f'&lt;pre&gt;{values[k]:.1f}&lt;/pre&gt;'
 
 
 def test_embed_slider_str_jslink(document, comm):
@@ -476,24 +527,24 @@ def test_embed_merged_sliders(document, comm):
     ref4 = model.children[1].children[0].ref['id']
     state0 = json.loads(state_model.state[0]['content'])['events']
     assert state0 == [
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>1</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "1", "hint": None},
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>1</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "1", "hint": None}
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>1</b>',},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "1"},
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>1</b>',},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "1"}
     ]
     state1 = json.loads(state_model.state[1]['content'])['events']
     assert state1 == [
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>5</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "5", "hint": None},
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>5</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "5", "hint": None}
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>5</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "5"},
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>5</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "5"}
     ]
     state2 = json.loads(state_model.state[2]['content'])['events']
     assert state2 == [
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>9</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "9", "hint": None},
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>9</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "9", "hint": None}
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>9</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "9"},
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>9</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "9"}
     ]
 
 
@@ -549,7 +600,7 @@ def test_save_embed_json(tmpdir):
         event = events[0]
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % v
+        assert event['new'] == f'&lt;pre&gt;{v}&lt;/pre&gt;'
 
 def test_embed_widget_disabled(document, comm):
     select = Select(options=['A', 'B', 'C'], disabled=True)

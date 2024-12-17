@@ -1,73 +1,126 @@
-import time
-
 import param
 import pytest
 
-pytestmark = pytest.mark.ui
+pytest.importorskip("playwright")
 
-from panel.io.server import serve
+from playwright.sync_api import expect
+
 from panel.reactive import ReactiveHTML
+from panel.tests.util import serve_component, wait_until
+
+pytestmark = pytest.mark.ui
 
 
 class ReactiveComponent(ReactiveHTML):
 
     count = param.Integer(default=0)
 
-    _template = "<div id='reactive' class='reactive'></div>"
+    event = param.Event()
 
-    _scripts = {'render': 'data.count += 1; reactive.innerText = `${data.count}`;'}
+    _template = """
+    <div id="reactive" class="reactive" onclick="${script('click')}"></div>
+    """
+
+    _scripts = {
+        'render': 'data.count += 1; reactive.innerText = `${data.count}`;',
+        'click': 'data.count += 1; reactive.innerText = `${data.count}`;',
+        'event': 'data.count += 1; reactive.innerText = `${data.count}`;',
+    }
+
+class ReactiveLiteral(ReactiveHTML):
+
+    value = param.String()
+
+    _template = """
+    <div class="reactive">{{value}}</div>
+    """
 
 
-def test_reactive_html_set_loading_no_rerender(page, port):
+def test_reactive_html_click_js_event(page):
     component = ReactiveComponent()
 
-    serve(component, port=port, threaded=True, show=False)
+    serve_component(page, component)
 
-    time.sleep(0.2)
+    expect(page.locator(".reactive")).to_have_text('1')
 
-    page.goto(f"http://localhost:{port}")
+    page.locator(".reactive").click()
 
-    assert page.text_content(".reactive") == '1'
+    expect(page.locator(".reactive")).to_have_text('2')
+
+    wait_until(lambda: component.count == 2, page)
+
+def test_reactive_html_param_event(page):
+    component = ReactiveComponent()
+
+    serve_component(page, component)
+
+    expect(page.locator(".reactive")).to_have_text('1')
+
+    component.param.trigger('event')
+
+    expect(page.locator(".reactive")).to_have_text('2')
+
+    component.param.trigger('event')
+
+    expect(page.locator(".reactive")).to_have_text('3')
+
+    component.param.trigger('event')
+    component.param.trigger('event')
+
+    expect(page.locator(".reactive")).to_have_text('5')
+
+    wait_until(lambda: component.count == 5, page)
+
+def test_reactive_html_set_loading_no_rerender(page):
+    component = ReactiveComponent()
+
+    serve_component(page, component)
+
+    expect(page.locator(".reactive")).to_have_text('1')
+
     component.loading = True
-    time.sleep(0.1)
-    assert page.text_content(".reactive") == '1'
+    expect(page.locator(".reactive")).to_have_text('1')
+
     component.loading = False
-    time.sleep(0.1)
-    assert page.text_content(".reactive") == '1'
+    expect(page.locator(".reactive")).to_have_text('1')
 
-def test_reactive_html_changing_css_classes_rerenders(page, port):
+def test_reactive_html_changing_css_classes_rerenders(page):
     component = ReactiveComponent()
 
-    serve(component, port=port, threaded=True, show=False)
+    serve_component(page, component)
 
-    time.sleep(0.2)
+    expect(page.locator(".reactive")).to_have_text('1')
 
-    page.goto(f"http://localhost:{port}")
-
-    assert page.text_content(".reactive") == '1'
     component.css_classes = ['custom']
-    time.sleep(0.1)
-    assert page.text_content(".reactive") == '2'
-    component.loading = True
-    time.sleep(0.1)
-    assert page.text_content(".reactive") == '2'
-    component.css_classes = []
-    time.sleep(0.1)
-    assert page.text_content(".reactive") == '3'
 
-def test_reactive_html_set_background_no_rerender(page, port):
+    expect(page.locator(".reactive")).to_have_text('1')
+
+    component.loading = True
+
+    expect(page.locator(".reactive")).to_have_text('1')
+
+    component.css_classes = []
+
+    expect(page.locator(".reactive")).to_have_text('1')
+
+def test_reactive_html_set_background_no_rerender(page):
     component = ReactiveComponent()
 
-    serve(component, port=port, threaded=True, show=False)
+    serve_component(page, component)
 
-    time.sleep(0.2)
+    expect(page.locator(".reactive")).to_have_text('1')
 
-    page.goto(f"http://localhost:{port}")
+    component.styles = dict(background='red')
 
-    assert page.text_content(".reactive") == '1'
-    component.background = 'red'
-    time.sleep(0.1)
-    assert page.text_content(".reactive") == '1'
-    component.background = 'green'
-    time.sleep(0.1)
-    assert page.text_content(".reactive") == '1'
+    expect(page.locator(".reactive")).to_have_text('1')
+
+    component.styles = dict(background='green')
+
+    expect(page.locator(".reactive")).to_have_text('1')
+
+def test_reactive_literal_backtick(page):
+    component = ReactiveLiteral(value="Backtick: `")
+
+    serve_component(page, component)
+
+    expect(page.locator(".reactive")).to_have_text('Backtick: `')

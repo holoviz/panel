@@ -76,7 +76,7 @@ The `pn.state` object makes various global state available and provides methods 
 : Allows defining a callback which is run when a server is fully loaded
 
 `schedule`
-: Schedule a callback periodically at a specific time (click [here](./Deploy_and_Export.rst#pn.state.schedule) for more details)
+: Schedule a callback periodically at a specific time (click [here](../how_to/callbacks/schedule.md) for more details)
 
 `sync_busy`
 : Sync an indicator with a boolean value parameter to the busy property on state

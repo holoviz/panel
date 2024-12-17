@@ -40,7 +40,7 @@ def start_loading_spinner(*objects):
     objects: tuple
         The panels to add the loading indicator to.
     """
-    css_classes = [LOADING_INDICATOR_CSS_CLASS, config.loading_spinner]
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}']
     for item in objects:
         if hasattr(item, "css_classes"):
             _add_css_classes(item, css_classes)
@@ -54,7 +54,7 @@ def stop_loading_spinner(*objects):
     objects: tuple
         The panels to remove the loading indicator from.
     """
-    css_classes = [LOADING_INDICATOR_CSS_CLASS, config.loading_spinner]
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}']
     for item in objects:
         if hasattr(item, "css_classes"):
             _remove_css_classes(item, css_classes)

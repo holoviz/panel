@@ -1,6 +1,6 @@
 # Microsoft Azure
 
-Azure is popular choice for enterprises often in combination with an automated CI/CD pipeline via Azure DevOps. To get started you can use the [Azure Portal](portal.azure.com) to deploy your app as a Linux Web App via the web based user interface.
+Azure is popular choice for enterprises often in combination with an automated CI/CD pipeline via Azure DevOps. To get started you can use the [Azure Portal](https://portal.azure.com) to deploy your app as a Linux Web App via the web based user interface.
 
 There are a few things you need to be aware of in order to be able to start your app.
 
@@ -26,6 +26,6 @@ You also need to configure your app service **general settings** to
 - allow `Web sockets` and
 - be `Always on`
 
-<img src="../../_static/azure_deployment.png" style="width:67%"></img>
+<img src="../../_static/images/azure_deployment.png" style="width:67%"></img>
 
 If you would like to setup **automated CI/ CD** via Azure DevOps, Azure Pipelines and Docker to a Web App for Containers, you can find a good starting point in the [devops Folder](https://github.com/MarcSkovMadsen/awesome-panel/tree/master/devops) of [awesome-panel.org](https://awesome-panel.org).

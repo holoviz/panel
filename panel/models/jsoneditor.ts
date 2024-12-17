@@ -1,27 +1,31 @@
-import * as p from "@bokehjs/core/properties"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
-import {PanelHTMLBoxView} from "./layout"
+import type * as p from "@bokehjs/core/properties"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {ImportedStyleSheet} from "@bokehjs/core/dom"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import {HTMLBox, HTMLBoxView} from "./layout"
+import type {Attrs} from "@bokehjs/core/types"
 
 export class JSONEditEvent extends ModelEvent {
-  event_name: string = "json_edit"
-
   constructor(readonly data: any) {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected override get event_values(): Attrs {
     return {model: this.origin, data: this.data}
+  }
+
+  static {
+    this.prototype.event_name = "json_edit"
   }
 }
 
+export class JSONEditorView extends HTMLBoxView {
+  declare model: JSONEditor
 
-export class JSONEditorView extends PanelHTMLBoxView {
-  model: JSONEditor
   editor: any
   _menu_context: any
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {data, disabled, templates, menu, mode, search, schema} = this.model.properties
     this.on_change([data], () => this.editor.update(this.model.data))
@@ -38,9 +42,17 @@ export class JSONEditorView extends PanelHTMLBoxView {
       this.editor.options.schema = this.model.schema
     })
     this.on_change([disabled, mode], () => {
-      const mode = this.model.disabled ? 'view': this.model.mode;
+      const mode = this.model.disabled ? "view": this.model.mode
       this.editor.setMode(mode)
     })
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    const styles = super.stylesheets()
+    for (const css of this.model.css) {
+      styles.push(new ImportedStyleSheet(css))
+    }
+    return styles
   }
 
   override remove(): void {
@@ -48,12 +60,12 @@ export class JSONEditorView extends PanelHTMLBoxView {
     this.editor.destroy()
   }
 
-  render(): void {
-    super.render();
-    const mode = this.model.disabled ? 'view': this.model.mode;
-    this.editor = new (window as any).JSONEditor(this.el, {
+  override render(): void {
+    super.render()
+    const mode = this.model.disabled ? "view": this.model.mode
+    this.editor = new (window as any).JSONEditor(this.shadow_el, {
       menu: this.model.menu,
-      mode: mode,
+      mode,
       onChangeJSON: (json: any) => {
         this.model.data = json
       },
@@ -63,14 +75,15 @@ export class JSONEditorView extends PanelHTMLBoxView {
       search: this.model.search,
       schema: this.model.schema,
       templates: this.model.templates,
-    });
-    this.editor.set(this.model.data);
+    })
+    this.editor.set(this.model.data)
   }
 }
 
 export namespace JSONEditor {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
+    css: p.Property<string[]>
     data: p.Property<any>
     menu: p.Property<boolean>
     mode: p.Property<string>
@@ -84,24 +97,25 @@ export namespace JSONEditor {
 export interface JSONEditor extends JSONEditor.Attrs {}
 
 export class JSONEditor extends HTMLBox {
-  properties: JSONEditor.Props
+  declare properties: JSONEditor.Props
 
   constructor(attrs?: Partial<JSONEditor.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.jsoneditor"
+  static override __module__ = "panel.models.jsoneditor"
 
-  static init_JSONEditor(): void {
+  static {
     this.prototype.default_view = JSONEditorView
-    this.define<JSONEditor.Props>(({Any, Array, Boolean, String}) => ({
-      data:      [ Any,          {} ],
-      mode:      [ String,   'tree' ],
-      menu:      [ Boolean,    true ],
-      search:    [ Boolean,    true ],
-      selection: [ Array(Any),   [] ],
-      schema:    [ Any,        null ],
-      templates: [ Array(Any),   [] ],
+    this.define<JSONEditor.Props>(({Any, List, Bool, Str}) => ({
+      css:       [ List(Str), [] ],
+      data:      [ Any,           {} ],
+      mode:      [ Str,    "tree" ],
+      menu:      [ Bool,     true ],
+      search:    [ Bool,     true ],
+      selection: [ List(Any),    [] ],
+      schema:    [ Any,         null ],
+      templates: [ List(Any),    [] ],
     }))
   }
 }

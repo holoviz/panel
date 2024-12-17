@@ -1,7 +1,7 @@
 import pytest
 
 from bokeh.models import (
-    Div, Panel as BkPanel, Spacer as BkSpacer, Tabs as BkTabs,
+    Div, Spacer as BkSpacer, TabPanel as BkPanel, Tabs as BkTabs,
 )
 
 import panel as pn

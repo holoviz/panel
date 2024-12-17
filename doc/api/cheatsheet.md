@@ -4,7 +4,7 @@ In order to get the best use out of the Panel user guide, it is important to hav
 
 ## Components
 
-Panel provides three main types of component: ``Pane``, ``Widget``, and ``Panel``. These components are introduced and explained in the [Components user guide](./Components.rst), but briefly:
+Panel provides three main types of component: ``Pane``, ``Widget``, and ``Panel``. These components are introduced and explained in the [Components](../explanation/components/components_overview.md) guide, but briefly:
 
 * **``Pane``**: A ``Pane`` wraps a user supplied object of almost any type and turns it into a renderable view. When the wrapped ``object`` or any parameter changes, a pane will update the view accordingly.
 
@@ -16,29 +16,25 @@ Panel provides three main types of component: ``Pane``, ``Widget``, and ``Panel`
 
 ## APIs
 
-Panel is a very flexible system that supports many different usage patterns, via multiple application programming interfaces (APIs).  Each API has its own advantages and disadvantages, and is suitable for different tasks and ways of working. The [API user guide](APIs.rst) goes through each of the APIs in detail, comparing their pros and cons and providing recommendations on when to use each.
+Panel is a very flexible system that supports many different usage patterns, via multiple application programming interfaces (APIs).  Each API has its own advantages and disadvantages, and is suitable for different tasks and ways of working. The [API guide](../explanation/api/index.md) goes through each of the APIs in detail, comparing their pros and cons and providing recommendations on when to use each.
 
-### [Reactive functions](./APIs.rst#reactive-functions)
+### [Reactive functions](../how_to/interactivity/index.md)
 
 Defining a reactive function using the ``pn.bind`` function or ``pn.depends`` decorator provides an explicit way to link specific inputs (such as the value of a widget) to some computation in a function, reactively updating the output of the function whenever the parameter changes. This approach is a highly convenient, intuitive, and flexible way of building interactive UIs.
 
-### [``interact``](./Interact.rst)
+### [``Param``](../how_to/param/index.md)
 
-The ``interact`` API will be familiar to ipywidgets users; it provides a very simple API to define an interactive view of the results of a Python function. This approach works by declaring functions whose arguments will be inspected to infer a set of widgets. Changing any of the resulting widgets causes the function to be re-run, updating the displayed output. This approach makes it extremely easy to get started and also easy to rearrange and reconfigure the resulting plots and widgets, but it may not be suited to more complex scenarios. See the [Interact user guide](./Interact.rst) for more detail.
+``Panel`` itself is built on the [param](https://param.pyviz.org) library, which allows capturing parameters and their allowable values entirely independently of any GUI code. By using Param to declare the parameters along with methods that depend on those parameters, even very complex GUIs can be encapsulated in a tidy, well-organized, maintainable, and declarative way. Panel will automatically convert parameter definition to corresponding widgets, allowing the same codebase to support command-line, batch, server, and GUI usage. This API requires the use of the param library to express the inputs and encapsulate the computations to be performed, but once implemented this approach leads to flexible, robust, and well encapsulated code. See the Panel [Param how-to guides](../how_to/param/index.md) for more detail.
 
-### [``Param``](./Param.rst)
+### [Callback API](../how_to/links/index.md)
 
-``Panel`` itself is built on the [param](https://param.pyviz.org) library, which allows capturing parameters and their allowable values entirely independently of any GUI code. By using Param to declare the parameters along with methods that depend on those parameters, even very complex GUIs can be encapsulated in a tidy, well-organized, maintainable, and declarative way. Panel will automatically convert parameter definition to corresponding widgets, allowing the same codebase to support command-line, batch, server, and GUI usage. This API requires the use of the param library to express the inputs and encapsulate the computations to be performed, but once implemented this approach leads to flexible, robust, and well encapsulated code. See the Panel [Param user guide](./Param.rst) for more detail.
-
-### [Callback API](./Widgets.rst)
-
-At the lowest level, you can build interactive applications using ``Pane``, ``Widget``, and ``Panel`` components and connect them using explicit callbacks. Registering callbacks on components to modify other components provides full flexibility in building interactive features, but once you have defined numerous callbacks it can be very difficult to track how they all interact. This approach affords the most amount of flexibility but can easily grow in complexity, and is not recommended as a starting point for most users. That said, it is the interface that all the other APIs are built on, so it is powerful and is a good approach for building entirely new ways of working with Panel, or when you need some specific behavior not covered by the other APIs. See the [Widgets user guide](./Widgets.rst) and [Links user guide](./Links.rst) for more detail.
+At the lowest level, you can build interactive applications using ``Pane``, ``Widget``, and ``Panel`` components and connect them using explicit callbacks. Registering callbacks on components to modify other components provides full flexibility in building interactive features, but once you have defined numerous callbacks it can be very difficult to track how they all interact. This approach affords the most amount of flexibility but can easily grow in complexity, and is not recommended as a starting point for most users. That said, it is the interface that all the other APIs are built on, so it is powerful and is a good approach for building entirely new ways of working with Panel, or when you need some specific behavior not covered by the other APIs. See the [callback and linking how-to guide](../how_to/links/index.md) for more detail.
 
 ---
 
 ## Display and rendering
 
-Throughout this user guide we will cover a number of ways to display Panel objects, including display in a Jupyter notebook, in a standalone server, by saving and embedding, and more. For a detailed description see the [Display and Export user guide](./Display_and_Export.rst).
+Throughout this user guide we will cover a number of ways to display Panel objects, including [display in a Jupyter notebook](../how_to/notebook/index.md), in a standalone server, by saving and embedding, and more.
 
 ### Notebook
 
@@ -46,7 +42,7 @@ All of Panel's documentation is built from Jupyter notebooks that you can explor
 
 #### ``pn.extension()``
 
-> The Panel extension loads BokehJS, any custom models required, and optionally additional custom JS and CSS in Jupyter notebook environments. It also allows passing any [`pn.config`](#pn.config) variables
+> The Panel extension loads BokehJS, any custom models required, and optionally additional custom JS and CSS in Jupyter notebook environments. It also allows passing any [`pn.config`](../api/config.md) variables.
 
 #### ``pn.ipywidget()``
 
@@ -59,10 +55,6 @@ All of Panel's documentation is built from Jupyter notebooks that you can explor
 #### Rich display
 
 Jupyter notebooks allow the final value of a notebook cell to display itself, using a mechanism called [rich display](https://ipython.readthedocs.io/en/stable/config/integrating.html#rich-display). As long as `pn.extension()` has been called in a notebook, all Panel components (widgets, panes, and panels) will display themselves when placed on the last line of a notebook cell.
-
-#### ``.app()``
-
-> The ``.app()`` method present on all viewable Panel objects allows displaying a Panel server process inline in a notebook, which can be useful for debugging a standalone server interactively.
 
 ### Python REPL and embedding a server
 
@@ -90,7 +82,7 @@ Panel mirrors Bokeh's command-line interface for launching and exporting apps an
 
 ### Export
 
-When not working interactively, a Panel object can be exported to a static file.
+When not working interactively, a Panel object can be [exported to a static file](../how_to/export/index.md).
 
 #### ``.save()`` to PNG
 
@@ -112,7 +104,7 @@ ___
 
 ## Linking and callbacks
 
-One of the most important aspects of a general app and dashboarding framework is the ability to link different components in flexible ways, scheduling callbacks in response to internal and external events. Panel provides convenient lower and higher-level APIs to achieve both.  For more details, see the [Links](./Links.rst) user guide.
+One of the most important aspects of a general app and dashboarding framework is the ability to link different components in flexible ways, scheduling callbacks in response to internal and external events. Panel provides convenient lower and higher-level APIs to achieve both.  For more details, see the [callback and linking how-tos](../how_to/links/index.md) .
 
 ### Methods
 

@@ -3,24 +3,25 @@ Miscellaneous widgets which do not fit into the other main categories.
 """
 from __future__ import annotations
 
-import os
-
 from base64 import b64encode
-from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
-)
+from collections.abc import Mapping
+from pathlib import Path
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
+from param.parameterized import eval_function_with_deps, iscoroutinefunction
 from pyviz_comms import JupyterComm
 
 from ..io.notebook import push
+from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..models import (
     FileDownload as _BkFileDownload, VideoStream as _BkVideoStream,
 )
 from ..util import lazy_load
 from .base import Widget
+from .button import BUTTON_STYLES, BUTTON_TYPES, IconMixin
 from .indicators import Progress  # noqa
 
 if TYPE_CHECKING:
@@ -39,7 +40,7 @@ class VideoStream(Widget):
     >>> VideoStream(name='Video Stream', timeout=100)
     """
 
-    format = param.ObjectSelector(default='png', objects=['png', 'jpeg'],
+    format = param.Selector(default='png', objects=['png', 'jpeg'],
                                   doc="""
         The file format as which the video is returned.""")
 
@@ -52,7 +53,7 @@ class VideoStream(Widget):
     value = param.String(default='', doc="""
         A base64 representation of the video stream snapshot.""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkVideoStream
+    _widget_type: ClassVar[type[Model]] = _BkVideoStream
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
@@ -61,14 +62,14 @@ class VideoStream(Widget):
         Triggers a snapshot of the current VideoStream state to sync
         the widget value.
         """
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             m.snapshot = not m.snapshot
             (self, root, doc, comm) = state._views[ref]
             if comm and 'embedded' not in root.tags:
                 push(doc, comm)
 
 
-class FileDownload(Widget):
+class FileDownload(IconMixin):
     """
     The `FileDownload` widget allows a user to download a file.
 
@@ -86,10 +87,15 @@ class FileDownload(Widget):
         Whether to download on the initial click or allow for
         right-click save as.""")
 
-    button_type = param.ObjectSelector(default='default', objects=[
-        'default', 'primary', 'success', 'warning', 'danger', 'light'])
+    button_type = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
+        A button theme; should be one of 'default' (white), 'primary'
+        (blue), 'success' (green), 'info' (yellow), 'light' (light),
+        or 'danger' (red).""")
 
-    callback = param.Callable(default=None, doc="""
+    button_style = param.Selector(default='solid', objects=BUTTON_STYLES, doc="""
+        A button style to switch between 'solid', 'outline'.""")
+
+    callback = param.Callable(default=None, allow_refs=False, doc="""
         A callable that returns the file path or file-like object.""")
 
     data = param.String(default=None, doc="""
@@ -99,7 +105,7 @@ class FileDownload(Widget):
         Whether to embed the file on initialization.""")
 
     file = param.Parameter(default=None, doc="""
-        The file, file-like object or file contents to transfer.  If
+        The file, Path, file-like object or file contents to transfer.  If
         the file is not pointing to a file on disk a filename must
         also be provided.""")
 
@@ -109,6 +115,9 @@ class FileDownload(Widget):
 
     label = param.String(default="Download file", doc="""
         The label of the download button""")
+
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
 
     _clicks = param.Integer(default=0)
 
@@ -136,11 +145,13 @@ class FileDownload(Widget):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'callback': None, 'embed': None, 'file': None,
-        '_clicks': 'clicks', 'name': 'title'
+        'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks',
+        'value': None
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkFileDownload
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
+
+    _widget_type: ClassVar[type[Model]] = _BkFileDownload
 
     def __init__(self, file=None, **params):
         self._default_label = 'label' not in params
@@ -149,15 +160,32 @@ class FileDownload(Widget):
         if self.embed:
             self._transfer()
         self._update_label()
+        if "filename" not in params:
+            self._update_filename()
+
+    def _process_param_change(self, params):
+        if 'button_style' in params or 'css_classes' in params:
+            params['css_classes'] = [
+                params.pop('button_style', self.button_style)
+            ] + params.get('css_classes', self.css_classes)
+        return super()._process_param_change(params)
 
     @param.depends('label', watch=True)
     def _update_default(self):
         self._default_label = False
 
+    @property
+    def _is_file_path(self)->bool:
+        return isinstance(self.file, (str, Path))
+
+    @property
+    def _file_path(self)->Path:
+        return Path(self.file)
+
     @param.depends('file', watch=True)
     def _update_filename(self):
-        if isinstance(self.file, str):
-            self.filename = os.path.basename(self.file)
+        if self._is_file_path:
+            self.filename = self._file_path.name
 
     @param.depends('auto', 'file', 'filename', watch=True)
     def _update_label(self):
@@ -167,11 +195,11 @@ class FileDownload(Widget):
                 label = 'No file set'
             else:
                 try:
-                    filename = self.filename or os.path.basename(self.file)
+                    filename = self.filename or self._file_path.name
                 except TypeError:
                     raise ValueError('Must provide filename if file-like '
-                                     'object is provided.')
-                label = '%s %s' % (label, filename)
+                                     'object is provided.') from None
+                label = f'{label} {filename}'
             self.label = label
             self._default_label = True
 
@@ -180,27 +208,16 @@ class FileDownload(Widget):
         if self.embed:
             self._transfer()
 
-    @param.depends('_clicks', watch=True)
-    def _transfer(self):
-        if self.file is None and self.callback is None:
-            if self.embed:
-                raise ValueError('Must provide a file or a callback '
-                                 'if it is to be embedded.')
-            return
-
-        from ..param import ParamFunction
-        if self.callback is None:
-            fileobj = self.file
-        else:
-            fileobj = ParamFunction.eval(self.callback)
+    def _sync_data(self, fileobj):
         filename = self.filename
-        if isinstance(fileobj, str):
-            if not os.path.isfile(fileobj):
-                raise FileNotFoundError('File "%s" not found.' % fileobj)
+        if isinstance(fileobj, (str, Path)):
+            fileobj = Path(fileobj)
+            if not fileobj.exists():
+                raise FileNotFoundError(f'File "{fileobj}" not found.')
             with open(fileobj, 'rb') as f:
                 b64 = b64encode(f.read()).decode("utf-8")
             if filename is None:
-                filename = os.path.basename(fileobj)
+                filename = fileobj.name
         elif hasattr(fileobj, 'read'):
             bdata = fileobj.read()
             if not isinstance(bdata, bytes):
@@ -210,26 +227,47 @@ class FileDownload(Widget):
                 raise ValueError('Must provide filename if file-like '
                                  'object is provided.')
         else:
-            raise ValueError('Cannot transfer unknown object of type %s' %
-                             type(fileobj).__name__)
+            raise ValueError(f'Cannot transfer unknown object of type {type(fileobj).__name__}')
 
         ext = filename.split('.')[-1]
-        for mtype, subtypes in self._mime_types.items():
-            stype = None
+        stype, mtype = None, None
+        for mime_type, subtypes in self._mime_types.items():
             if ext in subtypes:
+                mtype = mime_type
                 stype = subtypes[ext]
                 break
         if stype is None:
             mime = 'application/octet-stream'
         else:
-            mime = '{type}/{subtype}'.format(type=mtype, subtype=stype)
+            mime = f'{mtype}/{stype}'
 
-        data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
+        data = f"data:{mime};base64,{b64}"
         self._synced = True
-
         self.param.update(data=data, filename=filename)
         self._update_label()
         self._transfers += 1
+
+    async def _async_sync_data(self):
+        fileobj = await eval_function_with_deps(self.callback)
+        self._sync_data(fileobj)
+
+    @param.depends('_clicks', watch=True)
+    def _transfer(self):
+        if self.file is None and self.callback is None:
+            if self.embed:
+                raise ValueError('Must provide a file or a callback '
+                                 'if it is to be embedded.')
+            return
+
+        if self.callback is None:
+            fileobj = self.file
+        else:
+            if iscoroutinefunction(self.callback):
+                state.execute(self._async_sync_data)
+                return
+            else:
+                fileobj = eval_function_with_deps(self.callback)
+        self._sync_data(fileobj)
 
 
 
@@ -259,7 +297,7 @@ class JSONEditor(Widget):
         of mode.""")
 
     mode = param.Selector(default='tree', objects=[
-        "tree", "view", "form", "code", "text", "preview"], doc="""
+        "tree", "view", "form", "text", "preview"], doc="""
         Sets the editor mode. In 'view' mode, the data and
         datastructure is read-only. In 'form' mode, only the value can
         be changed, the data structure is read-only. Mode 'code'
@@ -292,12 +330,13 @@ class JSONEditor(Widget):
     value = param.Parameter(default={}, doc="""
         JSON data to be edited.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'data'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': None, 'value': 'data'
+    }
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        if self._widget_type is None:
-            self._widget_type = lazy_load(
-                "panel.models.jsoneditor", "JSONEditor", isinstance(comm, JupyterComm)
-            )
+        JSONEditor._widget_type = lazy_load(
+            "panel.models.jsoneditor", "JSONEditor", isinstance(comm, JupyterComm)
+        )
         model = super()._get_model(doc, root, parent, comm)
         return model

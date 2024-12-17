@@ -10,7 +10,7 @@
 
 
 {% block content %}
-<h2>Select a valid kernel</h3>
+<h2>Select a valid kernel</h2>
 <select name="kernel" id="kernel-select" onchange="window.location.search = '?kernel='+event.target.value">
   <option value="" disabled selected>-- Please choose an option --</option>
   {% for kernel in kernels %}

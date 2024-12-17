@@ -8,7 +8,9 @@ import bokeh.core.properties as bp
 
 from bokeh.events import ModelEvent
 from bokeh.model import DataModel
-from bokeh.models import HTMLBox, LayoutDOM
+from bokeh.models import LayoutDOM
+
+from .layout import HTMLBox
 
 endfor = '{%-? endfor -?%}'
 list_iter_re = r'{%-? for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*) -?%}'
@@ -103,17 +105,17 @@ class ReactiveHTMLParser(HTMLParser):
             if match[2:-1] not in self.loop_var_map[var]:
                 self.loop_var_map[var].append(match[2:-1])
             if var.endswith('.index0'):
-                matches.append('${%s }}]}' % var)
+                matches.append('${%s }}]}' % var)  # noqa: UP031
             else:
-                matches.append('${%s}' % var)
+                matches.append('${%s}' % var)  # noqa: UP031
 
         literal_matches = []
         for match in self._literal_re.findall(data):
             match = match[2:-2].strip()
             if match.endswith('.index0'):
-                literal_matches.append('{{%s }}]}' % match)
+                literal_matches.append('{{%s }}]}' % match)  # noqa: UP031
             else:
-                literal_matches.append('{{ %s }}' % match)
+                literal_matches.append('{{ %s }}' % match)  # noqa: UP031
 
         # Detect templating for loops
         list_loop = re.findall(list_iter_re, data)
@@ -170,10 +172,11 @@ class ReactiveHTMLParser(HTMLParser):
             match = None
 
         # Handle looped variables
-        if match and (match in self.loop_map or '[' in match) and self._open_for:
-            if match in self.loop_map:
-                matches[matches.index('${%s}' % match)] = '${%s}' % self.loop_map[match]
-                match = self.loop_map[match]
+        if match and (match.strip() in self.loop_map or '[' in match) and self._open_for:
+            if match.strip() in self.loop_map:
+                loop_match = self.loop_map[match.strip()]
+                matches[matches.index(f'${{{match}}}')] = f'${{{loop_match}}}'
+                match = loop_match
             elif '[' in match:
                 match, _ = match.split('[')
             dom_id = dom_id.replace('-{{ loop.index0 }}', '')
@@ -205,7 +208,6 @@ def find_attrs(html):
     return p.attrs
 
 
-
 class DOMEvent(ModelEvent):
 
     event_name = 'dom_event'
@@ -227,6 +229,8 @@ class ReactiveHTML(HTMLBox):
     data = bp.Instance(DataModel)
 
     events = bp.Dict(bp.String, bp.Dict(bp.String, bp.Bool))
+
+    event_params = bp.List(bp.String)
 
     html = bp.String()
 

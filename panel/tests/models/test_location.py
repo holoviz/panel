@@ -17,10 +17,10 @@ def test_constructor():
 
 def test_constructor_with__href():
     # Given
-    href = "https://panel.holoviz.org/user_guide/Interact.html:80?color=blue#interact"
+    href = "https://panel.holoviz.org:443/how_to/layout/spacing.html?color=blue#margin-parameter"
     # When
     actual = Location(
-        href="https://panel.holoviz.org/user_guide/Interact.html:80?color=blue#interact"
+        href="https://panel.holoviz.org:443/how_to/layout/spacing.html?color=blue#margin-parameter"
     )
     # Then
     assert actual.href == href

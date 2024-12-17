@@ -2,28 +2,25 @@ import time
 
 import pytest
 
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
+
+from panel.pane import panel
+from panel.tests.util import serve_component
+
 pytestmark = pytest.mark.ui
 
-from panel.io.server import serve
-from panel.pane import panel
 
-
-def test_param_defer_load(page, port):
+def test_param_defer_load(page):
     def defer_load():
         time.sleep(0.5)
         return 'I render after load!'
 
     component = panel(defer_load, defer_load=True)
 
-    serve(component, port=port, threaded=True, show=False)
+    serve_component(page, component)
 
-    time.sleep(0.2)
+    assert page.locator(".pn-loading")
 
-    page.goto(f"http://localhost:{port}")
-
-    assert page.locator(".bk.pn-loading")
-    assert page.locator('.bk.markdown').count() == 0
-
-    time.sleep(0.5)
-
-    assert page.text_content('.bk.markdown') == 'I render after load!'
+    expect(page.locator(".markdown").locator("div")).to_have_text('I render after load!\n')

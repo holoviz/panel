@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
@@ -50,8 +50,8 @@ yourself to be taken in just like that!”
 
 Aesop
 """
-_VOICES_NONE: List[Dict[str, Any]] = []
-_VOICES_FIREFOX_WIN10: List[Dict[str, Any]] = [
+_VOICES_NONE: list[dict[str, Any]] = []
+_VOICES_FIREFOX_WIN10: list[dict[str, Any]] = [
     {
         "default": False,
         "lang": "en-US",
@@ -67,7 +67,7 @@ _VOICES_FIREFOX_WIN10: List[Dict[str, Any]] = [
         "voice_uri": "urn:moz-tts:sapi:Microsoft Zira Desktop - English (United States)?en-US",
     },
 ]
-_VOICES_CHROME_WIN10: List[Dict[str, Any]] = [
+_VOICES_CHROME_WIN10: list[dict[str, Any]] = [
     {
         "default": True,
         "lang": "en-US",
@@ -233,13 +233,13 @@ def test_to_voices_dict_firefox_win10():
     assert len(actual["en-US"]) == 2
 
 
-def test_can_speak():
+def test_can_speak(document, comm):
     text = "Give me back my money!"
     # When
     speaker = TextToSpeech()
     speaker.value = text
 
-    model = speaker.get_root()
+    model = speaker.get_root(document, comm)
     assert model.speak["text"] == text
 
 

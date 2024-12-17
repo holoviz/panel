@@ -1,8 +1,16 @@
-# Linking Plots in Javascript
+# Link Plot Parameters in Javascript
 
-The [guide to linking in Javascript](jslinks) demonstrated how to link simple static panes, but links are probably most useful when combined with dynamic objects like plots.
+This guide addresses how to link Bokeh and HoloViews plot parameters in Javascript.
 
-## Bokeh
+```{admonition} Prerequisites
+1. The [How to > Link Two Objects in Javascript](./links) guide demonstrates how to use the `.jslink` API to link parameters in Javascript.
+```
+
+---
+
+The [How to > Link Two Objects in Javascript](./jslinks) guide demonstrated how to link simple static panes, but links are probably most useful when combined with dynamic objects like plots.
+
+## Link Bokeh plots
 
 The ``jslink`` API trivially allows us to link a parameter on a Panel widget to a Bokeh plot property. Here we create a Bokeh Figure with a simple sine curve. The ``jslink`` method allows us to pass any Bokeh model held by the Figure as the ``target``, then link the widget value to some property on it. E.g. here we link a ``FloatSlider`` value to the ``line_width`` of the ``Line`` glyph:
 
@@ -11,6 +19,8 @@ import numpy as np
 import panel as pn
 
 from bokeh.plotting import figure
+
+pn.extension()
 
 p = figure(width=300, height=300)
 xs = np.linspace(0, 10)
@@ -22,7 +32,7 @@ width_slider.jslink(r.glyph, value='line_width')
 pn.Column(width_slider, p)
 ```
 
-## HoloViews
+### Link HoloViews plots
 
 Bokeh models allow us to directly access the underlying models and properties, but this access is more indirect when working with HoloViews objects. HoloViews makes various models available directly in the namespace so that they can be accessed for linking:
 
@@ -53,4 +63,8 @@ color_widget.jslink(points, value='glyph.fill_color')
 pn.Row(points, pn.Column(size_widget, color_widget))
 ```
 
-Of course, if you need to transform between the displayed widget value and the value to be used on the underlying Bokeh property, you can add custom JS code as shown in [the previous section](#Linking-using-custom-JS-code). Together these linking options should allow you to express whatever interactions you wish between your Panel objects.
+Of course, if you need to transform between the displayed widget value and the value to be used on the underlying Bokeh property, you can add custom JS code as shown in [the guide on JS-callbacks](./jscallbacks.md). Together these linking options should allow you to express whatever interactions you wish between your Panel objects.
+
+## Related Resources
+
+- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs

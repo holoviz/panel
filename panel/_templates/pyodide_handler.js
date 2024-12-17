@@ -2,8 +2,10 @@ const pyodideWorker = new Worker("./{{ name }}.js");
 pyodideWorker.busy = false
 pyodideWorker.queue = []
 
+let patching = 0
+
 function send_change(jsdoc, event) {
-  if (event.setter_id != null && event.setter_id == 'py') {
+  if ((event.setter_id != null && event.setter_id == 'py') || (patching > 0)) {
     return
   } else if (pyodideWorker.busy && event.model && event.attr) {
     let events = []
@@ -16,7 +18,7 @@ function send_change(jsdoc, event) {
     pyodideWorker.queue = events
     return
   }
-  const patch = jsdoc.create_json_patch_string([event])
+  const patch = jsdoc.create_json_patch([event])
   pyodideWorker.busy = true
   pyodideWorker.postMessage({type: 'patch', patch: patch})
 }
@@ -28,7 +30,7 @@ pyodideWorker.onmessage = async (event) => {
   const loading_msgs = document.getElementsByClassName('pn-loading-msg')
   if (msg.type === 'idle') {
     if (pyodideWorker.queue.length) {
-      const patch = pyodideWorker.jsdoc.create_json_patch_string(pyodideWorker.queue)
+      const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
       pyodideWorker.busy = true
       pyodideWorker.queue = []
       pyodideWorker.postMessage({type: 'patch', patch: patch})
@@ -53,11 +55,11 @@ pyodideWorker.onmessage = async (event) => {
     const root_ids = JSON.parse(msg.root_ids)
 
     // Remap roots in message to element IDs
-    const root_els = document.getElementsByClassName('bk-root')
+    const root_els = document.querySelectorAll('[data-root-id]')
     const data_roots = []
     for (const el of root_els) {
        el.innerHTML = ''
-       data_roots.push([parseInt(el.getAttribute('data-root-id')), el.id])
+       data_roots.push([el.getAttribute('data-root-id'), el.id])
     }
     data_roots.sort((a, b) => a[0]<b[0] ? -1: 1)
     const roots = {}
@@ -67,21 +69,29 @@ pyodideWorker.onmessage = async (event) => {
     render_items[0]['roots'] = roots
     render_items[0]['root_ids'] = root_ids
 
+    // Clear pre-rendered contents
+    Bokeh.index.roots.map((v) => v.remove())
+
     // Embed content
     const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
 
     // Remove loading spinner and message
-    body.classList.remove("bk", "pn-loading", "{{ loading_spinner }}")
+    body.classList.remove("pn-loading", "{{ loading_spinner }}")
     for (const loading_msg of loading_msgs) {
       loading_msg.remove()
     }
 
     // Setup bi-directional syncing
-    pyodideWorker.jsdoc = jsdoc = views[0].model.document
+    pyodideWorker.jsdoc = jsdoc = [...views.roots.values()][0].model.document
     jsdoc.on_change(send_change.bind(null, jsdoc), false)
     pyodideWorker.postMessage({'type': 'rendered'})
     pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
   } else if (msg.type === 'patch') {
-    pyodideWorker.jsdoc.apply_json_patch(JSON.parse(msg.patch), msg.buffers, setter_id='py')
+    try {
+      patching += 1
+      pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers)
+    } finally {
+      patching -= 1
+    }
   }
 };

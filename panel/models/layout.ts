@@ -1,171 +1,209 @@
-import {classes, content_size, extents, sized} from "@bokehjs/core/dom"
-import {color2css} from "@bokehjs/core/util/color"
-import {VariadicBox} from "@bokehjs/core/layout/html"
-import {Size, SizeHint, Sizeable} from "@bokehjs/core/layout/types"
-import {MarkupView} from "@bokehjs/models/widgets/markup"
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import {div, px} from "@bokehjs/core/dom"
+import {isArray} from "@bokehjs/core/util/types"
+import {unreachable} from "@bokehjs/core/util/assert"
+import {WidgetView} from "@bokehjs/models/widgets/widget"
+import type {Markup} from "@bokehjs/models/widgets/markup"
+import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
+import type {UIElement} from "@bokehjs/models/ui/ui_element"
+import type * as p from "@bokehjs/core/properties"
 
-export function set_size(el: HTMLElement, model: HTMLBox): void {
-  let width_policy = model.width != null ? "fixed" : "fit"
-  let height_policy = model.height != null ? "fixed" : "fit"
-  const {sizing_mode} = model
-  if (sizing_mode != null) {
-    if (sizing_mode == "fixed")
-      width_policy = height_policy = "fixed"
-    else if (sizing_mode == "stretch_both")
-      width_policy = height_policy = "max"
-    else if (sizing_mode == "stretch_width")
-      width_policy = "max"
-    else if (sizing_mode == "stretch_height")
-      height_policy = "max"
-    else {
-      switch (sizing_mode) {
-      case "scale_width":
-        width_policy = "max"
-        height_policy = "min"
-        break
-      case "scale_height":
-        width_policy = "min"
-        height_policy = "max"
-        break
-      case "scale_both":
-        width_policy = "max"
-        height_policy = "max"
-        break
-      default:
-        throw new Error("unreachable")
-      }
-    }
-  }
-  if (width_policy == "fixed" && model.width)
-    el.style.width = model.width + "px";
-  else if (width_policy == "max")
-    el.style.width = "100%";
-  if (model.min_width != null)
-    el.style.minWidth = model.min_width + "px";
-  if (model.max_width != null)
-    el.style.maxWidth = model.max_width + "px";
+export class PanelMarkupView extends WidgetView {
+  declare model: Markup
 
-  if (height_policy == "fixed" && model.height)
-    el.style.height = model.height + "px";
-  else if (height_policy == "max")
-    el.style.height = "100%";
-  if (model.min_height != null)
-    el.style.minHeight = model.min_height + "px";
-  if (model.max_width != null)
-    el.style.maxHeight = model.max_height + "px";
-}
+  container: HTMLDivElement
+  protected _initialized_stylesheets: Map<string, boolean>
 
-export class CachedVariadicBox extends VariadicBox {
-  private readonly _cache: Map<string, SizeHint> = new Map()
-  private readonly _cache_count: Map<string, number> = new Map()
-
-  constructor(readonly el: HTMLElement, readonly sizing_mode: string | null, readonly changed: boolean) {
-    super(el)
-  }
-
-  protected _measure(viewport: Size): SizeHint {
-    const key = [viewport.width, viewport.height, this.sizing_mode]
-    const key_str = key.toString()
-
-    // If sizing mode is responsive and has changed since last render
-    // we have to wait until second rerender to use cached value
-    const min_count = (!this.changed || (this.sizing_mode == 'fixed') || (this.sizing_mode == null)) ? 0 : 1;
-    const cached = this._cache.get(key_str);
-    const cache_count = this._cache_count.get(key_str)
-    if (cached != null && cache_count != null && (cache_count >= min_count)) {
-      this._cache_count.set(key_str, cache_count + 1);
-      return cached
-    }
-
-    const bounded = new Sizeable(viewport).bounded_to(this.sizing.size)
-    const size = sized(this.el, bounded, () => {
-      const content = new Sizeable(content_size(this.el))
-      const {border, padding} = extents(this.el)
-      return content.grow_by(border).grow_by(padding).map(Math.ceil)
-    })
-    this._cache.set(key_str, size);
-    this._cache_count.set(key_str, 0);
-    return size;
-  }
-
-  invalidate_cache(): void {
-  }
-}
-
-export class PanelMarkupView extends MarkupView {
-  _prev_sizing_mode: string | null
-
-  _update_layout(): void {
-    let changed = ((this._prev_sizing_mode !== undefined) &&
-                   (this._prev_sizing_mode !== this.model.sizing_mode))
-    this._prev_sizing_mode = this.model.sizing_mode;
-    this.layout = (new CachedVariadicBox(this.el, this.model.sizing_mode, changed) as any)
-    this.layout.set_sizing(this.box_sizing())
-  }
-
-  render(): void {
-    super.render()
-    set_size(this.markup_el, this.model)
-  }
-}
-
-export class PanelHTMLBoxView extends HTMLBoxView {
-  _prev_sizing_mode: string | null
-  _prev_css_classes: string[]
-
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
-
-    // Note due to on_change hack properties must be defined in this order.
-    const {css_classes, background} = this.model.properties
-    this._prev_css_classes = this.model.css_classes
-    this.on_change([css_classes, background], () => {
-      // Note: This ensures that changes in the background and changes
-      // to the loading parameter in Panel do NOT trigger a full re-render
-      const css = []
-      let skip = false
-      for (const cls of this.model.css_classes) {
-        if (cls === 'pn-loading')
-          skip = true
-        else if (skip)
-          skip = false
-        else
-          css.push(cls)
-      }
-      const prev = this._prev_css_classes
-      if (JSON.stringify(css) === JSON.stringify(prev)) {
-        const {background} = this.model
-        this.el.style.backgroundColor = background != null ? color2css(background) : ""
-        classes(this.el).clear().add(...this.css_classes())
-      } else {
-        this.invalidate_render()
-      }
-      this._prev_css_classes = css
+    const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties
+    this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
+      set_size(this.el, this.model)
+      set_size(this.container, this.model, false)
     })
   }
 
-  on_change(properties: any, fn: () => void): void {
-    // HACKALERT: LayoutDOMView triggers re-renders whenever css_classes change
-    // which is very expensive so we do not connect this signal and handle it
-    // ourself
-    const p = this.model.properties
-    if (properties.length === 2 && properties[0] === p.background && properties[1] === p.css_classes) {
-      return
+  override async lazy_initialize() {
+    await super.lazy_initialize()
+
+    if (this.provider.status == "not_started" || this.provider.status == "loading") {
+      this.provider.ready.connect(() => {
+        if (this.contains_tex_string(this.model.text)) {
+          this.render()
+        }
+      })
     }
-    super.on_change(properties, fn)
   }
 
-  _update_layout(): void {
-    let changed = ((this._prev_sizing_mode !== undefined) &&
-                   (this._prev_sizing_mode !== this.model.sizing_mode))
-    this._prev_sizing_mode = this.model.sizing_mode;
-    this.layout = new CachedVariadicBox(this.el, this.model.sizing_mode, changed)
-    this.layout.set_sizing(this.box_sizing())
+  watch_stylesheets(): void {
+    this._initialized_stylesheets = new Map()
+    for (const stylesheet of this._applied_stylesheets) {
+      // @ts-expect-error: 'el' is protected
+      const style_el = stylesheet.el
+      if (style_el instanceof HTMLLinkElement) {
+        this._initialized_stylesheets.set(style_el.href, false)
+        style_el.addEventListener("load", () => {
+          this._initialized_stylesheets.set(style_el.href, true)
+          if ([...this._initialized_stylesheets.values()].every((v) => v)) {
+            this.style_redraw()
+          }
+        })
+      }
+    }
+    if (this._initialized_stylesheets.size == 0) {
+      this.style_redraw()
+    }
   }
 
-  render(): void {
+  style_redraw(): void {}
+
+  has_math_disabled(): boolean {
+    return this.model.disable_math || !this.contains_tex_string(this.model.text)
+  }
+
+  override render(): void {
     super.render()
     set_size(this.el, this.model)
+    this.container = div()
+    set_size(this.container, this.model, false)
+    this.shadow_el.appendChild(this.container)
+
+    if (this.provider.status == "failed" || this.provider.status == "loaded") {
+      this._has_finished = true
+    }
+  }
+}
+
+export function set_size(el: HTMLElement, model: HTMLBox, adjust_margin: boolean = true): void {
+  let width_policy = model.width != null ? "fixed" : "fit"
+  let height_policy = model.height != null ? "fixed" : "fit"
+  const {sizing_mode, margin} = model
+  if (sizing_mode != null) {
+    if (sizing_mode == "fixed") {
+      width_policy = height_policy = "fixed"
+    } else if (sizing_mode == "stretch_both") {
+      width_policy = height_policy = "max"
+    } else if (sizing_mode == "stretch_width") {
+      width_policy = "max"
+    } else if (sizing_mode == "stretch_height") {
+      height_policy = "max"
+    } else {
+      switch (sizing_mode) {
+        case "scale_width": {
+          width_policy = "max"
+          height_policy = "min"
+          break
+        }
+        case "scale_height": {
+          width_policy = "min"
+          height_policy = "max"
+          break
+        }
+        case "scale_both": {
+          width_policy = "max"
+          height_policy = "max"
+          break
+        }
+        default: {
+          unreachable()
+        }
+      }
+    }
+  }
+  let wm: number, hm: number
+  if (!adjust_margin) {
+    hm = wm = 0
+  } else if (isArray(margin)) {
+    if (margin.length === 4) {
+      hm = margin[0] + margin[2]
+      wm = margin[1] + margin[3]
+    } else {
+      hm = margin[0]*2
+      wm = margin[1]*2
+    }
+  } else if (margin == null) {
+    hm = wm = 0
+  } else {
+    wm = hm = margin*2
+  }
+
+  if (width_policy == "fixed" && model.width != null) {
+    el.style.width = px(model.width)
+  } else if (width_policy == "max") {
+    el.style.width = wm != 0 ? `calc(100% - ${px(wm)})` : "100%"
+  }
+  if (model.min_width != null) {
+    el.style.minWidth = px(model.min_width)
+  }
+  if (model.max_width != null) {
+    el.style.maxWidth = px(model.max_width)
+  }
+
+  if (height_policy == "fixed" && model.height != null) {
+    el.style.height = px(model.height)
+  } else if (height_policy == "max") {
+    el.style.height = hm != 0 ? `calc(100% - ${px(hm)})` : "100%"
+  }
+  if (model.min_height != null) {
+    el.style.minHeight = px(model.min_height)
+  }
+  if (model.max_height != null) {
+    el.style.maxHeight = px(model.max_height)
+  }
+}
+
+export abstract class HTMLBoxView extends LayoutDOMView {
+  declare model: HTMLBox
+
+  protected _initialized_stylesheets: Map<string, boolean>
+
+  override connect_signals(): void {
+    super.connect_signals()
+    const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties
+    this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
+      set_size(this.el, this.model)
+    })
+  }
+
+  override render(): void {
+    super.render()
+    set_size(this.el, this.model)
+  }
+
+  watch_stylesheets(): void {
+    this._initialized_stylesheets = new Map()
+    for (const stylesheet of this._applied_stylesheets) {
+      // @ts-expect-error: 'el' is protected
+      const style_el = stylesheet.el
+      if (style_el instanceof HTMLLinkElement) {
+        this._initialized_stylesheets.set(style_el.href, false)
+        style_el.addEventListener("load", () => {
+          this._initialized_stylesheets.set(style_el.href, true)
+          if ([...this._initialized_stylesheets.values()].every((v) => v)) {
+            this.style_redraw()
+          }
+        })
+      }
+    }
+  }
+
+  style_redraw(): void {}
+
+  get child_models(): UIElement[] {
+    return []
+  }
+}
+
+export namespace HTMLBox {
+  export type Attrs = p.AttrsOf<Props>
+  export type Props = LayoutDOM.Props
+}
+
+export interface HTMLBox extends HTMLBox.Attrs {}
+
+export abstract class HTMLBox extends LayoutDOM {
+  declare properties: HTMLBox.Props
+
+  constructor(attrs?: Partial<HTMLBox.Attrs>) {
+    super(attrs)
   }
 }

@@ -14,14 +14,14 @@ Both load balancing and starting multiple processes effectively spin up multiple
 ::::{grid} 1 2 2 2
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Set up Load Balancing
+:::{grid-item-card} {octicon}`law;2.5em;sd-mr-1 sd-animate-grow50` Set up Load Balancing
 :link: load_balancing
 :link-type: doc
 
 Discover how-to configure load balancing (e.g. using NGINX) to scale Panel apps across processes.
 :::
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Launch multiple processes
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1 sd-animate-grow50` Launch multiple processes
 :link: processes
 :link-type: doc
 
@@ -39,25 +39,48 @@ When to use which approach cannot be answered easily and is never completely cle
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Enable Automatic Threading
-:link: load_balancing
+:::{grid-item-card} {octicon}`number;2.5em;sd-mr-1 sd-animate-grow50` Enable Automatic Threading
+:link: threading
 :link-type: doc
 
 Discover how to enable threading to distribute processing across threads.
 :::
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Set up Manual Threading
-:link: load_balancing
+:::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1 sd-animate-grow50` Set up Manual Threading
+:link: manual_threading
 :link-type: doc
 
 Discover how to manually set up a Thread to process an event queue.
 :::
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Use Asynchronous Processing
-:link: processes
+:::{grid-item-card} {octicon}`arrow-switch;2.5em;sd-mr-1 sd-animate-grow50` Use Asynchronous Processing
+:link: ../callbacks/async
 :link-type: doc
 
-Discover how to make use of asynchronous callbacks to handle I/O bound operations concurrently.
+Discover how to make use of asynchronous callbacks to handle I/O and cpu bound operations concurrently.
+:::
+
+:::{grid-item-card} {octicon}`paper-airplane;2.5em;sd-mr-1 sd-animate-grow50` Sync to Async
+:link: sync_to_async
+:link-type: doc
+
+Discover how to run your sync callbacks asynchronously to handle I/O and cpu bound operations concurrently.
+:::
+
+::::
+
+## Scaling via an external compute engine
+
+You can also scale your application by offloading your compute heavy tasks to an external compute engine like [Dask](https://www.dask.org/). Please note that this may add additional overhead of several 100ms to your tasks.
+
+::::{grid} 1 2 2 2
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1 sd-animate-grow50` Dask
+:link: dask
+:link-type: doc
+
+Discover how-to configure and use Dask to scale your Panel application
 :::
 
 ::::
@@ -70,5 +93,8 @@ Discover how to make use of asynchronous callbacks to handle I/O bound operation
 load_balancing
 processes
 threading
-async
+manual_threading
+../callbacks/async
+sync_to_async
+dask
 ```

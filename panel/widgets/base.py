@@ -7,13 +7,18 @@ from __future__ import annotations
 
 import math
 
+from collections.abc import Callable, Mapping
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Tuple,
-    Type,
+    TYPE_CHECKING, Any, ClassVar, TypeVar,
 )
 
 import param  # type: ignore
 
+from bokeh.models import ImportedStyleSheet, Tooltip
+from bokeh.models.dom import HTML
+from param.parameterized import register_reference_transform
+
+from .._param import Margin
 from ..layout.base import Row
 from ..reactive import Reactive
 from ..viewable import Layoutable, Viewable
@@ -25,8 +30,51 @@ if TYPE_CHECKING:
 
     from ..layout.base import ListPanel
 
+    T = TypeVar('T')
 
-class Widget(Reactive):
+
+class WidgetBase(param.Parameterized):
+    """
+    WidgetBase provides an abstract baseclass for widget components
+    which can be used to implement a custom widget-like type without
+    implementing the methods associated with a Reactive Panel component,
+    e.g. it may be used as a mix-in to a PyComponent or JSComponent.
+    """
+
+    value = param.Parameter(allow_None=True, doc="""
+        The widget value which the widget type resolves to when used
+        as a reactive param reference.""")
+
+    __abstract = True
+
+    @classmethod
+    def from_param(cls: type[T], parameter: param.Parameter, **params) -> T:
+        """
+        Construct a widget from a Parameter and link the two
+        bi-directionally.
+
+        Parameters
+        ----------
+        parameter: param.Parameter
+          A parameter to create the widget from.
+
+        Returns
+        -------
+        Widget instance linked to the supplied parameter
+        """
+        from ..param import Param
+        layout = Param(
+            parameter, widgets={parameter.name: dict(type=cls, **params)},
+            display_threshold=-math.inf
+        )
+        return layout[0]
+
+    @property
+    def rx(self):
+        return self.param.value.rx
+
+
+class Widget(Reactive, WidgetBase):
     """
     Widgets allow syncing changes in bokeh widget models with the
     parameters on the Widget instance.
@@ -41,7 +89,7 @@ class Widget(Reactive):
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    margin = param.Parameter(default=(5, 10), doc="""
+    margin = Margin(default=(5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
@@ -49,14 +97,14 @@ class Widget(Reactive):
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     # Whether the widget supports embedding
-    _supports_embed: ClassVar[bool] = False
+    _supports_embed: bool = False
 
     # Declares the Bokeh model type of the widget
-    _widget_type: ClassVar[Type[Model] | None] = None
+    _widget_type: ClassVar[type[Model] | None] = None
 
     __abstract = True
 
-    def __init__(self, **params):
+    def __init__(self, **params: Any):
         if 'name' not in params:
             params['name'] = ''
         if '_supports_embed' in params:
@@ -67,51 +115,53 @@ class Widget(Reactive):
             self._param_pane = None
         super().__init__(**params)
 
-    @classmethod
-    def from_param(cls, parameter: param.Parameter, **params) -> Viewable:
-        """
-        Construct a widget from a Parameter and link the two
-        bi-directionally.
+    @property
+    def _linked_properties(self) -> tuple[str, ...]:
+        props = list(super()._linked_properties)
+        if 'description' in props:
+            props.remove('description')
+        return tuple(props)
 
-        Parameters
-        ----------
-        parameter: param.Parameter
-          A parameter to create the widget from.
-        params: dict
-          Keyword arguments to be passed to the widget constructor
-
-        Returns
-        -------
-        Widget instance linked to the supplied parameter
-        """
-        from ..param import Param
-        layout = Param(
-            parameter, widgets={parameter.name: dict(type=cls, **params)},
-            display_threshold=-math.inf
-        )
-        return layout[0]
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_param_change(params)
+        if self._widget_type is not None and 'stylesheets' in params:
+            css = getattr(self._widget_type, '__css__', [])
+            params['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + params['stylesheets']
+        if "description" in params:
+            description = params["description"]
+            renderer_options = params.pop("renderer_options", {})
+            if isinstance(description, str):
+                from ..pane.markup import Markdown
+                parser = Markdown._get_parser('markdown-it', (), **renderer_options)
+                html = parser.render(description)
+                params['description'] = Tooltip(
+                    content=HTML(html), position='right',
+                    stylesheets=[':host { white-space: initial; max-width: 300px; }'],
+                    syncable=False
+                )
+            elif isinstance(description, Tooltip):
+                description.syncable = False
+        return params
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        model = self._widget_type(**self._process_param_change(self._init_params()))
-        if root is None:
-            root = model
-        # Link parameters and bokeh model
-        values = self.param.values()
-        properties = self._filter_properties(list(self._process_param_change(values)))
+        if self._widget_type is None:
+            raise NotImplementedError(
+                'Widget {type(self).__name__} did not define a _widget_type'
+            )
+        model = self._widget_type(**self._get_properties(doc))
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, properties, doc, root, comm)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
-    def _filter_properties(self, properties: List[str]) -> List[str]:
-        ignored = list(Layoutable.param)+['loading']
-        return [p for p in properties if p not in ignored]
-
     def _get_embed_state(
-        self, root: 'Model', values: Optional[List[Any]] = None, max_opts: int = 3
-    ) -> Tuple['Widget', 'Model', List[Any], Callable[['Model'], Any], str, str]:
+        self, root: Model, values: list[Any] | None = None, max_opts: int = 3
+    ) -> tuple[Widget, Model, list[Any], Callable[[Model], Any], str, str]:
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -140,6 +190,7 @@ class Widget(Reactive):
         js_getter: string
           JS snippet that returns the state value given the model
         """
+        raise NotImplementedError()
 
 
 class CompositeWidget(Widget):
@@ -148,7 +199,9 @@ class CompositeWidget(Widget):
     widgets
     """
 
-    _composite_type: ClassVar[Type[ListPanel]] = Row
+    _composite_type: ClassVar[type[ListPanel]] = Row
+
+    _linked_properties: tuple[str, ...] = ()
 
     __abstract = True
 
@@ -157,19 +210,25 @@ class CompositeWidget(Widget):
         layout_params = [p for p in Layoutable.param if p != 'name']
         layout = {p: getattr(self, p) for p in layout_params
                   if getattr(self, p) is not None}
-        if layout.get('width', self.width) is None and not 'sizing_mode' in layout:
+        if layout.get('width', self.width) is None and 'sizing_mode' not in layout:
             layout['sizing_mode'] = 'stretch_width'
+        if layout.get('sizing_mode') not in (None, 'fixed') and layout.get('width'):
+            min_width = layout.pop('width')
+            if not layout.get('min_width'):
+                layout['min_width'] = min_width
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models
-        self.param.watch(self._update_layout_params, layout_params)
+        self._internal_callbacks.append(
+            self.param.watch(self._update_layout_params, layout_params)
+        )
 
     def _update_layout_params(self, *events: param.parameterized.Event) -> None:
         updates = {event.name: event.new for event in events}
         self._composite.param.update(**updates)
 
     def select(
-        self, selector: Optional[type | Callable[['Viewable'], bool]] = None
-    ) -> List[Viewable]:
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> list[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -194,12 +253,11 @@ class CompositeWidget(Widget):
         super()._cleanup(root)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
-        if root is None:
-            root = parent = model
+        root = model if root is None else root
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -207,5 +265,11 @@ class CompositeWidget(Widget):
         return object in self._composite.objects
 
     @property
-    def _synced_params(self) -> List[str]:
+    def _synced_params(self) -> list[str]:
         return []
+
+
+def _widget_transform(obj):
+    return obj.param.value if isinstance(obj, WidgetBase) else obj
+
+register_reference_transform(_widget_transform)

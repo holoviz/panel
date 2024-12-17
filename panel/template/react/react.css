@@ -1,15 +1,18 @@
 body {
   margin: 0px;
-  font-family: "Lato", sans-serif;
+  font-family: 'Lato', sans-serif;
   overflow: hidden;
 }
 
 #container {
-  padding:0px;
+  padding: 0px;
+  height: 100vh;
   width: 100vw;
 }
 
-#header{
+#header {
+  background-color: var(--design-primary-color, var(--panel-primary-color));
+  color: var(--design-primary-text-color, var(-panel-on-primary-color));
   display: flex;
   align-items: center;
   padding: 10px;
@@ -30,14 +33,14 @@ a.navbar-brand {
 }
 
 .title {
-  color: #fff;
+  color: var(--design-primary-text-color, var(--panel-on-primary-color));
   text-decoration: none;
   text-decoration-line: none;
   text-decoration-style: initial;
   text-decoration-color: initial;
   font-weight: 400;
-  font-size: 2.0em;
-  line-height: 2em;
+  font-size: 2em;
+  line-height: 1.4em;
   white-space: nowrap;
 }
 
@@ -48,7 +51,7 @@ a.navbar-brand {
 
 .app-header a.title:hover {
   text-decoration: none;
-  color: white;
+  color: var(--design-primary-text-color, var(--panel-on-primary-color));
 }
 
 img.app-logo {
@@ -60,19 +63,21 @@ img.app-logo {
 .pn-bar {
   width: 20px;
   height: 2px;
-  background-color: white;
+  background-color: var(
+    --design-primary-text-color,
+    var(--panel-on-primary-color)
+  );
   margin: 4px 0;
 }
 
-.bk-canvas {
-  padding-right: 2px !important;
-}
-
 #content {
-  height: calc(100vh - 76px);
-  margin: 0px;
-  width: 100vw;
+  color: var(--text-color);
   display: flex;
+  flex-direction: row;
+  height: 100%;
+  margin: 0px;
+  overflow: hidden;
+  width: 100vw;
 }
 
 #responsive-grid {
@@ -82,23 +87,35 @@ img.app-logo {
 
 #sidebar-button {
   margin-left: 10px;
-  margin-right:  10px;
+  margin-right: 10px;
+}
+
+#sidebar.hidden {
+  border: 0px;
+  margin: 0px;
+  min-width: 0px;
+  overflow: hidden;
+  padding: 0px;
+  width: 0px;
 }
 
 #sidebar {
-  transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+  border-right: 1px solid var(--panel-surface-color);
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden auto;
+  padding: 15px 10px 15px 5px;
+  transition: all 0.2s cubic-bezier(0.945, 0.02, 0.27, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
-  height: calc(100vh - 76px);
-  overflow-y: scroll;
-  padding: 10px;
+  overflow-y: auto;
 }
 
 #main {
-  transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+  transition: all 0.2s cubic-bezier(0.945, 0.02, 0.27, 0.665);
   width: 100%;
   height: 100%;
   padding-bottom: 20px;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 #sidebarCollapse {
@@ -106,18 +123,9 @@ img.app-logo {
   border: none;
 }
 
-p.bk.card-button {
-  display: none;
-}
-
 .sidenav {
   padding-top: 15px;
-  position: absolute;
   overflow-y: scroll;
-}
-
-.bk.card-title {
-  position: absolute !important;
 }
 
 .sidenav a {
@@ -142,8 +150,12 @@ p.bk.card-button {
 }
 
 @media screen and (max-height: 450px) {
-  .sidenav {padding-top: 15px;}
-  .sidenav a {font-size: 18px;}
+  .sidenav {
+    padding-top: 15px;
+  }
+  .sidenav a {
+    font-size: 18px;
+  }
 }
 
 .nav.flex-column {
@@ -325,7 +337,7 @@ p.bk.card-button {
 }
 
 .react-grid-item > .react-resizable-handle::after {
-  content: "";
+  content: '';
   position: absolute;
   right: 3px;
   bottom: 3px;

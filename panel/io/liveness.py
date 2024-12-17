@@ -1,7 +1,6 @@
 from tornado import web
 
 from .document import _cleanup_doc
-from .state import set_curdoc, state
 
 
 class LivenessHandler(web.RequestHandler):
@@ -21,11 +20,9 @@ class LivenessHandler(web.RequestHandler):
         app = self.applications[endpoint]
         try:
             doc = app.create_document()
-            with set_curdoc(doc):
-                state._on_load(None)
             _cleanup_doc(doc)
             self.write({endpoint: True})
         except Exception as e:
             raise web.HTTPError(
                 500, f"Endpoint {endpoint!r} could not be served. Application raised error: {e}"
-            )
+            ) from e

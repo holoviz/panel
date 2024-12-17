@@ -16,28 +16,28 @@ This guide will take you through the process of either
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`duplicate;2.5em;sd-mr-1` Convert to WASM.
+:::{grid-item-card} {octicon}`duplicate;2.5em;sd-mr-1 sd-animate-grow50` Convert to WASM.
 :link: convert
 :link-type: doc
 
 Discover how to convert existing Panel applications to WebAssembly.
 :::
 
-:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Use from WASM
+:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1 sd-animate-grow50` Use from WASM
 :link: standalone
 :link-type: doc
 
 Discover how to set up and use Panel from Pyodide and PyScript.
 :::
 
-:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` Sphinx Integration
-:link: user_info
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1 sd-animate-grow50` Sphinx Integration
+:link: sphinx
 :link-type: doc
 
 Discover how to integrate live Panel components in your Sphinx based documentation.
 :::
 
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` JupyterLite
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1 sd-animate-grow50` JupyterLite
 :link: jupyterlite
 :link-type: doc
 

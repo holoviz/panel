@@ -13,7 +13,7 @@ If you are a leading community member: **Please act as a role model**.
 We as members, contributors, and leaders pledge to make participation in our
 community a harassment-free experience for everyone, regardless of age, body
 size, visible or invisible disability, ethnicity, sex characteristics, gender
-identity and expression, level of experience, education, socio-economic status,
+identity and expression, level of experience, education, socioeconomic status,
 nationality, personal appearance, race, caste, color, religion, or sexual
 identity and orientation.
 
@@ -66,9 +66,15 @@ representative at an online or offline event.
 
 ## 👩‍⚖️ Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-coc@holoviz.org.
+Instances of abusive, harassing, or otherwise unacceptable behavior
+may be reported to the community leaders responsible for enforcement
+at coc@holoviz.org, which is monitored by the [CoC
+subcommittee](https://panel.holoviz.org/about/people.html#CoC-Subcommittee)
+or a report can be made using the NumFOCUS Code of Conduct report
+form.  If community leaders cannot come to a resolution about
+enforcement, reports will be escalated to the NumFocus Code of Conduct
+committee (conduct@numfocus.org).
+
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the

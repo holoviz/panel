@@ -17,87 +17,84 @@ export type DType = keyof typeof ARRAY_TYPES
 export const vtkns: any = {}
 
 export function setup_vtkns(): void {
-  if (vtkns.Actor != null)
+  if (vtkns.Actor != null) {
     return
+  }
   const vtk = (window as any).vtk
-  vtkns["Actor"] = vtk.Rendering.Core.vtkActor
-  vtkns["AxesActor"] = vtk.Rendering.Core.vtkAxesActor
-  vtkns["Base64"] = vtk.Common.Core.vtkBase64
-  vtkns["BoundingBox"] = vtk.Common.DataModel.vtkBoundingBox
-  vtkns["Camera"] = vtk.Rendering.Core.vtkCamera
-  vtkns["ColorTransferFunction"] = vtk.Rendering.Core.vtkColorTransferFunction
-  vtkns["CubeSource"] = vtk.Filters.Sources.vtkCubeSource
-  vtkns["DataAccessHelper"] = vtk.IO.Core.DataAccessHelper
-  vtkns["DataArray"] = vtk.Common.Core.vtkDataArray
-  vtkns["Follower"] = vtk.Rendering.Core.vtkFollower
-  vtkns["FullScreenRenderWindow"] = vtk.Rendering.Misc.vtkFullScreenRenderWindow
-  vtkns["Glyph3DMapper"] = vtk.Rendering.Core.vtkGlyph3DMapper
-  vtkns["HttpSceneLoader"] = vtk.IO.Core.vtkHttpSceneLoader
-  vtkns["ImageData"] = vtk.Common.DataModel.vtkImageData
-  vtkns["ImageMapper"] = vtk.Rendering.Core.vtkImageMapper
-  vtkns["ImageProperty"] = vtk.Rendering.Core.vtkImageProperty
-  vtkns["ImageSlice"] = vtk.Rendering.Core.vtkImageSlice
-  vtkns["InteractiveOrientationWidget"] =
-    vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget
-  vtkns["InteractorStyleTrackballCamera"] =
-    vtk.Interaction.Style.vtkInteractorStyleTrackballCamera
-  vtkns["Light"] = vtk.Rendering.Core.vtkLight
-  vtkns["LineSource"] = vtk.Filters.Sources.vtkLineSource
-  vtkns["LookupTable"] = vtk.Common.Core.vtkLookupTable
-  vtkns["macro"] = vtk.macro
-  vtkns["Mapper"] = vtk.Rendering.Core.vtkMapper
-  vtkns["OpenGLRenderWindow"] = vtk.Rendering.OpenGL.vtkRenderWindow
-  vtkns["OrientationMarkerWidget"] =
-    vtk.Interaction.Widgets.vtkOrientationMarkerWidget
-  vtkns["OutlineFilter"] = vtk.Filters.General.vtkOutlineFilter
-  vtkns["PiecewiseFunction"] = vtk.Common.DataModel.vtkPiecewiseFunction
-  vtkns["PixelSpaceCallbackMapper"] =
-    vtk.Rendering.Core.vtkPixelSpaceCallbackMapper
-  vtkns["PlaneSource"] = vtk.Filters.Sources.vtkPlaneSource
-  vtkns["PointSource"] = vtk.Filters.Sources.vtkPointSource
-  vtkns["PolyData"] = vtk.Common.DataModel.vtkPolyData
-  vtkns["Property"] = vtk.Rendering.Core.vtkProperty
-  vtkns["Renderer"] = vtk.Rendering.Core.vtkRenderer
-  vtkns["RenderWindow"] = vtk.Rendering.Core.vtkRenderWindow
-  vtkns["RenderWindowInteractor"] = vtk.Rendering.Core.vtkRenderWindowInteractor
-  vtkns["SphereMapper"] = vtk.Rendering.Core.vtkSphereMapper
-  vtkns["SynchronizableRenderWindow"] =
-    vtk.Rendering.Misc.vtkSynchronizableRenderWindow
-  vtkns["ThirdParty"] = vtk.ThirdParty
-  vtkns["Texture"] = vtk.Rendering.Core.vtkTexture
-  vtkns["Volume"] = vtk.Rendering.Core.vtkVolume
-  vtkns["VolumeController"] = vtk.Interaction.UI.vtkVolumeController
-  vtkns["VolumeMapper"] = vtk.Rendering.Core.vtkVolumeMapper
-  vtkns["VolumeProperty"] = vtk.Rendering.Core.vtkVolumeProperty
-  vtkns["WidgetManager"] = vtk.Widgets.Core.vtkWidgetManager
+  Object.assign(vtkns, {
+    Actor: vtk.Rendering.Core.vtkActor,
+    AxesActor: vtk.Rendering.Core.vtkAxesActor,
+    Base64: vtk.Common.Core.vtkBase64,
+    BoundingBox: vtk.Common.DataModel.vtkBoundingBox,
+    Camera: vtk.Rendering.Core.vtkCamera,
+    ColorTransferFunction: vtk.Rendering.Core.vtkColorTransferFunction,
+    CubeSource: vtk.Filters.Sources.vtkCubeSource,
+    DataAccessHelper: vtk.IO.Core.DataAccessHelper,
+    DataArray: vtk.Common.Core.vtkDataArray,
+    Follower: vtk.Rendering.Core.vtkFollower,
+    FullScreenRenderWindow: vtk.Rendering.Misc.vtkFullScreenRenderWindow,
+    Glyph3DMapper: vtk.Rendering.Core.vtkGlyph3DMapper,
+    HttpSceneLoader: vtk.IO.Core.vtkHttpSceneLoader,
+    ImageData: vtk.Common.DataModel.vtkImageData,
+    ImageMapper: vtk.Rendering.Core.vtkImageMapper,
+    ImageProperty: vtk.Rendering.Core.vtkImageProperty,
+    ImageSlice: vtk.Rendering.Core.vtkImageSlice,
+    InteractiveOrientationWidget: vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget,
+    InteractorStyleTrackballCamera: vtk.Interaction.Style.vtkInteractorStyleTrackballCamera,
+    Light: vtk.Rendering.Core.vtkLight,
+    LineSource: vtk.Filters.Sources.vtkLineSource,
+    LookupTable: vtk.Common.Core.vtkLookupTable,
+    macro: vtk.macro,
+    Mapper: vtk.Rendering.Core.vtkMapper,
+    OpenGLRenderWindow: vtk.Rendering.OpenGL.vtkRenderWindow,
+    OrientationMarkerWidget: vtk.Interaction.Widgets.vtkOrientationMarkerWidget,
+    OutlineFilter: vtk.Filters.General.vtkOutlineFilter,
+    PiecewiseFunction: vtk.Common.DataModel.vtkPiecewiseFunction,
+    PixelSpaceCallbackMapper: vtk.Rendering.Core.vtkPixelSpaceCallbackMapper,
+    PlaneSource: vtk.Filters.Sources.vtkPlaneSource,
+    PointSource: vtk.Filters.Sources.vtkPointSource,
+    PolyData: vtk.Common.DataModel.vtkPolyData,
+    Property: vtk.Rendering.Core.vtkProperty,
+    Renderer: vtk.Rendering.Core.vtkRenderer,
+    RenderWindow: vtk.Rendering.Core.vtkRenderWindow,
+    RenderWindowInteractor: vtk.Rendering.Core.vtkRenderWindowInteractor,
+    SphereMapper: vtk.Rendering.Core.vtkSphereMapper,
+    SynchronizableRenderWindow: vtk.Rendering.Misc.vtkSynchronizableRenderWindow,
+    Texture: vtk.Rendering.Core.vtkTexture,
+    Volume: vtk.Rendering.Core.vtkVolume,
+    VolumeController: vtk.Interaction.UI.vtkVolumeController,
+    VolumeMapper: vtk.Rendering.Core.vtkVolumeMapper,
+    VolumeProperty: vtk.Rendering.Core.vtkVolumeProperty,
+    WidgetManager: vtk.Widgets.Core.vtkWidgetManager,
+  })
 
   const {vtkObjectManager} = vtkns.SynchronizableRenderWindow
 
   vtkObjectManager.setTypeMapping(
     "vtkVolumeMapper",
     vtkns.VolumeMapper.newInstance,
-    vtkObjectManager.oneTimeGenericUpdater
+    vtkObjectManager.oneTimeGenericUpdater,
   )
   vtkObjectManager.setTypeMapping(
     "vtkSmartVolumeMapper",
     vtkns.VolumeMapper.newInstance,
-    vtkObjectManager.oneTimeGenericUpdater
+    vtkObjectManager.oneTimeGenericUpdater,
   )
   vtkObjectManager.setTypeMapping(
     "vtkFollower",
     vtkns.Follower.newInstance,
-    vtkObjectManager.genericUpdater
+    vtkObjectManager.genericUpdater,
   )
   vtkObjectManager.setTypeMapping(
     "vtkOpenGLGlyph3DMapper",
     vtkns.Glyph3DMapper.newInstance,
-    vtkObjectManager.genericUpdater
+    vtkObjectManager.genericUpdater,
   )
 }
 
-
-if ((window as any).vtk)
+if ((window as any).vtk) {
   setup_vtkns()
+}
 
 declare type RGBnode = {
   x: number
@@ -111,7 +108,6 @@ export type ColorMapper = {
   low: number
   high: number
 }
-
 
 export const Interpolation = Enum("fast_linear", "linear", "nearest")
 export type Interpolation = typeof Interpolation["__type__"]
@@ -159,18 +155,19 @@ export function hexToRGB(color: string): number[] {
 
 function valToHex(val: number): string {
   const hex = Math.min(Math.max(Math.round(val), 0), 255).toString(16)
-  return hex.length == 2 ? hex : "0" + hex
+  return hex.length == 2 ? hex : `0${hex}`
 }
 
 export function rgbToHex(r: number, g: number, b: number): string {
-  return "#" + valToHex(r) + valToHex(g) + valToHex(b)
+  return `#${valToHex(r)}${valToHex(g)}${valToHex(b)}`
 }
 
 export function vtkLutToMapper(vtk_lut: any): ColorMapper {
   //For the moment only linear colormapper are handle
   const {scale, nodes} = vtk_lut.get("scale", "nodes")
-  if (scale !== vtkns.ColorTransferFunction.Scale.LINEAR)
-    throw "Error transfer function scale not handle"
+  if (scale !== vtkns.ColorTransferFunction.Scale.LINEAR) {
+    throw new Error("Error transfer function scale not handle")
+  }
   const x = (nodes as RGBnode[]).map((a: RGBnode) => a.x)
   const low = Math.min(...x)
   const high = Math.max(...x)
@@ -184,9 +181,9 @@ export function vtkLutToMapper(vtk_lut: any): ColorMapper {
 }
 
 function utf8ToAB(utf8_str: string): ArrayBuffer {
-  var buf = new ArrayBuffer(utf8_str.length) // 2 bytes for each char
-  var bufView = new Uint8Array(buf)
-  for (var i = 0, strLen = utf8_str.length; i < strLen; i++) {
+  const buf = new ArrayBuffer(utf8_str.length) // 2 bytes for each char
+  const bufView = new Uint8Array(buf)
+  for (let i = 0, strLen = utf8_str.length; i < strLen; i++) {
     bufView[i] = utf8_str.charCodeAt(i)
   }
   return buf
@@ -198,12 +195,12 @@ export function data2VTKImageData(data: VolumeType): any {
   })
   source.setDimensions(data.dims)
   source.setOrigin(
-    data.origin != null ? data.origin : data.dims.map((v: number) => v / 2)
+    data.origin != null ? data.origin : data.dims.map((v: number) => v / 2),
   )
   const dataArray = vtkns.DataArray.newInstance({
     name: "scalars",
     numberOfComponents: 1,
-    values: new ARRAY_TYPES[data.dtype as DType](utf8ToAB(atob(data.buffer))),
+    values: new ARRAY_TYPES[data.dtype](utf8ToAB(atob(data.buffer))),
   })
   source.getPointData().setScalars(dataArray)
   return source
@@ -212,7 +209,7 @@ export function data2VTKImageData(data: VolumeType): any {
 export function majorAxis(
   vec3: number[],
   idxA: number,
-  idxB: number
+  idxB: number,
 ): number[] {
   const axis = [0, 0, 0]
   const idx = Math.abs(vec3[idxA]) > Math.abs(vec3[idxB]) ? idxA : idxB
@@ -222,7 +219,7 @@ export function majorAxis(
 }
 
 export function cartesian_product(...arrays: any) {
-  return arrays.reduce((acc: any, curr: any) =>
-    acc.flatMap((c: any) => curr.map((n: any) => [].concat(c, n)))
-  )
+  return arrays.reduce((acc: any, curr: any) => {
+    return [...acc].flatMap((c: any) => curr.map((n: any) => [].concat(c, n)))
+  })
 }

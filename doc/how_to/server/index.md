@@ -15,42 +15,42 @@ If you do not want to maintain your own web server and/or set up complex reverse
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`terminal;2.5em;sd-mr-1` Launch from the commandline
+:::{grid-item-card} {octicon}`terminal;2.5em;sd-mr-1 sd-animate-grow50` Launch from the commandline
 :link: commandline
 :link-type: doc
 
 Discover how to launch and configure a Panel application from the commandline.
 :::
 
-:::{grid-item-card} {octicon}`code-square;2.5em;sd-mr-1` Launch programmatically
+:::{grid-item-card} {octicon}`code-square;2.5em;sd-mr-1 sd-animate-grow50` Launch programmatically
 :link: programmatic
 :link-type: doc
 
 Discover how to launch and configure a Panel application programmatically.
 :::
 
-:::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1` Serving multiple applications
+:::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1 sd-animate-grow50` Serving multiple applications
 :link: multiple
 :link-type: doc
 
 Discover how-to launch and configure multiple applications on the same server.
 :::
 
-:::{grid-item-card} {octicon}`server;2.5em;sd-mr-1` Setting up a (reverse) proxy
+:::{grid-item-card} {octicon}`server;2.5em;sd-mr-1 sd-animate-grow50` Setting up a (reverse) proxy
 :link: proxy
 :link-type: doc
 
 Discover how-to configure a reverse proxy to scale your deployment.
 :::
 
-:::{grid-item-card} {octicon}`chevron-right;2.5em;sd-mr-1` Access via SSH
+:::{grid-item-card} {octicon}`chevron-right;2.5em;sd-mr-1 sd-animate-grow50` Access via SSH
 :link: ssh
 :link-type: doc
 
 Discover how to access a Panel deployment running remotely via SSH.
 :::
 
-:::{grid-item-card} {octicon}`file-media;2.5em;sd-mr-1` Serve static files
+:::{grid-item-card} {octicon}`file-media;2.5em;sd-mr-1 sd-animate-grow50` Serving static files
 :link: static_files
 :link-type: doc
 

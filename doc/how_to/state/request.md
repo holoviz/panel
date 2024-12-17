@@ -1,4 +1,11 @@
-# Access HTTP request state
+# Access HTTP Request State
+
+This guide addresses how to access information about the HTTP request associated with a session.
+
+```{admonition} Prerequisites
+1. See the [How to > Access and Manipulate the URL](url) guide to learn how to work with the URL.
+```
+---
 
 The `panel.state` object holds a wide range of information about the HTTP request that is associated with a running session. Note that if you are running Panel inside a notebook session these attributes will simply return `None`.
 
@@ -13,7 +20,7 @@ except Exception:
     phase = 1
 ```
 
-This mechanism may be used to modify the behavior of an app dependending on parameters provided in the URL.
+This mechanism may be used to modify the behavior of an app depending on parameters provided in the URL.
 
 ## Cookies
 
@@ -22,3 +29,5 @@ The `panel.state.cookies` will allow accessing the cookies stored in the browser
 ## Headers
 
 The `panel.state.headers` will allow accessing the HTTP headers stored in the browser and on the bokeh server.
+
+## Related Resources

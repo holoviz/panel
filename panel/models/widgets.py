@@ -3,17 +3,37 @@ Custom bokeh Widget models.
 """
 from bokeh.core.enums import ButtonType
 from bokeh.core.properties import (
-    Any, Bool, Dict, Either, Enum, Float, Int, List, Nullable, Override,
+    Any, Bool, Either, Enum, Float, Instance, Int, List, Nullable, Override,
     String, Tuple,
 )
-from bokeh.models.layouts import HTMLBox
-from bokeh.models.widgets import InputWidget, Select, Widget
+from bokeh.events import ModelEvent
+from bokeh.models.ui import Tooltip
+from bokeh.models.ui.icons import Icon
+from bokeh.models.widgets import (
+    Button as bkButton, CheckboxButtonGroup as bkCheckboxButtonGroup,
+    InputWidget, MultiSelect, RadioButtonGroup as bkRadioButtonGroup, Select,
+    TextAreaInput as bkTextAreaInput, TextInput as bkTextInput, Widget,
+)
+
+from .layout import HTMLBox
+
+
+class DoubleClickEvent(ModelEvent):
+
+    event_name = 'dblclick_event'
+
+    def __init__(self, model, option=None):
+        self.option = option
+        super().__init__(model=model)
 
 
 class Player(Widget):
     """
     The Player widget provides controls to play through a number of frames.
     """
+    title = Nullable(String, default="", help="""
+    The slider's label (supports :ref:`math text <ug_styling_mathtext>`).
+    """)
 
     start = Int(0, help="Lower bound of the Player slider")
 
@@ -22,6 +42,9 @@ class Player(Widget):
     value = Int(0, help="Current value of the player app")
 
     value_throttled = Int(0, help="Current throttled value of the player app")
+
+    value_align = String("start", help="""Location to display
+        the value of the slider ("start" "center", "end")""")
 
     step = Int(1, help="Number of steps to advance the player by.")
 
@@ -36,9 +59,31 @@ class Player(Widget):
     show_loop_controls = Bool(True, help="""Whether the loop controls
         radio buttons are shown""")
 
-    width = Override(default=400)
+    preview_duration = Int(1500, help="""
+        Duration (in milliseconds) for showing the current FPS when clicking
+        the slower/faster buttons, before reverting to the icon.""")
 
-    height = Override(default=250)
+    show_value = Bool(True, help="""
+        Whether to show the widget value""")
+
+    width = Override(default=400)  # type: ignore
+
+    height = Override(default=250)  # type: ignore
+
+    scale_buttons = Float(1, help="Percentage to scale the size of the buttons by")
+
+    visible_buttons = List(String, default=[
+        'slower', 'first', 'previous', 'reverse', 'pause', 'play', 'next', 'last', 'faster'
+    ], help="The buttons to display on the player.")  # type: ignore
+
+    visible_loop_options = List(String, default=[
+        'once', 'loop', 'reflect'
+    ], help="The loop options to display on the player.")  # type: ignore
+
+class DiscretePlayer(Player):
+
+    options = List(Any, help="""
+        List of discrete options.""")
 
 
 class SingleSelect(InputWidget):
@@ -57,13 +102,13 @@ class SingleSelect(InputWidget):
     value will be corresponding given label.
     """)
 
-    value = String(help="Initial or selected value.")
-
     size = Int(default=4, help="""
     The number of visible options in the dropdown list. (This uses the
     ``select`` HTML element's ``size`` attribute. Some browsers might not
     show less than 3 options.)
     """)
+
+    value = Nullable(String, help="Initial or selected value.")
 
 
 class Audio(HTMLBox):
@@ -84,7 +129,7 @@ class Audio(HTMLBox):
 
     value = Any(help="Encoded file data")
 
-    volume = Int(0, help="""The volume of the audio player.""")
+    volume = Nullable(Float, help="""The volume of the audio player.""")
 
 
 class Video(HTMLBox):
@@ -103,7 +148,7 @@ class Video(HTMLBox):
     throttle = Int(250, help="""
         The frequency at which the time value is updated in milliseconds.""")
 
-    value = Any(help="Encoded file data")
+    value = String(help="Encoded file data")
 
     volume = Int(help="""The volume of the video player.""")
 
@@ -122,9 +167,9 @@ class VideoStream(HTMLBox):
 
     value = Any(help="""Snapshot Data""")
 
-    height = Override(default=240)
+    height = Override(default=240)  # type: ignore
 
-    width = Override(default=320)
+    width = Override(default=320)  # type: ignore
 
 
 class Progress(HTMLBox):
@@ -138,9 +183,7 @@ class Progress(HTMLBox):
 
     value = Nullable(Int, help="""Current value""")
 
-    style = Dict(String, Any, default={}, help="""
-    Raw CSS style declaration. Note this may be web browser dependent.
-    """)
+    css = List(String)
 
 
 class FileDownload(InputWidget):
@@ -157,6 +200,14 @@ class FileDownload(InputWidget):
 
     data = String(help="""Encoded URI data.""")
 
+    embed = Bool(False, help="""Whether the data is pre-embedded.""")
+
+    icon = Nullable(Instance(Icon), help="""
+    An optional image appearing to the left of button's text. An instance of
+    :class:`~bokeh.models.Icon` (such as :class:`~bokeh.models.BuiltinIcon`,
+    :class:`~bokeh.models.SVGIcon`, or :class:`~bokeh.models.TablerIcon`).`
+    """)
+
     label = String("", help="""The text label for the button to display.""")
 
     filename = String(help="""Filename to use on download""")
@@ -165,7 +216,7 @@ class FileDownload(InputWidget):
     A private property to create and click the link.
     """)
 
-    title = Override(default='')
+    title = Override(default='')  # type: ignore
 
 
 class CustomSelect(Select):
@@ -176,3 +227,88 @@ class CustomSelect(Select):
     disabled_options = List(Any, default=[], help="""
     List of options to disable.
     """)
+
+    size = Int(default=1)
+
+
+class CustomMultiSelect(MultiSelect):
+    """
+    MultiSelect widget which allows capturing double tap events.
+    """
+
+class TooltipIcon(Widget):
+    description = Instance(
+        Tooltip,
+        default=Tooltip(content="Help text", position="right"),
+        help="""The tooltip held by the icon"""
+    )
+
+
+class TextAreaInput(bkTextAreaInput):
+
+    auto_grow = Bool(
+        default=False,
+        help="""
+        Whether the text area should automatically grow vertically to
+        accommodate the current text."""
+    )
+
+    max_rows = Nullable(Int(), help="""
+        Maximum number of rows the input area can grow to if auto_grow
+        is enabled."""
+    )
+
+
+class Button(bkButton):
+
+    tooltip = Nullable(Instance(Tooltip), help="""
+    A tooltip with plain text or rich HTML contents, providing general help or
+    description of a widget's or component's function.
+    """)
+
+    tooltip_delay = Int(500, help="""
+    Delay (in milliseconds) to display the tooltip after the cursor has
+    hovered over the Button, default is 500ms.
+    """)
+
+
+class CheckboxButtonGroup(bkCheckboxButtonGroup):
+
+    tooltip = Nullable(Instance(Tooltip), help="""
+    A tooltip with plain text or rich HTML contents, providing general help or
+    description of a widget's or component's function.
+    """)
+
+    tooltip_delay = Int(500, help="""
+    Delay (in milliseconds) to display the tooltip after the cursor has
+    hovered over the Button, default is 500ms.
+    """)
+
+
+class RadioButtonGroup(bkRadioButtonGroup):
+
+    tooltip = Nullable(Instance(Tooltip), help="""
+    A tooltip with plain text or rich HTML contents, providing general help or
+    description of a widget's or component's function.
+    """)
+
+    tooltip_delay = Int(500, help="""
+    Delay (in milliseconds) to display the tooltip after the cursor has
+    hovered over the Button, default is 500ms.
+    """)
+
+
+class EnterEvent(ModelEvent):
+
+    event_name = 'enter-pressed'
+
+    def __init__(self, model, value_input):
+        self.value_input = value_input
+        super().__init__(model=model)
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(value_input={self.value_input})'
+        )
+
+class TextInput(bkTextInput): ...

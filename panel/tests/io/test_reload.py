@@ -1,31 +1,35 @@
+import asyncio
 import os
+import pathlib
+import tempfile
 
 from panel.io.location import Location
 from panel.io.reload import (
-    _check_file, _modules, _reload_on_update, _watched_files, in_blacklist,
-    record_modules, watch,
+    _check_file, _modules, _watched_files, in_denylist, record_modules, watch,
 )
 from panel.io.state import state
+from panel.tests.util import async_wait_until
 
 
 def test_record_modules_not_stdlib():
+    old_modules = _modules.copy()
     with record_modules():
-        import audioop  # noqa
-    assert ((_modules == set()) or (_modules == set(['audioop'])))
+        import dis  # noqa
+    assert _modules == old_modules
     _modules.clear()
 
 def test_check_file():
     modify_times = {}
-    _check_file(modify_times, __file__)
+    _check_file(__file__, modify_times)
     assert modify_times[__file__] == os.stat(__file__).st_mtime
 
-def test_file_in_blacklist():
+def test_file_in_denylist():
     filepath = '/home/panel/lib/python/site-packages/panel/__init__.py'
-    assert in_blacklist(filepath)
+    assert in_denylist(filepath)
     filepath = '/home/panel/.config/panel.py'
-    assert in_blacklist(filepath)
+    assert in_denylist(filepath)
     filepath = '/home/panel/development/panel/__init__.py'
-    assert not in_blacklist(filepath)
+    assert not in_denylist(filepath)
 
 def test_watch():
     filepath = os.path.abspath(__file__)
@@ -34,15 +38,21 @@ def test_watch():
     # Cleanup
     _watched_files.clear()
 
-def test_reload_on_update():
+async def test_reload_on_update(server_document, watch_files):
     location = Location()
-    state._location = location
-    filepath = os.path.abspath(__file__)
-    watch(filepath)
-    modify_times = {filepath: os.stat(__file__).st_mtime-1}
-    _reload_on_update(modify_times)
-    assert location.reload
+    state._locations[server_document] = location
+    state._loaded[server_document] = True
+    with tempfile.NamedTemporaryFile() as temp:
+        # Write to file and wait for filesystem to perform write
+        temp.write(b'Foo')
+        temp.flush()
+        await asyncio.sleep(0.1)
 
-    # Cleanup
-    _watched_files.clear()
-    state._location = None
+        watch_files(temp.name)
+        await asyncio.sleep(0.1)
+
+        temp.write(b'Bar')
+        temp.flush()
+        pathlib.Path(temp.name).touch()
+
+        await async_wait_until(lambda: location.reload)

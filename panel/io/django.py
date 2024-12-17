@@ -4,7 +4,7 @@ from urllib.parse import urljoin, urlparse
 try:
     from bokeh_django.consumers import AutoloadJsConsumer, DocConsumer
 except Exception:
-    from bokeh.server.django.consumers import AutoloadJsConsumer, DocConsumer
+    from bokeh.server.django.consumers import AutoloadJsConsumer, DocConsumer  # type: ignore
 
 from ..util import edit_readonly
 from .resources import Resources
@@ -61,7 +61,7 @@ async def autoload_handle(self, body):
         absolute_url = self.get_argument("bokeh-absolute-url", default=None)
 
         if absolute_url:
-            server_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(absolute_url))
+            server_url = f'{urlparse(absolute_url).scheme}://{urlparse(absolute_url).netloc}/'
         else:
             server_url = None
 

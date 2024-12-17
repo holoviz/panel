@@ -14,45 +14,55 @@ Users can customize the file output by providing their own Jinja2 template
 that accepts these same parameters.
 
 #}
-
 {% from macros import embed %}
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" {{ html_attrs | default("", true) }}>
   {% block head %}
   <head>
-    {% block inner_head %}
-      <meta charset="utf-8">
-      <title>{% block title %}{{ title | e if title else "Panel App" }}{% endblock %}</title>
-      {% if manifest_url %}<link rel="manifest" href="{{ manifest_url }}">{% endif %}
-      {% block preamble %}{% endblock %}
-      {% block resources %}
-        {% block css_resources %}
-          {{ bokeh_css | indent(8) if bokeh_css }}
-        {% endblock %}
-        {% block js_resources %}
-          {{ bokeh_js | indent(8) if bokeh_js }}
-        {% endblock %}
-      {% endblock %}
-      {% block postamble %}{% endblock %}
-    {% endblock %}
+  {% block inner_head %}
+    <meta charset="utf-8">
+    <title>{% block title %}{{ title | e if title else "Panel App" }}{% endblock %}</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ dist_url }}images/apple-touch-icon.png">
+    {% if app_favicon is not defined %} <link rel="icon" type="image/png" sizes="32x32" href="{{ dist_url }}images/favicon.ico"> {% endif %}
+    {% if manifest_url %}<link rel="manifest" href="{{ manifest_url }}">{% endif %}
+    {% if theme_name == "dark"%}<style>html { background-color: #121212 }</style>{% endif %}
+  {%  block preamble -%}{%- endblock %}
+  {%  block resources %}
+    <style>
+      html, body {
+	display: flow-root;
+        box-sizing: border-box;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  {%   block css_resources -%}
+    {{- bokeh_css if bokeh_css }}
+  {%-  endblock css_resources %}
+  {%   block js_resources -%}
+    {{  bokeh_js if bokeh_js }}
+  {%-  endblock js_resources %}
+  {%  endblock resources %}
+  {%  block postamble %}{% endblock %}
+  {% endblock inner_head %}
   </head>
-  {% endblock %}
+  {% endblock head%}
   {% block body %}
   <body>
-    {% block inner_body %}
-      {% block contents %}
-        {% for doc in docs %}
-          {{ embed(doc) if doc.elementid }}
-          {% for root in doc.roots %}
-            {% block root scoped %}
-              {{ embed(root) | indent(10) }}
-            {% endblock %}
-          {% endfor %}
-        {% endfor %}
-      {% endblock %}
-      {{ plot_script | indent(8) }}
-    {% endblock %}
+  {%  block inner_body %}
+  {%    block contents %}
+  {%      for doc in docs %}
+  {{        embed(doc) if doc.elementid }}
+  {%-       for root in doc.roots %}
+  {%          block root scoped %}
+  {{            embed(root) }}
+  {%          endblock %}
+  {%        endfor %}
+  {%      endfor %}
+  {%    endblock contents %}
+  {{ plot_script | indent(4) }}
+  {%  endblock inner_body %}
   </body>
-  {% endblock %}
+  {% endblock body%}
 </html>

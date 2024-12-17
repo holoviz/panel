@@ -1,6 +1,5 @@
 import datetime as dt
-
-from collections import OrderedDict
+import warnings
 
 import numpy as np
 import pytest
@@ -10,19 +9,32 @@ try:
 except Exception:
     hv = None
 
+try:
+    import holoviews.plotting.plotly as hv_plotly
+except Exception:
+    hv_plotly = None
+plotly_available = pytest.mark.skipif(hv_plotly is None, reason="requires plotly backend")
+
 from bokeh.models import (
-    Column as BkColumn, ColumnDataSource, GlyphRenderer, GridBox, Line,
+    Column as BkColumn, ColumnDataSource, GlyphRenderer, GridPlot, Line,
     Row as BkRow, Scatter, Select as BkSelect, Slider as BkSlider,
     Spacer as BkSpacer,
 )
-from bokeh.plotting import Figure
+from bokeh.plotting import figure
 
 import panel as pn
 
-from panel.layout import Column, FlexBox, Row
-from panel.pane import HoloViews, PaneBase
+from panel.depends import bind
+from panel.layout import (
+    Column, FlexBox, HSpacer, Row,
+)
+from panel.pane import HoloViews, PaneBase, panel
 from panel.tests.util import hv_available, mpl_available
-from panel.widgets import DiscreteSlider, FloatSlider, Select
+from panel.theme import Native
+from panel.util.warnings import PanelDeprecationWarning
+from panel.widgets import (
+    Checkbox, DiscreteSlider, FloatSlider, Select,
+)
 
 
 @hv_available
@@ -76,7 +88,7 @@ def test_holoviews_pane_switch_backend(document, comm):
     # Replace Pane.object
     pane.backend = 'bokeh'
     model = row.children[0]
-    assert isinstance(model, Figure)
+    assert isinstance(model, figure)
 
     # Cleanup
     pane._cleanup(row)
@@ -94,7 +106,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
-    assert isinstance(model, Figure)
+    assert isinstance(model, figure)
     assert pane._models[row.ref['id']][0] is model
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
@@ -104,7 +116,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     scatter = hv.Scatter([1, 2, 3])
     pane.object = scatter
     model = row.children[0]
-    assert isinstance(model, Figure)
+    assert isinstance(model, figure)
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
     assert isinstance(renderers[0].glyph, Scatter)
@@ -113,7 +125,6 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     # Cleanup
     pane._cleanup(row)
     assert pane._models == {}
-
 
 @pytest.mark.usefixtures("hv_bokeh")
 @hv_available
@@ -130,8 +141,106 @@ def test_holoviews_pane_initialize_empty(document, comm):
 
     pane.object = hv.Curve([1, 2, 3])
     model = row.children[0]
-    assert isinstance(model, Figure)
+    assert isinstance(model, figure)
 
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_pane_reflect_responsive(document, comm):
+    curve = hv.Curve([1, 2, 3]).opts(responsive=True)
+    pane = HoloViews(curve)
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    assert row.sizing_mode == 'stretch_both'
+    assert pane.sizing_mode == 'stretch_both'
+
+    pane.object = hv.Curve([1, 2, 3])
+
+    assert row.sizing_mode is None
+    assert pane.sizing_mode == 'fixed'
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_pane_reflect_responsive_override(document, comm):
+    curve = hv.Curve([1, 2, 3]).opts(responsive=True)
+    pane = HoloViews(curve, sizing_mode='fixed')
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    assert row.sizing_mode == 'stretch_both'
+    assert pane.sizing_mode == 'fixed'
+
+    # Unset override
+    pane.sizing_mode = None
+
+    row = pane.get_root(document, comm=comm)
+
+    assert row.sizing_mode == 'stretch_both'
+    assert pane.sizing_mode == 'stretch_both'
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_pane_reflect_responsive_interact_function(document, comm):
+    curve_fn = lambda: hv.Curve([1, 2, 3]).opts(responsive=True)
+    pane = panel(curve_fn)
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    assert row.sizing_mode == 'stretch_both'
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_pane_reflect_responsive_bind_function(document, comm):
+    checkbox = Checkbox(value=True)
+    curve_fn = lambda responsive: hv.Curve([1, 2, 3]).opts(responsive=responsive)
+    pane = panel(bind(curve_fn, responsive=checkbox))
+
+    # Create pane
+    col = pane.get_root(document, comm=comm)
+
+    assert col.sizing_mode == 'stretch_both'
+
+    checkbox.value = False
+
+    assert col.sizing_mode == 'fixed'
+
+@pytest.mark.usefixtures("hv_plotly")
+@hv_available
+@plotly_available
+def test_holoviews_pane_reflect_responsive_plotly(document, comm):
+    curve = hv.Curve([1, 2, 3]).opts(responsive=True, backend='plotly')
+    pane = HoloViews(curve, backend='plotly')
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    assert row.sizing_mode == 'stretch_both'
+    assert pane.sizing_mode == 'stretch_both'
+
+    pane.object = hv.Curve([1, 2, 3])
+
+    assert row.sizing_mode is None
+    assert pane.sizing_mode is None
+
+
+@pytest.mark.usefixtures("hv_plotly")
+@hv_available
+@plotly_available
+def test_holoviews_pane_inherits_design_stylesheets(document, comm):
+    curve = hv.Curve([1, 2, 3]).opts(responsive=True, backend='plotly')
+    pane = HoloViews(curve, backend='plotly')
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    Native().apply(pane, row)
+
+    plotly_model = row.children[0]
+
+    assert len(plotly_model.stylesheets) == 6
 
 @hv_available
 def test_holoviews_widgets_from_dynamicmap(document, comm):
@@ -181,7 +290,7 @@ def test_holoviews_widgets_from_dynamicmap(document, comm):
 
     assert isinstance(widgets[5], DiscreteSlider)
     assert widgets[5].name == 'F'
-    assert widgets[5].options == OrderedDict([(str(v), v) for v in value_numeric_dim.values])
+    assert widgets[5].options == {str(v): v for v in value_numeric_dim.values}
     assert widgets[5].value == value_numeric_dim.default
 
 
@@ -214,12 +323,13 @@ def test_holoviews_updates_widgets(document, comm):
 
     hv_pane.widgets = {'X': Select}
     assert isinstance(hv_pane.widget_box[0], Select)
-    assert isinstance(layout.children[1].children[0].children[0], BkSelect)
+    assert isinstance(layout.children[1].children[1], BkSelect)
 
     hv_pane.widgets = {'X': DiscreteSlider}
     assert isinstance(hv_pane.widget_box[0], DiscreteSlider)
-    assert isinstance(layout.children[1].children[0].children[0], BkColumn)
-    assert isinstance(layout.children[1].children[0].children[0].children[1], BkSlider)
+    assert isinstance(layout.children[1].children[0], BkColumn)
+    assert isinstance(layout.children[1].children[0].children[1], BkSlider)
+
 
 @hv_available
 def test_holoviews_widgets_update_plot(document, comm):
@@ -228,7 +338,7 @@ def test_holoviews_widgets_update_plot(document, comm):
     hv_pane = HoloViews(hmap, backend='bokeh')
     layout = hv_pane.get_root(document, comm)
 
-    cds = layout.children[0].select_one(ColumnDataSource)
+    cds = layout.children[0].select_one({'type': ColumnDataSource})
     assert cds.data['y'] == np.array([0])
     hv_pane.widget_box[0].value = 1
     hv_pane.widget_box[1].value = chr(65+1)
@@ -236,10 +346,27 @@ def test_holoviews_widgets_update_plot(document, comm):
 
 
 @hv_available
+def test_holoviews_dynamic_widgets_with_unit_updates_plot(document, comm):
+    def function(f):
+        return hv.Curve((x, np.sin(f*x)))
+
+    x = np.linspace(0, 10)
+    factor = hv.Dimension('factor', unit='m', values=[1, 2, 3, 4, 5])
+    dmap = hv.DynamicMap(function, kdims=factor)
+    hv_pane = HoloViews(dmap, backend='bokeh')
+    layout = hv_pane.get_root(document, comm)
+
+    cds = layout.children[0].select_one({'type': ColumnDataSource})
+    np.testing.assert_array_equal(cds.data['y'], np.sin(x))
+    hv_pane.widget_box[0].value = 3
+    np.testing.assert_array_equal(cds.data['y'], np.sin(3*x))
+
+
+@hv_available
 def test_holoviews_with_widgets_not_shown(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
-    hv_pane = HoloViews(hmap, show_widgets=False)
+    hv_pane = HoloViews(hmap)
     layout_obj = Column(hv_pane, hv_pane.widget_box)
     layout = layout_obj.get_root(document, comm)
     model = layout.children[0]
@@ -255,6 +382,18 @@ def test_holoviews_with_widgets_not_shown(document, comm):
     assert hv_pane.widget_box.objects[0].name == 'A'
     assert hv_pane.widget_box.objects[1].name == 'B'
 
+
+@hv_available
+def test_holoviews_center(document, comm):
+    hv_pane = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh', center=True)
+
+    layout = hv_pane.layout
+
+    assert len(layout) == 3
+    hspacer1, hv_out, hspacer2 = layout
+    assert isinstance(hspacer1, HSpacer)
+    assert hv_pane is hv_out
+    assert isinstance(hspacer2, HSpacer)
 
 @hv_available
 def test_holoviews_layouts(document, comm):
@@ -281,16 +420,14 @@ def test_holoviews_layouts(document, comm):
                     col = layout[1]
                     cmodel = model.children[1]
                     assert isinstance(col, Column)
-                    widgets, hv_col = col
-                    hv_obj = hv_col[1]
-                    wmodel, hv_model = cmodel.children[0],  cmodel.children[1].children[1]
+                    widgets, hv_obj = col
+                    wmodel, hv_model = cmodel.children[0],  cmodel.children[1]
                 elif loc.startswith('bottom'):
                     col = layout[1]
                     cmodel = model.children[1]
                     assert isinstance(col, Column)
-                    hv_col, widgets = col
-                    hv_obj = hv_col[1]
-                    wmodel, hv_model = cmodel.children[1],  cmodel.children[0].children[1]
+                    hv_obj, widgets = col
+                    wmodel, hv_model = cmodel.children[1],  cmodel.children[0]
             else:
                 if loc.startswith('left'):
                     assert len(layout) == 2
@@ -315,16 +452,10 @@ def test_holoviews_layouts(document, comm):
                     hv_obj, widgets = col
                     hv_model, wmodel = cmodel.children
             assert hv_pane is hv_obj
-            assert isinstance(hv_model, Figure)
+            assert isinstance(hv_model, figure)
 
-            if loc in ('left', 'right', 'top', 'bottom',
-                       'top_right', 'right_bottom', 'bottom_right',
-                       'left_bottom'):
-                box = widgets[1]
-                boxmodel = wmodel.children[1]
-            else:
-                box = widgets[0]
-                boxmodel = wmodel.children[0]
+            box = widgets
+            boxmodel = wmodel
             assert hv_pane.widget_box is box
             assert isinstance(boxmodel, BkColumn)
             assert isinstance(boxmodel.children[0], BkColumn)
@@ -340,7 +471,7 @@ def test_holoviews_widgets_from_holomap():
 
     assert isinstance(widgets[0], DiscreteSlider)
     assert widgets[0].name == 'X'
-    assert widgets[0].options == OrderedDict([(str(i), i) for i in range(3)])
+    assert widgets[0].options == {str(i): i for i in range(3)}
     assert widgets[0].value == 0
 
     assert isinstance(widgets[1], Select)
@@ -357,10 +488,11 @@ def test_holoviews_date_slider_widgets_from_holomap():
 
     assert isinstance(widgets[0], DiscreteSlider)
     assert widgets[0].name == 'X'
-    assert widgets[0].options == OrderedDict([
-        ('2016-01-01 00:00:00', dt.datetime(2016, 1, 1)),
-        ('2016-01-02 00:00:00', dt.datetime(2016, 1, 2)),
-        ('2016-01-03 00:00:00', dt.datetime(2016, 1, 3))])
+    assert widgets[0].options == {
+        '2016-01-01 00:00:00': dt.datetime(2016, 1, 1),
+        '2016-01-02 00:00:00': dt.datetime(2016, 1, 2),
+        '2016-01-03 00:00:00': dt.datetime(2016, 1, 3),
+    }
     assert widgets[0].value == dt.datetime(2016, 1, 1)
 
 
@@ -372,7 +504,7 @@ def test_holoviews_widgets_explicit_widget_type_override():
 
     assert isinstance(widgets[0], Select)
     assert widgets[0].name == 'X'
-    assert widgets[0].options == OrderedDict([(str(i), i) for i in range(3)])
+    assert widgets[0].options == {str(i): i for i in range(3)}
     assert widgets[0].value == 0
 
 
@@ -394,6 +526,7 @@ def test_holoviews_widgets_explicit_widget_instance_override():
     assert widgets[0] is widget
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -403,12 +536,13 @@ def test_holoviews_linked_axes(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is p2.x_range
     assert p1.y_range is p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_linked_axes_flexbox(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -418,12 +552,13 @@ def test_holoviews_linked_axes_flexbox(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is p2.x_range
     assert p1.y_range is p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_linked_axes_merged_ranges(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -433,7 +568,7 @@ def test_holoviews_linked_axes_merged_ranges(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is p2.x_range
     assert p1.y_range is p2.y_range
@@ -441,6 +576,7 @@ def test_holoviews_linked_axes_merged_ranges(document, comm):
     assert p1.y_range.end == 4.4
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_linked_x_axis(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -450,12 +586,13 @@ def test_holoviews_linked_x_axis(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is p2.x_range
     assert p1.y_range is not p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_axiswise_not_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -465,12 +602,13 @@ def test_holoviews_axiswise_not_linked_axes(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is not p2.x_range
     assert p1.y_range is not p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_shared_axes_opt_not_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -480,12 +618,13 @@ def test_holoviews_shared_axes_opt_not_linked_axes(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is not p2.x_range
     assert p1.y_range is not p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_not_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -498,12 +637,13 @@ def test_holoviews_not_linked_axes(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is not p2.x_range
     assert p1.y_range is not p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_link_across_panes(document, comm):
     from bokeh.models.tools import RangeTool
@@ -520,14 +660,15 @@ def test_holoviews_link_across_panes(document, comm):
     assert len(row.children) == 2
     p1, p2 = row.children
 
-    assert isinstance(p1, Figure)
-    assert isinstance(p2, Figure)
+    assert isinstance(p1, figure)
+    assert isinstance(p2, figure)
 
     range_tool = row.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_link_after_adding_item(document, comm):
     from bokeh.models.tools import RangeTool
@@ -544,18 +685,19 @@ def test_holoviews_link_after_adding_item(document, comm):
     assert len(row.children) == 1
     p1, = row.children
 
-    assert isinstance(p1, Figure)
+    assert isinstance(p1, figure)
     range_tool = row.select_one({'type': RangeTool})
     assert range_tool is None
 
     layout.append(pn.panel(c2, backend='bokeh'))
     _, p2 = row.children
-    assert isinstance(p2, Figure)
+    assert isinstance(p2, figure)
     range_tool = row.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_link_within_pane(document, comm):
     from bokeh.models.tools import RangeTool
@@ -570,29 +712,72 @@ def test_holoviews_link_within_pane(document, comm):
     column = pane.get_root(document, comm=comm)
 
     assert len(column.children) == 1
-    subcolumn = column.children[0]
-    assert isinstance(subcolumn, BkColumn)
-    assert len(subcolumn.children) == 2
-    toolbar, subsubcolumn = subcolumn.children
-    assert isinstance(subsubcolumn, GridBox)
-    assert len(subsubcolumn.children) == 2
-    (p1, _, _), (p2, _, _) = subsubcolumn.children
+    grid_plot = column.children[0]
+    assert isinstance(grid_plot, GridPlot)
+    assert len(grid_plot.children) == 2
+    (p1, _, _), (p2, _, _) = grid_plot.children
 
-    assert isinstance(p1, Figure)
-    assert isinstance(p2, Figure)
+    assert isinstance(p1, figure)
+    assert isinstance(p2, figure)
 
-    range_tool = subsubcolumn.select_one({'type': RangeTool})
+    range_tool = grid_plot.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
 
 
 @hv_available
+def test_holoviews_property_override_old_method(document, comm):
+    c1 = hv.Curve([])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", PanelDeprecationWarning)
+        pane = pn.panel(c1, backend='bokeh', css_classes=['test_class'])
+    model = pane.get_root(document, comm=comm)
+
+    assert model.children[0].css_classes == ['test_class']
+
+@hv_available
 def test_holoviews_property_override(document, comm):
     c1 = hv.Curve([])
 
-    pane = pn.panel(c1, backend='bokeh', background='red',
+    pane = pn.panel(c1, backend='bokeh',
+                styles={'background': 'red'},
                 css_classes=['test_class'])
     model = pane.get_root(document, comm=comm)
 
-    assert model.background == 'red'
-    assert model.css_classes == ['test_class']
+    assert model.styles["background"] == 'red'
+    assert model.children[0].css_classes == ['test_class']
+
+
+@hv_available
+def test_holoviews_date_picker_widget(document, comm):
+    ds = {
+        "time": [np.datetime64("2000-01-01"), np.datetime64("2000-01-02")],
+        "x": [0, 1],
+        "y": [0, 1],
+    }
+    viz = hv.Dataset(ds, ["x", "time"], ["y"])
+    layout = pn.panel(viz.to(
+        hv.Scatter, ["x"], ["y"]), widgets={"time": pn.widgets.DatePicker}
+    )
+    widget_box = layout[0][1]
+    assert isinstance(layout, pn.Row)
+    assert isinstance(widget_box, pn.WidgetBox)
+    assert isinstance(widget_box[0], pn.widgets.DatePicker)
+
+
+@hv_available
+def test_holoviews_datetime_picker_widget(document, comm):
+    ds = {
+        "time": [np.datetime64("2000-01-01"), np.datetime64("2000-01-02")],
+        "x": [0, 1],
+        "y": [0, 1],
+    }
+    viz = hv.Dataset(ds, ["x", "time"], ["y"])
+    layout = pn.panel(viz.to(
+        hv.Scatter, ["x"], ["y"]), widgets={"time": pn.widgets.DatetimePicker}
+    )
+    widget_box = layout[0][1]
+    assert isinstance(layout, pn.Row)
+    assert isinstance(widget_box, pn.WidgetBox)
+    assert isinstance(widget_box[0], pn.widgets.DatetimePicker)

@@ -1,7 +1,7 @@
 """
 These that verify Templates are working correctly.
 """
-from packaging.version import Version
+import json
 
 try:
     import holoviews as hv
@@ -10,9 +10,6 @@ except Exception:
 
 import param
 import pytest
-
-latest_param = pytest.mark.skipif(Version(param.__version__) < Version('1.10.0a4'),
-                                  reason="requires param>=1.10.0a4")
 
 from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
@@ -45,9 +42,9 @@ template = """
 def test_template_links_axes(document, comm):
     tmplt = Template(template)
 
-    p1 = HoloViews(hv.Curve([1, 2, 3]))
-    p2 = HoloViews(hv.Curve([1, 2, 3]))
-    p3 = HoloViews(hv.Curve([1, 2, 3]))
+    p1 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
+    p2 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
+    p3 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
     row = Row(p2, p3)
 
     tmplt.add_panel('A', p1)
@@ -97,7 +94,6 @@ list_templates = [
     if not issubclass(t, ReactTemplate)
 ]
 
-@latest_param
 @pytest.mark.parametrize('template', list_templates)
 def test_basic_template(template, document, comm):
     tmplt = template(title='BasicTemplate', header_background='blue', header_color='red')
@@ -119,26 +115,26 @@ def test_basic_template(template, document, comm):
     markdown = Markdown('# Some title')
     tmplt.main.append(markdown)
 
-    assert titems[str(id(markdown))] == (markdown, ['main'])
+    assert titems[f'main-{id(markdown)}'] == (markdown, ['main'])
 
     slider = FloatSlider()
     tmplt.sidebar.append(slider)
 
-    assert titems[str(id(slider))] == (slider, ['nav'])
+    assert titems[f'nav-{id(slider)}'] == (slider, ['nav'])
     assert tvars['nav'] == True
 
     tmplt.sidebar[:] = []
     assert tvars['nav'] == False
-    assert str(id(slider)) not in titems
+    assert f'nav-{id(slider)}' not in titems
 
     subtitle = Markdown('## Some subtitle')
     tmplt.header.append(subtitle)
 
-    assert titems[str(id(subtitle))] == (subtitle, ['header'])
+    assert titems[f'header-{id(subtitle)}'] == (subtitle, ['header'])
     assert tvars['header'] == True
 
     tmplt.header[:] = []
-    assert str(id(subtitle)) not in titems
+    assert f'header-{id(subtitle)}' not in titems
     assert tvars['header'] == False
 
 
@@ -183,9 +179,9 @@ def test_react_template(document, comm):
 
     for size in layouts:
         for layout in layouts[size]:
-            layout.update({'minW': 0, 'minH': 0, 'maxW': 'Infinity', 'maxH': 'Infinity'})
+            layout.update({'minW': 0, 'minH': 0})
 
-    assert tvars['layouts'] == layouts
+    assert json.loads(tvars['layouts']) == layouts
 
 @pytest.mark.parametrize(["template_class"], [(t,) for t in LIST_TEMPLATES])
 def test_list_template_insert_order(template_class):
@@ -197,7 +193,7 @@ def test_list_template_insert_order(template_class):
 
     template.main.extend([2, 3])
 
-    objs = list(template._render_items.values())[3:]
+    objs = list(template._render_items.values())[4:]
     ((obj1, tag1), (obj2, tag2), (obj3, tag3), (obj4, tag4)) = objs
 
     assert tag1 == tag2 == tag3 == tag4 == ['main']
@@ -226,7 +222,7 @@ def test_grid_template_override():
     template.main[0, 0] = item
     template.main[0, 0] = override
 
-    objs = list(template._render_items.values())[3:]
+    objs = list(template._render_items.values())[4:]
     assert len(objs) == 1
     ((obj, tags),) = objs
 

@@ -1,0 +1,70 @@
+name: panel_gallery
+description: An environment to serve all Panel gallery examples
+
+commands:
+  prod:
+    description: Serve the prod Panel gallery
+    unix: panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --global-loading-spinner --liveness --num-procs 8
+    supports_http_options: true
+    env_spec: prod
+  dev:
+    description: Serve the dev Panel gallery
+    unix: panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --global-loading-spinner --liveness --num-procs 2
+    supports_http_options: true
+    env_spec: dev
+
+variables:
+  PANEL_AE5_CDN: 1
+  MPLBACKEND: Agg
+  DISPLAY: ":99.0"
+  MESA_GL_VERSION_OVERRIDE: 3.2
+  PYVISTA_OFF_SCREEN: "true"
+
+packages: &pkgs
+  - python >=3.10.13
+  - panel >=1.5.0rc2
+  - bokeh_sampledata
+  - holoviews >=1.18.2
+  - nbconvert
+  - pandas >=2.2.0
+  - dask >=2024.3.1
+  - dask-expr >=1.0.5
+  - pillow >=10
+  - spatialpandas >=0.4.10
+  - scikit-learn >=1.4.0
+  - scikit-image >=0.22.0
+  - fastparquet >=2023.10.1
+  - hvplot >=0.9.2
+  - datashader >=0.16.0
+  - graphviz >=8.1.0
+  - networkx >=3.2.1
+  - ipywidgets >=8.1.1
+  - pygraphviz >=1.11
+  - plotly >=5.18.0
+  - altair >=5.2.0
+  - pydeck >=0.8.0
+  - pyvista >=0.43.2
+  - seaborn >=0.13.2
+  - xgboost >=2.0.3
+  - vtk =9.2.6
+  - pyvista >=0.43.2
+  - mesalib >=24.0.0
+  - numpy >=1.23.5,<1.24
+  - numba::llvmlite >=0.42.0
+  - pip:
+    - ipyvolume
+    - folium
+    - vega_datasets
+
+env_specs:
+  prod:
+    packages: *pkgs
+    channels:
+      - conda-forge
+      - nodefaults
+  dev:
+    packages: *pkgs
+    channels:
+      - pyviz/label/dev
+      - conda-forge
+      - nodefaults

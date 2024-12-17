@@ -1,9 +1,12 @@
 """This module contains tests of the Debugger"""
 import logging
 
+import pytest
+
 import panel as pn
 
 
+@pytest.mark.xdist_group("debugger")
 def test_debugger_constructor():
     debugger = pn.widgets.Debugger()
 
@@ -17,6 +20,7 @@ def test_debugger_constructor():
     assert repr(debugger).startswith("Debugger(")
 
 
+@pytest.mark.xdist_group("debugger")
 def test_debugger_logging():
     logger = logging.getLogger('panel.callbacks')
     debugger = pn.widgets.Debugger()
@@ -36,6 +40,7 @@ def test_debugger_logging():
     #TODO: test if debugger.terminal.output is cleared by JS callback.
 
 
+@pytest.mark.xdist_group("debugger")
 def test_debugger_logging_info():
     logger = logging.getLogger('panel.callbacks')
     debugger = pn.widgets.Debugger(level=logging.DEBUG)

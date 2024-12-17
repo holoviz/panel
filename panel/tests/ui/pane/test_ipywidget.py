@@ -1,24 +1,42 @@
-import time
+from __future__ import annotations
 
 import pytest
 
+pytest.importorskip("ipywidgets")
+pytest.importorskip("playwright")
+
+import traitlets
+
+from bokeh.core.has_props import _default_resolver
 from bokeh.model import Model
 
-pytestmark = pytest.mark.ui
-
-from panel.io.server import serve
 from panel.layout import Row
 from panel.pane.ipywidget import Reacton
+from panel.tests.util import serve_component, wait_until
+
+try:
+    import reacton
+except Exception:
+    reacton = None  # type: ignore
+requires_reacton = pytest.mark.skipif(reacton is None, reason="requires reaction")
+
+try:
+    import anywidget
+except Exception:
+    anywidget = None  # type: ignore
+requires_anywidget = pytest.mark.skipif(anywidget is None, reason="requires anywidget")
+
+pytestmark = pytest.mark.ui
 
 
 @pytest.fixture(scope="module", autouse=True)
 def cleanup_ipywidgets():
     old_models = dict(Model.model_class_reverse_map)
     yield
-    Model.model_class_reverse_map = old_models
+    _default_resolver._known_models = old_models
 
-
-def test_reacton(page, port):
+@requires_reacton
+def test_reacton(page):
     import reacton
     import reacton.ipywidgets
 
@@ -52,24 +70,50 @@ def test_reacton(page, port):
         Reacton(ButtonClick(), width=200, height=50)
     )
 
-    serve(reacton_app, port=port, threaded=True, show=False)
+    serve_component(page, reacton_app)
 
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
-
-    time.sleep(0.5)
-
-    assert runs
+    wait_until(lambda: bool(runs), page)
 
     page.locator('button.jupyter-button').click()
 
-    time.sleep(0.5)
-
-    assert click
+    wait_until(lambda: bool(click), page)
 
     reacton_app[:] = []
 
-    time.sleep(0.5)
+    wait_until(lambda: bool(cleanups), page)
 
-    assert cleanups
+
+@requires_anywidget()
+def test_anywidget(page):
+
+    class CounterWidget(anywidget.AnyWidget):
+        # Widget front-end JavaScript code
+        _esm = """
+        export function render(view) {
+          let getCount = () => view.model.get("count");
+          let button = document.createElement("button");
+          button.innerHTML = `count is ${getCount()}`;
+          button.addEventListener("click", () => {
+            view.model.set("count", getCount() + 1);
+            view.model.save_changes();
+          });
+          view.model.on("change:count", () => {
+            button.innerHTML = `count is ${getCount()}`;
+          });
+          view.el.appendChild(button);
+        }
+        """
+        # Stateful property that can be accessed by JavaScript & Python
+        count = traitlets.Int(0).tag(sync=True)
+
+    counter = CounterWidget()
+
+    serve_component(page, counter)
+
+    page.locator('.lm-Widget button').click()
+
+    wait_until(lambda: counter.count == 1, page)
+
+    page.locator('.lm-Widget button').click()
+
+    wait_until(lambda: counter.count == 2, page)

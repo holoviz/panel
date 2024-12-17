@@ -1,18 +1,18 @@
-# Caching
+# Cache Data
 
-Caching data and computation is one of the most effective ways to speed up your applications. Some common examples of scenarios that benefit from caching is working with large datasets that you have to load from disk or over a network connection or you have to perform expensive computations that don't depend on any extraneous state. Panel makes it easy for you to add caching to you applications using a few approaches. Panel' architecture is also very well suited towards caching since multiple user sessions can run in the same process and therefore have access to the same global state. This means that we can cache data in Panel's global `state` object, either by directly assigning to the `pn.state.cache` dictionary object, using the `pn.state.as_cached` helper function or the `pn.cache` decorator. Once cached all current and subsequent sessions will be sped up by having access to the cache.
+Caching data and computation is one of the most effective ways to speed up your applications, especially when working with large datasets or performing expensive computations that don't depend on any extraneous state. Panel's architecture is well suited towards caching since multiple user sessions can run in the same process and therefore have access to Panel's global `state` object. These How-to guides address common tasks related to caching.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Manual Caching
+:::{grid-item-card} {octicon}`squirrel;2.5em;sd-mr-1 sd-animate-grow50` Manually Cache
 :link: manual
 :link-type: doc
 
 How to manually cache data and objects on `pn.state.cache`.
 :::
 
-:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Memoization
+:::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1 sd-animate-grow50` Automatically Cache
 :link: memoization
 :link-type: doc
 

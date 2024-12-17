@@ -1,25 +1,52 @@
 import logging
+import os
 
 from functools import partial
 
 import ipykernel
+import jupyter_client.session as session
 import param
 
 from bokeh.document.events import MessageSentEvent
 from bokeh.document.json import Literal, MessageSent, TypedDict
 from bokeh.util.serialization import make_id
-from ipykernel.comm import Comm, CommManager
+from ipykernel.comm import CommManager
+from ipykernel.kernelbase import Kernel
 from ipywidgets import Widget
 from ipywidgets._version import __protocol_version__
+from ipywidgets.widgets.widget import _remove_buffers
+
+# Stop ipywidgets_bokeh from patching the kernel
+ipykernel.kernelbase.Kernel._instance = ''  # type: ignore
+
 from ipywidgets_bokeh.kernel import (
     BokehKernel, SessionWebsocket, WebsocketStream,
 )
 from ipywidgets_bokeh.widget import IPyWidget
 from tornado.ioloop import IOLoop
+from traitlets import Any
 
+from ..config import __version__
 from ..util import classproperty
 from .state import set_curdoc, state
 
+try:
+    from ipykernel.comm.comm import BaseComm as _IPyComm
+except Exception:
+    from ipykernel.comm.comm import Comm as _IPyComm  # type: ignore
+
+try:
+    # Support for ipywidgets>=8.0.5
+    import comm
+
+    from comm.base_comm import BaseComm
+
+    class TempComm(BaseComm):
+        def publish_msg(self, *args, **kwargs): pass
+
+    comm.create_comm = lambda *args, **kwargs: TempComm(target_name='panel-temp-comm', primary=False)
+except Exception:
+    comm = None  # type: ignore
 
 def _get_kernel(cls=None, doc=None):
     doc = doc or state.curdoc
@@ -44,22 +71,32 @@ def _on_widget_constructed(widget, doc=None):
         return
     widget._document = doc
     kernel = _get_kernel(doc=doc)
-    if widget.comm and isinstance(widget.comm.kernel, PanelKernel):
+    if (widget.comm and widget.comm.target_name != 'panel-temp-comm' and
+        (not (comm and isinstance(widget.comm, comm.DummyComm)) and
+         isinstance(widget.comm.kernel, PanelKernel))):
         return
-    args = dict(
-        target_name='jupyter.widget', data={}, buffers=[],
-        metadata={'version': __protocol_version__}
-    )
+    wstate, buffer_paths, buffers = _remove_buffers(widget.get_state())
+    args = {
+        'target_name': 'jupyter.widget',
+        'data': {
+            'state': wstate,
+            'buffer_paths': buffer_paths
+        },
+        'buffers': buffers,
+        'metadata': {
+            'version': __protocol_version__
+        },
+    }
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
-    widget.comm = Comm(**args)
+    try:
+        _IPyComm.kernel = kernel
+        widget.comm = _IPyComm(**args)
+    except Exception as e:
+        if 'PANEL_IPYWIDGET' not in os.environ:
+            raise e
     kernel.register_widget(widget)
 
-# Patch kernel and widget objects
-_ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance
-if isinstance(ipykernel.kernelbase.Kernel._instance, BokehKernel):
-    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)
-Widget.on_widget_constructed(_on_widget_constructed)
 
 # Patch font-awesome CSS onto ipywidgets_bokeh IPyWidget
 IPyWidget.__css__ = [
@@ -100,14 +137,18 @@ class MessageSentEventPatched(MessageSentEvent):
 class PanelSessionWebsocket(SessionWebsocket):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.parent = kwargs.pop('parent', None)
         self._document = kwargs.pop('document', None)
+        session.Session.__init__(self, **kwargs)
         self._queue = []
         self._document.on_message("ipywidgets_bokeh", self.receive)
 
     def send(self, stream, msg_type, content=None, parent=None, ident=None, buffers=None, track=False, header=None, metadata=None):
         msg = self.msg(msg_type, content=content, parent=parent, header=header, metadata=metadata)
-        msg['channel'] = stream.channel
+        try:
+            msg['channel'] = stream.channel
+        except Exception:
+            return
 
         packed = self.pack(msg)
 
@@ -137,12 +178,21 @@ class PanelSessionWebsocket(SessionWebsocket):
             for event in self._queue:
                 self._document.callbacks.trigger_on_change(event)
         except Exception as e:
-            param.main.warning(f'ipywidgets event dispatch failed with: {e}')
+            param.main.param.warning(f'ipywidgets event dispatch failed with: {e}')
         finally:
             self._queue = []
 
+class ShellStream:
 
-class PanelKernel(BokehKernel):
+    def flush(self, *args):
+        pass
+
+class PanelKernel(Kernel):
+    implementation = 'panel'
+    implementation_version = __version__
+    banner = 'banner'
+
+    shell_stream = Any(ShellStream(), allow_none=True)  # type: ignore
 
     def __init__(self, key=None, document=None):
         super().__init__()
@@ -155,22 +205,33 @@ class PanelKernel(BokehKernel):
         self.session.stream = self.iopub_socket
         self.comm_manager = CommManager(parent=self, kernel=self)
         self.shell = None
+        self.session.auth = None
         self.log = logging.getLogger('fake')
 
         comm_msg_types = ['comm_open', 'comm_msg', 'comm_close']
         for msg_type in comm_msg_types:
             handler = getattr(self.comm_manager, msg_type)
-            self.shell_handlers[msg_type] = self._wrap_handler(handler)
+            self.shell_handlers[msg_type] = self._wrap_handler(msg_type, handler)
+
+    async def _flush_control_queue(self):
+        pass
 
     def register_widget(self, widget):
         comm = widget.comm
         comm.kernel = self
-        comm.open()
         self.comm_manager.register_comm(comm)
 
-    def _wrap_handler(self, handler):
+    def _wrap_handler(self, msg_type, handler):
         doc = self.session._document
         def wrapper(*args, **kwargs):
+            if msg_type == 'comm_open':
+                return
             with set_curdoc(doc):
                 state.execute(partial(handler, *args, **kwargs), schedule=True)
         return wrapper
+
+# Patch kernel and widget objects
+_ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance
+if isinstance(ipykernel.kernelbase.Kernel._instance, (BokehKernel, str)):
+    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)  # type: ignore
+Widget.on_widget_constructed(_on_widget_constructed)

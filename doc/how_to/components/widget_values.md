@@ -1,5 +1,9 @@
 # Access and Set Widget Values
 
+This guide addresses how to access and set widget values.
+
+---
+
 In addition to other parameters that govern widget behavior and appearance, Widget objects have a ``value`` parameter that can be used to access the current value state.
 
 
@@ -7,7 +11,7 @@ Let's first create a `TextInput` widget:
 
 ```{pyodide}
 import panel as pn
-pn.extension()
+pn.extension() # for notebook
 
 widget = pn.widgets.TextInput(name='A widget', value='A string')
 widget
@@ -25,8 +29,8 @@ We can also use this value parameter to set the widget value:
 widget.value = '3'
 ```
 
-:::{admonition} See Also
-:class: seealso
+---
 
-* Learn more about Widgets in the <a href="../../background/components/components_overview.html#widgets">Background for Components</a>
-:::
+## Related Resources
+
+- Learn more about Panes in [Explanation > Components](../../explanation/components/components_overview.md#panes).

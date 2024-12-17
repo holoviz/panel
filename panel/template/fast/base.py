@@ -2,39 +2,39 @@ import pathlib
 
 import param
 
-from ...config import config
 from ...io.state import state
+from ...theme import THEMES, DefaultTheme
+from ...theme.fast import Design, Fast
 from ..base import BasicTemplate
 from ..react import ReactTemplate
-from ..theme import THEMES, DefaultTheme
 
 _ROOT = pathlib.Path(__file__).parent
 
 
 class FastBaseTemplate(BasicTemplate):
 
-    accent_base_color = param.String(default="#0072B5", doc="""
+    accent_base_color = param.Color(default="#0072B5", doc="""
         Optional body accent color override.""")
 
-    background_color = param.String(doc="""
+    background_color = param.Color(doc="""
         Optional body background color override.""")
 
     corner_radius = param.Integer(default=3, bounds=(0,25), doc="""
         The corner radius applied to controls.""")
 
     font = param.String(doc="""
-        The font to use.""")
+        The font name(s) to apply.""")
 
     font_url = param.String(doc="""
         A font url to import.""")
 
-    header_neutral_color = param.String(doc="""
+    header_neutral_color = param.Color(doc="""
         Optional header neutral color override.""")
 
-    header_accent_base_color = param.String(doc="""
+    header_accent_base_color = param.Color(doc="""
         Optional header accent color override.""")
 
-    neutral_color = param.String(doc="""
+    neutral_color = param.Color(doc="""
         Optional body neutral color override.""")
 
     theme_toggle = param.Boolean(default=True, doc="""
@@ -47,44 +47,17 @@ class FastBaseTemplate(BasicTemplate):
         A HTML string appended to the sidebar""")
 
     # Might be extended to accordion or tabs in the future
-    main_layout = param.Selector(default="card", label="Layout", objects=["", "card"], doc="""
+    main_layout = param.Selector(default="card", label="Layout", objects=[None, "card"], doc="""
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
         Could be extended to Accordion, Tab etc. in the future.""")
 
-    _css = [
-        _ROOT / "css/fast_root.css",
-        _ROOT / "css/fast_bokeh.css",
-        _ROOT / "css/fast_bokeh_slickgrid.css",
-        _ROOT / "css/fast_panel.css",
-        _ROOT / "css/fast_panel_dataframe.css",
-        _ROOT / "css/fast_panel_widgets.css",
-        _ROOT / "css/fast_panel_markdown.css",
-        _ROOT / "css/fast_awesome.css"
-    ]
+    design = param.ClassSelector(class_=Design, default=Fast,
+                                 is_instance=False, instantiate=False, doc="""
+        A Design applies a specific design system to a template.""")
+
+    _css = [_ROOT / "fast.css"]
 
     _js = _ROOT / "js/fast_template.js"
-
-    _resources = {
-        'js_modules': {
-            'fast-colors': f'{config.npm_cdn}/@microsoft/fast-colors@5.3.1/dist/index.js',
-            'fast': f'{config.npm_cdn}/@microsoft/fast-components@1.21.8/dist/fast-components.js'
-        },
-        'bundle': True,
-        'tarball': {
-            'fast-colors': {
-                'tar': 'https://registry.npmjs.org/@microsoft/fast-colors/-/fast-colors-5.3.1.tgz',
-                'src': 'package/',
-                'dest': '@microsoft/fast-colors@5.3.1',
-                'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
-            },
-            'fast': {
-                'tar': 'https://registry.npmjs.org/@microsoft/fast-components/-/fast-components-1.21.8.tgz',
-                'src': 'package/',
-                'dest': '@microsoft/fast-components@1.21.8',
-                'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
-            }
-        }
-    }
 
     __abstract = True
 
@@ -98,35 +71,16 @@ class FastBaseTemplate(BasicTemplate):
             params['theme'] = THEMES[params['theme']]
         if "accent" in params:
             accent = params.pop("accent")
-            if not "accent_base_color" in params:
-                params["accent_base_color"]=accent
-            if not "header_background" in params:
-                params["header_background"]=accent
+            if "accent_base_color" not in params:
+                params["accent_base_color"] = accent
+            if "header_background" not in params:
+                params["header_background"] = accent
 
         super().__init__(**params)
-        theme = self._get_theme()
-        if "background_color" not in params:
-            self.background_color = theme.style.background_color
-        if "accent_base_color" not in params:
-            self.accent_base_color = theme.style.accent_base_color
-        if "header_color" not in params:
-            self.header_color = theme.style.header_color
-        if "header_accent_base_color" not in params:
-            self.header_accent_base_color = theme.style.header_accent_base_color
-        if "header_background" not in params:
-            self.header_background = theme.style.header_background
-        if "neutral_color" not in params:
-            self.neutral_color = theme.style.neutral_color
-        if "header_neutral_color" not in params:
-            self.header_neutral_color = theme.style.header_neutral_color
-        if "corner_radius" not in params:
-            self.corner_radius = theme.style.corner_radius
-        if "font" not in params:
-            self.font = theme.style.font
-        if "font_url" not in params:
-            self.font_url = theme.style.font_url
-        if "shadow" not in params:
-            self.shadow = theme.style.shadow
+        self.param.update({
+            p: v for p, v in self._design.theme.style.param.values().items()
+            if p != 'name' and p in self.param and p not in params
+        })
 
     @staticmethod
     def _get_theme_from_query_args():
@@ -138,18 +92,11 @@ class FastBaseTemplate(BasicTemplate):
 
     def _update_vars(self):
         super()._update_vars()
-        style = self._get_theme().style
-        style.background_color = self.background_color
-        style.accent_base_color = self.accent_base_color
-        style.header_color = self.header_color
-        style.header_background = self.header_background
-        style.header_accent_base_color = self.header_accent_base_color
-        style.neutral_color = self.neutral_color
-        style.header_neutral_color = self.header_neutral_color
-        style.corner_radius = self.corner_radius
-        style.font = self.font
-        style.font_url = self.font_url
-        style.shadow = self.shadow
+        style = self._design.theme.style
+        style.param.update({
+            p: getattr(self, p) for p in style.param
+            if p != 'name' and p in self.param
+        })
         self._render_variables["style"] = style
         self._render_variables["theme_toggle"] = self.theme_toggle
         self._render_variables["theme"] = self.theme.__name__[:-5].lower()
@@ -162,6 +109,6 @@ class FastGridBaseTemplate(FastBaseTemplate, ReactTemplate):
     Combines the FastTemplate and the React template.
     """
 
-    _resources = dict(FastBaseTemplate._resources, js=ReactTemplate._resources['js'])
+    _resources = dict(js=ReactTemplate._resources['js'])
 
     __abstract = True

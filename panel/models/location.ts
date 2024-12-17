@@ -1,13 +1,14 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {View} from "@bokehjs/core/view"
 import {Model} from "@bokehjs/model"
 
 export class LocationView extends View {
-  model: Location
+  declare model: Location
+
   _hash_listener: any
 
-  initialize(): void {
-    super.initialize();
+  override initialize(): void {
+    super.initialize()
 
     this.model.pathname = window.location.pathname
     this.model.search = window.location.search
@@ -22,43 +23,48 @@ export class LocationView extends View {
     this._hash_listener = () => {
       this.model.hash = window.location.hash
     }
-    window.addEventListener('hashchange', this._hash_listener)
+    window.addEventListener("hashchange", this._hash_listener)
 
     this._has_finished = true
     this.notify_finished()
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
-    this.connect(this.model.properties.pathname.change, () => this.update('pathname'))
-    this.connect(this.model.properties.search.change, () => this.update('search'))
-    this.connect(this.model.properties.hash.change, () => this.update('hash'))
-    this.connect(this.model.properties.reload.change, () => this.update('reload'))
+    const {pathname, search, hash, reload} = this.model.properties
+    this.on_change(pathname, () => this.update("pathname"))
+    this.on_change(search, () => this.update("search"))
+    this.on_change(hash, () => this.update("hash"))
+    this.on_change(reload, () => this.update("reload"))
   }
 
-  remove(): void {
+  override remove(): void {
     super.remove()
-    window.removeEventListener('hashchange', this._hash_listener)
+    window.removeEventListener("hashchange", this._hash_listener)
   }
 
   update(change: string): void {
-    if (!this.model.reload || (change === 'reload')) {
+    if (!this.model.reload || (change === "reload")) {
       window.history.pushState(
         {},
-        '',
-        `${this.model.pathname}${this.model.search}${this.model.hash}`
+        "",
+        `${this.model.pathname}${this.model.search}${this.model.hash}`,
       )
       this.model.href = window.location.href
-      if (change === 'reload')
+      if (change === "reload") {
         window.location.reload()
+      }
     } else {
-      if (change == 'pathname')
-        window.location.pathname = (this.model.pathname as string)
-      if (change == 'search')
-        window.location.search = (this.model.search as string)
-      if (change == 'hash')
-        window.location.hash = (this.model.hash as string)
+      if (change == "pathname") {
+        window.location.pathname = (this.model.pathname)
+      }
+      if (change == "search") {
+        window.location.search = (this.model.search)
+      }
+      if (change == "hash") {
+        window.location.hash = (this.model.hash)
+      }
     }
   }
 }
@@ -80,26 +86,26 @@ export namespace Location {
 export interface Location extends Location.Attrs { }
 
 export class Location extends Model {
-  properties: Location.Props
+  declare properties: Location.Props
 
-  static __module__ = "panel.models.location"
+  static override __module__ = "panel.models.location"
 
   constructor(attrs?: Partial<Location.Attrs>) {
     super(attrs)
   }
 
-  static init_Location(): void {
+  static {
     this.prototype.default_view = LocationView
 
-    this.define<Location.Props>(({Boolean, String}) => ({
-      href:     [ String,     "" ],
-      hostname: [ String,     "" ],
-      pathname: [ String,     "" ],
-      protocol: [ String,     "" ],
-      port:     [ String,     "" ],
-      search:   [ String,     "" ],
-      hash:     [ String,     "" ],
-      reload:   [ Boolean, false ],
+    this.define<Location.Props>(({Bool, Str}) => ({
+      href:     [ Str,     "" ],
+      hostname: [ Str,     "" ],
+      pathname: [ Str,     "" ],
+      protocol: [ Str,     "" ],
+      port:     [ Str,     "" ],
+      search:   [ Str,     "" ],
+      hash:     [ Str,     "" ],
+      reload:   [ Bool, false ],
     }))
   }
 }

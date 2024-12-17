@@ -4,63 +4,59 @@ Markdown, and also regular strings.
 """
 from __future__ import annotations
 
+import functools
 import json
 import textwrap
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Type,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
-import param
+import param  # type: ignore
 
-from ..models import HTML as _BkHTML, JSON as _BkJSON
-from ..util import escape
-from ..viewable import Layoutable
-from .base import PaneBase
+from ..io.resources import CDN_DIST
+from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
+from ..util import HTML_SANITIZER, escape, prefix_length
+from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
-    from pyviz_comms import Comm
+    from pyviz_comms import Comm  # type: ignore
 
 
-class DivPaneBase(PaneBase):
+class HTMLBasePane(ModelPane):
     """
     Baseclass for Panes which render HTML inside a Bokeh Div.
     See the documentation for Bokeh Div for more detail about
     the supported options like style and sizing_mode.
     """
 
-    style = param.Dict(default=None, doc="""
-        Dictionary of CSS property:value pairs to apply to this Div.""")
+    enable_streaming = param.Boolean(default=False, doc="""
+        Whether to enable streaming of text snippets. This is useful
+        when updating a string step by step, e.g. in a chat message.""")
 
-    _bokeh_model: ClassVar[Model] = _BkHTML
+    _bokeh_model: ClassVar[type[Model]] = _BkHTML
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text', 'enable_streaming': None}
 
     _updates: ClassVar[bool] = True
 
     __abstract = True
 
-    def _get_properties(self):
-        return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
-                if getattr(self, p) is not None}
-
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        model = self._bokeh_model(**self._get_properties())
-        if root is None:
-            root = model
-        self._models[root.ref['id']] = (model, parent)
-        return model
-
     def _update(self, ref: str, model: Model) -> None:
-        model.update(**self._get_properties())
+        props = self._get_properties(model.document)
+        if self.enable_streaming and 'text' in props:
+            text = props['text']
+            start = prefix_length(text, model.text)
+            model.run_scripts = False
+            patch = text[start:]
+            self._send_event(HTMLStreamEvent, patch=patch, start=start)
+            model._property_values['text'] = model.text[:start]+patch
+            del props['text']
+        model.update(**props)
 
 
-class HTML(DivPaneBase):
+class HTML(HTMLBasePane):
     """
     `HTML` panes renders HTML strings and objects with a `_repr_html_` method.
 
@@ -73,7 +69,7 @@ class HTML(DivPaneBase):
 
     >>> HTML(
     ...     "<h1>This is a HTML pane</h1>",
-    ...     style={'background-color': '#F6F6F6'}
+    ...     styles={'background-color': '#F6F6F6'}
     ... )
     """
 
@@ -81,26 +77,41 @@ class HTML(DivPaneBase):
         Whether to disable support for MathJax math rendering for
         strings escaped with $$ delimiters.""")
 
+    sanitize_html = param.Boolean(default=False, doc="""
+        Whether to sanitize HTML sent to the frontend.""")
+
+    sanitize_hook = param.Callable(default=HTML_SANITIZER.clean, doc="""
+        Sanitization callback to apply if `sanitize_html=True`.""")
+
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'sanitize_html': None, 'sanitize_hook': None, 'stream': None
+    }
+
+    _rerender_params: ClassVar[list[str]] = [
+        'object', 'sanitize_html', 'sanitize_hook'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         module, name = getattr(obj, '__module__', ''), type(obj).__name__
         if ((any(m in module for m in ('pandas', 'dask')) and
             name in ('DataFrame', 'Series')) or hasattr(obj, '_repr_html_')):
-            return 0.2
+            return 0 if isinstance(obj, param.Parameterized) else 0.2
         elif isinstance(obj, str):
             return None
         else:
             return False
 
-    def _get_properties(self):
-        properties = super()._get_properties()
-        text = '' if self.object is None else self.object
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
+        text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
-        return dict(properties, text=escape(text))
+        if self.sanitize_html:
+            text = self.sanitize_hook(text)
+        return dict(object=escape(text))
 
 
 class DataFrame(HTML):
@@ -128,7 +139,7 @@ class DataFrame(HTML):
     classes = param.List(default=['panel-df'], doc="""
         CSS class(es) to apply to the resulting html table.""")
 
-    col_space = param.ClassSelector(default=None, class_=(str, int), doc="""
+    col_space = param.ClassSelector(default=None, class_=(str, int, dict), doc="""
         The minimum width of each column in CSS length units. An int
         is assumed to be px units.""")
 
@@ -156,7 +167,7 @@ class DataFrame(HTML):
     index_names = param.Boolean(default=True, doc="""
         Prints the names of the indexes.""")
 
-    justify = param.ObjectSelector(default=None, allow_None=True, objects=[
+    justify = param.Selector(default=None, allow_None=True, objects=[
         'left', 'right', 'center', 'justify', 'justify-all', 'start',
         'end', 'inherit', 'match-parent', 'initial', 'unset'], doc="""
         How to justify the column labels.""")
@@ -181,29 +192,41 @@ class DataFrame(HTML):
         Set to False for a DataFrame with a hierarchical index to
         print every multi-index key at each row.""")
 
+    text_align = param.Selector(default=None, objects=[
+        'start', 'end', 'center'], doc="""
+         Alignment of non-header cells.""")
+
     _object = param.Parameter(default=None, doc="""Hidden parameter.""")
 
-    _dask_params: ClassVar[List[str]] = ['max_rows']
+    _dask_params: ClassVar[list[str]] = ['max_rows']
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'object', '_object', 'bold_rows', 'border', 'classes',
         'col_space', 'decimal', 'escape', 'float_format', 'formatters',
         'header', 'index', 'index_names', 'justify', 'max_rows',
         'max_cols', 'na_rep', 'render_links', 'show_dimensions',
-        'sparsify', 'sizing_mode'
+        'sparsify', 'text_align', 'sizing_mode'
+    ]
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        rp: None for rp in _rerender_params[1:-1]
+    }
+
+    _stylesheets: ClassVar[list[str]] = [
+        f'{CDN_DIST}css/dataframe.css'
     ]
 
     def __init__(self, object=None, **params):
-        super().__init__(object, **params)
         self._stream = None
-        self._setup_stream()
+        super().__init__(object, **params)
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         module = getattr(obj, '__module__', '')
         name = type(obj).__name__
-        if (any(m in module for m in ('pandas', 'dask', 'streamz')) and
-            name in ('DataFrame', 'Series', 'Random', 'DataFrames', 'Seriess', 'Styler')):
+        if (any(m in module for m in ('pandas', 'dask', 'streamz', 'geopandas', 'spatialpandas')) and
+            name in ('DataFrame', 'Series', 'Random', 'DataFrames',
+                     'Seriess', 'Styler', 'GeoDataFrame', 'GeoSeries')):
             return 0.3
         else:
             return False
@@ -211,7 +234,7 @@ class DataFrame(HTML):
     def _set_object(self, object):
         self._object = object
 
-    @param.depends('object', watch=True)
+    @param.depends('object', watch=True, on_init=True)
     def _setup_stream(self):
         if not self._models or not hasattr(self.object, 'stream'):
             return
@@ -222,8 +245,8 @@ class DataFrame(HTML):
         self._stream.sink(self._set_object)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._setup_stream()
@@ -235,32 +258,39 @@ class DataFrame(HTML):
             self._stream.destroy()
             self._stream = None
 
-    def _get_properties(self):
-        properties = DivPaneBase._get_properties(self)
-        if self._stream:
-            df = self._object
-        else:
-            df = self.object
-        if hasattr(df, 'to_frame'):
-            df = df.to_frame()
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
+        if hasattr(obj, 'to_frame'):
+            obj = obj.to_frame()
 
-        module = getattr(df, '__module__', '')
-        if hasattr(df, 'to_html'):
+        module = getattr(obj, '__module__', '')
+        if hasattr(obj, 'to_html'):
+            classes = list(self.classes)
+            if self.text_align:
+                classes.append(f'{self.text_align}-align')
             if 'dask' in module:
-                html = df.to_html(max_rows=self.max_rows).replace('border="1"', '')
+                html = obj.to_html(max_rows=self.max_rows).replace('border="1"', '')
             elif 'style' in module:
-                classes = ' '.join(self.classes)
-                html = df.to_html(table_attributes=f'class="{classes}"')
+                class_string = ' '.join(classes)
+                html = obj.to_html(table_attributes=f'class="{class_string}"')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
-                          if p not in DivPaneBase.param and p != '_object'}
-                html = df.to_html(**kwargs)
+                          if p not in HTMLBasePane.param and p not in ('_object', 'text_align')}
+                kwargs['classes'] = classes
+                html = obj.to_html(**kwargs)
         else:
             html = ''
-        return dict(properties, text=escape(html))
+        return dict(object=escape(html))
+
+    def _init_params(self) -> dict[str, Any]:
+        params = HTMLBasePane._init_params(self)
+
+        if self._stream:
+            params['object'] = self._object
+
+        return params
 
 
-class Str(DivPaneBase):
+class Str(HTMLBasePane):
     """
     The `Str` pane allows rendering arbitrary text and objects in a panel.
 
@@ -276,13 +306,13 @@ class Str(DivPaneBase):
 
     >>> Str(
     ...    'This raw string will not be formatted, except for the applied style.',
-    ...    style={'font-size': '12pt'}
+    ...    styles={'font-size': '12pt'}
     ... )
     """
 
     priority: ClassVar[float | bool | None] = 0
 
-    _bokeh_model: ClassVar[Type[Model]] = _BkHTML
+    _bokeh_model: ClassVar[type[Model]] = _BkHTML
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
         'object': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""
@@ -292,16 +322,15 @@ class Str(DivPaneBase):
     def applies(cls, obj: Any) -> bool:
         return True
 
-    def _get_properties(self):
-        properties = super()._get_properties()
-        if self.object is None or (isinstance(self.object, str) and self.object == ''):
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
+        if obj is None or (isinstance(obj, str) and obj == ''):
             text = '<pre> </pre>'
         else:
-            text = '<pre>'+str(self.object)+'</pre>'
-        return dict(properties, text=escape(text))
+            text = '<pre>'+str(obj)+'</pre>'
+        return dict(object=escape(text))
 
 
-class Markdown(DivPaneBase):
+class Markdown(HTMLBasePane):
     """
     The `Markdown` pane allows rendering arbitrary markdown strings in a panel.
 
@@ -323,16 +352,38 @@ class Markdown(DivPaneBase):
         strings escaped with $$ delimiters.""")
 
     extensions = param.List(default=[
-        "extra", "smarty", "codehilite"], doc="""
-        Markdown extension to apply when transforming markup.""")
+        "extra", "smarty", "codehilite"], nested_refs=True, doc="""
+        Markdown extension to apply when transforming markup.
+        Does not apply if renderer is set to 'markdown-it' or 'myst'.""")
+
+    plugins = param.List(default=[], nested_refs=True, doc="""
+        Additional markdown-it-py plugins to use.""")
+
+    renderer = param.Selector(default='markdown-it', objects=[
+        'markdown-it', 'myst', 'markdown'], doc="""
+        Markdown renderer implementation.""")
+
+    renderer_options = param.Dict(default={}, nested_refs=True, doc="""
+        Options to pass to the markdown renderer.""")
 
     # Priority depends on the data type
     priority: ClassVar[float | bool | None] = None
 
-    _target_transforms: ClassVar[Mapping[str, str | None]] = {'object': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'dedent': None, 'disable_math': None, 'extensions': None,
+        'plugins': None, 'renderer': None, 'renderer_options': None
+    }
 
-    _rerender_params: ClassVar[List[str]] = [
-        'object', 'dedent', 'extensions', 'css_classes'
+    _rerender_params: ClassVar[list[str]] = [
+        'object', 'dedent', 'extensions', 'css_classes', 'plugins',
+    ]
+
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+        'object': None
+    }
+
+    _stylesheets: ClassVar[list[str]] = [
+        f'{CDN_DIST}css/markdown.css'
     ]
 
     @classmethod
@@ -344,25 +395,95 @@ class Markdown(DivPaneBase):
         else:
             return False
 
-    def _get_properties(self):
+    @classmethod
+    @functools.cache
+    def _get_parser(cls, renderer, plugins, **renderer_options):
+        if renderer == 'markdown':
+            return None
+        from markdown_it import MarkdownIt
+        from markdown_it.renderer import RendererHTML
+        from mdit_py_plugins.anchors import anchors_plugin
+        from mdit_py_plugins.deflist import deflist_plugin
+        from mdit_py_plugins.footnote import footnote_plugin
+        from mdit_py_plugins.tasklists import tasklists_plugin
+
+        def hilite(token, langname, attrs):
+            try:
+                from markdown.extensions.codehilite import CodeHilite
+                return CodeHilite(src=token, lang=langname).hilite()
+            except Exception:
+                return token
+
+        if renderer == 'markdown-it':
+            if "breaks" not in renderer_options:
+                renderer_options["breaks"] = True
+
+            parser = MarkdownIt(
+                'gfm-like',
+                renderer_cls=RendererHTML,
+                options_update=renderer_options
+            )
+        elif renderer == 'myst':
+            from myst_parser.parsers.mdit import (
+                MdParserConfig, create_md_parser,
+            )
+            config = MdParserConfig(heading_anchors=1, enable_extensions=[
+                'colon_fence', 'linkify', 'smartquotes', 'tasklist',
+                'attrs_block'
+            ], enable_checkboxes=True, **renderer_options)
+            parser = create_md_parser(config, RendererHTML)
+        parser = (
+            parser
+            .enable('strikethrough').enable('table')
+            .use(anchors_plugin, permalink=True).use(deflist_plugin).use(footnote_plugin).use(tasklists_plugin)
+        )
+        for plugin in plugins:
+            parser = parser.use(plugin)
+        try:
+            from mdit_py_emoji import emoji_plugin
+            parser = parser.use(emoji_plugin)
+        except Exception:
+            pass
+        parser.options['highlight'] = hilite
+        return parser
+
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         import markdown
-        data = self.object
-        if data is None:
-            data = ''
-        elif not isinstance(data, str):
-            data = data._repr_markdown_()
+        if obj is None:
+            obj = ''
+        elif not isinstance(obj, str):
+            obj = obj._repr_markdown_()
         if self.dedent:
-            data = textwrap.dedent(data)
-        properties = super()._get_properties()
-        properties['style'] = properties.get('style', {})
-        css_classes = properties.pop('css_classes', []) + ['markdown']
-        html = markdown.markdown(data, extensions=self.extensions,
-                                 output_format='html5')
-        return dict(properties, text=escape(html), css_classes=css_classes)
+            obj = textwrap.dedent(obj)
+
+        if self.renderer == 'markdown':
+            html = markdown.markdown(
+                obj,
+                extensions=self.extensions,
+                output_format='xhtml',
+                **self.renderer_options
+            )
+        else:
+            parser = self._get_parser(
+                self.renderer, tuple(self.plugins), **self.renderer_options
+            )
+            try:
+                html = parser.render(obj)
+            except IndexError:
+                # Likely markdown-it mdurl parser error
+                with parser.reset_rules():
+                    parser.disable('link')
+                    html = parser.render(obj)
+        return dict(object=escape(html))
+
+    def _process_param_change(self, params):
+        if 'css_classes' in params:
+            params['css_classes'] = ['markdown'] + params['css_classes']
+        return super()._process_param_change(params)
 
 
 
-class JSON(DivPaneBase):
+class JSON(HTMLBasePane):
     """
     The `JSON` pane allows rendering arbitrary JSON strings, dicts and other
     json serializable objects in a panel.
@@ -383,26 +504,25 @@ class JSON(DivPaneBase):
     hover_preview = param.Boolean(default=False, doc="""
         Whether to display a hover preview for collapsed nodes.""")
 
-    margin = param.Parameter(default=(5, 20, 5, 5), doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
-    theme = param.ObjectSelector(default="dark", objects=["light", "dark"], doc="""
+    theme = param.Selector(default="dark", objects=["light", "dark"], doc="""
         Whether the JSON tree view is expanded by default.""")
 
     priority: ClassVar[float | bool | None] = None
 
     _applies_kw: ClassVar[bool] = True
 
-    _bokeh_model: ClassVar[Model] = _BkJSON
+    _bokeh_model: ClassVar[type[Model]] = _BkJSON
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "name": None, "object": "text", "encoder": None
+        "object": "text", "encoder": None, "style": "styles"
     }
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'object', 'depth', 'encoder', 'hover_preview', 'theme'
+    ]
+
+    _stylesheets: ClassVar[list[str]] = [
+        f'{CDN_DIST}css/json.css'
     ]
 
     @classmethod
@@ -419,13 +539,22 @@ class JSON(DivPaneBase):
         else:
             return None
 
-    def _get_properties(self):
-        properties = super()._get_properties()
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         try:
-            data = json.loads(self.object)
+            data = json.loads(obj)
         except Exception:
-            data = self.object
+            data = obj
         text = json.dumps(data or {}, cls=self.encoder)
-        depth = None if self.depth < 0 else self.depth
-        return dict(text=text, theme=self.theme, depth=depth,
-                    hover_preview=self.hover_preview, **properties)
+        return dict(object=text)
+
+    def _process_property_change(self, properties: dict[str, Any]) -> dict[str, Any]:
+        properties = super()._process_property_change(properties)
+        if 'depth' in properties:
+            properties['depth'] = -1 if properties['depth'] is None else properties['depth']
+        return properties
+
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any] :
+        params = super()._process_param_change(params)
+        if 'depth' in params:
+            params['depth'] = None if params['depth'] < 0 else params['depth']
+        return params

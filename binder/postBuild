@@ -1,11 +1,8 @@
-pip install voila>=0.2.10 -U
 conda install -c conda-forge code-server
-conda install -c conda-forge pygraphviz
+conda install -c conda-forge pygraphviz pygraphviz
 code-server --install-extension ms-python.python
 SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension wesbos.theme-cobalt2
-SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension RandomFractalsInc.vscode-data-preview
-SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension RandomFractalsInc.geo-data-viewer
 SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension ritwickdey.liveserver
 bokeh sampledata
 panel build panel
-jupyter serverextension enable panel.io.jupyter_server_extension
+python -c 'from panel.compiler import bundle_resources;bundle_resources()'

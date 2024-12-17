@@ -1,0 +1,82 @@
+name: jupyterlite
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+a[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+b[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Site to build and deploy"
+        type: choice
+        options:
+          - dev
+          - main
+          - dryrun
+        required: true
+        default: dryrun
+  schedule:
+    - cron: "0 19 * * SUN"
+
+jobs:
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
+
+  lite_build:
+    name: Build Jupyterlite
+    needs: [pixi_lock]
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+        with:
+          environments: "lite"
+          install: false
+          download-data: false
+      - name: lite build
+        run: pixi run lite-build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jupyterlite
+          path: lite/dist/
+          if-no-files-found: error
+
+  lite_publish:
+    name: Publish Jupyterlite
+    runs-on: ubuntu-latest
+    needs: [lite_build]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: jupyterlite
+          path: lite/dist/
+      - name: Set output
+        id: vars
+        run: echo "tag=${{ needs.docs_build.outputs.tag }}" >> $GITHUB_OUTPUT
+      - name: Upload dev
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
+          (github.event_name == 'workflow_run' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.ACCESS_TOKEN }}
+          external_repository: holoviz-dev/panelite-dev
+          publish_dir: ./lite/dist
+          force_orphan: true
+      - name: Upload prod
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.ACCESS_TOKEN }}
+          external_repository: holoviz-dev/panelite
+          publish_dir: ./lite/dist
+          cname: panelite.holoviz.org
+          force_orphan: true

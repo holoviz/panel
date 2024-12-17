@@ -1,12 +1,24 @@
-# Custom widgets
+# Declare Custom Widgets
 
-In the previous section we saw how parameters can automatically be turned into widgets. This is possible because internally Panel maintains a mapping between parameter types and widget types. However, sometimes the default widget does not provide the most convenient UI and we want to provide an explicit hint to Panel to tell it how to render a parameter. This is possible using the ``widgets`` argument to the `Param` pane. Using the ``widgets`` keyword we can declare a mapping between the parameter name and the type of widget that is desired (as long as the widget type supports the types of values held by the parameter type).
+This guide addresses how to extend Param based UIs with custom widgets.
+
+```{admonition} Prerequisites
+1. The [How to > Generate Widgets from Parameters](./uis) guide demonstrates the default case of automatically generating widgets.
+```
+
+---
+
+## Custom type
+
+`Param Parameters` can automatically be turned into widgets because Panel maintains a mapping between `Parameter` types and widget types. However, sometimes the default widget does not provide the most convenient UI and we want to provide an explicit hint to Panel to tell it how to render a `Parameter`. Using the `widgets` keyword we can declare a mapping between the parameter name and the type of widget that is desired (as long as the widget type supports the types of values held by the parameter type).
 
 As an example, we can map a string and a number Selector to a `RadioButtonGroup` and `DiscretePlayer` respectively.
 
 ```{pyodide}
 import panel as pn
 import param
+
+pn.extension()
 
 class CustomExample(param.Parameterized):
     """An example Parameterized class"""
@@ -37,7 +49,6 @@ pn.Param(CustomExample.param, widgets={
 
 However it is also possible to explicitly construct a widget from a parameter using the `.from_param` method, which makes it easy to override widget settings using keyword arguments:
 
-
 ```{pyodide}
 pn.widgets.RadioBoxGroup.from_param(CustomExample.param.select_string, inline=True)
 ```
@@ -46,15 +57,13 @@ pn.widgets.RadioBoxGroup.from_param(CustomExample.param.select_string, inline=Tr
 
 By default, a param Pane has a title that is derived from the class name of its `Parameterized` object. Using the ``name`` keyword we can set any title to the pane, e.g. to improve the user interface.
 
-
 ```{pyodide}
 pn.Param(CustomExample.param, name="Custom Name")
 ```
 
-## Sort
+## Custom Sort
 
 You can sort the widgets alphabetically by setting `sort=True`
-
 
 ```{pyodide}
 pn.Param(CustomExample.param, sort=True, name="Sort by Label Example")
@@ -62,10 +71,15 @@ pn.Param(CustomExample.param, sort=True, name="Sort by Label Example")
 
 You can also specify a custom sort function that takes the (parameter name, Parameter instance) as input.
 
-
 ```{pyodide}
 def sort_func(x):
     return len(x[1].label)
 
 pn.Param(CustomExample.param, sort=sort_func, name="Sort by Label Length Example")
 ```
+
+---
+
+## Related Resources
+
+- See the [Explanation > APIs](../../explanation/api/index) for context on this and other Panel APIs

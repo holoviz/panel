@@ -1,9 +1,15 @@
-# Linking parameters in Python
+# Create High-Level Python Links with `.link`
+
+This guide addresses how to use the convenient, high-level `.link` API to link parameters in Python.
+
+---
 
 To start, let's see how a ``TextInput`` widget and a ``Markdown`` pane normally behave:
 
 ```{pyodide}
 import panel as pn
+
+pn.extension()
 
 pn.Row(
     pn.widgets.TextInput(value="Editable text"),
@@ -46,3 +52,8 @@ pn.Row(t, m)
 ```
 
 Note that here we explicitly set `t.value` before displaying the panel to trigger the linked Markdown pane to update to match the text widget; callbacks are not otherwise triggered when the links are first set up.
+
+---
+
+## Related Resources
+- See the [Explanation > APIs](../../explanation/api/index) for context on this and other Panel APIs
