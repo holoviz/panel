@@ -10,6 +10,7 @@ import param
 
 from pyviz_comms import JupyterComm
 
+from ..config import config
 from ..models.enums import ace_themes
 from ..util import lazy_load
 from .base import Widget
@@ -18,7 +19,6 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
-
 
 class CodeEditor(Widget):
     """
@@ -48,8 +48,11 @@ class CodeEditor(Widget):
     readonly = param.Boolean(default=False, doc="""
         Define if editor content can be modified. Alias for disabled.""")
 
-    theme = param.Selector(default="chrome", objects=list(ace_themes),
-                                 doc="Theme of the editor")
+    theme = param.Selector(default="chrome", objects=list(ace_themes), doc="""
+        If no value is provided, it defaults to the current theme
+        set by pn.config.theme, as specified in the
+        CodeEditor.THEME_CONFIGURATION dictionary. If not defined there, it
+        falls back to the default parameter value.""")
 
     value = param.String(default="", doc="""
         State of the current code in the editor if `on_keyup`. Otherwise, only upon loss of focus,
@@ -60,11 +63,15 @@ class CodeEditor(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
 
+    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"dark": "chaos"}
+
     def __init__(self, **params):
         if 'readonly' in params:
             params['disabled'] = params['readonly']
         elif 'disabled' in params:
             params['readonly'] = params['disabled']
+        if "theme" not in params:
+            params["theme"]=self._get_theme(config.theme)
         super().__init__(**params)
         self._internal_callbacks.append(
             self.param.watch(self._update_disabled, ['disabled', 'readonly'])
@@ -91,3 +98,7 @@ class CodeEditor(Widget):
                 self.readonly = event.new
             elif event.name == 'readonly':
                 self.disabled = event.new
+
+    @classmethod
+    def _get_theme(cls, config_theme: str)->str:
+        return cls.THEME_CONFIGURATION.get(config_theme, cls.param.theme.default)
