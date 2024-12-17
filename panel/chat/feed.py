@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import traceback
 
+from collections.abc import Callable
 from enum import Enum
 from inspect import (
     getfullargspec, isasyncgen, isasyncgenfunction, isawaitable,
@@ -15,7 +16,7 @@ from inspect import (
 )
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Literal,
+    TYPE_CHECKING, Any, ClassVar, Literal,
 )
 
 import param
@@ -99,7 +100,7 @@ class ChatFeed(ListPanel):
         the previous message value `contents`, the previous `user` name,
         and the component `instance`.""")
 
-    callback_exception = param.ObjectSelector(
+    callback_exception = param.Selector(
         default="summary", objects=["raise", "summary", "verbose", "ignore"], doc="""
         How to handle exceptions raised by the callback.
         If "raise", the exception will be raised.
@@ -199,7 +200,7 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
-    _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
+    _callback_state = param.Selector(objects=list(CallbackState), doc="""
         The current state of the callback.""")
 
     _prompt_trigger = param.Event(doc="Triggers the prompt input.")
@@ -409,7 +410,7 @@ class ChatFeed(ListPanel):
         is_stopped = self._callback_future is not None and self._callback_future.cancelled()
         if value is None:
             # don't add new message if the callback returns None
-            return
+            return None
         elif is_stopping or is_stopped:
             raise StopCallback("Callback was stopped.")
 
@@ -491,12 +492,14 @@ class ChatFeed(ListPanel):
                 self._callback_state = CallbackState.GENERATING
                 async for token in response:
                     response_message = self._upsert_message(token, response_message)
-                    response_message.show_activity_dot = self.show_activity_dot
+                    if response_message is not None:
+                        response_message.show_activity_dot = self.show_activity_dot
             elif isgenerator(response):
                 self._callback_state = CallbackState.GENERATING
                 for token in response:
                     response_message = self._upsert_message(token, response_message)
-                    response_message.show_activity_dot = self.show_activity_dot
+                    if response_message is not None:
+                        response_message.show_activity_dot = self.show_activity_dot
             elif isawaitable(response):
                 response_message = self._upsert_message(await response, response_message)
             else:
@@ -527,7 +530,7 @@ class ChatFeed(ListPanel):
                 return
             await asyncio.sleep(0.1)
 
-    async def _handle_callback(self, message, loop: asyncio.BaseEventLoop):
+    async def _handle_callback(self, message, loop: asyncio.AbstractEventLoop):
         callback_args, callback_kwargs = self._gather_callback_args(message)
         if iscoroutinefunction(self.callback):
             response = await self.callback(*callback_args, **callback_kwargs)
@@ -561,16 +564,16 @@ class ChatFeed(ListPanel):
 
             num_entries = len(self._chat_log)
             loop = asyncio.get_event_loop()
-            future = loop.create_task(self._handle_callback(message, loop))
-            self._callback_future = future
+            task = loop.create_task(self._handle_callback(message, loop))
+            self._callback_future = task
             await asyncio.gather(
-                self._schedule_placeholder(future, num_entries), future,
+                self._schedule_placeholder(task, num_entries), task,
             )
         except StopCallback:
             # callback was stopped by user
             self._callback_state = CallbackState.STOPPED
         except Exception as e:
-            send_kwargs = dict(user="Exception", respond=False)
+            send_kwargs: dict[str, Any] = dict(user="Exception", respond=False)
             if self.callback_exception == "summary":
                 self.send(
                     f"Encountered `{e!r}`. "
@@ -633,7 +636,7 @@ class ChatFeed(ListPanel):
                     "Cannot set user or avatar when explicitly sending "
                     "a ChatMessage. Set them directly on the ChatMessage."
                 )
-            message = value
+            message: ChatMessage | None = value
         else:
             if not isinstance(value, dict):
                 value = {"object": value}
@@ -690,7 +693,7 @@ class ChatFeed(ListPanel):
                 "a ChatMessage. Set them directly on the ChatMessage."
             )
         elif message:
-            if isinstance(value, (str, dict)):
+            if isinstance(value, str):
                 message.stream(value, replace=replace)
                 if user:
                     message.user = user
@@ -723,6 +726,7 @@ class ChatFeed(ListPanel):
         steps_layout: Column | Card | None = None,
         default_layout: Literal["column", "card"] = "card",
         layout_params: dict | None = None,
+        last_messages: int = 1,
         **step_params
     ) -> ChatStep:
         """
@@ -750,6 +754,8 @@ class ChatFeed(ListPanel):
             'card' will create a new Card layout.
         layout_params : dict | None
             Additional parameters to pass to the layout.
+        last_messages: int
+            The number of messages to go back to find the last message.
         step_params : dict
             Parameters to pass to the ChatStep.
         """
@@ -771,13 +777,19 @@ class ChatFeed(ListPanel):
             if "context_exception" not in step_params:
                 step_params["context_exception"] = self.callback_exception
             step = ChatStep(**step_params)
+
         if append:
-            last = self._chat_log[-1] if self._chat_log else None
-            if last is not None and isinstance(last.object, Column) and (
+            for i in range(1, last_messages + 1):
+                if not self._chat_log:
+                    break
+
+                last = self._chat_log[-i]
+                if last is not None and isinstance(last.object, Column) and (
                     all(isinstance(o, ChatStep) for o in last.object) or
                     last.object.css_classes == 'chat-steps'
-            ) and (user is None or last.user == user):
-                steps_layout = last.object
+                ) and (user is None or last.user == user):
+                    steps_layout = last.object
+
         if steps_layout is None:
             layout_params = layout_params or {}
             input_layout_params = dict(
@@ -848,7 +860,7 @@ class ChatFeed(ListPanel):
         timeout_button_params : dict | None
             Additional parameters to pass to the timeout button.
         """
-        async def _prepare_prompt(*_) -> None:
+        async def _prepare_prompt(*args) -> None:
             input_button_params = button_params or {}
             if "name" not in input_button_params:
                 input_button_params["name"] = "Submit"
@@ -958,7 +970,7 @@ class ChatFeed(ListPanel):
         self,
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
-        default_role: str | None = "assistant",
+        default_role: str = "assistant",
         custom_serializer: Callable | None = None,
         **serialize_kwargs
     ) -> list[dict[str, Any]]:

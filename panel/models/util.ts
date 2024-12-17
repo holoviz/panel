@@ -11,13 +11,27 @@ export const get = (obj: any, path: string, defaultValue: any = undefined) => {
   return result === undefined || result === obj ? defaultValue : result
 }
 
-export function throttle(func: any, timeFrame: number) {
-  let lastTime: number = 0
-  return function() {
-    const now: number = Number(new Date())
-    if (now - lastTime >= timeFrame) {
-      func()
-      lastTime = now
+export function throttle(func: Function, limit: number): any {
+  let lastRan: number = 0
+  let trailingCall: ReturnType<typeof setTimeout> | null = null
+
+  return function(...args: any) {
+    // @ts-ignore
+    const context = this
+    const now = Date.now()
+    if (trailingCall) {
+      clearTimeout(trailingCall)
+    }
+
+    if ((now - lastRan) >= limit) {
+      func.apply(context, args)
+      lastRan = Date.now()
+    } else {
+      trailingCall = setTimeout(function() {
+        func.apply(context, args)
+        lastRan = Date.now()
+        trailingCall = null
+      }, limit - (now - lastRan))
     }
   }
 }

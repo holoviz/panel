@@ -15,12 +15,11 @@ import sys
 import threading
 import time
 import unittest.mock
-import weakref
 
+from collections.abc import Awaitable, Callable, Hashable
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Callable, Hashable, Literal, ParamSpec, Protocol,
-    TypeVar, overload,
+    TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, TypeVar, cast, overload,
 )
 
 import param
@@ -50,21 +49,19 @@ _FFI_TYPE_NAMES = ("_cffi_backend.FFI", "builtins.CompiledFFI",)
 
 _HASH_MAP: dict[Hashable, str] = {}
 
-_HASH_STACKS = weakref.WeakKeyDictionary()
-
 _INDETERMINATE = type('INDETERMINATE', (object,), {})()
 
 _NATIVE_TYPES = (
     bytes, str, float, int, bool, bytearray, type(None)
 )
 
-_NP_SIZE_LARGE = 100_000
+_ARRAY_SIZE_LARGE = 100_000
 
-_NP_SAMPLE_SIZE = 100_000
+_ARRAY_SAMPLE_SIZE = 100_000
 
-_PANDAS_ROWS_LARGE = 100_000
+_DATAFRAME_ROWS_LARGE = 100_000
 
-_PANDAS_SAMPLE_SIZE = 100_000
+_DATAFRAME_SAMPLE_SIZE = 100_000
 
 if sys.platform == 'win32':
     _TIME_FN = time.perf_counter
@@ -92,41 +89,41 @@ def _get_fqn(obj):
     name = the_type.__qualname__
     return f"{module}.{name}"
 
-def _int_to_bytes(i):
+def _int_to_bytes(i: int) -> bytes:
     num_bytes = (i.bit_length() + 8) // 8
     return i.to_bytes(num_bytes, "little", signed=True)
 
-def _is_native(obj):
+def _is_native(obj: Any) -> bool:
     return isinstance(obj, _NATIVE_TYPES)
 
-def _is_native_tuple(obj):
+def _is_native_tuple(obj: Any) -> bool:
     return isinstance(obj, tuple) and all(_is_native_tuple(v) for v in obj)
 
-def _container_hash(obj):
+def _container_hash(obj: Any) -> bytes:
     h = hashlib.new("md5")
     h.update(_generate_hash(f'__{type(obj).__name__}'))
     for item in (obj.items() if isinstance(obj, dict) else obj):
         h.update(_generate_hash(item))
     return h.digest()
 
-def _slice_hash(x):
+def _slice_hash(x: slice) -> bytes:
     return _container_hash([x.start, x.step, x.stop])
 
-def _partial_hash(obj):
+def _partial_hash(obj: Any) -> bytes:
     h = hashlib.new("md5")
     h.update(_generate_hash(obj.args))
     h.update(_generate_hash(obj.func))
     h.update(_generate_hash(obj.keywords))
     return h.digest()
 
-def _pandas_hash(obj):
+def _pandas_hash(obj: Any) -> bytes:
     import pandas as pd
 
     if not isinstance(obj, (pd.Series, pd.DataFrame)):
         obj = pd.Series(obj)
 
-    if len(obj) >= _PANDAS_ROWS_LARGE:
-        obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
+    if len(obj) >= _DATAFRAME_ROWS_LARGE:
+        obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
     try:
         if isinstance(obj, pd.DataFrame):
             return ((b"%s" % pd.util.hash_pandas_object(obj).sum())
@@ -138,13 +135,62 @@ def _pandas_hash(obj):
         # it contains unhashable objects.
         return b"%s" % pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
 
+def _polars_combine_hash_expr(columns):
+    """
+    Inspired by pd.core.util.hashing.combine_hash_arrays,
+    rewritten to a Polars expression.
+    """
+    import polars as pl
+
+    mult = pl.lit(1000003, dtype=pl.UInt64)
+    initial_value = pl.lit(0x345678, dtype=pl.UInt64)
+    increment = pl.lit(82520, dtype=pl.UInt64)
+    final_addition = pl.lit(97531, dtype=pl.UInt64)
+
+    out = initial_value
+    num_items = len(columns)
+    for i, col_name in enumerate(columns):
+        col = pl.col(col_name).hash(seed=0)
+        inverse_i = pl.lit(num_items - i, dtype=pl.UInt64)
+        out = (out ^ col) * mult
+        mult = mult + (increment + inverse_i + inverse_i)
+
+    return out + final_addition
+
+def _polars_hash(obj):
+    import polars as pl
+
+    hash_type = type(obj).__name__.encode()
+
+    if isinstance(obj, pl.Series):
+        obj = obj.to_frame()
+
+    columns = obj.collect_schema().names()
+    hash_columns = _container_hash(columns)
+
+    # LazyFrame does not support len and sample
+    if hash_type != b"LazyFrame" and len(obj) >= _DATAFRAME_ROWS_LARGE:
+        obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, seed=0)
+    elif hash_type == b"LazyFrame":
+        count = obj.select(pl.col(columns[0]).count()).collect().item()
+        if count >= _DATAFRAME_ROWS_LARGE:
+            obj = obj.select(pl.all().sample(n=_DATAFRAME_SAMPLE_SIZE, seed=0))
+
+    hash_expr = _polars_combine_hash_expr(columns)
+    hash_data = obj.select(hash_expr).sum()
+    if hash_type == b"LazyFrame":
+        hash_data = hash_data.collect()
+    hash_data = _int_to_bytes(hash_data.item())
+
+    return hash_type + hash_data + hash_columns
+
 def _numpy_hash(obj):
     h = hashlib.new("md5")
     h.update(_generate_hash(obj.shape))
-    if obj.size >= _NP_SIZE_LARGE:
+    if obj.size >= _ARRAY_SIZE_LARGE:
         import numpy as np
         state = np.random.RandomState(0)
-        obj = state.choice(obj.flat, size=_NP_SAMPLE_SIZE)
+        obj = state.choice(obj.flat, size=_ARRAY_SAMPLE_SIZE)
     h.update(obj.tobytes())
     return h.digest()
 
@@ -154,7 +200,7 @@ def _io_hash(obj):
     h.update(_generate_hash(obj.getvalue()))
     return h.digest()
 
-_hash_funcs = {
+_hash_funcs: dict[str | type[Any] | tuple[type, ...] | Callable[[Any], bool], bytes | Callable[[Any], bytes]] = {
     # Types
     int          : _int_to_bytes,
     str          : lambda obj: obj.encode(),
@@ -168,7 +214,7 @@ _hash_funcs = {
     functools.partial  : _partial_hash,
     unittest.mock.Mock : lambda obj: _int_to_bytes(id(obj)),
     (io.StringIO, io.BytesIO): _io_hash,
-    dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode('utf-8'),
+    dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode(),
     # Fully qualified type strings
     'numpy.ndarray'              : _numpy_hash,
     'pandas.core.series.Series'  : _pandas_hash,
@@ -180,6 +226,9 @@ _hash_funcs = {
     'builtins.dict_items'        : lambda obj: _container_hash(dict(obj)),
     'builtins.getset_descriptor' : lambda obj: obj.__qualname__.encode(),
     "numpy.ufunc"                : lambda obj: obj.__name__.encode(),
+    "polars.series.series.Series": _polars_hash,
+    "polars.dataframe.frame.DataFrame": _polars_hash,
+    "polars.lazyframe.frame.LazyFrame": _polars_hash,
     # Functions
     inspect.isbuiltin          : lambda obj: obj.__name__.encode(),
     inspect.ismodule           : lambda obj: obj.__name__,
@@ -214,7 +263,7 @@ def _generate_hash_inner(obj):
                 f'{obj!r} with following error: {type(e).__name__}("{e}").'
             ) from e
         return output
-    if hasattr(obj, '__reduce__'):
+    if hasattr(obj, '__reduce__') and inspect.isclass(obj):
         h = hashlib.new("md5")
         try:
             reduce_data = obj.__reduce__()
@@ -470,7 +519,7 @@ def cache(
                     ret, ts, count, _ = func_cache[hash_value]
                     func_cache[hash_value] = (ret, ts, count+1, time)
             else:
-                ret = await func(*args, **kwargs)
+                ret = await cast(Awaitable[Any], func(*args, **kwargs))
                 with lock:
                     func_cache[hash_value] = (ret, time, 0, time)
             return ret
@@ -513,7 +562,7 @@ def cache(
     except AttributeError:
         pass
 
-    return wrapped_func
+    return wrapped_func  # type: ignore
 
 def is_equal(value, other)->bool:
     """Returns True if value and other are equal

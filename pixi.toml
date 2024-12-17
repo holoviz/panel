@@ -17,7 +17,7 @@ test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py313", "test-core", "test-unit-task"]
 test-minimum = ["py310", "test-core", "test-unit-task", "test-minimum"]
-test-type = ["py311", "type"]
+test-type = ["py311", "type", "example", "test"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
@@ -25,6 +25,7 @@ lite = ["py311", "lite"]
 
 [dependencies]
 nodejs = ">=18"
+esbuild = "*"
 nomkl = "*"
 pip = "*"
 # Required
@@ -141,6 +142,7 @@ ipympl = "*"
 ipyvuetify = "*"
 ipywidgets_bokeh = "*"
 numba = "*"
+polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
@@ -161,7 +163,7 @@ channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
 playwright = { version = "*", channel = "microsoft" }
-pytest-playwright = "*"
+pytest-playwright = { version = "*", channel = "microsoft" }
 pytest-asyncio = "*"
 jupyter_server = "*"
 esbuild = "*"
@@ -179,6 +181,7 @@ depends_on = ["_install-ui"]
 # =============================================
 [feature.type.dependencies]
 mypy = "*"
+pytest = "*"
 pandas-stubs = "*"
 types-bleach = "*"
 types-croniter = "*"

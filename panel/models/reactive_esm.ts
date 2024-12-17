@@ -630,17 +630,26 @@ export class ReactiveESM extends HTMLBox {
     this.compiled = compiled
     this._declare_importmap()
     let esm_module
-    const cache_key = this.bundle || `${this.class_name}-${this.esm.length}`
+    const use_cache = (!this.dev || this.bundle)
+    const cache_key = (this.bundle === "url") ? this.esm : (this.bundle || `${this.class_name}-${this.esm.length}`)
     let resolve: (value: any) => void
-    if (!this.dev && MODULE_CACHE.has(cache_key)) {
+    if (use_cache && MODULE_CACHE.has(cache_key)) {
       esm_module = Promise.resolve(MODULE_CACHE.get(cache_key))
     } else {
-      if (!this.dev) {
+      if (use_cache) {
         MODULE_CACHE.set(cache_key, new Promise((res) => { resolve = res }))
       }
-      const url = URL.createObjectURL(
-        new Blob([this.compiled], {type: "text/javascript"}),
-      )
+      let url
+      if (this.bundle === "url") {
+        const parts = location.pathname.split("/")
+        let path = parts.slice(0, parts.length-1).join("/")
+        if (path.length) {
+          path += "/"
+        }
+        url = `${location.origin}/${path}${this.esm}`
+      } else {
+        url = URL.createObjectURL(new Blob([this.compiled], {type: "text/javascript"}))
+      }
       esm_module = (window as any).importShim(url)
     }
     this.compiled_module = (esm_module as Promise<any>).then((mod: any) => {

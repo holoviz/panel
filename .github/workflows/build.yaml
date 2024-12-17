@@ -55,6 +55,8 @@ jobs:
           name: conda
           path: dist/*tar.bz2
           if-no-files-found: error
+      - name: Verify size
+        run: python scripts/verify_build_size.py conda
 
   conda_publish:
     name: Publish Conda
@@ -106,6 +108,10 @@ jobs:
           name: pip
           path: dist/
           if-no-files-found: error
+      - name: Verify sizes
+        run: |
+          python scripts/verify_build_size.py sdist
+          python scripts/verify_build_size.py whl
 
   pip_install:
     name: Install PyPI
@@ -165,6 +171,8 @@ jobs:
           name: npm
           if-no-files-found: error
           path: ./${{ env.PACKAGE }}/${{ env.TARBALL }}
+      - name: Verify size
+        run: python scripts/verify_build_size.py npm
 
   npm_publish:
     name: Publish NPM

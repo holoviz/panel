@@ -55,9 +55,9 @@ We also define a ``view`` method that returns an HTML iframe displaying the coun
 ```{pyodide}
 class GoogleMapViewer(param.Parameterized):
 
-    continent = param.ObjectSelector(default='Asia', objects=['Africa', 'Asia', 'Europe'])
+    continent = param.Selector(default='Asia', objects=['Africa', 'Asia', 'Europe'])
 
-    country = param.ObjectSelector(default='China', objects=['China', 'Thailand', 'Japan'])
+    country = param.Selector(default='China', objects=['China', 'Thailand', 'Japan'])
 
     _countries = {'Africa': ['Ghana', 'Togo', 'South Africa', 'Tanzania'],
                   'Asia'  : ['China', 'Thailand', 'Japan'],

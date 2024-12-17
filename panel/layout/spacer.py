@@ -101,7 +101,7 @@ class Divider(Reactive):
     >>> )
     """
 
-    width_policy = param.ObjectSelector(default="fit", readonly=True)
+    width_policy = param.Selector(default="fit", readonly=True)
 
     _bokeh_model = BkDiv
 

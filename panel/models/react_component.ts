@@ -34,7 +34,7 @@ export class ReactComponentView extends ReactiveESMView {
 
   protected override _render_code(): string {
     let render_code = `
-if (rendered && view.model.usesReact) {
+if (rendered) {
   view._changing = true
   const root = createRoot(view.container)
   try {
@@ -44,9 +44,10 @@ if (rendered && view.model.usesReact) {
   }
 }`
     let import_code
+    const cache_key = (this.model.bundle === "url") ? this.model.esm : (this.model.bundle || `${this.model.class_name}-${this.model.esm.length}`)
     if (this.model.bundle) {
       import_code = `
-const ns = await view._module_cache.get(view.model.bundle)
+const ns = await view._module_cache.get("${cache_key}")
 const {React, createRoot} = ns.default`
     } else {
       import_code = `
@@ -56,7 +57,7 @@ import { createRoot } from "react-dom/client"`
     if (this.model.usesMui) {
       if (this.model.bundle) {
         import_code = `
-const ns = await view._module_cache.get(view.model.bundle)
+const ns = await view._module_cache.get("${cache_key}")
 const {CacheProvider, React, createCache, createRoot} = ns.default`
       } else {
         import_code = `
@@ -67,7 +68,7 @@ import { CacheProvider } from "@emotion/react"`
       render_code = `
   if (rendered) {
     const cache = createCache({
-      key: 'css-${btoa(this.model.id).replace("=", "-").toLowerCase()}',
+      key: 'css-${this.model.id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()}',
       prepend: true,
       container: view.style_cache,
     })
@@ -246,10 +247,6 @@ export class ReactComponent extends ReactiveESM {
       return Object.keys(this.importmap?.imports).some(k => k.startsWith("@mui"))
     }
     return false
-  }
-
-  get usesReact(): boolean {
-    return this.compiled !== null && this.compiled.includes("React")
   }
 
   override compile(): string | null {

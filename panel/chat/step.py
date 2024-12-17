@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import traceback
 
-from typing import ClassVar, Literal, Mapping
+from collections.abc import Mapping
+from typing import ClassVar, Literal
 
 import param
 
@@ -43,7 +44,7 @@ class ChatStep(Card):
     collapsed_on_success = param.Boolean(default=True, doc="""
         Whether to collapse the card on completion.""")
 
-    context_exception = param.ObjectSelector(
+    context_exception = param.Selector(
         default="raise", objects=["raise", "summary", "verbose", "ignore"], doc="""
         How to handle exceptions raised upon exiting the context manager.
         If "raise", the exception will be raised.

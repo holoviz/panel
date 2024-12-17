@@ -11,9 +11,10 @@ import sys
 import traceback
 import urllib.parse as urlparse
 
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from types import ModuleType
-from typing import IO, Any, Callable
+from typing import IO, TYPE_CHECKING, Any
 
 import bokeh.command.util
 
@@ -30,6 +31,9 @@ from .mime_render import MIME_RENDERERS
 from .profile import profile_ctx
 from .reload import record_modules
 from .state import state
+
+if TYPE_CHECKING:
+    from nbformat import NotebookNode
 
 log = logging.getLogger('panel.io.handlers')
 
@@ -51,7 +55,7 @@ def _patch_ipython_display():
         pass
 
 @contextmanager
-def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> dict[str, Any]:
+def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> Iterator[None]:
     import bokeh.io as io
     old: dict[str, Any] = {}
     for f in CodeHandler._io_functions:
@@ -102,7 +106,7 @@ def extract_code(
     inblock = False
     block_opener = None
     title = None
-    markdown = []
+    markdown: list[str] = []
     out = []
     while True:
         line = filehandle.readline()
@@ -261,7 +265,7 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
             raise RuntimeError(f"{handler._origin} at '{handler._runner.path}' replaced the output document")
 
     try:
-        state._launching.append(doc)
+        state._launching.add(doc)
         with _monkeypatch_io(handler._loggers):
             with patch_curdoc(doc):
                 with profile_ctx(config.profiler) as sessions:
@@ -297,7 +301,10 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
         if old_doc is not None:
             bk_set_curdoc(old_doc)
 
-def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None = None):
+def parse_notebook(
+    filename: str | os.PathLike | IO,
+    preamble: list[str] | None = None
+) -> tuple[NotebookNode, str, dict[str, Any]]:
     """
     Parses a notebook on disk and returns a script.
 
@@ -320,7 +327,7 @@ def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None 
     nbconvert = import_required('nbconvert', 'The Panel notebook application handler requires nbconvert to be installed.')
     nbformat = import_required('nbformat', 'The Panel notebook application handler requires Jupyter Notebook to be installed.')
 
-    class StripMagicsProcessor(nbconvert.preprocessors.Preprocessor):
+    class StripMagicsProcessor(nbconvert.preprocessors.Preprocessor):  # type: ignore
         """
         Preprocessor to convert notebooks to Python source while stripping
         out all magics (i.e IPython specific syntax).
@@ -376,8 +383,8 @@ def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None 
         elif cell['cell_type'] == 'markdown':
             md = ''.join(cell['source']).replace('"', r'\"')
             code.append(f'_pn__state._cell_outputs[{cell_id!r}].append("""{md}""")')
-    code = '\n'.join(code)
-    return nb, code, cell_layouts
+    code_string = '\n'.join(code)
+    return nb, code_string, cell_layouts
 
 #---------------------------------------------------------------------
 # Handler classes
@@ -429,10 +436,22 @@ class PanelCodeHandler(CodeHandler):
     - Track modules loaded during app execution to enable autoreloading
     """
 
-    def __init__(self, *, source: str, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        source: str | None = None,
+        filename: PathLike, argv: list[str] = [],
+        package: ModuleType | None = None,
+        runner: PanelCodeRunner | None = None
+    ) -> None:
         Handler.__init__(self)
 
-        self._runner = PanelCodeRunner(source, filename, argv, package=package)
+        if runner:
+            self._runner = runner
+        elif source:
+            self._runner = PanelCodeRunner(source, filename, argv, package=package)
+        else:
+            raise ValueError("Must provide source code to PanelCodeHandler")
 
         self._loggers = {}
         for f in PanelCodeHandler._io_functions:
@@ -445,7 +464,7 @@ class PanelCodeHandler(CodeHandler):
         # TODO should fix invalid URL characters
         return '/' + os.path.splitext(os.path.basename(self._runner.path))[0]
 
-    def modify_document(self, doc: 'Document'):
+    def modify_document(self, doc: Document):
         if config.autoreload:
             path = self._runner.path
             argv = self._runner._argv
@@ -468,7 +487,7 @@ class PanelCodeHandler(CodeHandler):
 
         run_app(self, module, doc)
 
-CodeHandler.modify_document = PanelCodeHandler.modify_document
+CodeHandler.modify_document = PanelCodeHandler.modify_document  # type: ignore
 
 
 class ScriptHandler(PanelCodeHandler):
@@ -492,7 +511,7 @@ class ScriptHandler(PanelCodeHandler):
 
         super().__init__(source=source, filename=filename, argv=argv, package=package)
 
-bokeh.application.handlers.directory.ScriptHandler = ScriptHandler
+bokeh.application.handlers.directory.ScriptHandler = ScriptHandler  # type: ignore
 
 
 class MarkdownHandler(PanelCodeHandler):
@@ -720,4 +739,4 @@ class NotebookHandler(PanelCodeHandler):
             json.dump(nb_layout, f)
         self._stale = True
 
-bokeh.application.handlers.directory.NotebookHandler = NotebookHandler
+bokeh.application.handlers.directory.NotebookHandler = NotebookHandler  # type: ignore

@@ -2,6 +2,7 @@ import {display, undisplay} from "@bokehjs/core/dom"
 import {sum} from "@bokehjs/core/util/arrayable"
 import {isArray, isBoolean, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
@@ -16,6 +17,8 @@ import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
 import {HTMLBox, HTMLBoxView} from "./layout"
 import {schedule_when} from "./util"
+
+import tabulator_css from "styles/models/tabulator.css"
 
 export class TableEditEvent extends ModelEvent {
   constructor(readonly column: string, readonly row: number, readonly pre: boolean) {
@@ -70,12 +73,17 @@ function find_group(key: any, value: string, records: any[]): any {
   return null
 }
 
-function summarize(grouped: any[], columns: any[], aggregators: string[], depth: number = 0): any {
+function summarize(grouped: any[], columns: any[], aggregators: any[], depth: number = 0): any {
   const summary: any = {}
   if (grouped.length == 0) {
     return summary
   }
-  const agg = aggregators[depth]
+  // depth level 0 is the root, finish here
+  let aggs = ""
+  if (depth > 0) {
+    aggs = aggregators[depth-1]
+  }
+
   for (const group of grouped) {
     const subsummary = summarize(group._children, columns, aggregators, depth+1)
     for (const col in subsummary) {
@@ -85,14 +93,23 @@ function summarize(grouped: any[], columns: any[], aggregators: string[], depth:
         group[col] = subsummary[col]
       }
     }
+
     for (const column of columns.slice(1)) {
+      // if no aggregation method provided for an index level,
+      // or a specific column of an index level, do not aggregate data
+      let agg: string = ""
+      if (typeof aggs === "string") {
+        agg = aggs
+      } else if (column.field in aggs) {
+        agg = aggs[column.field]
+      }
       const val = group[column.field]
       if (column.field in summary) {
         const old_val = summary[column.field]
         if (agg === "min") {
-          summary[column.field] = Math.min(val, old_val)
+          summary[column.field] = (val < old_val) ? val : old_val
         } else if (agg === "max") {
-          summary[column.field] = Math.max(val, old_val)
+          summary[column.field] = (val > old_val) ? val : old_val
         } else if (agg === "sum") {
           summary[column.field] = val + old_val
         } else if (agg === "mean") {
@@ -122,7 +139,6 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
       grouped.push(group)
     }
     let subgroup = group
-    const groups: any = {}
     for (const index of indexes.slice(1)) {
       subgroup = find_group(index_field, record[index], subgroup._children)
       if (subgroup == null) {
@@ -130,7 +146,6 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
         subgroup[index_field] = record[index]
         group._children.push(subgroup)
       }
-      groups[index] = group
       for (const column of columns.slice(1)) {
         subgroup[column.field] = record[column]
       }
@@ -142,7 +157,16 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
   }
   const aggs = []
   for (const index of indexes) {
-    aggs.push((index in aggregators) ? aggregators[index] : "sum")
+    if (index in aggregators) {
+      if (aggregators[index] instanceof Map) {
+        // when some column names are numeric, need to convert that from a Map to an Object
+        aggs.push(Object.fromEntries(aggregators[index]))
+      } else {
+        aggs.push(aggregators[index])
+      }
+    } else {
+      aggs.push("sum")
+    }
   }
   summarize(grouped, columns, aggs)
   return grouped
@@ -545,6 +569,10 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     this.redraw(true, true)
     this.restore_scroll()
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), tabulator_css]
   }
 
   setCSSClasses(el: HTMLDivElement): void {

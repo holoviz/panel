@@ -81,8 +81,8 @@ class Example(BaseClass):
     date                    = param.Date(default=dt.datetime(2017, 1, 1),
                                          bounds=(dt.datetime(2017, 1, 1), dt.datetime(2017, 2, 1)))
     dataframe               = param.DataFrame(default=pd.DataFrame({'A': [1, 2, 3]}))
-    select_string           = param.ObjectSelector(default="yellow", objects=["red", "yellow", "green"])
-    select_fn               = param.ObjectSelector(default=list,objects=[list, set, dict])
+    select_string           = param.Selector(default="yellow", objects=["red", "yellow", "green"])
+    select_fn               = param.Selector(default=list,objects=[list, set, dict])
     int_list                = param.ListSelector(default=[3, 5], objects=[1, 3, 5, 7, 9], precedence=0.5)
     single_file             = param.FileSelector(path='../../*/*.py*', precedence=0.5)
     multiple_files          = param.MultiFileSelector(path='../../*/*.py?', precedence=0.5)

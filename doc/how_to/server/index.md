@@ -57,6 +57,13 @@ Discover how to access a Panel deployment running remotely via SSH.
 Discover how to serve static files alongside your Panel application(s).
 :::
 
+:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1` Add custom endpoints
+:link: endpoints
+:link-type: doc
+
+Discover how to add custom endpoints to your Panel server.
+:::
+
 ::::
 
 ```{toctree}
@@ -70,4 +77,5 @@ multiple
 ssh
 proxy
 static_files
+endpoints
 ```

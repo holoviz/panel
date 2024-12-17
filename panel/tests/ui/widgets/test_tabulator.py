@@ -23,6 +23,7 @@ from panel.depends import bind
 from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
+from panel.pane import Markdown
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
 from panel.util import BOKEH_GE_3_6
 from panel.widgets import Select, Tabulator, TextInput
@@ -4079,3 +4080,224 @@ def test_tabulator_header_tooltips(page):
     page.wait_for_timeout(200)
 
     expect(page.locator('.tabulator-tooltip')).to_have_text("Test")
+
+
+def test_tabulator_row_content_markup_wrap(page):
+    # https://github.com/holoviz/panel/issues/7388
+
+    df = pd.DataFrame({"col": ["foo"]})
+    long_markdown = Markdown("xxxx " * 50)
+    widget = Tabulator(df, row_content=lambda row: long_markdown, expanded=[0], width=200)
+
+    serve_component(page, widget)
+
+    md = page.locator('.row-content .bk-panel-models-markup-HTML')
+
+    assert md.bounding_box()['height'] >= 130
+
+
+@pytest.fixture(scope='session')
+def df_agg():
+    data = {
+        "employee_id": range(1, 6),
+        "gender": ["Male", "Male", "Female", "Male", "Female"],
+        "region": ["East", "North", "North", "North", "North"],
+        "name": ["Charlie", "Bob", "Alice", "David", "Eve"],
+        "salary": [75000.0, 82000.5, np.nan, 64000.0, 91000.0],
+        "date_joined": [
+            np.nan,  # Charlie
+            dt.datetime(2019, 3, 15),  # Bob
+            dt.datetime(2020, 1, 10),  # Alice
+            dt.datetime(2021, 5, 20),  # David
+            dt.datetime(2022, 7, 30),  # Eve
+        ],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture(scope='session')
+def df_agg_int_column_names(df_agg):
+    return df_agg.rename(columns={"salary": 1, "date_joined": 2})
+
+
+@pytest.mark.parametrize("df", ["df_agg", "df_agg_int_column_names"])
+def test_tabulator_hierarchical_data_grouping(page, df, request):
+    df_agg = request.getfixturevalue(df)
+    widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True)
+    serve_component(page, widget)
+
+    expanded_groups = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-collapse')
+    collapsed_groups = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
+
+    expect(collapsed_groups).to_have_count(2)
+    expect(expanded_groups).to_have_count(0)
+    group_east = collapsed_groups.nth(0)
+    group_north = collapsed_groups.nth(1)
+
+    # expand first group and see the data there
+    group_east.click()
+    expect(collapsed_groups).to_have_count(1)
+    expect(expanded_groups).to_have_count(1)
+    collapsed_genders = page.locator(".tabulator-tree-level-1 .tabulator-data-tree-control-expand")
+    expanded_genders = page.locator(".tabulator-tree-level-1 .tabulator-data-tree-control-collapse")
+    expect(collapsed_genders).to_have_count(1)
+    expect(expanded_genders).to_have_count(0)
+    # TODO: uncomment when showing indexes fixed
+    # expect(collapsed_genders).to_contain_text("Male")
+    collapsed_genders.click()
+    employees = page.locator(".tabulator-tree-level-2")
+    expect(employees).to_have_count(1)
+    # TODO: assert employee id
+    expect(employees).to_contain_text("Charlie")
+
+    # collapse 1st group and expand 2nd group and see the data there
+    expanded_groups.click()
+    group_north.click()
+    expect(collapsed_genders).to_have_count(2)
+    # note: after clicking 1st gender group, `gender` now has count 1 as we queries for css class
+    # .tabulator-data-tree-control-expand
+    collapsed_genders.nth(0).click()
+    expect(collapsed_genders).to_have_count(1)
+    expect(expanded_genders).to_have_count(1)
+    expect(employees).to_have_count(2)
+    expect(employees.nth(0)).to_contain_text("Bob")
+    expect(employees.nth(1)).to_contain_text("David")
+
+    collapsed_genders.nth(0).click()
+    expanded_genders.nth(0).click()
+    expect(employees).to_have_count(2)
+    expect(employees.nth(0)).to_contain_text("Alice")
+    expect(employees.nth(1)).to_contain_text("Eve")
+
+
+@pytest.mark.parametrize("aggs", [
+    {"region": "min", "gender": "max"},
+    {"region": "min", "gender": {"salary": "max", "date_joined": "max"}},
+    {"region": {"salary": "min", "date_joined": "min"}, "gender": {"salary": "max", "date_joined": "max"}},
+    {"region": {"salary": "min", "date_joined": "min"}, "gender": "max"},
+])
+def test_tabulator_aggregators_data_aggregation(page, df_agg, aggs):
+    # TODO: parametrize agg_method, index level and column
+    widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True, aggregators=aggs)
+    serve_component(page, widget)
+
+    column_titles = page.locator('.tabulator-col-title')
+    col_mapping = {"salary": 3, "date_joined": 4}
+    for col in col_mapping:
+        expect(column_titles.nth(col_mapping[col])).to_have_text(col)
+
+    expected_results = {
+        "region": {
+            "region1": {"salary": "75,000.0", "date_joined": "-"},
+            "region2": {"salary": "82,000.5", "date_joined": "2021-05-20 00:00:00"},
+        },
+        "gender": {
+            "region1": {
+                "Male": {"salary": "75,000.0", "date_joined": "-"},
+                # "Female": {},  # no female in this region
+            },
+            "region2": {
+                "Male": {"salary": "82,000.5", "date_joined": "2021-05-20 00:00:00"},
+                "Female": {"salary": "-", "date_joined": "2022-07-30 00:00:00"},
+            },
+        }
+    }
+
+    # region level
+    rows = page.locator('.tabulator-row')
+    expect(rows).to_have_count(2)
+    agged = {
+        "region1": rows.nth(0).inner_text().split("\n"),
+        "region2": rows.nth(1).inner_text().split("\n"),
+    }
+    region_agged = {
+        region: {col: agged[region][col_mapping[col] - 1] for col in col_mapping} for region in agged
+    }
+    assert region_agged == expected_results["region"]
+
+    regions = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
+    # expand all region groups and see the data there
+    regions.nth(0).click()
+    regions.nth(0).click()
+    rows = page.locator(".tabulator-row.tabulator-tree-level-1")
+    expect(rows).to_have_count(3)
+    # gender level
+    agged = {
+        "region1": {"Male": rows.nth(0).inner_text().split("\n")},
+        "region2": {
+            "Male": rows.nth(1).inner_text().split("\n"),
+            "Female": rows.nth(2).inner_text().split("\n"),
+        },
+    }
+    gender_agged = {
+        region: {
+            gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
+    }
+    assert gender_agged == expected_results["gender"]
+
+
+@pytest.mark.parametrize("aggs", [
+    {"region": "min", "gender": "max"},
+    {"region": "min", "gender": {1: "max", 2: "max"}},
+    {"region": {1: "min", 2: "min"}, "gender": {1: "max", 2: "max"}},
+    {"region": {1: "min", 2: "min"}, "gender": "max"},
+])
+def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_agg_int_column_names, aggs):
+    # TODO: parametrize agg_method, index level and column
+    df_agg = df_agg_int_column_names
+    widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True, aggregators=aggs)
+    serve_component(page, widget)
+
+    column_titles = page.locator('.tabulator-col-title')
+    col_mapping = {1: 3, 2: 4}
+    for col in col_mapping:
+        expect(column_titles.nth(col_mapping[col])).to_have_text(str(col))
+
+    expected_results = {
+        "region": {
+            "region1": {1: "75,000.0", 2: "-"},
+            "region2": {1: "82,000.5", 2: "2021-05-20 00:00:00"},
+        },
+        "gender": {
+            "region1": {
+                "Male": {1: "75,000.0", 2: "-"},
+                # "Female": {},  # no female in this region
+            },
+            "region2": {
+                "Male": {1: "82,000.5", 2: "2021-05-20 00:00:00"},
+                "Female": {1: "-", 2: "2022-07-30 00:00:00"},
+            },
+        }
+    }
+
+    # region level
+    rows = page.locator('.tabulator-row')
+    expect(rows).to_have_count(2)
+    agged = {
+        "region1": rows.nth(0).inner_text().split("\n"),
+        "region2": rows.nth(1).inner_text().split("\n"),
+    }
+    region_agged = {
+        region: {col: agged[region][col_mapping[col] - 1] for col in col_mapping} for region in agged
+    }
+    assert region_agged == expected_results["region"]
+
+    regions = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
+    # expand all region groups and see the data there
+    regions.nth(0).click()
+    regions.nth(0).click()
+    rows = page.locator(".tabulator-row.tabulator-tree-level-1")
+    expect(rows).to_have_count(3)
+    # gender level
+    agged = {
+        "region1": {"Male": rows.nth(0).inner_text().split("\n")},
+        "region2": {
+            "Male": rows.nth(1).inner_text().split("\n"),
+            "Female": rows.nth(2).inner_text().split("\n"),
+        },
+    }
+    gender_agged = {
+        region: {
+            gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
+    }
+    assert gender_agged == expected_results["gender"]

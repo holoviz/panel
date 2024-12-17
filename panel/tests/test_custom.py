@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 import param
 
 from panel.custom import PyComponent, ReactiveESM
@@ -42,6 +44,25 @@ def test_py_component_cleanup(document, comm):
 
     assert not spy._models
     assert not spy._view__._models
+
+
+class ESMDataFrame(ReactiveESM):
+
+    df = param.DataFrame()
+
+
+def test_reactive_esm_sync_dataframe(document, comm):
+    esm_df = ESMDataFrame()
+
+    model = esm_df.get_root(document, comm)
+
+    esm_df.df = pd.DataFrame({"1": [2]})
+
+    assert isinstance(model.data.df, dict)
+    assert len(model.data.df) == 2
+    expected = {"index": np.array([0]), "1": np.array([2])}
+    for col, values in model.data.df.items():
+        np.testing.assert_array_equal(values, expected.get(col))
 
 
 class ESMWithChildren(ReactiveESM):
@@ -122,3 +143,18 @@ def test_reactive_esm_children_models_cleanup_on_replace(document, comm):
     assert ref in md2._models
     md2_model, _ = md2._models[ref]
     assert model.data.children == [md2_model]
+
+class ESMOverride(ReactiveESM):
+
+    width = param.Integer(default=42)
+
+def test_esm_parameter_override(document, comm):
+    esm = ESMOverride()
+
+    model = esm.get_root(document, comm)
+
+    assert model.width == 42
+
+    esm.width = 84
+
+    assert model.width == 84
