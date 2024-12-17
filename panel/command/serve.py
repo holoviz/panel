@@ -281,7 +281,7 @@ class Serve(_BkServe):
         ('--plugins', dict(
             action  = 'append',
             type    = str
-        ))
+        )),
         ('--reuse-sessions', Argument(
             action  = 'store_true',
             help    = "Whether to reuse sessions when serving the initial request.",
