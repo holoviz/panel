@@ -71,10 +71,14 @@ class ChatAreaInput(_PnTextAreaInput):
         Can only be set during initialization.""",
     )
 
+    enter_pressed = param.Event(doc="""
+        Event when the enter key has been pressed.""")
+
     _widget_type: ClassVar[type[Model]] = _bkChatAreaInput
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         "value": None,
+        "enter_pressed": None,
         **_PnTextAreaInput._rename,
     }
 
@@ -99,5 +103,6 @@ class ChatAreaInput(_PnTextAreaInput):
         Clear value on shift enter key down.
         """
         self.value = event.value
+        self.enter_pressed = True
         with param.discard_events(self):
             self.value = ""

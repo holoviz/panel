@@ -118,6 +118,11 @@ class ChatFeed(ListPanel):
         defaults to the avatar set in `ChatMessage.default_avatars` if matching key exists.
         Otherwise defaults to the first character of the `callback_user`.""")
 
+    edit_callback = param.Callable(allow_refs=False, doc="""
+        Callback to execute when a user edits a message.
+        The signature must include the new message value `contents`,
+        the `message_index`, and the `instance`.""")
+
     card_params = param.Dict(default={}, doc="""
         Params to pass to Card, like `header`, `header_background`, `header_color`, etc.""")
 
@@ -232,7 +237,16 @@ class ChatFeed(ListPanel):
         super().__init__(*objects, **params)
 
         if self.help_text:
-            self.objects = [ChatMessage(self.help_text, user="Help", **message_params), *self.objects]
+            self.objects = [
+                ChatMessage(
+                    self.help_text,
+                    user="Help",
+                    show_edit_icon=False,
+                    show_copy_icon=False,
+                    show_reaction_icons=False,
+                    **message_params
+                ), *self.objects
+            ]
 
         # instantiate the card's column
         linked_params = dict(
@@ -368,6 +382,17 @@ class ChatFeed(ListPanel):
             except ValueError:
                 pass
 
+    async def _on_edit_message(self, event):
+        if self.edit_callback is None:
+            return
+        message = event.obj
+        contents = message.serialize()
+        index = self._chat_log.index(message)
+        if iscoroutinefunction(self.edit_callback):
+            await self.edit_callback(contents, index, self)
+        else:
+            self.edit_callback(contents, index, self)
+
     def _build_message(
         self,
         value: dict,
@@ -396,7 +421,15 @@ class ChatFeed(ListPanel):
             message_params["width"] = int(self.width - 80)
         message_params.update(input_message_params)
 
+        if "show_edit_icon" not in message_params:
+            user = message_params.get("user", "")
+            message_params["show_edit_icon"] = (
+                bool(self.edit_callback) and
+                user.lower() not in (self.callback_user.lower(), "help")
+            )
+
         message = ChatMessage(**message_params)
+        message.param.watch(self._on_edit_message, "edited")
         return message
 
     def _upsert_message(
