@@ -1,4 +1,4 @@
-import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import type {EventCallback} from "@bokehjs/model"
@@ -7,6 +7,24 @@ import {Column as BkColumn, ColumnView as BkColumnView} from "@bokehjs/models/la
 export class ScrollButtonClick extends ModelEvent {
   static {
     this.prototype.event_name = "scroll_button_click"
+  }
+}
+
+@server_event("scroll_to")
+export class ScrollToEvent extends ModelEvent {
+  constructor(readonly model: ReactiveESM, readonly data: any) {
+    super()
+    this.index = index
+    this.origin = model
+  }
+
+  protected override get event_values(): Attrs {
+    return {model: this.origin, index: this.index}
+  }
+
+  static overridefrom_values(values: object) {
+    const {model, index} = values as {model: ReactiveESM, index: any}
+    return new ScrollToEvent(model, index)
   }
 }
 
@@ -19,20 +37,19 @@ export class ColumnView extends BkColumnView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {children, scroll_position, scroll_index, scroll_button_threshold} = this.model.properties
+    const {children, scroll_position, scroll_button_threshold} = this.model.properties
 
     this.on_change(children, () => this.trigger_auto_scroll())
     this.on_change(scroll_position, () => this.scroll_to_position())
-    this.on_change(scroll_index, () => this.scroll_to_index())
     this.on_change(scroll_button_threshold, () => this.toggle_scroll_button())
+    this.model.on_event(ScrollToEvent, (event: ScrollToEvent) => this.scroll_to_index(event.index))
   }
 
   get distance_from_latest(): number {
     return this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight
   }
 
-  scroll_to_index(): void {
-    const index = this.model.scroll_index
+  scroll_to_index(index: number): void {
     if (index === null) {
       return
     }

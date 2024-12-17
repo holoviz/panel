@@ -238,7 +238,7 @@ def test_column_scroll_position_param_updated(page):
     expect(column).to_have_js_property('scrollTop', 175)
 
 
-def test_column_scroll_index(page):
+def test_column_scroll_to(page):
     col = Column(
         *list(range(100)),
         height=300,
@@ -255,14 +255,13 @@ def test_column_scroll_index(page):
     expect(column_el).to_have_js_property('scrollTop', 0)
 
     # scroll to 50
-    col.scroll_index = 50
+    col.scroll_to(50)
     expect(column_el).to_have_js_property('scrollTop', 1362)
-    assert col.scroll_index is None
 
     # scroll away using mouse wheel
     column_el.evaluate('(el) => el.scrollTo({top: 1000})')
     expect(column_el).to_have_js_property('scrollTop', 1000)
 
     # scroll to 50 again
-    col.scroll_index = 50
+    col.scroll_to(50)
     expect(column_el).to_have_js_property('scrollTop', 1362)

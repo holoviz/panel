@@ -18,7 +18,7 @@ from param.parameterized import iscoroutinefunction, resolve_ref
 from ..io.document import freeze_doc
 from ..io.model import hold
 from ..io.resources import CDN_DIST
-from ..models import Column as PnColumn
+from ..models import Column as PnColumn, ScrollToEvent
 from ..reactive import Reactive
 from ..util import param_name, param_reprs, param_watchers
 from ..viewable import Children
@@ -939,12 +939,6 @@ class Column(ListPanel):
         will update the scroll position of the Column. Setting to
         0 will scroll to the top.""")
 
-    scroll_index = param.Integer(default=None, bounds=(0, None), doc="""
-        The index of the object to scroll to. If set the Column will
-        scroll to the object at the specified index and will reset
-        back to None after scrolling.""",
-        allow_None=True)
-
     view_latest = param.Boolean(default=False, doc="""
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
@@ -972,6 +966,18 @@ class Column(ListPanel):
             bool(self.scroll_button_threshold) or
             self.view_latest
         )
+
+    def scroll_to(self, index: int):
+        """
+        Scrolls to the child at the provided index.
+
+        Arguments
+        ---------
+        index: int
+            Index of the child object to scroll to.
+        """
+        self._send_event(ScrollToEvent, index=index)
+
 
     @param.depends("scroll_index", watch=True)
     def _reset_scroll_index(self):
