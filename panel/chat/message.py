@@ -597,7 +597,7 @@ class ChatMessage(Pane):
         old = self._object_panel
         self._object_panel = new = self._create_panel(self.object, old=old)
         if old is not new:
-            self._center_row[0] = new
+            self._placeholder.update(new)
         self._update_chat_copy_icon()
         self._update_edit_widgets()
 
