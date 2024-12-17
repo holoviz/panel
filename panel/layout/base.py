@@ -17,7 +17,7 @@ from param.parameterized import iscoroutinefunction, resolve_ref
 
 from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
-from ..models import Column as PnColumn, ScrollToEvent
+from ..models.layout import Column as PnColumn, ScrollToEvent
 from ..reactive import Reactive
 from ..util import param_name, param_reprs
 from ..viewable import Children
