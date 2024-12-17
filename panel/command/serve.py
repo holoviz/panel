@@ -570,19 +570,19 @@ class Serve(_BkServe):
             try:
                 with add_sys_path('./'):
                     plugin_module = importlib.import_module(plugin)
-            except ModuleNotFoundError:
+            except ModuleNotFoundError as e:
                 raise Exception(
                     f'Specified plugin module {plugin!r} could not be found. '
                     'Ensure the module exists and is in the right path. '
-                )
+                ) from e
             try:
-                routes = getattr(plugin_module, 'ROUTES')
-            except AttributeError:
+                routes = plugin_module.ROUTES
+            except AttributeError as e:
                 raise Exception(
                     f'The plugin module {plugin!r} does not declare '
                     'a ROUTES variable. Ensure that the module provides '
                     'a list of ROUTES to serve.'
-                )
+                ) from e
             patterns.extend(routes)
 
         if args.oauth_provider:
