@@ -17,7 +17,7 @@ from param.parameterized import iscoroutinefunction, resolve_ref
 
 from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
-from ..models import Column as PnColumn
+from ..models.layout import Column as PnColumn, ScrollToEvent
 from ..reactive import Reactive
 from ..util import param_name, param_reprs
 from ..viewable import Children
@@ -966,6 +966,17 @@ class Column(ListPanel):
             bool(self.scroll_button_threshold) or
             self.view_latest
         )
+
+    def scroll_to(self, index: int):
+        """
+        Scrolls to the child at the provided index.
+
+        Arguments
+        ---------
+        index: int
+            Index of the child object to scroll to.
+        """
+        self._send_event(ScrollToEvent, index=index)
 
 
 class WidgetBox(ListPanel):

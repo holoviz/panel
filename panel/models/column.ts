@@ -1,12 +1,31 @@
-import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
+import type {Attrs} from "@bokehjs/core/types"
 import type {EventCallback} from "@bokehjs/model"
 import {Column as BkColumn, ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
 
 export class ScrollButtonClick extends ModelEvent {
   static {
     this.prototype.event_name = "scroll_button_click"
+  }
+}
+
+@server_event("scroll_to")
+export class ScrollToEvent extends ModelEvent {
+  constructor(readonly model: Column, readonly index: any) {
+    super()
+    this.index = index
+    this.origin = model
+  }
+
+  protected override get event_values(): Attrs {
+    return {model: this.origin, index: this.index}
+  }
+
+  static override from_values(values: object) {
+    const {model, index} = values as {model: Column, index: any}
+    return new ScrollToEvent(model, index)
   }
 }
 
@@ -24,10 +43,38 @@ export class ColumnView extends BkColumnView {
     this.on_change(children, () => this.trigger_auto_scroll())
     this.on_change(scroll_position, () => this.scroll_to_position())
     this.on_change(scroll_button_threshold, () => this.toggle_scroll_button())
+    this.model.on_event(ScrollToEvent, (event: ScrollToEvent) => this.scroll_to_index(event.index))
   }
 
   get distance_from_latest(): number {
     return this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight
+  }
+
+  scroll_to_index(index: number): void {
+    if (index === null) {
+      return
+    }
+
+    if (index >= this.model.children.length) {
+      console.warn(`Invalid scroll index: ${index}`)
+      return
+    }
+
+    // Get the child view at the specified index
+    const childView = this.child_views[index]
+    if (!childView) {
+      console.warn(`Child view not found for index: ${index}`)
+      return
+    }
+
+    // Get the top position of the child element relative to the column
+    const childEl = childView.el
+    const childRect = childEl.getBoundingClientRect()
+    const columnRect = this.el.getBoundingClientRect()
+    const relativeTop = childRect.top - columnRect.top + this.el.scrollTop
+
+    // Scroll to the child's position
+    this.model.scroll_position = Math.round(relativeTop)
   }
 
   scroll_to_position(): void {
@@ -106,6 +153,7 @@ export namespace Column {
   export type Attrs = p.AttrsOf<Props>
   export type Props = BkColumn.Props & {
     scroll_position: p.Property<number>
+    scroll_index: p.Property<number | null>
     auto_scroll_limit: p.Property<number>
     scroll_button_threshold: p.Property<number>
     view_latest: p.Property<boolean>
@@ -126,8 +174,9 @@ export class Column extends BkColumn {
   static {
     this.prototype.default_view = ColumnView
 
-    this.define<Column.Props>(({Int, Bool}) => ({
+    this.define<Column.Props>(({Int, Bool, Nullable}) => ({
       scroll_position: [Int, 0],
+      scroll_index: [Nullable(Int), null],
       auto_scroll_limit: [Int, 0],
       scroll_button_threshold: [Int, 0],
       view_latest: [Bool, false],
