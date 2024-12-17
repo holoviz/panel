@@ -34,6 +34,7 @@ from ..util import to_async_gen
 from ..viewable import Children
 from ..widgets import Widget
 from ..widgets.button import Button
+from ._param import CallbackException
 from .icon import ChatReactionIcons
 from .message import ChatMessage
 from .step import ChatStep
@@ -100,13 +101,16 @@ class ChatFeed(ListPanel):
         the previous message value `contents`, the previous `user` name,
         and the component `instance`.""")
 
-    callback_exception = param.Selector(
-        default="summary", objects=["raise", "summary", "verbose", "ignore"], doc="""
+    callback_exception = CallbackException(
+        default="summary", doc="""
         How to handle exceptions raised by the callback.
         If "raise", the exception will be raised.
         If "summary", a summary will be sent to the chat feed.
-        If "verbose", the full traceback will be sent to the chat feed.
+        If "verbose" or "traceback", the full traceback will be sent to the chat feed.
         If "ignore", the exception will be ignored.
+        If a callable is provided, the signature must contain the
+        `exception` and `instance` arguments and it
+        will be called with the exception.
         """)
 
     callback_user = param.String(default="Assistant", doc="""
@@ -574,13 +578,15 @@ class ChatFeed(ListPanel):
             self._callback_state = CallbackState.STOPPED
         except Exception as e:
             send_kwargs: dict[str, Any] = dict(user="Exception", respond=False)
-            if self.callback_exception == "summary":
+            if callable(self.callback_exception):
+                self.callback_exception(e, self)
+            elif self.callback_exception == "summary":
                 self.send(
                     f"Encountered `{e!r}`. "
                     f"Set `callback_exception='verbose'` to see the full traceback.",
                     **send_kwargs
                 )
-            elif self.callback_exception == "verbose":
+            elif self.callback_exception in ("verbose", "traceback"):
                 self.send(f"```python\n{traceback.format_exc()}\n```", **send_kwargs)
             elif self.callback_exception == "ignore":
                 return
