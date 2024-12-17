@@ -1,6 +1,7 @@
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
+import type {Attrs} from "@bokehjs/core/types"
 import type {EventCallback} from "@bokehjs/model"
 import {Column as BkColumn, ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
 
@@ -12,7 +13,7 @@ export class ScrollButtonClick extends ModelEvent {
 
 @server_event("scroll_to")
 export class ScrollToEvent extends ModelEvent {
-  constructor(readonly model: ReactiveESM, readonly data: any) {
+  constructor(readonly model: Column, readonly index: any) {
     super()
     this.index = index
     this.origin = model
@@ -22,8 +23,8 @@ export class ScrollToEvent extends ModelEvent {
     return {model: this.origin, index: this.index}
   }
 
-  static overridefrom_values(values: object) {
-    const {model, index} = values as {model: ReactiveESM, index: any}
+  static override from_values(values: object) {
+    const {model, index} = values as {model: Column, index: any}
     return new ScrollToEvent(model, index)
   }
 }
