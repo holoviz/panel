@@ -196,7 +196,6 @@ class NotificationArea(NotificationAreaBase):
         })
       """,
       "notifications": """
-        let to_render = []
         for (notification of data.notifications) {
           if (notification._destroyed || notification._rendered) {
             return
