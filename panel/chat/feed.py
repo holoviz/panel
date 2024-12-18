@@ -164,7 +164,11 @@ class ChatFeed(ListPanel):
         The text to display next to the placeholder icon.""")
 
     placeholder_params = param.Dict(default={
-        "user": " ", "reaction_icons": {}, "show_copy_icon": False, "show_timestamp": False
+        "user": " ",
+        "reaction_icons": {},
+        "show_copy_icon": False,
+        "show_timestamp": False,
+        "show_edit_icon": False
     }, doc="""
         Params to pass to the placeholder ChatMessage, like `reaction_icons`,
         `timestamp_format`, `show_avatar`, `show_user`, `show_timestamp`.
@@ -425,7 +429,7 @@ class ChatFeed(ListPanel):
             user = message_params.get("user", "")
             message_params["show_edit_icon"] = (
                 bool(self.edit_callback) and
-                user.lower() not in (self.callback_user.lower(), "help", " ")
+                user.lower() not in (self.callback_user.lower(), "help")
             )
 
         message = ChatMessage(**message_params)
