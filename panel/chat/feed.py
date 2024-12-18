@@ -425,7 +425,7 @@ class ChatFeed(ListPanel):
             user = message_params.get("user", "")
             message_params["show_edit_icon"] = (
                 bool(self.edit_callback) and
-                user.lower() not in (self.callback_user.lower(), "help")
+                user.lower() not in (self.callback_user.lower(), "help", " ")
             )
 
         message = ChatMessage(**message_params)
