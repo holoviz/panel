@@ -740,5 +740,5 @@ class ChatInterface(ChatFeed):
             # so only set to the default when not a ChatMessage
             user = user or self.user
             avatar = avatar or self.avatar
-        message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user)
+        message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user and message_params.get("edit_callback"))
         return super().stream(value, user=user, avatar=avatar, message=message, replace=replace, **message_params)
