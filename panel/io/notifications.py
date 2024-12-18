@@ -214,9 +214,7 @@ class NotificationArea(NotificationAreaBase):
           }
           let toast = state.toaster.open(config);
           function destroy() {
-            if (state.current !== notification) {
-              notification._destroyed = true;
-            }
+            notification._destroyed = true;
           }
           notification._rendered = true
           toast.on('dismiss', destroy)
