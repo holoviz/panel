@@ -85,7 +85,7 @@
   width: fit-content;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: left;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -146,4 +146,20 @@
   /* since 1.25em, adjust line-height */
   font-size: 1.25em;
   line-height: 0.9em;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+p {
+  overflow-wrap: break-word;
+}
+
+code {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
