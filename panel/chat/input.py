@@ -71,6 +71,9 @@ class ChatAreaInput(_PnTextAreaInput):
         Can only be set during initialization.""",
     )
 
+    max_length = param.Integer(default=50000, doc="""
+        Max count of characters in the input field.""")
+
     _widget_type: ClassVar[type[Model]] = _bkChatAreaInput
 
     _rename: ClassVar[Mapping[str, str | None]] = {
