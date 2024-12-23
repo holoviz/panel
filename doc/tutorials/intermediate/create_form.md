@@ -1,6 +1,6 @@
-# Build a Todo App with HoloViz Panel
+# Create a Form with HoloViz Panel
 
-Welcome to the "Build a Form" tutorial! In this guide, we will create an interactive and fully functional *form* using HoloViz Panel. By the end of this tutorial, you'll have built a form with validation that captures user input and processes it effectively. This tutorial adopts the `param.Parameterized` approach to ensure the form is extensible and maintainable.
+Welcome to the "Create a Form" tutorial! In this guide, we will create an interactive and fully functional *form* using HoloViz Panel. By the end of this tutorial, you'll have built a form with validation that captures user input and processes it effectively. This tutorial adopts the `param.Parameterized` approach to ensure the form is extensible and maintainable.
 
 <iframe src="https://panel-org-create-form.hf.space" frameborder="0" style="width: 100%;height:500px"></iframe>
 
@@ -78,7 +78,7 @@ class FormState(param.Parameterized):
         self.validation_message = "**Error**: " + " ".join(errors.values())
 
     def _to_dict(self):
-        return {"name": self.name, "email": None, "message": self.message}
+        return {"name": self.name, "email": self.email, "message": self.message}
 
     def _reset_to_defaults(self):
         self.param.update(name="", email="", message="")
@@ -209,7 +209,7 @@ class FormState(param.Parameterized):
         self.validation_message = "**Error**: " + " ".join(errors.values())
 
     def _to_dict(self):
-        return {"name": self.name, "email": "", "message": self.message}
+        return {"name": self.name, "email": self.email, "message": self.message}
 
     def _reset_to_defaults(self):
         self.param.update(name="", email="", message="")
