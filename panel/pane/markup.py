@@ -345,6 +345,10 @@ class Markdown(HTMLBasePane):
     >>> Markdown("# This is a header")
     """
 
+    break_as_new = param.Boolean(default=True, doc="""
+        Whether line breaks are rendered as new lines. Ineffective (False)
+        if renderer is set to 'myst'.""")
+
     dedent = param.Boolean(default=True, doc="""
         Whether to dedent common whitespace across all lines.""")
 
@@ -371,6 +375,7 @@ class Markdown(HTMLBasePane):
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
+        'break_as_new': None,
         'dedent': None, 'disable_math': None, 'extensions': None,
         'plugins': None, 'renderer': None, 'renderer_options': None
     }
@@ -398,7 +403,7 @@ class Markdown(HTMLBasePane):
 
     @classmethod
     @functools.cache
-    def _get_parser(cls, renderer, plugins, **renderer_options):
+    def _get_parser(cls, renderer, plugins, breaks_as_new, **renderer_options):
         if renderer == 'markdown':
             return None
         from markdown_it import MarkdownIt
@@ -416,7 +421,7 @@ class Markdown(HTMLBasePane):
                 return token
 
         if renderer == 'markdown-it':
-            if "breaks" not in renderer_options:
+            if breaks_as_new and "breaks" not in renderer_options:
                 renderer_options["breaks"] = True
 
             parser = MarkdownIt(
@@ -458,15 +463,17 @@ class Markdown(HTMLBasePane):
             obj = textwrap.dedent(obj)
 
         if self.renderer == 'markdown':
+            if self.break_as_new:
+                extensions = self.extensions + ['nl2br']
             html = markdown.markdown(
                 obj,
-                extensions=self.extensions,
+                extensions=extensions,
                 output_format='xhtml',
                 **self.renderer_options
             )
         else:
             parser = self._get_parser(
-                self.renderer, tuple(self.plugins), **self.renderer_options
+                self.renderer, tuple(self.plugins), self.break_as_new, **self.renderer_options
             )
             try:
                 html = parser.render(obj)
