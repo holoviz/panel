@@ -403,7 +403,7 @@ class Markdown(HTMLBasePane):
 
     @classmethod
     @functools.cache
-    def _get_parser(cls, renderer, plugins, breaks_as_new, **renderer_options):
+    def _get_parser(cls, renderer, plugins, break_as_new, **renderer_options):
         if renderer == 'markdown':
             return None
         from markdown_it import MarkdownIt
@@ -421,7 +421,7 @@ class Markdown(HTMLBasePane):
                 return token
 
         if renderer == 'markdown-it':
-            if breaks_as_new and "breaks" not in renderer_options:
+            if break_as_new and "breaks" not in renderer_options:
                 renderer_options["breaks"] = True
 
             parser = MarkdownIt(
