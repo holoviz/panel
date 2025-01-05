@@ -54,6 +54,7 @@ def decode_response_body(response):
         body = codecs.decode(response.body, 'ascii')
     except Exception:
         body = codecs.decode(response.body, 'utf-8')
+    body = re.sub("\'", '\\"', body)
     body = re.sub('"', '\"', body)
     body = re.sub("'", '"', body)
     body = json.loads(body)
@@ -450,10 +451,17 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             log.warning(f"{provider} OAuth provider failed to fully "
                         f"authenticate returning the following response:"
                         f"{body}.")
+        if hasattr(body, "get"):
+            log_message = body.get('error_description', str(body))
+            reason = body.get('error', 'Unknown error')
+        else:
+            log_message = str(response)
+            reason = 'Unknown Error'
+
         raise HTTPError(
             status,
-            body.get('error_description', str(body)),
-            reason=body.get('error', 'Unknown error')
+            log_message=log_message,
+            reason=reason
         )
 
     def write_error(self, status_code, **kwargs):

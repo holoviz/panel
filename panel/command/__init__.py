@@ -91,7 +91,7 @@ def main(args: list[str] | None = None):
             try:
                 ret = parsed_args.invoke(parsed_args)
             except Exception as e:
-                if config.dev:
+                if hasattr(config, "dev") and config.dev:
                     raise e
                 die("ERROR: " + str(e))
         else:
