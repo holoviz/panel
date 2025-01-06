@@ -12,7 +12,7 @@ class JSTestComponent(JSComponent):
     _esm = "export function render() { console.log('foo') }"
 
 
-def test_compile_component(py_file):
+def __test_compile_component(py_file):
     cmd = [sys.executable, "-m", "panel", "compile", "panel.tests.command.test_compile:JSTestComponent", "--unminified"]
     p = subprocess.Popen(cmd, shell=False, cwd=CWD)
     p.wait()

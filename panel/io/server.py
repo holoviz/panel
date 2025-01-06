@@ -119,6 +119,11 @@ def async_execute(func: Callable[..., None]) -> None:
     is propagated from function to partial wrapping it.
     """
     if not state.curdoc or not state.curdoc.session_context:
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         ioloop = IOLoop.current()
         event_loop = ioloop.asyncio_loop # type: ignore
         wrapper = state._handle_exception_wrapper(func)
