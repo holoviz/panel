@@ -24,7 +24,9 @@ from panel.pane import (
 from panel.param import (
     JSONInit, Param, ParamFunction, ParamMethod, Skip,
 )
-from panel.tests.util import async_wait_until, mpl_available, mpl_figure
+from panel.tests.util import (
+    async_wait_until, mpl_available, mpl_figure, wait_until,
+)
 from panel.widgets import (
     AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
     EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
@@ -1776,7 +1778,7 @@ def test_param_function_recursive_update_multiple(document, comm):
     assert layout.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
-async def test_param_generator(document, comm):
+def test_param_generator(document, comm):
     checkbox = Checkbox(value=False)
 
     def function(value):
@@ -1786,14 +1788,14 @@ async def test_param_generator(document, comm):
 
     root = pane.get_root(document, comm)
 
-    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
 
     checkbox.value = True
 
-    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
-async def test_param_generator_append(document, comm):
+def test_param_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
     def function(value):
@@ -1804,14 +1806,14 @@ async def test_param_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    await async_wait_until(lambda: len(root.children) == 2)
+    wait_until(lambda: len(root.children) == 2)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
     assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
     checkbox.value = True
 
-    await async_wait_until(lambda: len(root.children) == 2)
-    await async_wait_until(lambda: (
+    wait_until(lambda: len(root.children) == 2)
+    wait_until(lambda: (
         (root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n') and
         (root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n')
     ))
