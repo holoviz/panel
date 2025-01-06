@@ -111,6 +111,8 @@ def _server_url(url: str, port: int) -> str:
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
+_tasks = set()
+
 def async_execute(func: Callable[..., None]) -> None:
     """
     Wrap async event loop scheduling to ensure that with_lock flag
@@ -121,7 +123,9 @@ def async_execute(func: Callable[..., None]) -> None:
         event_loop = ioloop.asyncio_loop # type: ignore
         wrapper = state._handle_exception_wrapper(func)
         if event_loop.is_running():
-            ioloop.add_callback(wrapper)
+            task = asyncio.ensure_future(wrapper())
+            _tasks.add(task)
+            task.add_done_callback(_tasks.discard)
             return
         event_loop = asyncio.new_event_loop()
         try:
