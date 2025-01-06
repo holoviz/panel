@@ -12,6 +12,7 @@ import os
 import pathlib
 import signal
 import sys
+import threading
 import uuid
 
 from collections.abc import Callable, Mapping
@@ -126,6 +127,8 @@ def async_execute(func: Callable[..., None]) -> None:
             asyncio.set_event_loop(loop)
         if loop in IOLoop._ioloop_for_asyncio:
             ioloop = IOLoop._ioloop_for_asyncio[loop]
+        elif threading.current_thread() is not threading.main_thread():
+            ioloop = IOLoop.current()
         else:
             ioloop = None
         wrapper = state._handle_exception_wrapper(func)

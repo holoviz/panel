@@ -44,7 +44,7 @@ class TestChatInterface:
 
     @pytest.mark.internet
     @pytest.mark.parametrize("type_", [bytes, BytesIO])
-    async def test_init_avatar_bytes(self, type_, chat_interface):
+    def test_init_avatar_bytes(self, type_, chat_interface):
         with requests.get("https://panel.holoviz.org/_static/logo_horizontal.png") as resp:
             chat_interface.avatar = type_(resp.content)
         assert isinstance(chat_interface.avatar, type_)
