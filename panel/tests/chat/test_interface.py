@@ -85,7 +85,7 @@ class TestChatInterface:
         assert chat_interface.active == 1
         assert isinstance(chat_interface.active_widget, TextInput)
 
-    def test_click_send(self, chat_interface: ChatInterface):
+    async def test_click_send(self, chat_interface: ChatInterface):
         chat_interface.widgets = [TextAreaInput()]
         chat_interface.active_widget.value = "Message"
         # since it's TextAreaInput and NOT TextInput, need to manually send
@@ -93,7 +93,7 @@ class TestChatInterface:
         chat_interface._click_send(None)
         assert len(chat_interface.objects) == 1
 
-    def test_click_send_with_no_value_input(self, chat_interface: ChatInterface):
+    async def test_click_send_with_no_value_input(self, chat_interface: ChatInterface):
         chat_interface.widgets = [RadioButtonGroup(options=["A", "B"])]
         chat_interface.active_widget.value = "A"
         chat_interface._click_send(None)
@@ -177,14 +177,14 @@ class TestChatInterface:
         await async_wait_until(lambda: not chat_interface._buttons["stop"].visible)
 
     @pytest.mark.parametrize("widget", [TextInput(), TextAreaInput()])
-    def test_auto_send_types(self, chat_interface: ChatInterface, widget):
+    async def test_auto_send_types(self, chat_interface: ChatInterface, widget):
         chat_interface.auto_send_types = [TextAreaInput]
         chat_interface.widgets = [widget]
         chat_interface.active_widget.value = "Message"
         assert len(chat_interface.objects) == 1
         assert chat_interface.objects[0].object == "Message"
 
-    def test_click_undo(self, chat_interface):
+    async def test_click_undo(self, chat_interface):
         chat_interface.user = "User"
         chat_interface.send("Message 1")
         chat_interface.send("Message 2")
@@ -202,7 +202,7 @@ class TestChatInterface:
         assert chat_interface.objects[1].object == "Message 2"
         assert chat_interface.objects[2].object == "Message 3"
 
-    def test_click_clear(self, chat_interface):
+    async def test_click_clear(self, chat_interface):
         chat_interface.send("Message 1")
         chat_interface.send("Message 2")
         chat_interface.send("Message 3")
@@ -211,7 +211,7 @@ class TestChatInterface:
         assert len(chat_interface.objects) == 0
         assert chat_interface._button_data["clear"].objects == expected
 
-    def test_click_rerun(self, chat_interface):
+    async def test_click_rerun(self, chat_interface):
         self.count = 0
 
         def callback(contents, user, instance):
@@ -220,12 +220,12 @@ class TestChatInterface:
 
         chat_interface.callback = callback
         chat_interface.send("Message 1")
-        wait_until(lambda: len(chat_interface.objects) >= 2)
-        wait_until(lambda: chat_interface.objects[1].object == 1)
+        await async_wait_until(lambda: len(chat_interface.objects) >= 2)
+        await async_wait_until(lambda: chat_interface.objects[1].object == 1)
         chat_interface._click_rerun(None)
-        wait_until(lambda: chat_interface.objects[1].object == 2)
+        await async_wait_until(lambda: len(chat_interface.objects) == 2 and chat_interface.objects[1].object == 2)
 
-    def test_click_rerun_null(self, chat_interface):
+    async def test_click_rerun_null(self, chat_interface):
         chat_interface._click_rerun(None)
         assert len(chat_interface.objects) == 0
 
@@ -238,12 +238,12 @@ class TestChatInterface:
         assert isinstance(chat_interface._widgets["TextAreaInput"], TextAreaInput)
         assert isinstance(chat_interface._widgets["FileInput"], FileInput)
 
-    def test_reset_on_send(self, chat_interface):
+    async def test_reset_on_send(self, chat_interface):
         chat_interface.active_widget.value = "Hello"
         chat_interface.reset_on_send = True
         assert chat_interface.active_widget.value == ""
 
-    def test_reset_on_send_text_area(self, chat_interface):
+    async def test_reset_on_send_text_area(self, chat_interface):
         chat_interface.widgets = TextAreaInput()
         chat_interface.reset_on_send = False
         chat_interface.active_widget.value = "Hello"
@@ -275,7 +275,7 @@ class TestChatInterface:
         assert not send_button.visible
 
     @pytest.mark.parametrize("key", ["callback", "post_callback"])
-    def test_button_properties_new_button(self, chat_interface, key):
+    async def test_button_properties_new_button(self, chat_interface, key):
         def callback(instance, event):
             instance.send("Checking if this works", respond=False)
 
@@ -289,7 +289,7 @@ class TestChatInterface:
         check_button.param.trigger("clicks")
         assert chat_interface.objects[0].object == "Checking if this works"
 
-    def test_button_properties_new_callback_and_post_callback(self, chat_interface):
+    async def test_button_properties_new_callback_and_post_callback(self, chat_interface):
         def pre_callback(instance, event):
             instance.send("1", respond=False)
 
@@ -305,7 +305,7 @@ class TestChatInterface:
         assert chat_interface.objects[0].object == "1"
         assert chat_interface.objects[1].object == "2"
 
-    def test_button_properties_default_callback_and_post_callback(self, chat_interface):
+    async def test_button_properties_default_callback_and_post_callback(self, chat_interface):
         def post_callback(instance, event):
             instance.send("This should show", respond=False)
 
@@ -317,7 +317,7 @@ class TestChatInterface:
         clear_button.param.trigger("clicks")
         assert chat_interface.objects[0].object == "This should show"
 
-    def test_button_properties_send_with_callback_no_duplicate(self, chat_interface):
+    async def test_button_properties_send_with_callback_no_duplicate(self, chat_interface):
         def post_callback(instance, event):
             instance.send("This should show", respond=False)
 
@@ -339,7 +339,7 @@ class TestChatInterface:
                 "check": {"icon": "check"},
             }
 
-    def test_button_properties_update_default(self, chat_interface):
+    async def test_button_properties_update_default(self, chat_interface):
         def callback(instance, event):
             instance.send("This comes first", respond=False)
 
@@ -354,7 +354,7 @@ class TestChatInterface:
         assert chat_interface.objects[0].object == "This comes first"
         assert chat_interface.objects[1].object == "This comes second"
 
-    def test_button_properties_update_default_icon(self, chat_interface):
+    async def test_button_properties_update_default_icon(self, chat_interface):
         chat_interface.widgets = TextAreaInput()
         chat_interface.button_properties = {
             "send": {"icon": "check"},
@@ -365,7 +365,7 @@ class TestChatInterface:
         send_button.param.trigger("clicks")
         assert chat_interface.objects[0].object == "Test test"
 
-    def test_button_properties_update_callback_and_post_callback(self, chat_interface):
+    async def test_button_properties_update_callback_and_post_callback(self, chat_interface):
         def pre_callback(instance, event):
             instance.send("1", respond=False)
 
@@ -386,7 +386,7 @@ class TestChatInterface:
     def test_custom_js_no_code(self):
         chat_interface = ChatInterface()
         with pytest.raises(ValueError, match="A 'code' key is required for"):
-            chat_interface.button_properties={
+            chat_interface.button_properties = {
                 "help": {
                     "icon": "help",
                     "js_on_click": {
@@ -395,13 +395,13 @@ class TestChatInterface:
                 },
             }
 
-    def test_manual_user(self):
+    async def test_manual_user(self):
         chat_interface = ChatInterface(user="New User")
         assert chat_interface.user == "New User"
         chat_interface.send("Test")
         assert chat_interface.objects[0].user == "New User"
 
-    def test_stream_chat_message(self, chat_interface):
+    async def test_stream_chat_message(self, chat_interface):
         chat_interface.stream(ChatMessage("testeroo", user="useroo", avatar="avataroo"))
         chat_message = chat_interface.objects[0]
         assert chat_message.user == "useroo"
@@ -459,7 +459,7 @@ class TestChatInterface:
         await asyncio.sleep(0.2)  # give a little time for enabling
         assert not chat_interface.disabled
 
-    def test_prevent_stream_override_message_user_avatar(self, chat_interface):
+    async def test_prevent_stream_override_message_user_avatar(self, chat_interface):
         msg = chat_interface.send("Hello", user="Welcoming User", avatar="👋")
         chat_interface.stream("New Hello", message=msg)
         assert msg.user == "Welcoming User"

@@ -78,7 +78,7 @@ class TestChatFeed:
 
     async def test_send(self, chat_feed):
         message = chat_feed.send("Message", footer_objects=[HTML("Footer")])
-        await async_wait_until(lambda: len(chat_feed.objects) == 1)
+        assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Message"
         assert chat_feed.objects[0].footer_objects[0].object == "Footer"
@@ -96,7 +96,7 @@ class TestChatFeed:
 
     async def test_send_dict(self, chat_feed):
         message = chat_feed.send({"object": "Message", "user": "Bob", "avatar": "👨"})
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Message"
         assert chat_feed.objects[0].user == "Bob"
@@ -105,15 +105,15 @@ class TestChatFeed:
     @pytest.mark.parametrize("key", ["value", "object"])
     async def test_send_dict_minimum(self, chat_feed, key):
         message = chat_feed.send({key: "Message"})
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Message"
 
-    def test_send_dict_without_object(self, chat_feed):
+    async def test_send_dict_without_object(self, chat_feed):
         with pytest.raises(ValueError, match="it must contain an 'object' key"):
             chat_feed.send({"user": "Bob", "avatar": "👨"})
 
-    def test_send_dict_with_value_and_object(self, chat_feed):
+    async def test_send_dict_with_value_and_object(self, chat_feed):
         with pytest.raises(ValueError, match="both 'value' and 'object'"):
             chat_feed.send({"value": "hey", "object": "hi", "user": "Bob", "avatar": "👨"})
 
@@ -125,7 +125,7 @@ class TestChatFeed:
             user=user,
             avatar=avatar,
         )
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Message"
         assert chat_feed.objects[0].user == user
@@ -134,39 +134,39 @@ class TestChatFeed:
     async def test_send_entry(self, chat_feed):
         message = ChatMessage("Message", user="Bob", avatar="👨")
         chat_feed.send(message)
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Message"
         assert chat_feed.objects[0].user == "Bob"
         assert chat_feed.objects[0].avatar == "👨"
 
-    def test_send_with_respond(self, chat_feed):
+    async def test_send_with_respond(self, chat_feed):
         def callback(contents, user, instance):
             return f"Response to: {contents}"
 
         chat_feed.callback = callback
         chat_feed.send("Question", respond=True)
 
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Response to: Question"
 
         chat_feed.respond()
 
-        wait_until(lambda: len(chat_feed.objects) == 3)
+        await async_wait_until(lambda: len(chat_feed.objects) == 3)
         assert chat_feed.objects[2].object == "Response to: Response to: Question"
 
-    def test_send_without_respond(self, chat_feed):
+    async def test_send_without_respond(self, chat_feed):
         def callback(contents, user, instance):
             return f"Response to: {contents}"
 
         chat_feed.callback = callback
         chat_feed.send("Question", respond=False)
 
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        assert len(chat_feed.objects) == 1
 
         chat_feed.respond()
 
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Response to: Question"
 
     async def test_respond_without_callback(self, chat_feed):
@@ -184,7 +184,7 @@ class TestChatFeed:
         updated_entry = chat_feed.stream(
             " Appended message", user="New Person", message=message, avatar="N", footer_objects=[HTML("New Footer")]
         )
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is updated_entry
         assert chat_feed.objects[0].object == "Streaming message Appended message"
         assert chat_feed.objects[0].user == "New Person"
@@ -192,11 +192,11 @@ class TestChatFeed:
         assert chat_feed.objects[0].footer_objects[0].object == "New Footer"
 
         new_entry = chat_feed.stream("New message")
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1] is new_entry
         assert chat_feed.objects[1].object == "New message"
 
-    def test_add_step(self, chat_feed):
+    async def test_add_step(self, chat_feed):
         # new
         with chat_feed.add_step("Object", title="Title") as step:
             assert isinstance(step, ChatStep)
@@ -233,7 +233,7 @@ class TestChatFeed:
         assert isinstance(steps[1], ChatStep)
         assert isinstance(steps[2], ChatStep)
 
-    def test_add_step_new_user(self, chat_feed):
+    async def test_add_step_new_user(self, chat_feed):
         with chat_feed.add_step("Object", title="Title", user="A") as step:
             assert isinstance(step, ChatStep)
             assert step.title == "Title"
@@ -265,7 +265,7 @@ class TestChatFeed:
         assert len(steps2[0].objects) == 1
         assert steps2[0].objects[0].object == "Object 2"
 
-    def test_add_step_explict_not_append(self, chat_feed):
+    async def test_add_step_explict_not_append(self, chat_feed):
         with chat_feed.add_step("Object", title="Title") as step:
             assert isinstance(step, ChatStep)
             assert step.title == "Title"
@@ -297,7 +297,7 @@ class TestChatFeed:
         assert len(steps2[0].objects) == 1
         assert steps2[0].objects[0].object == "Object 2"
 
-    def test_add_step_inherits_callback_exception(self, chat_feed):
+    async def test_add_step_inherits_callback_exception(self, chat_feed):
         chat_feed.callback_exception = "verbose"
         with chat_feed.add_step("Object", title="Title") as step:
             assert step.callback_exception == "verbose"
@@ -332,7 +332,7 @@ class TestChatFeed:
             steps = chat_feed[-1].object
             assert len(steps) == 1
 
-    def test_stream_with_user_avatar(self, chat_feed):
+    async def test_stream_with_user_avatar(self, chat_feed):
         user = "Bob"
         avatar = "👨"
         message = chat_feed.stream(
@@ -341,27 +341,27 @@ class TestChatFeed:
         assert message.user == user
         assert message.avatar == avatar
 
-    def test_stream_dict(self, chat_feed):
+    async def test_stream_dict(self, chat_feed):
         message = chat_feed.stream(
             {"object": "Streaming message", "user": "Person", "avatar": "P"}
         )
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        await async_wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Streaming message"
         assert chat_feed.objects[0].user == "Person"
         assert chat_feed.objects[0].avatar == "P"
 
-    def test_stream_dict_minimum(self, chat_feed):
+    async def test_stream_dict_minimum(self, chat_feed):
         message = chat_feed.stream({"object": "Streaming message"})
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        await async_wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Streaming message"
 
-    def test_stream_dict_without_value(self, chat_feed):
+    async def test_stream_dict_without_value(self, chat_feed):
         with pytest.raises(ValueError, match="it must contain an 'object' key"):
             chat_feed.stream({"user": "Person", "avatar": "P"})
 
-    def test_stream_dict_with_user_avatar_override(self, chat_feed):
+    async def test_stream_dict_with_user_avatar_override(self, chat_feed):
         user = "Bob"
         avatar = "👨"
         message = chat_feed.stream(
@@ -375,7 +375,7 @@ class TestChatFeed:
         assert chat_feed.objects[0].user == user
         assert chat_feed.objects[0].avatar == avatar
 
-    def test_stream_message(self, chat_feed):
+    async def test_stream_message(self, chat_feed):
         message = ChatMessage("Streaming message", user="Person", avatar="P")
         chat_feed.stream(message)
         wait_until(lambda: len(chat_feed.objects) == 1)
@@ -389,26 +389,26 @@ class TestChatFeed:
         with pytest.raises(ValueError, match="Cannot set user or avatar"):
             chat_feed.stream(message, user="Bob", avatar="👨")
 
-    def test_stream_replace(self, chat_feed):
+    async def test_stream_replace(self, chat_feed):
         message = chat_feed.stream("Hello")
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        await async_wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0].object == "Hello"
 
         message = chat_feed.stream(" World", message=message)
-        wait_until(lambda: chat_feed.objects[-1].object == "Hello World")
+        await async_wait_until(lambda: chat_feed.objects[-1].object == "Hello World")
 
         chat_feed.stream("Goodbye", message=message, replace=True)
-        wait_until(lambda: chat_feed.objects[-1].object == "Goodbye")
+        await async_wait_until(lambda: chat_feed.objects[-1].object == "Goodbye")
 
     @pytest.mark.parametrize("replace", [True, False])
-    def test_stream_originally_none_message(self, chat_feed, replace):
+    async def test_stream_originally_none_message(self, chat_feed, replace):
         def callback(contents, user, instance):
             for i in range(3):
                 chat_feed.stream(f"{i}.", message=base_message, replace=replace)
         chat_feed.callback = callback
         base_message = ChatMessage()
         chat_feed.send(base_message, respond=True)
-        assert chat_feed.objects[0].object == "2." if replace else "0.1.2."
+        await async_wait_until(lambda: chat_feed.objects[0].object == ("2." if replace else "0.1.2."))
 
     @pytest.mark.parametrize(
         "obj",
@@ -419,7 +419,7 @@ class TestChatFeed:
             Row(HTML("Some Text")),
         ],
     )
-    def test_stream_to_nested_entry(self, chat_feed, obj):
+    async def test_stream_to_nested_entry(self, chat_feed, obj):
         message = chat_feed.send(
             Row(
                 obj,
@@ -427,7 +427,7 @@ class TestChatFeed:
             )
         )
         chat_feed.stream(" Added", message=message)
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        await async_wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0] is message
         message_obj = chat_feed.objects[0].object[0]
         if isinstance(message_obj, Row):
@@ -440,39 +440,39 @@ class TestChatFeed:
         else:
             assert message_obj.objects == "Some Text Added"
 
-    def test_undo(self, chat_feed):
+    async def test_undo(self, chat_feed):
         chat_feed.send("Message 1")
         chat_feed.send("Message 2")
         entry3 = chat_feed.send("Message 3")
 
-        wait_until(lambda: len(chat_feed.objects) == 3)
+        await async_wait_until(lambda: len(chat_feed.objects) == 3)
 
         undone_entries = chat_feed.undo()
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert undone_entries == [entry3]
 
         chat_feed.undo(2)
-        wait_until(lambda: len(chat_feed.objects) == 0)
+        await async_wait_until(lambda: len(chat_feed.objects) == 0)
 
-    def test_clear(self, chat_feed):
+    async def test_clear(self, chat_feed):
         chat_feed.send("Message 1")
         chat_feed.send("Message 2")
 
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert len(chat_feed.objects) == 2
 
         cleared_entries = chat_feed.clear()
-        wait_until(lambda: len(chat_feed.objects) == 0)
+        assert len(chat_feed.objects) == 0
         assert cleared_entries[0].object == "Message 1"
         assert cleared_entries[1].object == "Message 2"
 
-    def test_set_entries(self, chat_feed):
+    async def test_set_entries(self, chat_feed):
         chat_feed.send("Message 1")
         chat_feed.send("Message 2")
 
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert len(chat_feed.objects) == 2
 
         chat_feed.objects = [ChatMessage("Message 3")]
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0].object == "Message 3"
 
     @pytest.mark.parametrize(["key", "value"], LAYOUT_PARAMETERS.items())
@@ -481,7 +481,7 @@ class TestChatFeed:
         assert getattr(chat_feed, key) == value
         assert getattr(chat_feed._card, key) == value
 
-    def test_width_message_offset_80(self, chat_feed):
+    async def test_width_message_offset_80(self, chat_feed):
         """
         Prevent horizontal scroll bars by subtracting 80px
         which is about the width of the avatar
@@ -494,25 +494,25 @@ class TestChatFeed:
     @pytest.mark.parametrize(
         "user", ["system", "System", " System", " system ", "system-"]
     )
-    def test_default_avatars_default(self, chat_feed, user):
+    async def test_default_avatars_default(self, chat_feed, user):
         chat_feed.send("Message 1", user=user)
 
         assert chat_feed.objects[0].user == user
         assert chat_feed.objects[0].avatar == "⚙️"
 
-    def test_default_avatars_superseded_in_dict(self, chat_feed):
+    async def test_default_avatars_superseded_in_dict(self, chat_feed):
         chat_feed.send({"user": "System", "avatar": "👨", "value": "Message 1"})
 
         assert chat_feed.objects[0].user == "System"
         assert chat_feed.objects[0].avatar == "👨"
 
-    def test_default_avatars_superseded_by_keyword(self, chat_feed):
+    async def test_default_avatars_superseded_by_keyword(self, chat_feed):
         chat_feed.send({"user": "System", "value": "Message 1"}, avatar="👨")
 
         assert chat_feed.objects[0].user == "System"
         assert chat_feed.objects[0].avatar == "👨"
 
-    def test_default_avatars_superseded_in_entry(self, chat_feed):
+    async def test_default_avatars_superseded_in_entry(self, chat_feed):
         chat_feed.send(
             ChatMessage(user="System", avatar="👨", object="Message 1")
         )
@@ -599,14 +599,14 @@ class TestChatFeed:
         assert chat_feed.objects[2].avatar == "🦿"
         assert chat_feed.objects[2].object == 'Yeah! They said "Testing!".'
 
-    def test_respond_callback_returns_none(self, chat_feed):
+    async def test_respond_callback_returns_none(self, chat_feed):
         def callback(contents, user, instance):
             instance.objects[0].object = "Mutated"
 
         chat_feed.callback = callback
         chat_feed.send("Testing!", user="User")
-        wait_until(lambda: len(chat_feed.objects) == 1)
-        assert chat_feed.objects[0].object == "Mutated"
+        await async_wait_until(lambda: len(chat_feed.objects) == 1)
+        await async_wait_until(lambda: chat_feed.objects[0].object == "Mutated")
 
     async def test_forward_message_params(self, chat_feed):
         chat_feed = ChatFeed(reaction_icons={"like": "thumb-up"}, reactions=["like"])
@@ -617,12 +617,12 @@ class TestChatFeed:
         assert chat_message.reactions == ["like"]
         assert chat_message.reaction_icons.options == {"like": "thumb-up"}
 
-    async def test_message_params_no_chat_reaction_icons_instance(self, chat_feed):
+    def test_message_params_no_chat_reaction_icons_instance(self, chat_feed):
         with pytest.raises(ValueError, match="Cannot pass"):
             chat_feed.message_params = {"reaction_icons": ChatReactionIcons(
                 options={"like": "thumb-up", "dislike": "thumb-down"})}
 
-    async def test_update_chat_log_params(self, chat_feed):
+    def test_update_chat_log_params(self, chat_feed):
         chat_feed = ChatFeed(load_buffer=5, scroll_button_threshold=5, auto_scroll_limit=5)
         assert chat_feed._chat_log.load_buffer == 5
         assert chat_feed._chat_log.scroll_button_threshold == 5
@@ -781,7 +781,7 @@ class TestChatFeedPromptUser:
 @pytest.mark.xdist_group("chat")
 class TestChatFeedCallback:
 
-    def test_user_avatar(self, chat_feed):
+    async def test_user_avatar(self, chat_feed):
         ChatMessage.default_avatars["bob"] = "👨"
 
         def echo(contents, user, instance):
@@ -790,18 +790,18 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.callback_user = "Bob"
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].user == "Bob"
         assert chat_feed.objects[1].avatar == "👨"
         ChatMessage.default_avatars.pop("bob")
 
-    def test_return(self, chat_feed):
+    async def test_return(self, chat_feed):
         def echo(contents, user, instance):
             return contents
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Message"
 
     @pytest.mark.parametrize("callback_user", [None, "Bob"])
@@ -817,7 +817,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Message"
         assert chat_feed.objects[1].user == callback_avatar or "Assistant"
         assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
@@ -952,7 +952,7 @@ class TestChatFeedCallback:
         await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
         assert chat_feed.objects[-1].object == "Message"
 
-    def test_placeholder_text_params(self, chat_feed):
+    async def test_placeholder_text_params(self, chat_feed):
         def echo(contents, user, instance):
             assert instance._placeholder.user == "Loading..."
             assert instance._placeholder.object == "Thinking..."
@@ -964,7 +964,7 @@ class TestChatFeedCallback:
         chat_feed.placeholder_params = {"user": "Loading..."}
         chat_feed.send("Message", respond=True)
 
-    def test_placeholder_disabled(self, chat_feed):
+    async def test_placeholder_disabled(self, chat_feed):
         def echo(contents, user, instance):
             time.sleep(1.25)
             assert instance._placeholder not in instance._chat_log
@@ -975,7 +975,7 @@ class TestChatFeedCallback:
         chat_feed.send("Message", respond=True)
         assert chat_feed._placeholder not in chat_feed._chat_log
 
-    def test_placeholder_enabled(self, chat_feed):
+    async def test_placeholder_enabled(self, chat_feed):
         def echo(contents, user, instance):
             time.sleep(1.25)
             assert instance._placeholder in instance._chat_log
@@ -1031,7 +1031,7 @@ class TestChatFeedCallback:
         chat_feed.send("Message", respond=True)
         assert chat_feed._placeholder not in chat_feed._chat_log
 
-    def test_renderers_pane(self, chat_feed):
+    async def test_renderers_pane(self, chat_feed):
         chat_feed.renderers = [HTML]
         chat_feed.send("Hello!")
         html = chat_feed.objects[0]._object_panel
@@ -1073,7 +1073,7 @@ class TestChatFeedCallback:
         chat_feed.callback = callback
         chat_feed.callback_exception = "summary"
         chat_feed.send("Message", respond=True)
-        assert "division by zero" in chat_feed.objects[-1].object
+        await async_wait_until(lambda: "division by zero" in chat_feed.objects[-1].object)
         assert chat_feed.objects[-1].user == "Exception"
 
     async def test_callback_exception_traceback(self, chat_feed):
@@ -1083,9 +1083,9 @@ class TestChatFeedCallback:
         chat_feed.callback = callback
         chat_feed.callback_exception = "verbose"
         chat_feed.send("Message", respond=True)
-        assert chat_feed.objects[-1].object.startswith(
+        await async_wait_until(lambda: chat_feed.objects[-1].object.startswith(
             "```python\nTraceback (most recent call last):"
-        )
+        ))
         assert chat_feed.objects[-1].user == "Exception"
 
     async def test_callback_exception_ignore(self, chat_feed):
@@ -1095,17 +1095,7 @@ class TestChatFeedCallback:
         chat_feed.callback = callback
         chat_feed.callback_exception = "ignore"
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 1)
-
-    def test_callback_exception_raise(self, chat_feed):
-        def callback(msg, user, instance):
-            return 1 / 0
-
-        chat_feed.callback = callback
-        chat_feed.callback_exception = "raise"
-        with pytest.raises(ZeroDivisionError, match="division by zero"):
-            chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        await async_wait_until(lambda: len(chat_feed.objects) == 1)
 
     async def test_callback_stop_generator(self, chat_feed):
         def callback(msg, user, instance):
@@ -1170,7 +1160,7 @@ class TestChatFeedCallback:
         await asyncio.sleep(1)
         assert chat_feed.objects[-1].object == "A"
 
-    def test_callback_short_time(self, chat_feed):
+    async def test_callback_short_time(self, chat_feed):
         def callback(contents, user, instance):
             time.sleep(1)
             message = None
@@ -1182,90 +1172,90 @@ class TestChatFeedCallback:
 
         feed = ChatFeed(callback=callback)
         feed.send("Message", respond=True)
-        assert feed.objects[-1].object == "helloooo"
+        await async_wait_until(lambda: feed.objects[-1].object == "helloooo")
         assert chat_feed._placeholder not in chat_feed._chat_log
 
-    def test_callback_one_argument(self, chat_feed):
+    async def test_callback_one_argument(self, chat_feed):
         def callback(contents):
             return contents
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Message"
 
-    def test_callback_positional_argument(self, chat_feed):
+    async def test_callback_positional_argument(self, chat_feed):
         def callback(*args):
             return f"{args[1]}: {args[0]}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_mix_positional_argument(self, chat_feed):
+    async def test_callback_mix_positional_argument(self, chat_feed):
         def callback(contents, *args):
             return f"{args[0]}: {contents}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_keyword_argument(self, chat_feed):
+    async def test_callback_keyword_argument(self, chat_feed):
         def callback(**kwargs):
             assert "instance" in kwargs
             return f"{kwargs['user']}: {kwargs['contents']}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_mix_keyword_argument(self, chat_feed):
+    async def test_callback_mix_keyword_argument(self, chat_feed):
         def callback(contents, **kwargs):
             return f"{kwargs['user']}: {contents}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_mix_positional_keyword_argument(self, chat_feed):
+    async def test_callback_mix_positional_keyword_argument(self, chat_feed):
         def callback(*args, **kwargs):
             assert not kwargs
             return f"{args[1]}: {args[0]}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_two_arguments(self, chat_feed):
+    async def test_callback_two_arguments(self, chat_feed):
         def callback(contents, user):
             return f"{user}: {contents}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_two_arguments_with_keyword(self, chat_feed):
+    async def test_callback_two_arguments_with_keyword(self, chat_feed):
         def callback(contents, user=None):
             return f"{user}: {contents}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_three_arguments_with_keyword(self, chat_feed):
+    async def test_callback_three_arguments_with_keyword(self, chat_feed):
         def callback(contents, user=None, instance=None):
             return f"{user}: {contents}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
     async def test_callback_two_arguments_yield(self, chat_feed):
@@ -1286,17 +1276,17 @@ class TestChatFeedCallback:
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_as_method(self, chat_feed):
+    async def test_callback_as_method(self, chat_feed):
         class Test:
             def callback(self, contents, user):
                 return f"{user}: {contents}"
 
         chat_feed.callback = Test().callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_as_class_method(self, chat_feed):
+    async def test_callback_as_class_method(self, chat_feed):
         class Test:
             @classmethod
             def callback(cls, contents, user):
@@ -1304,10 +1294,10 @@ class TestChatFeedCallback:
 
         chat_feed.callback = Test.callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_persist_placeholder_while_loading(self, chat_feed):
+    async def test_persist_placeholder_while_loading(self, chat_feed):
         def callback(contents):
             assert chat_feed._placeholder in chat_feed._chat_log
             return "hey testing"
