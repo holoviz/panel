@@ -304,7 +304,7 @@ class TestChatFeed:
             raise ValueError("Testing")
         assert "Traceback" in step.objects[0].object
 
-    def test_add_step_last_messages(self, chat_feed):
+    async def test_add_step_last_messages(self, chat_feed):
         # create steps
         with chat_feed.add_step("Object 1", title="Step 1"):
             assert len(chat_feed) == 1
@@ -838,7 +838,7 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
-        assert chat_feed.objects[1].object == "Message"
+        await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
 
     @pytest.mark.parametrize("callback_user", [None, "Bob"])
     @pytest.mark.parametrize("callback_avatar", [None, "C"])
@@ -886,8 +886,7 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
-        assert len(chat_feed.objects) == 2
-        assert chat_feed.objects[1].object == "Message"
+        await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
 
     async def test_generator(self, chat_feed):
         def echo(contents, user, instance):
@@ -900,8 +899,7 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
-        assert len(chat_feed.objects) == 2
-        assert chat_feed.objects[1].object == "Message"
+        await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
         assert not chat_feed.objects[-1].show_activity_dot
 
     @pytest.mark.parametrize("key", ["value", "object"])
@@ -1323,7 +1321,7 @@ class TestChatFeedCallback:
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeForTransformers:
 
-    def test_defaults(self):
+    async def test_defaults(self):
         chat_feed = ChatFeed()
         chat_feed.send("I'm a user", user="user")
         chat_feed.send("I'm the assistant", user="assistant")
@@ -1338,7 +1336,7 @@ class TestChatFeedSerializeForTransformers:
         chat_feed = ChatFeed()
         assert chat_feed.serialize() == []
 
-    def test_case_insensitivity(self):
+    async def test_case_insensitivity(self):
         chat_feed = ChatFeed()
         chat_feed.send("I'm a user", user="USER")
         chat_feed.send("I'm the assistant", user="ASSISTant")
@@ -1349,7 +1347,7 @@ class TestChatFeedSerializeForTransformers:
             {"role": "assistant", "content": "I'm a bot"},
         ]
 
-    def test_default_role(self):
+    async def test_default_role(self):
         chat_feed = ChatFeed()
         chat_feed.send("I'm a user", user="user")
         chat_feed.send("I'm the assistant", user="assistant")
@@ -1360,7 +1358,7 @@ class TestChatFeedSerializeForTransformers:
             {"role": "system", "content": "I'm a bot"},
         ]
 
-    def test_empty_default_role(self):
+    async def test_empty_default_role(self):
         chat_feed = ChatFeed()
         chat_feed.send("I'm a user", user="user")
         chat_feed.send("I'm the assistant", user="assistant")
@@ -1380,7 +1378,7 @@ class TestChatFeedSerializeForTransformers:
             {"role": "assistant", "content": "I'm the assistant"},
         ]
 
-    def test_custom_serializer(self):
+    async def test_custom_serializer(self):
         def custom_serializer(obj):
             if isinstance(obj, str):
                 return "new string"
@@ -1395,7 +1393,7 @@ class TestChatFeedSerializeForTransformers:
             {"role": "assistant", "content": "0"},
         ]
 
-    def test_custom_serializer_invalid_output(self):
+    async def test_custom_serializer_invalid_output(self):
         def custom_serializer(obj):
             if isinstance(obj, str):
                 return "new string"
@@ -1408,7 +1406,7 @@ class TestChatFeedSerializeForTransformers:
         with pytest.raises(ValueError, match="must return a string"):
             chat_feed.serialize(custom_serializer=custom_serializer)
 
-    def test_serialize_filter_by(self, chat_feed):
+    async def test_serialize_filter_by(self, chat_feed):
         def filter_by_reactions(messages):
             return [obj for obj in messages if "favorite" in obj.reactions]
 
@@ -1418,7 +1416,7 @@ class TestChatFeedSerializeForTransformers:
         assert len(filtered) == 1
         assert filtered[0]["content"] == "yes"
 
-    def test_serialize_exclude_users_default(self):
+    async def test_serialize_exclude_users_default(self):
         def say_hi(contents, user, instance):
             return f"Hi {user}!"
 
@@ -1432,7 +1430,7 @@ class TestChatFeedSerializeForTransformers:
             {"role": "assistant", "content": "Hi User!"}
         ]
 
-    def test_serialize_exclude_users_custom(self):
+    async def test_serialize_exclude_users_custom(self):
         def say_hi(contents, user, instance):
             return f"Hi {user}!"
 
@@ -1446,7 +1444,7 @@ class TestChatFeedSerializeForTransformers:
             {"role": "user", "content": "Hello there!"},
         ]
 
-    def test_serialize_exclude_placeholder(self):
+    async def test_serialize_exclude_placeholder(self):
         def say_hi(contents, user, instance):
             assert len(instance.serialize()) == 1
             return f"Hi {user}!"
@@ -1462,7 +1460,7 @@ class TestChatFeedSerializeForTransformers:
             {"role": "assistant", "content": "Hi User!"}
         ]
 
-    def test_serialize_limit(self):
+    async def test_serialize_limit(self):
         chat_feed = ChatFeed()
         chat_feed.send("I'm a user", user="user")
         chat_feed.send("I'm the assistant", user="assistant")
@@ -1471,7 +1469,7 @@ class TestChatFeedSerializeForTransformers:
             {"role": "assistant", "content": "I'm a bot"},
         ]
 
-    def test_serialize_class(self, chat_feed):
+    async def test_serialize_class(self, chat_feed):
         class Test():
 
             def __repr__(self):
@@ -1480,7 +1478,7 @@ class TestChatFeedSerializeForTransformers:
         chat_feed.send(Test())
         assert chat_feed.serialize() == [{"role": "user", "content": "Test()"}]
 
-    def test_serialize_kwargs(self, chat_feed):
+    async def test_serialize_kwargs(self, chat_feed):
         chat_feed.send("Hello")
         chat_feed.add_step("Hello", "World")
         assert chat_feed.serialize(
@@ -1495,7 +1493,7 @@ class TestChatFeedSerializeForTransformers:
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeBase:
 
-    def test_transformers_format(self):
+    async def test_transformers_format(self):
         chat_feed = ChatFeed()
         chat_feed.send("I'm a user", user="user")
         chat_feed.send("I'm the assistant", user="assistant")
@@ -1506,7 +1504,7 @@ class TestChatFeedSerializeBase:
             {"role": "assistant", "content": "I'm a bot"},
         ]
 
-    def test_invalid(self):
+    async def test_invalid(self):
         with pytest.raises(NotImplementedError, match="is not supported"):
             chat_feed = ChatFeed()
             chat_feed.send("I'm a user", user="user")
@@ -1516,7 +1514,7 @@ class TestChatFeedSerializeBase:
 @pytest.mark.xdist_group("chat")
 class TestChatFeedPostHook:
 
-    def test_return_string(self, chat_feed):
+    async def test_return_string(self, chat_feed):
         def callback(contents, user, instance):
             return f"Echo: {contents}"
 
