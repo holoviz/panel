@@ -123,15 +123,9 @@ def async_execute(func: Callable[..., None]) -> None:
         event_loop = ioloop.asyncio_loop # type: ignore
         wrapper = state._handle_exception_wrapper(func)
         if event_loop.is_running():
-            task = asyncio.ensure_future(wrapper())
-            _tasks.add(task)
-            task.add_done_callback(_tasks.discard)
-            return
-        event_loop = asyncio.new_event_loop()
-        try:
+            ioloop.add_callback(wrapper)
+        else:
             event_loop.run_until_complete(wrapper())
-        finally:
-            event_loop.close()
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
@@ -1013,6 +1007,11 @@ def get_server(
         asyncio.set_event_loop(loop.asyncio_loop)
         opts['io_loop'] = loop
     elif opts.get('num_procs', 1) == 1:
+        try:
+            asyncio.get_event_loop()
+        except Exception:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         opts['io_loop'] = IOLoop.current()
 
     if 'index' not in opts:

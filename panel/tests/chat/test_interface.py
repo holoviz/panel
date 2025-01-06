@@ -44,7 +44,7 @@ class TestChatInterface:
 
     @pytest.mark.internet
     @pytest.mark.parametrize("type_", [bytes, BytesIO])
-    def test_init_avatar_bytes(self, type_, chat_interface):
+    async def test_init_avatar_bytes(self, type_, chat_interface):
         with requests.get("https://panel.holoviz.org/_static/logo_horizontal.png") as resp:
             chat_interface.avatar = type_(resp.content)
         assert isinstance(chat_interface.avatar, type_)
@@ -99,7 +99,7 @@ class TestChatInterface:
         chat_interface._click_send(None)
         assert chat_interface.objects[0].object == "A"
 
-    def test_show_stop_disabled(self, chat_interface: ChatInterface):
+    async def test_show_stop_disabled(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
             yield "A"
             send_button = instance._buttons["send"]
@@ -120,7 +120,7 @@ class TestChatInterface:
         assert not send_button.disabled
         assert not stop_button.visible
 
-    def test_show_stop_for_async(self, chat_interface: ChatInterface):
+    async def test_show_stop_for_async(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
             send_button = instance._buttons["send"]
             stop_button = instance._buttons["stop"]
@@ -132,7 +132,7 @@ class TestChatInterface:
         send_button = chat_interface._input_layout[1]
         assert not send_button.disabled
 
-    def test_show_stop_for_async_generator(self, chat_interface: ChatInterface):
+    async def test_show_stop_for_async_generator(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
             send_button = instance._buttons["send"]
             stop_button = instance._buttons["stop"]
@@ -145,7 +145,7 @@ class TestChatInterface:
         send_button = chat_interface._input_layout[1]
         assert not send_button.disabled
 
-    def test_show_stop_for_sync_generator(self, chat_interface: ChatInterface):
+    async def test_show_stop_for_sync_generator(self, chat_interface: ChatInterface):
         def callback(msg, user, instance):
             send_button = instance._buttons["send"]
             stop_button = instance._buttons["stop"]
@@ -158,7 +158,7 @@ class TestChatInterface:
         send_button = chat_interface._input_layout[1]
         assert not send_button.disabled
 
-    def test_click_stop(self, chat_interface: ChatInterface):
+    async def test_click_stop(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
             send_button = instance._buttons["send"]
             stop_button = instance._buttons["stop"]
@@ -172,9 +172,9 @@ class TestChatInterface:
             chat_interface.send("Message", respond=True)
         except asyncio.exceptions.CancelledError:
             pass
-        wait_until(lambda: not chat_interface._buttons["send"].disabled)
-        wait_until(lambda: chat_interface._buttons["send"].visible)
-        wait_until(lambda: not chat_interface._buttons["stop"].visible)
+        await async_wait_until(lambda: not chat_interface._buttons["send"].disabled)
+        await async_wait_until(lambda: chat_interface._buttons["send"].visible)
+        await async_wait_until(lambda: not chat_interface._buttons["stop"].visible)
 
     @pytest.mark.parametrize("widget", [TextInput(), TextAreaInput()])
     def test_auto_send_types(self, chat_interface: ChatInterface, widget):

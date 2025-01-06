@@ -131,7 +131,7 @@ class TestChatFeed:
         assert chat_feed.objects[0].user == user
         assert chat_feed.objects[0].avatar == avatar
 
-    def test_send_entry(self, chat_feed):
+    async def test_send_entry(self, chat_feed):
         message = ChatMessage("Message", user="Bob", avatar="👨")
         chat_feed.send(message)
         wait_until(lambda: len(chat_feed.objects) == 1)
@@ -169,7 +169,7 @@ class TestChatFeed:
         wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Response to: Question"
 
-    def test_respond_without_callback(self, chat_feed):
+    async def test_respond_without_callback(self, chat_feed):
         chat_feed.respond()  # Should not raise any errors
 
     def test_stream(self, chat_feed):
@@ -520,14 +520,14 @@ class TestChatFeed:
         assert chat_feed.objects[0].user == "System"
         assert chat_feed.objects[0].avatar == "👨"
 
-    def test_default_avatars_lookup(self, chat_feed):
+    async def test_default_avatars_lookup(self, chat_feed):
         def callback(contents, user, instance):
             yield "Message back"
 
         chat_feed.callback = callback
         chat_feed.callback_user = "System"
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].user == "System"
         assert chat_feed.objects[1].avatar == avatar_lookup(
             "System",
@@ -536,7 +536,7 @@ class TestChatFeed:
             default_avatars=DEFAULT_AVATARS
         )
 
-    def test_default_avatars_superseded_by_callback_avatar(self, chat_feed):
+    async def test_default_avatars_superseded_by_callback_avatar(self, chat_feed):
         def callback(contents, user, instance):
             yield "Message back"
 
@@ -544,32 +544,31 @@ class TestChatFeed:
         chat_feed.callback_user = "System"
         chat_feed.callback_avatar = "S"
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].user == "System"
         assert chat_feed.objects[1].avatar == "S"
 
-    def test_default_avatars_message_params(self, chat_feed):
+    async def test_default_avatars_message_params(self, chat_feed):
         chat_feed.message_params["default_avatars"] = {"test1": "1"}
         assert chat_feed.send(value="", user="test1").avatar == "1"
 
         # has default
         assert chat_feed.send(value="", user="system").avatar == "⚙️"
 
-    def test_no_recursion_error(self, chat_feed):
+    async def test_no_recursion_error(self, chat_feed):
         chat_feed.send("Some time ago, there was a recursion error like this")
 
     @pytest.mark.parametrize("callback_avatar", [None, "👨", Image("https://panel.holoviz.org/_static/logo_horizontal.png")])
-    def test_callback_avatar(self, chat_feed, callback_avatar):
+    async def test_callback_avatar(self, chat_feed, callback_avatar):
         def callback(contents, user, instance):
             yield "Message back"
 
         chat_feed.callback_avatar = callback_avatar
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
 
-    @pytest.mark.asyncio
     async def test_chained_response(self, chat_feed):
         async def callback(contents, user, instance):
             if user == "User":
@@ -609,7 +608,7 @@ class TestChatFeed:
         wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0].object == "Mutated"
 
-    def test_forward_message_params(self, chat_feed):
+    async def test_forward_message_params(self, chat_feed):
         chat_feed = ChatFeed(reaction_icons={"like": "thumb-up"}, reactions=["like"])
         chat_feed.send("Hey!")
         chat_message = chat_feed.objects[0]
@@ -618,12 +617,12 @@ class TestChatFeed:
         assert chat_message.reactions == ["like"]
         assert chat_message.reaction_icons.options == {"like": "thumb-up"}
 
-    def test_message_params_no_chat_reaction_icons_instance(self, chat_feed):
+    async def test_message_params_no_chat_reaction_icons_instance(self, chat_feed):
         with pytest.raises(ValueError, match="Cannot pass"):
             chat_feed.message_params = {"reaction_icons": ChatReactionIcons(
                 options={"like": "thumb-up", "dislike": "thumb-down"})}
 
-    def test_update_chat_log_params(self, chat_feed):
+    async def test_update_chat_log_params(self, chat_feed):
         chat_feed = ChatFeed(load_buffer=5, scroll_button_threshold=5, auto_scroll_limit=5)
         assert chat_feed._chat_log.load_buffer == 5
         assert chat_feed._chat_log.scroll_button_threshold == 5
@@ -636,7 +635,7 @@ class TestChatFeed:
         assert chat_feed._chat_log.scroll_button_threshold == 10
         assert chat_feed._chat_log.auto_scroll_limit == 10
 
-    def test_repr(self, chat_feed):
+    async def test_repr(self, chat_feed):
         chat_feed.send("A")
         chat_feed.send("B")
         assert repr(chat_feed) == (
@@ -823,16 +822,15 @@ class TestChatFeedCallback:
         assert chat_feed.objects[1].user == callback_avatar or "Assistant"
         assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
 
-    def test_yield(self, chat_feed):
+    async def test_yield(self, chat_feed):
         def echo(contents, user, instance):
             yield contents
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Message"
 
-    @pytest.mark.asyncio
     async def test_async_return(self, chat_feed):
         async def echo(contents, user, instance):
             return contents
@@ -844,7 +842,7 @@ class TestChatFeedCallback:
 
     @pytest.mark.parametrize("callback_user", [None, "Bob"])
     @pytest.mark.parametrize("callback_avatar", [None, "C"])
-    def test_yield_chat_message(self, chat_feed, callback_user, callback_avatar):
+    async def test_yield_chat_message(self, chat_feed, callback_user, callback_avatar):
         def echo(contents, user, instance):
             message_kwargs = {}
             if callback_user:
@@ -855,14 +853,14 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
-        assert chat_feed.objects[1].object == "Message"
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
         assert chat_feed.objects[1].user == callback_avatar or "Assistant"
         assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
 
     @pytest.mark.parametrize("callback_user", [None, "Bob"])
     @pytest.mark.parametrize("callback_avatar", [None, "C"])
-    def test_yield_chat_message_stream(self, chat_feed, callback_user, callback_avatar):
+    async def test_yield_chat_message_stream(self, chat_feed, callback_user, callback_avatar):
         def echo(contents, user, instance):
             message_kwargs = {}
             if callback_user:
@@ -876,12 +874,11 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
-        assert chat_feed.objects[1].object == "Message"
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
         assert chat_feed.objects[1].user == callback_avatar or "Assistant"
         assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
 
-    @pytest.mark.asyncio
     async def test_async_yield(self, chat_feed):
         async def echo(contents, user, instance):
             yield contents
@@ -892,7 +889,7 @@ class TestChatFeedCallback:
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
 
-    def test_generator(self, chat_feed):
+    async def test_generator(self, chat_feed):
         def echo(contents, user, instance):
             message = ""
             for char in contents:
@@ -902,13 +899,13 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
         assert not chat_feed.objects[-1].show_activity_dot
 
     @pytest.mark.parametrize("key", ["value", "object"])
-    def test_generator_dict(self, chat_feed, key):
+    async def test_generator_dict(self, chat_feed, key):
         def echo(contents, user, instance):
             message = ""
             for char in contents:
@@ -917,11 +914,10 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
-        assert chat_feed.objects[1].object == "Message"
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
         assert chat_feed.objects[-1].object == "Message"
 
-    @pytest.mark.asyncio
     async def test_async_generator(self, chat_feed):
         async def async_gen(contents):
             for char in contents:
@@ -937,10 +933,9 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
-        assert chat_feed.objects[1].object == "Message"
+        await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
         assert not chat_feed.objects[-1].show_activity_dot
 
-    @pytest.mark.asyncio
     @pytest.mark.parametrize("key", ["value", "object"])
     async def test_async_generator_dict(self, chat_feed, key):
         async def async_gen(contents):
@@ -956,7 +951,7 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
-        assert chat_feed.objects[1].object == "Message"
+        await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
         assert chat_feed.objects[-1].object == "Message"
 
     def test_placeholder_text_params(self, chat_feed):
@@ -992,7 +987,7 @@ class TestChatFeedCallback:
         chat_feed.send("Message", respond=True)
         assert chat_feed._placeholder not in chat_feed._chat_log
 
-    def test_placeholder_threshold_under(self, chat_feed):
+    async def test_placeholder_threshold_under(self, chat_feed):
         async def echo(contents, user, instance):
             await asyncio.sleep(0.25)
             assert instance._placeholder not in instance._chat_log
@@ -1003,7 +998,7 @@ class TestChatFeedCallback:
         chat_feed.send("Message", respond=True)
         assert chat_feed._placeholder not in chat_feed._chat_log
 
-    def test_placeholder_threshold_under_generator(self, chat_feed):
+    async def test_placeholder_threshold_under_generator(self, chat_feed):
         async def echo(contents, user, instance):
             assert instance._placeholder not in instance._chat_log
             await asyncio.sleep(0.25)
@@ -1014,7 +1009,7 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
 
-    def test_placeholder_threshold_exceed(self, chat_feed):
+    async def test_placeholder_threshold_exceed(self, chat_feed):
         async def echo(contents, user, instance):
             await asyncio.sleep(0.5)
             assert instance._placeholder in instance._chat_log
@@ -1025,7 +1020,7 @@ class TestChatFeedCallback:
         chat_feed.send("Message", respond=True)
         assert chat_feed._placeholder not in chat_feed._chat_log
 
-    def test_placeholder_threshold_exceed_generator(self, chat_feed):
+    async def test_placeholder_threshold_exceed_generator(self, chat_feed):
         async def echo(contents, user, instance):
             await async_wait_until(lambda: instance._placeholder not in instance._chat_log)
             await asyncio.sleep(0.5)
@@ -1114,7 +1109,7 @@ class TestChatFeedCallback:
             chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 1)
 
-    def test_callback_stop_generator(self, chat_feed):
+    async def test_callback_stop_generator(self, chat_feed):
         def callback(msg, user, instance):
             yield "A"
             assert chat_feed.stop()
@@ -1128,10 +1123,10 @@ class TestChatFeedCallback:
             pass
         # use sleep here instead of wait for because
         # the callback is timed and I want to confirm stop works
-        time.sleep(1)
+        await asyncio.sleep(1)
         assert chat_feed.objects[-1].object == "A"
 
-    def test_callback_stop_async_generator(self, chat_feed):
+    async def test_callback_stop_async_generator(self, chat_feed):
         async def callback(msg, user, instance):
             yield "A"
             assert chat_feed.stop()
@@ -1145,10 +1140,10 @@ class TestChatFeedCallback:
             pass
         # use sleep here instead of wait for because
         # the callback is timed and I want to confirm stop works
-        time.sleep(1)
+        await asyncio.sleep(1)
         assert chat_feed.objects[-1].object == "A"
 
-    def test_callback_stop_function(self, chat_feed):
+    async def test_callback_stop_function(self, chat_feed):
         def callback(msg, user, instance):
             assert chat_feed.stop()
             return "B"
@@ -1160,7 +1155,7 @@ class TestChatFeedCallback:
             pass
         assert chat_feed.objects[-1].object == "Message"
 
-    def test_callback_stop_async_function(self, chat_feed):
+    async def test_callback_stop_async_function(self, chat_feed):
         async def callback(msg, user, instance):
             message = instance.stream("A")
             assert chat_feed.stop()
@@ -1174,7 +1169,7 @@ class TestChatFeedCallback:
             pass
         # use sleep here instead of wait for because
         # the callback is timed and I want to confirm stop works
-        time.sleep(1)
+        await asyncio.sleep(1)
         assert chat_feed.objects[-1].object == "A"
 
     def test_callback_short_time(self, chat_feed):
@@ -1275,22 +1270,22 @@ class TestChatFeedCallback:
         wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_two_arguments_yield(self, chat_feed):
+    async def test_callback_two_arguments_yield(self, chat_feed):
         def callback(contents, user):
             yield f"{user}: {contents}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
-    def test_callback_two_arguments_async_yield(self, chat_feed):
+    async def test_callback_two_arguments_async_yield(self, chat_feed):
         async def callback(contents, user):
             yield f"{user}: {contents}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
     def test_callback_as_method(self, chat_feed):
@@ -1523,7 +1518,7 @@ class TestChatFeedPostHook:
 
     def test_return_string(self, chat_feed):
         def callback(contents, user, instance):
-            yield f"Echo: {contents}"
+            return f"Echo: {contents}"
 
         def append_callback(message, instance):
             logs.append(message.object)
@@ -1535,7 +1530,7 @@ class TestChatFeedPostHook:
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
 
-    def test_yield_string(self, chat_feed):
+    async def test_yield_string(self, chat_feed):
         def callback(contents, user, instance):
             yield f"Echo: {contents}"
 
@@ -1546,10 +1541,10 @@ class TestChatFeedPostHook:
         chat_feed.callback = callback
         chat_feed.post_hook = append_callback
         chat_feed.send("Hello World!")
-        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        await async_wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
 
-    def test_generator(self, chat_feed):
+    async def test_generator(self, chat_feed):
         def callback(contents, user, instance):
             message = "Echo: "
             for char in contents:
@@ -1563,10 +1558,10 @@ class TestChatFeedPostHook:
         chat_feed.callback = callback
         chat_feed.post_hook = append_callback
         chat_feed.send("Hello World!")
-        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        await async_wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
 
-    def test_async_generator(self, chat_feed):
+    async def test_async_generator(self, chat_feed):
         async def callback(contents, user, instance):
             message = "Echo: "
             for char in contents:
@@ -1580,7 +1575,7 @@ class TestChatFeedPostHook:
         chat_feed.callback = callback
         chat_feed.post_hook = append_callback
         chat_feed.send("Hello World!")
-        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        await async_wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
 
     def test_stream(self, chat_feed):
