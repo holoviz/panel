@@ -172,7 +172,7 @@ class TestChatFeed:
     async def test_respond_without_callback(self, chat_feed):
         chat_feed.respond()  # Should not raise any errors
 
-    def test_stream(self, chat_feed):
+    async def test_stream(self, chat_feed):
         message = chat_feed.stream("Streaming message", user="Person", avatar="P", footer_objects=[HTML("Footer")])
         assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is message
@@ -806,7 +806,7 @@ class TestChatFeedCallback:
 
     @pytest.mark.parametrize("callback_user", [None, "Bob"])
     @pytest.mark.parametrize("callback_avatar", [None, "C"])
-    def test_return_chat_message(self, chat_feed, callback_user, callback_avatar):
+    async def test_return_chat_message(self, chat_feed, callback_user, callback_avatar):
         def echo(contents, user, instance):
             message_kwargs = {}
             if callback_user:
@@ -1039,7 +1039,7 @@ class TestChatFeedCallback:
         assert html.object == "Hello!"
         assert html.sizing_mode is None
 
-    def test_renderers_widget(self, chat_feed):
+    async def test_renderers_widget(self, chat_feed):
         chat_feed.renderers = [TextAreaInput]
         chat_feed.send("Hello!")
         area_input = chat_feed[0]._update_object_pane()
@@ -1049,7 +1049,7 @@ class TestChatFeedCallback:
         assert area_input.height == 500
         assert area_input.sizing_mode is None
 
-    def test_renderers_custom_callable(self, chat_feed):
+    async def test_renderers_custom_callable(self, chat_feed):
         def renderer(value):
             return Column(value, LinearGauge(value=int(value), width=100))
 
@@ -1066,7 +1066,7 @@ class TestChatFeedCallback:
         assert gauge.width == 100
         assert gauge.sizing_mode == "fixed"
 
-    def test_callback_exception(self, chat_feed):
+    async def test_callback_exception(self, chat_feed):
         def callback(msg, user, instance):
             return 1 / 0
 
@@ -1076,7 +1076,7 @@ class TestChatFeedCallback:
         assert "division by zero" in chat_feed.objects[-1].object
         assert chat_feed.objects[-1].user == "Exception"
 
-    def test_callback_exception_traceback(self, chat_feed):
+    async def test_callback_exception_traceback(self, chat_feed):
         def callback(msg, user, instance):
             return 1 / 0
 
@@ -1088,7 +1088,7 @@ class TestChatFeedCallback:
         )
         assert chat_feed.objects[-1].user == "Exception"
 
-    def test_callback_exception_ignore(self, chat_feed):
+    async def test_callback_exception_ignore(self, chat_feed):
         def callback(msg, user, instance):
             return 1 / 0
 
@@ -1366,7 +1366,7 @@ class TestChatFeedSerializeForTransformers:
         with pytest.raises(ValueError, match="not found in role_names"):
             chat_feed.serialize(default_role="")
 
-    def test_role_names(self):
+    async def test_role_names(self):
         chat_feed = ChatFeed()
         chat_feed.send("I'm the user", user="Andrew")
         chat_feed.send("I'm another user", user="August")
@@ -1425,10 +1425,10 @@ class TestChatFeedSerializeForTransformers:
             callback=say_hi
         )
         chat_feed.send("Hello there!")
-        assert chat_feed.serialize() == [
+        await async_wait_until(lambda: chat_feed.serialize() == [
             {"role": "user", "content": "Hello there!"},
             {"role": "assistant", "content": "Hi User!"}
-        ]
+        ])
 
     async def test_serialize_exclude_users_custom(self):
         def say_hi(contents, user, instance):
@@ -1439,10 +1439,10 @@ class TestChatFeedSerializeForTransformers:
             callback=say_hi
         )
         chat_feed.send("Hello there!")
-        assert chat_feed.serialize(exclude_users=["assistant"]) == [
+        await async_wait_until(lambda: chat_feed.serialize(exclude_users=["assistant"]) == [
             {"role": "assistant", "content": "This chat feed will respond by saying hi!"},
             {"role": "user", "content": "Hello there!"},
-        ]
+        ])
 
     async def test_serialize_exclude_placeholder(self):
         def say_hi(contents, user, instance):
@@ -1455,19 +1455,19 @@ class TestChatFeedSerializeForTransformers:
         )
 
         chat_feed.send("Hello there!")
-        assert chat_feed.serialize() == [
+        await async_wait_until(lambda: chat_feed.serialize() == [
             {"role": "user", "content": "Hello there!"},
             {"role": "assistant", "content": "Hi User!"}
-        ]
+        ])
 
     async def test_serialize_limit(self):
         chat_feed = ChatFeed()
         chat_feed.send("I'm a user", user="user")
         chat_feed.send("I'm the assistant", user="assistant")
         chat_feed.send("I'm a bot", user="bot")
-        assert chat_feed.serialize(limit=1) == [
+        await async_wait_until(lambda: chat_feed.serialize(limit=1) == [
             {"role": "assistant", "content": "I'm a bot"},
-        ]
+        ])
 
     async def test_serialize_class(self, chat_feed):
         class Test():
@@ -1476,18 +1476,18 @@ class TestChatFeedSerializeForTransformers:
                 return "Test()"
 
         chat_feed.send(Test())
-        assert chat_feed.serialize() == [{"role": "user", "content": "Test()"}]
+        await async_wait_until(lambda: chat_feed.serialize() == [{"role": "user", "content": "Test()"}])
 
     async def test_serialize_kwargs(self, chat_feed):
         chat_feed.send("Hello")
         chat_feed.add_step("Hello", "World")
-        assert chat_feed.serialize(
+        await async_wait_until(lambda: chat_feed.serialize(
             prefix_with_container_label=False,
             prefix_with_viewable_label=False
         ) == [
             {'role': 'user', 'content': 'Hello'},
             {'role': 'assistant', 'content': '((Hello))'}
-        ]
+        ])
 
 
 @pytest.mark.xdist_group("chat")
@@ -1525,7 +1525,7 @@ class TestChatFeedPostHook:
         chat_feed.callback = callback
         chat_feed.post_hook = append_callback
         chat_feed.send("Hello World!")
-        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        await async_wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
 
     async def test_yield_string(self, chat_feed):
@@ -1576,7 +1576,7 @@ class TestChatFeedPostHook:
         await async_wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
 
-    def test_stream(self, chat_feed):
+    async def test_stream(self, chat_feed):
         def callback(contents, user, instance):
             message = instance.stream("Echo: ")
             for char in contents:
@@ -1589,5 +1589,5 @@ class TestChatFeedPostHook:
         chat_feed.callback = callback
         chat_feed.post_hook = append_callback
         chat_feed.send("AB")
-        wait_until(lambda: chat_feed.objects[-1].object == "Echo: AB")
+        await async_wait_until(lambda: chat_feed.objects[-1].object == "Echo: AB")
         assert logs == ["AB", "Echo: ", "Echo: AB"]
