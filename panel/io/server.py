@@ -122,8 +122,12 @@ def async_execute(func: Callable[..., None]) -> None:
         wrapper = state._handle_exception_wrapper(func)
         if event_loop.is_running():
             ioloop.add_callback(wrapper)
-        else:
+            return
+        event_loop = asyncio.new_event_loop()
+        try:
             event_loop.run_until_complete(wrapper())
+        finally:
+            event_loop.close()
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
