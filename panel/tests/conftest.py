@@ -55,11 +55,6 @@ for e in os.environ:
     if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", ):
         os.environ.pop(e, None)
 
-try:
-    asyncio.get_event_loop()
-except (RuntimeError, DeprecationWarning):
-    asyncio.set_event_loop(asyncio.new_event_loop())
-
 @cache
 def internet_available(host="8.8.8.8", port=53, timeout=3):
     """Check if the internet connection is available."""
