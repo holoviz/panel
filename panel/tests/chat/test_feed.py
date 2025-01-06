@@ -76,25 +76,25 @@ class TestChatFeed:
         assert chat_feed._card.header == "Test"
         assert not chat_feed._card.hide_header
 
-    def test_send(self, chat_feed):
+    async def test_send(self, chat_feed):
         message = chat_feed.send("Message", footer_objects=[HTML("Footer")])
-        wait_until(lambda: len(chat_feed.objects) == 1)
+        await async_wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Message"
         assert chat_feed.objects[0].footer_objects[0].object == "Footer"
 
-    def test_link_chat_log_objects(self, chat_feed):
+    async def test_link_chat_log_objects(self, chat_feed):
         chat_feed.send("Message")
         assert chat_feed._chat_log.objects[0] is chat_feed.objects[0]
 
-    def test_send_with_user_avatar(self, chat_feed):
+    async def test_send_with_user_avatar(self, chat_feed):
         user = "Bob"
         avatar = "👨"
         message = chat_feed.send("Message", user=user, avatar=avatar)
         assert message.user == user
         assert message.avatar == avatar
 
-    def test_send_dict(self, chat_feed):
+    async def test_send_dict(self, chat_feed):
         message = chat_feed.send({"object": "Message", "user": "Bob", "avatar": "👨"})
         wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0] is message
@@ -103,7 +103,7 @@ class TestChatFeed:
         assert chat_feed.objects[0].avatar == "👨"
 
     @pytest.mark.parametrize("key", ["value", "object"])
-    def test_send_dict_minimum(self, chat_feed, key):
+    async def test_send_dict_minimum(self, chat_feed, key):
         message = chat_feed.send({key: "Message"})
         wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0] is message
@@ -117,7 +117,7 @@ class TestChatFeed:
         with pytest.raises(ValueError, match="both 'value' and 'object'"):
             chat_feed.send({"value": "hey", "object": "hi", "user": "Bob", "avatar": "👨"})
 
-    def test_send_dict_with_user_avatar_override(self, chat_feed):
+    async def test_send_dict_with_user_avatar_override(self, chat_feed):
         user = "August"
         avatar = "👩"
         message = chat_feed.send(
