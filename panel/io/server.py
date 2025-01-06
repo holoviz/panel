@@ -12,7 +12,6 @@ import os
 import pathlib
 import signal
 import sys
-import threading
 import uuid
 
 from collections.abc import Callable, Mapping
@@ -112,35 +111,19 @@ def _server_url(url: str, port: int) -> str:
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
-_tasks = set()
-
 def async_execute(func: Callable[..., None]) -> None:
     """
     Wrap async event loop scheduling to ensure that with_lock flag
     is propagated from function to partial wrapping it.
     """
     if not state.curdoc or not state.curdoc.session_context:
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        if loop in IOLoop._ioloop_for_asyncio:
-            ioloop = IOLoop._ioloop_for_asyncio[loop]
-        elif threading.current_thread() is not threading.main_thread():
-            ioloop = IOLoop.current()
-        else:
-            ioloop = None
+        ioloop = IOLoop.current()
+        event_loop = ioloop.asyncio_loop # type: ignore
         wrapper = state._handle_exception_wrapper(func)
-        if loop.is_running():
-            if ioloop is None:
-                task = asyncio.ensure_future(wrapper())
-                _tasks.add(task)
-                task.add_done_callback(_tasks.discard)
-            else:
-                ioloop.add_callback(wrapper)
+        if event_loop.is_running():
+            ioloop.add_callback(wrapper)
         else:
-            loop.run_until_complete(wrapper())
+            event_loop.run_until_complete(wrapper())
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
