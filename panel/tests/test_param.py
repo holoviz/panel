@@ -24,9 +24,7 @@ from panel.pane import (
 from panel.param import (
     JSONInit, Param, ParamFunction, ParamMethod, Skip,
 )
-from panel.tests.util import (
-    async_wait_until, mpl_available, mpl_figure, wait_until,
-)
+from panel.tests.util import async_wait_until, mpl_available, mpl_figure
 from panel.widgets import (
     AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
     EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
@@ -1865,7 +1863,7 @@ async def test_param_async_generator_append(document, comm):
 
 
 @pytest.mark.flaky(max_runs=3)
-def test_param_generator_multiple(document, comm):
+async def test_param_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
     def function(value):
@@ -1876,11 +1874,11 @@ def test_param_generator_multiple(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n', timeout=10_000)
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n', timeout=10_000)
 
     checkbox.value = True
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
 
 async def test_param_async_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
