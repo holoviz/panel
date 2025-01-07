@@ -238,13 +238,11 @@ def stop_event():
 
 @pytest.fixture
 def asyncio_loop():
-    try:
-        loop = asyncio.get_event_loop()
-    except (RuntimeError, DeprecationWarning):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(asyncio.new_event_loop())
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(asyncio.new_event_loop())
     yield
     loop.stop()
+    loop.close()
 
 @pytest.fixture
 async def watch_files():
@@ -368,7 +366,7 @@ def markdown_server_session():
 
 
 @pytest.fixture
-def multiple_apps_server_sessions(port):
+def multiple_apps_server_sessions(asyncio_loop, port):
     """Serve multiple apps and yield a factory to allow
     parameterizing the slugs and the titles."""
     servers = []
