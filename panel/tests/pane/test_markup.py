@@ -13,7 +13,7 @@ from panel import config
 from panel.pane import (
     HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
-from panel.tests.util import streamz_available
+from panel.tests.util import not_windows, streamz_available
 
 
 def test_get_markdown_pane_type():
@@ -39,18 +39,22 @@ async def streamz_df():
         await asyncio.sleep(0.1)
     sdf.loop.asyncio_loop.close()
 
+@not_windows
 @streamz_available
 def test_get_streamz_dataframe_pane_type(streamz_df):
     assert PaneBase.get_pane_type(streamz_df) is DataFrame
 
+@not_windows
 @streamz_available
 def test_get_streamz_dataframes_pane_type(streamz_df):
     assert PaneBase.get_pane_type(streamz_df.groupby('y').sum()) is DataFrame
 
+@not_windows
 @streamz_available
 def test_get_streamz_series_pane_type(streamz_df):
     assert PaneBase.get_pane_type(streamz_df.x) is DataFrame
 
+@not_windows
 @streamz_available
 def test_get_streamz_seriess_pane_type(streamz_df):
     assert PaneBase.get_pane_type(streamz_df.groupby('y').sum().x) is DataFrame
@@ -226,6 +230,7 @@ def test_dataframe_pane_supports_escape(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
+@not_windows
 @streamz_available
 def test_dataframe_pane_streamz(streamz_df, document, comm):
     pane = DataFrame(streamz_df)
