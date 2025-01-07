@@ -113,7 +113,7 @@ def test_markdown_indexed(doc_file):
 @pytest.mark.parametrize(
     "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
 )
-def test_markdown_codeblocks(file, tmp_path):
+async def test_markdown_codeblocks(file, tmp_path):
     from markdown_it import MarkdownIt
 
     exceptions = ("await", "pn.serve", "django", "raise", "display(")

@@ -256,7 +256,7 @@ class TestChatMessage:
         assert message.object.objects[0].css_classes == ["custom"]
 
     @mpl_available
-    def test_can_display_any_python_object_that_panel_can_display(self):
+    async def test_can_display_any_python_object_that_panel_can_display(self):
         # For example matplotlib figures
         ChatMessage(object=mpl_figure())
 
