@@ -7,5 +7,5 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--panel-surface-color, #f1f1f1);
+  background-color: var(--panel-secondary-color, #f1f1f1);
 }
