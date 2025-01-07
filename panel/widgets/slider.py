@@ -52,7 +52,7 @@ class _SliderBase(Widget):
         Whether the slider should go from left-to-right ('ltr') or
         right-to-left ('rtl').""")
 
-    name = param.String(default=None, doc="""
+    name = param.String(default=None, constant=False, doc="""
         The name of the widget. Also used as the label of the widget. If not set,
         the widget has no label.""")
 
