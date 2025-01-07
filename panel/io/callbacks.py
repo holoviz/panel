@@ -169,20 +169,16 @@ class PeriodicCallback(param.Parameterized):
             finally:
                 self._updating = False
         self._start_time = time.time()
-        if state._is_pyodide:
-            self._cb = asyncio.create_task(
-                self._async_repeat(self._periodic_callback)
-            )
-        elif state.curdoc and state.curdoc.session_context:
+        if state.curdoc and state.curdoc.session_context and not state._is_pyodide:
             self._doc = state.curdoc
             if state._unblocked(state.curdoc):
                 self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
             else:
                 self._doc.add_next_tick_callback(self.start)
         else:
-            from tornado.ioloop import PeriodicCallback
-            self._cb = PeriodicCallback(lambda: asyncio.create_task(self._periodic_callback()), self.period)
-            self._cb.start()
+            self._cb = asyncio.create_task(
+                self._async_repeat(self._periodic_callback)
+            )
 
     def stop(self):
         """
