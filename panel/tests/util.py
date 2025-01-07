@@ -241,6 +241,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
         except AssertionError as e:
             if timed_out():
                 raise TimeoutError(timeout_msg) from e
+            raise e
         else:
             if result not in (None, True, False):
                 raise ValueError(
