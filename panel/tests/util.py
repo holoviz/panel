@@ -31,6 +31,9 @@ from panel.io.state import state
 # Will begin to fail again when the first rc is released.
 pnv = Version(pn.__version__)
 
+not_osx = pytest.mark.skipif(sys.platform == 'darwin', reason="Sometimes fails on OSX")
+not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
+
 try:
     import holoviews as hv
     hv_version: Version | None = Version(hv.__version__)

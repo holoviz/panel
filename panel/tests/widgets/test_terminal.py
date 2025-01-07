@@ -9,8 +9,7 @@ import pytest
 
 import panel as pn
 
-not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
-not_osx = pytest.mark.skipif(sys.platform == 'darwin', reason="Sometimes fails on OSX")
+from panel.tests.util import not_osx, not_windows
 
 
 def test_terminal_constructor():
@@ -18,7 +17,6 @@ def test_terminal_constructor():
     terminal.write("Hello")
 
     assert repr(terminal).startswith("Terminal(")
-
 
 def test_terminal(document, comm):
     terminal = pn.widgets.Terminal("Hello")
@@ -36,7 +34,6 @@ def test_terminal(document, comm):
     model2 = terminal.get_root(document, comm)
 
     assert model2.output == ""
-
 
 @not_windows
 @not_osx
@@ -63,7 +60,6 @@ async def test_subprocess():
     assert subprocess._child_pid == 0
     assert subprocess._fd == 0
 
-
 @not_windows
 @not_osx
 @pytest.mark.subprocess
@@ -78,7 +74,6 @@ async def test_run_list_args():
         count += 1
     assert subprocess.running
     subprocess.kill()
-
 
 def test_cannot_assign_string_args_with_spaces():
     terminal = pn.widgets.Terminal()
