@@ -479,7 +479,7 @@ def test_server_reuse_sessions_with_session_key_func(port, reuse_sessions):
 
 
 @pytest.mark.xdist_group(name="server")
-def test_show_server_info(html_server_session, markdown_server_session):
+def test_show_server_info(asyncio_loop, html_server_session, markdown_server_session):
     *_, html_port = html_server_session
     *_, markdown_port = markdown_server_session
     server_info = repr(state)
@@ -488,7 +488,7 @@ def test_show_server_info(html_server_session, markdown_server_session):
 
 
 @pytest.mark.xdist_group(name="server")
-def test_kill_all_servers(html_server_session, markdown_server_session):
+def test_kill_all_servers(asyncio_loop, html_server_session, markdown_server_session):
     _, server_1, *_ = html_server_session
     _, server_2, *_ = markdown_server_session
     state.kill_all_servers()
@@ -497,7 +497,7 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
 
 
 @pytest.mark.xdist_group(name="server")
-def test_multiple_titles(multiple_apps_server_sessions):
+def test_multiple_titles(asyncio_loop, multiple_apps_server_sessions):
     """Serve multiple apps with a title per app."""
     session1, session2 = multiple_apps_server_sessions(
         slugs=('app1', 'app2'), titles={'app1': 'APP1', 'app2': 'APP2'})

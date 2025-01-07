@@ -1530,7 +1530,7 @@ class TestChatFeedPostHook:
         chat_feed.post_hook = append_callback
         chat_feed.send("Hello World!")
         await async_wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
-        assert logs == ["Hello World!", "Echo: Hello World!"]
+        await async_wait_until(lambda: logs == ["Hello World!", "Echo: Hello World!"])
 
     async def test_generator(self, chat_feed):
         def callback(contents, user, instance):

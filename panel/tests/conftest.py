@@ -325,7 +325,7 @@ def tmpdir(request, tmpdir_factory):
     shutil.rmtree(str(tmp_dir))
 
 
-@pytest.fixture()
+@pytest.fixture
 def html_server_session():
     port = 5050
     html = HTML('<h1>Title</h1>')
@@ -341,6 +341,12 @@ def html_server_session():
     except AssertionError:
         pass  # tests may already close this
 
+@pytest.fixture(autouse=True)
+def asyncio_loop():
+    try:
+        asyncio.get_event_loop()
+    except (RuntimeError, DeprecationWarning):
+        asyncio.set_event_loop(asyncio.new_event_loop())
 
 @pytest.fixture()
 def markdown_server_session():
