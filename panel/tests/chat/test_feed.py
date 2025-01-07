@@ -1580,4 +1580,4 @@ class TestChatFeedPostHook:
         chat_feed.post_hook = append_callback
         chat_feed.send("AB")
         await async_wait_until(lambda: chat_feed.objects[-1].object == "Echo: AB")
-        assert logs == ["AB", "Echo: ", "Echo: AB"]
+        await async_wait_until(lambda: logs == ["AB", "Echo: ", "Echo: AB"])
