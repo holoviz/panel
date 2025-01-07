@@ -199,7 +199,7 @@ class PeriodicCallback(param.Parameterized):
             elif self._cb in self._doc.callbacks.session_callbacks:
                 self._doc.callbacks._session_callbacks.remove(self._cb)
         elif self._cb:
-            self._cb.stop()
+            self._cb.cancel()
         self._cb = None
         doc = self._doc or curdoc_locked()
         if doc:
