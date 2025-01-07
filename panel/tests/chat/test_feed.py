@@ -900,7 +900,7 @@ class TestChatFeedCallback:
         chat_feed.send("Message", respond=True)
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
         await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
-        assert not chat_feed.objects[-1].show_activity_dot
+        await async_wait_until(lambda: not chat_feed.objects[-1].show_activity_dot)
 
     @pytest.mark.parametrize("key", ["value", "object"])
     async def test_generator_dict(self, chat_feed, key):

@@ -125,8 +125,9 @@ def async_execute(func: Callable[..., None]) -> None:
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
+        # Avoid creating IOLoop if one is not already associated
+        # with the asyncio loop or we're on a child thread
         if hasattr(IOLoop, '_ioloop_for_asyncio') and loop in IOLoop._ioloop_for_asyncio:
-            # Avoid creating a Tornado IOLoop unless it already exists
             ioloop = IOLoop._ioloop_for_asyncio[loop]
         elif threading.current_thread() is not threading.main_thread():
             ioloop = IOLoop.current()
