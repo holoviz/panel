@@ -444,15 +444,6 @@ def cache_cleanup():
     Design._resolve_modifiers.cache_clear()
     Design._cache.clear()
 
-@pytest.fixture(autouse=True)
-async def asyncio_threadpool_cleanup():
-    yield
-    try:
-        loop = asyncio.get_running_loop()
-    except Exception:
-        return
-    await loop.shutdown_default_executor()
-
 @pytest.fixture
 def autoreload():
     config.autoreload = True

@@ -1005,11 +1005,6 @@ def get_server(
         asyncio.set_event_loop(loop.asyncio_loop)
         opts['io_loop'] = loop
     elif opts.get('num_procs', 1) == 1:
-        try:
-            asyncio.get_event_loop()
-        except Exception:
-            async_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(async_loop)
         opts['io_loop'] = IOLoop.current()
 
     if 'index' not in opts:
