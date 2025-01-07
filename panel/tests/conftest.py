@@ -237,6 +237,16 @@ def stop_event():
         event.set()
 
 @pytest.fixture
+def asyncio_loop():
+    try:
+        loop = asyncio.get_event_loop()
+    except (RuntimeError, DeprecationWarning):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(asyncio.new_event_loop())
+    yield
+    loop.stop()
+
+@pytest.fixture
 async def watch_files():
     tasks = []
     stop_event = asyncio.Event()
@@ -324,9 +334,8 @@ def tmpdir(request, tmpdir_factory):
     yield tmp_dir
     shutil.rmtree(str(tmp_dir))
 
-
 @pytest.fixture
-def html_server_session():
+def html_server_session(asyncio_loop):
     port = 5050
     html = HTML('<h1>Title</h1>')
     server = serve(html, port=port, show=False, start=False)
@@ -340,13 +349,6 @@ def html_server_session():
         server.stop()
     except AssertionError:
         pass  # tests may already close this
-
-@pytest.fixture(autouse=True)
-def asyncio_loop():
-    try:
-        asyncio.get_event_loop()
-    except (RuntimeError, DeprecationWarning):
-        asyncio.set_event_loop(asyncio.new_event_loop())
 
 @pytest.fixture()
 def markdown_server_session():
