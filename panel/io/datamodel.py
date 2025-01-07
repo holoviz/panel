@@ -199,7 +199,10 @@ def create_linked_datamodel(obj, root=None):
     else:
         _DATA_MODELS[cls] = model = construct_data_model(obj)
     properties = model.properties()
-    model = model(**{k: v for k, v in obj.param.values().items() if k in properties})
+    props = {k: v for k, v in obj.param.values().items() if k in properties}
+    if root:
+        props['name'] = f"{root.ref['id']}-{id(obj)}"
+    model = model(**props)
     _changing = []
 
     def cb_bokeh(attr, old, new):

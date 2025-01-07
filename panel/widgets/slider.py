@@ -379,7 +379,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         A custom format string. Separate from format parameter since
         formatting is applied in Python, not via the bokeh TickFormatter.""")
 
-
     _rename: ClassVar[Mapping[str, str | None]] = {'formatter': None}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
