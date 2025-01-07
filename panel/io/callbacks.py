@@ -193,9 +193,7 @@ class PeriodicCallback(param.Parameterized):
         with param.discard_events(self):
             self.counter = 0
         self._timeout = None
-        if state._is_pyodide and self._cb:
-            self._cb.cancel()
-        elif self._doc and self._cb:
+        if self._doc and self._cb and not state._is_pyodide:
             if self._doc._session_context:
                 self._doc.callbacks.remove_session_callback(self._cb)
             elif self._cb in self._doc.callbacks.session_callbacks:
