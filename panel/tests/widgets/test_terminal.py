@@ -41,7 +41,7 @@ def test_terminal(document, comm):
 @not_windows
 @not_osx
 @pytest.mark.subprocess
-def test_subprocess():
+def test_subprocess(asyncio_loop):
     args = "bash"
     terminal = pn.widgets.Terminal()
 
@@ -67,7 +67,7 @@ def test_subprocess():
 @not_windows
 @not_osx
 @pytest.mark.subprocess
-def test_run_list_args():
+def test_run_list_args(asyncio_loop):
     terminal = pn.widgets.Terminal()
     subprocess = terminal.subprocess
     subprocess.args = ["ls", "-l"]
