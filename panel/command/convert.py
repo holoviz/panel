@@ -114,7 +114,7 @@ class Convert(Subcommand):
         for f in args.files:
             p = pathlib.Path(f).absolute()
             if not p.is_file():
-                raise ValueError('File {f!r} not found.')
+                raise FileNotFoundError(f'File {f!r} not found.')
             elif p not in excluded:
                 included.append(p)
 
