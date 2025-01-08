@@ -52,7 +52,7 @@ class _SliderBase(Widget):
         Whether the slider should go from left-to-right ('ltr') or
         right-to-left ('rtl').""")
 
-    name = param.String(default=None, doc="""
+    name = param.String(default=None, constant=False, doc="""
         The name of the widget. Also used as the label of the widget. If not set,
         the widget has no label.""")
 
@@ -378,7 +378,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     formatter = param.String(default='%.3g', doc="""
         A custom format string. Separate from format parameter since
         formatting is applied in Python, not via the bokeh TickFormatter.""")
-
 
     _rename: ClassVar[Mapping[str, str | None]] = {'formatter': None}
 
