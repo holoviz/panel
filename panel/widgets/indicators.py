@@ -1143,7 +1143,7 @@ class Trend(SyncableData, Indicator):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    name = param.String(doc="""The name or a short description of the card""")
+    name = param.String(constant=False, doc="""The name or a short description of the card""")
 
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
