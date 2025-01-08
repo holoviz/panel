@@ -161,6 +161,7 @@
 .edit-area {
   /* for that smooth transition on a one line message */
   height: 51.5px;
+}
 
 pre {
   white-space: pre-wrap;
