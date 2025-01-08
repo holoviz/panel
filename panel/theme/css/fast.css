@@ -2,8 +2,8 @@
 :host {
   --track-width: 4;
   --thumb-size: calc(
-    (var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 0.5 -
-      var(--design-unit)
+    (var(--base-height-multiplier) + var(--density)) * var(--design-unit) *
+      0.5 - var(--design-unit)
   );
   --handle-width: calc(var(--thumb-size) * 1px);
   --handle-height: calc(var(--thumb-size) * 1px);
@@ -743,7 +743,8 @@ select:not([size]).bk-input {
     (
         (var(--base-height-multiplier) + var(--density)) * var(--design-unit) /
           2 + var(--design-unit)
-      ) * 1px
+      ) *
+      1px
   );
 }
 
@@ -764,7 +765,8 @@ select:not([size]).bk-input {
     (
         (var(--base-height-multiplier) + var(--density)) * var(--design-unit) /
           2 + var(--design-unit)
-      ) * 1px
+      ) *
+      1px
   );
   top: 0;
   width: calc(

@@ -319,12 +319,12 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     if len(cross_product) > max_states:
         if config._doc_build:
             return
-        param.main.param.warning('The cross product of different application '
-                           'states is very large to explore (N=%d), consider '
-                           'reducing the number of options on the widgets or '
-                           'increase the max_states specified in the function '
-                           'to remove this warning' %
-                           len(cross_product))
+        param.main.param.warning(
+            'The cross product of different application states is very large '
+            f'to explore (N={len(cross_product)}), consider reducing the number '
+            'of options on the widgets or increase the max_states specified '
+            'in the function to remove this warning.'
+        )
 
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()
