@@ -2048,7 +2048,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         for parent, child_name in self._parser.children.items():
             if (parent, child_name) in self._parser.looped:
                 for i, _ in enumerate(getattr(self, child_name)):
-                    html = html.replace('${%s[%d]}' % (child_name, i), '')
+                    html = html.replace(f'${{{child_name}[{i}]}}', '')
             else:
                 html = html.replace(f'${{{child_name}}}', '')
         return html, parser.nodes, p_attrs
@@ -2170,6 +2170,27 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                 )
             ):
                 continue
+            elif isinstance(v, list) and all(isinstance(vs, param.Parameterized) for vs in v):
+                from .io.datamodel import create_linked_datamodel
+                old = getattr(model.data, prop)
+                if isinstance(old, list):
+                    mapping = {o.name: o for o in old}
+                    vals = []
+                    for vs in v:
+                        if (vname:=f"{root.ref['id']}-{id(vs)}") in mapping:
+                            vals.append(mapping[vname])
+                        else:
+                            vals.append(create_linked_datamodel(vs, root))
+                    v = vals
+                data_msg[prop] = v
+            elif isinstance(v, param.Parameterized):
+                from .io.datamodel import create_linked_datamodel
+                old = getattr(model.data, prop)
+                if old.name == f"{root.ref['id']}-{id(v)}":
+                    v = old
+                else:
+                    v = create_linked_datamodel(vs, root)
+                data_msg[prop] = v
             elif isinstance(v, str):
                 data_msg[prop] = HTML_SANITIZER.clean(v)
             else:

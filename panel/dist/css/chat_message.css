@@ -85,7 +85,7 @@
   width: fit-content;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: left;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -161,4 +161,19 @@
 .edit-area {
   /* for that smooth transition on a one line message */
   height: 51.5px;
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+p {
+  overflow-wrap: break-word;
+}
+
+code {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }

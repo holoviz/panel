@@ -174,7 +174,7 @@ class Param(Pane):
         usually to update the default Parameter values of the
         underlying parameterized object.""")
 
-    name = param.String(default='', doc="""
+    name = param.String(default='', constant=False, doc="""
         Title of the pane.""")
 
     object = param.Parameter(default=None, allow_refs=False, doc="""

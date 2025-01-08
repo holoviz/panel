@@ -22,11 +22,13 @@ This release fixes a regression causing .node_modules to be bundled into our rel
 
 ### Bug fixes
 
+- Ensure Notifications are cleaned up correctly ([#4964](https://github.com/holoviz/panel/pull/4964))
 - Ensure `FileDownload` label text updates correctly ([#7489](https://github.com/holoviz/panel/pull/7489))
 - Fix `Tabulator` aggregation behavior ([#7450](https://github.com/holoviz/panel/pull/7450))
 - Fix typing for `.servable` method ([#7530](https://github.com/holoviz/panel/pull/7530))
 - Ensure `NestedSelect` respects `disabled` parameter ([#7533](https://github.com/holoviz/panel/pull/7533))
 - Ensure errors in hooks aren't masked by fallback to different signature ([#7502](https://github.com/holoviz/panel/pull/7502))
+- Ensure Notifications are only shown once if scheduled onload ([#7504](https://github.com/holoviz/panel/pull/7504))
 
 ### Documentation
 

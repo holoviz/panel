@@ -362,11 +362,11 @@ class ChatInterface(ChatFeed):
         self._input_layout = input_layout
 
     def _wrap_callbacks(
-            self,
-            callback: Callable | None = None,
-            post_callback: Callable | None = None,
-            name: str = ""
-        ):
+        self,
+        callback: Callable | None = None,
+        post_callback: Callable | None = None,
+        name: str = ""
+    ):
         """
         Wrap the callback and post callback around the default callback.
         """
@@ -653,7 +653,6 @@ class ChatInterface(ChatFeed):
         """
         await super()._cleanup_response()
         await self._update_input_disabled()
-
 
     def send(
         self,
