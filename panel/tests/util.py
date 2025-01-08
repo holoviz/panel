@@ -468,7 +468,7 @@ def http_serve_directory(directory=".", port=0):
     httpd.timeout = 0.5
     httpd.server_bind()
 
-    address = "http://%s:%d" % (httpd.server_name, httpd.server_port)
+    address = f"http://{httpd.server_name}:{httpd.server_port}"
 
     httpd.server_activate()
 

@@ -107,9 +107,9 @@ def _origin_url(url: str) -> str:
 
 def _server_url(url: str, port: int) -> str:
     if url.startswith("http"):
-        return '%s:%d%s' % (url.rsplit(':', 1)[0], port, "/")
+        return f"{url.rsplit(':', 1)[0]}:{port}/"
     else:
-        return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
+        return f"http://{url.split(':')[0]}:{port}/"
 
 def async_execute(func: Callable[..., None]) -> None:
     """

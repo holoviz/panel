@@ -1147,11 +1147,11 @@ class View(param.Parameterized):
 
     @param.depends('a')
     def view(self):
-        return Div(text='%d' % self.a)
+        return Div(text=str(int(self.a)))
 
     @param.depends('b.param')
     def subobject_view(self):
-        return Div(text='%d' % self.b.a)
+        return Div(text=str(int(self.b.a)))
 
     @param.depends('a')
     def mpl_view(self):
@@ -1166,7 +1166,7 @@ def test_get_param_function_pane_type():
     test = View()
 
     def view(a):
-        return Div(text='%d' % a)
+        return Div(text=str(int(a)))
 
     assert PaneBase.get_pane_type(view) is not ParamFunction
     assert PaneBase.get_pane_type(param.depends(test.param.a)(view)) is ParamFunction
@@ -1177,7 +1177,7 @@ def test_param_function_pane(document, comm):
 
     @param.depends(test.param.a)
     def view(a):
-        return Div(text='%d' % a)
+        return Div(text=str(int(a)))
 
     pane = panel(view)
     inner_pane = pane._pane
@@ -1218,7 +1218,7 @@ def test_param_function_pane_defer_load(document, comm):
 
     @param.depends(test.param.a)
     def view(a):
-        return Div(text='%d' % a)
+        return Div(text=str(int(a)))
 
     pane = panel(view, defer_load=True)
     inner_pane = pane._pane

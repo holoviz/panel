@@ -161,10 +161,11 @@ class Tabs(NamedListPanel):
         from ..pane.base import RerenderError, panel
         new_models, old_models = [], []
         if len(self._names) != len(self):
-            raise ValueError('Tab names do not match objects, ensure '
-                             'that the Tabs.objects are not modified '
-                             'directly. Found %d names, expected %d.' %
-                             (len(self._names), len(self)))
+            raise ValueError(
+                'Tab names do not match objects, ensure that the '
+                'Tabs.objects are not modified directly. '
+                f'Found {len(self._names)} names, expected {len(self)}.'
+            )
         for i, (name, pane) in enumerate(zip(self._names, self)):
             pane = panel(pane, name=name)
             self.objects[i] = pane
