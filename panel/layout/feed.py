@@ -102,7 +102,7 @@ class Feed(Column):
         if (event.type == 'triggered' or not self.view_latest or
             not event.new or event.new[-1] in event.old):
             return
-        self.scroll_to_latest(scroll_limit=self.auto_scroll_limit)
+        self.scroll_to_latest()
 
     @property
     def _synced_range(self):
