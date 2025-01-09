@@ -72,7 +72,7 @@ export class FeedView extends ColumnView {
   override connect_signals(): void {
     super.connect_signals()
     this.model.on_event(ScrollLatestEvent, (event: ScrollLatestEvent) => {
-      if (event.scroll_limit !== 0 && event.scroll_limit && (this.el.scrollHeight - this.el.scrollTop) > event.scroll_limit) {
+      if (event.scroll_limit == 0 && event.scroll_limit && (this.el.scrollHeight - this.el.scrollTop) > event.scroll_limit) {
         return
       }
       this.scroll_to_latest()
