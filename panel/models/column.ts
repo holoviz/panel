@@ -95,8 +95,8 @@ export class ColumnView extends BkColumnView {
     }
 
     requestAnimationFrame(() => {
-      this.model.scroll_position = Math.round(this.el.scrollHeight);
-    });
+      this.model.scroll_position = Math.round(this.el.scrollHeight)
+    })
   }
 
   trigger_auto_scroll(): void {
