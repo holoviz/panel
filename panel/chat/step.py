@@ -248,6 +248,8 @@ class ChatStep(Card):
             The token to stream.
         replace : bool
             Whether to replace the existing text.
+        scroll: bool
+            Whether to scroll to the latest message when streaming.
 
         Returns
         -------
@@ -264,7 +266,8 @@ class ChatStep(Card):
             self.append(message)
         else:
             stream_to(self.objects[-1], token, replace=replace)
-        if self._instance is not None:
+
+        if self._instance is not None and scroll:
             self._instance._chat_log.scroll_to_latest()
 
     def serialize(
