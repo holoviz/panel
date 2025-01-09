@@ -10,7 +10,7 @@ class ScrollLatestEvent(ModelEvent):
 
     event_name = 'scroll_latest_event'
 
-    def __init__(self, model, rerender=False, scroll_limit=200):
+    def __init__(self, model, rerender=False, scroll_limit=None):
         super().__init__(model=model)
         self.rerender = rerender
         self.scroll_limit = scroll_limit

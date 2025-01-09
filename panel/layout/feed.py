@@ -212,10 +212,9 @@ class Feed(Column):
         scroll_limit : float, optional
             Maximum pixel distance from the latest object in the Feed to
             trigger scrolling. If the distance exceeds this limit, scrolling will not occur.
-            Setting this to 0 disables scrolling. Defaults to the auto_scroll_limit param's value.
+            If this is not set, it will always scroll to the latest while setting this to 0 disables scrolling.
         """
         rerender = self._last_synced and self._last_synced[-1] < len(self.objects)
         if rerender:
             self._process_event()
-        scroll_limit = self.auto_scroll_limit if scroll_limit is None else scroll_limit
         self._send_event(ScrollLatestEvent, rerender=rerender, scroll_limit=scroll_limit)

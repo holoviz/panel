@@ -8,7 +8,7 @@ import {ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
 
 @server_event("scroll_latest_event")
 export class ScrollLatestEvent extends ModelEvent {
-  constructor(readonly model: Feed, readonly rerender: boolean, readonly scroll_limit?: number) {
+  constructor(readonly model: Feed, readonly rerender: boolean, readonly scroll_limit?: number | null) {
     super()
     this.origin = model
     this.rerender = rerender
