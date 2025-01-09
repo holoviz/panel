@@ -102,7 +102,7 @@ class Feed(Column):
         if (event.type == 'triggered' or not self.view_latest or
             not event.new or event.new[-1] in event.old):
             return
-        self.scroll_to_latest()
+        self.scroll_to_latest(scroll_limit=200)
 
     @property
     def _synced_range(self):
@@ -203,11 +203,18 @@ class Feed(Column):
             # reset the buffers and loaded objects
             self.load_buffer = load_buffer
 
-    def scroll_to_latest(self):
+    def scroll_to_latest(self, scroll_limit: float = 0) -> None:
         """
         Scrolls the Feed to the latest entry.
+
+        Parameters
+        ----------
+        scroll_limit : float, optional
+            Maximum pixel distance from the latest object in the Column to
+            trigger scrolling. If the distance exceeds this limit, scrolling will not occur.
+            Setting this to 0 disables the limit.
         """
         rerender = self._last_synced and self._last_synced[-1] < len(self.objects)
         if rerender:
             self._process_event()
-        self._send_event(ScrollLatestEvent, rerender=rerender)
+        self._send_event(ScrollLatestEvent, rerender=rerender, scroll_limit=scroll_limit)

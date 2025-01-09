@@ -265,7 +265,7 @@ class ChatStep(Card):
         else:
             stream_to(self.objects[-1], token, replace=replace)
         if self._instance is not None:
-            self._instance._chat_log.scroll_to_latest()
+            self._instance._chat_log.scroll_to_latest(scroll_limit=200)
 
     def serialize(
         self,
