@@ -704,6 +704,7 @@ class ChatFeed(ListPanel):
 
             if message_params:
                 message.param.update(**message_params)
+            self._chat_log.scroll_to_latest()
             return message
 
         if isinstance(value, ChatMessage):
@@ -715,6 +716,7 @@ class ChatFeed(ListPanel):
         self._replace_placeholder(message)
 
         self.param.trigger("_post_hook_trigger")
+        self._chat_log.scroll_to_latest()
         return message
 
     def add_step(
@@ -777,6 +779,8 @@ class ChatFeed(ListPanel):
             if "context_exception" not in step_params:
                 step_params["context_exception"] = self.callback_exception
             step = ChatStep(**step_params)
+
+        step._instance = self
 
         if append:
             for i in range(1, last_messages + 1):

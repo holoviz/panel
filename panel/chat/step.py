@@ -238,7 +238,7 @@ class ChatStep(Card):
             original = getattr(self, f"{status}_title") or ""
             setattr(self, f"{status}_title", original + token)
 
-    def stream(self, token: str | None, replace: bool = False):
+    def stream(self, token: str | None, replace: bool = False, scroll: bool = True):
         """
         Stream a token to the last available string-like object.
 
@@ -264,6 +264,8 @@ class ChatStep(Card):
             self.append(message)
         else:
             stream_to(self.objects[-1], token, replace=replace)
+        if self._instance is not None:
+            self._instance._chat_log.scroll_to_latest()
 
     def serialize(
         self,
