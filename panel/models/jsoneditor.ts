@@ -69,6 +69,14 @@ export class JSONEditorView extends HTMLBoxView {
       onChangeJSON: (json: any) => {
         this.model.data = json
       },
+      onChangeText: (text: any) => {
+        try {
+          this.model.data = JSON.parse(text)
+        }
+        catch (e) {
+          console.warn(e)
+        }
+      },
       onSelectionChange: (start: any, end: any) => {
         this.model.selection = [start, end]
       },
