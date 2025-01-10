@@ -1077,7 +1077,7 @@ class TestChatFeedCallback:
         assert chat_feed.objects[-1].user == "Exception"
 
     @pytest.mark.parametrize("callback_exception", ["traceback", "verbose"])
-    def test_callback_exception_traceback(self, chat_feed, callback_exception):
+    async def test_callback_exception_traceback(self, chat_feed, callback_exception):
         def callback(msg, user, instance):
             return 1 / 0
 
