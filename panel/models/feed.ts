@@ -8,19 +8,20 @@ import {ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
 
 @server_event("scroll_latest_event")
 export class ScrollLatestEvent extends ModelEvent {
-  constructor(readonly model: Feed, readonly rerender: boolean) {
+  constructor(readonly model: Feed, readonly rerender: boolean, readonly scroll_limit?: number | null) {
     super()
     this.origin = model
     this.rerender = rerender
+    this.scroll_limit = scroll_limit
   }
 
   protected override get event_values(): Attrs {
-    return {model: this.origin, rerender: this.rerender}
+    return {model: this.origin, rerender: this.rerender, scroll_limit: this.scroll_limit}
   }
 
   static override from_values(values: object) {
-    const {model, rerender} = values as {model: Feed, rerender: boolean}
-    return new ScrollLatestEvent(model, rerender)
+    const {model, rerender, scroll_limit} = values as {model: Feed, rerender: boolean, scroll_limit?: number}
+    return new ScrollLatestEvent(model, rerender, scroll_limit)
   }
 }
 
@@ -71,7 +72,7 @@ export class FeedView extends ColumnView {
   override connect_signals(): void {
     super.connect_signals()
     this.model.on_event(ScrollLatestEvent, (event: ScrollLatestEvent) => {
-      this.scroll_to_latest()
+      this.scroll_to_latest(event.scroll_limit)
       if (event.rerender) {
         this._rendered = false
       }
