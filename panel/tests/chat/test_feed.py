@@ -1108,11 +1108,25 @@ class TestChatFeedCallback:
             chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 1)
 
-    async def test_callback_exception_callable(self, chat_feed):
+    def test_callback_exception_callable(self, chat_feed):
         def callback(msg, user, instance):
             raise ValueError("Expected error")
 
         def exception_callback(exception, instance):
+            instance.stream(f"The exception: {exception}")
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = exception_callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[-1].object == "The exception: Expected error"
+
+    async def test_callback_exception_async_callable(self, chat_feed):
+        async def callback(msg, user, instance):
+            raise ValueError("Expected error")
+
+        async def exception_callback(exception, instance):
+            await asyncio.sleep(0.1)
             instance.stream(f"The exception: {exception}")
 
         chat_feed.callback = callback

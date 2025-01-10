@@ -579,7 +579,9 @@ class ChatFeed(ListPanel):
         except Exception as e:
             send_kwargs: dict[str, Any] = dict(user="Exception", respond=False)
             if callable(self.callback_exception):
-                self.callback_exception(e, self)
+                result = self.callback_exception(e, self)
+                if isawaitable(result):
+                    await result
             elif self.callback_exception == "summary":
                 self.send(
                     f"Encountered `{e!r}`. "
