@@ -1587,13 +1587,13 @@ class TestChatFeedPostHook:
 class TestChatFeedEditCallback:
 
     @pytest.mark.parametrize("edit_callback", [None, lambda content, index, instance: ""])
-    def test_show_edit_icon_callback(self, chat_feed, edit_callback):
+    async def test_show_edit_icon_callback(self, chat_feed, edit_callback):
         chat_feed.edit_callback = edit_callback
         chat_feed.send("Hello")
         assert chat_feed[0].show_edit_icon is bool(edit_callback)
 
     @pytest.mark.parametrize("user", ["User", "Assistant", "Help"])
-    def test_show_edit_icon_user(self, chat_feed, user):
+    async def test_show_edit_icon_user(self, chat_feed, user):
         chat_feed.edit_callback = lambda content, index, instance: ""
         chat_feed.send("Hello", user=user)
         if user == "User":

@@ -530,13 +530,13 @@ class TestChatInterfaceEditCallback:
     def chat_interface(self):
         return ChatInterface()
 
-    def test_show_edit_icon_user(self, chat_interface):
+    async def test_show_edit_icon_user(self, chat_interface):
         chat_interface.edit_callback = lambda content, index, instance: ""
         chat_interface.send("Hello")
         assert chat_interface[0].show_edit_icon
 
     @pytest.mark.parametrize("user", ["admin", "Assistant", "Help"])
-    def test_not_show_edit_icon_user(self, chat_interface, user):
+    async def test_not_show_edit_icon_user(self, chat_interface, user):
         chat_interface.edit_callback = lambda content, index, instance: ""
         chat_interface.send("Hello", user=user)
         assert not chat_interface[0].show_edit_icon
