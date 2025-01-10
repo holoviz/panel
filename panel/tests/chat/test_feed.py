@@ -1076,12 +1076,13 @@ class TestChatFeedCallback:
         await async_wait_until(lambda: "division by zero" in chat_feed.objects[-1].object)
         assert chat_feed.objects[-1].user == "Exception"
 
-    async def test_callback_exception_traceback(self, chat_feed):
+    @pytest.mark.parametrize("callback_exception", ["traceback", "verbose"])
+    def test_callback_exception_traceback(self, chat_feed, callback_exception):
         def callback(msg, user, instance):
             return 1 / 0
 
         chat_feed.callback = callback
-        chat_feed.callback_exception = "verbose"
+        chat_feed.callback_exception = callback_exception
         chat_feed.send("Message", respond=True)
         await async_wait_until(lambda: chat_feed.objects[-1].object.startswith(
             "```python\nTraceback (most recent call last):"
@@ -1096,6 +1097,33 @@ class TestChatFeedCallback:
         chat_feed.callback_exception = "ignore"
         chat_feed.send("Message", respond=True)
         await async_wait_until(lambda: len(chat_feed.objects) == 1)
+
+    def test_callback_exception_raise(self, chat_feed):
+        def callback(msg, user, instance):
+            return 1 / 0
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = "raise"
+        with pytest.raises(ZeroDivisionError, match="division by zero"):
+            chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 1)
+
+    def test_callback_exception_callable(self, chat_feed):
+        def callback(msg, user, instance):
+            raise ValueError("Expected error")
+
+        def exception_callback(exception, instance):
+            instance.stream(f"The exception: {exception}")
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = exception_callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[-1].object == "The exception: Expected error"
+
+    def test_callback_exception_invalid_option(self, chat_feed):
+        with pytest.raises(ValueError, match="Valid options are"):
+            chat_feed.callback_exception = "abc"
 
     async def test_callback_stop_generator(self, chat_feed):
         def callback(msg, user, instance):
