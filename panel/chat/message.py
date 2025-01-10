@@ -185,6 +185,9 @@ class ChatMessage(Pane):
         to use when the user is specified but the avatar is. You can
         modify, but not replace the dictionary.""")
 
+    edited = param.Event(doc="""
+        An event that is triggered when the message is edited.""")
+
     footer_objects = param.List(doc="""
         A list of objects to display in the column of the footer of the message.""")
 
@@ -246,9 +249,6 @@ class ChatMessage(Pane):
 
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
-
-    edited = param.Event(doc="""
-        An event that is triggered when the message is edited.""")
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
