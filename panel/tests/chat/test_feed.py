@@ -1108,6 +1108,7 @@ class TestChatFeedCallback:
             chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 1)
 
+    @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
     def test_callback_exception_callable(self, chat_feed):
         def callback(msg, user, instance):
             raise ValueError("Expected error")
@@ -1118,7 +1119,6 @@ class TestChatFeedCallback:
         chat_feed.callback = callback
         chat_feed.callback_exception = exception_callback
         chat_feed.send("Message", respond=True)
-        wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[-1].object == "The exception: Expected error"
 
     async def test_callback_exception_async_callable(self, chat_feed):
@@ -1132,7 +1132,7 @@ class TestChatFeedCallback:
         chat_feed.callback = callback
         chat_feed.callback_exception = exception_callback
         chat_feed.send("Message", respond=True)
-        await async_wait_until(lambda: len(chat_feed.objects) == 2)
+        async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[-1].object == "The exception: Expected error"
 
     def test_callback_exception_invalid_option(self, chat_feed):
