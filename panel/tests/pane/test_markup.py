@@ -100,6 +100,7 @@ def test_markdown_pane_hard_line_break_enabled(document, comm, renderer):
 
 @pytest.mark.parametrize('hard_line_break', (False, True))
 def test_markdown_pane_hard_line_break_myst(document, comm, hard_line_break):
+    pytest.importorskip("myst_parser")
     # hard_line_break not supported
     assert Markdown.hard_line_break is False
     txt = "Hello\nWorld\nI am here"
@@ -112,6 +113,8 @@ def test_markdown_pane_hard_line_break_myst(document, comm, hard_line_break):
 @pytest.mark.parametrize('renderer', ('markdown-it', 'markdown', 'myst'))
 @pytest.mark.parametrize('hard_line_break', (False, True))
 def test_markdown_pane_hard_line_break_default_two_spaces(document, comm, renderer, hard_line_break):
+    if renderer == 'myst':
+        pytest.importorskip("myst_parser")
     # Same output, whether hard_line_break is True or False
     assert Markdown.hard_line_break is False
     # Note the two empty spaces at the end of each line.
