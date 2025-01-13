@@ -71,3 +71,31 @@ def test_chat_interface_show_button_tooltips(page):
     help_button.hover()
 
     expect(page.locator(".bk-Tooltip")).to_be_visible()
+
+
+def test_chat_interface_edit_message(page):
+    def echo_callback(content, index, instance):
+        return content
+
+    def edit_callback(content, index, instance):
+        instance.objects[index + 1].object = content
+
+    chat_interface = ChatInterface(edit_callback=edit_callback, callback=echo_callback)
+    chat_interface.send("Edit this")
+
+    serve_component(page, chat_interface)
+
+    # find the edit icon and click .ti.ti-edit
+    # trict mode violation: locator(".ti-edit") resolved to 2 elements
+    page.locator(".ti-edit").first.click()
+
+    # find the input field and type new message
+    chat_input = page.locator(".bk-input").first
+    chat_input.fill("Edited")
+
+    # click enter
+    chat_input.press("Enter")
+
+    expect(page.locator(".message").first).to_have_text("Edited")
+    for object in chat_interface.objects:
+        assert object.object == "Edited"

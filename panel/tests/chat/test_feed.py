@@ -1581,3 +1581,22 @@ class TestChatFeedPostHook:
         chat_feed.send("AB")
         await async_wait_until(lambda: chat_feed.objects[-1].object == "Echo: AB")
         await async_wait_until(lambda: logs == ["AB", "Echo: ", "Echo: AB"])
+
+
+@pytest.mark.xdist_group("chat")
+class TestChatFeedEditCallback:
+
+    @pytest.mark.parametrize("edit_callback", [None, lambda content, index, instance: ""])
+    async def test_show_edit_icon_callback(self, chat_feed, edit_callback):
+        chat_feed.edit_callback = edit_callback
+        chat_feed.send("Hello")
+        assert chat_feed[0].show_edit_icon is bool(edit_callback)
+
+    @pytest.mark.parametrize("user", ["User", "Assistant", "Help"])
+    async def test_show_edit_icon_user(self, chat_feed, user):
+        chat_feed.edit_callback = lambda content, index, instance: ""
+        chat_feed.send("Hello", user=user)
+        if user == "User":
+            assert chat_feed[0].show_edit_icon
+        else:
+            assert not chat_feed[0].show_edit_icon

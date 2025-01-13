@@ -148,6 +148,21 @@
   line-height: 0.9em;
 }
 
+.edit-icon {
+  margin-top: 4px;
+  margin-inline: 3px;
+}
+
+.placeholder {
+  margin: 0;
+  width: calc(100% - 15px);
+}
+
+.edit-area {
+  /* for that smooth transition on a one line message */
+  height: 51.5px;
+}
+
 pre {
   white-space: pre-wrap;
   word-wrap: break-word;
