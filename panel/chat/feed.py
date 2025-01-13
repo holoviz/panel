@@ -102,7 +102,7 @@ class ChatFeed(ListPanel):
         and the component `instance`.""")
 
     callback_exception = CallbackException(
-        default="summary", doc="""
+        default="summary", allow_refs=False, doc="""
         How to handle exceptions raised by the callback.
         If "raise", the exception will be raised.
         If "summary", a summary will be sent to the chat feed.
