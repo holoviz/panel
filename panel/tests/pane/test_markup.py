@@ -126,6 +126,8 @@ def test_markdown_pane_hard_line_break_default_two_spaces(document, comm, render
 
 @pytest.mark.parametrize('renderer', ('markdown-it', 'markdown', 'myst'))
 def test_markdown_pane_two_new_lines(document, comm, renderer):
+    if renderer == 'myst':
+        pytest.importorskip("myst_parser")
     assert Markdown.hard_line_break is False
     pane = Markdown("Hello\n\nWorld", renderer=renderer)
     model = pane.get_root(document, comm=comm)
