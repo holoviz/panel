@@ -521,3 +521,22 @@ class TestChatInterfaceWidgetsSizingMode:
         assert chat_interface._chat_log.sizing_mode == "scale_height"
         assert chat_interface._input_layout.sizing_mode == "stretch_width"
         assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
+
+
+@pytest.mark.xdist_group("chat")
+class TestChatInterfaceEditCallback:
+
+    @pytest.fixture
+    def chat_interface(self):
+        return ChatInterface()
+
+    async def test_show_edit_icon_user(self, chat_interface):
+        chat_interface.edit_callback = lambda content, index, instance: ""
+        chat_interface.send("Hello")
+        assert chat_interface[0].show_edit_icon
+
+    @pytest.mark.parametrize("user", ["admin", "Assistant", "Help"])
+    async def test_not_show_edit_icon_user(self, chat_interface, user):
+        chat_interface.edit_callback = lambda content, index, instance: ""
+        chat_interface.send("Hello", user=user)
+        assert not chat_interface[0].show_edit_icon

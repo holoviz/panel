@@ -8,6 +8,10 @@ See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual su
 
 - Allow `ChatFeed.callback_exception` to accept a callable and 'traceback' (alias for verbose) ([#7558](https://github.com/holoviz/panel/pull/7558))
 
+### Features
+
+- Introduces `ChatMessage` and `ChatFeed` edit functionality ([#7559](https://github.com/holoviz/panel/pull/7559))
+
 ## Version 1.5.5
 
 This release fixes a regression causing .node_modules to be bundled into our released wheel and introduces a number of bug fixes and enhancements. Many thanks to @mayonnaisecolouredbenz7, @pmeier, @Italirz, @Coderambling and our maintainer team @MarcSkovMadsen, @hoxbro, @ahuang11, @thuydotm, @maximlt and @philippjfr.
