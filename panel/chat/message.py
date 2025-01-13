@@ -515,6 +515,8 @@ class ChatMessage(Pane):
                 self._set_params(old, enable_streaming=True, object=value)
                 return old
             object_panel = _panel(value)
+            if isinstance(object_panel, Markdown) and not object_panel.hard_line_break:
+                object_panel.hard_line_break = True
 
         self._set_params(object_panel)
         if type(old) is type(object_panel) and self._internal:
