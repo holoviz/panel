@@ -345,10 +345,6 @@ class Markdown(HTMLBasePane):
     >>> Markdown("# This is a header")
     """
 
-    break_as_new = param.Boolean(default=True, doc="""
-        Whether line breaks are rendered as new lines. Ineffective (False)
-        if renderer is set to 'myst'.""")
-
     dedent = param.Boolean(default=True, doc="""
         Whether to dedent common whitespace across all lines.""")
 
@@ -360,6 +356,11 @@ class Markdown(HTMLBasePane):
         "extra", "smarty", "codehilite"], nested_refs=True, doc="""
         Markdown extension to apply when transforming markup.
         Does not apply if renderer is set to 'markdown-it' or 'myst'.""")
+
+    hard_line_break = param.Boolean(default=False, doc="""
+        Whether simple new lines are rendered as hard line breaks. False by
+        default to conform with the original Markdown spec. Not supported by
+        the 'myst' renderer.""")
 
     plugins = param.List(default=[], nested_refs=True, doc="""
         Additional markdown-it-py plugins to use.""")
@@ -375,7 +376,7 @@ class Markdown(HTMLBasePane):
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'break_as_new': None,
+        'hard_line_break': None,
         'dedent': None, 'disable_math': None, 'extensions': None,
         'plugins': None, 'renderer': None, 'renderer_options': None
     }
@@ -403,7 +404,7 @@ class Markdown(HTMLBasePane):
 
     @classmethod
     @functools.cache
-    def _get_parser(cls, renderer, plugins, break_as_new, **renderer_options):
+    def _get_parser(cls, renderer, plugins, hard_line_break, **renderer_options):
         if renderer == 'markdown':
             return None
         from markdown_it import MarkdownIt
@@ -421,7 +422,7 @@ class Markdown(HTMLBasePane):
                 return token
 
         if renderer == 'markdown-it':
-            if break_as_new and "breaks" not in renderer_options:
+            if hard_line_break and "breaks" not in renderer_options:
                 renderer_options["breaks"] = True
 
             parser = MarkdownIt(
@@ -463,8 +464,7 @@ class Markdown(HTMLBasePane):
             obj = textwrap.dedent(obj)
 
         if self.renderer == 'markdown':
-            if self.break_as_new:
-                extensions = self.extensions + ['nl2br']
+            extensions = self.extensions + ['nl2br'] if self.hard_line_break else self.extensions
             html = markdown.markdown(
                 obj,
                 extensions=extensions,
@@ -473,7 +473,7 @@ class Markdown(HTMLBasePane):
             )
         else:
             parser = self._get_parser(
-                self.renderer, tuple(self.plugins), self.break_as_new, **self.renderer_options
+                self.renderer, tuple(self.plugins), self.hard_line_break, **self.renderer_options
             )
             try:
                 html = parser.render(obj)
