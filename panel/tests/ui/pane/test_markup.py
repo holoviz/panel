@@ -121,7 +121,7 @@ def test_anchor_scroll(page):
     md = ''
     for tag in ['tag1', 'tag2', 'tag3']:
         md += f'# {tag}\n\n'
-        md += f'{tag} content\n' * 50
+        md += f'{tag} content  \n' * 50
 
     content = Markdown(md)
     link = Markdown('<a id="link1" href="#tag1">Link1</a><a id="link3" href="#tag3">Link</a>')
@@ -145,7 +145,7 @@ def test_anchor_scroll_on_init(page):
     md = ''
     for tag in ['tag1', 'tag2', 'tag3']:
         md += f'# {tag}\n\n'
-        md += f'{tag} content\n' * 50
+        md += f'{tag} content  \n' * 50
 
     content = Markdown(md)
 
