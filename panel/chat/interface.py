@@ -362,11 +362,11 @@ class ChatInterface(ChatFeed):
         self._input_layout = input_layout
 
     def _wrap_callbacks(
-            self,
-            callback: Callable | None = None,
-            post_callback: Callable | None = None,
-            name: str = ""
-        ):
+        self,
+        callback: Callable | None = None,
+        post_callback: Callable | None = None,
+        name: str = ""
+    ):
         """
         Wrap the callback and post callback around the default callback.
         """
@@ -654,7 +654,6 @@ class ChatInterface(ChatFeed):
         await super()._cleanup_response()
         await self._update_input_disabled()
 
-
     def send(
         self,
         value: ChatMessage | dict | Any,
@@ -693,6 +692,7 @@ class ChatInterface(ChatFeed):
                 user = self.user
             if avatar is None:
                 avatar = self.avatar
+        message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user)
         return super().send(value, user=user, avatar=avatar, respond=respond, **message_params)
 
     def stream(
@@ -739,4 +739,5 @@ class ChatInterface(ChatFeed):
             # so only set to the default when not a ChatMessage
             user = user or self.user
             avatar = avatar or self.avatar
+        message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user and message_params.get("edit_callback"))
         return super().stream(value, user=user, avatar=avatar, message=message, replace=replace, **message_params)

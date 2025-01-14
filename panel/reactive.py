@@ -2048,7 +2048,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         for parent, child_name in self._parser.children.items():
             if (parent, child_name) in self._parser.looped:
                 for i, _ in enumerate(getattr(self, child_name)):
-                    html = html.replace('${%s[%d]}' % (child_name, i), '')
+                    html = html.replace(f'${{{child_name}[{i}]}}', '')
             else:
                 html = html.replace(f'${{{child_name}}}', '')
         return html, parser.nodes, p_attrs

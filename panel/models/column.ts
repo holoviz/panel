@@ -86,8 +86,14 @@ export class ColumnView extends BkColumnView {
     })
   }
 
-  scroll_to_latest(): void {
-    // Waits for the child to be rendered before scrolling
+  scroll_to_latest(scroll_limit: number | null = null): void {
+    if (scroll_limit !== null) {
+      const within_limit = this.distance_from_latest <= scroll_limit
+      if (!within_limit) {
+        return
+      }
+    }
+
     requestAnimationFrame(() => {
       this.model.scroll_position = Math.round(this.el.scrollHeight)
     })
