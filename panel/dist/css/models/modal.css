@@ -58,10 +58,10 @@ fast-design-system-provider .dialog-content {
 }
 .pnx-dialog-close {
   position: absolute;
-  top: 0.5em;
-  right: 0.5em;
+  top: 0;
+  right: 0;
   border: 0;
-  padding: 0.25em;
+  padding: 0;
   background-color: transparent;
   font-size: 1.5em;
   width: 1.5em;
