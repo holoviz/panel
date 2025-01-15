@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from typing import ClassVar, Literal, Mapping
+import traceback
+
+from collections.abc import Mapping
+from typing import ClassVar, Literal
 
 import param
 
@@ -41,6 +44,15 @@ class ChatStep(Card):
     collapsed_on_success = param.Boolean(default=True, doc="""
         Whether to collapse the card on completion.""")
 
+    context_exception = param.Selector(
+        default="raise", objects=["raise", "summary", "verbose", "ignore"], doc="""
+        How to handle exceptions raised upon exiting the context manager.
+        If "raise", the exception will be raised.
+        If "summary", a summary will be sent to the chat step.
+        If "verbose", the full traceback will be sent to the chat step.
+        If "ignore", the exception will be ignored.
+        """)
+
     success_title = param.String(default=None, doc="""
         Title to display when status is success.""")
 
@@ -79,6 +91,7 @@ class ChatStep(Card):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         "collapsed_on_success": None,
+        "context_exception": None,
         "default_badges": None,
         "default_title": None,
         "pending_title": None,
@@ -115,21 +128,38 @@ class ChatStep(Card):
                 self._title_pane,
                 stylesheets=self._stylesheets + self.param.stylesheets.rx(),
                 css_classes=["step-header"],
-                margin=(5, 0)
+                margin=(5, 0),
+                width=self.width,
+                max_width=self.max_width,
+                min_width=self.min_width,
+                sizing_mode=self.sizing_mode,
             )
 
     def __enter__(self):
         self.status = "running"
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type is not None:
+    def __exit__(self, exc_type, exc_value, tb):
+        if exc_type is not None and self.context_exception != "ignore":
             if self.failed_title is None:
                 # convert to str to wrap repr in apostrophes
-                self._failed_title = f"Error: {str(exc_value)!r}"
+                self._failed_title = f"Error: {exc_type.__name__!r}"
+                if self.context_exception == "summary" or self.context_exception == "raise":
+                    exc_msg = f"{exc_value}"
+                elif self.context_exception == "verbose":
+                    exc_msg = "```python\n" + "\n".join(traceback.format_exception(exc_type, exc_value, tb)) + "\n```"
+                else:
+                    exc_msg = None
+
+                if len(self.objects) == 1:
+                    exc_msg = f"\n{exc_msg}"
+                self.stream(exc_msg)
             self.status = "failed"
-            raise exc_value
-        self.status = "success"
+            if self.context_exception == "raise":
+                return False
+        else:
+            self.status = "success"
+        return True  # suppress exception if any
 
     @param.depends("status", "default_badges", watch=True)
     def _render_avatar(self):
@@ -208,7 +238,7 @@ class ChatStep(Card):
             original = getattr(self, f"{status}_title") or ""
             setattr(self, f"{status}_title", original + token)
 
-    def stream(self, token: str, replace: bool = False):
+    def stream(self, token: str | None, replace: bool = False):
         """
         Stream a token to the last available string-like object.
 
@@ -224,6 +254,9 @@ class ChatStep(Card):
         Viewable
             The updated message pane.
         """
+        if token is None:
+            token = ""
+
         if (
             len(self.objects) == 0 or not isinstance(self.objects[-1], HTMLBasePane) or isinstance(self.objects[-1], ImageBase)
         ):
@@ -231,6 +264,9 @@ class ChatStep(Card):
             self.append(message)
         else:
             stream_to(self.objects[-1], token, replace=replace)
+
+        if self._instance is not None:
+            self._instance._chat_log.scroll_to_latest(self._instance.auto_scroll_limit)
 
     def serialize(
         self,

@@ -11,9 +11,10 @@ import sys
 import traceback
 import urllib.parse as urlparse
 
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from types import ModuleType
-from typing import IO, Any, Callable
+from typing import IO, TYPE_CHECKING, Any
 
 import bokeh.command.util
 
@@ -30,6 +31,9 @@ from .mime_render import MIME_RENDERERS
 from .profile import profile_ctx
 from .reload import record_modules
 from .state import state
+
+if TYPE_CHECKING:
+    from nbformat import NotebookNode
 
 log = logging.getLogger('panel.io.handlers')
 
@@ -51,7 +55,7 @@ def _patch_ipython_display():
         pass
 
 @contextmanager
-def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> dict[str, Any]:
+def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> Iterator[None]:
     import bokeh.io as io
     old: dict[str, Any] = {}
     for f in CodeHandler._io_functions:
@@ -102,7 +106,7 @@ def extract_code(
     inblock = False
     block_opener = None
     title = None
-    markdown = []
+    markdown: list[str] = []
     out = []
     while True:
         line = filehandle.readline()
@@ -239,7 +243,7 @@ def autoreload_handle_exception(handler, module, e):
         alert_type='danger', margin=5, sizing_mode='stretch_width'
     ).servable()
 
-def run_app(handler, module, doc, post_run=None):
+def run_app(handler, module, doc, post_run=None, allow_empty=False):
     try:
         old_doc = curdoc()
     except RuntimeError:
@@ -261,14 +265,30 @@ def run_app(handler, module, doc, post_run=None):
             raise RuntimeError(f"{handler._origin} at '{handler._runner.path}' replaced the output document")
 
     try:
-        state._launching.append(doc)
+        state._launching.add(doc)
         with _monkeypatch_io(handler._loggers):
             with patch_curdoc(doc):
                 with profile_ctx(config.profiler) as sessions:
                     with record_modules(handler=handler):
-                        handler._runner.run(module, post_check)
-                        if post_run:
-                            post_run()
+                        runner = handler._runner
+                        if runner.error:
+                            from ..pane import Alert
+                            Alert(
+                                f'<b>{runner.error}</b>\n<pre style="overflow-y: auto">{runner.error_detail}</pre>',
+                                alert_type='danger', margin=5, sizing_mode='stretch_width'
+                            ).servable()
+                        else:
+                            handler._runner.run(module, post_check)
+                            if post_run:
+                                post_run()
+                if not doc.roots and not allow_empty and config.autoreload and doc not in state._templates:
+                    from ..pane import Alert
+                    Alert(
+                        ('<b>Application did not publish any contents</b>\n\n<span>'
+                        'Ensure you have marked items as servable or added models to '
+                        'the bokeh document manually.'),
+                        alert_type='danger', margin=5, sizing_mode='stretch_width'
+                    ).servable()
     finally:
         if config.profiler:
             try:
@@ -281,7 +301,10 @@ def run_app(handler, module, doc, post_run=None):
         if old_doc is not None:
             bk_set_curdoc(old_doc)
 
-def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None = None):
+def parse_notebook(
+    filename: str | os.PathLike | IO,
+    preamble: list[str] | None = None
+) -> tuple[NotebookNode, str, dict[str, Any]]:
     """
     Parses a notebook on disk and returns a script.
 
@@ -304,7 +327,7 @@ def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None 
     nbconvert = import_required('nbconvert', 'The Panel notebook application handler requires nbconvert to be installed.')
     nbformat = import_required('nbformat', 'The Panel notebook application handler requires Jupyter Notebook to be installed.')
 
-    class StripMagicsProcessor(nbconvert.preprocessors.Preprocessor):
+    class StripMagicsProcessor(nbconvert.preprocessors.Preprocessor):  # type: ignore
         """
         Preprocessor to convert notebooks to Python source while stripping
         out all magics (i.e IPython specific syntax).
@@ -360,8 +383,8 @@ def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None 
         elif cell['cell_type'] == 'markdown':
             md = ''.join(cell['source']).replace('"', r'\"')
             code.append(f'_pn__state._cell_outputs[{cell_id!r}].append("""{md}""")')
-    code = '\n'.join(code)
-    return nb, code, cell_layouts
+    code_string = '\n'.join(code)
+    return nb, code_string, cell_layouts
 
 #---------------------------------------------------------------------
 # Handler classes
@@ -413,16 +436,35 @@ class PanelCodeHandler(CodeHandler):
     - Track modules loaded during app execution to enable autoreloading
     """
 
-    def __init__(self, *, source: str, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        source: str | None = None,
+        filename: PathLike, argv: list[str] = [],
+        package: ModuleType | None = None,
+        runner: PanelCodeRunner | None = None
+    ) -> None:
         Handler.__init__(self)
 
-        self._runner = PanelCodeRunner(source, filename, argv, package=package)
+        if runner:
+            self._runner = runner
+        elif source:
+            self._runner = PanelCodeRunner(source, filename, argv, package=package)
+        else:
+            raise ValueError("Must provide source code to PanelCodeHandler")
 
         self._loggers = {}
         for f in PanelCodeHandler._io_functions:
             self._loggers[f] = self._make_io_logger(f)
 
-    def modify_document(self, doc: 'Document'):
+    def url_path(self) -> str | None:
+        if self.failed and not config.autoreload:
+            return None
+
+        # TODO should fix invalid URL characters
+        return '/' + os.path.splitext(os.path.basename(self._runner.path))[0]
+
+    def modify_document(self, doc: Document):
         if config.autoreload:
             path = self._runner.path
             argv = self._runner._argv
@@ -433,18 +475,19 @@ class PanelCodeHandler(CodeHandler):
 
         # If no module was returned it means the code runner has some permanent
         # unfixable problem, e.g. the configured source code has a syntax error
-        if module is None:
+        if module is None and not config.autoreload:
             return
 
         # One reason modules are stored is to prevent the module from being gc'd
         # before the document is. A symptom of a gc'd module is that its globals
         # become None. Additionally stored modules are used to provide correct
         # paths to custom models resolver.
-        doc.modules.add(module)
+        if module is not None:
+            doc.modules.add(module)
 
         run_app(self, module, doc)
 
-CodeHandler.modify_document = PanelCodeHandler.modify_document
+CodeHandler.modify_document = PanelCodeHandler.modify_document  # type: ignore
 
 
 class ScriptHandler(PanelCodeHandler):
@@ -468,7 +511,7 @@ class ScriptHandler(PanelCodeHandler):
 
         super().__init__(source=source, filename=filename, argv=argv, package=package)
 
-bokeh.application.handlers.directory.ScriptHandler = ScriptHandler
+bokeh.application.handlers.directory.ScriptHandler = ScriptHandler  # type: ignore
 
 
 class MarkdownHandler(PanelCodeHandler):
@@ -649,14 +692,15 @@ class NotebookHandler(PanelCodeHandler):
 
         # If no module was returned it means the code runner has some permanent
         # unfixable problem, e.g. the configured source code has a syntax error
-        if module is None:
+        if module is None and not config.autoreload:
             return
 
         # One reason modules are stored is to prevent the module from being gc'd
         # before the document is. A symptom of a gc'd module is that its globals
         # become None. Additionally stored modules are used to provide correct
         # paths to custom models resolver.
-        doc.modules.add(module)
+        if module is not None:
+            doc.modules.add(module)
 
         def post_run():
             if not (doc.roots or doc in state._templates or self._runner.error):
@@ -665,7 +709,7 @@ class NotebookHandler(PanelCodeHandler):
 
         with _patch_ipython_display():
             with set_env_vars(MPLBACKEND='agg'):
-                run_app(self, module, doc, post_run)
+                run_app(self, module, doc, post_run, allow_empty=True)
 
     def _update_position_metadata(self, event):
         """
@@ -695,4 +739,4 @@ class NotebookHandler(PanelCodeHandler):
             json.dump(nb_layout, f)
         self._stale = True
 
-bokeh.application.handlers.directory.NotebookHandler = NotebookHandler
+bokeh.application.handlers.directory.NotebookHandler = NotebookHandler  # type: ignore

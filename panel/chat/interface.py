@@ -6,15 +6,17 @@ through a frontend input UI.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
-from typing import Any, Callable, ClassVar
+from typing import Any, ClassVar
 
 import param
 
 from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
+from ..layout.base import ListLike, NamedListLike
 from ..pane.image import ImageBase
 from ..viewable import Viewable
 from ..widgets.base import WidgetBase
@@ -70,8 +72,8 @@ class ChatInterface(ChatFeed):
     >>>     yield contents
 
     >>> chat_interface = ChatInterface(
-        callback=repeat_contents, widgets=[TextInput(), FileInput()]
-    )
+    ...    callback=repeat_contents, widgets=[TextInput(), FileInput()]
+    ... )
     """
 
     auto_send_types = param.List(doc="""
@@ -106,6 +108,9 @@ class ChatInterface(ChatFeed):
 
     show_button_name = param.Boolean(default=None, doc="""
         Whether to show the button name.""")
+
+    show_button_tooltips = param.Boolean(default=False, doc="""
+        Whether to show the button tooltips.""")
 
     user = param.String(default="User", doc="""
         Name of the ChatInterface user.""")
@@ -186,9 +191,10 @@ class ChatInterface(ChatFeed):
         Link the disabled and loading attributes of the chat box to the
         given object.
         """
-        for attr in ["disabled", "loading"]:
-            setattr(obj, attr, getattr(self, attr))
-            self.link(obj, **{attr: attr})
+        mapping: dict[str, Any] = {"disabled": "disabled", "loading": "loading"}
+        values = {p: getattr(self, p) for p in mapping}
+        self.param.update(values)
+        self.link(obj, **mapping)
 
     @param.depends("width", watch=True)
     def _update_input_width(self):
@@ -303,12 +309,14 @@ class ChatInterface(ChatFeed):
                     visible = self.param[f'show_{action}'] if action != "stop" else False
                 except KeyError:
                     visible = True
-                show_expr = self.param.show_button_name.rx()
+                show_name_expr = self.param.show_button_name.rx()
+                show_tooltip_expr = self.param.show_button_tooltips.rx()
                 button = Button(
-                    name=show_expr.rx.where(button_data.name.title(), ""),
+                    name=show_name_expr.rx.where(button_data.name.title(), ""),
+                    description=show_tooltip_expr.rx.where(f"Click to {button_data.name.lower()}", None),
                     icon=button_data.icon,
                     sizing_mode="stretch_width",
-                    max_width=show_expr.rx.where(90, 45),
+                    max_width=show_name_expr.rx.where(90, 45),
                     max_height=50,
                     margin=(0, 5, 0, 0),
                     align="center",
@@ -354,11 +362,11 @@ class ChatInterface(ChatFeed):
         self._input_layout = input_layout
 
     def _wrap_callbacks(
-            self,
-            callback: Callable | None = None,
-            post_callback: Callable | None = None,
-            name: str = ""
-        ):
+        self,
+        callback: Callable | None = None,
+        post_callback: Callable | None = None,
+        name: str = ""
+    ):
         """
         Wrap the callback and post callback around the default callback.
         """
@@ -389,7 +397,7 @@ class ChatInterface(ChatFeed):
     def _click_send(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Send the input when the user presses Enter.
@@ -430,7 +438,7 @@ class ChatInterface(ChatFeed):
     def _click_stop(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> bool:
         """
         Cancel the callback when the user presses the Stop button.
@@ -479,7 +487,7 @@ class ChatInterface(ChatFeed):
     def _click_rerun(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Upon clicking the rerun button, rerun the last user message,
@@ -494,7 +502,7 @@ class ChatInterface(ChatFeed):
     def _click_undo(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Upon clicking the undo button, undo (remove) messages
@@ -518,7 +526,7 @@ class ChatInterface(ChatFeed):
     def _click_clear(
         self,
         event: param.parameterized.Event | None = None,
-        instance: "ChatInterface" | None = None
+        instance: ChatInterface | None = None
     ) -> None:
         """
         Upon clicking the clear button, clear the chat log.
@@ -548,7 +556,11 @@ class ChatInterface(ChatFeed):
         The active widget.
         """
         if isinstance(self._input_layout, Tabs):
-            return self._input_layout[self.active].objects[0]
+            current_tab = self._input_layout[self.active]
+            if isinstance(current_tab, (ListLike, NamedListLike)):
+                return current_tab.objects[0]
+            else:
+                return current_tab  # type: ignore
         return self._input_layout.objects[0]
 
     @property
@@ -583,8 +595,9 @@ class ChatInterface(ChatFeed):
         self,
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
-        default_role: str | None = "assistant",
-        custom_serializer: Callable = None
+        default_role: str = "assistant",
+        custom_serializer: Callable[[ChatMessage], Any] | None = None,
+        **serialize_kwargs
     ) -> list[dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
@@ -606,6 +619,8 @@ class ChatInterface(ChatFeed):
             A custom function to format the ChatMessage's object. The function must
             accept one positional argument, the ChatMessage object, and return a string.
             If not provided, uses the serialize method on ChatMessage.
+        serialize_kwargs : dict
+            Additional keyword arguments to pass to the serializer.
 
         Returns
         -------
@@ -616,7 +631,9 @@ class ChatInterface(ChatFeed):
                 "user": [self.user],
                 "assistant": [self.callback_user],
             }
-        return super()._serialize_for_transformers(messages, role_names, default_role, custom_serializer)
+        return super()._serialize_for_transformers(
+            messages, role_names, default_role, custom_serializer, **serialize_kwargs
+        )
 
     @param.depends("_callback_state", watch=True)
     async def _update_input_disabled(self):
@@ -637,14 +654,15 @@ class ChatInterface(ChatFeed):
         await super()._cleanup_response()
         await self._update_input_disabled()
 
-
     def send(
         self,
         value: ChatMessage | dict | Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
+        **message_params
     ) -> ChatMessage | None:
+
         """
         Sends a value and creates a new message in the chat log.
 
@@ -662,6 +680,8 @@ class ChatInterface(ChatFeed):
             Will default to the avatar parameter.
         respond : bool
             Whether to execute the callback.
+        message_params : dict
+            Additional parameters to pass to the ChatMessage.
 
         Returns
         -------
@@ -672,7 +692,8 @@ class ChatInterface(ChatFeed):
                 user = self.user
             if avatar is None:
                 avatar = self.avatar
-        return super().send(value, user=user, avatar=avatar, respond=respond)
+        message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user)
+        return super().send(value, user=user, avatar=avatar, respond=respond, **message_params)
 
     def stream(
         self,
@@ -681,6 +702,7 @@ class ChatInterface(ChatFeed):
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
         replace: bool = False,
+        **message_params
     ) -> ChatMessage | None:
         """
         Streams a token and updates the provided message, if provided.
@@ -705,14 +727,17 @@ class ChatInterface(ChatFeed):
             The message to update.
         replace : bool
             Whether to replace the existing text when streaming a string or dict.
+        message_params : dict
+            Additional parameters to pass to the ChatMessage.
 
         Returns
         -------
         The message that was updated.
         """
-        if not isinstance(value, ChatMessage):
+        if not isinstance(value, ChatMessage) and not message:
             # ChatMessage cannot set user or avatar when explicitly streaming
             # so only set to the default when not a ChatMessage
             user = user or self.user
             avatar = avatar or self.avatar
-        return super().stream(value, user=user, avatar=avatar, message=message, replace=replace)
+        message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user and message_params.get("edit_callback"))
+        return super().stream(value, user=user, avatar=avatar, message=message, replace=replace, **message_params)

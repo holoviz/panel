@@ -12,7 +12,7 @@ To begin simply create a Markdown file with the `.md` file extension, e.g. `app.
 # My App
 ```
 
-Before adding any actual content add a code block with any imports your application needs. The code block should have one of two type declarations, either `python` or `{pyodide}`. The latter is useful if you also want to use [the Sphinx Pyodide integration](../wasm/sphinx.md). In this case we will simply declare a `python` code block that imports Panel and calls the extension with a specific template:
+Before adding any actual content add a code block with any imports your application needs. The code block should have one of two type declarations, either `python` or `{pyodide}`. The latter is useful if you also want to use [the Sphinx Pyodide integration](../wasm/sphinx). In this case we will simply declare a `python` code block that imports Panel and calls the extension with a specific template:
 
 ````markdown
 ```python
@@ -82,11 +82,12 @@ def hello_world(text):
 pn.Row(widget, pn.bind(hello_world, widget)).servable()
 ```
 ````
+:::
 
 Then, from the command line, launch a server with:
 
 ```bash
-panel serve app.md --show --autoreload
+panel serve app.md --show --dev
 ```
 
 ![The rendered Panel application written as a Markdown file.](../../_static/images/markdown_sample.png)

@@ -49,7 +49,7 @@ class VSpacer(Spacer):
     Using this component we can space objects equidistantly in a layout and
     allow the empty space to shrink when the browser is resized.
 
-    Reference: https://panel.holoviz.org/user_guide/Customization.html#spacers
+    Reference: https://panel.holoviz.org/how_to/layout/spacing.html#spacer-components
 
     :Example:
 
@@ -101,7 +101,7 @@ class Divider(Reactive):
     >>> )
     """
 
-    width_policy = param.ObjectSelector(default="fit", readonly=True)
+    width_policy = param.Selector(default="fit", readonly=True)
 
     _bokeh_model = BkDiv
 

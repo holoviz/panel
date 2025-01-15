@@ -20,7 +20,6 @@ function extractClasses() {
     classesDict[cls] = deck[cls]
   }
   const carto = (window as any).CartoLibrary
-  console.log(carto)
   const layers = Object.keys(carto.CARTO_LAYERS).filter(x => x.endsWith("Layer"))
   for (const layer of layers) {
     classesDict[layer] = carto.CARTO_LAYERS[layer]
@@ -47,6 +46,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   _map: any
   _layer_map: any
   _view_cb: any
+  _initialized: boolean = false
 
   override connect_signals(): void {
     super.connect_signals()
@@ -219,7 +219,9 @@ export class DeckGLPlotView extends LayoutDOMView {
       this.jsonConverter.mergeConfiguration(configuration)
       const props = this.jsonConverter.convert(jsonInput)
       const getTooltip = makeTooltip(tooltip, props.layers)
-      if (props.mapStyle && props.mapStyle.includes("carto")) {
+      if (props.mapStyle === null) {
+        props.map = null
+      } else if (props.mapStyle.includes("carto")) {
         this._map = new (window as any).maplibregl.Map({
           container,
           style: props.mapStyle,
@@ -268,14 +270,27 @@ export class DeckGLPlotView extends LayoutDOMView {
       })
     }
     this.shadow_el.appendChild(container)
+    this._initialized = false
   }
 
-  override after_layout(): void {
-    super.after_layout()
+  resize(): void {
     this.deckGL.redraw(true)
     if (this._map) {
       this._map.resize()
     }
+  }
+
+  override after_layout(): void {
+    super.after_layout()
+    if (!this._initialized) {
+      this.resize()
+    }
+    this._initialized = true
+  }
+
+  override after_resize(): void {
+    super.after_resize()
+    this.resize()
   }
 }
 

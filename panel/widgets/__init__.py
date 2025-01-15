@@ -47,6 +47,7 @@ from .input import (  # noqa
     DatetimeInput, DatetimePicker, DatetimeRangeInput, DatetimeRangePicker,
     FileDropper, FileInput, FloatInput, IntInput, LiteralInput, NumberInput,
     PasswordInput, Spinner, StaticText, Switch, TextAreaInput, TextInput,
+    TimePicker,
 )
 from .misc import FileDownload, JSONEditor, VideoStream  # noqa
 from .player import DiscretePlayer, Player  # noqa
@@ -56,9 +57,9 @@ from .select import (  # noqa
     RadioButtonGroup, Select, ToggleGroup,
 )
 from .slider import (  # noqa
-    DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
-    EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatSlider,
-    IntRangeSlider, IntSlider, RangeSlider,
+    DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider,
+    DiscreteSlider, EditableFloatSlider, EditableIntSlider,
+    EditableRangeSlider, FloatSlider, IntRangeSlider, IntSlider, RangeSlider,
 )
 from .speech_to_text import Grammar, GrammarList, SpeechToText  # noqa
 from .tables import DataFrame, Tabulator  # noqa
@@ -86,6 +87,7 @@ __all__ = (
     "DateRangeSlider",
     "DatetimeRangeSlider",
     "DateSlider",
+    "DatetimeSlider",
     "DatetimeInput",
     "DatetimePicker",
     "DatetimeRangeInput",
@@ -137,6 +139,7 @@ __all__ = (
     "TextEditor",
     "TextInput",
     "TextToSpeech",
+    "TimePicker",
     "Toggle",
     "ToggleGroup",
     "ToggleIcon",

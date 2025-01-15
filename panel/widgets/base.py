@@ -7,8 +7,9 @@ from __future__ import annotations
 
 import math
 
+from collections.abc import Callable, Mapping
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, TypeVar,
+    TYPE_CHECKING, Any, ClassVar, TypeVar,
 )
 
 import param  # type: ignore
@@ -82,7 +83,7 @@ class Widget(Reactive, WidgetBase):
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
 
-    name = param.String(default='')
+    name = param.String(default='', constant=False)
 
     height = param.Integer(default=None, bounds=(0, None))
 
@@ -96,14 +97,14 @@ class Widget(Reactive, WidgetBase):
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     # Whether the widget supports embedding
-    _supports_embed: ClassVar[bool] = False
+    _supports_embed: bool = False
 
     # Declares the Bokeh model type of the widget
     _widget_type: ClassVar[type[Model] | None] = None
 
     __abstract = True
 
-    def __init__(self, **params):
+    def __init__(self, **params: Any):
         if 'name' not in params:
             params['name'] = ''
         if '_supports_embed' in params:
@@ -115,7 +116,7 @@ class Widget(Reactive, WidgetBase):
         super().__init__(**params)
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         props = list(super()._linked_properties)
         if 'description' in props:
             props.remove('description')
@@ -145,9 +146,13 @@ class Widget(Reactive, WidgetBase):
         return params
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
+        if self._widget_type is None:
+            raise NotImplementedError(
+                'Widget {type(self).__name__} did not define a _widget_type'
+            )
         model = self._widget_type(**self._get_properties(doc))
         root = root or model
         self._models[root.ref['id']] = (model, parent)
@@ -155,8 +160,8 @@ class Widget(Reactive, WidgetBase):
         return model
 
     def _get_embed_state(
-        self, root: 'Model', values: Optional[list[Any]] = None, max_opts: int = 3
-    ) -> tuple['Widget', 'Model', list[Any], Callable[['Model'], Any], str, str]:
+        self, root: Model, values: list[Any] | None = None, max_opts: int = 3
+    ) -> tuple[Widget, Model, list[Any], Callable[[Model], Any], str, str]:
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -185,6 +190,7 @@ class Widget(Reactive, WidgetBase):
         js_getter: string
           JS snippet that returns the state value given the model
         """
+        raise NotImplementedError()
 
 
 class CompositeWidget(Widget):
@@ -195,7 +201,7 @@ class CompositeWidget(Widget):
 
     _composite_type: ClassVar[type[ListPanel]] = Row
 
-    _linked_properties: ClassVar[tuple[str]] = ()
+    _linked_properties: tuple[str, ...] = ()
 
     __abstract = True
 
@@ -221,7 +227,7 @@ class CompositeWidget(Widget):
         self._composite.param.update(**updates)
 
     def select(
-        self, selector: Optional[type | Callable[['Viewable'], bool]] = None
+        self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
@@ -247,11 +253,11 @@ class CompositeWidget(Widget):
         super()._cleanup(root)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
-        root = root or model
+        root = model if root is None else root
         self._models[root.ref['id']] = (model, parent)
         return model
 

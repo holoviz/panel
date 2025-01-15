@@ -17,9 +17,7 @@ except Exception:
     diskcache = None
 diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires diskcache")
 
-from panel.io.cache import (
-    _find_hash_func, _generate_hash, cache, is_equal,
-)
+from panel.io.cache import _generate_hash, cache, is_equal
 from panel.io.state import set_curdoc, state
 from panel.tests.util import serve_and_wait
 
@@ -28,7 +26,7 @@ from panel.tests.util import serve_and_wait
 ################
 
 def hashes_equal(v1, v2):
-    a, b = _find_hash_func(v1)(v1), _find_hash_func(v2)(v2)
+    a, b = _generate_hash(v1), _generate_hash(v2)
     return a == b
 
 def test_str_hash():
@@ -52,6 +50,11 @@ def test_none_hash():
     assert hashes_equal(None, None)
     assert not hashes_equal(None, False)
 
+def test_object_hash():
+    obj1, obj2 = object(), object()
+    assert hashes_equal(obj1, obj1)
+    assert not hashes_equal(obj1, obj2)
+
 def test_bytes_hash():
     assert hashes_equal(b'0', b'0')
     assert not hashes_equal(b'0', b'1')
@@ -70,10 +73,11 @@ def test_list_hash():
     assert not hashes_equal([0], [1])
     assert not hashes_equal(['a', ['b']], ['a', ['c']])
 
+def test_list_hash_recursive():
     # Recursion
     l = [0]
     l.append(l)
-    assert hashes_equal(l, list(l))
+    assert hashes_equal(list(l), list(l))
 
 def test_tuple_hash():
     assert hashes_equal((0,), (0,))
@@ -88,10 +92,10 @@ def test_dict_hash():
     assert not hashes_equal({'a': 0}, {'a': 1})
     assert not hashes_equal({'a': {'b': 0}}, {'a': {'b': 1}})
 
-    # Recursion
+def test_dict_hash_recursive():
     d = {'a': {}}
     d['a'] = d
-    assert hashes_equal(d, dict(d))
+    assert hashes_equal(dict(d), dict(d))
 
 def test_stringio_hash():
     sio1, sio2 = io.StringIO(), io.StringIO()
@@ -151,6 +155,34 @@ def test_series_hash():
     series2.iloc[0] = 3.14
     assert not hashes_equal(series1, series2)
 
+def test_polars_dataframe_hash():
+    pl = pytest.importorskip("polars")
+    data = {
+        "A": [0.0, 1.0, 2.0, 3.0, 4.0],
+        "B": [0.0, 1.0, 0.0, 1.0, 0.0],
+        "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
+    }
+    # DataFrame
+    df1, df2 = pl.DataFrame(data), pl.DataFrame(data)
+    assert hashes_equal(df1, df2)
+    df2 = df2.with_columns(A=pl.col("A").sort(descending=True))
+    assert not hashes_equal(df1, df2)
+
+    # Lazy DataFrame
+    df1, df2 = pl.LazyFrame(data), pl.LazyFrame(data)
+    assert hashes_equal(df1, df2)
+    df2 = df2.with_columns(A=pl.col("A").sort(descending=True))
+    assert not hashes_equal(df1, df2)
+
+def test_polars_series_hash():
+    pl = pytest.importorskip("polars")
+    ser1 = pl.Series([0.0, 1.0, 2.0, 3.0, 4.0])
+    ser2 = ser1.clone()
+
+    assert hashes_equal(ser1, ser2)
+    ser2 = ser2.replace(0.0, 3.14)
+    assert not hashes_equal(ser1, ser2)
+
 def test_ufunc_hash():
     assert hashes_equal(np.absolute, np.absolute)
     assert not hashes_equal(np.sin, np.cos)
@@ -167,7 +199,7 @@ def test_module_hash():
 # Test caching #
 ################
 
-OFFSET = {}
+OFFSET: dict[tuple, int] = {}
 
 def function_with_args(a, b):
     global OFFSET
@@ -251,56 +283,52 @@ def test_per_session_cache_server(port):
 
     assert list(counts.values()) == [1, 1]
 
-@pytest.mark.xdist_group("cache")
 @diskcache_available
-def test_disk_cache():
+def test_disk_cache(tmp_path):
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, to_disk=True)
+    fn = cache(function_with_args, to_disk=True, cache_path=tmp_path)
 
     assert fn(0, 0) == 0
-    assert pathlib.Path('./cache').exists()
-    assert list(pathlib.Path('./cache').glob('*'))
+    assert tmp_path.exists()
+    assert list(tmp_path.glob('*'))
     assert fn(0, 0) == 0
     fn.clear()
     assert fn(0, 0) == 1
 
-@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_fifo(to_disk):
+def test_cache_fifo(to_disk, tmp_path):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=2, policy='fifo', to_disk=to_disk)
+    fn = cache(function_with_args, max_items=2, policy='fifo', to_disk=to_disk, cache_path=tmp_path)
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 0) == 0
     assert fn(0, 2) == 2 # (0, 0) should be evicted
     assert fn(0, 0) == 1
 
-@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_lfu(to_disk):
+def test_cache_lfu(to_disk, tmp_path):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=2, policy='lfu', to_disk=to_disk)
+    fn = cache(function_with_args, max_items=2, policy='lfu', to_disk=to_disk, cache_path=tmp_path)
     assert fn(0, 0) == 0
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 2) == 2 # (0, 1) should be evicted
     assert fn(0, 1) == 2
 
-@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_lru(to_disk):
+def test_cache_lru(to_disk, tmp_path):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=3, policy='lru', to_disk=to_disk)
+    fn = cache(function_with_args, max_items=3, policy='lru', to_disk=to_disk, cache_path=tmp_path)
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 2) == 2
@@ -309,19 +337,17 @@ def test_cache_lru(to_disk):
     assert fn(0, 0) == 0
     assert fn(0, 1) == 2
 
-@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_ttl(to_disk):
+def test_cache_ttl(to_disk, tmp_path):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, ttl=0.1, to_disk=to_disk)
+    fn = cache(function_with_args, ttl=0.1, to_disk=to_disk, cache_path=tmp_path)
     assert fn(0, 0) == 0
     time.sleep(0.2)
     assert fn(0, 0) == 1
 
-@pytest.mark.xdist_group("cache")
 def test_cache_on_undecorated_parameterized_method():
     class Model(param.Parameterized):
         data = param.Parameter(default=1)

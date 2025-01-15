@@ -79,7 +79,7 @@ def build_avatar_pane(
     return avatar_pane
 
 
-def stream_to(obj, token, replace=False, object_panel=None):
+def stream_to(obj, token: str, replace: bool = False, object_panel: Viewable | None = None):
     """
     Updates the message with the new token traversing the object to
     allow updating nested objects. When traversing a nested Panel
@@ -127,7 +127,7 @@ def get_obj_label(obj):
     Get the label for the object; defaults to specified object name;
     if unspecified, defaults to the type name.
     """
-    label = obj.name
+    label = obj.name if hasattr(obj, "name") else ""
     type_name = type(obj).__name__
     # If the name is just type + ID, simply use type
     # e.g. Column10241 -> Column
@@ -185,4 +185,8 @@ def serialize_recursively(
     if prefix_with_viewable_label and isinstance(obj, Viewable):
         label = get_obj_label(obj)
         string = f"{label}={string!r}"
+
+    if not isinstance(string, str):
+        string = str(string)
+
     return string

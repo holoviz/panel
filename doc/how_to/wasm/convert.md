@@ -4,12 +4,13 @@ Writing an HTML file from scratch with all the Javascript and Python dependencie
 
 The ``panel convert`` command has the following options:
 
+```bash
     positional arguments:
     DIRECTORY-OR-SCRIPT   The app directories or scripts to serve (serve empty document if not specified)
 
     options:
     -h, --help            show this help message and exit
-    --to TO               The format to convert to, one of 'pyodide' (default), 'pyodide-worker' or 'pyscript'
+    --to TO               The format to convert to, one of 'pyodide' (default), 'pyodide-worker', 'pyscript' or 'pyscript-worker'
     --compiled            Whether to use the compiled and faster version of Pyodide.
     --out OUT             The directory to write the file to.
     --title TITLE         A custom title for the application(s).
@@ -17,16 +18,19 @@ The ``panel convert`` command has the following options:
     --index               Whether to create an index if multiple files are served.
     --pwa                 Whether to add files to serve applications as a Progressive Web App.
     --requirements REQUIREMENTS [REQUIREMENTS ...]
-                            Explicit requirements to add to the converted file, a single requirements.txt file or a JSON file containing requirements per app. By default requirements are inferred from the code.
+                            Explicit requirements to add to the converted file, a single requirements.txt file or a JSON file containing requirements per app. By default requirements
+                            are inferred from the code.
     --disable-http-patch  Whether to disable patching http requests using the pyodide-http library.
     --watch               Watch the files
     --num-procs NUM_PROCS
                             The number of processes to start in parallel to convert the apps.
+```
 
 ## Example
 
 This example will demonstrate how to *convert* and *serve* a basic data app locally.
 
+- install the dependencies `pip install panel scikit-learn xgboost`.
 - Create a `script.py` file with the following content
 
 ```python
@@ -75,7 +79,7 @@ You can now add the `script.html` (and `script.js` file if you used the `pyodide
 
 ## Tips & Tricks for development
 
-- While developing you should run the script locally with *auto reload*: `panel serve script.py --autoreload`.
+- While developing you should run the script locally in dev mode (enabling autoreload): `panel serve script.py --dev`.
 - You can also watch your script for changes and rebuild it if you make an edit with `panel convert ... --watch`
 - If the converted app does not work as expected, you can most often find the errors in the browser
 console. [This guide](https://balsamiq.com/support/faqs/browserconsole/) describes how to open the
@@ -88,7 +92,8 @@ Using the `--to` argument on the CLI you can control the format of the file that
 
 - **`pyodide`** (default): Run application using Pyodide running in the main thread. This option is less performant than pyodide-worker but produces completely standalone HTML files that do not have to be hosted on a static file server (e.g. Github Pages).
 - **`pyodide-worker`**: Generates an HTML file and a JS file containing a Web Worker that runs in a separate thread. This is the most performant option, but files have to be hosted on a static file server.
-- **`pyscript`**: Generates an HTML leveraging PyScript. This produces standalone HTML files containing `<py-env>` and `<py-script>` tags containing the dependencies and the application code. This output is the most readable, and should have equivalent performance to the `pyodide` option.
+- **`pyscript`**: Generates an HTML leveraging PyScript. This produces standalone HTML files containing `<script type="py">` tags containing the dependencies and the application code. This output is the most readable, and should have equivalent performance to the `pyodide` option.
+- **`pyscript-worker`**: Same as `pyscript` except the Python is executed on a Web Worker. This option is slightly less efficient than the `pyodide-worker` option but still ensures that the frontend is not blocked while the code is executing.
 
 ## Requirements
 
@@ -118,9 +123,9 @@ Progressive web applications (PWAs) provide a way for your web apps to behave al
 
 Once generated, you can inspect the `site.webmanifest` file and modify it to your liking, including updating the favicons in the assets directory.
 
-```{note}
+:::{note}
 If you decide to enable the `--pwa` ensure that you also provide a unique `--title`. Otherwise the browser caches storing your apps dependencies will end up overwriting each other.
-```
+:::
 
 ## Handling HTTP requests
 

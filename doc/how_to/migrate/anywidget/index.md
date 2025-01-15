@@ -1,14 +1,14 @@
 # Converting from AnyWidget to Panel
 
-This guide addresses how to convert [AnyWidget](https://anywidget.dev/) widgets to custom Panel widgets.
+This guide addresses how to convert [AnyWidget](https://anywidget.dev/) widgets to custom `JSComponent` or `ReactComponent` widgets.
 
-Please note that AnyWidget widgets are [`ipywidgets`](https://ipywidgets.readthedocs.io/en/stable/) and can be used directly in Panel via the [`IpyWidgets`](../../reference/panes/IPyWidget.ipynb) pane and the `Traitlets` `@observe` API without a conversion. We recommend trying this option first. If it does not work for your use case, please consider contributing to the existing `AnyWidget` before converting it to a Panel widget.
+Please note that AnyWidget widgets are [`ipywidgets`](https://ipywidgets.readthedocs.io/en/stable/) and can be used directly in Panel via the [`IpyWidgets`](../../../reference/panes/Image.md) pane and the `Traitlets` `@observe` API without a conversion. We recommend trying this option first. If it does not work for your use case, please consider contributing to the existing `AnyWidget` before converting it to a Panel widget.
 
 Some reasons you might still want to convert an `AnyWidget` to a custom Panel widget are:
 
-- Familiar and Optimized API: This enables your and your users to use the familiar `Param` parameter API for which Panel is optimized.
-- Customization: You might want to use the `AnyWidget` as a starting point and customize it to your exact needs.
-- Efficiency: You users avoid loading  `AnyWidget`/`ipywidgets` JavaScript libraries which ANECDOTALLY is not insignificant. Your users also avoid the overhead of converting between `Param/Panel/Bokeh` and `Traitlets`/`AnyWidget`/`ipywidgets` objects: ANECDOTALLY, Panel (i.e., Bokeh) utilizes faster serialization and deserialization methods and formats. IS THIS TRUE, PHILIPP? ALSO, WHEN USING THE ANYWIDGET ON THE BOKEH SERVER? DO WE HAVE NUMBERS FOR THIS?
+- **Familiar and Optimized API**: This enables you and your users to use the familiar `Param` parameter API for which Panel is optimized.
+- **Customization**: You might want to use the `AnyWidget` as a starting point and customize it to your exact needs.
+- **Efficiency**: You users avoid loading  `AnyWidget`/`ipywidgets` JavaScript libraries which ANECDOTALLY is not insignificant. Your users also avoid the overhead of converting between `Param/Panel/Bokeh` and `Traitlets`/`AnyWidget`/`ipywidgets` objects: ANECDOTALLY, Panel (i.e., Bokeh) utilizes faster serialization and deserialization methods and formats. IS THIS TRUE, PHILIPP? ALSO, WHEN USING THE ANYWIDGET ON THE BOKEH SERVER? DO WE HAVE NUMBERS FOR THIS?
 
 ## Conversion Steps
 
@@ -18,7 +18,7 @@ The high-level steps needed for converting `AnyWidgets` components to Panel comp
 
 #### Step 1: Base Class Conversion
 
-Convert from the `AnyWidget` base class to the Panel [`JSComponent`](../../reference/panes/JSComponent.md) base class. If the `_esm` script is based on [React](https://react.dev/), use the [`ReactComponent`](../../reference/panes/ReactComponent.md). For [Preact](https://preactjs.com/), use the [`PreactComponent`](../../reference/panes/JSComponent.md).
+Convert from the `AnyWidget` base class to the Panel [`JSComponent`](../../../reference/custom_components/JSComponent) base class. If the `_esm` script is based on [React](https://react.dev/), use the [`ReactComponent`](../../../reference/custom_components/ReactComponent).
 
 #### Step 2: Attribute Conversion
 
@@ -49,9 +49,9 @@ Their methods are also different reflecting differences between Traitlets and Pa
 
 | AnyWidget | Panel/ Bokeh |
 | --------- | ----- |
-| `model.get('some_value')` | `data.some_value`|
-| `model.save('some_value', 1)`<br>`model.save_changes()` | `data.some_value = 1`|
-| `model.on("change:some_value", () => {...})` | `data.on('change: some_value', () => {...}))` |
+| `model.get('some_value')` | `model.some_value`|
+| `model.save('some_value', 1)`<br>`model.save_changes()` | `model.some_value = 1`|
+| `model.on("change:some_value", () => {...})` | `model.on('change: some_value', () => {...}))` |
 
 ### Convert React Code
 
@@ -99,7 +99,7 @@ class CounterWidget(anywidget.AnyWidget):
     """
 ```
 
-#### Panel `CounterWidget`
+#### Panel JS `CounterWidget`
 
 ```{pyodide}
 import panel as pn
@@ -121,7 +121,7 @@ class CounterButton(JSComponent):
       btn.addEventListener("click", () => {
           model.value += 1
       });
-      data.on('change:value', () => {
+      model.on('change:value', () => {
         btn.innerHTML = `count is ${model.value}`;
       })
       return btn
@@ -134,15 +134,9 @@ CounterButton().servable()
 
 :::{note}
 
-With Panel you may replace the lines `export function render({ data })` and `return btn` with the lines `export function render({ data, el })` and `el.appendChild(btn)`, if you want to minimize the number of changes.
+With Panel you may replace the lines `export function render({ model })` and `return btn` with the lines `export function render({ model, el })` and `el.appendChild(btn)`, if you want to minimize the number of changes.
 
 :::
-
-### React Counter Widget
-
-#### AnyWidget React `CounterWidget`
-
-To be determined (TBD).
 
 #### Panel React `CounterWidget`
 
@@ -175,24 +169,24 @@ CounterButton().servable()
 
 ### Mario Button
 
-Check out our [Custom Components Tutorial](../../../tutorials/expert/custom_components.md) to see a converted version of the [ipymario](https://github.com/manzt/ipymario) widget.
+Check out our [Custom Components Tutorial](../../../tutorials/expert/custom_anywidget_components) to see a converted version of the [ipymario](https://github.com/manzt/ipymario) widget.
 
-[![Mario Button](https://assets.holoviz.org/panel/tutorials/ipymario.gif)](../../../tutorials/expert/custom_components.md)
+[![Mario Button](https://assets.holoviz.org/panel/tutorials/ipymario.gif)](../../../tutorials/expert/custom_anywidget_components)
 
 ## References
 
 ### Tutorials
 
-- [Build Custom Components](../../../how_to/custom_components/reactive_esm/reactive_esm_layout.md)
+- [Build Custom AnyWidget Components](../../../tutorials/expert/custom_anywidget_components)
 
 ### How-To Guides
 
-- [Convert `AnyWidget` widgets](../../../how_to/migrate/anywidget/index.md)
+- [Convert `AnyWidget` widgets](../../../how_to/migrate/anywidget/index)
 
 ### Reference Guides
 
-- [`JSComponent`](../../../reference/panes/JSComponent.md)
-- [`ReactComponent`](../../../reference/panes/ReactComponent.md)
-- [`PreactComponent`](../../../reference/panes/PreactComponent.md)
+- [`JSComponent`](../../../reference/custom_components/JSComponent)
+- [`ReactComponent`](../../../reference/custom_components/ReactComponent)
+- [`AnyWidgetComponent`](../../../reference/custom_components/AnyWidgetComponent)
 
 With these skills, you are now equipped to pioneer and push the boundaries of what can be achieved with Panel. Happy coding!

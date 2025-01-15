@@ -7,11 +7,10 @@ from __future__ import annotations
 import itertools
 import re
 
+from collections.abc import Awaitable, Callable, Mapping
 from functools import partial
 from types import FunctionType
-from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -81,7 +80,7 @@ class SingleSelectBase(SelectBase):
 
     _allows_none: ClassVar[bool] = False
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     __abstract = True
 
@@ -276,7 +275,7 @@ class Select(SingleSelectBase):
         groups_provided = 'groups' in msg
         msg = super()._process_param_change(msg)
         if groups_provided or 'options' in msg and self.groups:
-            groups = self.groups
+            groups: dict[str, list[str | tuple[str, str]]] = self.groups
             if (all(isinstance(values, dict) for values in groups.values()) is False
                and  all(isinstance(values, list) for values in groups.values()) is False):
                 raise ValueError(
@@ -294,7 +293,7 @@ class Select(SingleSelectBase):
                         }
                     else:
                         options = {
-                            group: [str(v) for v in self.groups[group]]
+                            group: [str(v) for v in self.groups[group]]  # type: ignore
                             for group in groups.keys()
                         }
                     msg['options'] = options
@@ -422,19 +421,11 @@ class NestedSelect(CompositeWidget):
         return False
 
     def _find_max_depth(self, d, depth=1):
-        if d is None or len(d) == 0:
-            return 0
-        elif not isinstance(d, dict):
-            return depth
-
+        if isinstance(d, list) or d is None:
+            return depth-1
         max_depth = depth
         for value in d.values():
-            if isinstance(value, dict):
-                max_depth = max(max_depth, self._find_max_depth(value, depth + 1))
-            # dict means it's a level, so it's not the last level
-            # list means it's a leaf, so it's the last level
-            if isinstance(value, list) and len(value) == 0 and max_depth > 0:
-                max_depth -= 1
+            max_depth = max(max_depth, self._find_max_depth(value, depth + 1))
         return max_depth
 
     def _resolve_callable_options(self, i, options) -> dict | list:
@@ -554,6 +545,7 @@ class NestedSelect(CompositeWidget):
         value = self._lookup_value(i, options, self.value, error=False)
         widget_kwargs["options"] = options
         widget_kwargs["value"] = value
+        widget_kwargs["disabled"] = self.param.disabled
         if "visible" not in widget_kwargs:
             # first select widget always visible
             widget_kwargs["visible"] = i == 0 or callable(options) or len(options) > 0
@@ -746,7 +738,7 @@ class _MultiSelectBase(SingleSelectBase):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
-    _supports_embed: ClassVar[bool] = False
+    _supports_embed: bool = False
 
     __abstract = True
 
@@ -806,8 +798,8 @@ class MultiSelect(_MultiSelectBase):
         self._dbl__click_handlers = [click_handler] if click_handler else []
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('dblclick_event', model=model, doc=doc, comm=comm)
@@ -1058,7 +1050,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
         'value': "source.labels[value]", 'button_style': None, 'description': None
     }
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _widget_type: ClassVar[type[Model]] = _BkRadioButtonGroup
 
@@ -1086,7 +1078,7 @@ class RadioBoxGroup(_RadioGroupBase):
         Whether the items be arrange vertically (``False``) or
         horizontally in-line (``True``).""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _widget_type: ClassVar[type[Model]] = _BkRadioBoxGroup
 

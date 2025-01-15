@@ -72,6 +72,10 @@ Now that you've mastered the more advanced concepts of Panel, it's time to put y
 - **Serve Apps without a Server:** Explore the realm of WASM to serve your apps without traditional servers.
 - **[Build a Server Video Stream](build_server_video_stream.md):** Utilize threading to set up a video stream from a camera connected to a server without blocking the UI.
 
+## Community Tutorials
+
+- [Adding user authentication to a Panel application](https://ploomber.io/blog/panel-auth/) (blog post)
+
 ```{toctree}
 :titlesonly:
 :hidden:

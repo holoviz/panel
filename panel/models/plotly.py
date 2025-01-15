@@ -25,6 +25,13 @@ class PlotlyPlot(LayoutDOM):
     A bokeh model that wraps around a plotly plot and renders it inside
     a bokeh plot.
     """
+    __css_raw__ = [
+        "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css",
+    ]
+
+    @classproperty
+    def __css__(cls):
+        return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
         JS_URLS['jQuery'],

@@ -4,9 +4,8 @@ import json
 import sys
 
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
-)
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -44,10 +43,10 @@ class ECharts(ModelPane):
         the `objects` with a value containing a smaller number of series.
         """)
 
-    renderer = param.ObjectSelector(default="canvas", objects=["canvas", "svg"], doc="""
+    renderer = param.Selector(default="canvas", objects=["canvas", "svg"], doc="""
        Whether to render as HTML canvas or SVG""")
 
-    theme = param.ObjectSelector(default="default", objects=["default", "light", "dark"], doc="""
+    theme = param.Selector(default="default", objects=["default", "light", "dark"], doc="""
        Theme to apply to plots.""")
 
     priority: ClassVar[float | bool | None] = None
@@ -116,7 +115,7 @@ class ECharts(ModelPane):
             props['sizing_mode'] = 'stretch_both'
         return props
 
-    def _get_properties(self, document: Document):
+    def _get_properties(self, document: Document | None) -> dict[str, Any]:
         props = super()._get_properties(document)
         props['event_config'] = {
             event: list(queries) for event, queries in self._py_callbacks.items()
@@ -124,10 +123,10 @@ class ECharts(ModelPane):
         return props
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
+        ECharts._bokeh_model = lazy_load(
             'panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root
         )
         model = super()._get_model(doc, root, parent, comm)
@@ -151,7 +150,7 @@ class ECharts(ModelPane):
         """
         self._py_callbacks[event][query].append(callback)
         event_config = {event: list(queries) for event, queries in self._py_callbacks.items()}
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update({}, {'event_config': event_config}, model, ref)
 
     def js_on_event(self, event: str, callback: str | CustomJS, query: str | None = None, **args):
@@ -176,7 +175,7 @@ class ECharts(ModelPane):
             of the object.
         """
         self._js_callbacks[event].append((query, callback, args))
-        for ref, (model, _) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             js_events = self._get_js_events(ref)
             self._apply_update({}, {'js_events': js_events}, model, ref)
 

@@ -17,7 +17,7 @@ You will have to:
 - add `.servable` to the Panel objects you want to include in your apps *template* when served as
 a web app.
 
-For production you will also have to migrate some of your app configuration to `panel serve` [command line options](../server/commandline.md) or environment variables.
+For production you will also have to migrate some of your app configuration to `panel serve` [command line options](../server/commandline) or environment variables.
 
 ## Examples
 
@@ -54,7 +54,7 @@ pn.panel("Hello World").servable()
 You *serve* and *show* (i.e. open) the app in your browser with *autoreload* via
 
 ```bash
-panel serve app.py --autoreload --show
+panel serve app.py --dev --show
 ```
 
 ![Panel Hello World Example](../../_static/images/panel_hello_world.png)

@@ -6,19 +6,18 @@ from __future__ import annotations
 import math
 
 from collections import namedtuple
+from collections.abc import Mapping
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
 
 from bokeh.models import FlexBox as BkFlexBox, GridBox as BkGridBox
 
-from ..io.document import freeze_doc
-from ..io.model import hold
+from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
+from ..viewable import ChildDict
 from .base import (
     ListPanel, Panel, _col, _row,
 )
@@ -54,7 +53,7 @@ class GridBox(ListPanel):
     ncols = param.Integer(default=None, bounds=(0, None),  doc="""
       Number of columns to reflow the layout into.""")
 
-    _bokeh_model: ClassVar[Model] = BkGridBox
+    _bokeh_model: ClassVar[type[Model]] = BkGridBox
 
     _linked_properties: ClassVar[tuple[str,...]] = ()
 
@@ -196,21 +195,22 @@ class GridBox(ListPanel):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         from ..io import state
 
         msg = dict(msg)
         preprocess = any(self._rename.get(k, k) in self._preprocess_params for k in msg)
         update_children = self._rename['objects'] in msg
-        if update_children or 'ncols' in msg or 'nrows' in msg:
+        child_name = self._rename['objects']
+        if child_name and (update_children or 'ncols' in msg or 'nrows' in msg):
             if 'objects' in events:
                 old = events['objects'].old
             else:
                 old = self.objects
             objects, old_models = self._get_objects(model, old, doc, root, comm)
             children = self._get_children(objects, self.nrows, self.ncols)
-            msg[self._rename['objects']] = children
+            msg[child_name] = children
         else:
             old_models = None
 
@@ -257,10 +257,10 @@ class GridSpec(Panel):
     >>> gspec
     """
 
-    objects = param.Dict(default={}, doc="""
+    objects = ChildDict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
 
-    mode = param.ObjectSelector(default='warn', objects=['warn', 'error', 'override'], doc="""
+    mode = param.Selector(default='warn', objects=['warn', 'error', 'override'], doc="""
         Whether to warn, error or simply override on overlapping assignment.""")
 
     ncols = param.Integer(default=None, bounds=(0, None), doc="""
@@ -269,9 +269,9 @@ class GridSpec(Panel):
     nrows = param.Integer(default=None, bounds=(0, None), doc="""
         Limits the number of rows that can be assigned.""")
 
-    _bokeh_model: ClassVar[Model] = BkGridBox
+    _bokeh_model: ClassVar[type[Model]] = BkGridBox
 
-    _linked_properties: ClassVar[tuple[str]] = ()
+    _linked_properties: tuple[str, ...] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None
@@ -503,7 +503,6 @@ class GridSpec(Panel):
             return list(subgrid)[0][1]
 
     def __setitem__(self, index, obj):
-        from ..pane.base import panel
         if not isinstance(index, tuple):
             raise IndexError('Must supply a 2D index for GridSpec assignment.')
 
@@ -536,7 +535,7 @@ class GridSpec(Panel):
         overlap = key in self.objects
         clone = self.clone(objects=dict(self.objects), mode='override')
         if not overlap:
-            clone.objects[key] = panel(obj)
+            clone.objects[key] = obj
             clone._update_grid_size()
             grid = clone.grid
         else:
@@ -555,12 +554,14 @@ class GridSpec(Panel):
                     continue
                 if old_obj not in objects:
                     objects.append(old_obj)
-                    overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, old_obj)
-            overlap_text = ('Specified region overlaps with the following '
-                            'existing object(s) in the grid:\n\n'+overlapping+
-                            'The following shows a view of the grid '
-                            '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
-                            str(grid.astype('uint8')))
+                    overlapping += f'    ({yidx}, {xidx}: {old_obj}\n\n'
+            overlap_text = (
+                'Specified region overlaps with the following '
+                'existing object(s) in the grid:\n\n'+overlapping+
+                'The following shows a view of the grid '
+                '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
+                str(grid.astype('uint8'))
+            )
             if self.mode == 'error':
                 raise IndexError(overlap_text)
             elif self.mode == 'warn':
@@ -576,5 +577,5 @@ class GridSpec(Panel):
                     del new_objects[dkey]
                 except KeyError:
                     continue
-        new_objects[key] = panel(obj)
+        new_objects[key] = obj
         self.objects = new_objects

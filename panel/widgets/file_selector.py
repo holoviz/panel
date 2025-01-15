@@ -292,7 +292,7 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         self._update_files(True)
 
     def _update_files(
-        self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
+        self, event: param.parameterized.Event | None = None, refresh: bool = False
     ):
         path = self._provider.normalize(self._directory.value)
         refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
@@ -428,10 +428,10 @@ class FileSelector(BaseFileNavigator):
         self._selector.options.update(prefix+[
             (k, v) for k, v in options.items() if k in paths or v in self.value
         ])
-        options = [o for o in denylist.options if o in paths]
+        option_list = [o for o in denylist.options if o in paths]
         if not self._up.disabled:
-            options.insert(0, '⬆ ..')
-        denylist.options = options
+            option_list.insert(0, '⬆ ..')
+        denylist.options = option_list
 
     def _select(self, event: param.parameterized.Event):
         if len(event.new) != 1:

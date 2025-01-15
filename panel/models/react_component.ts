@@ -24,12 +24,17 @@ export class ReactComponentView extends ReactiveESMView {
     for (const cb of handlers) {
       cb()
     }
+    if (!this._rendered) {
+      for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
+        cb()
+      }
+    }
     this._rendered = true
   }
 
   protected override _render_code(): string {
     let render_code = `
-if (rendered && view.model.usesReact) {
+if (rendered) {
   view._changing = true
   const root = createRoot(view.container)
   try {
@@ -37,32 +42,44 @@ if (rendered && view.model.usesReact) {
   } catch(e) {
     view.render_error(e)
   }
-  view._changing = false
-  view.after_rendered()
 }`
-    let import_code = `
+    let import_code
+    const cache_key = (this.model.bundle === "url") ? this.model.esm : (this.model.bundle || `${this.model.class_name}-${this.model.esm.length}`)
+    if (this.model.bundle) {
+      import_code = `
+const ns = await view._module_cache.get("${cache_key}")
+const {React, createRoot} = ns.default`
+    } else {
+      import_code = `
 import * as React from "react"
 import { createRoot } from "react-dom/client"`
+    }
     if (this.model.usesMui) {
-      import_code = `
+      if (this.model.bundle) {
+        import_code = `
+const ns = await view._module_cache.get("${cache_key}")
+const {CacheProvider, React, createCache, createRoot} = ns.default`
+      } else {
+        import_code = `
 ${import_code}
 import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
+      }
       render_code = `
-if (rendered) {
-  const cache = createCache({
-    key: 'css',
-    prepend: true,
-    container: view.style_cache,
-  })
-  rendered = React.createElement(CacheProvider, {value: cache}, rendered)
-}
-${render_code}`
+  if (rendered) {
+    const cache = createCache({
+      key: 'css-${this.model.id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()}',
+      prepend: true,
+      container: view.style_cache,
+    })
+    rendered = React.createElement(CacheProvider, {value: cache}, rendered)
+  }
+  ${render_code}`
     }
     return `
-${import_code}
-
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
+
+${import_code}
 
 class Child extends React.Component {
 
@@ -73,7 +90,8 @@ class Child extends React.Component {
   }
 
   get element() {
-    return this.view.el
+    const view = this.view
+    return view == null ? null : view.el
   }
 
   componentDidMount() {
@@ -89,8 +107,17 @@ class Child extends React.Component {
     })
   }
 
+  append_child(ref) {
+    if (ref != null) {
+       const view = this.view
+       if (view != null) {
+         ref.appendChild(this.element)
+       }
+    }
+  }
+
   render() {
-    return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && ref.appendChild(this.element)})
+    return React.createElement('div', {className: "child-wrapper", ref: (ref) => this.append_child(ref)})
   }
 }
 
@@ -168,13 +195,14 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return React.createElement('div')
     }
-    return React.createElement('div', {}, this.props.children);
+    return React.createElement('div', {className: "error-wrapper"}, this.props.children);
   }
 }
 
 class Component extends React.Component {
 
   componentDidMount() {
+    this.props.view._changing = false
     this.props.view.after_rendered()
   }
 
@@ -187,19 +215,21 @@ class Component extends React.Component {
   }
 }
 
-const props = {view, model: react_proxy, data: view.model.data, el: view.container}
-let rendered = React.createElement(Component, props)
+function render() {
+  const props = {view, model: react_proxy, data: view.model.data, el: view.container}
+  let rendered = React.createElement(Component, props)
 
-${render_code}`
+  ${render_code}
+}
+
+export default {render}`
   }
 }
 
 export namespace ReactComponent {
   export type Attrs = p.AttrsOf<Props>
 
-  export type Props = ReactiveESM.Props & {
-    react_version: p.Property<string>
-  }
+  export type Props = ReactiveESM.Props
 }
 
 export interface ReactComponent extends ReactComponent.Attrs {}
@@ -219,39 +249,11 @@ export class ReactComponent extends ReactiveESM {
     return false
   }
 
-  get usesReact(): boolean {
-    return this.compiled !== null && this.compiled.includes("React")
-  }
-
-  protected override _declare_importmap(): void {
-    const react_version = this.react_version
-    const imports = this.importmap?.imports
-    const scopes = this.importmap?.scopes
-    const pkg_suffix = this.dev ? "?dev": ""
-    const path_suffix = this.dev ? "&dev": ""
-    const importMap = {
-      imports: {
-        react: `https://esm.sh/react@${react_version}${pkg_suffix}`,
-        "react/": `https://esm.sh/react@${react_version}${path_suffix}/`,
-        "react-dom/": `https://esm.sh/react-dom@${react_version}&deps=react@${react_version},react-dom@${react_version}${path_suffix}/`,
-        ...imports,
-      },
-      scopes: scopes || {},
-    }
-    if (this.usesMui) {
-      importMap.imports = {
-        ...importMap.imports,
-        "@emotion/cache": "https://esm.sh/@emotion/cache",
-        "@emotion/react": `https://esm.sh/@emotion/react?external=react${path_suffix}`,
-      }
-    }
-    // @ts-ignore
-    importShim.addImportMap(importMap)
-  }
-
   override compile(): string | null {
     const compiled = super.compile()
-    if (compiled === null || !compiled.includes("React")) {
+    if (this.bundle) {
+      return compiled
+    } else if (compiled === null || !compiled.includes("React")) {
       return compiled
     }
     return `
@@ -264,9 +266,5 @@ ${compiled}`
 
   static {
     this.prototype.default_view = ReactComponentView
-
-    this.define<ReactComponent.Props>(({String}) => ({
-      react_version: [ String,    "18.3.1" ],
-    }))
   }
 }

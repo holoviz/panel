@@ -16,7 +16,7 @@ class SineWave(param.Parameterized):
     y_range = param.Range(default=(-2.5,2.5),bounds=(-10,10))
 
     def __init__(self, **params):
-        super(SineWave, self).__init__(**params)
+        super().__init__(**params)
         x, y = self.sine()
         self.cds = ColumnDataSource(data=dict(x=x, y=y))
         self.plot = figure(height=400, width=400,
