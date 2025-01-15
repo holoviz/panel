@@ -32,6 +32,8 @@ class Modal(ListPanel):
 
     _rename: ClassVar[Mapping[str, str | None]] = {}
 
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {'objects': None}
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
