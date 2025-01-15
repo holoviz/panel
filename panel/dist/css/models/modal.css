@@ -28,10 +28,6 @@
   padding: 10px;
   padding-bottom: 20px;
 }
-fast-design-system-provider .dialog-content {
-  background-color: var(--background-color);
-  border-radius: calc(var(--corner-radius) * 1px);
-}
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -72,14 +68,8 @@ fast-design-system-provider .dialog-content {
   border-radius: 50%;
   z-index: 100003;
 }
-fast-design-system-provider .pnx-dialog-close {
-  color: var(--neutral-foreground-rest);
-}
 .pnx-dialog-close:hover {
   background-color: rgb(50 50 0 / 0.15);
-}
-fast-design-system-provider .pnx-dialog-close:hover {
-  background-color: var(--neutral-fill-hover);
 }
 .lm-Widget.p-Widget.lm-TabBar.p-TabBar.lm-DockPanel-tabBar.jp-Activity {
   z-index: -1;
