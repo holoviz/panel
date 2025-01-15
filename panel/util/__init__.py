@@ -383,7 +383,7 @@ def fullpath(path: AnyStr | os.PathLike) -> str:
     """
     if '://' in str(path):
         return str(path)
-    return os.path.abspath(os.path.expanduser(path))
+    return str(os.path.abspath(os.path.expanduser(path)))
 
 
 def base_version(version: str) -> str:
