@@ -381,8 +381,8 @@ def fullpath(path: AnyStr | os.PathLike) -> AnyStr:
     """
     Expanduser and then abspath for a given path.
     """
-    if '://' in path:
-        return path
+    if '://' in str(path):
+        return str(path)
     return os.path.abspath(os.path.expanduser(path))
 
 

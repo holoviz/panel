@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
 
 
-def _scan_path(path: str, file_pattern='*') -> tuple[list[str], list[str]]:
+def _scan_path(path: str, file_pattern: str = '*') -> tuple[list[str], list[str]]:
     """
     Scans the supplied path for files and directories and optionally
     filters the files with the file keyword, returning a list of sorted
@@ -256,8 +256,8 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         self._directory.param.watch(self._update_files, 'enter_pressed')
 
         # Set up state
-        self._stack = []
-        self._cwd = None
+        self._stack: list[str] = []
+        self._cwd = ""
         self._position = -1
         self._update_files(True)
 
@@ -292,7 +292,7 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         self, event: param.parameterized.Event | None = None, refresh: bool = False
     ):
         path = self._provider.normalize(self._directory.value)
-        refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
+        refresh = refresh or bool(event and getattr(event, 'obj', None) is self._reload)
         if refresh:
             path = self._cwd
         elif not self._provider.isdir(path):
