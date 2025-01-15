@@ -334,13 +334,22 @@ def init_doc(doc: Document | None) -> Document:
         state._thread_id_[curdoc] = thread_id
 
     ready_callbacks = [CustomJS(code="""
-        for (const v of cb_context.index.all_views()) {
+        const doc = cb_context.index.roots[0].model.document
+        const write_ids = () => {
+          for (const v of cb_context.index.all_views()) {
             for (const t of v.model.tags) {
               if (typeof t === 'object' && t !== null && 'css_id' in t) {
                 v.el.id = t.css_id
               }
             }
+          }
         }
+        doc.on_change((event) => {
+          if (event.kind == 'ModelChanged') {
+            setTimeout(write_ids, 100)
+          }
+        })
+        write_ids()
         """)
     ]
     if config.global_loading_spinner:
