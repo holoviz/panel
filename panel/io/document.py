@@ -334,6 +334,7 @@ def init_doc(doc: Document | None) -> Document:
         state._thread_id_[curdoc] = thread_id
 
     ready_callbacks = [CustomJS(code="""
+        let timeout = null
         const doc = cb_context.index.roots[0].model.document
         const write_ids = () => {
           for (const v of cb_context.index.all_views()) {
@@ -343,10 +344,14 @@ def init_doc(doc: Document | None) -> Document:
               }
             }
           }
+          timeout = null
         }
         doc.on_change((event) => {
           if (event.kind == 'ModelChanged') {
-            setTimeout(write_ids, 100)
+            if (timeout !== null) {
+              clearTimeout(timeout)
+            }
+            timeout = setTimeout(write_ids, 100)
           }
         })
         write_ids()
