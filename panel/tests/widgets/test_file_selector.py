@@ -34,6 +34,12 @@ def test_dir(tmp_path):
 
     yield str(test_dir)
 
+@pytest.fixture
+async def s3_filesystem():
+    fs = s3fs.S3FileSystem(anon=True)
+    yield fs
+    s3 = await fs.get_s3()
+    await s3.close()
 
 def test_local_file_provider_is_dir():
     provider = LocalFileProvider()
@@ -46,16 +52,14 @@ def test_local_file_provider_ls():
     assert files == [str(FILE_PATH)]
 
 @s3fs_available
-def test_remote_file_provider_is_dir():
-    fs = s3fs.S3FileSystem(anon=True)
-    provider = RemoteFileProvider(fs=fs)
+def test_remote_file_provider_is_dir(s3_filesystem):
+    provider = RemoteFileProvider(fs=s3_filesystem)
     assert not provider.isdir('s3://datasets.holoviz.org/stocks/v1/stocks.csv')
     assert provider.isdir('s3://datasets.holoviz.org/stocks/v1/')
 
 @s3fs_available
-def test_remote_file_provider_ls():
-    fs = s3fs.S3FileSystem(anon=True)
-    provider = RemoteFileProvider(fs=fs)
+def test_remote_file_provider_ls(s3_filesystem):
+    provider = RemoteFileProvider(fs=s3_filesystem)
     dirs, _ = provider.ls('s3://datasets.holoviz.org/stocks/')
     assert dirs == ['s3://datasets.holoviz.org/stocks/v1/']
     _, files = provider.ls('s3://datasets.holoviz.org/stocks/v1')
