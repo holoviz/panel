@@ -377,7 +377,7 @@ def parse_timedelta(time_str: str) -> dt.timedelta | None:
     return dt.timedelta(**time_params)
 
 
-def fullpath(path: AnyStr | os.PathLike) -> AnyStr:
+def fullpath(path: AnyStr | os.PathLike) -> str:
     """
     Expanduser and then abspath for a given path.
     """
