@@ -709,6 +709,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     objects to be displayed in the notebook and on bokeh server.
     """
 
+    css_id = param.String(default=None, constant=True, doc="""
+        The id set on the rendered DOM node.""")
+
     loading = param.Boolean(doc="""
         Whether or not the Viewable is loading. If True a loading spinner
         is shown on top of the Viewable.""")

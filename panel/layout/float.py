@@ -86,7 +86,7 @@ class FloatPanel(ListLike, ReactiveHTML):
     </div>
     """
 
-    _rename = {'loading': None}
+    _rename = {'loading': None, 'css_id': None}
 
     _scripts = {
         "render": """
