@@ -53,8 +53,14 @@ python = "3.11.*"
 [feature.py312.dependencies]
 python = "3.12.*"
 
+[feature.py312.activation.env]
+COVERAGE_CORE = "sysmon"
+
 [feature.py313.dependencies]
 python = "3.13.*"
+
+[feature.py313.activation.env]
+COVERAGE_CORE = "sysmon"
 
 [feature.example.dependencies]
 # Optional dependencies - recommended
@@ -174,7 +180,7 @@ _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10'
-depends_on = ["_install-ui"]
+depends-on = ["_install-ui"]
 
 # =============================================
 # ================== TYPES ====================
@@ -217,7 +223,7 @@ _docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.
 docs-server = 'python -m http.server 5500 --directory ./builtdocs'
 
 [feature.doc.tasks.docs-build]
-depends_on = [
+depends-on = [
     '_docs-refmanual',
     '_docs-convert-gallery',
     '_docs-generate',
@@ -226,7 +232,7 @@ depends_on = [
 ]
 
 [feature.doc.tasks.docs-build-parallel]
-depends_on = [
+depends-on = [
     '_docs-refmanual',
     '_docs-convert-gallery',
     '_docs-generate-parallel',

@@ -174,6 +174,8 @@ panel serve name_of_notebook.ipynb --show
 
 [![Awesome Panel Gallery](https://assets.holoviz.org/panel/readme/awesome_panel.jpg)](https://www.awesome-panel.org)
 
+[![HoloViz Examples Gallery](https://assets.holoviz.org/panel/readme/holoviz_examples.jpg)](https://examples.holoviz.org)
+
 ## Get started
 
 Develop applications in your favorite notebook or editor environment, including Jupyter(Lab) notebooks, VSCode, Google Colab and many more, [see our getting started guide](https://panel.holoviz.org/getting_started/installation.html#developing-in-different-editors) for more details.

@@ -554,12 +554,14 @@ class GridSpec(Panel):
                     continue
                 if old_obj not in objects:
                     objects.append(old_obj)
-                    overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, old_obj)
-            overlap_text = ('Specified region overlaps with the following '
-                            'existing object(s) in the grid:\n\n'+overlapping+
-                            'The following shows a view of the grid '
-                            '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
-                            str(grid.astype('uint8')))
+                    overlapping += f'    ({yidx}, {xidx}: {old_obj}\n\n'
+            overlap_text = (
+                'Specified region overlaps with the following '
+                'existing object(s) in the grid:\n\n'+overlapping+
+                'The following shows a view of the grid '
+                '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
+                str(grid.astype('uint8'))
+            )
             if self.mode == 'error':
                 raise IndexError(overlap_text)
             elif self.mode == 'warn':

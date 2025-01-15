@@ -31,6 +31,9 @@ from panel.io.state import state
 # Will begin to fail again when the first rc is released.
 pnv = Version(pn.__version__)
 
+not_osx = pytest.mark.skipif(sys.platform == 'darwin', reason="Sometimes fails on OSX")
+not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
+
 try:
     import holoviews as hv
     hv_version: Version | None = Version(hv.__version__)
@@ -241,6 +244,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
         except AssertionError as e:
             if timed_out():
                 raise TimeoutError(timeout_msg) from e
+            raise e
         else:
             if result not in (None, True, False):
                 raise ValueError(
@@ -468,7 +472,7 @@ def http_serve_directory(directory=".", port=0):
     httpd.timeout = 0.5
     httpd.server_bind()
 
-    address = "http://%s:%d" % (httpd.server_name, httpd.server_port)
+    address = f"http://{httpd.server_name}:{httpd.server_port}"
 
     httpd.server_activate()
 

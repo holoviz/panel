@@ -41,8 +41,8 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.26.2'
-PYSCRIPT_VERSION = '2024.8.1'
+PYODIDE_VERSION = 'v0.27.0'
+PYSCRIPT_VERSION = '2024.10.2'
 WHL_PATH = DIST_DIR / 'wheels'
 PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
@@ -216,7 +216,7 @@ def script_to_html(
 
     if requirements == 'auto':
         requirement_list = find_requirements(source)
-    elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
+    elif isinstance(requirements, (str, os.PathLike)) and pathlib.Path(requirements).is_file():
         requirement_list = pathlib.Path(requirements).read_text(encoding='utf-8').splitlines()
         try:
             from packaging.requirements import Requirement

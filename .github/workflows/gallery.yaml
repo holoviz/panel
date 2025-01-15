@@ -35,9 +35,11 @@ jobs:
           python-version: '3.10'
       - name: Set and echo git ref
         id: vars
+        env:
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
-          echo 'Deploying from ref ${{ github.event.workflow_run.head_branch }}'
-          echo 'tag=${{ github.event.workflow_run.head_branch }}' >> $GITHUB_OUTPUT
+          echo "Deploying from ref $HEAD_BRANCH"
+          echo "tag=$HEAD_BRANCH" >> $GITHUB_OUTPUT
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"

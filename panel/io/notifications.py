@@ -34,6 +34,8 @@ class Notification(param.Parameterized):
 
     notification_type = param.String(default=None, constant=True, label='type')
 
+    _rendered = param.Boolean(default=False)
+
     _destroyed = param.Boolean(default=False)
 
     def destroy(self) -> None:
@@ -194,46 +196,45 @@ class NotificationArea(NotificationAreaBase):
         })
       """,
       "notifications": """
-        var notification = state.current || data.notifications[data.notifications.length-1]
-        if (notification._destroyed) {
-          return
-        }
-        var config = {
-          duration: notification.duration,
-          type: notification.notification_type,
-          message: notification.message
-        }
-        if (notification.background != null) {
-          config.background = notification.background;
-        }
-        if (notification.icon != null) {
-          config.icon = notification.icon;
-        }
-        var toast = state.toaster.open(config);
-        function destroy() {
-          if (state.current !== notification) {
+        for (notification of data.notifications) {
+          if (notification._destroyed || notification._rendered) {
+            return
+          }
+          var config = {
+            duration: notification.duration,
+            type: notification.notification_type,
+            message: notification.message
+          }
+          if (notification.background != null) {
+            config.background = notification.background;
+          }
+          if (notification.icon != null) {
+            config.icon = notification.icon;
+          }
+          let toast = state.toaster.open(config);
+          function destroy() {
             notification._destroyed = true;
           }
+          notification._rendered = true
+          toast.on('dismiss', destroy)
+          if (notification.duration) {
+            setTimeout(destroy, notification.duration)
+          }
+          if (notification.properties === undefined)
+            return
+          view.connect(notification.properties._destroyed.change, function () {
+            state.toaster.dismiss(toast)
+          })
         }
-        toast.on('dismiss', destroy)
-        if (notification.duration) {
-          setTimeout(destroy, notification.duration)
-        }
-        if (notification.properties === undefined)
-          return
-        view.connect(notification.properties._destroyed.change, function () {
-          state.toaster.dismiss(toast)
-        })
       """,
       "_clear": "state.toaster.dismissAll()",
       "position": """
         script('_clear');
         script('render');
         for (notification of data.notifications) {
-          state.current = notification;
-          script('notifications');
+          notification._rendered = false;
         }
-        state.current = undefined
+        script('notifications');
       """
     }
 

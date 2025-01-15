@@ -725,7 +725,7 @@ def genericMapperSerializer(parent, mapper, mapperId, context, depth):
         for port in range(mapper.GetNumberOfInputPorts()): # Glyph3DMapper can define input data objects on 2 ports (input, source)
             dataObject = mapper.GetInputDataObject(port, 0)
             if dataObject:
-                dataObjectId = '%s-dataset-%d' % (mapperId, port)
+                dataObjectId = f'{mapperId}-dataset-{port}'
                 if parent.IsA('vtkActor') and not mapper.IsA('vtkTexture'):
                     # vtk-js actors can render only surfacic datasets
                     # => we ensure to convert the dataset in polydata

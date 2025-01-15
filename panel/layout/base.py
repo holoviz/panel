@@ -17,7 +17,7 @@ from param.parameterized import iscoroutinefunction, resolve_ref
 
 from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
-from ..models import Column as PnColumn
+from ..models.layout import Column as PnColumn, ScrollToEvent
 from ..reactive import Reactive
 from ..util import param_name, param_reprs
 from ..viewable import Children
@@ -70,10 +70,11 @@ class Panel(Reactive):
         spacer = '\n' + ('    ' * (depth+1))
         cls = type(self).__name__
         params = param_reprs(self, ['objects'])
-        objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self)]
+        objs = [f'[{i}] {obj.__repr__(depth+1)}' for i, obj in enumerate(self)]
         if not params and not objs:
             return super().__repr__(depth+1)
-        elif not params:
+
+        if not params:
             template = '{cls}{spacer}{objs}'
         elif not objs:
             template = '{cls}({params})'
@@ -81,7 +82,8 @@ class Panel(Reactive):
             template = '{cls}({params}){spacer}{objs}'
         return template.format(
             cls=cls, params=', '.join(params),
-            objs=str(spacer).join(objs), spacer=spacer)
+            objs=str(spacer).join(objs), spacer=spacer
+        )
 
     #----------------------------------------------------------------
     # Callback API
@@ -393,34 +395,40 @@ class ListLike(param.Parameterized):
 
     def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
         new_objects = list(self)
+        name = type(self).__name__
         if not isinstance(index, slice):
             start, end = index, index+1
             if start > len(self.objects):
-                raise IndexError('Index %d out of bounds on %s '
-                                 'containing %d objects.' %
-                                 (end, type(self).__name__, len(self.objects)))
+                raise IndexError(
+                    f'Index {end} out of bounds on {name} containing '
+                    f'{len(self.objects)} objects.'
+                )
             panes = [panes]
         else:
             start = index.start or 0
             end = len(self) if index.stop is None else index.stop
             if index.start is None and index.stop is None:
                 if not isinstance(panes, list):
-                    raise IndexError('Expected a list of objects to '
-                                     f'replace the objects in the {type(self).__name__}, '
-                                     f'got a {type(panes).__name__} type.')
+                    raise IndexError(
+                        'Expected a list of objects to replace the '
+                        f'objects in the {name}, got a '
+                        f'{type(panes).__name__} type.'
+                    )
                 expected = len(panes)
                 new_objects = [None]*expected # type: ignore
                 end = expected
             elif end > len(self.objects):
-                raise IndexError('Index %d out of bounds on %s '
-                                 'containing %d objects.' %
-                                 (end, type(self).__name__, len(self.objects)))
+                raise IndexError(
+                    f'Index {end} out of bounds on {name} containing '
+                    f'{len(self.objects)} objects.'
+                )
             else:
                 expected = end-start
             if not isinstance(panes, list) or len(panes) != expected:
-                raise IndexError('Expected a list of %d objects to set '
-                                 'on the %s to match the supplied slice.' %
-                                 (expected, type(self).__name__))
+                raise IndexError(
+                    f'Expected a list of {expected} objects to set '
+                    f'on the {name} to match the supplied slice.'
+                )
         for i, pane in zip(range(start, end), panes):
             new_objects[i] = pane
 
@@ -445,8 +453,10 @@ class ListLike(param.Parameterized):
             else:
                 objects = self.objects
         elif 'objects' in params:
-            raise ValueError(f"A {type(self).__name__}'s objects should be supplied either "
-                             "as arguments or as a keyword, not both.")
+            raise ValueError(
+                f"A {type(self).__name__}'s objects should be supplied either "
+                "as arguments or as a keyword, not both."
+            )
         p = dict(self.param.values(), **params)
         del p['objects']
         return type(self)(*objects, **p)
@@ -645,11 +655,13 @@ class NamedListLike(param.Parameterized):
 
     def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
         new_objects = list(self)
+        name = type(self).__name__
         if not isinstance(index, slice):
             if index > len(self.objects):
-                raise IndexError('Index %d out of bounds on %s '
-                                 'containing %d objects.' %
-                                 (index, type(self).__name__, len(self.objects)))
+                raise IndexError(
+                    f'Index {index} out of bounds on {name} '
+                    f'containing {len(self.objects)} objects.'
+                )
             start, end = index, index+1
             panes = [panes]
         else:
@@ -657,23 +669,28 @@ class NamedListLike(param.Parameterized):
             end = len(self.objects) if index.stop is None else index.stop
             if index.start is None and index.stop is None:
                 if not isinstance(panes, list):
-                    raise IndexError('Expected a list of objects to '
-                                     f'replace the objects in the {type(self).__name__}, '
-                                     f'got a {type(panes).__name__} type.')
+                    raise IndexError(
+                        'Expected a list of objects to replace '
+                        f'the objects in the {name}, got a '
+                        f'{type(panes).__name__} type.'
+                    )
                 expected = len(panes)
                 new_objects = [None]*expected # type: ignore
                 self._names = [None]*len(panes)
                 end = expected
             else:
                 expected = end-start
-                if end > len(self.objects):
-                    raise IndexError('Index %d out of bounds on %s '
-                                     'containing %d objects.' %
-                                     (end, type(self).__name__, len(self.objects)))
+                nobjs = len(self.objects)
+                if end > nobjs:
+                    raise IndexError(
+                        f'Index {end} out of bounds on {name} '
+                        'containing {nobjs} objects.'
+                    )
             if not isinstance(panes, list) or len(panes) != expected:
-                raise IndexError('Expected a list of %d objects to set '
-                                 'on the %s to match the supplied slice.' %
-                                 (expected, type(self).__name__))
+                raise IndexError(
+                    f'Expected a list of {expected} objects to set '
+                    f'on the {name} to match the supplied slice.'
+                )
         for i, pane in zip(range(start, end), panes):
             new_objects[i], self._names[i] = self._to_object_and_name(pane)
         self.objects = new_objects
@@ -694,9 +711,10 @@ class NamedListLike(param.Parameterized):
         if objects:
             overrides = objects
         elif 'objects' in params:
-            raise ValueError('Tabs objects should be supplied either '
-                             'as positional arguments or as a keyword, '
-                             'not both.')
+            raise ValueError(
+                'Tabs objects should be supplied either as positional '
+                'arguments or as a keyword, not both.'
+            )
         elif 'objects' in params:
             overrides = params.pop('objects')
         else:
@@ -966,6 +984,17 @@ class Column(ListPanel):
             bool(self.scroll_button_threshold) or
             self.view_latest
         )
+
+    def scroll_to(self, index: int):
+        """
+        Scrolls to the child at the provided index.
+
+        Arguments
+        ---------
+        index: int
+            Index of the child object to scroll to.
+        """
+        self._send_event(ScrollToEvent, index=index)
 
 
 class WidgetBox(ListPanel):
