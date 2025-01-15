@@ -71,6 +71,13 @@ def test_reactive_html_param_event(page):
 
     wait_until(lambda: component.count == 5, page)
 
+def test_reactive_html_css_id(page):
+    component = ReactiveComponent(css_id='foo')
+
+    serve_component(page, component)
+
+    expect(page.locator("#foo")).to_have_text('1')
+
 def test_reactive_html_set_loading_no_rerender(page):
     component = ReactiveComponent()
 

@@ -74,6 +74,19 @@ def test_update(page, component):
     expect(page.locator('h1')).to_have_text('Foo!')
 
 
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate])
+def test_css_id(page, component):
+    example = component(text='Hello World!', css_id='foo')
+
+    serve_component(page, example)
+
+    expect(page.locator('#foo')).to_have_text('Hello World!')
+
+    example.text = "Foo!"
+
+    expect(page.locator('#foo')).to_have_text('Foo!')
+
+
 class AnyWidgetInitialize(AnyWidgetComponent):
 
     count = param.Integer(default=0)
