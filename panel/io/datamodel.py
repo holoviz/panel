@@ -155,7 +155,8 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
         if pname == 'name' or pname is None:
             continue
         nullable = getattr(p, 'allow_None', False)
-        kwargs = {'default': p.default, 'help': p.doc}
+        default = p.default
+        kwargs = {'default': default, 'help': p.doc}
         if prop is None:
             bk_prop, accepts = bp.Any(**kwargs), []
         else:
@@ -163,9 +164,14 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
             bk_prop, accepts = bkp if isinstance(bkp, tuple) else (bkp, [])
             if nullable:
                 bk_prop = bp.Nullable(bk_prop, **kwargs)
+        is_valid = bk_prop.is_valid(default)
         for bkp, convert in accepts:
             bk_prop = bk_prop.accepts(bkp, convert)
         properties[pname] = bk_prop
+        if not is_valid:
+            for tp, converter in bk_prop.alternatives:
+                if tp.is_valid(default):
+                    bk_prop._default = default = converter(default)
     for pname, ptype in extras.items():
         if issubclass(ptype, pm.Parameter):
             ptype = PARAM_MAPPING.get(ptype)(None, {})
