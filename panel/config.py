@@ -676,7 +676,6 @@ class panel_extension(_pyviz_extension):
         'tabulator': 'panel.models.tabulator',
         'terminal': 'panel.models.terminal',
         'texteditor': 'panel.models.quill',
-        'tree': 'panel.models.jstree',
         'vizzu': 'panel.models.vizzu',
         'vega': 'panel.models.vega',
         'vtk': 'panel.models.vtk'

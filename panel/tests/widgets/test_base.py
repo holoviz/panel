@@ -6,15 +6,14 @@ from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.tests.util import check_layoutable_properties
 from panel.widgets import (
-    CompositeWidget, Dial, FileDownload, FileTree, FloatSlider, LinearGauge,
+    CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge,
     LoadingSpinner, Terminal, TextInput, ToggleGroup, Tqdm, Widget,
 )
 from panel.widgets.tables import BaseTable
-from panel.widgets.tree import Tree
 
 excluded = (
     BaseTable, CompositeWidget, Dial, FileDownload, LinearGauge,
-    LoadingSpinner, ToggleGroup, Terminal, Tqdm, FileTree, Tree
+    LoadingSpinner, ToggleGroup, Terminal, Tqdm
 )
 
 all_widgets = [

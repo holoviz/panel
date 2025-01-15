@@ -36,7 +36,7 @@ from .base import CompositeWidget, Widget, WidgetBase  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
 from .codeeditor import CodeEditor  # noqa
 from .debugger import Debugger  # noqa
-from .file_selector import FileSelector, FileTree  # noqa
+from .file_selector import FileSelector  # noqa
 from .icon import ButtonIcon, ToggleIcon  # noqa
 from .indicators import (  # noqa
     BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress,
@@ -103,7 +103,6 @@ __all__ = (
     "FileDropper",
     "FileInput",
     "FileSelector",
-    "FileTree",
     "FloatInput",
     "FloatSlider",
     "Gauge",
