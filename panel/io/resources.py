@@ -151,7 +151,7 @@ CSS_URLS = {
 }
 
 JS_URLS = {
-    'jQuery': f'{CDN_DIST}bundled/jquery/jquery.slim.min.js',
+    'jQuery': f'{CDN_DIST}bundled/jquery/jquery.min.js',
     'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/js/bootstrap.bundle.min.js',
     'bootstrap5': f'{CDN_DIST}bundled/bootstrap5/js/bootstrap.bundle.min.js'
 }

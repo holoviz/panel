@@ -95,6 +95,7 @@ pyinstrument = ">=4.0"
 python-graphviz = "*"
 pyvista = "*"
 reacton = "*"
+s3fs = ">=2023"  # Python 3.9 pull in 0.6.0
 scikit-image = "*"
 scikit-learn = "*"
 seaborn = "*"
