@@ -1098,7 +1098,7 @@ class TestChatFeedCallback:
         chat_feed.send("Message", respond=True)
         await async_wait_until(lambda: len(chat_feed.objects) == 1)
 
-    def test_callback_exception_raise(self, chat_feed):
+    async def test_callback_exception_raise(self, chat_feed):
         def callback(msg, user, instance):
             return 1 / 0
 
