@@ -1104,9 +1104,11 @@ class TestChatFeedCallback:
 
         chat_feed.callback = callback
         chat_feed.callback_exception = "raise"
+
+        # We need to use asyncio.gather to properly catch the exception
         with pytest.raises(ZeroDivisionError, match="division by zero"):
             chat_feed.send("Message", respond=True)
-            wait_until(lambda: len(chat_feed.objects) == 1)
+            await chat_feed._prepare_response()
 
     async def test_callback_exception_callable(self, chat_feed):
         def callback(msg, user, instance):
