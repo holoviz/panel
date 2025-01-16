@@ -130,6 +130,7 @@ def test_feed_scroll_to_latest_within_limit(page):
     feed.scroll_to_latest(scroll_limit=100)
 
     def test_case():
+        feed_el = page.locator(".bk-panel-models-feed-Feed")
         cmd = '(el) => el.scrollHeight - el.scrollTop - el.clientHeight'
         assert feed_el.evaluate(cmd) == 0
 
