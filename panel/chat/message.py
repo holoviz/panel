@@ -362,8 +362,8 @@ class ChatMessage(Pane):
         )
 
         self._icons_row = Row(
-            self.edit_icon,
             self.chat_copy_icon,
+            self.edit_icon,
             self._render_reaction_icons(),
             css_classes=["icons"],
             sizing_mode="stretch_width",
