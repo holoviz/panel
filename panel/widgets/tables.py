@@ -1671,7 +1671,7 @@ class Tabulator(BaseTable):
 
     @updating
     def _patch(self, patch):
-        if self.filters or self.sorters:
+        if self.filters or self._filters or self.sorters:
             self._updating = False
             self._update_cds()
             return
