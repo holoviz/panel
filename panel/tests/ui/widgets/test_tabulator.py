@@ -2891,6 +2891,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
 
     header = page.locator('input[type="search"]')
     header.click()
+    page.wait_for_timeout(200)
     header.fill('B')
     header.press('Enter')
 
@@ -2898,6 +2899,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
 
     cell = page.locator('text="B"').first
     cell.click()
+    page.wait_for_timeout(200)
     editable_cell = page.locator('input[type="text"]')
     editable_cell.fill("Q")
     editable_cell.press('Enter')
@@ -2917,6 +2919,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     # Edit a cell in the filtered column, from B to X
     cell = page.locator('text="B"').nth(1)
     cell.click()
+    page.wait_for_timeout(200)
     editable_cell = page.locator('input[type="text"]')
     editable_cell.fill("X")
     editable_cell.press('Enter')
@@ -2930,6 +2933,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     # In the same column, edit X to Y
     cell = page.locator('text="X"')
     cell.click()
+    page.wait_for_timeout(200)
     editable_cell = page.locator('input[type="text"]')
     editable_cell.fill("Y")
     editable_cell.press('Enter')
@@ -2942,6 +2946,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     # Edit the last B value found in that column, from B to Z
     cell = page.locator('text="B"')
     cell.click()
+    page.wait_for_timeout(200)
     editable_cell = page.locator('input[type="text"]')
     editable_cell.fill("Z")
     editable_cell.press('Enter')
@@ -3496,6 +3501,7 @@ def test_tabulator_sorter_default_number(page):
     widget = Tabulator(df, sorters=[{"field": "x", "dir": "desc"}])
 
     serve_component(page, widget)
+    expect(page.locator('.tabulator-cell')).to_have_count(0)
 
     df2 = pd.DataFrame({'x': [0, 96, 116]})
     widget.value = df2
