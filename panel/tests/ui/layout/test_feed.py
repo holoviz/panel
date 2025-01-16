@@ -49,7 +49,13 @@ def test_feed_view_latest(page):
     # Assert scroll is not at 0 (view_latest)
     wait_until(lambda: feed_el.evaluate('(el) => el.scrollTop') > 0, page)
 
-    wait_until(lambda: int(page.locator('pre').last.inner_text()) > 0.9 * ITEMS, page)
+    def case():
+        inner_text = page.locator('pre').last.inner_text()
+        if inner_text == "":
+            return False
+        assert int(inner_text) > 0.9 * ITEMS
+
+    wait_until(case, page)
 
 
 def test_feed_view_scroll_to_latest(page):
@@ -129,12 +135,12 @@ def test_feed_scroll_to_latest_within_limit(page):
 
     feed.scroll_to_latest(scroll_limit=100)
 
-    def test_case():
+    def case():
         feed_el = page.locator(".bk-panel-models-feed-Feed")
         cmd = '(el) => el.scrollHeight - el.scrollTop - el.clientHeight'
         assert feed_el.evaluate(cmd) == 0
 
-    wait_until(test_case, page)
+    wait_until(case, page)
 
 
 def test_feed_view_scroll_button(page):
