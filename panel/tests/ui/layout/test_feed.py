@@ -49,13 +49,7 @@ def test_feed_view_latest(page):
     # Assert scroll is not at 0 (view_latest)
     wait_until(lambda: feed_el.evaluate('(el) => el.scrollTop') > 0, page)
 
-    def case():
-        inner_text = page.locator('pre').last.inner_text()
-        if inner_text == "":
-            return False
-        assert int(inner_text) > 0.9 * ITEMS
-
-    wait_until(case, page)
+    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) > 0.9 * ITEMS, page)
 
 
 def test_feed_view_scroll_to_latest(page):
@@ -158,7 +152,7 @@ def test_feed_view_scroll_button(page):
 
     # Assert scroll is not at 0 (view_latest)
     wait_until(lambda: feed_el.evaluate('(el) => el.scrollTop') > 0, page)
-    wait_until(lambda: int(page.locator('pre').last.inner_text()) > 50, page)
+    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) > 50, page)
 
 def test_feed_dynamic_objects(page):
     feed = Feed(height=250, load_buffer=10)
