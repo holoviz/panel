@@ -104,14 +104,14 @@ def test_player_visible_loop_options(page):
     player = Player(visible_loop_options=["loop", "once"])
     serve_component(page, player)
 
-    assert page.is_visible(".loop")
-    assert page.is_visible(".once")
-    assert not page.is_visible(".reflect")
+    expect(page.locator(".loop")).to_be_visible()
+    expect(page.locator(".once")).to_be_visible()
+    expect(page.locator(".reflect")).to_be_hidden()
 
     player.visible_loop_options = ["reflect"]
     expect(page.locator(".reflect")).to_be_visible()
-    assert not page.is_visible(".loop")
-    assert not page.is_visible(".once")
+    expect(page.locator(".loop")).to_be_hidden()
+    expect(page.locator(".once")).to_be_hidden()
 
 
 def test_player_scale_buttons(page):
