@@ -111,7 +111,7 @@ myst_enable_extensions = ["colon_fence", "deflist"]
 
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
 gallery_url = f'https://{gallery_endpoint}.holoviz-demo.anaconda.com'
-jlite_url = 'https://holoviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
+jlite_url = 'https://holoviz-dev.github.io/panelite-dev/lab' if is_dev else 'https://panelite.holoviz.org/lab'
 pyodide_url = 'https://holoviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
 
 rediraffe_redirects = {
