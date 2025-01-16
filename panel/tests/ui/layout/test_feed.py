@@ -129,9 +129,11 @@ def test_feed_scroll_to_latest_within_limit(page):
 
     feed.scroll_to_latest(scroll_limit=100)
 
-    wait_until(lambda: feed_el.evaluate(
-        '(el) => el.scrollHeight - el.scrollTop - el.clientHeight'
-    ) == 0, page)
+    def test_case():
+        cmd = '(el) => el.scrollHeight - el.scrollTop - el.clientHeight'
+        assert feed_el.evaluate(cmd) == 0
+
+    wait_until(test_case, page)
 
 
 def test_feed_view_scroll_button(page):
