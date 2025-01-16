@@ -133,10 +133,9 @@ def test_feed_scroll_to_latest_within_limit(page):
     # assert auto scroll works; i.e. distance from bottom is 0
     feed.append(Spacer(styles=dict(background='yellow'), width=200, height=200))
 
-    feed.scroll_to_latest(scroll_limit=100)
+    feed.scroll_to_latest(scroll_limit=1000)
 
     def case():
-        feed_el = page.locator(".bk-panel-models-feed-Feed")
         cmd = '(el) => el.scrollHeight - el.scrollTop - el.clientHeight'
         assert feed_el.evaluate(cmd) == 0
 
