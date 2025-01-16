@@ -2432,6 +2432,8 @@ def test_tabulator_patching_and_styling(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator-cell')).not_to_have_count(0)
+
     # Changing the highest value in the int column should
     # update the style so that this cell gets a yellow background
     widget.patch({'int': [(0, 100)]}, as_index=False)
