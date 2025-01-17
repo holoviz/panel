@@ -56,7 +56,7 @@ def test_name(page):
     player = Player(name='test')
     serve_component(page, player)
 
-    assert page.is_visible('label')
+    expect(page.locator('label')).to_have_count(3)
     assert page.query_selector('.pn-player-value') is None
 
     name = page.locator('.pn-player-title:has-text("test")')
@@ -75,11 +75,12 @@ def test_name_and_show_value(page):
     player = Player(name='test', show_value=True)
     serve_component(page, player)
 
-    assert page.is_visible('label')
+    expect(page.locator('label')).to_have_count(3)
     assert page.query_selector('.pn-player-value') is not None
 
     name = page.locator('.pn-player-title:has-text("test")')
     expect(name).to_have_count(1)
+
 def test_player_visible_buttons(page):
     player = Player(visible_buttons=["play", "pause"])
     serve_component(page, player)
