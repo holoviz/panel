@@ -65,11 +65,10 @@ def setup_build_dir(build_dir: str | os.PathLike | None = None):
 
 def check_cli_tool(tool_name: str) -> bool:
     try:
-        result = subprocess.run([tool_name, '--version'], capture_output=True)
-        code = result.returncode == 0
+        cmd = shutil.which(tool_name)
     except Exception:
-        code = 1
-    if not code:
+        cmd = None
+    if cmd:
         return True
     if sys.platform == 'win32':
         tool_name = f'{tool_name}.cmd'
