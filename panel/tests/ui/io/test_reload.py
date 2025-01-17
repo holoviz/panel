@@ -9,7 +9,7 @@ try:
 
     pytestmark = [pytest.mark.ui, pytest.mark.flaky(reruns=3, reason="Writing files can sometimes be unpredictable")]
 except ImportError:
-    pytestmark = pytest.mark.skip("playwright not available")
+    pytestmark = [pytest.mark.skip("playwright not available")]
 
 from panel.io.state import state
 from panel.tests.util import serve_component, wait_until
