@@ -111,7 +111,6 @@ xgboost = "*"
 # =================== TESTS ===================
 # =============================================
 [feature.test-core.dependencies]
-cryptography = "*"
 psutil = "*"
 pytest = "*"
 pytest-asyncio = "*"
@@ -143,6 +142,7 @@ altair = "*"
 anywidget = "*"
 bokeh-fastapi = "*"
 bokeh_sampledata = "*"
+cryptography = "*"
 diskcache = "*"
 fastapi = "*"
 folium = "*"
