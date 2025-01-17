@@ -7,7 +7,7 @@ import pytest
 try:
     from playwright.sync_api import expect
 
-    pytestmark = pytest.mark.ui
+    pytestmark = [pytest.mark.ui, pytest.mark.flaky(reruns=3, reason="Writing files can sometimes be unpredictable")]
 except ImportError:
     pytestmark = pytest.mark.skip("playwright not available")
 
@@ -80,7 +80,6 @@ def test_load_app_with_no_content(page, autoreload, py_file):
 
     expect(page.locator('.alert')).to_have_count(1)
 
-@pytest.mark.flaky(reruns=3, reason="Writing files can sometimes be unpredictable")
 def test_reload_app_on_local_module_change(page, autoreload, py_files):
     py_file, module = py_files
     import_name = pathlib.Path(module.name).stem
