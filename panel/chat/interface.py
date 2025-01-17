@@ -692,7 +692,8 @@ class ChatInterface(ChatFeed):
                 user = self.user
             if avatar is None:
                 avatar = self.avatar
-        message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user)
+        message_params["show_edit_icon"] = message_params.get(
+            "show_edit_icon", user == self.user and self.edit_callback is not None)
         return super().send(value, user=user, avatar=avatar, respond=respond, **message_params)
 
     def stream(
@@ -739,5 +740,5 @@ class ChatInterface(ChatFeed):
             # so only set to the default when not a ChatMessage
             user = user or self.user
             avatar = avatar or self.avatar
-        message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user and message_params.get("edit_callback"))
+        message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user and self.edit_callback is not None)
         return super().stream(value, user=user, avatar=avatar, message=message, replace=replace, **message_params)

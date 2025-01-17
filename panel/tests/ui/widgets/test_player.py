@@ -56,7 +56,7 @@ def test_name(page):
     player = Player(name='test')
     serve_component(page, player)
 
-    assert page.is_visible('label')
+    expect(page.locator('label')).to_have_count(3)
     assert page.query_selector('.pn-player-value') is None
 
     name = page.locator('.pn-player-title:has-text("test")')
@@ -75,16 +75,17 @@ def test_name_and_show_value(page):
     player = Player(name='test', show_value=True)
     serve_component(page, player)
 
-    assert page.is_visible('label')
+    expect(page.locator('label')).to_have_count(3)
     assert page.query_selector('.pn-player-value') is not None
 
     name = page.locator('.pn-player-title:has-text("test")')
     expect(name).to_have_count(1)
+
 def test_player_visible_buttons(page):
     player = Player(visible_buttons=["play", "pause"])
     serve_component(page, player)
 
-    assert page.is_visible(".play")
+    expect(page.locator(".play")).to_be_visible()
     assert page.is_visible(".pause")
     assert not page.is_visible(".reverse")
     assert not page.is_visible(".first")
@@ -104,14 +105,14 @@ def test_player_visible_loop_options(page):
     player = Player(visible_loop_options=["loop", "once"])
     serve_component(page, player)
 
-    assert page.is_visible(".loop")
-    assert page.is_visible(".once")
-    assert not page.is_visible(".reflect")
+    expect(page.locator(".loop")).to_be_visible()
+    expect(page.locator(".once")).to_be_visible()
+    expect(page.locator(".reflect")).to_be_hidden()
 
     player.visible_loop_options = ["reflect"]
     expect(page.locator(".reflect")).to_be_visible()
-    assert not page.is_visible(".loop")
-    assert not page.is_visible(".once")
+    expect(page.locator(".loop")).to_be_hidden()
+    expect(page.locator(".once")).to_be_hidden()
 
 
 def test_player_scale_buttons(page):
