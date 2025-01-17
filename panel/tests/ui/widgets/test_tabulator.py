@@ -1083,11 +1083,11 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
     df_mixed['tomodify'] = 'target'
-    widget = Tabulator(df_mixed, width=width, widths=widths)
+    widget = Tabulator(df_mixed.iloc[:1], width=width, widths=widths)
 
     serve_component(page, widget)
 
-    cell = page.locator('text="target"').first
+    cell = page.locator('text="target"')
     # Scroll to the right
     cell.scroll_into_view_if_needed()
     page.wait_for_timeout(200)
