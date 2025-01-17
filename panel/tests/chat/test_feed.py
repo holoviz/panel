@@ -1172,14 +1172,8 @@ class TestChatFeedCallback:
 
         feed = ChatFeed(callback=callback)
         feed.send("Message", respond=True)
-
-        def case():
-            msg = feed.objects[-1].object
-            if msg == "Message":
-                return False
-            assert msg == "helloooo"
-
-        await async_wait_until(case)
+        await async_wait_until(lambda: len(feed.objects) == 2)
+        await async_wait_until(lambda: feed.objects[-1].object == "helloooo")
         assert chat_feed._placeholder not in chat_feed._chat_log
 
     async def test_callback_one_argument(self, chat_feed):
