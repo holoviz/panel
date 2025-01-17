@@ -111,6 +111,7 @@ xgboost = "*"
 # =================== TESTS ===================
 # =============================================
 [feature.test-core.dependencies]
+cryptography = "*"
 psutil = "*"
 pytest = "*"
 pytest-asyncio = "*"
