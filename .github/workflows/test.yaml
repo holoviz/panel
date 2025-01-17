@@ -137,7 +137,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-    timeout-minutes: 90
+    timeout-minutes: 30
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:

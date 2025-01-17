@@ -91,6 +91,7 @@ def test_chat_interface_edit_message(page):
 
     # find the input field and type new message
     chat_input = page.locator(".bk-input").first
+    page.wait_for_timeout(200)
     chat_input.fill("Edited")
 
     # click enter

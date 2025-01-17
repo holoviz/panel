@@ -1172,6 +1172,7 @@ class TestChatFeedCallback:
 
         feed = ChatFeed(callback=callback)
         feed.send("Message", respond=True)
+        await async_wait_until(lambda: len(feed.objects) == 2)
         await async_wait_until(lambda: feed.objects[-1].object == "helloooo")
         assert chat_feed._placeholder not in chat_feed._chat_log
 

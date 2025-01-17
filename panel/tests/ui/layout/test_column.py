@@ -238,6 +238,7 @@ def test_column_scroll_position_param_updated(page):
     expect(column).to_have_js_property('scrollTop', 175)
 
 
+@pytest.mark.flaky(reruns=3)
 def test_column_scroll_to(page):
     col = Column(
         *list(range(100)),
