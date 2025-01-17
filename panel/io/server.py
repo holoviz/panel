@@ -268,7 +268,8 @@ def server_html_page_for_session(
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
     if resources.mode == 'server':
-        dist_url = f'{state.rel_path}/{LOCAL_DIST}' if state.rel_path else LOCAL_DIST
+        with set_curdoc(session.document):
+            dist_url = f'{state.rel_path}/{LOCAL_DIST}' if state.rel_path else LOCAL_DIST
     else:
         dist_url = CDN_DIST
 
