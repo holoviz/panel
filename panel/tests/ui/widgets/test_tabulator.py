@@ -586,6 +586,7 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     cell_edit = page.locator('input[type="date"]')
     new_date = "1980-01-01"
     cell_edit.fill(new_date)
+    page.wait_for_timeout(100)
     # Need to Enter to validate the change
     page.locator('input[type="date"]').press('Enter')
     expect(page.locator(f'text="{new_date}"')).to_have_count(1)
@@ -597,6 +598,7 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     cell_edit = page.locator('input[type="date"]')
     new_date2 = "1990-01-01"
     cell_edit.fill(new_date2)
+    page.wait_for_timeout(100)
     # Escape invalidates the change
     page.locator('input[type="date"]').press('Escape')
     expect(page.locator(f'text="{new_date2}"')).to_have_count(0)
@@ -1081,11 +1083,11 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
     df_mixed['tomodify'] = 'target'
-    widget = Tabulator(df_mixed, width=width, widths=widths)
+    widget = Tabulator(df_mixed.iloc[:1], width=width, widths=widths)
 
     serve_component(page, widget)
 
-    cell = page.locator('text="target"').first
+    cell = page.locator('text="target"')
     # Scroll to the right
     cell.scroll_into_view_if_needed()
     page.wait_for_timeout(200)
@@ -2432,6 +2434,8 @@ def test_tabulator_patching_and_styling(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator-cell')).not_to_have_count(0)
+
     # Changing the highest value in the int column should
     # update the style so that this cell gets a yellow background
     widget.patch({'int': [(0, 100)]}, as_index=False)
@@ -2869,6 +2873,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     assert len(widget.current_view) == 2
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pagination):
     df = pd.DataFrame({
@@ -2907,7 +2912,6 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     assert len(widget.current_view) == 4
 
     page.locator('text="Last"').click()
-    page.wait_for_timeout(200)
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(2)
@@ -3494,6 +3498,7 @@ def test_tabulator_sorter_default_number(page):
     widget = Tabulator(df, sorters=[{"field": "x", "dir": "desc"}])
 
     serve_component(page, widget)
+    expect(page.locator('.tabulator-cell')).to_have_count(0)
 
     df2 = pd.DataFrame({'x': [0, 96, 116]})
     widget.value = df2

@@ -23,3 +23,4 @@ def test_compile_component(py_file):
         assert 'function render() {\n  console.log("foo");\n}' in bundle.read_text()
     finally:
         bundle.unlink()
+        p.kill()
