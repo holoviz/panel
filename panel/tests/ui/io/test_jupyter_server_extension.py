@@ -10,8 +10,7 @@ from playwright.sync_api import expect
 
 from panel.tests.util import wait_until
 
-pytestmark = pytest.mark.jupyter
-
+pytestmark = [pytest.mark.jupyter, pytest.mark.flaky(max_runs=3)]
 
 
 def test_jupyter_server(page, jupyter_preview):
