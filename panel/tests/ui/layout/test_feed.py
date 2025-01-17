@@ -113,27 +113,25 @@ def test_feed_scroll_to_latest_within_limit(page):
 
     feed.scroll_to_latest(scroll_limit=100)
 
-    # assert scroll location is still at top
     feed.append(Spacer(styles=dict(background='yellow'), width=200, height=200))
 
-    page.wait_for_timeout(500)
-
+    # assert scroll location is still at top
     expect(feed_el.locator('div')).to_have_count(5)
     expect(feed_el).to_have_js_property('scrollTop', 0)
 
     # scroll to close to bottom
-    feed_el.evaluate('(el) => el.scrollTo({top: el.scrollHeight})')
+    feed_el.evaluate('(el) => el.scrollTo({top: 200})')
+    expect(feed_el).to_have_js_property('scrollTop', 200)
 
     # assert auto scroll works; i.e. distance from bottom is 0
     feed.append(Spacer(styles=dict(background='yellow'), width=200, height=200))
-
     feed.scroll_to_latest(scroll_limit=1000)
 
-    def case():
-        cmd = '(el) => el.scrollHeight - el.scrollTop - el.clientHeight'
-        assert feed_el.evaluate(cmd) == 0
-
-    wait_until(case, page)
+    def assert_at_bottom():
+        assert feed_el.evaluate(
+            '(el) => el.scrollHeight - el.scrollTop - el.clientHeight'
+        ) == 0
+    wait_until(assert_at_bottom, page)
 
 
 def test_feed_view_scroll_button(page):
