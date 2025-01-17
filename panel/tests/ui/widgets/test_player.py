@@ -85,7 +85,7 @@ def test_player_visible_buttons(page):
     player = Player(visible_buttons=["play", "pause"])
     serve_component(page, player)
 
-    assert page.is_visible(".play")
+    expect(page.locator(".play")).to_be_visible()
     assert page.is_visible(".pause")
     assert not page.is_visible(".reverse")
     assert not page.is_visible(".first")
