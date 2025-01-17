@@ -63,15 +63,18 @@ def setup_build_dir(build_dir: str | os.PathLike | None = None):
             shutil.rmtree(temp_dir)
 
 
-def check_cli_tool(tool_name):
+def check_cli_tool(tool_name: str) -> bool:
     try:
-        result = subprocess.run([tool_name, '--version'], capture_output=True, shell=True)
-        if result.returncode == 0:
-            return True
-        else:
-            return False
+        result = subprocess.run([tool_name, '--version'], capture_output=True)
+        code = result.returncode == 0
     except Exception:
-        return False
+        code = 1
+    if not code:
+        return True
+    if sys.platform == 'win32':
+        tool_name = f'{tool_name}.cmd'
+        return check_cli_tool(tool_name)
+    return False
 
 
 def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[ReactiveESM]]:
