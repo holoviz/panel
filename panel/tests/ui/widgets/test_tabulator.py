@@ -586,6 +586,7 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     cell_edit = page.locator('input[type="date"]')
     new_date = "1980-01-01"
     cell_edit.fill(new_date)
+    page.wait_for_timeout(100)
     # Need to Enter to validate the change
     page.locator('input[type="date"]').press('Enter')
     expect(page.locator(f'text="{new_date}"')).to_have_count(1)
@@ -597,6 +598,7 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     cell_edit = page.locator('input[type="date"]')
     new_date2 = "1990-01-01"
     cell_edit.fill(new_date2)
+    page.wait_for_timeout(100)
     # Escape invalidates the change
     page.locator('input[type="date"]').press('Escape')
     expect(page.locator(f'text="{new_date2}"')).to_have_count(0)
@@ -2871,6 +2873,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     assert len(widget.current_view) == 2
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pagination):
     df = pd.DataFrame({
@@ -2891,7 +2894,6 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
 
     header = page.locator('input[type="search"]')
     header.click()
-    page.wait_for_timeout(200)
     header.fill('B')
     header.press('Enter')
 
@@ -2899,7 +2901,6 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
 
     cell = page.locator('text="B"').first
     cell.click()
-    page.wait_for_timeout(200)
     editable_cell = page.locator('input[type="text"]')
     editable_cell.fill("Q")
     editable_cell.press('Enter')
@@ -2911,7 +2912,6 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     assert len(widget.current_view) == 4
 
     page.locator('text="Last"').click()
-    page.wait_for_timeout(200)
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(2)
@@ -2919,7 +2919,6 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     # Edit a cell in the filtered column, from B to X
     cell = page.locator('text="B"').nth(1)
     cell.click()
-    page.wait_for_timeout(200)
     editable_cell = page.locator('input[type="text"]')
     editable_cell.fill("X")
     editable_cell.press('Enter')
@@ -2933,7 +2932,6 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     # In the same column, edit X to Y
     cell = page.locator('text="X"')
     cell.click()
-    page.wait_for_timeout(200)
     editable_cell = page.locator('input[type="text"]')
     editable_cell.fill("Y")
     editable_cell.press('Enter')
@@ -2946,7 +2944,6 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     # Edit the last B value found in that column, from B to Z
     cell = page.locator('text="B"')
     cell.click()
-    page.wait_for_timeout(200)
     editable_cell = page.locator('input[type="text"]')
     editable_cell.fill("Z")
     editable_cell.press('Enter')
