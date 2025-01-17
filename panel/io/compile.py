@@ -65,7 +65,7 @@ def setup_build_dir(build_dir: str | os.PathLike | None = None):
 
 def check_cli_tool(tool_name):
     try:
-        result = subprocess.run([tool_name, '--version'], capture_output=True)
+        result = subprocess.run([tool_name, '--version'], capture_output=True, shell=True)
         if result.returncode == 0:
             return True
         else:
