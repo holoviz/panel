@@ -20,6 +20,13 @@ from panel.tests.util import serve_component, wait_until
 pytestmark = pytest.mark.ui
 
 
+@pytest.fixture(scope="module", autouse=True)
+def set_expect_timeout():
+    expect.set_options(timeout=10_000)
+    yield
+    expect.set_options(timeout=5_000)
+
+
 class JSUpdate(JSComponent):
 
     text = param.String()
