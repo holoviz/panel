@@ -55,7 +55,10 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page):
     download = download_info.value
     tmp = tempfile.NamedTemporaryFile(suffix='.txt')
     download.save_as(tmp.name)
-    assert tmp.file.read().decode('utf-8') == 'abc'
+    try:
+        assert tmp.file.read().decode('utf-8') == 'abc'
+    finally:
+        tmp.close()
 
     page.click('.bk-tab:not(.bk-active)')
     page.click('.bk-tab:not(.bk-active)')
@@ -71,4 +74,7 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page):
     download = download_info.value
     tmp = tempfile.NamedTemporaryFile(suffix='.txt')
     download.save_as(tmp.name)
-    assert tmp.file.read().decode('utf-8') == 'abcdef'
+    try:
+        assert tmp.file.read().decode('utf-8') == 'abcdef'
+    finally:
+        tmp.close()
