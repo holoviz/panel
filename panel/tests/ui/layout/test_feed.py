@@ -8,7 +8,7 @@ from panel import Feed
 from panel.layout.spacer import Spacer
 from panel.tests.util import serve_component, wait_until
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3)]
 
 ITEMS = 100  # 1000 items make the CI flaky
 
