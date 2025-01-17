@@ -27,7 +27,7 @@ pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3)]
 
 
 if os.name == "wt":
-    TIMEOUT = 150_000
+    TIMEOUT = 200_000
 else:
     TIMEOUT = 90_000
 
