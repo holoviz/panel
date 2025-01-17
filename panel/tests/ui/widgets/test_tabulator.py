@@ -2394,6 +2394,32 @@ def test_tabulator_patching_no_event(page, df_mixed):
 
     assert len(events) == 0
 
+def test_tabulator_patch_scalar_as_index_filtered(page):
+    # https://github.com/holoviz/panel/issues/7619
+    sample_data = pd.DataFrame({"Number": np.arange(100, 110)})
+    table = Tabulator(sample_data, height=200)
+
+    def filt(df):
+        return df[df.index >= 5]
+
+    table.add_filter(filt)
+
+    def edit(e):
+        table.patch({"Number": [(sample_data.index[e.row], 10)]}, as_index=True)
+
+    table.on_edit(edit)
+
+    serve_component(page, table)
+
+    # Chankge the cell that contains B to BB
+    cell = page.locator('text="107"')
+    cell.click()
+    editable_cell = page.locator('input[type="number"]')
+    editable_cell.fill("120")
+    editable_cell.press('Enter')
+
+    wait_until(lambda: table.value.iloc[7, 0] == 10, page)
+
 
 def color_false(val):
     color = 'red' if not val else 'black'
