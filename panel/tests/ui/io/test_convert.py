@@ -26,7 +26,7 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
 pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3)]
 
 
-if os.name == "wt":
+if os.name == "nt":
     TIMEOUT = 200_000
 else:
     TIMEOUT = 90_000
