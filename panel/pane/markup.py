@@ -357,6 +357,11 @@ class Markdown(HTMLBasePane):
         Markdown extension to apply when transforming markup.
         Does not apply if renderer is set to 'markdown-it' or 'myst'.""")
 
+    hard_line_break = param.Boolean(default=False, doc="""
+        Whether simple new lines are rendered as hard line breaks. False by
+        default to conform with the original Markdown spec. Not supported by
+        the 'myst' renderer.""")
+
     plugins = param.List(default=[], nested_refs=True, doc="""
         Additional markdown-it-py plugins to use.""")
 
@@ -371,6 +376,7 @@ class Markdown(HTMLBasePane):
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
+        'hard_line_break': None,
         'dedent': None, 'disable_math': None, 'extensions': None,
         'plugins': None, 'renderer': None, 'renderer_options': None
     }
@@ -398,7 +404,7 @@ class Markdown(HTMLBasePane):
 
     @classmethod
     @functools.cache
-    def _get_parser(cls, renderer, plugins, **renderer_options):
+    def _get_parser(cls, renderer, plugins, hard_line_break, **renderer_options):
         if renderer == 'markdown':
             return None
         from markdown_it import MarkdownIt
@@ -416,7 +422,7 @@ class Markdown(HTMLBasePane):
                 return token
 
         if renderer == 'markdown-it':
-            if "breaks" not in renderer_options:
+            if hard_line_break and "breaks" not in renderer_options:
                 renderer_options["breaks"] = True
 
             parser = MarkdownIt(
@@ -458,15 +464,16 @@ class Markdown(HTMLBasePane):
             obj = textwrap.dedent(obj)
 
         if self.renderer == 'markdown':
+            extensions = self.extensions + ['nl2br'] if self.hard_line_break else self.extensions
             html = markdown.markdown(
                 obj,
-                extensions=self.extensions,
+                extensions=extensions,
                 output_format='xhtml',
                 **self.renderer_options
             )
         else:
             parser = self._get_parser(
-                self.renderer, tuple(self.plugins), **self.renderer_options
+                self.renderer, tuple(self.plugins), self.hard_line_break, **self.renderer_options
             )
             try:
                 html = parser.render(obj)
