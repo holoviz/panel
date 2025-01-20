@@ -60,7 +60,7 @@ export class ModalView extends BkColumnView {
   }
 
   override stylesheets(): StyleSheetLike[] {
-    return [...super.stylesheets(), tabulator_css]
+    return [...super.stylesheets(), modal_css]
   }
 
   override async update_children(): Promise<void> {
