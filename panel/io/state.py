@@ -298,7 +298,8 @@ class _state(param.Parameterized):
         return bool(
             doc is self.curdoc and
             self._thread_id in (self._current_thread, None) and
-            (not (doc and doc.session_context and doc.session_context.session) or self._loaded.get(doc))
+            (not (doc and doc.session_context and getattr(doc.session_context, 'session', None))
+             or self._loaded.get(doc))
         )
 
     @param.depends('_busy_counter', watch=True)
