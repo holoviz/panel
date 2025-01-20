@@ -86,7 +86,7 @@ def main(args: list[str] | None = None):
         die(f"ERROR: Must specify subcommand, one of: {nice_join(all_commands)}")
     elif len(sys.argv) > 1 and any(sys.argv[1] == c.name for c in commands):
         sys.argv = transform_cmds(sys.argv)
-        if sys.argv[1] in ('bundle', 'compile', 'convert', 'serve', 'help'):
+        if sys.argv[1] in ('bundle', 'compile', 'convert', 'serve', 'oauth-secret', 'help'):
             parsed_args = parser.parse_args(sys.argv[1:])
             try:
                 ret = parsed_args.invoke(parsed_args)

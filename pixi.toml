@@ -95,6 +95,7 @@ pyinstrument = ">=4.0"
 python-graphviz = "*"
 pyvista = "*"
 reacton = "*"
+s3fs = ">=2023"  # Python 3.9 pull in 0.6.0
 scikit-image = "*"
 scikit-learn = "*"
 seaborn = "*"
@@ -141,6 +142,7 @@ altair = "*"
 anywidget = "*"
 bokeh-fastapi = "*"
 bokeh_sampledata = "*"
+cryptography = "*"
 diskcache = "*"
 fastapi = "*"
 folium = "*"
@@ -179,7 +181,7 @@ packaging = "*"
 _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
-cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10'
+cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup'
 depends-on = ["_install-ui"]
 
 # =============================================

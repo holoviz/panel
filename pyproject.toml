@@ -273,6 +273,7 @@ module = [
     "pyvista.*",
     "pyviz_comms.*",
     "rpy2.*",
+    "s3fs.*",
     "scipy.*",
     "setuptools_scm.*",
     "snakeviz.*",

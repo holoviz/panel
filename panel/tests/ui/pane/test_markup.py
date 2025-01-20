@@ -114,7 +114,7 @@ def test_html_model_no_stylesheet(page):
     serve_component(page, html)
 
     header_element = page.locator('h1:has-text("Header")')
-    assert header_element.is_visible()
+    expect(header_element).to_be_visible()
     assert header_element.text_content() == "Header"
 
 def test_anchor_scroll(page):
