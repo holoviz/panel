@@ -4,6 +4,7 @@ from bokeh.core.properties import Bool
 from bokeh.events import ModelEvent
 from bokeh.model import Model
 
+from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import Column
@@ -17,7 +18,7 @@ __all__ = (
 class Modal(Column):
 
     __javascript_raw__ = [
-        "https://cdn.jsdelivr.net/npm/a11y-dialog@7/dist/a11y-dialog.min.js"
+        f"{config.npm_cdn}/a11y-dialog@7/dist/a11y-dialog.min.js"
     ]
 
     @classproperty
@@ -30,7 +31,7 @@ class Modal(Column):
 
     __js_require__ = {
         'paths': {
-            'a11y-dialog': "https://cdn.jsdelivr.net/npm/a11y-dialog@7/dist/a11y-dialog.min",
+            'a11y-dialog': f"{config.npm_cdn}/a11y-dialog@7/dist/a11y-dialog.min",
         },
         'exports': {
             'A11yDialog': 'a11y-dialog',
