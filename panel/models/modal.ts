@@ -2,10 +2,13 @@ import type * as p from "@bokehjs/core/properties"
 import {Column as BkColumn, ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
 import {div, button} from "@bokehjs/core/dom"
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type {Attrs} from "@bokehjs/core/types"
 import {UIElementView} from "@bokehjs/models/ui/ui_element"
 import {isNumber} from "@bokehjs/core/util/types"
 import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
+
+import modal_css from "styles/models/modal.css"
 
 declare type A11yDialogView = {
   on(event: string, listener: () => void): void
@@ -54,6 +57,10 @@ export class ModalView extends BkColumnView {
     UIElementView.prototype.render.call(this)
     this.class_list.add(...this.css_classes())
     this.create_modal()
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), tabulator_css]
   }
 
   override async update_children(): Promise<void> {

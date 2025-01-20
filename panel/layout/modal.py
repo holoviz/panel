@@ -8,7 +8,6 @@ import param
 
 from pyviz_comms import JupyterComm
 
-from ..io.resources import CDN_DIST
 from ..models.modal import ModalDialogEvent
 from ..util import lazy_load
 from ..util.warnings import PanelUserWarning, warn
@@ -28,8 +27,6 @@ class Modal(ListPanel):
     show_close_button = param.Boolean(default=True, doc="Whether to show a close button in the modal.")
 
     background_close = param.Boolean(default=True, doc="Whether to enable closing the modal when clicking the background.")
-
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/models/modal.css"]
 
     _rename: ClassVar[Mapping[str, str | None]] = {}
 
