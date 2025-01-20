@@ -1,5 +1,79 @@
 # Releases
 
+## Version 1.6.0
+
+### Enhancements
+
+- Allow `ChatFeed.callback_exception` to accept a callable and 'traceback' (alias for verbose) ([#7558](https://github.com/holoviz/panel/pull/7558))
+
+### Features
+
+- Introduces `ChatMessage` and `ChatFeed` edit functionality ([#7559](https://github.com/holoviz/panel/pull/7559))
+
+## Version 1.5.5
+
+This release fixes a regression causing .node_modules to be bundled into our released wheel and introduces a number of bug fixes and enhancements. Many thanks to @mayonnaisecolouredbenz7, @pmeier, @Italirz, @Coderambling and our maintainer team @MarcSkovMadsen, @hoxbro, @ahuang11, @thuydotm, @maximlt and @philippjfr.
+
+### Enhancements
+
+- Add ability to `scroll_to` a particular object on `Column` ([#7206](https://github.com/holoviz/panel/pull/7206))
+- Add pointer when hovering on `Markdown` copy button ([#7490](https://github.com/holoviz/panel/pull/7490))
+- Allow streaming to  `ChatStep` ([#7520](https://github.com/holoviz/panel/pull/7520))
+- Improve `ChatMessage` repr ([#7521](https://github.com/holoviz/panel/pull/7521))
+- Add `ChatInterface` button tooltips ([#7552](https://github.com/holoviz/panel/pull/7552))
+
+### Bug fixes
+
+- Ensure Notifications are cleaned up correctly ([#4964](https://github.com/holoviz/panel/pull/4964))
+- Ensure `FileDownload` label text updates correctly ([#7489](https://github.com/holoviz/panel/pull/7489))
+- Fix `Tabulator` aggregation behavior ([#7450](https://github.com/holoviz/panel/pull/7450))
+- Fix typing for `.servable` method ([#7530](https://github.com/holoviz/panel/pull/7530))
+- Ensure `NestedSelect` respects `disabled` parameter ([#7533](https://github.com/holoviz/panel/pull/7533))
+- Ensure errors in hooks aren't masked by fallback to different signature ([#7502](https://github.com/holoviz/panel/pull/7502))
+- Ensure Notifications are only shown once if scheduled onload ([#7504](https://github.com/holoviz/panel/pull/7504))
+
+### Documentation
+
+- Improve `hold` how-to guide ([#7487](https://github.com/holoviz/panel/pull/7487), [#7500](https://github.com/holoviz/panel/pull/7500))
+
+### Maintenance
+
+- Enable strict type checking ([#7497](https://github.com/holoviz/panel/pull/7497))
+- Ensure node_modules aren't bundled into package ([#7526](https://github.com/holoviz/panel/pull/7526))
+- Internal cleanup of compatibility code for older param versions ([#7527](https://github.com/holoviz/panel/pull/7527))
+
+### Compatibility
+
+- Compatibility for websockets 14 when running on FastAPI server ([#7491](https://github.com/holoviz/panel/pull/7491))
+- Compatibility with Textual 0.86 ([#7501](https://github.com/holoviz/panel/pull/7501))
+- Compatibility with Altair 5.5.0 ([#7523](https://github.com/holoviz/panel/pull/7523))
+- Bump Vizzu version to 0.15 ([#7485](https://github.com/holoviz/panel/pull/7485))
+
+## Version 1.5.4
+
+This release primarily focuses on improving the ESM components including fixes for serialization of parameter values, improvements for compiling bundles, and building custom layouts. Additionally this release includes the new `DatetimeSlider`, adds a copy button to codeblocks in `Markdown` panes, improves responsive sizing for Plotly and starts adding better support for Polars. Many thanks and a warm welcome to our new contributor @MP-MaximilianLattka as well as our maintainer team, including @Hoxbro, @thuydotm, @ahuang11, @MarcSkovMadsen and @philippjfr.
+
+### Enhancements
+
+- Add `DatetimeSlider` widget ([#7374](https://github.com/holoviz/panel/pull/7374))
+- Improve Jupyter preview error handling ([#7434](https://github.com/holoviz/panel/pull/7434))
+- Add copy button to `Markdown` codeblocks ([#7451](https://github.com/holoviz/panel/pull/7451))
+- Various improvements for writing ESM components ([#7462](https://github.com/holoviz/panel/pull/7462))
+- Log authorization callback errors ([#7463](https://github.com/holoviz/panel/pull/7463))
+- Support polars in `pn.cache` ([#7472](https://github.com/holoviz/panel/pull/7472))
+- Improve and document `hold` utility ([#7474](https://github.com/holoviz/panel/pull/7474))
+- Improve how `panel compile` collects bundles ([#7477](https://github.com/holoviz/panel/pull/7477))
+
+### Bug fixes
+
+- Fix issues detecting changed property values during serialization ([#7432](https://github.com/holoviz/panel/pull/7432))
+- Ensure ESM compilation correctly detects file extension ([#7446](https://github.com/holoviz/panel/pull/7446))
+- Ensure parameter overrides are applied to ESM components ([#7452](https://github.com/holoviz/panel/pull/7452))
+- Ensure component `Children` parameter correctly resolves when multiple types are defined ([#7454](https://github.com/holoviz/panel/pull/7454))
+- Fix issues using Jupyter Preview with notifications enabled ([#7466](https://github.com/holoviz/panel/pull/7466))
+- Ensure `HTML`/`Markdown` streaming does not freeze during rapid updates ([#7480](https://github.com/holoviz/panel/pull/7480))
+- Ensure `Plotly` sizes correctly on initial render ([#7483](https://github.com/holoviz/panel/pull/7483))
+
 ## Version 1.5.3
 
 This release fixes a number of smaller regressions related to `Tabulator` `row_content`, ensures `--dev`/`--autoreload` picks up on external modules correctly and resolves OAuth guest endpoints correctly. Additionally it introduces some enhancements and bug fixes for custom components, such as adding support for loading custom components ESM Javascript bundles from the inbuilt endpoint ensuring that the bundle can be cached by the browser. Many thanks and welcome to our new contributors @chryshumble and @haojungc, our returning contributors @TheoMathurin, @aktech and @Coderambling and the core maintainer team @Hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr for their contributions to this release.
@@ -21,7 +95,7 @@ This release fixes a number of smaller regressions related to `Tabulator` `row_c
 - Do not mutate layout `Children` inplace ([#7417](https://github.com/holoviz/panel/pull/7403))
 - Set `Tabulator` null formatter to empty string ([#7421](https://github.com/holoviz/panel/pull/7421))
 - Ensure Tabulator table content does not overflow ([#7425](https://github.com/holoviz/panel/pull/7425))
-
+- Ensure `cache` handles hashing of classes and instances correctly ([#7478](https://github.com/holoviz/panel/issues/7478))
 
 ### Compatibility
 

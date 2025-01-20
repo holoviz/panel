@@ -1,5 +1,5 @@
 import {concat, uniq} from "@bokehjs/core/util/array"
-import {isPlainObject, isArray} from "@bokehjs/core/util/types"
+import {isArray, isPlainObject} from "@bokehjs/core/util/types"
 
 export const get = (obj: any, path: string, defaultValue: any = undefined) => {
   const travel = (regexp: RegExp) =>
@@ -11,13 +11,27 @@ export const get = (obj: any, path: string, defaultValue: any = undefined) => {
   return result === undefined || result === obj ? defaultValue : result
 }
 
-export function throttle(func: any, timeFrame: number) {
-  let lastTime: number = 0
-  return function() {
-    const now: number = Number(new Date())
-    if (now - lastTime >= timeFrame) {
-      func()
-      lastTime = now
+export function throttle(func: Function, limit: number): any {
+  let lastRan: number = 0
+  let trailingCall: ReturnType<typeof setTimeout> | null = null
+
+  return function(...args: any) {
+    // @ts-ignore
+    const context = this
+    const now = Date.now()
+    if (trailingCall) {
+      clearTimeout(trailingCall)
+    }
+
+    if ((now - lastRan) >= limit) {
+      func.apply(context, args)
+      lastRan = Date.now()
+    } else {
+      trailingCall = setTimeout(function() {
+        func.apply(context, args)
+        lastRan = Date.now()
+        trailingCall = null
+      }, limit - (now - lastRan))
     }
   }
 }
@@ -92,6 +106,13 @@ export async function loadScript(type: string, src: string) {
       reject()
     }
   })
+}
+
+export function ID() {
+  // Math.random should be unique because of its seeding algorithm.
+  // Convert it to base 36 (numbers + letters), and grab the first 9 characters
+  // after the decimal.
+  return `_${  Math.random().toString(36).substring(2, 11)}`
 }
 
 export function convertUndefined(obj: any): any {

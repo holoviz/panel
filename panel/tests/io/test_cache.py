@@ -17,9 +17,7 @@ except Exception:
     diskcache = None
 diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires diskcache")
 
-from panel.io.cache import (
-    _find_hash_func, _generate_hash, cache, is_equal,
-)
+from panel.io.cache import _generate_hash, cache, is_equal
 from panel.io.state import set_curdoc, state
 from panel.tests.util import serve_and_wait
 
@@ -28,7 +26,7 @@ from panel.tests.util import serve_and_wait
 ################
 
 def hashes_equal(v1, v2):
-    a, b = _find_hash_func(v1)(v1), _find_hash_func(v2)(v2)
+    a, b = _generate_hash(v1), _generate_hash(v2)
     return a == b
 
 def test_str_hash():
@@ -52,6 +50,11 @@ def test_none_hash():
     assert hashes_equal(None, None)
     assert not hashes_equal(None, False)
 
+def test_object_hash():
+    obj1, obj2 = object(), object()
+    assert hashes_equal(obj1, obj1)
+    assert not hashes_equal(obj1, obj2)
+
 def test_bytes_hash():
     assert hashes_equal(b'0', b'0')
     assert not hashes_equal(b'0', b'1')
@@ -70,10 +73,11 @@ def test_list_hash():
     assert not hashes_equal([0], [1])
     assert not hashes_equal(['a', ['b']], ['a', ['c']])
 
+def test_list_hash_recursive():
     # Recursion
     l = [0]
     l.append(l)
-    assert hashes_equal(l, list(l))
+    assert hashes_equal(list(l), list(l))
 
 def test_tuple_hash():
     assert hashes_equal((0,), (0,))
@@ -88,10 +92,10 @@ def test_dict_hash():
     assert not hashes_equal({'a': 0}, {'a': 1})
     assert not hashes_equal({'a': {'b': 0}}, {'a': {'b': 1}})
 
-    # Recursion
+def test_dict_hash_recursive():
     d = {'a': {}}
     d['a'] = d
-    assert hashes_equal(d, dict(d))
+    assert hashes_equal(dict(d), dict(d))
 
 def test_stringio_hash():
     sio1, sio2 = io.StringIO(), io.StringIO()
@@ -195,7 +199,7 @@ def test_module_hash():
 # Test caching #
 ################
 
-OFFSET = {}
+OFFSET: dict[tuple, int] = {}
 
 def function_with_args(a, b):
     global OFFSET

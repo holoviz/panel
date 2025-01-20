@@ -6,13 +6,11 @@ class OAuthSecret(Subcommand):
 
     '''
 
-    #: name for this subcommand
     name = "oauth-secret"
 
     help = "Create a Panel encryption key for use with Panel server"
 
-    args = (
-    )
+    args = ()
 
     def invoke(self, args):
         from cryptography.fernet import Fernet

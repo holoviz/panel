@@ -4,8 +4,9 @@ Miscellaneous widgets which do not fit into the other main categories.
 from __future__ import annotations
 
 from base64 import b64encode
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -39,7 +40,7 @@ class VideoStream(Widget):
     >>> VideoStream(name='Video Stream', timeout=100)
     """
 
-    format = param.ObjectSelector(default='png', objects=['png', 'jpeg'],
+    format = param.Selector(default='png', objects=['png', 'jpeg'],
                                   doc="""
         The file format as which the video is returned.""")
 
@@ -86,12 +87,12 @@ class FileDownload(IconMixin):
         Whether to download on the initial click or allow for
         right-click save as.""")
 
-    button_type = param.ObjectSelector(default='default', objects=BUTTON_TYPES, doc="""
+    button_type = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
         or 'danger' (red).""")
 
-    button_style = param.ObjectSelector(default='solid', objects=BUTTON_STYLES, doc="""
+    button_style = param.Selector(default='solid', objects=BUTTON_STYLES, doc="""
         A button style to switch between 'solid', 'outline'.""")
 
     callback = param.Callable(default=None, allow_refs=False, doc="""
@@ -334,9 +335,8 @@ class JSONEditor(Widget):
     }
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        if self._widget_type is None:
-            self._widget_type = lazy_load(
-                "panel.models.jsoneditor", "JSONEditor", isinstance(comm, JupyterComm)
-            )
+        JSONEditor._widget_type = lazy_load(
+            "panel.models.jsoneditor", "JSONEditor", isinstance(comm, JupyterComm)
+        )
         model = super()._get_model(doc, root, parent, comm)
         return model

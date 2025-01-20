@@ -6,13 +6,14 @@ from __future__ import annotations
 
 import datetime
 
+from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union,
+    TYPE_CHECKING, Any, ClassVar, TypedDict, Union,
 )
 from zoneinfo import ZoneInfo
 
@@ -29,21 +30,30 @@ from ..pane.markup import (
     HTML, DataFrame, HTMLBasePane, Markdown,
 )
 from ..pane.media import Audio, Video
+from ..pane.placeholder import Placeholder
 from ..param import ParamFunction
-from ..viewable import Viewable
+from ..viewable import ServableMixin, Viewable
 from ..widgets.base import Widget
+from ..widgets.icon import ToggleIcon
 from .icon import ChatCopyIcon, ChatReactionIcons
+from .input import ChatAreaInput
 from .utils import (
     avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
 )
+
+Avatar = Union[str, BytesIO, bytes, ImageBase]
+AvatarDict = dict[str, Avatar]
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-Avatar = Union[str, BytesIO, bytes, ImageBase]
-AvatarDict = dict[str, Avatar]
+    class MessageParams(TypedDict, total=False):
+        avatar: Avatar
+        user: str
+        object: Any
+        value: Any
 
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
@@ -175,6 +185,9 @@ class ChatMessage(Pane):
         to use when the user is specified but the avatar is. You can
         modify, but not replace the dictionary.""")
 
+    edited = param.Event(doc="""
+        An event that is triggered when the message is edited.""")
+
     footer_objects = param.List(doc="""
         A list of objects to display in the column of the footer of the message.""")
 
@@ -207,6 +220,9 @@ class ChatMessage(Pane):
 
     show_avatar = param.Boolean(default=True, doc="""
          Whether to display the avatar of the user.""")
+
+    show_edit_icon = param.Boolean(default=True, doc="""
+        Whether to display the edit icon.""")
 
     show_user = param.Boolean(default=True, doc="""
         Whether to display the name of the user.""")
@@ -241,9 +257,6 @@ class ChatMessage(Pane):
 
     def __init__(self, object=None, **params):
         self._exit_stack = ExitStack()
-        self.chat_copy_icon = ChatCopyIcon(
-            visible=False, width=15, height=15, css_classes=["copy-icon"]
-        )
         if params.get("timestamp") is None:
             tz = params.get("timestamp_tz")
             if tz is not None:
@@ -257,8 +270,12 @@ class ChatMessage(Pane):
             params["reaction_icons"] = ChatReactionIcons(options=reaction_icons, default_layout=Row, sizing_mode=None)
         self._internal = True
         super().__init__(object=object, **params)
+        self.edit_icon = ToggleIcon(
+            icon="edit", active_icon="x", width=15, height=15,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(), css_classes=["edit-icon"],
+        )
         self.chat_copy_icon = ChatCopyIcon(
-            visible=False, width=15, height=15, css_classes=["copy-icon"],
+            visible=False, width=15, height=15, css_classes=["edit-icon"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
         if not self.avatar:
@@ -278,15 +295,29 @@ class ChatMessage(Pane):
         self.param.watch(self._update_avatar_pane, "avatar")
 
         self._object_panel = self._create_panel(self.object)
+        self._placeholder = Placeholder(
+            object=self._object_panel,
+            css_classes=["placeholder"],
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            sizing_mode=None,
+        )
+        self._edit_area = ChatAreaInput(
+            css_classes=["edit-area"],
+            stylesheets=self._stylesheets + self.param.stylesheets.rx()
+        )
+
         self._update_chat_copy_icon()
+        self._update_edit_widgets()
         self._center_row = Row(
-            self._object_panel,
+            self._placeholder,
             css_classes=["center"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
         )
         self.param.watch(self._update_object_pane, "object")
         self.param.watch(self._update_reaction_icons, "reaction_icons")
+        self.edit_icon.param.watch(self._toggle_edit, "value")
+        self._edit_area.param.watch(self._submit_edit, "enter_pressed")
 
         self._user_html = HTML(
             self.param.user, height=20,
@@ -331,6 +362,7 @@ class ChatMessage(Pane):
         )
 
         self._icons_row = Row(
+            self.edit_icon,
             self.chat_copy_icon,
             self._render_reaction_icons(),
             css_classes=["icons"],
@@ -384,11 +416,11 @@ class ChatMessage(Pane):
         self,
         contents: Any,
         mime_type: str,
-    ):
+    ) -> tuple[Any, type[Pane] | Callable[..., Pane | ServableMixin]]:
         """
         Determine the renderer to use based on the mime type.
         """
-        renderer = _panel
+        renderer: type[Pane] | Callable[..., Pane | ServableMixin] = _panel
         if mime_type == "application/pdf":
             contents = self._exit_stack.enter_context(BytesIO(contents))
             renderer = partial(PDF, embed=True)
@@ -508,6 +540,8 @@ class ChatMessage(Pane):
                 self._set_params(old, enable_streaming=True, object=value)
                 return old
             object_panel = _panel(value)
+            if isinstance(object_panel, Markdown) and not object_panel.hard_line_break:
+                object_panel.hard_line_break = True
 
         self._set_params(object_panel)
         if type(old) is type(object_panel) and self._internal:
@@ -565,8 +599,9 @@ class ChatMessage(Pane):
         old = self._object_panel
         self._object_panel = new = self._create_panel(self.object, old=old)
         if old is not new:
-            self._center_row[0] = new
+            self._placeholder.update(new)
         self._update_chat_copy_icon()
+        self._update_edit_widgets()
 
     @param.depends("avatar_lookup", "user", watch=True)
     def _update_avatar(self):
@@ -601,6 +636,39 @@ class ChatMessage(Pane):
             self.chat_copy_icon.value = ""
             self.chat_copy_icon.visible = False
 
+    def _update_edit_widgets(self):
+        object_panel = self._object_panel
+        if isinstance(object_panel, HTMLBasePane):
+            object_panel = object_panel.object
+        elif isinstance(object_panel, Widget):
+            object_panel = object_panel.value
+        if isinstance(object_panel, str) and self.show_edit_icon:
+            self.edit_icon.visible = True
+        else:
+            self.edit_icon.visible = False
+
+    def _toggle_edit(self, event):
+        if event.new:
+            with param.discard_events(self):
+                if isinstance(self._object_panel, HTMLBasePane):
+                    self._edit_area.value = self._object_panel.object
+                elif isinstance(self._object_panel, Widget):
+                    self._edit_area.value = self._object_panel.value
+            self._placeholder.update(object=self._edit_area)
+        else:
+            self._placeholder.update(object=self._object_panel)
+
+    def _submit_edit(self, event):
+        if isinstance(self.object, HTMLBasePane):
+            self.object.object = self._edit_area.value
+        elif isinstance(self.object, Widget):
+            self.object.value = self._edit_area.value
+        else:
+            self.object = self._edit_area.value
+        self.param.trigger("object")
+        self.edit_icon.value = False
+        self.edited = True
+
     def _cleanup(self, root=None) -> None:
         """
         Cleanup the exit stack.
@@ -627,7 +695,7 @@ class ChatMessage(Pane):
 
     def update(
         self,
-        value: dict | ChatMessage | Any,
+        value: MessageParams | ChatMessage | Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
     ):
@@ -643,9 +711,9 @@ class ChatMessage(Pane):
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message message's avatar if provided.
         """
-        updates = {}
+        updates: MessageParams = {}
         if isinstance(value, dict):
-            updates.update(value)
+            updates.update(value)  # type: ignore
             if user:
                 updates["user"] = user
             if avatar:
@@ -667,7 +735,7 @@ class ChatMessage(Pane):
         self.param.update(**updates)
 
     def select(
-        self, selector: Optional[type | Callable[[Viewable], bool]] = None
+        self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
         return super().select(selector) + self._composite.select(selector)
 
@@ -698,3 +766,6 @@ class ChatMessage(Pane):
             prefix_with_viewable_label=prefix_with_viewable_label,
             prefix_with_container_label=prefix_with_container_label,
         )
+
+    def __repr__(self, depth: int = 0) -> str:
+        return f"ChatMessage(object={self.object!r}, user={self.user!r}, reactions={self.reactions!r})"

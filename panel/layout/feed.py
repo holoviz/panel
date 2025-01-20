@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -119,8 +118,8 @@ class Feed(Column):
             return (0, min(self.load_buffer, n))
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('scroll_button_click', model=model, doc=doc, comm=comm)
@@ -153,7 +152,7 @@ class Feed(Column):
 
     def _get_objects(
         self, model: Model, old_objects: list[Viewable], doc: Document,
-        root: Model, comm: Optional[Comm] = None
+        root: Model, comm: Comm | None = None
     ):
         from ..pane.base import RerenderError
         new_models, old_models = [], []
@@ -204,11 +203,18 @@ class Feed(Column):
             # reset the buffers and loaded objects
             self.load_buffer = load_buffer
 
-    def scroll_to_latest(self):
+    def scroll_to_latest(self, scroll_limit: float | None = None) -> None:
         """
         Scrolls the Feed to the latest entry.
+
+        Parameters
+        ----------
+        scroll_limit : float, optional
+            Maximum pixel distance from the latest object in the Feed to
+            trigger scrolling. If the distance exceeds this limit, scrolling will not occur.
+            If this is not set, it will always scroll to the latest while setting this to 0 disables scrolling.
         """
         rerender = self._last_synced and self._last_synced[-1] < len(self.objects)
         if rerender:
             self._process_event()
-        self._send_event(ScrollLatestEvent, rerender=rerender)
+        self._send_event(ScrollLatestEvent, rerender=rerender, scroll_limit=scroll_limit)

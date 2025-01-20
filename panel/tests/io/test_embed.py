@@ -442,7 +442,7 @@ def test_embed_slider_str_link(document, comm):
         assert event1['kind'] == 'ModelChanged'
         assert event1['attr'] == 'text'
         assert event1['model'] == model.children[0].children[0].ref
-        assert event1['new'] == '<b>%d</b>' % values[k]
+        assert event1['new'] == f'<b>{values[k]:.0f}</b>'
 
         assert event2['kind'] == 'ModelChanged'
         assert event2['attr'] == 'text'

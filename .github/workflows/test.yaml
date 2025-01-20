@@ -137,7 +137,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-    timeout-minutes: 90
+    timeout-minutes: 30
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
@@ -270,7 +270,7 @@ jobs:
           environments: ${{ matrix.environment }}
       - name: Test Type
         run: |
-          pixi run -e ${{ matrix.environment }} test-type || echo "Failed"
+          pixi run -e ${{ matrix.environment }} test-type
 
   result_test_suite:
     name: result:test

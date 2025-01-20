@@ -24,9 +24,7 @@ from panel.pane import (
 from panel.param import (
     JSONInit, Param, ParamFunction, ParamMethod, Skip,
 )
-from panel.tests.util import (
-    async_wait_until, mpl_available, mpl_figure, wait_until,
-)
+from panel.tests.util import async_wait_until, mpl_available, mpl_figure
 from panel.widgets import (
     AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
     EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
@@ -314,7 +312,7 @@ def test_integer_param(document, comm):
 
 def test_object_selector_param(document, comm):
     class Test(param.Parameterized):
-        a = param.ObjectSelector(default='b', objects=[1, 'b', 'c'])
+        a = param.Selector(default='b', objects=[1, 'b', 'c'])
 
     test = Test()
     test_pane = Param(test)
@@ -420,7 +418,7 @@ def test_number_param_overrides(document, comm):
 
 def test_object_selector_param_overrides(document, comm):
     class Test(param.Parameterized):
-        a = param.ObjectSelector(default='b', objects=[1, 'b', 'c'])
+        a = param.Selector(default='b', objects=[1, 'b', 'c'])
 
     test = Test()
     test_pane = Param(test, widgets={'a': {'options': ['b', 'c'], 'value': 'c'}})
@@ -953,7 +951,7 @@ def test_expand_param_subobject(document, comm):
 
 def test_switch_param_subobject(document, comm):
     class Test(param.Parameterized):
-        a = param.ObjectSelector()
+        a = param.Selector()
 
     o1 = Test(name='Subobject 1')
     o2 = Test(name='Subobject 2')
@@ -1147,11 +1145,11 @@ class View(param.Parameterized):
 
     @param.depends('a')
     def view(self):
-        return Div(text='%d' % self.a)
+        return Div(text=str(int(self.a)))
 
     @param.depends('b.param')
     def subobject_view(self):
-        return Div(text='%d' % self.b.a)
+        return Div(text=str(int(self.b.a)))
 
     @param.depends('a')
     def mpl_view(self):
@@ -1166,7 +1164,7 @@ def test_get_param_function_pane_type():
     test = View()
 
     def view(a):
-        return Div(text='%d' % a)
+        return Div(text=str(int(a)))
 
     assert PaneBase.get_pane_type(view) is not ParamFunction
     assert PaneBase.get_pane_type(param.depends(test.param.a)(view)) is ParamFunction
@@ -1177,7 +1175,7 @@ def test_param_function_pane(document, comm):
 
     @param.depends(test.param.a)
     def view(a):
-        return Div(text='%d' % a)
+        return Div(text=str(int(a)))
 
     pane = panel(view)
     inner_pane = pane._pane
@@ -1218,7 +1216,7 @@ def test_param_function_pane_defer_load(document, comm):
 
     @param.depends(test.param.a)
     def view(a):
-        return Div(text='%d' % a)
+        return Div(text=str(int(a)))
 
     pane = panel(view, defer_load=True)
     inner_pane = pane._pane
@@ -1865,7 +1863,7 @@ async def test_param_async_generator_append(document, comm):
 
 
 @pytest.mark.flaky(max_runs=3)
-def test_param_generator_multiple(document, comm):
+async def test_param_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
     def function(value):
@@ -1876,11 +1874,11 @@ def test_param_generator_multiple(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n', timeout=10_000)
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n', timeout=10_000)
 
     checkbox.value = True
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
 
 async def test_param_async_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)

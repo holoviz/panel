@@ -8,10 +8,9 @@ from __future__ import annotations
 import sys
 
 from collections import defaultdict
+from collections.abc import Mapping
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -58,7 +57,7 @@ class HoloViews(Pane):
     >>> HoloViews(some_holoviews_object)
     """
 
-    backend = param.ObjectSelector(
+    backend = param.Selector(
         default=None, objects=['bokeh', 'matplotlib', 'plotly'], doc="""
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
@@ -81,18 +80,18 @@ class HoloViews(Pane):
                                 allow_None=True, doc="""
         Bokeh theme to apply to the HoloViews plot.""")
 
-    widget_location = param.ObjectSelector(default='right_top', objects=[
+    widget_location = param.Selector(default='right_top', objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
         'right_top', 'right_bottom'], doc="""
         The layout of the plot and the widgets. The value refers to the
         position of the widgets relative to the plot.""")
 
-    widget_layout = param.ObjectSelector(
+    widget_layout = param.Selector(
         objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")
 
-    widget_type = param.ObjectSelector(default='individual',
+    widget_type = param.Selector(default='individual',
                                        objects=['individual', 'scrubber'], doc=""")
         Whether to generate individual widgets for each dimension or
         on global scrubber.""")
@@ -417,8 +416,8 @@ class HoloViews(Pane):
     #----------------------------------------------------------------
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         from holoviews.plotting.plot import Plot
         if root is None:
@@ -738,8 +737,8 @@ class Interactive(Pane):
         self._layout_panel.param.update(**{e.name: e.new for e in events})
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if root is None:
             return self.get_root(doc, comm)

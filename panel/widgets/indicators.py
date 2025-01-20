@@ -23,10 +23,9 @@ import os
 import sys
 import time
 
+from collections.abc import Mapping
 from math import pi
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -55,7 +54,7 @@ if TYPE_CHECKING:
 try:
     from tqdm.asyncio import tqdm as _tqdm
 except ImportError:
-    _tqdm = None
+    _tqdm = None  # type: ignore
 
 RED   = "#d9534f"
 GREEN = "#5cb85c"
@@ -66,11 +65,11 @@ class Indicator(Widget):
     Indicator is a baseclass for widgets which indicate some state.
     """
 
-    sizing_mode = param.ObjectSelector(default='fixed', objects=[
+    sizing_mode = param.Selector(default='fixed', objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    _linked_properties: ClassVar[tuple[str,...]] = ()
+    _linked_properties: tuple[str,...] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
@@ -135,7 +134,7 @@ class BooleanIndicator(Indicator):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         events = self._throttle_events(events)
         if not events:
@@ -158,7 +157,7 @@ class BooleanStatus(BooleanIndicator):
     >>> BooleanStatus(value=True, color='primary', width=100, height=100)
     """
 
-    color = param.ObjectSelector(default='dark', objects=[
+    color = param.Selector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'light', 'dark'], doc="""
         The color of the circle, one of 'primary', 'secondary', 'success', 'info', 'danger',
         'warning', 'light', 'dark'""")
@@ -203,9 +202,9 @@ class LoadingSpinner(BooleanIndicator):
     >>> LoadingSpinner(value=True, color='primary', bgcolor='light', width=100, height=100)
     """
 
-    bgcolor = param.ObjectSelector(default='light', objects=['dark', 'light'])
+    bgcolor = param.Selector(default='light', objects=['dark', 'light'])
 
-    color = param.ObjectSelector(default='dark', objects=[
+    color = param.Selector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'])
 
@@ -284,13 +283,13 @@ class Progress(ValueIndicator):
         If no value is set the active property toggles animation of the
         progress bar on and off.""")
 
-    bar_color = param.ObjectSelector(default='success', objects=[
+    bar_color = param.Selector(default='success', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'])
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
@@ -1120,7 +1119,7 @@ class Trend(SyncableData, Indicator):
     data = param.Parameter(doc="""
       The plot data declared as a dictionary of arrays or a DataFrame.""")
 
-    layout = param.ObjectSelector(default="column", objects=["column", "row"])
+    layout = param.Selector(default="column", objects=["column", "row"])
 
     plot_x = param.String(default="x", doc="""
       The name of the key in the plot_data to use on the x-axis.""")
@@ -1131,7 +1130,7 @@ class Trend(SyncableData, Indicator):
     plot_color = param.String(default=BLUE, doc="""
       The color to use in the plot.""")
 
-    plot_type = param.ObjectSelector(default="bar", objects=["line", "step", "area", "bar"], doc="""
+    plot_type = param.Selector(default="bar", objects=["line", "step", "area", "bar"], doc="""
       The plot type to render the plot data as.""")
 
     pos_color = param.String(GREEN, doc="""
@@ -1140,11 +1139,11 @@ class Trend(SyncableData, Indicator):
     neg_color = param.String(RED, doc="""
       The color used to indicate a negative change.""")
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    name = param.String(doc="""The name or a short description of the card""")
+    name = param.String(constant=False, doc="""The name or a short description of the card""")
 
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
@@ -1222,7 +1221,7 @@ MARGIN = {
 
 
 
-class ptqdm(_tqdm or object):
+class ptqdm(_tqdm or object):  # type: ignore
 
     def __init__(self, *args, **kwargs):
         if _tqdm is None:
@@ -1350,8 +1349,8 @@ class Tqdm(Indicator):
             self._lock = params.pop('lock', None)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self.layout._get_model(doc, root, parent, comm)
         root = root or model
