@@ -671,6 +671,7 @@ class panel_extension(_pyviz_extension):
         'jsoneditor': 'panel.models.jsoneditor',
         'katex': 'panel.models.katex',
         'mathjax': 'panel.models.mathjax',
+        'modal': 'panel.models.modal',
         'perspective': 'panel.models.perspective',
         'plotly': 'panel.models.plotly',
         'tabulator': 'panel.models.tabulator',
