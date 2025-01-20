@@ -15,7 +15,7 @@ from panel.widgets.button import Button
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
 from panel.widgets.select import RadioButtonGroup
 
-ChatInterface.callback_exception = "raise"
+ChatInterface.callback_exception = "raise"  # type: ignore
 
 
 class TestChatInterface:

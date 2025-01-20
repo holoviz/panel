@@ -2,6 +2,10 @@
 
 ## Version 1.6.0
 
+### Enhancements
+
+- Allow `ChatFeed.callback_exception` to accept a callable and 'traceback' (alias for verbose) ([#7558](https://github.com/holoviz/panel/pull/7558))
+
 ### Features
 
 - Introduces `ChatMessage` and `ChatFeed` edit functionality ([#7559](https://github.com/holoviz/panel/pull/7559))
