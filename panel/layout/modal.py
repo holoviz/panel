@@ -11,6 +11,7 @@ from pyviz_comms import JupyterComm
 from ..io.resources import CDN_DIST
 from ..models.modal import ModalDialogEvent
 from ..util import lazy_load
+from ..util.warnings import PanelUserWarning, warn
 from .base import ListPanel
 
 if TYPE_CHECKING:
@@ -54,6 +55,9 @@ class Modal(ListPanel):
 
     @param.depends("open", watch=True)
     def _open(self):
+        if not self._models:
+            msg = "To use the Modal, you must use '.servable' in a server setting or output the Modal in Jupyter Notebook."
+            warn(msg, category=PanelUserWarning)
         self._send_event(ModalDialogEvent, open=self.open)
 
     def create_button(self, button_type: Literal["show", "hide", "toggle"], **kwargs):
