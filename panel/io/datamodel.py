@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import weakref
 
 from functools import partial
 from typing import Any
