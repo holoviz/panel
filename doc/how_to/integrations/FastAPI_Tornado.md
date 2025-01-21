@@ -4,6 +4,9 @@ Panel generally runs on the Bokeh server which itself runs on Tornado. However, 
 
 Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutorial/) make sure you first have FastAPI installed using: `conda install -c conda-forge fastapi`. Also make sure Panel is installed `conda install -c conda-forge panel`.
 
+:::{admonition} warn
+Embedding Panel in a FastAPI server has many drawbacks and shortcomings. We now strongly recommend running Panel directly on a FastAPI server as described in the [FastAPI how-to guide](FastAPI).
+:::
 
 ## Configuration
 
@@ -20,11 +23,9 @@ from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 ```
 
-
 Each of these will be explained as we add them in.
 
 Next we are going to need to create an instance of FastAPI below your imports in `main.py` and set up the path to your templates like so:
-
 
 ```python
 app = FastAPI()
