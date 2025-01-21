@@ -278,6 +278,31 @@ def dataframe():
 
 
 @pytest.fixture
+def df_mixed():
+    df = pd.DataFrame({
+        'int': [1, 2, 3, 4],
+        'float': [3.14, 6.28, 9.42, -2.45],
+        'str': ['A', 'B', 'C', 'D'],
+        'bool': [True, True, True, False],
+        'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
+        'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
+    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+    return df
+
+
+@pytest.fixture
+def df_multiindex(df_mixed):
+    df_mi = df_mixed.copy()
+    df_mi.index = pd.MultiIndex.from_tuples([
+        ('group0', 'subgroup0'),
+        ('group0', 'subgroup1'),
+        ('group1', 'subgroup0'),
+        ('group1', 'subgroup1'),
+    ], names=['groups', 'subgroups'])
+    return df_mi
+
+
+@pytest.fixture
 def hv_bokeh():
     import holoviews as hv
     hv.renderer('bokeh')
@@ -543,18 +568,6 @@ def exception_handler_accumulator():
     finally:
         config.exception_handler = old_eh
 
-
-@pytest.fixture
-def df_mixed():
-    df = pd.DataFrame({
-        'int': [1, 2, 3, 4],
-        'float': [3.14, 6.28, 9.42, -2.45],
-        'str': ['A', 'B', 'C', 'D'],
-        'bool': [True, True, True, False],
-        'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
-        'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
-    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
-    return df
 
 @pytest.fixture
 def df_strings():

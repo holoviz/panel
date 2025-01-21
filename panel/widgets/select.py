@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import itertools
 import re
+import sys
 
 from collections.abc import Awaitable, Callable, Mapping
 from functools import partial
@@ -30,7 +31,9 @@ from ..models import (
     CustomMultiSelect as _BkMultiSelect, CustomSelect,
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
-from ..util import PARAM_NAME_PATTERN, indexOf, isIn
+from ..util import (
+    PARAM_NAME_PATTERN, indexOf, isIn, unique_iterator,
+)
 from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
@@ -351,16 +354,8 @@ class NestedSelect(CompositeWidget):
     ... )
     """
 
-    value = param.Dict(doc="""
-        The value from all the Select widgets; the keys are the levels names.
-        If no levels names are specified, the keys are the levels indices.""")
-
-    options = param.ClassSelector(class_=(dict, FunctionType), doc="""
-        The options to select from. The options may be nested dictionaries, lists,
-        or callables that return those types. If callables are used, the callables
-        must accept `level` and `value` keyword arguments, where `level` is the
-        level that updated and `value` is a dictionary of the current values, containing keys
-        up to the level that was updated.""")
+    disabled = param.Boolean(default=False, doc="""
+        Whether the widget is disabled.""")
 
     layout = param.Parameter(default=Column, doc="""
         The layout type of the widgets. If a dictionary, a "type" key can be provided,
@@ -374,8 +369,16 @@ class NestedSelect(CompositeWidget):
         is used as the type of widget, and any corresponding widget keyword arguments.
         Must be specified if options is callable.""")
 
-    disabled = param.Boolean(default=False, doc="""
-        Whether the widget is disabled.""")
+    options = param.ClassSelector(class_=(list, dict, FunctionType), doc="""
+        The options to select from. The options may be nested dictionaries, lists,
+        or callables that return those types. If callables are used, the callables
+        must accept `level` and `value` keyword arguments, where `level` is the
+        level that updated and `value` is a dictionary of the current values, containing keys
+        up to the level that was updated.""")
+
+    value = param.Dict(doc="""
+        The value from all the Select widgets; the keys are the levels names.
+        If no levels names are specified, the keys are the levels indices.""")
 
     _widgets = param.List(doc="The nested select widgets.")
 
@@ -383,6 +386,38 @@ class NestedSelect(CompositeWidget):
 
     _levels = param.List(doc="""
         The internal rep of levels to prevent overwriting user provided levels.""")
+
+    @classmethod
+    def _infer_params(cls, values, **params):
+        if 'pandas' in sys.modules and isinstance(values, sys.modules['pandas'].MultiIndex):
+            params['options'] = options = {}
+            params['levels'] = levels = list(values.names)
+            depth = len(values.names)
+            value = {}
+            for vals in values.to_list():
+                current = options
+                for i, (l, v) in enumerate(zip(levels, vals)):
+                    if 'value' not in params:
+                        value[l] = v
+                    if i == (depth-1):
+                        if v not in current:
+                            current.append(v)
+                        continue
+                    elif v not in current:
+                        container = [] if i == (depth-2) else {}
+                        current[v] = container
+                    current = current[v]
+                if 'value' not in params:
+                    params['value'] = value
+        else:
+            params['options'] = options = list(unique_iterator(values))
+            if hasattr(values, 'name'):
+                params['levels'] = [values.name]
+                params['value'] = {values.name: options[0]}
+            else:
+                params['levels'] = []
+                params['value'] = {0: options[0]}
+        return super()._infer_params(values, **params)
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -443,6 +478,8 @@ class NestedSelect(CompositeWidget):
             if not self.levels:
                 raise ValueError("levels must be specified if options is callable")
             self._max_depth = len(self.levels)
+        elif isinstance(self.options, list):
+            self._max_depth = 1
         else:
             self._max_depth = self._find_max_depth(self.options) + 1
 
