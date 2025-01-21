@@ -27,7 +27,7 @@ How to access and set widget values.
 :::
 
 :::{grid-item-card} {octicon}`telescope;2.5em;sd-mr-1 sd-animate-grow50` Construct Widget from Data
-:link: widget_values
+:link: widget_from_values
 :link-type: doc
 
 How to automatically infer widget parameters from data values.
