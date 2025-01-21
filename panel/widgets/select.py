@@ -1285,8 +1285,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
         # Define buttons
         self._buttons = {
-            False: Button(name='\u276e\u276e', width=50),
-            True: Button(name='\u276f\u276f', width=50)
+            False: Button(name='\u276e\u276e', width=50, sizing_mode=None),
+            True: Button(name='\u276f\u276f', width=50, sizing_mode=None)
         }
 
         self._buttons[False].param.watch(self._apply_selection, 'clicks')
@@ -1296,11 +1296,11 @@ class CrossSelector(CompositeWidget, MultiSelect):
         self._search = {
             False: TextInput(
                 placeholder='Filter available options',
-                margin=(0, 0, 10, 0), width_policy='max'
+                margin=(0, 0, 10, 0), sizing_mode='stretch_width'
             ),
             True: TextInput(
                 placeholder='Filter selected options',
-                margin=(0, 0, 10, 0), width_policy='max'
+                margin=(0, 0, 10, 0), sizing_mode='stretch_width'
             )
         }
         self._search[False].param.watch(self._filter_options, 'value_input')
@@ -1316,7 +1316,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         # Define Layout
         self._unselected = Column(self._search[False], self._lists[False], **layout)
         self._selected = Column(self._search[True], right, **layout)
-        buttons = Column(self._buttons[True], self._buttons[False], margin=(0, 5), align='center')
+        buttons = Column(
+            self._buttons[True], self._buttons[False],
+            margin=(0, 5), align='center', sizing_mode=None
+        )
 
         self._composite[:] = [
             self._unselected, buttons, self._selected
