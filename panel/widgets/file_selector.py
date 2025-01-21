@@ -226,32 +226,32 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
 
         self._back = Button(
             name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
-            align='end', on_click=self._go_back
+            align='end', on_click=self._go_back, sizing_mode=None
         )
         self._forward = Button(
             name='▶', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
-            align='end', on_click=self._go_forward
+            align='end', on_click=self._go_forward, sizing_mode=None
         )
         self._up = Button(
             name='⬆', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
-            align='end', on_click=self._go_up
+            align='end', on_click=self._go_up, sizing_mode=None
         )
         self._directory = TextInput.from_param(
-            self.param.directory, margin=(5, 10, 0, 0), width_policy='max', height_policy='max'
+            self.param.directory, margin=(5, 10, 0, 0), width_policy='max', height_policy='max', sizing_mode=None
         )
         self._go = Button(
             name='⬇', disabled=True, width=40, height=40, margin=(5, 5, 0, 0),
-            align='end', on_click=self._update_files
+            align='end', on_click=self._update_files, sizing_mode=None
         )
         self._reload = Button(
             name='↻', width=40, height=40, margin=(5, 0, 0, 10), align='end',
-            on_click=self._update_files
+            on_click=self._update_files, sizing_mode=None
         )
         self._nav_bar = Row(
             self._back, self._forward, self._up, self._directory, self._go, self._reload,
-            **dict(layout, width=None, margin=0, width_policy='max')
+            **dict(layout, width=None, margin=0, sizing_mode='stretch_width')
         )
-        self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
+        self._composite[:] = [self._nav_bar, Divider(margin=0, sizing_mode=None), self._selector]
         self._directory.param.watch(self._dir_change, 'value')
         self._directory.param.watch(self._update_files, 'enter_pressed')
 
@@ -355,8 +355,8 @@ class FileSelector(BaseFileNavigator):
         super().__init__(directory=directory, fs=fs, **params)
 
         style = 'h4 { margin-block-start: 0; margin-block-end: 0;}'
-        self._selector._selected.insert(0, Markdown('#### Selected files', margin=0, stylesheets=[style]))
-        self._selector._unselected.insert(0, Markdown('#### File Browser', margin=0, stylesheets=[style]))
+        self._selector._selected.insert(0, Markdown('#### Selected files', margin=0, sizing_mode=None, stylesheets=[style]))
+        self._selector._unselected.insert(0, Markdown('#### File Browser', margin=0, sizing_mode=None, stylesheets=[style]))
 
         # Set up callback
         self._selector._lists[False].on_double_click(self._select_and_go)
