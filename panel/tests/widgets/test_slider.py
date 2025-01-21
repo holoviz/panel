@@ -1,6 +1,7 @@
 from datetime import date, datetime
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from bokeh.models import (
@@ -14,6 +15,28 @@ from panel.widgets import (
     EditableRangeSlider, FloatSlider, IntSlider, RangeSlider, StaticText,
 )
 
+
+def test_float_slider_from_list():
+    slider = FloatSlider.from_values([1.1, 2.2])
+
+    assert slider.start == 1.1
+    assert slider.end == 2.2
+    assert slider.value == 1.1
+
+def test_float_slider_from_array():
+    slider = FloatSlider.from_values(np.array([1.1, 2.2]))
+
+    assert slider.start == 1.1
+    assert slider.end == 2.2
+    assert slider.value == 1.1
+
+def test_float_slider_from_series():
+    slider = FloatSlider.from_values(pd.Series([1.1, 2.2], name='Series'))
+
+    assert slider.start == 1.1
+    assert slider.end == 2.2
+    assert slider.value == 1.1
+    assert slider.name == 'Series'
 
 def test_float_slider(document, comm):
 
@@ -83,6 +106,29 @@ def test_int_slider(document, comm):
         slider.value = 2
         assert widget.value == 2
 
+
+
+def test_range_slider_from_list():
+    slider = RangeSlider.from_values([1.1, 2.2])
+
+    assert slider.start == 1.1
+    assert slider.end == 2.2
+    assert slider.value == (1.1, 2.2)
+
+def test_range_slider_from_array():
+    slider = RangeSlider.from_values(np.array([1.1, 2.2]))
+
+    assert slider.start == 1.1
+    assert slider.end == 2.2
+    assert slider.value == (1.1, 2.2)
+
+def test_range_slider_from_series():
+    slider = RangeSlider.from_values(pd.Series([1.1, 2.2], name='Series'))
+
+    assert slider.start == 1.1
+    assert slider.end == 2.2
+    assert slider.value == (1.1, 2.2)
+    assert slider.name == 'Series'
 
 def test_range_slider(document, comm):
 

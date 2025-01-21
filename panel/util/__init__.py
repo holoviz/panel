@@ -508,6 +508,16 @@ async def to_async_gen(sync_gen):
             break
         yield value
 
+def unique_iterator(seq):
+    """
+    Returns an iterator containing all non-duplicate elements
+    in the input sequence.
+    """
+    seen = set()
+    for item in seq:
+        if item not in seen:
+            seen.add(item)
+            yield item
 
 def prefix_length(a: str, b: str) -> int:
     """

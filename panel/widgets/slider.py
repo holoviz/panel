@@ -563,7 +563,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
 
-
 class _RangeSliderBase(_SliderBase):
 
     value = param.Tuple(default=(None, None), length=2, allow_None=False, nested_refs=True, doc="""
