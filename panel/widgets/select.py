@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import itertools
 import re
+import sys
 
 from collections.abc import Awaitable, Callable, Mapping
 from functools import partial
@@ -13,7 +14,6 @@ from types import FunctionType
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
-import pandas as pd
 import param
 
 from bokeh.models import PaletteSelect
@@ -389,7 +389,7 @@ class NestedSelect(CompositeWidget):
 
     @classmethod
     def _infer_params(cls, values, **params):
-        if isinstance(values, pd.MultiIndex):
+        if 'pandas' in sys.modules and isinstance(values, sys.modules['pandas'].MultiIndex):
             params['options'] = options = {}
             params['levels'] = levels = list(values.names)
             depth = len(values.names)
