@@ -222,7 +222,7 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         super().__init__(directory=directory, **params)
 
         layout = {p: getattr(self, p) for p in Layoutable.param
-                  if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
+                  if p not in ('name', 'height', 'margin', 'loading') and getattr(self, p) is not None}
 
         self._back = Button(
             name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
@@ -249,7 +249,7 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         )
         self._nav_bar = Row(
             self._back, self._forward, self._up, self._directory, self._go, self._reload,
-            **dict(layout, width=None, margin=0, sizing_mode='stretch_width')
+            **dict(layout, width=None, margin=0, sizing_mode='stretch_width', visible=self.param.visible)
         )
         self._composite[:] = [self._nav_bar, Divider(margin=0, sizing_mode=None), self._selector]
         self._directory.param.watch(self._dir_change, 'value')
@@ -349,7 +349,8 @@ class FileSelector(BaseFileNavigator):
                   if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
         sel_layout = dict(layout, sizing_mode='stretch_width', height=300, margin=0)
         self._selector = CrossSelector(
-            filter_fn=lambda p, f: fnmatch(f, p), size=self.param.size, **sel_layout
+            filter_fn=lambda p, f: fnmatch(f, p), size=self.param.size,
+            **dict(sel_layout, visible=self.param.visible)
         )
 
         super().__init__(directory=directory, fs=fs, **params)
