@@ -518,7 +518,7 @@ class ResourceComponent:
             is_file = bundlepath.is_file()
         except Exception:
             is_file = False
-        if is_file:
+        if is_file or (state._is_pyodide and not isurl(resource)):
             return f'{prefixed_dist}bundled/{resource_path}'
         elif isurl(resource):
             return resource
