@@ -183,7 +183,7 @@ def set_resource_mode(mode):
         _settings.resources.set_value(old_resources)
 
 def use_cdn() -> bool:
-    return _settings.resources(default="server") != 'server'
+    return _settings.resources(default="server") != 'server' or state._is_pyodide
 
 def get_dist_path(cdn: bool | Literal['auto'] = 'auto') -> str:
     cdn = use_cdn() if cdn == 'auto' else cdn
@@ -518,7 +518,7 @@ class ResourceComponent:
             is_file = bundlepath.is_file()
         except Exception:
             is_file = False
-        if is_file:
+        if is_file or (state._is_pyodide and not isurl(resource)):
             return f'{prefixed_dist}bundled/{resource_path}'
         elif isurl(resource):
             return resource

@@ -71,18 +71,6 @@ def df_mixed_as_string():
     """
 
 
-@pytest.fixture
-def df_multiindex(df_mixed):
-    df_mi = df_mixed.copy()
-    df_mi.index = pd.MultiIndex.from_tuples([
-        ('group0', 'subgroup0'),
-        ('group0', 'subgroup1'),
-        ('group1', 'subgroup0'),
-        ('group1', 'subgroup1'),
-    ], names=['groups', 'subgroups'])
-    return df_mi
-
-
 def count_per_page(count: int, page_size: int):
     """
     >>> count_per_page(12, 7)

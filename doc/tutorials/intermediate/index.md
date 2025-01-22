@@ -67,6 +67,7 @@ Embark on a deeper exploration of supplementary topics to further hone your Pane
 Now that you've mastered the more advanced concepts of Panel, it's time to put your skills to the test:
 
 - **Create an Interactive Report:** Elevate the interactivity of your reports through embedding.
+- **[Create a Form](create_form.md):** Create a form to sign up for a news letter.
 - **[Create a Todo App](build_todo.md):** Create a Todo App using a class based approach.
 - **[Test a Todo App](test_todo.md):** Learn how to test a class based Panel app.
 - **Serve Apps without a Server:** Explore the realm of WASM to serve your apps without traditional servers.
@@ -88,6 +89,7 @@ structure_data_store
 develop_editor
 serve
 advanced_layouts
+create_form
 build_todo
 test_todo
 build_server_video_stream

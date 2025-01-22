@@ -599,12 +599,13 @@ class _state(param.Parameterized):
         wait: boolean
             Whether to wait until after the next execution.
         """
-        if name not in self._scheduled:
+        key = f"{os.getpid()}_{name}"
+        if key not in self._scheduled:
             raise KeyError(f'No task with the name {name!r} has been scheduled.')
         if wait:
-            self._scheduled[name] = (None, self._scheduled[name][1])
+            self._scheduled[key] = (None, self._scheduled[key][1])
         else:
-            del self._scheduled[name]
+            del self._scheduled[key]
 
     def clear_caches(self):
         """
@@ -878,9 +879,9 @@ class _state(param.Parameterized):
           Whether the callback should be run on a thread (requires
           config.nthreads to be set).
         """
-        name = f"{os.getpid()}_{name}"
-        if name in self._scheduled:
-            if callback is not self._scheduled[name][1]:
+        key = f"{os.getpid()}_{name}"
+        if key in self._scheduled:
+            if callback is not self._scheduled[key][1]:
                 self.param.warning(
                     "A separate task was already scheduled under the "
                     f"name {name!r}. The new task will be ignored. If "
@@ -933,9 +934,9 @@ class _state(param.Parameterized):
             call_time_seconds = (next(diter) - now)
         except StopIteration:
             return
-        self._scheduled[name] = (diter, callback)
+        self._scheduled[key] = (diter, callback)
         self._ioloop.call_later(
-            delay=call_time_seconds, callback=partial(self._scheduled_cb, name, threaded)
+            delay=call_time_seconds, callback=partial(self._scheduled_cb, key, threaded)
         )
 
     def sync_busy(self, indicator: BooleanIndicator) -> None:

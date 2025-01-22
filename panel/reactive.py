@@ -2174,7 +2174,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                 from .io.datamodel import create_linked_datamodel
                 old = getattr(model.data, prop)
                 if isinstance(old, list):
-                    mapping = {o.name: o for o in old}
+                    mapping = {getattr(o, "name", o): o for o in old}
                     vals = []
                     for vs in v:
                         if (vname:=f"{root.ref['id']}-{id(vs)}") in mapping:

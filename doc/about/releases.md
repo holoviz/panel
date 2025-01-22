@@ -4,13 +4,51 @@ See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual su
 
 ## Version 1.6.0
 
-### Enhancements
-
-- Allow `ChatFeed.callback_exception` to accept a callable and 'traceback' (alias for verbose) ([#7558](https://github.com/holoviz/panel/pull/7558))
+This release adds a number of features including a standalone `Modal` component, the ability to infer widget parameters from values, and the ability to easily edit a `ChatMessage`. Additionally it includes a number of enhancements for styling, particularly in dark themes, other enhancements for chat components and a large number of bug fixes. Many thanks for our returning contributor @kdheepak, our new contributors @jonatantreijs and @etihwo, and of course the whole maintainer team including @ahuang11, @MarcSkovMadsen @hoxbro, @maximlt and @philippjfr.
 
 ### Features
 
+- Add `Widget.from_values` method ([#7033](https://github.com/holoviz/panel/pull/7033))
+- Add a standalone `Modal` layout ([#7083](https://github.com/holoviz/panel/pull/7083))
 - Introduces `ChatMessage` and `ChatFeed` edit functionality ([#7559](https://github.com/holoviz/panel/pull/7559))
+
+### Enhancements
+
+- Allow `ChatFeed.callback_exception` to accept a callable and 'traceback' (alias for verbose) ([#7558](https://github.com/holoviz/panel/pull/7558))
+- Fix Accordion active_header_background in dark theme ([#7576](https://github.com/holoviz/panel/pull/7576))
+- Increase default max character limit on `ChatAreaInput` ([#7562](https://github.com/holoviz/panel/pull/7562))
+- Fix chat message alignment issues ([#7563](https://github.com/holoviz/panel/pull/7563))
+- Make `Markdown` pane line breaking behavior configurable ([#7582](https://github.com/holoviz/panel/pull/7582))
+- Improve styling of chat components in dark theme ([#7601](https://github.com/holoviz/panel/pull/7601), [#7602](https://github.com/holoviz/panel/pull/7602))
+- Automatically scroll when streaming to `ChatFeed` and `ChatStep` ([#7608](https://github.com/holoviz/panel/pull/7608))
+- Add support for remote filesystems on `FileSelector` ([#7618](https://github.com/holoviz/panel/pull/7618))
+
+### Bug fixes
+
+- Fix Azure Oauth issues ([#7587](https://github.com/holoviz/panel/pull/7587))
+- Correctly display file not found paths in `panel convert` ([#7589](https://github.com/holoviz/panel/pull/7589))
+- Fix `Tabulator.patch` when table is filtered ([#7621](https://github.com/holoviz/panel/pull/7621))
+- Ensure `esbuild` can be detected on windows during `panel compile` ([#7625](https://github.com/holoviz/panel/pull/7625))
+- Fix various issues styling `Tabulator` when it is wider than the viewport ([#7626](https://github.com/holoviz/panel/pull/7626))
+- Fix resource loading when serving Panel app on nested FastAPI endpoint ([#7627](https://github.com/holoviz/panel/pull/7627))
+- Fix `panel oauth-secret` command ([#7628](https://github.com/holoviz/panel/pull/7628))
+- Ensure fonts are applied to `NotificationArea` ([#7633](https://github.com/holoviz/panel/pull/7633))
+- Handle session context where session is not defined ([#7634](https://github.com/holoviz/panel/pull/7634))
+- Ensure `CompositeWidget` can be populated in callback ([#7636](https://github.com/holoviz/panel/pull/7636))
+- Correctly identify skimage and PIL packages when converting to pyodide ([#7637](https://github.com/holoviz/panel/pull/7637))
+- Ensure we use CDN resources in pyodide ([#7638](https://github.com/holoviz/panel/pull/7638))
+- Consistently apply sizing_mode to `FileSelector` components ([#7640](https://github.com/holoviz/panel/pull/7640))
+- Ensure tasks are cancelled correctly ([#7641](https://github.com/holoviz/panel/pull/7641))
+- Ensure `NotificationArea` stylesheet loads in panel-preview ([#7643](https://github.com/holoviz/panel/pull/7643))
+
+### Compatibility and Updates
+
+- Update panel convert to latest versions of pyodide and pyscript ([#7584](https://github.com/holoviz/panel/pull/7584))
+
+### Documentation
+
+- Ensure Open in JupyterLite links work ([#7622](https://github.com/holoviz/panel/pull/7622))
+- Add admonitions for outdated guides and minor corrections ([#7635](https://github.com/holoviz/panel/pull/7635))
 
 ## Version 1.5.5
 
