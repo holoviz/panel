@@ -141,15 +141,26 @@ def test_plotly_hover_data(page, plotly_2d_plot):
     point = plotly_plot.locator('g.points path.point').nth(0)
     point.hover(force=True)
 
-    wait_until(lambda: {
-        'points': [{
-            'curveNumber': 0,
-            'pointIndex': 0,
-            'pointNumber': 0,
-            'x': 0,
-            'y': 2
-        }]
-    } in hover_data, page)
+    def check_hover():
+        assert plotly_2d_plot.hover_data == {
+            'selector': None,
+            'device_state': {
+                'alt': False,
+                'button': 0,
+                'buttons': 0,
+                'ctrl': False,
+                'meta': False,
+                'shift': False,
+            },
+            'points': [{
+                'curveNumber': 0,
+                'pointIndex': 0,
+                'pointNumber': 0,
+                'x': 0,
+                'y': 2
+            }]
+        }
+    wait_until(check_hover, page)
 
     # Hover somewhere else
     plot = page.locator('.js-plotly-plot .plot-container.plotly g.scatterlayer')
@@ -170,7 +181,16 @@ def test_plotly_click_data(page, plotly_2d_plot):
         point.click(force=True)
 
         def check_click(i=i):
-            return plotly_2d_plot.click_data == {
+            assert plotly_2d_plot.click_data == {
+                'selector': None,
+                'device_state': {
+                    'alt': False,
+                    'button': 0,
+                    'buttons': 1,
+                    'ctrl': False,
+                    'meta': False,
+                    'shift': False,
+                },
                 'points': [{
                     'curveNumber': 0,
                     'pointIndex': i,
