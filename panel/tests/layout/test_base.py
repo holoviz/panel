@@ -135,7 +135,7 @@ def test_layout_repr(panel):
     layout = panel(div1, div2)
 
     name = panel.__name__
-    assert repr(layout) == '%s\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)' % name
+    assert repr(layout) == f'{name}\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)'
 
 
 @pytest.mark.parametrize('panel', [Card, Column, Row])
@@ -442,6 +442,34 @@ def test_layout_clone_objects_in_kwargs(panel):
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_children_not_copied(panel):
+    layout = panel()
+
+    objects = [Markdown(), Markdown()]
+    layout.objects = objects
+
+    assert layout.objects is objects
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_children_not_mutated_inplace(panel):
+    layout = panel()
+
+    objects = [Div(), Div()]
+    layout.objects = objects
+
+    assert layout.objects is not objects
+    assert layout.objects[0].object is objects[0]
+    assert layout.objects[1].object is objects[1]
+
+    layout[:] = objects
+
+    assert layout.objects is not objects
+    assert layout.objects[0].object is objects[0]
+    assert layout.objects[1].object is objects[1]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_clone_objects_in_args_and_kwargs(panel):
     div1 = Div()
     div2 = Div()
@@ -466,7 +494,7 @@ def test_widgetbox(document, comm):
 def test_layout_with_param_setitem(document, comm):
     import param
     class TestClass(param.Parameterized):
-        select = param.ObjectSelector(default=0, objects=[0,1])
+        select = param.Selector(default=0, objects=[0,1])
 
         def __init__(self, **params):
             super().__init__(**params)

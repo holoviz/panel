@@ -2,6 +2,8 @@ import json
 import os
 import pathlib
 
+from typing import Any
+
 import param
 
 param.parameterized.docstring_signature = False
@@ -21,7 +23,7 @@ from panel.io.convert import (
     BOKEH_VERSION, MINIMUM_VERSIONS, PY_VERSION, PYODIDE_VERSION,
     PYSCRIPT_VERSION,
 )
-from panel.io.resources import CDN_DIST
+from panel.io.resources import CDN_ROOT
 
 PANEL_ROOT = pathlib.Path(panel.__file__).parent
 
@@ -42,6 +44,11 @@ html_css_files += [
 
 html_theme = "pydata_sphinx_theme"
 html_favicon = "_static/icons/favicon.ico"
+
+current_release = panel.__version__  # Current release version variable
+
+announcement_text = f"Panel {current_release} has just been released! Check out the <a href='https://panel.holoviz.org/about/releases.html'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>."
+
 
 html_theme_options = {
     "logo": {
@@ -66,31 +73,45 @@ html_theme_options = {
             "icon": "fa-brands fa-discord",
         },
     ],
-    "pygment_light_style": "material",
-    "pygment_dark_style": "material",
+    "pygments_light_style": "material",
+    "pygments_dark_style": "material",
     "header_links_before_dropdown": 5,
     'secondary_sidebar_items': [
         "github-stars-button",
         "panelitelink",
         "page-toc",
     ],
-    "announcement": "Panel 1.4 has just been released! Checkout the <a href='https://panel.holoviz.org/about/releases.html#version-1-4-0'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>.",
+    "announcement": announcement_text,
 }
 
-extensions += [
-    'sphinx.ext.napoleon',
-    'nbsite.gallery',
+
+extensions = [
+    'bokeh.sphinxext.bokeh_plot',
+    'myst_parser',
+    'sphinx_design',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.linkcode',
+    'sphinx.ext.inheritance_diagram',
     'sphinx_copybutton',
+    'sphinxext.rediraffe',
+    'nbsite.gallery',
     'nbsite.pyodide',
     'nbsite.analytics',
 ]
 napoleon_numpy_docstring = True
 
+autodoc_mock_imports = ["panel.pane.vtk"]
+
 myst_enable_extensions = ["colon_fence", "deflist"]
 
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
 gallery_url = f'https://{gallery_endpoint}.holoviz-demo.anaconda.com'
-jlite_url = 'https://holoviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
+jlite_url = 'https://holoviz-dev.github.io/panelite-dev/lab' if is_dev else 'https://panelite.holoviz.org/lab'
 pyodide_url = 'https://holoviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
 
 rediraffe_redirects = {
@@ -112,6 +133,7 @@ nbsite_gallery_conf = {
     'galleries': {
         'reference': {
             'title': 'Component Gallery',
+            'extensions': ['*.ipynb', '*.py', '*.md'],
             'sections': [
                 'panes',
                 'widgets',
@@ -121,6 +143,7 @@ nbsite_gallery_conf = {
                 'global',
                 'indicators',
                 'templates',
+                'custom_components',
             ],
             'titles': {
                 'Vega': 'Altair & Vega',
@@ -130,12 +153,13 @@ nbsite_gallery_conf = {
                 'PanelCallbackHandler': 'LangChain CallbackHandler',
             },
             'as_pyodide': True,
-            'normalize_titles': False
+            'normalize_titles': False,
         }
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
     'deployment_url': gallery_url,
     'jupyterlite_url': jlite_url,
+    'only_use_existing': True,
 }
 
 if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
@@ -143,8 +167,8 @@ if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
     panel_req = f'./wheels/panel-{py_version}-py3-none-any.whl'
     bokeh_req = f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 else:
-    panel_req = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
-    bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+    panel_req = f'{CDN_ROOT}wheels/panel-{PY_VERSION}-py3-none-any.whl'
+    bokeh_req = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
 def get_requirements():
     with open('pyodide_dependencies.json') as deps:
@@ -160,10 +184,17 @@ def get_requirements():
         requirements[src] = deps
     return requirements
 
+
+html_js_files = [
+    (None, {'body': '{"shimMode": true}', 'type': 'esms-options'}),
+    f'https://cdn.holoviz.org/panel/{js_version}/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
+    'toggle.js'
+]
+
 nbsite_pyodide_conf = {
     'PYODIDE_URL': f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js',
     'requirements': [bokeh_req, panel_req, 'pyodide-http'],
-    'requires': get_requirements()
+    'requires': get_requirements(),
 }
 
 templates_path += [
@@ -229,16 +260,52 @@ def _get_pyodide_version():
     raise NotImplementedError(F"{PYODIDE_VERSION=} is not valid")
 
 def update_versions(app, docname, source):
+    from panel.models.tabulator import TABULATOR_VERSION
+    from panel.models.vizzu import VIZZU_VERSION
+
     # Inspired by: https://stackoverflow.com/questions/8821511
     version_replace = {
-       "{{PANEL_VERSION}}" : PY_VERSION,
-       "{{BOKEH_VERSION}}" : BOKEH_VERSION,
-       "{{PYSCRIPT_VERSION}}" : PYSCRIPT_VERSION,
-       "{{PYODIDE_VERSION}}" : _get_pyodide_version(),
+        "{{PANEL_VERSION}}" : PY_VERSION,
+        "{{BOKEH_VERSION}}" : BOKEH_VERSION,
+        "{{PYSCRIPT_VERSION}}" : PYSCRIPT_VERSION,
+        "{{PYODIDE_VERSION}}" : _get_pyodide_version(),
+        "{{TABULATOR_VERSION}}" : TABULATOR_VERSION,
+        "{{VIZZU_VERSION}}" : VIZZU_VERSION,
     }
 
     for old, new in version_replace.items():
         source[0] = source[0].replace(old, new)
+
+
+def setup_mystnb(app):
+    from myst_nb.core.config import NbParserConfig
+    from myst_nb.sphinx_ import (
+        HideCodeCellNode, HideInputCells, SelectMimeType,
+    )
+    from myst_nb.sphinx_ext import create_mystnb_config
+
+    _UNSET = "--unset--"
+    for name, default, field in NbParserConfig().as_triple():
+        if not field.metadata.get("sphinx_exclude"):
+            # TODO add types?
+            app.add_config_value(f"nb_{name}", default, "env", Any)  # type: ignore[arg-type]
+            if "legacy_name" in field.metadata:
+                app.add_config_value(
+                    f"{field.metadata['legacy_name']}",
+                    _UNSET,
+                    "env",
+                    Any,  # type: ignore[arg-type]
+                )
+    app.add_config_value("nb_render_priority", _UNSET, "env", Any)  # type: ignore[arg-type]
+    create_mystnb_config(app)
+
+    # add post-transform for selecting mime type from a bundle
+    app.add_post_transform(SelectMimeType)
+
+    # setup collapsible content
+    app.add_post_transform(HideInputCells)
+    HideCodeCellNode.add_to_app(app)
+
 
 
 def setup(app) -> None:
@@ -248,6 +315,8 @@ def setup(app) -> None:
         app.connect('autodoc-skip-member', param_skip)
     except ImportError:
         print('no param_formatter (no param?)')
+
+    app.connect('builder-inited', setup_mystnb)
 
     app.connect('source-read', update_versions)
     nbbuild.setup(app)

@@ -23,20 +23,25 @@ from .layout import HTMLBox
 class DeckGLPlot(HTMLBox):
     """A Bokeh model that wraps around a DeckGL plot and renders it inside a HTMLBox"""
 
-    __css_raw__ = ["https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css"]
+    __css_raw__ = [
+        "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css",
+        f"{config.npm_cdn}/maplibre-gl@4.4.1/dist/maplibre-gl.css"
+    ]
 
     @classproperty
     def __css__(cls):
         return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
-        f"{config.npm_cdn}/h3-js@3.7.2/dist/h3-js.umd.js",
-        f"{config.npm_cdn}/deck.gl@8.6.7/dist.min.js",
-        f"{config.npm_cdn}/@deck.gl/json@8.6.7/dist.min.js",
-        f"{config.npm_cdn}/@loaders.gl/csv@3.1.7/dist/dist.min.js",
-        f"{config.npm_cdn}/@loaders.gl/json@3.1.7/dist/dist.min.js",
-        f"{config.npm_cdn}/@loaders.gl/3d-tiles@3.1.7/dist/dist.min.js",
+        f"{config.npm_cdn}/h3-js@4.1.0/dist/h3-js.umd.js",
+        f"{config.npm_cdn}/deck.gl@9.0.20/dist.min.js",
+        f"{config.npm_cdn}/@deck.gl/json@9.0.20/dist.min.js",
+        f"{config.npm_cdn}/@loaders.gl/csv@4.2.2/dist/dist.min.js",
+        f"{config.npm_cdn}/@loaders.gl/json@4.2.2/dist/dist.min.js",
+        f"{config.npm_cdn}/@loaders.gl/3d-tiles@4.2.2/dist/dist.min.js",
         "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js",
+        f"{config.npm_cdn}/maplibre-gl/dist/maplibre-gl.js",
+        f"{config.npm_cdn}/@deck.gl/carto@^9.0.20/dist.min.js"
     ]
 
     @classproperty
@@ -52,14 +57,14 @@ class DeckGLPlot(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            "h3": f"{config.npm_cdn}/h3-js@3.7.2/dist/h3-js.umd",
-            "deck-gl": f"{config.npm_cdn}/deck.gl@8.6.7/dist.min",
-            "deck-json": f"{config.npm_cdn}/@deck.gl/json@8.6.7/dist.min",
-            "loader-csv": f"{config.npm_cdn}/@loaders.gl/csv@3.1.7/dist/dist.min",
-            "loader-json": f"{config.npm_cdn}/@loaders.gl/json@3.1.7/dist/dist.min",
-            "loader-tiles": f"{config.npm_cdn}/@loaders.gl/3d-tiles@3.1.7/dist/dist.min",
+            "h3": f"{config.npm_cdn}/h3-js@4.1.0/dist/h3-js.umd",
+            "deck-gl": f"{config.npm_cdn}/deck.gl@9.0.20/dist.min",
+            "deck-json": f"{config.npm_cdn}/@deck.gl/json@9.0.20/dist.min",
+            "loader-csv": f"{config.npm_cdn}/@loaders.gl/csv@4.2.2/dist/dist.min",
+            "loader-json": f"{config.npm_cdn}/@loaders.gl/json@4.2.2/dist/dist.min",
+            "loader-tiles": f"{config.npm_cdn}/@loaders.gl/3d-tiles@4.2.2/dist/dist.min",
             "mapbox-gl": "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl",
-            "carto": f"{config.npm_cdn}/@deck.gl/carto@^8.7.0/dist.min.js",
+            "carto": f"{config.npm_cdn}/@deck.gl/carto@^9.0.20/dist.min",
     },
         'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
         'shim': {
@@ -80,6 +85,8 @@ class DeckGLPlot(HTMLBox):
 
     tooltip = Either(Bool, Dict(Any, Any), default=True)
 
+    configuration = String()
+
     clickState = Dict(String, Any)
 
     hoverState = Dict(String, Any)
@@ -88,6 +95,6 @@ class DeckGLPlot(HTMLBox):
 
     throttle = Dict(String, Int)
 
-    height = Override(default=400)
+    height = Override(default=400)  # type: ignore
 
-    width = Override(default=600)
+    width = Override(default=600)  # type: ignore

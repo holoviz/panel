@@ -1,23 +1,25 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from panel.layout import GridBox, Row
 from panel.pane import panel
 from panel.tests.util import mpl_available
 from panel.widgets import (
-    ColorMap, CrossSelector, DiscreteSlider, MultiChoice, MultiSelect,
-    NestedSelect, Select, ToggleGroup,
+    AutocompleteInput, ColorMap, CrossSelector, DiscreteSlider, MultiChoice,
+    MultiSelect, NestedSelect, Select, ToggleGroup,
 )
 
 
-def test_select_list_constructor():
-    select = Select(options=['A', 1], value=1)
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_list_constructor(widget):
+    select = widget(options=['A', 1], value=1)
     assert select.options == ['A', 1]
 
-
-def test_select_float_option_with_equality():
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_select_float_option_with_equality(widget):
     opts = {'A': 3.14, '1': 2.0}
-    select = Select(options=opts, value=3.14, name='Select')
+    select = widget(options=opts, value=3.14, name='Select')
     assert select.value == 3.14
 
     select.value = 2
@@ -26,10 +28,10 @@ def test_select_float_option_with_equality():
     select.value = 3.14
     assert select.value == 3.14
 
-
-def test_select_text_option_with_equality():
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_select_text_option_with_equality(widget):
     opts = {'A': 'ABC', '1': 'DEF'}
-    select = Select(options=opts, value='DEF', name='Select')
+    select = widget(options=opts, value='DEF', name='Select')
     assert select.value == 'DEF'
 
     select.value = 'ABC'
@@ -38,6 +40,31 @@ def test_select_text_option_with_equality():
     select.value = 'DEF'
     assert select.value == 'DEF'
 
+def test_select_from_list(document, comm):
+    select = Select.from_values(['A', 'B', 'A', 'B', 'C'])
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == 'A'
+
+def test_select_from_array(document, comm):
+    select = Select.from_values(np.array(['A', 'B', 'A', 'B', 'C']))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == 'A'
+
+def test_select_from_index(document, comm):
+    select = Select.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == 'A'
+    assert select.name == 'index'
+
+def test_select_from_series(document, comm):
+    select = Select.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == 'A'
+    assert select.name == 'Series'
 
 def test_select(document, comm):
     opts = {'A': 'a', '1': 1}
@@ -60,13 +87,54 @@ def test_select(document, comm):
     select.value = opts['A']
     assert widget.value == str(opts['A'])
 
+def test_autocomplete(document, comm):
+    opts = {'A': 'a', '1': 1}
+    select = AutocompleteInput(options=opts, value=opts['1'], name='Autocomplete')
 
-def test_select_parameterized_option_labels():
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.title == 'Autocomplete'
+    assert widget.value == str(opts['1'])
+    assert widget.completions == list(opts)
+
+    select._process_events({'value': 'A'})
+    assert select.value == 'a'
+
+    widget.value = '1'
+    select.value = opts['1']
+    assert select.value == opts['1']
+
+    select.value = opts['A']
+    assert widget.value == 'A'
+
+def test_autocomplete_unrestricted(document, comm):
+    opts = {'A': 'a', '1': 1}
+    select = AutocompleteInput(options=opts, value=opts['1'], name='Autocomplete', restrict=False)
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.title == 'Autocomplete'
+    assert widget.value == str(opts['1'])
+    assert widget.completions == list(opts)
+
+    select._process_events({'value': str(opts['A'])})
+    assert select.value == opts['A']
+
+    select._process_events({'value': 'foo'})
+    assert select.value == 'foo'
+
+    select.value = 'bar'
+    assert widget.value == 'bar'
+
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_select_parameterized_option_labels(widget):
     c1 = panel("Value1", name="V1")
     c2 = panel("Value2")
     c3 = panel("Value3", name="V3")
 
-    select = Select(options=[c1, c2, c3], value=c1)
+    select = widget(options=[c1, c2, c3], value=c1)
     assert select.labels == ['V1', 'Markdown(str)', 'V3']
 
 
@@ -126,7 +194,7 @@ def test_select_change_groups(document, comm):
 
     select.groups = {}
     assert select.value is None
-    assert widget.value == ''
+    assert widget.value is None
 
 
 def test_select_groups_error_with_options():
@@ -147,37 +215,36 @@ def test_select_groups_error_with_options():
     with pytest.raises(ValueError):
         select.options = opts
 
-
-def test_select_change_options(document, comm):
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_select_change_options(widget, document, comm):
     opts = {'A': 'a', '1': 1}
-    select = Select(options=opts, value=opts['1'], name='Select')
+    select = widget(options=opts, value=opts['1'], name='Select')
 
     widget = select.get_root(document, comm=comm)
 
     select.options = {'A': 'a'}
-    assert select.value == opts['A']
-    assert widget.value == str(opts['A'])
+    assert select.value == ('' if select._allows_none else opts['A'])
+    assert widget.value == (str(opts['A']) if select._allows_values else '')
 
     select.options = {}
-    assert select.value is None
-    assert widget.value == ''
+    assert select.value is select.param['value'].default
+    assert widget.value == select.param['value'].default
 
-
-def test_select_non_hashable_options(document, comm):
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_select_non_hashable_options(widget, document, comm):
     opts = {'A': np.array([1, 2, 3]), '1': np.array([3, 4, 5])}
-    select = Select(options=opts, value=opts['1'], name='Select')
+    select = widget(options=opts, value=opts['1'], name='Select')
 
     widget = select.get_root(document, comm=comm)
 
     select.value = opts['A']
     assert select.value is opts['A']
-    assert widget.value == str(opts['A'])
+    assert widget.value == (str(opts['A']) if select._allows_values else 'A')
 
     opts.pop('A')
     select.options = opts
-    assert select.value is opts['1']
-    assert widget.value == str(opts['1'])
-
+    assert select.value is ('' if select._allows_none else opts['1'])
+    assert widget.value == (str(opts['1']) if select._allows_values else '')
 
 def test_select_mutables(document, comm):
     opts = {'A': [1,2,3], 'B': [2,4,6], 'C': dict(a=1,b=2)}
@@ -200,7 +267,6 @@ def test_select_mutables(document, comm):
 
     select.value = opts['A']
     assert widget.value == str(opts['A'])
-
 
 def test_select_change_options_on_watch(document, comm):
     select = Select(options={'A': 'A', '1': 1, 'C': object},
@@ -236,6 +302,31 @@ def test_nested_select_defaults(document, comm):
     assert select._max_depth == 3
 
 
+def test_nested_select_from_multi_index(df_multiindex):
+    select = NestedSelect.from_values(df_multiindex.index)
+
+    assert select.options == {
+        'group0': ['subgroup0', 'subgroup1'],
+        'group1': ['subgroup0', 'subgroup1'],
+    }
+    assert select.value == {'groups': 'group0', 'subgroups': 'subgroup0'}
+    assert select._max_depth == 2
+    assert select.levels == ['groups', 'subgroups']
+
+def test_nested_select_from_index():
+    select = NestedSelect.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == {'index': 'A'}
+    assert select._max_depth == 1
+
+def test_nested_select_from_series():
+    select = NestedSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == {'Series': 'A'}
+    assert select._max_depth == 1
+
 def test_nested_select_init_value(document, comm):
     options = {
         "Andrew": {
@@ -261,6 +352,15 @@ def test_nested_select_init_empty(document, comm):
     assert select.options is None
     assert select.levels == []
 
+def test_nested_select_max_depth_empty_first_sublevel(document, comm):
+    select = NestedSelect(options={'foo': ['a', 'b'], 'bar': []})
+
+    assert select._max_depth == 2
+
+def test_nested_select_max_depth_empty_second_sublevel(document, comm):
+    select = NestedSelect(options={'foo': {'0': ['a', 'b'], '1': []}, 'bar': {'0': []}})
+
+    assert select._max_depth == 3
 
 def test_nested_select_init_levels(document, comm):
     options = {
@@ -461,7 +561,7 @@ def test_nested_select_partial_options_set(document, comm):
     select.options = {"Ben": []}
     assert select._widgets[0].value == 'Ben'
     assert select._widgets[0].visible
-    assert select.value == {0: 'Ben'}
+    assert select.value == {0: 'Ben', 1: None}
 
 
 def test_nested_select_partial_value_init(document, comm):
@@ -808,6 +908,32 @@ def test_select_disabled_options_set_value_and_disabled_options(options, size, d
     assert widget.disabled_options == [10]
 
 
+def test_multi_select_from_list():
+    select = MultiSelect.from_values(['A', 'B', 'A', 'B', 'C'])
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == []
+
+def test_multi_select_from_array():
+    select = MultiSelect.from_values(np.array(['A', 'B', 'A', 'B', 'C']))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == []
+
+def test_multi_select_from_index():
+    select = MultiSelect.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == []
+    assert select.name == 'index'
+
+def test_multi_select_from_series(document, comm):
+    select = MultiSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == []
+    assert select.name == 'Series'
+
 def test_multi_select(document, comm):
     select = MultiSelect(options={'A': 'A', '1': 1, 'C': object},
                          value=[object, 1], name='Select')
@@ -941,7 +1067,7 @@ def test_toggle_group_radio(document, comm):
 
         widget.active = 2
         select._process_events({'active': 2})
-        assert select.value == object
+        assert select.value is object
 
         select.value = 'A'
         assert widget.active == 0

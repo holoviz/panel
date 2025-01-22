@@ -12,6 +12,7 @@ from panel.io.resources import (
     resolve_stylesheet, set_resource_mode,
 )
 from panel.io.state import set_curdoc
+from panel.models.tabulator import TABULATOR_VERSION
 from panel.theme.native import Native
 from panel.widgets import Button
 
@@ -43,6 +44,7 @@ def test_resources_cdn():
     resources = Resources(mode='cdn', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
+        f'https://cdn.holoviz.org/panel/{JS_VERSION}/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{bokeh_version}.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-gl-{bokeh_version}.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-widgets-{bokeh_version}.min.js',
@@ -54,6 +56,7 @@ def test_resources_server_absolute():
     resources = Resources(mode='server', absolute=True, minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
+        'http://localhost:5006/static/extensions/panel/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
         'http://localhost:5006/static/js/bokeh.min.js',
         'http://localhost:5006/static/js/bokeh-gl.min.js',
         'http://localhost:5006/static/js/bokeh-widgets.min.js',
@@ -65,6 +68,7 @@ def test_resources_server():
     resources = Resources(mode='server', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
+        'static/extensions/panel/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
         'static/js/bokeh.min.js',
         'static/js/bokeh-gl.min.js',
         'static/js/bokeh-widgets.min.js',
@@ -83,12 +87,12 @@ def test_resources_model_server(document):
     with set_resource_mode('server'):
         with set_curdoc(document):
             extension('tabulator')
-            assert resources.js_files[:2] == [
-                'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.min.js',
+            assert resources.js_files[1:3] == [
+                f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
                 'static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
-                f'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
+                f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_model_cdn(document):
@@ -96,12 +100,12 @@ def test_resources_model_cdn(document):
     with set_resource_mode('cdn'):
         with set_curdoc(document):
             extension('tabulator')
-            assert resources.js_files[:2] == [
-                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.min.js',
+            assert resources.js_files[1:3] == [
+                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
                 f'{CDN_DIST}bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
-                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
+                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_model_inline(document):
@@ -109,13 +113,14 @@ def test_resources_model_inline(document):
     with set_resource_mode('inline'):
         with set_curdoc(document):
             extension('tabulator')
+            tabulator_jsfile = f'bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+            luxon_jsfile = 'bundled/datatabulator/luxon/build/global/luxon.min.js'
+            tabulator_cssfile = f'bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css'
             assert resources.js_raw[-2:] == [
-                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.min.js').read_text(encoding='utf-8'),
-                (DIST_DIR / 'bundled/datatabulator/luxon/build/global/luxon.min.js').read_text(encoding='utf-8')
+                (DIST_DIR / tabulator_jsfile).read_text(encoding='utf-8'),
+                (DIST_DIR / luxon_jsfile).read_text(encoding='utf-8'),
             ]
-            assert resources.css_raw == [
-                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css').read_text(encoding='utf-8')
-            ]
+            assert resources.css_raw == [(DIST_DIR / tabulator_cssfile).read_text(encoding='utf-8')]
 
 def test_resources_reactive_html_server(document):
     resources = Resources(mode='server')
@@ -206,3 +211,16 @@ def test_resolve_stylesheet_long_css():
 }
 """
     assert resolve_stylesheet(cls, stylesheet, "_stylesheets")==stylesheet
+
+def test_resources_global_loading_indicator_server():
+    resources = Resources(mode='server')
+    with config.set(global_loading_spinner=True):
+        assert len(resources.css_raw) == 2
+        assert resources.css_raw[0].count('static/extensions/panel/assets') == 5
+
+def test_resources_global_loading_indicator_cdn():
+    resources = Resources(mode='cdn')
+    with config.set(global_loading_spinner=True):
+        assert len(resources.css_raw) == 2
+        assert resources.css_raw[0].count('https://cdn.holoviz.org/panel/') == 5
+        assert resources.css_raw[0].count('/dist/assets/') == 5

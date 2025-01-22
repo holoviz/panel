@@ -9,8 +9,9 @@ import sys
 import zipfile
 
 from abc import abstractmethod
+from collections.abc import Mapping
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar,
 )
 from urllib.request import urlopen
 
@@ -23,7 +24,7 @@ from pyviz_comms import JupyterComm
 
 from ...param import ParamMethod
 from ...util import isfile, lazy_load
-from ..base import PaneBase
+from ..base import Pane
 from ..plot import Bokeh
 from .enums import PRESET_CMAPS
 
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
 base64encode = lambda x: base64.b64encode(x).decode('utf-8')
 
 
-class AbstractVTK(PaneBase):
+class AbstractVTK(Pane):
 
     axes = param.Dict(default={}, nested_refs=True, doc="""
         Parameters of the axes to construct in the 3d view.
@@ -83,7 +84,7 @@ class AbstractVTK(PaneBase):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'axes' in msg and msg['axes'] is not None:
             VTKAxes = sys.modules['panel.models.vtk'].VTKAxes
@@ -326,7 +327,7 @@ class BaseVTKRenderWindow(AbstractVTK):
         with zipfile.ZipFile(filename, mode='w') as zf:
             zf.writestr('index.json', json.dumps(scene))
             for name, data in arrays.items():
-                zf.writestr('data/%s' % name, data, zipfile.ZIP_DEFLATED)
+                zf.writestr(f'data/{name}', data, zipfile.ZIP_DEFLATED)
             zf.writestr('annotations.json', json.dumps(annotations))
         return filename
 
@@ -376,14 +377,14 @@ class VTKRenderWindow(BaseVTKRenderWindow):
                 serialize_on_instantiation)
 
     def __init__(self, object=None, **params):
-        super(VTKRenderWindow, self).__init__(object, **params)
+        super().__init__(object, **params)
         if object is not None:
             self.color_mappers = self.get_color_mappers()
             self._update(None, None)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         VTKSynchronizedPlot = lazy_load(
             'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm), root
@@ -443,8 +444,8 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         self._contexts = {}
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         VTKSynchronizedPlot = lazy_load(
             'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm), root
@@ -468,8 +469,9 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         return model
 
     def _cleanup(self, root: Model | None = None) -> None:
-        ref = root.ref['id']
-        self._contexts.pop(ref, None)
+        if root:
+            ref = root.ref['id']
+            self._contexts.pop(ref, None)
         super()._cleanup(root)
 
     def _update(self, ref: str, model: Model) -> None:
@@ -638,7 +640,7 @@ class VTKVolume(AbstractVTK):
         Integer parameter to control the position of the slice normal
         to the Z direction.""")
 
-    _serializers = {}
+    _serializers: dict[type, Any] = {}
 
     _rename: ClassVar[Mapping[str, str | None]] = {'max_data_size': None, 'spacing': None, 'origin': None}
 
@@ -661,8 +663,8 @@ class VTKVolume(AbstractVTK):
             return isinstance(obj, vtk.vtkImageData)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         VTKVolumePlot = lazy_load(
             'panel.models.vtk', 'VTKVolumePlot', isinstance(comm, JupyterComm), root
@@ -733,7 +735,7 @@ class VTKVolume(AbstractVTK):
         A serializer is a function which take an instance of `class_type`
         (like a vtk.vtkImageData) as input and return a numpy array of the data
         """
-        cls._serializers.update({class_type:serializer})
+        cls._serializers.update({class_type: serializer})
 
     def _volume_from_array(self, sub_array):
         return dict(
@@ -782,7 +784,10 @@ class VTKVolume(AbstractVTK):
         if any([d_f > 1 for d_f in dowsnscale_factor]):
             try:
                 import scipy.ndimage as nd
-                sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
+                if hasattr(nd, "zoom"):
+                    sub_array = nd.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
+                else:  # Slated for removal in 2.0
+                    sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
             except ImportError:
                 sub_array = array[::int(np.ceil(dowsnscale_factor[0])),
                                   ::int(np.ceil(dowsnscale_factor[1])),
@@ -817,7 +822,7 @@ class VTKJS(AbstractVTK):
                  notebook context if they interact with already
                  bound keys.""")
 
-    _serializers = {}
+    _serializers: dict[type, Any] = {}
 
     _updates = True
 
@@ -829,10 +834,11 @@ class VTKJS(AbstractVTK):
     def applies(cls, obj: Any) -> float | bool | None:
         if isinstance(obj, str) and obj.endswith('.vtkjs'):
             return True
+        return None
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         """
         Should return the bokeh model to be rendered.

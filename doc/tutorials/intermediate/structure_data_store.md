@@ -159,7 +159,7 @@ class Indicators(View):
         return pn.FlexBox(
             pn.indicators.Number(
                 value=self.data_store.total_capacity / 1e6,
-                name="Total Capacity (TW)",
+                name="Total Capacity (GW)",
                 format="{value:,.2f}",
                 **style
             ),
@@ -241,7 +241,7 @@ App(
 ).servable()
 ```
 
-Once saved, run `panel serve app.py --autoreload` in your terminal to launch the app.
+Once saved, run `panel serve app.py --dev` in your terminal to launch the app.
 
 The app will look something like
 

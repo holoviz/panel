@@ -4,7 +4,6 @@ import asyncio
 import unittest.mock
 
 from functools import partial
-from typing import ClassVar, Mapping
 
 import bokeh.core.properties as bp
 import param
@@ -15,6 +14,7 @@ from bokeh.io.doc import patch_curdoc
 from bokeh.models import Div
 
 from panel.depends import bind, depends
+from panel.io.state import set_curdoc
 from panel.layout import Tabs, WidgetBox
 from panel.pane import Markdown
 from panel.reactive import Reactive, ReactiveHTML
@@ -66,7 +66,7 @@ def test_param_rename():
 
         a = param.Parameter()
 
-        _rename: ClassVar[Mapping[str, str | None]] = {'a': 'b'}
+        _rename = {'a': 'b'}
 
     obj = ReactiveRename()
 
@@ -127,18 +127,17 @@ def test_text_input_controls():
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
     assert len(wb1) == 7
-    name, disabled, *(ws) = wb1
+    name, value, disabled, *(ws) = wb1
 
+    assert isinstance(value, TextInput)
+    text_input.value = "New value"
+    assert value.value == "New value"
     assert isinstance(name, StaticText)
     assert isinstance(disabled, Checkbox)
 
     not_checked = []
     for w in ws:
-        if w.name == 'Value':
-            assert isinstance(w, TextInput)
-            text_input.value = "New value"
-            assert w.value == "New value"
-        elif w.name == 'Value input':
+        if w.name == 'Value input':
             assert isinstance(w, TextInput)
         elif w.name == 'Placeholder':
             assert isinstance(w, TextInput)
@@ -370,6 +369,19 @@ def test_text_input_controls_explicit():
 
     text_input.placeholder = "Test placeholder..."
     assert placeholder.value == "Test placeholder..."
+
+def test_property_change_does_not_boomerang(document, comm):
+    text_input = TextInput(value='A')
+
+    model = text_input.get_root(document, comm)
+
+    assert model.value == 'A'
+    model.value = 'B'
+    with set_curdoc(document):
+        text_input._process_events({'value': 'C'})
+
+    assert model.value == 'B'
+    assert text_input.value == 'C'
 
 def test_reactive_html_basic():
 

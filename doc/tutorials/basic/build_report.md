@@ -104,7 +104,7 @@ header = pn.Row(
 indicators = pn.FlexBox(
     pn.indicators.Number(
         value=total_capacity / 1e6,
-        name="Total Capacity (TW)",
+        name="Total Capacity (GW)",
         format="{value:,.0f}",
         styles=CARD_STYLE,
     ),
@@ -301,7 +301,7 @@ Here, we define some styling constants and create a header for the report, which
 indicators = pn.FlexBox(
     pn.indicators.Number(
         value=total_capacity / 1e6,
-        name="Total Capacity (TW)",
+        name="Total Capacity (GW)",
         format="{value:,.0f}",
         styles=CARD_STYLE,
     ),

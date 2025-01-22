@@ -2,6 +2,7 @@ import asyncio
 import fnmatch
 import logging
 import os
+import pathlib
 import sys
 import types
 import warnings
@@ -13,12 +14,15 @@ from bokeh.application.handlers import CodeHandler
 try:
     from watchfiles import awatch
 except Exception:
-    async def awatch(*files, stop_event=None):
+    async def awatch(  # type: ignore
+        *paths: pathlib.Path | str,
+        stop_event: asyncio.Event | None = None
+    ):
         stop_event = stop_event or asyncio.Event()
-        modify_times = {}
+        modify_times: dict[str | os.PathLike, int | float] = {}
         while not stop_event.is_set():
             changes = set()
-            for path in files:
+            for path in paths:
                 change = _check_file(path, modify_times)
                 if change:
                     changes.add((change, path))
@@ -31,9 +35,9 @@ from .state import state
 
 _reload_logger = logging.getLogger('panel.io.reload')
 
-_watched_files = set()
-_modules = set()
-_local_modules = set()
+_watched_files: set[str] = set()
+_modules: set[str] = set()
+_local_modules: set[str] = set()
 
 # List of paths to ignore
 DEFAULT_FOLDER_DENYLIST = [
@@ -56,7 +60,8 @@ IGNORED_MODULES = [
     'bokeh_app',
     'geoviews.models.',
     'panel.',
-    'torch.'
+    'torch.',
+    'defusedxml'
 ]
 
 def in_denylist(filepath):
@@ -113,9 +118,12 @@ def watched_modules():
 async def async_file_watcher(stop_event=None):
     while True:
         module_paths, files = watched_modules()
-        async for changes in awatch(*files, stop_event=stop_event):
-            _reload(module_paths, changes)
-            await asyncio.sleep(1)
+        try:
+            async for changes in awatch(*files, stop_event=stop_event):
+                _reload(module_paths, changes)
+                await asyncio.sleep(1)
+                break
+        except asyncio.CancelledError:
             break
         if stop_event.is_set():
             break
@@ -129,7 +137,7 @@ async def setup_autoreload_watcher(stop_event=None):
         import watchfiles  # noqa
     except Exception:
         warnings.warn(
-            '--autoreload functionality now depends on the watchfiles '
+            '--dev and --autoreload functionality now depends on the watchfiles '
             'library. In future versions autoreload will not work without '
             'watchfiles being installed. Since it provides a much better '
             'user experience consider installing it today.', FutureWarning,
@@ -239,7 +247,7 @@ def _reload(module_paths, changes):
                 loc.reload = True
             doc.on_event('document_ready', reload_session)
 
-def _check_file(path, modify_times):
+def _check_file(path: str | os.PathLike, modify_times: dict[str | os.PathLike, int | float]):
     """
     Checks if a file was modified or deleted and then returns a code,
     modeled after watchfiles, indicating the type of change:

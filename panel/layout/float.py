@@ -34,6 +34,14 @@ STATUS = [
 class FloatPanel(ListLike, ReactiveHTML):
     """
     Float provides a floating panel layout.
+
+    Reference: https://panel.holoviz.org/reference/layouts/FloatPanel.html
+
+    :Example:
+
+    >>> import panel as pn
+    >>> pn.extension("floatpanel")
+    >>> pn.layout.FloatPanel("**I can float**!", position="center", width=300).servable()
     """
 
     config = param.Dict({}, doc="""

@@ -3,7 +3,7 @@
 This guide addresses how to extend Param based UIs with custom widgets.
 
 ```{admonition} Prerequisites
-1. The [How to > Generate Widgets from Parameters](./uis.md) guide demonstrates the default case of automatically generating widgets.
+1. The [How to > Generate Widgets from Parameters](./uis) guide demonstrates the default case of automatically generating widgets.
 ```
 
 ---
@@ -49,7 +49,6 @@ pn.Param(CustomExample.param, widgets={
 
 However it is also possible to explicitly construct a widget from a parameter using the `.from_param` method, which makes it easy to override widget settings using keyword arguments:
 
-
 ```{pyodide}
 pn.widgets.RadioBoxGroup.from_param(CustomExample.param.select_string, inline=True)
 ```
@@ -57,7 +56,6 @@ pn.widgets.RadioBoxGroup.from_param(CustomExample.param.select_string, inline=Tr
 ## Custom name
 
 By default, a param Pane has a title that is derived from the class name of its `Parameterized` object. Using the ``name`` keyword we can set any title to the pane, e.g. to improve the user interface.
-
 
 ```{pyodide}
 pn.Param(CustomExample.param, name="Custom Name")
@@ -67,13 +65,11 @@ pn.Param(CustomExample.param, name="Custom Name")
 
 You can sort the widgets alphabetically by setting `sort=True`
 
-
 ```{pyodide}
 pn.Param(CustomExample.param, sort=True, name="Sort by Label Example")
 ```
 
 You can also specify a custom sort function that takes the (parameter name, Parameter instance) as input.
-
 
 ```{pyodide}
 def sort_func(x):
@@ -86,4 +82,4 @@ pn.Param(CustomExample.param, sort=sort_func, name="Sort by Label Length Example
 
 ## Related Resources
 
-- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs
+- See the [Explanation > APIs](../../explanation/api/index) for context on this and other Panel APIs

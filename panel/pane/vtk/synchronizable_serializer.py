@@ -5,6 +5,8 @@ import struct
 import time
 import zipfile
 
+from typing import Any
+
 from vtk.vtkCommonCore import vtkTypeInt32Array, vtkTypeUInt32Array
 from vtk.vtkCommonDataModel import vtkDataObject
 from vtk.vtkFiltersGeometry import (
@@ -71,7 +73,7 @@ def getJSArrayType(dataArray):
 def zipCompression(name, data):
     with io.BytesIO() as in_memory:
         with zipfile.ZipFile(in_memory, mode="w") as zf:
-            zf.writestr('data/%s' % name,
+            zf.writestr(f'data/{name}',
                         data, zipfile.ZIP_DEFLATED)
         in_memory.seek(0)
         return in_memory.read()
@@ -393,7 +395,7 @@ def pad(depth):
 
 
 def wrapId(idStr):
-    return 'instance:${%s}' % idStr
+    return f'instance:${{{idStr}}}'
 
 # -----------------------------------------------------------------------------
 
@@ -410,7 +412,7 @@ def getReferenceId(ref):
 
 # -----------------------------------------------------------------------------
 
-dataArrayShaMapping = {}
+dataArrayShaMapping: dict[str, dict[str, Any]] = {}
 
 
 def digest(array):
@@ -570,7 +572,7 @@ def extractRequiredFields(extractedFields, parent, dataset, context, requestedFi
 
 def annotationSerializer(parent, prop, propId, context, depth):
     if context.debugSerializers:
-        print('%s!!!Annotations are not handled directly by vtk.js but by bokeh model' % pad(depth))
+        print(f'{pad(depth)}!!!Annotations are not handled directly by vtk.js but by bokeh model')
 
     context.addAnnotation(parent, prop, propId)
 
@@ -723,7 +725,7 @@ def genericMapperSerializer(parent, mapper, mapperId, context, depth):
         for port in range(mapper.GetNumberOfInputPorts()): # Glyph3DMapper can define input data objects on 2 ports (input, source)
             dataObject = mapper.GetInputDataObject(port, 0)
             if dataObject:
-                dataObjectId = '%s-dataset-%d' % (mapperId, port)
+                dataObjectId = f'{mapperId}-dataset-{port}'
                 if parent.IsA('vtkActor') and not mapper.IsA('vtkTexture'):
                     # vtk-js actors can render only surfacic datasets
                     # => we ensure to convert the dataset in polydata
@@ -1243,8 +1245,7 @@ def rendererSerializer(parent, instance, objId, context, depth):
             dependencies.append(viewPropInstance)
             viewPropIds.append(viewPropId)
 
-    calls += context.buildDependencyCallList('%s-props' %
-                                             objId, viewPropIds, 'addViewProp', 'removeViewProp')
+    calls += context.buildDependencyCallList(f'{objId}-props', viewPropIds, 'addViewProp', 'removeViewProp')
 
     return {
         'parent': context.getReferenceId(parent),

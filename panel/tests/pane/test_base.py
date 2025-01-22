@@ -17,7 +17,6 @@ from panel.param import (
     Param, ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
 )
 from panel.tests.util import check_layoutable_properties
-from panel.util import param_watchers
 
 SKIP_PANES = (
     Bokeh, ChatMessage, HoloViews, Interactive, IPyWidget, Param,
@@ -90,7 +89,7 @@ def test_pane_untracked_watchers(pane, document, comm):
     except ImportError:
         pytest.skip("Dependent library could not be imported.")
     watchers = [
-        w for pwatchers in param_watchers(p).values()
+        w for pwatchers in p.param.watchers.values()
         for awatchers in pwatchers.values() for w in awatchers
     ]
     assert len([wfn for wfn in watchers if wfn not in p._internal_callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0

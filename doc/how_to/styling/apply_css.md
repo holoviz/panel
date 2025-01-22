@@ -109,7 +109,7 @@ pn.widgets.FloatSlider(
 
 Inlining stylesheets provides a quick way to override the style of a component but it also means we are sending the stylesheet to the frontend as a string. This can add up when we want to apply this stylesheet to multiple components. Therefore it is recommended that once you move to production the styles are served as an external stylesheet you reference.
 
-You can either provide a full URL to the stylesheet and host it yourself or you can [serve static assets alongside your application](../server/static_files.md). Here we load the stylesheet from an external URL:
+You can either provide a full URL to the stylesheet and host it yourself or you can [serve static assets alongside your application](../server/static_files). Here we load the stylesheet from an external URL:
 
 ```{pyodide}
 pn.widgets.FloatSlider(

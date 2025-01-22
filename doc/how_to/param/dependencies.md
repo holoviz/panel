@@ -3,7 +3,7 @@
 This guide addresses how to leverage `@param.depends` to express dependencies and trigger events based on UI interactions.
 
 ```{admonition} Prerequisites
-1. The [How to > Generate Widgets from Parameters](./uis.md) guide demonstrates the automatic generation of widgets without dependencies.
+1. The [How to > Generate Widgets from Parameters](uis) guide demonstrates the automatic generation of widgets without dependencies.
 ```
 
 ---
@@ -55,9 +55,9 @@ We also define a ``view`` method that returns an HTML iframe displaying the coun
 ```{pyodide}
 class GoogleMapViewer(param.Parameterized):
 
-    continent = param.ObjectSelector(default='Asia', objects=['Africa', 'Asia', 'Europe'])
+    continent = param.Selector(default='Asia', objects=['Africa', 'Asia', 'Europe'])
 
-    country = param.ObjectSelector(default='China', objects=['China', 'Thailand', 'Japan'])
+    country = param.Selector(default='China', objects=['China', 'Thailand', 'Japan'])
 
     _countries = {'Africa': ['Ghana', 'Togo', 'South Africa', 'Tanzania'],
                   'Asia'  : ['China', 'Thailand', 'Japan'],
@@ -87,4 +87,4 @@ Whenever the continent changes Param will now eagerly execute the ``_update_coun
 
 ## Related Resources
 
-- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs
+- See the [Explanation > APIs](../../explanation/api/index) for context on this and other Panel APIs

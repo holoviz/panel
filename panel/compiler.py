@@ -91,7 +91,7 @@ def _write_bundled_files(name, files, explicit_dir=None, ext=None):
         filename = str(filename)
         if ext and not str(filename).endswith(ext):
             filename += f'.{ext}'
-        if filename.endswith(('.ttf', '.wasm')):
+        if filename.endswith(('.ttf', '.wasm', '.png', '.gif')):
             with open(filename, 'wb') as f:
                 f.write(response.content)
         else:
@@ -348,6 +348,21 @@ def bundle_icons(verbose=False, external=True, download_list=None):
     for icon in glob.glob(str(icon_dir / '*')):
         shutil.copyfile(icon, dest_dir / os.path.basename(icon))
 
+def patch_tabulator():
+    path = BUNDLE_DIR / 'datatabulator' / 'tabulator-tables@6.3.0' / 'dist' / 'js' / 'tabulator.min.js'
+    text = path.read_text()
+    # https://github.com/olifolkerd/tabulator/issues/4421
+    old = '"focus"!==this.options("editTriggerEvent")&&"click"!==this.options("editTriggerEvent")'
+    new = '"click"!==this.options("editTriggerEvent")'
+    assert text.count(old) == 1
+    text = text.replace(old, new)
+    # https://github.com/olifolkerd/tabulator/pull/4598
+    old = '(i=!0,this.subscribed("table-resize")?this.dispatch("table-resize"):this.redraw())'
+    new = '(i=!0,this.redrawing||(this.redrawing=!0,this.subscribed("table-resize")?this.dispatch("table-resize"):this.redraw(),this.redrawing=!1))'
+    assert text.count(old) == 1
+    text = text.replace(old, new)
+    path.write_text(text)
+
 def bundle_resources(verbose=False, external=True):
     download_list = []
     bundle_resource_urls(verbose=verbose, external=external, download_list=download_list)
@@ -363,3 +378,5 @@ def bundle_resources(verbose=False, external=True):
     for future in futures:
         if future:
             future.result()
+
+    patch_tabulator()

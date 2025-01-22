@@ -13,7 +13,8 @@ import signal
 import subprocess
 import sys
 
-from typing import ClassVar, Mapping
+from collections.abc import Mapping
+from typing import ClassVar
 
 import param
 
@@ -248,7 +249,7 @@ class Terminal(Widget):
     nrows = param.Integer(readonly=True, doc="""
         The number of rows in the terminal.""")
 
-    value = param.String(label="Input", readonly=True, doc="""
+    value = param.String(default="", label="Input", readonly=True, doc="""
         User input received from the Terminal. Sent one character at the time.""")
 
     write_to_console = param.Boolean(default=False, doc="""
@@ -287,10 +288,9 @@ class Terminal(Widget):
         return len(self.output)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        if self._widget_type is None:
-            self._widget_type = lazy_load(
-                'panel.models.terminal', 'Terminal', isinstance(comm, JupyterComm), root
-            )
+        Terminal._widget_type = lazy_load(
+            'panel.models.terminal', 'Terminal', isinstance(comm, JupyterComm), root
+        )
         model = super()._get_model(doc, root, parent, comm)
         model.output = self.output
         self._register_events('keystroke', model=model, doc=doc, comm=comm)

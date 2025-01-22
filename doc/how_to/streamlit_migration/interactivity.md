@@ -41,7 +41,7 @@ Consider the following strategies for effective migration:
 - Transition your core business logic into functions. This includes data loading, transformations, calculations, plot creations, complex computations like galaxy mass estimations, model training, and inference tasks.
 - Enhance interactivity by using `pn.bind` to associate your functions with widgets.
   - For updates that occur multiple times during function execution, consider using generator functions (`yield`).
-- Use visual feedback to indicate activity, as detailed in the [Show Activity Section](activity.md).
+- Use visual feedback to indicate activity, as detailed in the [Show Activity Section](activity).
 
 ## Examples
 

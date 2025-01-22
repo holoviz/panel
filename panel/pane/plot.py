@@ -6,12 +6,11 @@ from __future__ import annotations
 import re
 import sys
 
+from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import partial
 from io import BytesIO
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -24,7 +23,7 @@ from ..io import remove_root, state
 from ..io.notebook import push
 from ..util import escape
 from ..viewable import Layoutable
-from .base import PaneBase
+from .base import Pane
 from .image import (
     PDF, PNG, SVG, Image,
 )
@@ -59,7 +58,7 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
     doc.hold(hold)
 
 
-class Bokeh(PaneBase):
+class Bokeh(Pane):
     """
     The Bokeh pane allows displaying any displayable Bokeh model inside a
     Panel app.
@@ -162,8 +161,8 @@ class Bokeh(PaneBase):
             self._syncing_props = False
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if root is None:
             return self.get_root(doc, comm)
@@ -319,8 +318,8 @@ class Matplotlib(Image, IPyWidget):
         return self._img_type._transform_object(self, obj)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if not self.interactive:
             return self._img_type._get_model(self, doc, root, parent, comm)
@@ -443,7 +442,7 @@ class Folium(HTML):
     The Folium pane wraps Folium map components.
     """
 
-    sizing_mode = param.ObjectSelector(default='stretch_width', objects=[
+    sizing_mode = param.Selector(default='stretch_width', objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 

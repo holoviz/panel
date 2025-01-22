@@ -4,9 +4,8 @@ bokeh model.
 """
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -14,7 +13,8 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..util import isdatetime, lazy_load
+from ..util import lazy_load
+from ..util.checks import datetime_types, isdatetime
 from ..viewable import Layoutable
 from .base import ModelPane
 
@@ -132,8 +132,8 @@ class Plotly(ModelPane):
         for key, value in list(json.items()):
             full_path = key if not parent_path else f"{parent_path}.{key}"
             if isinstance(value, np.ndarray):
-                # Extract numpy array
-                data[full_path] = [json.pop(key)]
+                array = json.pop(key)
+                data[full_path] = [array]
             elif isinstance(value, dict):
                 # Recurse into dictionaries:
                 Plotly._get_sources_for_trace(value, data=data, parent_path=full_path)
@@ -206,7 +206,7 @@ class Plotly(ModelPane):
             msg['relayout'] = relayout_data
         if restyle_data:
             msg['restyle'] = {'data': restyle_data, 'traces': trace_indexes}
-        for ref, (m, _) in self._models.items():
+        for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
 
     def _update_from_figure(self, event, *args, **kwargs):
@@ -227,7 +227,7 @@ class Plotly(ModelPane):
             try:
                 old = cds.data.get(key)[0]
                 update_array = (
-                    (type(old) != type(new)) or
+                    (type(old) is not type(new)) or
                     (new.shape != old.shape) or
                     (new != old).any())
             except Exception:
@@ -251,17 +251,21 @@ class Plotly(ModelPane):
         For #382: Map datetime elements to strings.
         """
         json = fig.to_plotly_json()
+        layout = json['layout']
         data = json['data']
-
-        for idx in range(len(data)):
-            for key in data[idx]:
-                if isdatetime(data[idx][key]):
-                    arr = data[idx][key]
-                    if isinstance(arr, np.ndarray):
-                        arr = arr.astype(str)
-                    else:
-                        arr = [str(v) for v in arr]
-                    data[idx][key] = arr
+        shapes = layout.get('shapes', [])
+        for trace in data+shapes:
+            for key in trace:
+                if not isdatetime(trace[key]):
+                    continue
+                arr = trace[key]
+                if isinstance(arr, np.ndarray):
+                    arr = arr.astype(str)
+                elif isinstance(arr, datetime_types):
+                    arr = str(arr)
+                else:
+                    arr = [str(v) for v in arr]
+                trace[key] = arr
         return json
 
     def _init_params(self):
@@ -306,13 +310,12 @@ class Plotly(ModelPane):
         return props
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        if not hasattr(self, '_bokeh_model'):
-            self._bokeh_model = lazy_load(
-                'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
-            )
+        Plotly._bokeh_model = lazy_load(
+            'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
+        )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('plotly_event', model=model, doc=doc, comm=comm)
         return model
@@ -376,7 +379,7 @@ class Plotly(ModelPane):
         except Exception:
             update_frames = True
 
-        updates = {}
+        updates: dict[str, Any] = {}
         if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
             autosize = layout.get('autosize')
             styles = dict(model.styles)

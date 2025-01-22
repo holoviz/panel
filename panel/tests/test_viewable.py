@@ -3,9 +3,11 @@ import pytest
 
 from panel import config
 from panel.interact import interactive
-from panel.pane import Markdown, Str, panel
+from panel.pane import Markdown, Str, panel as panel_fn
 from panel.param import ParamMethod
-from panel.viewable import Viewable, Viewer
+from panel.viewable import (
+    Child, Children, Viewable, Viewer, is_viewable_param,
+)
 
 from .util import jb_available
 
@@ -53,11 +55,11 @@ def test_Viewer_not_initialized():
         def __panel__(self):
             return "# Test"
 
-    test = panel(Test)
+    test = panel_fn(Test)
     assert test.object == "# Test"
 
     # Confirm that initialized also work
-    test = panel(Test())
+    test = panel_fn(Test())
     assert test.object == "# Test"
 
 def test_viewer_wraps_panel():
@@ -84,7 +86,7 @@ def test_viewer_wraps_panel_with_deps(document, comm):
 def test_viewer_with_deps_resolved_by_panel_func(document, comm):
     tv = ExampleViewerWithDeps(value="hello")
 
-    view = panel(tv)
+    view = panel_fn(tv)
 
     view.get_root(document, comm)
 
@@ -99,7 +101,7 @@ def test_non_viewer_class():
         def __panel__(self):
             return 42
 
-    panel(Example())
+    panel_fn(Example())
 
 @pytest.mark.parametrize('viewable', all_viewables)
 def test_clone(viewable):
@@ -110,8 +112,53 @@ def test_clone(viewable):
             [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])
 
 def test_clone_with_non_defaults():
-    v= Viewable(loading=True)
+    v = Viewable(loading=True)
     clone = v.clone()
 
     assert ([(k, v) for k, v in sorted(v.param.values().items()) if k not in ('name')] ==
             [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])
+
+def test_is_viewable_parameter():
+    class Example(param.Parameterized):
+        p_dict = param.Dict()
+        p_child = Child()
+        p_children = Children()
+
+        # ClassSelector
+        c_viewable = param.ClassSelector(class_=Viewable)
+        c_viewables = param.ClassSelector(class_=(Viewable,))
+        c_none = param.ClassSelector(class_=None)
+        c_tuple = param.ClassSelector(class_=tuple)
+        c_list_tuple = param.ClassSelector(class_=(list, tuple))
+
+        # List
+        l_no_item_type = param.List()
+        l_item_type_viewable = param.List(item_type=Viewable)
+        l_item_type_not_viewable = param.List(item_type=tuple)
+
+        l_item_types_viewable = param.List(item_type=(Viewable,))
+        l_item_types_not_viewable = param.List(item_type=(tuple,))
+        l_item_types_not_viewable2 = param.List(item_type=(list, tuple,))
+
+    example = Example()
+
+    assert not is_viewable_param(example.param.p_dict)
+    assert is_viewable_param(example.param.p_child)
+    assert is_viewable_param(example.param.p_children)
+
+    # ClassSelector
+    assert is_viewable_param(example.param.c_viewable)
+    assert is_viewable_param(example.param.c_viewables)
+    assert not is_viewable_param(example.param.c_none)
+    assert not is_viewable_param(example.param.c_tuple)
+    assert not is_viewable_param(example.param.c_list_tuple)
+
+    # List
+    assert not is_viewable_param(example.param.l_no_item_type)
+    assert not is_viewable_param(example.param.l_no_item_type)
+    assert is_viewable_param(example.param.l_item_type_viewable)
+    assert not is_viewable_param(example.param.l_item_type_not_viewable)
+
+    assert is_viewable_param(example.param.l_item_types_viewable)
+    assert not is_viewable_param(example.param.l_item_types_not_viewable)
+    assert not is_viewable_param(example.param.l_item_types_not_viewable2)

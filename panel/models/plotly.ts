@@ -2,16 +2,16 @@ import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
-import {isPlainObject, isArray} from "@bokehjs/core/util/types"
+import {isPlainObject} from "@bokehjs/core/util/types"
 import {clone} from "@bokehjs/core/util/object"
 import {is_equal} from "@bokehjs/core/util/eq"
 import type {Attrs} from "@bokehjs/core/types"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {debounce} from  "debounce"
-import {deepCopy, get, reshape, throttle} from "./util"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {convertUndefined, deepCopy, get, reshape, throttle} from "./util"
 
 import plotly_css from "styles/models/plotly.css"
 
@@ -42,23 +42,6 @@ interface PlotlyHTMLElement extends HTMLDivElement {
   on(event: "plotly_selected", callback: (eventData: any) => void): void
   on(event: "plotly_deselect", callback: () => void): void
   on(event: "plotly_unhover", callback: () => void): void
-}
-
-function convertUndefined(obj: any): any {
-  if (isArray(obj)) {
-    return obj.map(convertUndefined)
-  } else if (isPlainObject(obj)) {
-    Object
-      .entries(obj)
-      .forEach(([key, value]) => {
-        if (isPlainObject(value) || isArray(value)) {
-          convertUndefined(value)
-        } else if (value === undefined) {
-          obj[key] = null
-        }
-      })
-  }
-  return obj
 }
 
 const filterEventData = (gd: any, eventData: any, event: string) => {
@@ -157,6 +140,12 @@ export class PlotlyPlotView extends HTMLBoxView {
   _end_relayouting = debounce(() => {
     this._relayouting = false
   }, 2000, false)
+  _throttled_resize: any
+
+  override initialize(): void {
+    super.initialize()
+    this._throttled_resize = throttle(() => this.resize_layout(), 25)
+  }
 
   override connect_signals(): void {
     super.connect_signals()
@@ -222,28 +211,33 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.container = div() as PlotlyHTMLElement
     set_size(this.container, this.model)
     this._rendered = false
-    this.shadow_el.appendChild(this.container)
     this.watch_stylesheets()
-    this.plot().then(() => {
+    this.plot(true).then(() => {
+      this.shadow_el.appendChild(this.container)
       this._rendered = true
+      this.resize_layout()
       if (this.model.relayout != null) {
         (window as any).Plotly.relayout(this.container, this.model.relayout)
       }
-      (window as any).Plotly.Plots.resize(this.container)
     })
   }
 
   override style_redraw(): void {
-    if (this._rendered && this.container != null) {
-      (window as any).Plotly.Plots.resize(this.container)
+    this.resize_layout()
+  }
+
+  resize_layout(): void {
+    if (!this._rendered || this.container == null) {
+      return
     }
+    const width: number = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity)
+    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity);
+    (window as any).Plotly.relayout(this.container, {width, height})
   }
 
   override after_layout(): void {
     super.after_layout()
-    if (this._rendered && this.container != null) {
-      (window as any).Plotly.Plots.resize(this.container)
-    }
+    this._throttled_resize()
   }
 
   _trace_data(): any {
@@ -316,6 +310,10 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     //  - plotly_selected
     this.container.on("plotly_selected", (eventData: any) => {
+      if (eventData === undefined || eventData === null) {
+        // filter out the empty events that come from single-click
+        return
+      }
       const data = filterEventData(this.container, eventData, "selected")
       this.model.trigger_event(new PlotlyEvent({type: "selected", data}))
     })

@@ -93,6 +93,7 @@ Now that you've got the basics down, it's time to put your skills to the test:
 - **[Build an Animation](build_animation.md)**
 - **[Build an Image Classifier](build_image_classifier.md)**
 - **[Build a Monitoring Dashboard](build_monitoring_dashboard.md)**
+- **[Build a Crossfiltering Dashboard](build_crossfilter_dashboard.md)**
 - **[Build a Streaming Dashboard](build_streaming_dashboard.md)**
 - **[Build a Chat Bot](build_chatbot.md)**
 - **[Build a Todo App](build_todo.md)**
@@ -104,6 +105,8 @@ Let's start building some amazing wind turbine apps! 🌬️🌀
 Want more? Check out some amazing tutorials by the community.
 
 - [3 Ways to Build a Panel Visualization Dashboard - Sophia Yang](https://towardsdatascience.com/3-ways-to-build-a-panel-visualization-dashboard-6e14148f529d) (Blog Post) | [PyTexas 2023](https://www.youtube.com/watch?v=8du4NNoOtII) (Video)
+- [Building an LLM-driven chatbot for seamless order management](https://ploomber.io/blog/customer-chatbot-retail/) (Blog Post)
+- [Display Data from a PostgreSQL Database in a Panel App](https://ploomber.io/blog/panel-postgres/) (Blog Post)
 - [HoloViz: Visualization and Interactive Dashboards in Python - Jean-Luc Stevens](https://www.youtube.com/watch?v=61uHwBlxRug) (Video)
 - [How to create Data Analytics Visualisation Dashboard using Python with Panel/Hvplot in just 10 mins - Atish Jain](https://www.youtube.com/watch?v=__QUQg96SFs) (Video)
 - [Step-by-Step Guide to Create Multi-Page Dashboard using Panel - CoderzColumn](https://www.youtube.com/watch?v=G3M0lQcWpqE) (Video)
@@ -139,6 +142,7 @@ build_report
 build_animation
 build_image_classifier
 build_monitoring_dashboard
+build_crossfilter_dashboard
 build_streaming_dashboard
 build_chatbot
 build_todo

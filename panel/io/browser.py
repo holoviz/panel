@@ -4,7 +4,8 @@ navigator APIs.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param  # type: ignore
 
@@ -46,6 +47,9 @@ class BrowserInfo(Syncable):
     webdriver = param.Boolean(default=None, doc="""
         Indicates whether the user agent is controlled by automation.""")
 
+    webgl = param.Boolean(default=None, doc="""
+        Indicates whether the browser has WebGL support.""")
+
     # Mapping from parameter name to bokeh model property name
     _rename: ClassVar[Mapping[str, str | None]] = {"name": None}
 
@@ -62,7 +66,7 @@ class BrowserInfo(Syncable):
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
-    ) -> 'Model':
+    ) -> Model:
         doc = create_doc_if_none_exists(doc)
         root = self._get_model(doc, comm=comm)
         ref = root.ref['id']

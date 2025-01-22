@@ -3,7 +3,7 @@
 When interacting with functions which take a long time to run, realtime feedback can be a burden instead of being helpful. This guide addresses how to disable continuous updates with Panel `interact`.
 
 ```{admonition} Prerequisites
-1. The [How to > Generate Widgets for Function Arguments](./interact_basics.md) guide covers how to generate widgets for function arguments with Panel interact.
+1. The [How to > Generate Widgets for Function Arguments](interact_basics) guide covers how to generate widgets for function arguments with Panel interact.
 ```
 
 ---

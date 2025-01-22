@@ -70,7 +70,11 @@ Now that you've mastered the more advanced concepts of Panel, it's time to put y
 - **[Create a Todo App](build_todo.md):** Create a Todo App using a class based approach.
 - **[Test a Todo App](test_todo.md):** Learn how to test a class based Panel app.
 - **Serve Apps without a Server:** Explore the realm of WASM to serve your apps without traditional servers.
-- **Build a Streaming Dashboard:** Engineer a high-performing streaming dashboard employing a *producer/consumer* architecture.
+- **[Build a Server Video Stream](build_server_video_stream.md):** Utilize threading to set up a video stream from a camera connected to a server without blocking the UI.
+
+## Community Tutorials
+
+- [Adding user authentication to a Panel application](https://ploomber.io/blog/panel-auth/) (blog post)
 
 ```{toctree}
 :titlesonly:
@@ -86,4 +90,5 @@ serve
 advanced_layouts
 build_todo
 test_todo
+build_server_video_stream
 ```

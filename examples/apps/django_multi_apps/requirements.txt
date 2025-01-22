@@ -1,4 +1,4 @@
-setuptools==65.5.1
+setuptools==70.0.0
 asgiref==3.2.10
 attrs==19.3.0
 autobahn==20.12.3
@@ -8,15 +8,15 @@ cffi==1.13.2
 channels==2.4.0
 colorcet==2.0.5
 constantly==15.1.0
-cryptography==42.0.4
+cryptography==43.0.1
 daphne==2.4.1
-Django==3.2.25
+Django==4.2.18
 holoviews==1.13.2
 hvplot==0.5.2
 hyperlink==20.0.1
 idna==3.7
 incremental==21.3.0
-Jinja2==3.1.4
+Jinja2==3.1.5
 Markdown==3.1.1
 MarkupSafe==1.1.1
 numpy==1.22.0
@@ -39,7 +39,7 @@ PyYAML==5.4
 service-identity==18.1.0
 six==1.13.0
 sqlparse==0.5.0
-tornado==6.3.3
-Twisted==23.10.0
+tornado==6.4.2
+Twisted==24.7.0
 txaio==20.4.1
 zope.interface==4.7.1

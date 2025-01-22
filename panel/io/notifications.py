@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import param
 
@@ -10,7 +10,8 @@ from ..config import config
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
-from .resources import CSS_URLS, bundled_files, get_dist_path
+from .document import create_doc_if_none_exists
+from .resources import CDN_DIST, CSS_URLS, bundled_files
 from .state import state
 
 if TYPE_CHECKING:
@@ -32,6 +33,8 @@ class Notification(param.Parameterized):
     notification_area = param.Parameter(constant=True, precedence=-1)
 
     notification_type = param.String(default=None, constant=True, label='type')
+
+    _rendered = param.Boolean(default=False)
 
     _destroyed = param.Boolean(default=False)
 
@@ -78,9 +81,10 @@ class NotificationAreaBase(ReactiveHTML):
         self._notification_watchers = {}
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
-    ) -> 'Model':
+    ) -> Model:
+        doc = create_doc_if_none_exists(doc)
         root = super().get_root(doc, comm, preprocess)
         for event, notification in self.js_events.items():
             doc.js_on_event(event, CustomJS(code=f"""
@@ -176,9 +180,9 @@ class NotificationArea(NotificationAreaBase):
 
     @classproperty
     def __css__(cls):
-        return bundled_files(cls, 'css') + [
-            f"{get_dist_path()}css/notifications.css"
-        ]
+        return bundled_files(cls, 'css')
+
+    _stylesheets = [f"{CDN_DIST}css/notifications.css"]
 
     _template = ""
 
@@ -192,46 +196,45 @@ class NotificationArea(NotificationAreaBase):
         })
       """,
       "notifications": """
-        var notification = state.current || data.notifications[data.notifications.length-1]
-        if (notification._destroyed) {
-          return
-        }
-        var config = {
-          duration: notification.duration,
-          type: notification.notification_type,
-          message: notification.message
-        }
-        if (notification.background != null) {
-          config.background = notification.background;
-        }
-        if (notification.icon != null) {
-          config.icon = notification.icon;
-        }
-        var toast = state.toaster.open(config);
-        function destroy() {
-          if (state.current !== notification) {
+        for (notification of data.notifications) {
+          if (notification._destroyed || notification._rendered) {
+            return
+          }
+          var config = {
+            duration: notification.duration,
+            type: notification.notification_type,
+            message: notification.message
+          }
+          if (notification.background != null) {
+            config.background = notification.background;
+          }
+          if (notification.icon != null) {
+            config.icon = notification.icon;
+          }
+          let toast = state.toaster.open(config);
+          function destroy() {
             notification._destroyed = true;
           }
+          notification._rendered = true
+          toast.on('dismiss', destroy)
+          if (notification.duration) {
+            setTimeout(destroy, notification.duration)
+          }
+          if (notification.properties === undefined)
+            return
+          view.connect(notification.properties._destroyed.change, function () {
+            state.toaster.dismiss(toast)
+          })
         }
-        toast.on('dismiss', destroy)
-        if (notification.duration) {
-          setTimeout(destroy, notification.duration)
-        }
-        if (notification.properties === undefined)
-          return
-        view.connect(notification.properties._destroyed.change, function () {
-          state.toaster.dismiss(toast)
-        })
       """,
       "_clear": "state.toaster.dismissAll()",
       "position": """
         script('_clear');
         script('render');
         for (notification of data.notifications) {
-          state.current = notification;
-          script('notifications');
+          notification._rendered = false;
         }
-        state.current = undefined
+        script('notifications');
       """
     }
 

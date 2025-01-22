@@ -14,19 +14,17 @@ import textwrap
 import types
 
 from collections import defaultdict, namedtuple
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Generator, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
 try:
     from param import Skip
 except Exception:
-    class Skip(Exception):
+    class Skip(Exception):  # type: ignore
         """
         Exception that allows skipping an update for function-level updates.
         """
@@ -36,25 +34,17 @@ from param.parameterized import (
 )
 from param.reactive import rx
 
-try:
-    from param import Skip
-except Exception:
-    class Skip(RuntimeError):
-        """
-        Exception that allows skipping an update for function-level updates.
-        """
-
 from .config import config
 from .io import state
 from .layout import (
     Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
 )
 from .pane import DataFrame as DataFramePane
-from .pane.base import PaneBase, ReplacementPane
+from .pane.base import Pane, ReplacementPane
 from .reactive import Reactive
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
-    param_name, recursive_parameterized,
+    param_name, recursive_parameterized, to_async_gen,
 )
 from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
@@ -63,7 +53,7 @@ from .widgets import (
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
     FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
     LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
-    TextInput, Toggle, Widget,
+    TextInput, Toggle, Widget, WidgetBase,
 )
 from .widgets.button import _ButtonBase
 
@@ -85,13 +75,13 @@ def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
 
 def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     if isinstance(pobj, param.Tuple):
-        return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
+        return type('TupleInput', (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
-        return type(str('NumberInput'), (LiteralInput,), {'type': (int, float)})
+        return type('NumberInput', (LiteralInput,), {'type': (int, float)})
     elif isinstance(pobj, param.Dict):
-        return type(str('DictInput'), (LiteralInput,), {'type': dict})
+        return type('DictInput', (LiteralInput,), {'type': dict})
     elif isinstance(pobj, param.List):
-        return type(str('ListInput'), (LiteralInput,), {'type': list})
+        return type('ListInput', (LiteralInput,), {'type': list})
     return LiteralInput
 
 
@@ -127,10 +117,27 @@ def set_values(*parameterizeds, **param_values):
             parameterized.param.update(**old_values)
 
 
-class Param(PaneBase):
+class Param(Pane):
     """
-    Param panes render a Parameterized class to a set of widgets which
-    are linked to the parameter values on the class.
+    Param panes render a Parameterized class into a set of interactive widgets
+    that are dynamically linked to the parameter values of the class.
+
+    Reference: https://panel.holoviz.org/reference/panes/Param.html
+
+    Example:
+
+    >>> import param
+    >>> import panel as pn
+    >>> pn.extension()
+
+    >>> class App(param.Parameterized):
+    >>>     some_text = param.String(default="Hello")
+    >>>     some_float = param.Number(default=1, bounds=(0, 10), step=0.1)
+    >>>     some_boolean = param.Boolean(default=True)
+
+    >>> app = App()
+
+    >>> pn.Param(app, parameters=["some_text", "some_float"], show_name=False).servable()
     """
 
     display_threshold = param.Number(default=0, precedence=-10, doc="""
@@ -167,7 +174,7 @@ class Param(PaneBase):
         usually to update the default Parameter values of the
         underlying parameterized object.""")
 
-    name = param.String(default='', doc="""
+    name = param.String(default='', constant=False, doc="""
         Title of the pane.""")
 
     object = param.Parameter(default=None, allow_refs=False, doc="""
@@ -197,7 +204,7 @@ class Param(PaneBase):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    mapping: ClassVar[Mapping[param.Parameter, Widget | Callable[[param.Parameter], Widget]]] = {
+    mapping: ClassVar[dict[param.Parameter, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
         param.Action:            Button,
         param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
@@ -270,8 +277,7 @@ class Param(PaneBase):
             self.layout = self._expand_layout = layout(self._widget_box, **kwargs)
         else:
             raise ValueError('expand_layout expected to be a panel.layout.Panel'
-                             'type or instance, found %s type.' %
-                             type(layout).__name__)
+                             f'type or instance, found {type(layout).__name__} type.')
         self.param.watch(self._update_widgets, [
             'object', 'parameters', 'name', 'display_threshold', 'expand_button',
             'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name',
@@ -294,7 +300,7 @@ class Param(PaneBase):
                 params.append(f'{p}={abbreviated_repr(v)}')
             except RuntimeError:
                 params.append('{}={}'.format(p, '...'))
-        obj = 'None' if self.object is None else '%s' % type(self.object).__name__
+        obj = 'None' if self.object is None else f'{type(self.object).__name__}'
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
@@ -359,7 +365,7 @@ class Param(PaneBase):
 
     def _link_subobjects(self):
         for pname, widget in self._widgets.items():
-            widgets = [widget] if isinstance(widget, Widget) else widget
+            widgets = [widget] if isinstance(widget, WidgetBase) else widget
             if not any(is_parameterized(getattr(w, 'value', None)) or
                        any(is_parameterized(o) for o in getattr(w, 'options', []))
                        for w in widgets):
@@ -452,7 +458,7 @@ class Param(PaneBase):
 
         value = getattr(self.object, p_name)
         allow_None = p_obj.allow_None or False
-        if isinstance(widget_class, type) and issubclass(widget_class, Widget):
+        if isinstance(widget_class, type) and issubclass(widget_class, WidgetBase):
             allow_None &= widget_class.param.value.allow_None
         if value is not None or allow_None:
             kw['value'] = value
@@ -496,24 +502,17 @@ class Param(PaneBase):
         # Update kwargs
         onkeyup = kw_widget.pop('onkeyup', False)
         throttled = kw_widget.pop('throttled', False)
-        ignored_kws = [repr(k) for k in kw_widget if k not in widget_class.param]
-        if ignored_kws:
-            self.param.warning(
-                f'Param pane was given unknown keyword argument(s) for {p_name!r} '
-                f'parameter with a widget of type {widget_class!r}. The following '
-                f'keyword arguments could not be applied: {", ".join(ignored_kws)}.'
-            )
         kw.update(kw_widget)
-
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
+        non_param_kwargs = {k: v for k, v in kw_widget.items() if k not in widget_class.param}
 
         if isinstance(widget_class, type) and issubclass(widget_class, Button):
             kwargs.pop('value', None)
 
-        if isinstance(widget_class, Widget):
+        if isinstance(widget_class, WidgetBase):
             widget = widget_class
         else:
-            widget = widget_class(**kwargs)
+            widget = widget_class(**kwargs, **non_param_kwargs)
         widget._param_pane = self
         widget._param_name = p_name
 
@@ -714,10 +713,11 @@ class Param(PaneBase):
         return dict(widgets)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self.layout._get_model(doc, root, parent, comm)
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -749,7 +749,7 @@ class Param(PaneBase):
             return wtype
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Comm | None = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         root = super().get_root(doc, comm, preprocess)
@@ -888,19 +888,11 @@ class ParamRef(ReplacementPane):
                         param.DEBUG, 'Skip event was raised, skipping update.'
                     )
                     return
+            if isinstance(new_object, Generator):
+                new_object = to_async_gen(new_object)
             if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
-            elif isinstance(new_object, Generator):
-                append_mode = self.generator_mode == 'append'
-                if append_mode:
-                    self._inner_layout[:] = []
-                for new_obj in new_object:
-                    if append_mode:
-                        self._inner_layout.append(new_obj)
-                        self._pane = self._inner_layout[-1]
-                    else:
-                        self._update_inner(new_obj)
             else:
                 self._update_inner(new_object)
         finally:
@@ -919,8 +911,8 @@ class ParamRef(ReplacementPane):
         self._replace_pane()
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if not self._evaled:
             deferred = self.defer_load and not state.loaded
@@ -1105,7 +1097,7 @@ class ParamFunction(ParamRef):
         return eval_function_with_deps(ref)
 
 
-class ReactiveExpr(PaneBase):
+class ReactiveExpr(Pane):
     """
     ReactiveExpr generates a UI for param.rx objects by rendering the
     widgets and outputs.
@@ -1236,9 +1228,9 @@ class ReactiveExpr(PaneBase):
         return self.widget_layout(*widgets)
 
     def _get_model(
-        self, doc: Document, root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional[Comm] = None
-    ) -> 'Model':
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         return self.layout._get_model(doc, root, parent, comm)
 
     def _generate_layout(self):
@@ -1311,10 +1303,10 @@ class JSONInit(param.Parameterized):
         if self.json_file or env_var.endswith('.json'):
             try:
                 fname = self.json_file if self.json_file else env_var
-                with open(fullpath(fname), 'r') as f:
+                with open(fullpath(fname)) as f:
                     spec = json.load(f)
             except Exception:
-                warnobj.warning('Could not load JSON file %r' % spec)
+                warnobj.warning(f'Could not load JSON file {spec!r}')
         else:
             spec = json.loads(env_var)
 

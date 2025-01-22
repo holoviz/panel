@@ -59,7 +59,7 @@ def test_widgets_are_in_reference_gallery():
 @ref_available
 def test_panes_are_in_reference_gallery():
     exceptions = {
-        "PaneBase", "YT", "RGGPlot", "Interactive", "ICO", "Image",
+        "PaneBase", "Pane", "YT", "RGGPlot", "Interactive", "ICO", "Image",
         "IPyLeaflet", "ParamFunction", "ParamMethod", "ParamRef"
     }
     docs = {f.with_suffix("").name for f in (REF_PATH / "panes").iterdir()}
@@ -113,7 +113,7 @@ def test_markdown_indexed(doc_file):
 @pytest.mark.parametrize(
     "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
 )
-def test_markdown_codeblocks(file, tmp_path):
+async def test_markdown_codeblocks(file, tmp_path):
     from markdown_it import MarkdownIt
 
     exceptions = ("await", "pn.serve", "django", "raise", "display(")
@@ -139,3 +139,28 @@ def test_markdown_codeblocks(file, tmp_path):
         f.writelines(lines)
 
     runpy.run_path(str(mod))
+
+
+@doc_available
+@pytest.mark.parametrize(
+    "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
+)
+def test_colon_blocks_symmetric(file):
+    stack = []
+    for i, line in enumerate(file.read_text(encoding='utf-8').splitlines(), 1):
+        if ':::::' in line:
+            # Not checking triple nesting
+            stack.clear()
+            break
+        elif '::::' in line:
+            if stack:
+                assert stack[-1] == '::::', f'Expected ::: on line {i}, found ::::'
+                stack.pop()
+            else:
+                stack.append('::::')
+        elif ':::' in line:
+            if not stack or stack[-1] == '::::':
+                stack.append(':::')
+            else:
+                stack.pop()
+    assert not stack, 'Colon blocks were not symmetric, ensure all blocks were closed'

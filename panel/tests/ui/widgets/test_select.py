@@ -30,4 +30,4 @@ def test_multi_select_double_click(page):
 
     page.locator('option').nth(1).dblclick()
 
-    wait_until(lambda: clicks and clicks[0].option == 'B')
+    wait_until(lambda: bool(clicks) and clicks[0].option == 'B', page)

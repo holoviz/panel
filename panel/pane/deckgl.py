@@ -8,9 +8,8 @@ import json
 import sys
 
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -106,6 +105,9 @@ class DeckGL(ModelPane):
     tooltips = param.ClassSelector(default=True, class_=(bool, dict), doc="""
         Whether to enable tooltips""")
 
+    configuration = param.String(default="", doc="""
+        Custom configuration dictionary as json string""")
+
     click_state = param.Dict(default={}, doc="""
         Contains the last click event on the DeckGL plot.""")
 
@@ -154,7 +156,7 @@ class DeckGL(ModelPane):
         return {col: np.asarray(vals) for col, vals in columns.items()}
 
     @classmethod
-    def _update_sources(cls, json_data, sources):
+    def _update_sources(cls, json_data, sources: list[ColumnDataSource]):
         layers = json_data.get('layers', [])
 
         # Create index of sources by columns
@@ -204,34 +206,53 @@ class DeckGL(ModelPane):
         if cls._pydeck_encoders_are_added or 'pydeck' not in sys.modules:
             return
 
-        from pydeck.types import String
+        from pydeck.types import Function, String
         def pydeck_string_encoder(obj, serializer):
             return obj.value
+        def pydeck_function_encoder(obj, serializer):
+            return obj.serialize()
 
         Serializer._encoders[String] = pydeck_string_encoder
+        Serializer._encoders[Function] = pydeck_function_encoder
+        cls._pydeck_encoders_are_added = True
 
     def _transform_deck_object(self, obj):
         data = dict(obj.__dict__)
         mapbox_api_key = data.pop('mapbox_key', "") or self.mapbox_api_key
         deck_widget = data.pop('deck_widget', None)
+
         if isinstance(self.tooltips, dict) or deck_widget is None:
-            tooltip = self.tooltips
+            if '_tooltip' in data:
+                tooltip = data['_tooltip']
+            else:
+                tooltip = self.tooltips
         else:
             tooltip = deck_widget.tooltip
+
+        if self.configuration:
+            configuration = self.configuration
+        elif deck_widget:
+            configuration = deck_widget.configuration or ""
+        else:
+            import pydeck as pdk
+            configuration = pdk.settings.configuration or ""
+
         data = {k: v for k, v in recurse_data(data).items() if v is not None}
 
         if "initialViewState" in data:
-            data["initialViewState"]={
+            data["initialViewState"] = {
                 k:v for k, v in data["initialViewState"].items() if v is not None
             }
 
         self._add_pydeck_encoders()
 
-        return data, tooltip, mapbox_api_key
+        return data, tooltip, configuration, mapbox_api_key
 
     def _transform_object(self, obj) -> dict[str, Any]:
         if self.object is None:
-            data, mapbox_api_key, tooltip = {}, self.mapbox_api_key, self.tooltips
+            data, mapbox_api_key, tooltip, configuration = (
+                {}, self.mapbox_api_key, self.tooltips, self.configuration
+            )
         elif isinstance(self.object, (str, dict)):
             if isinstance(self.object, str):
                 data = json.loads(self.object)
@@ -240,8 +261,9 @@ class DeckGL(ModelPane):
                 data['layers'] = [dict(layer) for layer in data.get('layers', [])]
             mapbox_api_key = self.mapbox_api_key
             tooltip = self.tooltips
+            configuration = self.configuration
         else:
-            data, tooltip, mapbox_api_key = self._transform_deck_object(self.object)
+            data, tooltip, configuration, mapbox_api_key = self._transform_deck_object(self.object)
 
         # Delete undefined width and height
         for view in data.get('views', []):
@@ -250,22 +272,23 @@ class DeckGL(ModelPane):
             if view.get('height', False) is None:
                 view.pop('height')
 
-        return dict(data=data, tooltip=tooltip, mapbox_api_key=mapbox_api_key or "")
+        return dict(data=data, tooltip=tooltip, configuration=configuration, mapbox_api_key=mapbox_api_key or "")
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = DeckGLPlot = lazy_load(
+        DeckGL._bokeh_model = lazy_load(
             'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root
         )
         properties = self._get_properties(doc)
         data = properties.pop('data')
-        properties['data_sources'] = sources = []
+        sources: list[ColumnDataSource] = []
+        properties['data_sources'] = sources
         self._update_sources(data, sources)
         properties['layers'] = data.pop('layers', [])
         properties['initialViewState'] = data.pop('initialViewState', {})
-        model = DeckGLPlot(data=data, **properties)
+        model = DeckGL._bokeh_model(data=data, **properties)
         root = root or model
         self._link_props(model, ['clickState', 'hoverState', 'viewState'], doc, root, comm)
         self._models[root.ref["id"]] = (model, parent)

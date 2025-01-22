@@ -37,4 +37,4 @@ Without [`asyncify`](https://asyncer.tiangolo.com/tutorial/asyncify/) the app wo
 
 ## Dask
 
-If you run many cpu bound functions you may consider offloading your functions asynchronously to an external compute engine like [Dask](https://www.dask.org/). See our [Dask how-to Guide](../performance/dask.md).
+If you run many cpu bound functions you may consider offloading your functions asynchronously to an external compute engine like [Dask](https://www.dask.org/). See our [Dask how-to Guide](../concurrency/dask).

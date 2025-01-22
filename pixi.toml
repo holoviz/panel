@@ -1,50 +1,48 @@
 [project]
 name = "panel"
-channels = ["pyviz/label/dev", "bokeh", "conda-forge"]
+channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
+[activation.env]
+MPLBACKEND = "Agg"
+PYTHONIOENCODING = "utf-8"
+
 [tasks]
-download-data = 'bokeh sampledata'
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [environments]
-test-39 = ["py39", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
-test-core = ["py312", "test-core", "test-unit-task"]
+test-core = ["py313", "test-core", "test-unit-task"]
+test-minimum = ["py310", "test-core", "test-unit-task", "test-minimum"]
+test-type = ["py311", "type", "example", "test"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
+lite = ["py311", "lite"]
 
 [dependencies]
+nodejs = ">=18"
+esbuild = "*"
+nomkl = "*"
+pip = "*"
+# Required
 bleach = "*"
-bokeh = ">=3.4.0,<3.5.0"
+bokeh = ">=3.5.0,<3.7.0"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
 mdit-py-plugins = "*"
-nodejs = "20.9.*" # 20.12.2 breaks bokeh build on Windows: https://github.com/bokeh/bokeh/pull/13851
+numpy = "*"
 packaging = "*"
 pandas = ">=1.2"
 param = ">=2.1.0,<3.0"
-pip = "*"
 pyviz_comms = ">=2.0.0"
 requests = "*"
 tqdm = ">=4.48.0"
 typing_extensions = "*"
-# Recommended
-holoviews = ">=1.16.0"
-jupyterlab = "*"
-matplotlib = "*"
-pillow = "*"
-plotly = ">=4.0"
-# Standard
-watchfiles = "*"
-
-[feature.py39.dependencies]
-python = "3.9.*"
 
 [feature.py310.dependencies]
 python = "3.10.*"
@@ -55,9 +53,26 @@ python = "3.11.*"
 [feature.py312.dependencies]
 python = "3.12.*"
 
+[feature.py312.activation.env]
+COVERAGE_CORE = "sysmon"
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
+[feature.py313.activation.env]
+COVERAGE_CORE = "sysmon"
+
 [feature.example.dependencies]
+# Optional dependencies - recommended
+holoviews = ">=1.16.0"
+jupyterlab = "*"
+matplotlib-base = "*"
+pillow = "*"
+plotly = ">=4.0"
+# Example dependencies
 aiohttp = "*"
 altair = "*"
+bokeh_sampledata = "*"
 croniter = "*"
 dask-expr = "*"
 datashader = "*"
@@ -73,13 +88,14 @@ ipywidgets = "*"
 ipywidgets_bokeh = "*"
 jupyter_bokeh = ">=3.0.7"
 networkx = ">=2.5"
-pydeck = "*"
+pydeck = ">=0.8"
 pyecharts = "*"
 pygraphviz = "*"
 pyinstrument = ">=4.0"
 python-graphviz = "*"
 pyvista = "*"
 reacton = "*"
+s3fs = ">=2023"  # Python 3.9 pull in 0.6.0
 scikit-image = "*"
 scikit-learn = "*"
 seaborn = "*"
@@ -103,15 +119,38 @@ pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
+[feature.test-minimum.dependencies]
+# Lower pin of required dependencies
+bokeh = "3.5.*"
+# numpy = "1.21.*"
+# pandas = "1.3.*"  # Pandas 1.2 is not available for Python 3.10
+# param = "2.1.*"
+# pyviz_comms = "2.0.*"
+# tqdm = "4.48.*"
+
 [feature.test.dependencies]
+# Optional dependencies - recommended
+holoviews = ">=1.16.0"
+jupyterlab = "*"
+matplotlib-base = "*"
+pillow = "*"
+plotly = ">=4.0"
+# Optional dependencies - dev
+watchfiles = "*"
+# Test dependencies
 altair = "*"
 anywidget = "*"
+bokeh-fastapi = "*"
+bokeh_sampledata = "*"
+cryptography = "*"
 diskcache = "*"
+fastapi = "*"
 folium = "*"
 ipympl = "*"
 ipyvuetify = "*"
 ipywidgets_bokeh = "*"
 numba = "*"
+polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
@@ -128,40 +167,77 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 nbval = "*"
 
 [feature.test-ui]
-channels = ["pyviz/label/dev", "bokeh", "microsoft", "conda-forge"]
+channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
-playwright = "*"
-pytest-playwright = "*"
+playwright = { version = "*", channel = "microsoft" }
+pytest-playwright = { version = "*", channel = "microsoft" }
+pytest-asyncio = "*"
 jupyter_server = "*"
+esbuild = "*"
+packaging = "*"
 
 [feature.test-ui.tasks]
 _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
-cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10'
-depends_on = ["_install-ui"]
+cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup'
+depends-on = ["_install-ui"]
+
+# =============================================
+# ================== TYPES ====================
+# =============================================
+[feature.type.dependencies]
+mypy = "*"
+pytest = "*"
+pandas-stubs = "*"
+types-bleach = "*"
+types-croniter = "*"
+types-Markdown = "*"
+types-psutil = "*"
+types-requests = "*"
+types-tqdm = "*"
+typing-extensions = "*"
+
+[feature.type.tasks]
+test-type = 'mypy panel'
 
 # =============================================
 # =================== DOCS ====================
 # =============================================
+[feature.doc.activation.env]
+MOZ_HEADLESS = "1"
+PANEL_IPYWIDGET = "1"
+OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES"
+
 [feature.doc.dependencies]
-nbsite = ">=0.8.4"
 lxml = "*"
+nbsite = ">=0.8.6rc9"
+selenium = "*"
 
 [feature.doc.tasks]
 _docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
 _docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
-_docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
+_docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel --disable-parallel'
+_docs-generate-parallel = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
 _docs-copy-panel-dist = 'cp -r ./panel/dist ./builtdocs/panel_dist'
-_docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json'
+_docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json --exclude examples/gallery/vtk*.ipynb'
 docs-server = 'python -m http.server 5500 --directory ./builtdocs'
 
 [feature.doc.tasks.docs-build]
-depends_on = [
+depends-on = [
     '_docs-refmanual',
     '_docs-convert-gallery',
     '_docs-generate',
+    '_docs-copy-panel-dist',
+    '_docs-pyodide',
+]
+
+[feature.doc.tasks.docs-build-parallel]
+depends-on = [
+    '_docs-refmanual',
+    '_docs-convert-gallery',
+    '_docs-generate-parallel',
     '_docs-copy-panel-dist',
     '_docs-pyodide',
 ]
@@ -187,4 +263,19 @@ pre-commit = "*"
 
 [feature.lint.tasks]
 lint = 'pre-commit run --all-files'
-lint-install = 'pre-commit install'
+lint-install = 'pre-commit install -t=pre-commit'
+
+# =============================================
+# =================== LITE ====================
+# =============================================
+[feature.lite.dependencies]
+jupyterlab-myst = "*"
+jupyterlite-core = "*"
+jupyterlite-pyodide-kernel = "*"
+python-build = "*"
+
+[feature.lite.tasks]
+lite-build = "bash scripts/jupyterlite/build.sh"
+# Service worker only work on 127.0.0.1
+# https://jupyterlite.readthedocs.io/en/latest/howto/configure/advanced/service-worker.html#limitations
+lite-server = "python -m http.server --directory ./lite/dist --bind 127.0.0.1"

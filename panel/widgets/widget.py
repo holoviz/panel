@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from inspect import Parameter
-from numbers import Integral, Number, Real
-from typing import Any, Optional
+from numbers import Integral, Real
+from typing import Any
 
 empty = Parameter.empty
 
@@ -37,21 +37,22 @@ class fixed(param.Parameterized):
 
 
 def _get_min_max_value(
-    min: Number, max: Number, value: Optional[Number] = None, step: Optional[Number] = None
-) -> tuple[Number, Number, Number]:
+    minimum: int | float, maximum: int | float, value: int | float | None = None, step: int | float | None = None
+) -> tuple[int | float, int | float, int | float]:
     """Return min, max, value given input values with possible None."""
     # Either min and max need to be given, or value needs to be given
     if value is None:
-        if min is None or max is None:
-            raise ValueError(f'unable to infer range, value from: ({min}, {max}, {value})')
-        diff = max - min
-        value = min + (diff / 2)
+        if minimum is None or max is maximum:
+            raise ValueError(f'unable to infer range, value from: ({minimum}, {maximum}, {value})')
+
+        diff = maximum - minimum
+        value = minimum + (diff / 2)
         # Ensure that value has the same type as diff
         if not isinstance(value, type(diff)):
-            value = min + (diff // 2)
+            value = minimum + (diff // 2)
     else:  # value is not None
         if not isinstance(value, Real):
-            raise TypeError('expected a real number, got: %r' % value)
+            raise TypeError(f'expected a real number, got: {value!r}')
         # Infer min/max from value
         if value == 0:
             # This gives (0, 1) of the correct type
@@ -60,25 +61,25 @@ def _get_min_max_value(
             vrange = (-value, 3*value)
         else:
             vrange = (3*value, -value)
-        if min is None:
-            min = vrange[0]
-        if max is None:
-            max = vrange[1]
+        if minimum is None:
+            minimum = vrange[0]
+        if maximum is None:
+            maximum = vrange[1]
     if step is not None:
         # ensure value is on a step
-        tick = int((value - min) / step)
-        value = min + tick * step
-    if not min <= value <= max:
-        raise ValueError(f'value must be between min and max (min={min}, value={value}, max={max})')
-    return min, max, value
+        tick = int((value - minimum) / step)
+        value = minimum + tick * step
+    if not (minimum <= value <= maximum):
+        raise ValueError(f'value must be between min and max (min={minimum}, value={value}, max={maximum})')
+    return minimum, maximum, value
 
 
-def _matches(o: str, pattern: str) -> bool:
+def _matches(o: tuple[Any, ...], pattern: tuple[type, ...]) -> bool:
     """Match a pattern of types in a sequence."""
     if not len(o) == len(pattern):
         return False
-    comps = zip(o,pattern)
-    return all(isinstance(obj,kind) for obj,kind in comps)
+    comps = zip(o, pattern)
+    return all(isinstance(obj, kind) for obj, kind in comps)
 
 
 class widget(param.ParameterizedFunction):
@@ -163,7 +164,7 @@ class widget(param.ParameterizedFunction):
         elif _matches(o, (Real, Real, Real)):
             step = o[2]
             if step <= 0:
-                raise ValueError("step must be >= 0, not %r" % step)
+                raise ValueError(f"step must be >= 0, not {step!r}")
             min, max, value = _get_min_max_value(o[0], o[1], step=step)
             if all(isinstance(_, Integral) for _ in o) and int_default:
                 cls = IntSlider
@@ -173,7 +174,7 @@ class widget(param.ParameterizedFunction):
         elif _matches(o, (Real, Real, Real, Real)):
             step = o[2]
             if step <= 0:
-                raise ValueError("step must be >= 0, not %r" % step)
+                raise ValueError(f"step must be >= 0, not {step!r}")
             min, max, value = _get_min_max_value(o[0], o[1], value=o[3], step=step)
             if all(isinstance(_, Integral) for _ in o):
                 cls = IntSlider

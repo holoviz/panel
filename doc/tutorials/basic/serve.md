@@ -33,7 +33,7 @@ Here's a breakdown of the code:
 Copy the code into a file named `app.py` and save it. Then, run the Panel server in your terminal with:
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 ::::
@@ -67,7 +67,7 @@ Copy the above code cells into a clean notebook named `app.ipynb`. Run the cells
 Then, run the Panel server in your terminal with:
 
 ```bash
-panel serve app.ipynb --autoreload
+panel serve app.ipynb --dev
 ```
 
 :::::
@@ -92,7 +92,7 @@ Play around with the app by modifying the `"Hello World"` text, saving the file 
 Congratulations on serving your first Panel app! Let's recap what we've learned:
 
 - How to serve a Python script or Notebook using `panel serve app.py` or `panel serve app.ipynb`, respectively.
-- How to enable *auto reload* with the `--autoreload` flag.
+- How to enable *auto reload* with the `--dev` flag.
 - How to stop the Panel server with `CTRL+C`.
 
 ## Resources

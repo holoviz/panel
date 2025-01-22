@@ -1,4 +1,8 @@
-# Setting up a development environment
+# Developer Guide
+
+Welcome. We are so happy you've decided to contribute.
+
+## Setting up a development environment
 
 The Panel library is a project that provides a wide range of data interfaces and an extensible set of plotting backends, which means the development and testing process involves a broad set of libraries.
 
@@ -77,17 +81,12 @@ pixi install
 ```
 
 The first time you run it, it will create a `pixi.lock` file with information for all available environments. This command will take a minute or so to run.
-When this is finished, it is possible to run the following command to download the data Panel tests and examples depend upon.
-
-```bash
-pixi run download-data
-```
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
 ### Editable install
 
-It can be advantageous to install the Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
+It can be advantageous to install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
 
 ```bash
 pixi run install
@@ -101,6 +100,8 @@ Currently, this needs to be run for each environment. So, if you want to install
 ```bash
 pixi run -e test-ui install
 ```
+
+You can find the list of environments in the **pixi.toml** file or via the command `pixi info`.
 
 :::
 
@@ -133,7 +134,7 @@ Unit tests can be run with the `test-unit` task:
 pixi run test-unit
 ```
 
-The task is available in the following environments: `test-39`, `test-310`, `test-311`, `test-312`, and `test-core`. Where the first ones have the same environments except for different Python versions, and `test-core` only has a core set of dependencies.
+The task is available in the following environments: `test-310`, `test-311`, `test-312`, and `test-core`. Where the first ones have the same environments except for different Python versions, and `test-core` only has a core set of dependencies.
 
 If you haven't set the environment flag in the command, a menu will help you select which one of the environments to use.
 
@@ -170,7 +171,7 @@ As Panel uses notebooks for much of the documentation, this will take significan
 
 A development version of Panel can be found [here](https://holoviz-dev.github.io/panel/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
-To be able to run cells interactively you need `pyodide` server, this can be ran with:
+To be able to run cells interactively you need `pyodide` server, this can be run with:
 
 ```bash
 pixi run docs-server
@@ -178,7 +179,7 @@ pixi run docs-server
 
 ## Build
 
-Panel have four build tasks. One is for building packages for Pip, Conda, Pyodide, and NPM.
+Panel has four build tasks, for building packages for Pip, Conda, Pyodide, and NPM.
 
 ```bash
 pixi run build-pip

@@ -1,6 +1,11 @@
+from __future__ import annotations
+
+from typing import Any
+
 from bokeh.core.properties import (
     Bool, Int, List, Nullable, String,
 )
+from bokeh.events import ModelEvent
 from bokeh.models import Column as BkColumn
 from bokeh.models.layouts import LayoutDOM
 
@@ -9,6 +14,18 @@ __all__ = (
     "HTMLBox",
     "Column",
 )
+
+
+class ScrollToEvent(ModelEvent):
+
+    event_name = 'scroll_to'
+
+    def __init__(self, model, index=None):
+        self.index = index
+        super().__init__(model=model)
+
+    def event_values(self) -> dict[str, Any]:
+        return dict(super().event_values(), index=self.index)
 
 
 class HTMLBox(LayoutDOM):
@@ -24,6 +41,13 @@ class Column(BkColumn):
         will update the scroll position of the Column. Setting to
         0 will scroll to the top."""
     )
+
+    scroll_index = Nullable(
+        Int,
+        help="""
+        Index of the object to scroll to. Setting this value will
+        scroll the Column to the object at the given index."""
+)
 
     auto_scroll_limit = Int(
         default=0,

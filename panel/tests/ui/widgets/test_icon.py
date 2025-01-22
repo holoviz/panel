@@ -126,9 +126,12 @@ def test_toggle_icon_update_params_dynamically(page):
 
     # update size
     icon.size = "8em"
-    assert page.locator(".icon-tabler-ad-filled").bounding_box()["width"] >= 96
+    wait_until(lambda: page.locator(".icon-tabler-ad-filled").bounding_box() is not None, page)
+    wait_until(lambda: page.locator(".icon-tabler-ad-filled").bounding_box()["width"] > 96, page)
+
     icon.size = "1em"
-    wait_until(lambda: page.locator(".icon-tabler-ad-filled").bounding_box()["width"] <= 24, page)
+    wait_until(lambda: page.locator(".icon-tabler-ad-filled").bounding_box() is not None, page)
+    wait_until(lambda: page.locator(".icon-tabler-ad-filled").bounding_box()["width"] < 24, page)
 
 
 def test_toggle_icon_svg(page):

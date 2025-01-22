@@ -8,7 +8,7 @@ In this tutorial, we'll:
 - Harness the power of reactive expressions (`pn.rx`) to facilitate dynamic updates to the app.
 
 :::{note}
-When instructed to run the code, you can execute it directly in the Panel documentation using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
+When instructed to run the code, you can execute it directly in the Panel documentation using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --dev`.
 :::
 
 ## Replace Content Progressively

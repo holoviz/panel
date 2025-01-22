@@ -8,21 +8,22 @@ import functools
 import json
 import textwrap
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param  # type: ignore
 
+from ..config import config
 from ..io.resources import CDN_DIST
-from ..models import HTML as _BkHTML, JSON as _BkJSON
-from ..util import HTML_SANITIZER, escape
+from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
+from ..util import HTML_SANITIZER, escape, prefix_length
 from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm  # type: ignore
+
 
 class HTMLBasePane(ModelPane):
     """
@@ -31,13 +32,29 @@ class HTMLBasePane(ModelPane):
     the supported options like style and sizing_mode.
     """
 
-    _bokeh_model: ClassVar[Model] = _BkHTML
+    enable_streaming = param.Boolean(default=False, doc="""
+        Whether to enable streaming of text snippets. This is useful
+        when updating a string step by step, e.g. in a chat message.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
+    _bokeh_model: ClassVar[type[Model]] = _BkHTML
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text', 'enable_streaming': None}
 
     _updates: ClassVar[bool] = True
 
     __abstract = True
+
+    def _update(self, ref: str, model: Model) -> None:
+        props = self._get_properties(model.document)
+        if self.enable_streaming and 'text' in props:
+            text = props['text']
+            start = prefix_length(text, model.text)
+            model.run_scripts = False
+            patch = text[start:]
+            self._send_event(HTMLStreamEvent, patch=patch, start=start)
+            model._property_values['text'] = model.text[:start]+patch
+            del props['text']
+        model.update(**props)
 
 
 class HTML(HTMLBasePane):
@@ -71,7 +88,7 @@ class HTML(HTMLBasePane):
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'sanitize_html': None, 'sanitize_hook': None
+        'sanitize_html': None, 'sanitize_hook': None, 'stream': None
     }
 
     _rerender_params: ClassVar[list[str]] = [
@@ -151,7 +168,7 @@ class DataFrame(HTML):
     index_names = param.Boolean(default=True, doc="""
         Prints the names of the indexes.""")
 
-    justify = param.ObjectSelector(default=None, allow_None=True, objects=[
+    justify = param.Selector(default=None, allow_None=True, objects=[
         'left', 'right', 'center', 'justify', 'justify-all', 'start',
         'end', 'inherit', 'match-parent', 'initial', 'unset'], doc="""
         How to justify the column labels.""")
@@ -176,6 +193,10 @@ class DataFrame(HTML):
         Set to False for a DataFrame with a hierarchical index to
         print every multi-index key at each row.""")
 
+    text_align = param.Selector(default=None, objects=[
+        'start', 'end', 'center'], doc="""
+         Alignment of non-header cells.""")
+
     _object = param.Parameter(default=None, doc="""Hidden parameter.""")
 
     _dask_params: ClassVar[list[str]] = ['max_rows']
@@ -185,7 +206,7 @@ class DataFrame(HTML):
         'col_space', 'decimal', 'escape', 'float_format', 'formatters',
         'header', 'index', 'index_names', 'justify', 'max_rows',
         'max_cols', 'na_rep', 'render_links', 'show_dimensions',
-        'sparsify', 'sizing_mode'
+        'sparsify', 'text_align', 'sizing_mode'
     ]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
@@ -244,14 +265,18 @@ class DataFrame(HTML):
 
         module = getattr(obj, '__module__', '')
         if hasattr(obj, 'to_html'):
+            classes = list(self.classes)
+            if self.text_align:
+                classes.append(f'{self.text_align}-align')
             if 'dask' in module:
                 html = obj.to_html(max_rows=self.max_rows).replace('border="1"', '')
             elif 'style' in module:
-                classes = ' '.join(self.classes)
-                html = obj.to_html(table_attributes=f'class="{classes}"')
+                class_string = ' '.join(classes)
+                html = obj.to_html(table_attributes=f'class="{class_string}"')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
-                          if p not in HTMLBasePane.param and p != '_object'}
+                          if p not in HTMLBasePane.param and p not in ('_object', 'text_align')}
+                kwargs['classes'] = classes
                 html = obj.to_html(**kwargs)
         else:
             html = ''
@@ -332,6 +357,11 @@ class Markdown(HTMLBasePane):
         Markdown extension to apply when transforming markup.
         Does not apply if renderer is set to 'markdown-it' or 'myst'.""")
 
+    hard_line_break = param.Boolean(default=False, doc="""
+        Whether simple new lines are rendered as hard line breaks. False by
+        default to conform with the original Markdown spec. Not supported by
+        the 'myst' renderer.""")
+
     plugins = param.List(default=[], nested_refs=True, doc="""
         Additional markdown-it-py plugins to use.""")
 
@@ -346,6 +376,7 @@ class Markdown(HTMLBasePane):
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
+        'hard_line_break': None,
         'dedent': None, 'disable_math': None, 'extensions': None,
         'plugins': None, 'renderer': None, 'renderer_options': None
     }
@@ -372,8 +403,8 @@ class Markdown(HTMLBasePane):
             return False
 
     @classmethod
-    @functools.lru_cache(maxsize=None)
-    def _get_parser(cls, renderer, plugins, **renderer_options):
+    @functools.cache
+    def _get_parser(cls, renderer, plugins, hard_line_break, **renderer_options):
         if renderer == 'markdown':
             return None
         from markdown_it import MarkdownIt
@@ -391,7 +422,7 @@ class Markdown(HTMLBasePane):
                 return token
 
         if renderer == 'markdown-it':
-            if "breaks" not in renderer_options:
+            if hard_line_break and "breaks" not in renderer_options:
                 renderer_options["breaks"] = True
 
             parser = MarkdownIt(
@@ -433,15 +464,16 @@ class Markdown(HTMLBasePane):
             obj = textwrap.dedent(obj)
 
         if self.renderer == 'markdown':
+            extensions = self.extensions + ['nl2br'] if self.hard_line_break else self.extensions
             html = markdown.markdown(
                 obj,
-                extensions=self.extensions,
-                output_format='html5',
+                extensions=extensions,
+                output_format='xhtml',
                 **self.renderer_options
             )
         else:
             parser = self._get_parser(
-                self.renderer, tuple(self.plugins), **self.renderer_options
+                self.renderer, tuple(self.plugins), self.hard_line_break, **self.renderer_options
             )
             try:
                 html = parser.render(obj)
@@ -456,8 +488,6 @@ class Markdown(HTMLBasePane):
         if 'css_classes' in params:
             params['css_classes'] = ['markdown'] + params['css_classes']
         return super()._process_param_change(params)
-
-
 
 class JSON(HTMLBasePane):
     """
@@ -480,14 +510,17 @@ class JSON(HTMLBasePane):
     hover_preview = param.Boolean(default=False, doc="""
         Whether to display a hover preview for collapsed nodes.""")
 
-    theme = param.ObjectSelector(default="dark", objects=["light", "dark"], doc="""
-        Whether the JSON tree view is expanded by default.""")
+    theme = param.Selector(default="light", objects=["light", "dark"], doc="""
+        If no value is provided, it defaults to the current theme
+        set by pn.config.theme, as specified in the
+        JSON.THEME_CONFIGURATION dictionary. If not defined there, it
+        falls back to the default parameter value.""")
 
     priority: ClassVar[float | bool | None] = None
 
     _applies_kw: ClassVar[bool] = True
 
-    _bokeh_model: ClassVar[Model] = _BkJSON
+    _bokeh_model: ClassVar[type[Model]] = _BkJSON
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         "object": "text", "encoder": None, "style": "styles"
@@ -500,6 +533,13 @@ class JSON(HTMLBasePane):
     _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/json.css'
     ]
+
+    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"default": "light", "dark": "dark"}
+
+    def __init__(self, object=None, **params):
+        if "theme" not in params:
+            params["theme"]=self._get_theme(config.theme)
+        super().__init__(object=object, **params)
 
     @classmethod
     def applies(cls, obj: Any, **params) -> float | bool | None:
@@ -534,3 +574,7 @@ class JSON(HTMLBasePane):
         if 'depth' in params:
             params['depth'] = None if params['depth'] < 0 else params['depth']
         return params
+
+    @classmethod
+    def _get_theme(cls, config_theme: str)->str:
+        return cls.THEME_CONFIGURATION.get(config_theme, cls.param.theme.default)

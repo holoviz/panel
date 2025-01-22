@@ -17,4 +17,4 @@ Please note that the user information above is only available to the users sessi
 
 ## Related Topics
 
-- [Authorization Callbacks](authorization.md): Discover how to configure an authorization callback to perform custom authorization logic based on the user info such as redirects or error pages
+- [Authorization Callbacks](authorization): Discover how to configure an authorization callback to perform custom authorization logic based on the user info such as redirects or error pages

@@ -4,7 +4,7 @@
 
 So far when we have talked about responsive layouts we have primarily focused on simple `width`/`height` responsiveness of individual components, i.e. whether they will grow and shrink to fill the available space. For a truly responsive experience however we will need responsive layouts that will reflow the content depending on the size of the screen, browser window or the container they are placed inside of, much like how text wraps when there is insufficient width to accommodate it:
 
-Panel offers one such component out of the box, the [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout.
+Panel offers one such component out of the box, the [`FlexBox`](../../reference/layouts/FlexBox.md) layout.
 
 ```{pyodide}
 import panel as pn

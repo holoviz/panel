@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import datetime as dt
+import importlib.util
 import os
 import sys
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import numpy as np
 import param
@@ -26,7 +28,7 @@ __all__ = (
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 
-def isfile(path: str) -> bool:
+def isfile(path: str | os.PathLike) -> bool:
     """Safe version of os.path.isfile robust to path length issues on Windows"""
     try:
         return os.path.isfile(path)
@@ -108,7 +110,7 @@ def isdatetime(value) -> bool:
         return (
             value.dtype.kind == "M" or
             (value.dtype.kind == "O" and len(value) != 0 and
-             isinstance(value[0], datetime_types))
+             isinstance(np.take(value, 0), datetime_types))
         )
     elif isinstance(value, list):
         return all(isinstance(d, datetime_types) for d in value)
@@ -122,3 +124,20 @@ def is_number(s: Any) -> bool:
         return True
     except ValueError:
         return False
+
+
+def import_available(module: str):
+    """
+    Checks whether a module can be imported
+
+    Arguments
+    ---------
+    module: str
+
+    Returns
+    -------
+    available: bool
+      Whether the module is available to be imported
+    """
+    spec = importlib.util.find_spec(module)
+    return spec is not None

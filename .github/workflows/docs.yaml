@@ -23,20 +23,17 @@ on:
 
 defaults:
   run:
-    shell: bash -el {0}
+    shell: bash -e {0}
 
 env:
-  MPLBACKEND: "Agg"
-  MOZ_HEADLESS: 1
   DISPLAY: ":99.0"
-  PANEL_IPYWIDGET: 1
 
 jobs:
   pixi_lock:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
 
   docs_build:
     name: Build Documentation
@@ -46,7 +43,7 @@ jobs:
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: docs
           opengl: true

@@ -14,7 +14,21 @@ export class MathJaxView extends PanelMarkupView {
 
   override render(): void {
     super.render()
-    this.container.innerHTML = this.has_math_disabled() ? this.model.text : this.process_tex(this.model.text)
+    const text = this.model.text
+    const tex_parts = this.provider.MathJax.find_tex(text)
+    const processed_text: string[] = []
+
+    let last_index: number | undefined = 0
+    for (const part of tex_parts) {
+      processed_text.push(text.slice(last_index, part.start.n))
+      processed_text.push(this.provider.MathJax.tex2svg(part.math, {display: part.display}).outerHTML)
+      last_index = part.end.n
+    }
+    if (last_index! < text.length) {
+      processed_text.push(text.slice(last_index))
+    }
+
+    this.container.innerHTML = processed_text.join("")
   }
 }
 

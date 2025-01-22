@@ -3,6 +3,7 @@ A module containing testing utilities and fixtures.
 """
 import asyncio
 import atexit
+import datetime as dt
 import os
 import pathlib
 import re
@@ -14,6 +15,7 @@ import time
 import unittest
 
 from contextlib import contextmanager
+from functools import cache
 from subprocess import PIPE, Popen
 
 import pandas as pd
@@ -31,6 +33,8 @@ from panel.io.reload import (
 )
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
+from panel.tests.util import get_open_ports
+from panel.theme import Design
 
 CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
 
@@ -39,6 +43,28 @@ config.apply_signatures = False
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
+
+if os.name != 'nt':
+    import resource
+
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+
+
+for e in os.environ:
+    if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", ):
+        os.environ.pop(e, None)
+
+@cache
+def internet_available(host="8.8.8.8", port=53, timeout=3):
+    """Check if the internet connection is available."""
+    try:
+        socket.setdefaulttimeout(timeout)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as conn:
+            conn.connect((host, port))
+        return True
+    except OSError:
+        return False
 
 def port_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -70,7 +96,7 @@ def start_jupyter():
             break
         if time.monotonic() > deadline:
             raise TimeoutError(
-                'jupyter server did not start within {timeout} seconds.'
+                f'jupyter server did not start within {JUPYTER_TIMEOUT} seconds.'
             )
     JUPYTER_PORT = int(line.split(host)[-1][:4])
 
@@ -113,7 +139,8 @@ def pytest_addoption(parser):
     for marker, info in optional_markers.items():
         parser.addoption(f"--{marker}", action="store_true",
                          default=False, help=info['help'])
-
+    parser.addoption('--repeat', action='store',
+        help='Number of times to repeat each test')
 
 def pytest_configure(config):
     for marker, info in optional_markers.items():
@@ -122,6 +149,22 @@ def pytest_configure(config):
     if config.option.jupyter and not port_open(JUPYTER_PORT):
         start_jupyter()
 
+    config.addinivalue_line("markers", "internet: mark test as requiring an internet connection")
+
+def pytest_generate_tests(metafunc):
+    repeat = getattr(metafunc.config.option, 'repeat', None)
+    if repeat is not None:
+        count = int(repeat)
+
+        # We're going to duplicate these tests by parametrizing them,
+        # which requires that each test has a fixture to accept the parameter.
+        # We can add a new fixture like so:
+        metafunc.fixturenames.append('tmp_ct')
+
+        # Now we parametrize. This is what happens when we do e.g.,
+        # @pytest.mark.parametrize('tmp_ct', range(count))
+        # def test_foo(): pass
+        metafunc.parametrize('tmp_ct', range(count))
 
 def pytest_collection_modifyitems(config, items):
     skipped, selected = [], []
@@ -141,6 +184,11 @@ def pytest_collection_modifyitems(config, items):
     items[:] = selected
 
 
+def pytest_runtest_setup(item):
+    if "internet" in item.keywords and not internet_available():
+        pytest.skip("Skipping test: No internet connection")
+
+
 @pytest.fixture
 def context(context):
     # Set the default timeout to 20 secs
@@ -158,9 +206,11 @@ def server_document():
     doc = Document()
     session_context = unittest.mock.Mock()
     doc._session_context = lambda: session_context
-    with set_curdoc(doc):
-        yield doc
-    doc._session_context = None
+    try:
+        with set_curdoc(doc):
+            yield doc
+    finally:
+        doc._session_context = None
 
 @pytest.fixture
 def bokeh_curdoc():
@@ -187,6 +237,14 @@ def stop_event():
         event.set()
 
 @pytest.fixture
+def asyncio_loop():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(asyncio.new_event_loop())
+    yield
+    loop.stop()
+    loop.close()
+
+@pytest.fixture
 async def watch_files():
     tasks = []
     stop_event = asyncio.Event()
@@ -207,11 +265,7 @@ async def watch_files():
 
 @pytest.fixture
 def port():
-    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
-    new_port = PORT[0] + int(re.sub(r"\D", "", worker_id))
-    PORT[0] += worker_count
-    return new_port
+    return get_open_ports()[0]
 
 
 @pytest.fixture
@@ -221,6 +275,31 @@ def dataframe():
         'float': [3.14, 6.28, 9.42],
         'str': ['A', 'B', 'C']
     }, index=[1, 2, 3], columns=['int', 'float', 'str'])
+
+
+@pytest.fixture
+def df_mixed():
+    df = pd.DataFrame({
+        'int': [1, 2, 3, 4],
+        'float': [3.14, 6.28, 9.42, -2.45],
+        'str': ['A', 'B', 'C', 'D'],
+        'bool': [True, True, True, False],
+        'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
+        'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
+    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+    return df
+
+
+@pytest.fixture
+def df_multiindex(df_mixed):
+    df_mi = df_mixed.copy()
+    df_mi.index = pd.MultiIndex.from_tuples([
+        ('group0', 'subgroup0'),
+        ('group0', 'subgroup1'),
+        ('group1', 'subgroup0'),
+        ('group1', 'subgroup1'),
+    ], names=['groups', 'subgroups'])
+    return df_mi
 
 
 @pytest.fixture
@@ -278,9 +357,8 @@ def tmpdir(request, tmpdir_factory):
     yield tmp_dir
     shutil.rmtree(str(tmp_dir))
 
-
-@pytest.fixture()
-def html_server_session():
+@pytest.fixture
+def html_server_session(asyncio_loop):
     port = 5050
     html = HTML('<h1>Title</h1>')
     server = serve(html, port=port, show=False, start=False)
@@ -294,7 +372,6 @@ def html_server_session():
         server.stop()
     except AssertionError:
         pass  # tests may already close this
-
 
 @pytest.fixture()
 def markdown_server_session():
@@ -314,7 +391,7 @@ def markdown_server_session():
 
 
 @pytest.fixture
-def multiple_apps_server_sessions(port):
+def multiple_apps_server_sessions(asyncio_loop, port):
     """Serve multiple apps and yield a factory to allow
     parameterizing the slugs and the titles."""
     servers = []
@@ -369,12 +446,15 @@ def module_cleanup():
     Cleanup Panel extensions after each test.
     """
     from bokeh.core.has_props import _default_resolver
-    to_reset = list(panel_extension._imports.values())
 
+    from panel.reactive import ReactiveMetaBase
+
+    to_reset = list(panel_extension._imports.values())
     _default_resolver._known_models = {
         name: model for name, model in _default_resolver._known_models.items()
         if not any(model.__module__.startswith(tr) for tr in to_reset)
     }
+    ReactiveMetaBase._loaded_extensions = set()
 
 @pytest.fixture(autouse=True)
 def server_cleanup():
@@ -392,6 +472,8 @@ def server_cleanup():
 @pytest.fixture(autouse=True)
 def cache_cleanup():
     state.clear_caches()
+    Design._resolve_modifiers.cache_clear()
+    Design._cache.clear()
 
 @pytest.fixture
 def autoreload():
@@ -408,6 +490,15 @@ def autoreload():
 @pytest.fixture
 def py_file():
     tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
+    try:
+        yield tf
+    finally:
+        tf.close()
+        os.unlink(tf.name)
+
+@pytest.fixture
+def js_file():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False)
     try:
         yield tf
     finally:
@@ -476,3 +567,25 @@ def exception_handler_accumulator():
         yield exceptions
     finally:
         config.exception_handler = old_eh
+
+
+@pytest.fixture
+def df_strings():
+    descr = [
+        'Under the Weather',
+        'Top Drawer',
+        'Happy as a Clam',
+        'Cut To The Chase',
+        'Knock Your Socks Off',
+        'A Cold Day in Hell',
+        'All Greek To Me',
+        'A Cut Above',
+        'Cut The Mustard',
+        'Up In Arms',
+        'Playing For Keeps',
+        'Fit as a Fiddle',
+    ]
+
+    code = [f'{i:02d}' for i in range(len(descr))]
+
+    return pd.DataFrame(dict(code=code, descr=descr))

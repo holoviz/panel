@@ -90,7 +90,7 @@ def test_embed_select_str_link(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 def test_embed_float_slider_explicit_values(document, comm):
     select = FloatSlider()
@@ -114,12 +114,12 @@ def test_embed_float_slider_explicit_values(document, comm):
         assert event1['kind'] == 'ModelChanged'
         assert event1['attr'] == 'text'
         assert event1['model'] == model.children[0].children[0].ref
-        assert event1['new'] == '<b>%s</b>' % states[k]
+        assert event1['new'] == f'<b>{states[k]}</b>'
 
         assert event2['kind'] == 'ModelChanged'
         assert event2['attr'] == 'text'
         assert event2['model'] == model.children[1].ref
-        assert event2['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % states[k]
+        assert event2['new'] == f'&lt;pre&gt;{states[k]}&lt;/pre&gt;'
 
 def test_embed_editable_float_slider_explicit_values(document, comm):
     select = EditableFloatSlider()
@@ -143,7 +143,7 @@ def test_embed_editable_float_slider_explicit_values(document, comm):
         assert event1['kind'] == 'ModelChanged'
         assert event1['attr'] == 'text'
         assert event1['model'] == model.children[0].children[1].children[0].ref
-        assert event1['new'] == '<b>%s</b>' % states[k]
+        assert event1['new'] == f'<b>{states[k]}</b>'
 
         assert event2['kind'] == 'ModelChanged'
         assert event2['attr'] == 'value'
@@ -208,7 +208,7 @@ def test_embed_select_explicit_values(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 
 def test_embed_select_str_explicit_values_not_found(document, comm):
@@ -258,13 +258,13 @@ def test_embed_select_str_link_two_steps(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
         event = events[1]
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[2].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 
 def test_embed_select_str_link_with_secondary_watch(document, comm):
@@ -287,7 +287,7 @@ def test_embed_select_str_link_with_secondary_watch(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 
 def test_embed_select_str_jslink(document, comm):
@@ -442,12 +442,12 @@ def test_embed_slider_str_link(document, comm):
         assert event1['kind'] == 'ModelChanged'
         assert event1['attr'] == 'text'
         assert event1['model'] == model.children[0].children[0].ref
-        assert event1['new'] == '<b>%d</b>' % values[k]
+        assert event1['new'] == f'<b>{values[k]:.0f}</b>'
 
         assert event2['kind'] == 'ModelChanged'
         assert event2['attr'] == 'text'
         assert event2['model'] == model.children[1].ref
-        assert event2['new'] == '&lt;pre&gt;%.1f&lt;/pre&gt;' % values[k]
+        assert event2['new'] == f'&lt;pre&gt;{values[k]:.1f}&lt;/pre&gt;'
 
 
 def test_embed_slider_str_jslink(document, comm):
@@ -600,7 +600,7 @@ def test_save_embed_json(tmpdir):
         event = events[0]
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % v
+        assert event['new'] == f'&lt;pre&gt;{v}&lt;/pre&gt;'
 
 def test_embed_widget_disabled(document, comm):
     select = Select(options=['A', 'B', 'C'], disabled=True)

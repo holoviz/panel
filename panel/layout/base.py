@@ -5,22 +5,22 @@ in flexible ways to build complex dashboards.
 from __future__ import annotations
 
 from collections import defaultdict, namedtuple
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, Optional,
+from collections.abc import (
+    Generator, Iterable, Iterator, Mapping,
 )
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
 from bokeh.models import Row as BkRow
 from param.parameterized import iscoroutinefunction, resolve_ref
 
-from ..io.document import freeze_doc
-from ..io.model import hold
+from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
-from ..io.state import state
-from ..models import Column as PnColumn
+from ..models.layout import Column as PnColumn, ScrollToEvent
 from ..reactive import Reactive
-from ..util import param_name, param_reprs, param_watchers
+from ..util import param_name, param_reprs
+from ..viewable import Children
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -70,10 +70,11 @@ class Panel(Reactive):
         spacer = '\n' + ('    ' * (depth+1))
         cls = type(self).__name__
         params = param_reprs(self, ['objects'])
-        objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self)]
+        objs = [f'[{i}] {obj.__repr__(depth+1)}' for i, obj in enumerate(self)]
         if not params and not objs:
             return super().__repr__(depth+1)
-        elif not params:
+
+        if not params:
             template = '{cls}{spacer}{objs}'
         elif not objs:
             template = '{cls}({params})'
@@ -81,7 +82,8 @@ class Panel(Reactive):
             template = '{cls}({params}){spacer}{objs}'
         return template.format(
             cls=cls, params=', '.join(params),
-            objs=('%s' % spacer).join(objs), spacer=spacer)
+            objs=str(spacer).join(objs), spacer=spacer
+        )
 
     #----------------------------------------------------------------
     # Callback API
@@ -89,7 +91,7 @@ class Panel(Reactive):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         msg = dict(msg)
         inverse = {v: k for k, v in self._property_mapping.items() if v is not None}
@@ -140,17 +142,14 @@ class Panel(Reactive):
 
     def _get_objects(
         self, model: Model, old_objects: list[Viewable], doc: Document,
-        root: Model, comm: Optional[Comm] = None
+        root: Model, comm: Comm | None = None
     ):
         """
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from ..pane.base import RerenderError, panel
+        from ..pane.base import RerenderError
         new_models, old_models = [], []
-        for i, pane in enumerate(self.objects):
-            pane = panel(pane)
-            self.objects[i] = pane
 
         for obj in old_objects:
             if obj not in self.objects:
@@ -174,8 +173,8 @@ class Panel(Reactive):
         return new_models, old_models
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if self._bokeh_model is None:
             raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
@@ -313,7 +312,7 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         root = super().get_root(doc, comm, preprocess)
@@ -345,10 +344,24 @@ class Panel(Reactive):
 
 class ListLike(param.Parameterized):
 
-    objects = param.List(default=[], doc="""
+    objects = Children(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     _preprocess_params: ClassVar[list[str]] = ['objects']
+
+    def __init__(self, *objects: Any, **params: Any):
+        if objects:
+            if 'objects' in params:
+                raise ValueError(
+                    f"A {type(self).__name__}'s objects should be supplied either "
+                    "as positional arguments or as a keyword, not both."
+                )
+            params['objects'] = list(objects)
+        elif 'objects' in params:
+            objects = params['objects']
+            if not (resolve_ref(objects) or iscoroutinefunction(objects) or isinstance(objects, Generator)):
+                params['objects'] = list(objects)
+        super().__init__(**params)
 
     def __getitem__(self, index: int | slice) -> Viewable | list[Viewable]:
         return self.objects[index]
@@ -359,18 +372,18 @@ class ListLike(param.Parameterized):
     def __iter__(self) -> Iterator[Viewable]:
         yield from self.objects
 
-    def __iadd__(self, other: Iterable[Any]) -> 'ListLike':
+    def __iadd__(self, other: Iterable[Any]) -> ListLike:
         self.extend(other)
         return self
 
-    def __add__(self, other: Iterable[Any]) -> 'ListLike':
+    def __add__(self, other: Iterable[Any]) -> ListLike:
         if isinstance(other, ListLike):
             other = other.objects
         else:
             other = list(other)
         return self.clone(*(self.objects+other))
 
-    def __radd__(self, other: Iterable[Any]) -> 'ListLike':
+    def __radd__(self, other: Iterable[Any]) -> ListLike:
         if isinstance(other, ListLike):
             other = other.objects
         else:
@@ -381,42 +394,47 @@ class ListLike(param.Parameterized):
         return obj in self.objects
 
     def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
-        from ..pane import panel
         new_objects = list(self)
+        name = type(self).__name__
         if not isinstance(index, slice):
             start, end = index, index+1
             if start > len(self.objects):
-                raise IndexError('Index %d out of bounds on %s '
-                                 'containing %d objects.' %
-                                 (end, type(self).__name__, len(self.objects)))
+                raise IndexError(
+                    f'Index {end} out of bounds on {name} containing '
+                    f'{len(self.objects)} objects.'
+                )
             panes = [panes]
         else:
             start = index.start or 0
             end = len(self) if index.stop is None else index.stop
             if index.start is None and index.stop is None:
                 if not isinstance(panes, list):
-                    raise IndexError('Expected a list of objects to '
-                                     f'replace the objects in the {type(self).__name__}, '
-                                     f'got a {type(panes).__name__} type.')
+                    raise IndexError(
+                        'Expected a list of objects to replace the '
+                        f'objects in the {name}, got a '
+                        f'{type(panes).__name__} type.'
+                    )
                 expected = len(panes)
                 new_objects = [None]*expected # type: ignore
                 end = expected
             elif end > len(self.objects):
-                raise IndexError('Index %d out of bounds on %s '
-                                 'containing %d objects.' %
-                                 (end, type(self).__name__, len(self.objects)))
+                raise IndexError(
+                    f'Index {end} out of bounds on {name} containing '
+                    f'{len(self.objects)} objects.'
+                )
             else:
                 expected = end-start
             if not isinstance(panes, list) or len(panes) != expected:
-                raise IndexError('Expected a list of %d objects to set '
-                                 'on the %s to match the supplied slice.' %
-                                 (expected, type(self).__name__))
+                raise IndexError(
+                    f'Expected a list of {expected} objects to set '
+                    f'on the {name} to match the supplied slice.'
+                )
         for i, pane in zip(range(start, end), panes):
-            new_objects[i] = panel(pane)
+            new_objects[i] = pane
 
         self.objects = new_objects
 
-    def clone(self, *objects: Any, **params: Any) -> 'ListLike':
+    def clone(self, *objects: Any, **params: Any) -> ListLike:
         """
         Makes a copy of the layout sharing the same parameters.
 
@@ -435,9 +453,10 @@ class ListLike(param.Parameterized):
             else:
                 objects = self.objects
         elif 'objects' in params:
-            raise ValueError("A %s's objects should be supplied either "
-                             "as arguments or as a keyword, not both."
-                             % type(self).__name__)
+            raise ValueError(
+                f"A {type(self).__name__}'s objects should be supplied either "
+                "as arguments or as a keyword, not both."
+            )
         p = dict(self.param.values(), **params)
         del p['objects']
         return type(self)(*objects, **p)
@@ -450,9 +469,8 @@ class ListLike(param.Parameterized):
         ---------
         obj (object): Panel component to add to the layout.
         """
-        from ..pane import panel
         new_objects = list(self)
-        new_objects.append(panel(obj))
+        new_objects.append(obj)
         self.objects = new_objects
 
     def clear(self) -> list[Viewable]:
@@ -475,9 +493,8 @@ class ListLike(param.Parameterized):
         ---------
         objects (list): List of panel components to add to the layout.
         """
-        from ..pane import panel
         new_objects = list(self)
-        new_objects.extend(list(map(panel, objects)))
+        new_objects.extend(objects)
         self.objects = new_objects
 
     def index(self, object) -> int:
@@ -503,9 +520,8 @@ class ListLike(param.Parameterized):
         index (int): Index at which to insert the object.
         object (object): Panel components to insert in the layout.
         """
-        from ..pane import panel
         new_objects = list(self)
-        new_objects.insert(index, panel(obj))
+        new_objects.insert(index, obj)
         self.objects = new_objects
 
     def pop(self, index: int) -> Viewable:
@@ -544,7 +560,7 @@ class ListLike(param.Parameterized):
 
 class NamedListLike(param.Parameterized):
 
-    objects = param.List(default=[], doc="""
+    objects = Children(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     _preprocess_params: ClassVar[list[str]] = ['objects']
@@ -552,17 +568,19 @@ class NamedListLike(param.Parameterized):
     def __init__(self, *items: list[Any | tuple[str, Any]], **params: Any):
         if 'objects' in params:
             if items:
-                raise ValueError('%s objects should be supplied either '
-                                 'as positional arguments or as a keyword, '
-                                 'not both.' % type(self).__name__)
+                raise ValueError(
+                    f'{type(self).__name__} objects should be supplied either '
+                    'as positional arguments or as a keyword, not both.'
+                )
             items = params.pop('objects')
-        params['objects'], self._names = self._to_objects_and_names(items)
+        params['objects'], names = self._to_objects_and_names(items)
         super().__init__(**params)
-        self._panels = defaultdict(dict)
+        self._names = names
+        self._panels: defaultdict[str, dict[int, Viewable]] = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
-        param_watchers(self)['objects']['value'].reverse()
+        self.param.watchers['objects']['value'].reverse()
 
     def _to_object_and_name(self, item):
         from ..pane import panel
@@ -611,11 +629,11 @@ class NamedListLike(param.Parameterized):
     def __iter__(self) -> Iterator[Viewable]:
         yield from self.objects
 
-    def __iadd__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __iadd__(self, other: Iterable[Any]) -> NamedListLike:
         self.extend(other)
         return self
 
-    def __add__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __add__(self, other: Iterable[Any]) -> NamedListLike:
         if isinstance(other, NamedListLike):
             added = list(zip(other._names, other.objects))
         elif isinstance(other, ListLike):
@@ -625,7 +643,7 @@ class NamedListLike(param.Parameterized):
         objects = list(zip(self._names, self.objects))
         return self.clone(*(objects+added))
 
-    def __radd__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __radd__(self, other: Iterable[Any]) -> NamedListLike:
         if isinstance(other, NamedListLike):
             added = list(zip(other._names, other.objects))
         elif isinstance(other, ListLike):
@@ -637,11 +655,13 @@ class NamedListLike(param.Parameterized):
 
     def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
         new_objects = list(self)
+        name = type(self).__name__
         if not isinstance(index, slice):
             if index > len(self.objects):
-                raise IndexError('Index %d out of bounds on %s '
-                                 'containing %d objects.' %
-                                 (index, type(self).__name__, len(self.objects)))
+                raise IndexError(
+                    f'Index {index} out of bounds on {name} '
+                    f'containing {len(self.objects)} objects.'
+                )
             start, end = index, index+1
             panes = [panes]
         else:
@@ -649,28 +669,33 @@ class NamedListLike(param.Parameterized):
             end = len(self.objects) if index.stop is None else index.stop
             if index.start is None and index.stop is None:
                 if not isinstance(panes, list):
-                    raise IndexError('Expected a list of objects to '
-                                     f'replace the objects in the {type(self).__name__}, '
-                                     f'got a {type(panes).__name__} type.')
+                    raise IndexError(
+                        'Expected a list of objects to replace '
+                        f'the objects in the {name}, got a '
+                        f'{type(panes).__name__} type.'
+                    )
                 expected = len(panes)
                 new_objects = [None]*expected # type: ignore
                 self._names = [None]*len(panes)
                 end = expected
             else:
                 expected = end-start
-                if end > len(self.objects):
-                    raise IndexError('Index %d out of bounds on %s '
-                                     'containing %d objects.' %
-                                     (end, type(self).__name__, len(self.objects)))
+                nobjs = len(self.objects)
+                if end > nobjs:
+                    raise IndexError(
+                        f'Index {end} out of bounds on {name} '
+                        'containing {nobjs} objects.'
+                    )
             if not isinstance(panes, list) or len(panes) != expected:
-                raise IndexError('Expected a list of %d objects to set '
-                                 'on the %s to match the supplied slice.' %
-                                 (expected, type(self).__name__))
+                raise IndexError(
+                    f'Expected a list of {expected} objects to set '
+                    f'on the {name} to match the supplied slice.'
+                )
         for i, pane in zip(range(start, end), panes):
             new_objects[i], self._names[i] = self._to_object_and_name(pane)
         self.objects = new_objects
 
-    def clone(self, *objects: Any, **params: Any) -> 'NamedListLike':
+    def clone(self, *objects: Any, **params: Any) -> NamedListLike:
         """
         Makes a copy of the Tabs sharing the same parameters.
 
@@ -686,9 +711,10 @@ class NamedListLike(param.Parameterized):
         if objects:
             overrides = objects
         elif 'objects' in params:
-            raise ValueError('Tabs objects should be supplied either '
-                             'as positional arguments or as a keyword, '
-                             'not both.')
+            raise ValueError(
+                'Tabs objects should be supplied either as positional '
+                'arguments or as a keyword, not both.'
+            )
         elif 'objects' in params:
             overrides = params.pop('objects')
         else:
@@ -810,22 +836,8 @@ class ListPanel(ListLike, Panel):
 
     __abstract = True
 
-    def __init__(self, *objects: Any, **params: Any):
-        from ..pane import panel
-        if objects:
-            if 'objects' in params:
-                raise ValueError("A %s's objects should be supplied either "
-                                 "as positional arguments or as a keyword, "
-                                 "not both." % type(self).__name__)
-            params['objects'] = [panel(pane) for pane in objects]
-        elif 'objects' in params:
-            objects = params['objects']
-            if not resolve_ref(objects) or iscoroutinefunction(objects):
-                params['objects'] = [panel(pane) for pane in objects]
-        super(Panel, self).__init__(**params)
-
     @property
-    def _linked_properties(self):
+    def _linked_properties(self) -> tuple[str, ...]:
         return tuple(
             self._property_mapping.get(p, p) for p in self.param
             if p not in ListPanel.param and self._property_mapping.get(p, p) is not None
@@ -844,8 +856,6 @@ class ListPanel(ListLike, Panel):
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
-        if root is not None and root.ref['id'] in state._fake_roots:
-            state._fake_roots.remove(root.ref['id'])
         super()._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
@@ -856,7 +866,7 @@ class NamedListPanel(NamedListLike, Panel):
     active = param.Integer(default=0, bounds=(0, None), doc="""
         Index of the currently displayed objects.""")
 
-    scroll = param.ObjectSelector(
+    scroll = param.Selector(
         default=False,
         objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
         doc="""Whether to add scrollbars if the content overflows the size
@@ -888,8 +898,6 @@ class NamedListPanel(NamedListLike, Panel):
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
-        if root is not None and root.ref['id'] in state._fake_roots:
-            state._fake_roots.remove(root.ref['id'])
         super()._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
@@ -976,6 +984,17 @@ class Column(ListPanel):
             bool(self.scroll_button_threshold) or
             self.view_latest
         )
+
+    def scroll_to(self, index: int):
+        """
+        Scrolls to the child at the provided index.
+
+        Arguments
+        ---------
+        index: int
+            Index of the child object to scroll to.
+        """
+        self._send_event(ScrollToEvent, index=index)
 
 
 class WidgetBox(ListPanel):

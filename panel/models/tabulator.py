@@ -16,7 +16,7 @@ from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
 
-TABULATOR_VERSION = "5.5.0"
+TABULATOR_VERSION = "6.3.0"
 
 JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js"
 MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
@@ -113,7 +113,7 @@ class DataTabulator(HTMLBox):
     See http://tabulator.info/
     """
 
-    aggregators = Dict(String, String)
+    aggregators = Dict(Either(String, Int), Either(String, Dict(Either(String, Int), String)))
 
     buttons = Dict(String, String)
 
@@ -128,6 +128,8 @@ class DataTabulator(HTMLBox):
     children = Dict(Int, Instance(LayoutDOM))
 
     editable = Bool(default=True)
+
+    embed_content = Bool(default=False)
 
     expanded = List(Int)
 
@@ -155,7 +157,7 @@ class DataTabulator(HTMLBox):
 
     page = Nullable(Int)
 
-    page_size = Int()
+    page_size = Nullable(Int)
 
     max_page = Int()
 

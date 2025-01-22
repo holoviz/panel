@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 import logging
 import os
@@ -5,6 +7,7 @@ import sys
 import time
 
 from functools import partial
+from typing import TYPE_CHECKING
 
 import bokeh
 import numpy as np
@@ -34,7 +37,11 @@ from .profile import profiling_tabs
 from .server import set_curdoc
 from .state import state
 
-PROCESSES = {}
+if TYPE_CHECKING:
+    from psutil import Process
+
+
+PROCESSES: dict[int, Process] = {}
 
 log_sessions = []
 
@@ -257,7 +264,7 @@ def get_timeline(doc=None):
         else:
             msg = new.getMessage()
             line_color = 'black'
-            if msg.startswith('Session %s logged' % sid):
+            if msg.startswith(f'Session {sid} logged'):
                 etype = 'logging'
                 line_color = EVENT_TYPES.get(etype)
             elif msg.startswith(LOG_SESSION_DESTROYED % sid):
