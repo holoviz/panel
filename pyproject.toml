@@ -75,7 +75,6 @@ recommended = [
     'matplotlib',
     'pillow',
     'plotly',
-    'pamela',
 ]
 fastapi = [
     'bokeh-fastapi >= 0.1.1',
