@@ -193,7 +193,7 @@ class CustomComponent(ReactiveHTML):
 <p>value: {{value}} ({{ param.value.default }}, {{ param.value.doc }})</p>
 <h2>List of parameters</p>
 <p id="loop">
-{% for object in param.params().values() %}{% if loop.index0 < 3 %}
+{% for object in param.objects().values() %}{% if loop.index0 < 3 %}
 <div>{{ loop.index0 }}. {{object.name}}: {{object.owner[object.name]}} ({{object.default}}, {{object.doc | replace("`", "'")}})</div><hr/>
 {% endif %}{% endfor %}
 </p>
