@@ -74,7 +74,7 @@ def format_heading(level, text):
 def format_directive(module, package=None):
     """Create the automodule directive and add the options."""
     module_name = makename(package, module)
-    directive = f'.. automodule:: %s{module_name}'
+    directive = f'.. automodule:: %s{module_name}\n'
     for option in OPTIONS:
         directive += f'    :{option}:\n'
     return directive
@@ -99,14 +99,17 @@ def create_package_file(root, master_package, subroot, py_files, opts, subs):
         is_package = py_file == INIT
         py_file = os.path.splitext(py_file)[0]
         py_path = makename(subroot, py_file)
-        if is_package:
-            heading = f':mod:`{package}` Package'
-        else:
-            heading = f':mod:`{py_file}` Module'
+        if not is_package:
+            if package != master_package:
+                subpkg = f'{master_package}.{package}'
+            else:
+                subpkg = package
+            create_module_file(subpkg, py_file, opts)
+            continue
+        heading = f':mod:`{package}` Package'
         text += format_heading(2, heading)
-        text += '\n\n'
         text += format_directive(is_package and subroot or py_path, master_package)
-        text += '\n-------\n\n'
+        text += '\n'
 
     # build a list of directories that are packages (they contain an INIT file)
     subs = [sub for sub in subs if os.path.isfile(os.path.join(root, sub, INIT))]
@@ -177,7 +180,7 @@ def recurse_tree(path, excludes, opts):
         or not py_files \
         or is_excluded(root, excludes):
             continue
-        if INIT in py_files and not root == path:
+        if INIT in py_files:
             # we are in package ...
             if (# ... with subpackage(s)
                 subs
