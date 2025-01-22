@@ -89,6 +89,7 @@ structure_data_store
 develop_editor
 serve
 advanced_layouts
+create_form
 build_todo
 test_todo
 build_server_video_stream
