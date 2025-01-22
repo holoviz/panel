@@ -48,7 +48,7 @@ jobs:
           environments: docs
           opengl: true
       - name: Build documentation
-        run: pixi run -e docs docs-build-parallel
+        run: pixi run -e docs docs-build
       - uses: actions/upload-artifact@v4
         if: always()
         with:
