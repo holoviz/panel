@@ -58,7 +58,7 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
 
     const event_obj = eventData.event
     if (event_obj !== undefined) {
-      filteredEventData.inputDeviceState = {
+      filteredEventData.device_state = {
         // Keyboard modifiers
         alt: event_obj.altKey,
         ctrl: event_obj.ctrlKey,
