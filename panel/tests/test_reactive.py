@@ -808,3 +808,15 @@ def test_reactive_design_stylesheets_update(document, comm):
 
     assert len(model.stylesheets) == 5
     assert model.stylesheets[-1] == widget.stylesheets[0]
+
+
+def test_reactive_attribute_no_name(document, comm):
+    # Regression: https://github.com/holoviz/panel/pull/7655
+    class CustomComponent(ReactiveHTML):
+        groups = param.ListSelector(default=["A"], objects=["A", "B"])
+        _scripts = {"groups": "console.log(data.groups)"}
+
+    component = CustomComponent()
+    component.get_root(document, comm)
+    # Should not error out
+    component.groups = []
