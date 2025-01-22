@@ -281,4 +281,17 @@ def test_plotly_img_plot(page, plotly_img_plot):
     point = plotly_plot.locator('image')
     point.hover(force=True)
 
-    wait_until(lambda: plotly_img_plot.hover_data == {'points': [{'curveNumber': 0, 'x': 15, 'y': 3, 'colormodel': 'rgb'}]}, page)
+    def check_hover():
+        assert plotly_img_plot.hover_data == {
+            'selector': None,
+            'device_state': {
+                'alt': False,
+                'button': 0,
+                'buttons': 0,
+                'ctrl': False,
+                'meta': False,
+                'shift': False,
+            },
+            'points': [{'curveNumber': 0, 'x': 15, 'y': 3, 'colormodel': 'rgb'}]
+        }
+    wait_until(check_hover, page)
