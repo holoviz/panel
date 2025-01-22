@@ -126,6 +126,8 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
     }
 
     def __init__(self, **params):
+        if "active_icon" not in params:
+            params["active_icon"] = "check"
         click_handler = params.pop('on_click', None)
         super().__init__(**params)
         if click_handler:
