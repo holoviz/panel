@@ -812,11 +812,11 @@ def test_reactive_design_stylesheets_update(document, comm):
 
 def test_reactive_attribute_no_name(document, comm):
     # Regression: https://github.com/holoviz/panel/pull/7655
-    class CustomComponent(ReactiveHTML):
+    class CustomComponent2(ReactiveHTML):
         groups = param.ListSelector(default=["A"], objects=["A", "B"])
         _scripts = {"groups": "console.log(data.groups)"}
 
-    component = CustomComponent()
+    component = CustomComponent2()
     component.get_root(document, comm)
     # Should not error out
     component.groups = []
