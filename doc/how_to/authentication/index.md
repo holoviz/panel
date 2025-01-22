@@ -89,6 +89,7 @@ Note that since Panel is built on Bokeh server and Tornado it is also possible t
 :maxdepth: 2
 
 basic
+pam
 configuration
 providers
 templates
