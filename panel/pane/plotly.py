@@ -329,15 +329,16 @@ class Plotly(ModelPane):
 
     def _process_event(self, event):
         etype = event.data['type']
+        data = event.data['data']
         pname = f'{etype}_data'
-        if getattr(self, pname) == event.data['data']:
+        if getattr(self, pname) == data:
             self.param.trigger(pname)
         else:
-            self.param.update(**{pname: event.data['data']})
-        if event.data['data'] is None or not hasattr(self.object, '_handler_js2py_pointsCallback'):
+            self.param.update(**{pname: data})
+        if data is None or not hasattr(self.object, '_handler_js2py_pointsCallback'):
             return
 
-        points = event.data['data']['points']
+        points = data['points']
         num_points = len(points)
 
         has_nested_point_objects = True
@@ -396,7 +397,8 @@ class Plotly(ModelPane):
                 "new": dict(
                     event_type=f'plotly_{etype}',
                     points=points_object,
-                    selector=event.data['data']['selector']
+                    selector=data.get('selector', None),
+                    device_state=data.get('device_state', None)
                 )
             }
         )

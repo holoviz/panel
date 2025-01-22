@@ -56,6 +56,23 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
       return null
     }
 
+    const event_obj = eventData["event"];
+    if (event_obj !== undefined) {
+      /** @type {InputDeviceState} */
+      var inputDeviceState = {
+        // Keyboard modifiers
+        alt: event_obj["altKey"],
+        ctrl: event_obj["ctrlKey"],
+        meta: event_obj["metaKey"],
+        shift: event_obj["shiftKey"],
+
+        // Mouse buttons
+        button: event_obj["button"],
+        buttons: event_obj["buttons"],
+      };
+      filteredEventData.device_state = inputDeviceState
+    }
+
     let selectorObject
     if (eventData.hasOwnProperty("range")) {
       // Box selection

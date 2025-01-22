@@ -203,10 +203,14 @@ def test_plotly_click_data_figure_widget(page, plotly_2d_figure_widget):
         def check_click(i=i):
             if len(events) < (i+1):
                 return False
-            click_trace, points, _ = events[i]
+            click_trace, points, device_state = events[i]
             assert click_trace is trace
             assert points.xs == [0+i]
             assert points.ys == [2+i]
+            assert not device_state.ctrl
+            assert not device_state.alt
+            assert not device_state.shift
+            assert not device_state.meta
         wait_until(check_click, page)
         time.sleep(0.2)
 
