@@ -588,6 +588,7 @@ class Serve(_BkServe):
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
         if config.oauth_provider:
+            is_pam = config.oauth_provider
             config.oauth_refresh_tokens = args.oauth_refresh_tokens
             config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
@@ -597,7 +598,7 @@ class Serve(_BkServe):
                 )
             elif args.oauth_key:
                 config.oauth_key = args.oauth_key
-            elif not config.oauth_key:
+            elif not (config.oauth_key or is_pam):
                 raise ValueError(
                     "When enabling an OAuth provider you must supply "
                     "a valid oauth_key either using the --oauth-key "
@@ -620,7 +621,7 @@ class Serve(_BkServe):
                 )
             elif args.oauth_secret:
                 config.oauth_secret = args.oauth_secret
-            elif not config.oauth_secret:
+            elif not (config.oauth_secret or is_pam):
                 raise ValueError(
                     "When enabling an OAuth provider you must supply "
                     "a valid OAuth secret either using the --oauth-secret "
@@ -651,7 +652,7 @@ class Serve(_BkServe):
                         "base64-encoded bytes."
                     )
                 config.oauth_encryption_key = encryption_key
-            elif not config.oauth_encryption_key:
+            elif not (config.oauth_encryption_key or is_pam):
                 print("WARNING: OAuth has not been configured with an " # noqa: T201
                       "encryption key and will potentially leak "
                       "credentials in cookies and a JWT token embedded "

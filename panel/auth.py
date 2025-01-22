@@ -1192,6 +1192,26 @@ class OAuthProvider(BasicAuthProvider):
             del state._oauth_user_overrides[user]
 
 
+class PAMLoginHandler(BasicLoginHandler):
+    """
+    A LoginHandler that authenticates users via PAM.
+    """
+
+    def _validate(self, username, password):
+        try:
+            import pamela
+        except ImportError as e:
+            log.error(
+                "PAM authentication requires the pamela package. Please install it with e.g. 'pip install pamela'"
+            )
+            raise e
+        try:
+            pamela.authenticate(username, password)
+        except pamela.PAMError:
+            return False
+        return True
+
+
 AUTH_PROVIDERS = {
     'auth0': Auth0Handler,
     'azure': AzureAdLoginHandler,
@@ -1203,7 +1223,8 @@ AUTH_PROVIDERS = {
     'gitlab': GitLabLoginHandler,
     'okta': OktaLoginHandler,
     'password': PasswordLoginHandler,
-    'auth_code': CodeChallengeLoginHandler
+    'auth_code': CodeChallengeLoginHandler,
+    'pam': PAMLoginHandler,
 }
 
 # Populate AUTH Providers from external extensions
