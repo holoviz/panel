@@ -800,8 +800,8 @@ def test_nested_select_layout_dict(document, comm):
         options=options,
         layout={"type": GridBox, "ncols": 2},
     )
-    assert isinstance(select._composite, GridBox)
-    assert select._composite.ncols == 2
+    assert isinstance(select._composite[0], GridBox)
+    assert select._composite[0].ncols == 2
 
 
 def test_nested_select_layout_dynamic_update(document, comm):
@@ -819,8 +819,8 @@ def test_nested_select_layout_dynamic_update(document, comm):
         options=options,
         layout={"type": GridBox, "ncols": 2},
     )
-    assert isinstance(select._composite, GridBox)
-    assert select._composite.ncols == 2
+    assert isinstance(select._composite[0], GridBox)
+    assert select._composite[0].ncols == 2
 
     select.layout = Row
     assert isinstance(select._composite, Row)
