@@ -4,7 +4,6 @@ import asyncio
 import unittest.mock
 
 from functools import partial
-from typing import ClassVar, Mapping
 
 import bokeh.core.properties as bp
 import param
@@ -67,7 +66,7 @@ def test_param_rename():
 
         a = param.Parameter()
 
-        _rename: ClassVar[Mapping[str, str | None]] = {'a': 'b'}
+        _rename = {'a': 'b'}
 
     obj = ReactiveRename()
 
@@ -809,3 +808,15 @@ def test_reactive_design_stylesheets_update(document, comm):
 
     assert len(model.stylesheets) == 5
     assert model.stylesheets[-1] == widget.stylesheets[0]
+
+
+def test_reactive_attribute_no_name(document, comm):
+    # Regression: https://github.com/holoviz/panel/pull/7655
+    class CustomComponent2(ReactiveHTML):
+        groups = param.ListSelector(default=["A"], objects=["A", "B"])
+        _scripts = {"groups": "console.log(data.groups)"}
+
+    component = CustomComponent2()
+    component.get_root(document, comm)
+    # Should not error out
+    component.groups = []

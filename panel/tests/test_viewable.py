@@ -1,11 +1,9 @@
 import param
 import pytest
 
-import panel.custom  # To get the custom Viewable
-
 from panel import config
 from panel.interact import interactive
-from panel.pane import Markdown, Str, panel
+from panel.pane import Markdown, Str, panel as panel_fn
 from panel.param import ParamMethod
 from panel.viewable import (
     Child, Children, Viewable, Viewer, is_viewable_param,
@@ -57,11 +55,11 @@ def test_Viewer_not_initialized():
         def __panel__(self):
             return "# Test"
 
-    test = panel(Test)
+    test = panel_fn(Test)
     assert test.object == "# Test"
 
     # Confirm that initialized also work
-    test = panel(Test())
+    test = panel_fn(Test())
     assert test.object == "# Test"
 
 def test_viewer_wraps_panel():
@@ -88,7 +86,7 @@ def test_viewer_wraps_panel_with_deps(document, comm):
 def test_viewer_with_deps_resolved_by_panel_func(document, comm):
     tv = ExampleViewerWithDeps(value="hello")
 
-    view = panel(tv)
+    view = panel_fn(tv)
 
     view.get_root(document, comm)
 
@@ -103,7 +101,7 @@ def test_non_viewer_class():
         def __panel__(self):
             return 42
 
-    panel(Example())
+    panel_fn(Example())
 
 @pytest.mark.parametrize('viewable', all_viewables)
 def test_clone(viewable):
@@ -114,7 +112,7 @@ def test_clone(viewable):
             [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])
 
 def test_clone_with_non_defaults():
-    v= Viewable(loading=True)
+    v = Viewable(loading=True)
     clone = v.clone()
 
     assert ([(k, v) for k, v in sorted(v.param.values().items()) if k not in ('name')] ==

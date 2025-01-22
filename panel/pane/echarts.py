@@ -4,9 +4,8 @@ import json
 import sys
 
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
-)
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -116,7 +115,7 @@ class ECharts(ModelPane):
             props['sizing_mode'] = 'stretch_both'
         return props
 
-    def _get_properties(self, document: Document):
+    def _get_properties(self, document: Document | None) -> dict[str, Any]:
         props = super()._get_properties(document)
         props['event_config'] = {
             event: list(queries) for event, queries in self._py_callbacks.items()
@@ -124,10 +123,10 @@ class ECharts(ModelPane):
         return props
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
+        ECharts._bokeh_model = lazy_load(
             'panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root
         )
         model = super()._get_model(doc, root, parent, comm)

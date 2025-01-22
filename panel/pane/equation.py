@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import sys
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param  # type: ignore
 
@@ -68,7 +67,7 @@ class LaTeX(ModelPane):
         else:
             return False
 
-    def _get_model_type(self, root: Model, comm: Comm | None) -> type[Model]:
+    def _get_model_type(self, root: Model | None, comm: Comm | None) -> type[Model]:
         module = self.renderer
         if module is None:
             if 'panel.models.mathjax' in sys.modules and 'panel.models.katex' not in sys.modules:
@@ -83,8 +82,8 @@ class LaTeX(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = self._get_model_type(root, comm)
-        model = self._bokeh_model(**self._get_properties(doc))
+        model_type = self._get_model_type(root, comm)
+        model = model_type(**self._get_properties(doc))
         root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model

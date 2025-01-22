@@ -5,7 +5,8 @@ See https://getbootstrap.com/docs/4.0/components/alerts/
 """
 from __future__ import annotations
 
-from typing import Any, ClassVar, Mapping
+from collections.abc import Mapping
+from typing import Any, ClassVar
 
 import param
 

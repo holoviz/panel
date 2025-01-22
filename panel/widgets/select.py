@@ -6,12 +6,12 @@ from __future__ import annotations
 
 import itertools
 import re
+import sys
 
+from collections.abc import Awaitable, Callable, Mapping
 from functools import partial
 from types import FunctionType
-from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -31,7 +31,9 @@ from ..models import (
     CustomMultiSelect as _BkMultiSelect, CustomSelect,
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
-from ..util import PARAM_NAME_PATTERN, indexOf, isIn
+from ..util import (
+    PARAM_NAME_PATTERN, indexOf, isIn, unique_iterator,
+)
 from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
@@ -81,7 +83,7 @@ class SingleSelectBase(SelectBase):
 
     _allows_none: ClassVar[bool] = False
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     __abstract = True
 
@@ -276,7 +278,7 @@ class Select(SingleSelectBase):
         groups_provided = 'groups' in msg
         msg = super()._process_param_change(msg)
         if groups_provided or 'options' in msg and self.groups:
-            groups = self.groups
+            groups: dict[str, list[str | tuple[str, str]]] = self.groups
             if (all(isinstance(values, dict) for values in groups.values()) is False
                and  all(isinstance(values, list) for values in groups.values()) is False):
                 raise ValueError(
@@ -294,7 +296,7 @@ class Select(SingleSelectBase):
                         }
                     else:
                         options = {
-                            group: [str(v) for v in self.groups[group]]
+                            group: [str(v) for v in self.groups[group]]  # type: ignore
                             for group in groups.keys()
                         }
                     msg['options'] = options
@@ -352,16 +354,8 @@ class NestedSelect(CompositeWidget):
     ... )
     """
 
-    value = param.Dict(doc="""
-        The value from all the Select widgets; the keys are the levels names.
-        If no levels names are specified, the keys are the levels indices.""")
-
-    options = param.ClassSelector(class_=(dict, FunctionType), doc="""
-        The options to select from. The options may be nested dictionaries, lists,
-        or callables that return those types. If callables are used, the callables
-        must accept `level` and `value` keyword arguments, where `level` is the
-        level that updated and `value` is a dictionary of the current values, containing keys
-        up to the level that was updated.""")
+    disabled = param.Boolean(default=False, doc="""
+        Whether the widget is disabled.""")
 
     layout = param.Parameter(default=Column, doc="""
         The layout type of the widgets. If a dictionary, a "type" key can be provided,
@@ -375,8 +369,16 @@ class NestedSelect(CompositeWidget):
         is used as the type of widget, and any corresponding widget keyword arguments.
         Must be specified if options is callable.""")
 
-    disabled = param.Boolean(default=False, doc="""
-        Whether the widget is disabled.""")
+    options = param.ClassSelector(class_=(list, dict, FunctionType), doc="""
+        The options to select from. The options may be nested dictionaries, lists,
+        or callables that return those types. If callables are used, the callables
+        must accept `level` and `value` keyword arguments, where `level` is the
+        level that updated and `value` is a dictionary of the current values, containing keys
+        up to the level that was updated.""")
+
+    value = param.Dict(doc="""
+        The value from all the Select widgets; the keys are the levels names.
+        If no levels names are specified, the keys are the levels indices.""")
 
     _widgets = param.List(doc="The nested select widgets.")
 
@@ -384,6 +386,38 @@ class NestedSelect(CompositeWidget):
 
     _levels = param.List(doc="""
         The internal rep of levels to prevent overwriting user provided levels.""")
+
+    @classmethod
+    def _infer_params(cls, values, **params):
+        if 'pandas' in sys.modules and isinstance(values, sys.modules['pandas'].MultiIndex):
+            params['options'] = options = {}
+            params['levels'] = levels = list(values.names)
+            depth = len(values.names)
+            value = {}
+            for vals in values.to_list():
+                current = options
+                for i, (l, v) in enumerate(zip(levels, vals)):
+                    if 'value' not in params:
+                        value[l] = v
+                    if i == (depth-1):
+                        if v not in current:
+                            current.append(v)
+                        continue
+                    elif v not in current:
+                        container = [] if i == (depth-2) else {}
+                        current[v] = container
+                    current = current[v]
+                if 'value' not in params:
+                    params['value'] = value
+        else:
+            params['options'] = options = list(unique_iterator(values))
+            if hasattr(values, 'name'):
+                params['levels'] = [values.name]
+                params['value'] = {values.name: options[0]}
+            else:
+                params['levels'] = []
+                params['value'] = {0: options[0]}
+        return super()._infer_params(values, **params)
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -444,6 +478,8 @@ class NestedSelect(CompositeWidget):
             if not self.levels:
                 raise ValueError("levels must be specified if options is callable")
             self._max_depth = len(self.levels)
+        elif isinstance(self.options, list):
+            self._max_depth = 1
         else:
             self._max_depth = self._find_max_depth(self.options) + 1
 
@@ -486,7 +522,7 @@ class NestedSelect(CompositeWidget):
                 f"The layout must be a subclass of ListLike or dict, got {self.layout!r}."
             )
 
-        self._composite = layout_type(*self._widgets, **layout_kwargs)
+        self._composite[:] = [layout_type(*self._widgets, **layout_kwargs)]
         if self.options is not None:
             self.value = self._gather_values_from_widgets()
 
@@ -546,6 +582,7 @@ class NestedSelect(CompositeWidget):
         value = self._lookup_value(i, options, self.value, error=False)
         widget_kwargs["options"] = options
         widget_kwargs["value"] = value
+        widget_kwargs["disabled"] = self.param.disabled
         if "visible" not in widget_kwargs:
             # first select widget always visible
             widget_kwargs["visible"] = i == 0 or callable(options) or len(options) > 0
@@ -738,7 +775,7 @@ class _MultiSelectBase(SingleSelectBase):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
-    _supports_embed: ClassVar[bool] = False
+    _supports_embed: bool = False
 
     __abstract = True
 
@@ -798,8 +835,8 @@ class MultiSelect(_MultiSelectBase):
         self._dbl__click_handlers = [click_handler] if click_handler else []
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('dblclick_event', model=model, doc=doc, comm=comm)
@@ -1050,7 +1087,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
         'value': "source.labels[value]", 'button_style': None, 'description': None
     }
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _widget_type: ClassVar[type[Model]] = _BkRadioButtonGroup
 
@@ -1078,7 +1115,7 @@ class RadioBoxGroup(_RadioGroupBase):
         Whether the items be arrange vertically (``False``) or
         horizontally in-line (``True``).""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _widget_type: ClassVar[type[Model]] = _BkRadioBoxGroup
 
@@ -1285,8 +1322,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
         # Define buttons
         self._buttons = {
-            False: Button(name='\u276e\u276e', width=50),
-            True: Button(name='\u276f\u276f', width=50)
+            False: Button(name='\u276e\u276e', width=50, sizing_mode=None),
+            True: Button(name='\u276f\u276f', width=50, sizing_mode=None)
         }
 
         self._buttons[False].param.watch(self._apply_selection, 'clicks')
@@ -1296,11 +1333,11 @@ class CrossSelector(CompositeWidget, MultiSelect):
         self._search = {
             False: TextInput(
                 placeholder='Filter available options',
-                margin=(0, 0, 10, 0), width_policy='max'
+                margin=(0, 0, 10, 0), sizing_mode='stretch_width'
             ),
             True: TextInput(
                 placeholder='Filter selected options',
-                margin=(0, 0, 10, 0), width_policy='max'
+                margin=(0, 0, 10, 0), sizing_mode='stretch_width'
             )
         }
         self._search[False].param.watch(self._filter_options, 'value_input')
@@ -1316,7 +1353,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         # Define Layout
         self._unselected = Column(self._search[False], self._lists[False], **layout)
         self._selected = Column(self._search[True], right, **layout)
-        buttons = Column(self._buttons[True], self._buttons[False], margin=(0, 5), align='center')
+        buttons = Column(
+            self._buttons[True], self._buttons[False],
+            margin=(0, 5), align='center', sizing_mode=None
+        )
 
         self._composite[:] = [
             self._unselected, buttons, self._selected

@@ -20,7 +20,8 @@ case is up to you to evaluate.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -38,7 +39,7 @@ class Language(param.Parameterized):
 
     country = param.String(doc="A country like 'United States'")
 
-    name = param.String(doc="""
+    name = param.String(constant=False, doc="""
         The bcp 47 code uniquely identifying the language. For example
         'en-US'.""")
 

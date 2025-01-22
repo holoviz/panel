@@ -239,7 +239,7 @@ class Pipeline(Viewer):
             else:
                 cls_name = stage.__name__
             params = ', '.join(param_reprs(stage))
-            repr_str += '\n    [%d] %s: %s(%s)' % (i, name, cls_name, params)
+            repr_str += f'\n    [{i}] {name}: {cls_name}({params})'
         return repr_str
 
     def __str__(self):

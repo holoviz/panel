@@ -4,9 +4,8 @@ events or merely toggling between on-off states.
 """
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
-)
+from collections.abc import Awaitable, Callable, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -73,7 +72,7 @@ class IconMixin(Widget):
     __abstract = True
 
     def __init__(self, **params) -> None:
-        self._rename = dict(self._rename, **IconMixin._rename)
+        type(self)._rename = dict(self._rename, **IconMixin._rename)
         super().__init__(**params)
 
     def _process_param_change(self, params):
@@ -95,8 +94,8 @@ class _ClickButton(Widget):
     _event: ClassVar[str] = 'button_click'
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events(self._event, model=model, doc=doc, comm=comm)
@@ -200,8 +199,8 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
         return super()._linkable_params + ['value']
 
     def jslink(
-        self, target: JSLinkTarget, code: Optional[dict[str, str]] = None,
-        args: Optional[dict[str, Any]] = None, bidirectional: bool = False,
+        self, target: JSLinkTarget, code: dict[str, str] | None = None,
+        args: dict[str, Any] | None = None, bidirectional: bool = False,
         **links: str
     ) -> Link:
         """
@@ -290,7 +289,7 @@ class Toggle(_ButtonBase, IconMixin):
         'value': 'active', 'name': 'label',
     }
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _widget_type: ClassVar[type[Model]] = _BkToggle
 
@@ -342,8 +341,8 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
             self.on_click(click_handler)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('button_click', model=model, doc=doc, comm=comm)

@@ -26,6 +26,13 @@ How to access Pane Type.
 How to access and set widget values.
 :::
 
+:::{grid-item-card} {octicon}`telescope;2.5em;sd-mr-1 sd-animate-grow50` Construct Widget from Data
+:link: widget_from_values
+:link-type: doc
+
+How to automatically infer widget parameters from data values.
+:::
+
 :::{grid-item-card} {octicon}`file-diff;2.5em;sd-mr-1 sd-animate-grow50` Add or Remove Components
 :link: add_remove
 :link-type: doc
@@ -42,5 +49,6 @@ How to add or remove components from a panel.
 construct_panes
 pane_type
 widget_values
+widget_from_values
 add_remove
 ```

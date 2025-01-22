@@ -1,4 +1,3 @@
-
 import pytest
 
 from panel import Column, GridSpec, Spacer

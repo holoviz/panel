@@ -66,6 +66,6 @@ class AcePlot(HTMLBox):
 
     print_margin = Bool(default=False)
 
-    height = Override(default=300)
+    height = Override(default=300)  # type: ignore
 
-    width = Override(default=300)
+    width = Override(default=300)  # type: ignore

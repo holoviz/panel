@@ -17,7 +17,7 @@ test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py313", "test-core", "test-unit-task"]
 test-minimum = ["py310", "test-core", "test-unit-task", "test-minimum"]
-test-type = ["py311", "type"]
+test-type = ["py311", "type", "example", "test"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
 lint = ["py311", "lint"]
@@ -53,8 +53,14 @@ python = "3.11.*"
 [feature.py312.dependencies]
 python = "3.12.*"
 
+[feature.py312.activation.env]
+COVERAGE_CORE = "sysmon"
+
 [feature.py313.dependencies]
 python = "3.13.*"
+
+[feature.py313.activation.env]
+COVERAGE_CORE = "sysmon"
 
 [feature.example.dependencies]
 # Optional dependencies - recommended
@@ -89,6 +95,7 @@ pyinstrument = ">=4.0"
 python-graphviz = "*"
 pyvista = "*"
 reacton = "*"
+s3fs = ">=2023"  # Python 3.9 pull in 0.6.0
 scikit-image = "*"
 scikit-learn = "*"
 seaborn = "*"
@@ -135,6 +142,7 @@ altair = "*"
 anywidget = "*"
 bokeh-fastapi = "*"
 bokeh_sampledata = "*"
+cryptography = "*"
 diskcache = "*"
 fastapi = "*"
 folium = "*"
@@ -173,14 +181,15 @@ packaging = "*"
 _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
-cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10'
-depends_on = ["_install-ui"]
+cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup'
+depends-on = ["_install-ui"]
 
 # =============================================
 # ================== TYPES ====================
 # =============================================
 [feature.type.dependencies]
 mypy = "*"
+pytest = "*"
 pandas-stubs = "*"
 types-bleach = "*"
 types-croniter = "*"
@@ -216,7 +225,7 @@ _docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.
 docs-server = 'python -m http.server 5500 --directory ./builtdocs'
 
 [feature.doc.tasks.docs-build]
-depends_on = [
+depends-on = [
     '_docs-refmanual',
     '_docs-convert-gallery',
     '_docs-generate',
@@ -225,7 +234,7 @@ depends_on = [
 ]
 
 [feature.doc.tasks.docs-build-parallel]
-depends_on = [
+depends-on = [
     '_docs-refmanual',
     '_docs-convert-gallery',
     '_docs-generate-parallel',

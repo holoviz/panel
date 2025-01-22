@@ -51,10 +51,10 @@ class TestChatMessage:
         assert isinstance(center_row, Row)
 
         object_pane = center_row[0]
-        assert isinstance(object_pane, Markdown)
-        assert object_pane.object == "ABC"
+        assert isinstance(object_pane.object, Markdown)
+        assert object_pane.object.object == "ABC"
 
-        icons = columns[1][4][1]
+        icons = columns[1][4][2]
         assert isinstance(icons, ChatReactionIcons)
 
         footer_col = columns[1][3]
@@ -155,19 +155,19 @@ class TestChatMessage:
     def test_update_object(self):
         message = ChatMessage(object="Test")
         columns = message._composite.objects
-        object_pane = columns[1][2][0]
+        object_pane = columns[1][2][0].object
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "Test"
 
         message.object = TextInput(value="Also testing...")
-        object_pane = columns[1][2][0]
+        object_pane = columns[1][2][0].object
         assert isinstance(object_pane, TextInput)
         assert object_pane.value == "Also testing..."
 
         message.object = _FileInputMessage(
             contents=b"I am a file", file_name="test.txt", mime_type="text/plain"
         )
-        object_pane = columns[1][2][0]
+        object_pane = columns[1][2][0].object
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "I am a file"
 
@@ -256,7 +256,7 @@ class TestChatMessage:
         assert message.object.objects[0].css_classes == ["custom"]
 
     @mpl_available
-    def test_can_display_any_python_object_that_panel_can_display(self):
+    async def test_can_display_any_python_object_that_panel_can_display(self):
         # For example matplotlib figures
         ChatMessage(object=mpl_figure())
 
@@ -390,3 +390,11 @@ class TestChatMessage:
     def test_serialize_dataframe(self):
         message = ChatMessage(DataFrame(pd.DataFrame({'a': [1, 2, 3]})))
         assert message.serialize() == "DataFrame=   a\n0  1\n1  2\n2  3"
+
+    def test_repr(self):
+        message = ChatMessage(object="Hello", user="User", avatar="A", reactions=["favorite"])
+        assert repr(message) == "ChatMessage(object='Hello', user='User', reactions=['favorite'])"
+
+    def test_repr_dataframe(self):
+        message = ChatMessage(pd.DataFrame({'a': [1, 2, 3]}), avatar="D")
+        assert repr(message) == "ChatMessage(object=   a\n0  1\n1  2\n2  3, user='User', reactions=[])"

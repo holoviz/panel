@@ -20,16 +20,16 @@ class Compile(Subcommand):
             help    = "The Python modules to compile. May optionally define a single class.",
             default = None,
         )),
-        ('--build-dir', dict(
+        ('--build-dir', Argument(
             action = 'store',
             type    = str,
             help    = "Where to write the build directory."
         )),
-        ('--unminified', dict(
+        ('--unminified', Argument(
             action  = 'store_true',
             help    = "Whether to generate unminified output."
         )),
-        ('--verbose', dict(
+        ('--verbose', Argument(
             action  = 'store_true',
             help    = "Whether to show verbose output. Note when setting --outfile only the result will be printed to stdout."
         )),

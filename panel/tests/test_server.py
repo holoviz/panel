@@ -323,6 +323,24 @@ def test_server_periodic_async_callback(server_implementation, threads):
     wait_until(lambda: len(counts) >= 5 and counts == list(range(len(counts))))
 
 
+def test_server_cancel_task(server_implementation):
+    state.cache['count'] = 0
+    def periodic_cb():
+        state.cache['count'] += 1
+
+    def app():
+        state.schedule_task('periodic', periodic_cb, period='0.1s')
+        return '# state.schedule test'
+
+    serve_and_request(app)
+
+    wait_until(lambda: state.cache['count'] > 0)
+    state.cancel_task('periodic')
+    count = state.cache['count']
+    time.sleep(0.5)
+    assert state.cache['count'] == count
+
+
 def test_server_schedule_repeat(server_implementation):
     state.cache['count'] = 0
     def periodic_cb():
@@ -831,7 +849,7 @@ def test_server_async_onload(threads):
 
 class CustomBootstrapTemplate(BootstrapTemplate):
 
-    _css = './assets/custom.css'
+    _css = ['./assets/custom.css']
 
 
 def test_server_template_custom_resources(port):

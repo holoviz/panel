@@ -9,9 +9,8 @@ from __future__ import annotations
 
 import datetime as dt
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -53,7 +52,7 @@ class _SliderBase(Widget):
         Whether the slider should go from left-to-right ('ltr') or
         right-to-left ('rtl').""")
 
-    name = param.String(default=None, doc="""
+    name = param.String(default=None, constant=False, doc="""
         The name of the widget. Also used as the label of the widget. If not set,
         the widget has no label.""")
 
@@ -84,7 +83,7 @@ class _SliderBase(Widget):
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return super()._linked_properties + ('value_throttled',)
 
     def _process_property_change(self, msg):
@@ -97,7 +96,7 @@ class _SliderBase(Widget):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'value_throttled' in msg:
             del msg['value_throttled']
@@ -115,7 +114,7 @@ class ContinuousSlider(_SliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A custom format string or Bokeh TickFormatter.""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     __abstract = True
 
@@ -380,14 +379,13 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         A custom format string. Separate from format parameter since
         formatting is applied in Python, not via the bokeh TickFormatter.""")
 
-
     _rename: ClassVar[Mapping[str, str | None]] = {'formatter': None}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'value_throttled': None, 'options': None
     }
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _style_params: ClassVar[list[str]] = [
         p for p in list(Layoutable.param) if p != 'name'
@@ -563,7 +561,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     def values(self):
         """The list of option values"""
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
-
 
 
 class _RangeSliderBase(_SliderBase):

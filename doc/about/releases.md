@@ -2,6 +2,93 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.6.0
+
+This release adds a number of features including a standalone `Modal` component, the ability to infer widget parameters from values, and the ability to easily edit a `ChatMessage`. Additionally it includes a number of enhancements for styling, particularly in dark themes, other enhancements for chat components and a large number of bug fixes. Many thanks for our returning contributor @kdheepak, our new contributors @jonatantreijs and @etihwo, and of course the whole maintainer team including @ahuang11, @MarcSkovMadsen @hoxbro, @maximlt and @philippjfr.
+
+### Features
+
+- Add `Widget.from_values` method ([#7033](https://github.com/holoviz/panel/pull/7033))
+- Add a standalone `Modal` layout ([#7083](https://github.com/holoviz/panel/pull/7083))
+- Introduces `ChatMessage` and `ChatFeed` edit functionality ([#7559](https://github.com/holoviz/panel/pull/7559))
+
+### Enhancements
+
+- Allow `ChatFeed.callback_exception` to accept a callable and 'traceback' (alias for verbose) ([#7558](https://github.com/holoviz/panel/pull/7558))
+- Fix Accordion active_header_background in dark theme ([#7576](https://github.com/holoviz/panel/pull/7576))
+- Increase default max character limit on `ChatAreaInput` ([#7562](https://github.com/holoviz/panel/pull/7562))
+- Fix chat message alignment issues ([#7563](https://github.com/holoviz/panel/pull/7563))
+- Make `Markdown` pane line breaking behavior configurable ([#7582](https://github.com/holoviz/panel/pull/7582))
+- Improve styling of chat components in dark theme ([#7601](https://github.com/holoviz/panel/pull/7601), [#7602](https://github.com/holoviz/panel/pull/7602))
+- Automatically scroll when streaming to `ChatFeed` and `ChatStep` ([#7608](https://github.com/holoviz/panel/pull/7608))
+- Add support for remote filesystems on `FileSelector` ([#7618](https://github.com/holoviz/panel/pull/7618))
+
+### Bug fixes
+
+- Fix Azure Oauth issues ([#7587](https://github.com/holoviz/panel/pull/7587))
+- Correctly display file not found paths in `panel convert` ([#7589](https://github.com/holoviz/panel/pull/7589))
+- Fix `Tabulator.patch` when table is filtered ([#7621](https://github.com/holoviz/panel/pull/7621))
+- Ensure `esbuild` can be detected on windows during `panel compile` ([#7625](https://github.com/holoviz/panel/pull/7625))
+- Fix various issues styling `Tabulator` when it is wider than the viewport ([#7626](https://github.com/holoviz/panel/pull/7626))
+- Fix resource loading when serving Panel app on nested FastAPI endpoint ([#7627](https://github.com/holoviz/panel/pull/7627))
+- Fix `panel oauth-secret` command ([#7628](https://github.com/holoviz/panel/pull/7628))
+- Ensure fonts are applied to `NotificationArea` ([#7633](https://github.com/holoviz/panel/pull/7633))
+- Handle session context where session is not defined ([#7634](https://github.com/holoviz/panel/pull/7634))
+- Ensure `CompositeWidget` can be populated in callback ([#7636](https://github.com/holoviz/panel/pull/7636))
+- Correctly identify skimage and PIL packages when converting to pyodide ([#7637](https://github.com/holoviz/panel/pull/7637))
+- Ensure we use CDN resources in pyodide ([#7638](https://github.com/holoviz/panel/pull/7638))
+- Consistently apply sizing_mode to `FileSelector` components ([#7640](https://github.com/holoviz/panel/pull/7640))
+- Ensure tasks are cancelled correctly ([#7641](https://github.com/holoviz/panel/pull/7641))
+- Ensure `NotificationArea` stylesheet loads in panel-preview ([#7643](https://github.com/holoviz/panel/pull/7643))
+
+### Compatibility and Updates
+
+- Update panel convert to latest versions of pyodide and pyscript ([#7584](https://github.com/holoviz/panel/pull/7584))
+
+### Documentation
+
+- Ensure Open in JupyterLite links work ([#7622](https://github.com/holoviz/panel/pull/7622))
+- Add admonitions for outdated guides and minor corrections ([#7635](https://github.com/holoviz/panel/pull/7635))
+
+## Version 1.5.5
+
+This release fixes a regression causing .node_modules to be bundled into our released wheel and introduces a number of bug fixes and enhancements. Many thanks to @mayonnaisecolouredbenz7, @pmeier, @Italirz, @Coderambling and our maintainer team @MarcSkovMadsen, @hoxbro, @ahuang11, @thuydotm, @maximlt and @philippjfr.
+
+### Enhancements
+
+- Add ability to `scroll_to` a particular object on `Column` ([#7206](https://github.com/holoviz/panel/pull/7206))
+- Add pointer when hovering on `Markdown` copy button ([#7490](https://github.com/holoviz/panel/pull/7490))
+- Allow streaming to  `ChatStep` ([#7520](https://github.com/holoviz/panel/pull/7520))
+- Improve `ChatMessage` repr ([#7521](https://github.com/holoviz/panel/pull/7521))
+- Add `ChatInterface` button tooltips ([#7552](https://github.com/holoviz/panel/pull/7552))
+
+### Bug fixes
+
+- Ensure Notifications are cleaned up correctly ([#4964](https://github.com/holoviz/panel/pull/4964))
+- Ensure `FileDownload` label text updates correctly ([#7489](https://github.com/holoviz/panel/pull/7489))
+- Fix `Tabulator` aggregation behavior ([#7450](https://github.com/holoviz/panel/pull/7450))
+- Fix typing for `.servable` method ([#7530](https://github.com/holoviz/panel/pull/7530))
+- Ensure `NestedSelect` respects `disabled` parameter ([#7533](https://github.com/holoviz/panel/pull/7533))
+- Ensure errors in hooks aren't masked by fallback to different signature ([#7502](https://github.com/holoviz/panel/pull/7502))
+- Ensure Notifications are only shown once if scheduled onload ([#7504](https://github.com/holoviz/panel/pull/7504))
+
+### Documentation
+
+- Improve `hold` how-to guide ([#7487](https://github.com/holoviz/panel/pull/7487), [#7500](https://github.com/holoviz/panel/pull/7500))
+
+### Maintenance
+
+- Enable strict type checking ([#7497](https://github.com/holoviz/panel/pull/7497))
+- Ensure node_modules aren't bundled into package ([#7526](https://github.com/holoviz/panel/pull/7526))
+- Internal cleanup of compatibility code for older param versions ([#7527](https://github.com/holoviz/panel/pull/7527))
+
+### Compatibility
+
+- Compatibility for websockets 14 when running on FastAPI server ([#7491](https://github.com/holoviz/panel/pull/7491))
+- Compatibility with Textual 0.86 ([#7501](https://github.com/holoviz/panel/pull/7501))
+- Compatibility with Altair 5.5.0 ([#7523](https://github.com/holoviz/panel/pull/7523))
+- Bump Vizzu version to 0.15 ([#7485](https://github.com/holoviz/panel/pull/7485))
+
 ## Version 1.5.4
 
 This release primarily focuses on improving the ESM components including fixes for serialization of parameter values, improvements for compiling bundles, and building custom layouts. Additionally this release includes the new `DatetimeSlider`, adds a copy button to codeblocks in `Markdown` panes, improves responsive sizing for Plotly and starts adding better support for Polars. Many thanks and a warm welcome to our new contributor @MP-MaximilianLattka as well as our maintainer team, including @Hoxbro, @thuydotm, @ahuang11, @MarcSkovMadsen and @philippjfr.

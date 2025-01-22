@@ -55,6 +55,8 @@ jobs:
           name: conda
           path: dist/*tar.bz2
           if-no-files-found: error
+      - name: Verify size
+        run: python scripts/verify_build_size.py conda
 
   conda_publish:
     name: Publish Conda
@@ -76,6 +78,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
+          channels: "conda-forge"
       - name: conda setup
         run: |
           conda install -y anaconda-client
@@ -106,6 +109,10 @@ jobs:
           name: pip
           path: dist/
           if-no-files-found: error
+      - name: Verify sizes
+        run: |
+          python scripts/verify_build_size.py sdist
+          python scripts/verify_build_size.py whl
 
   pip_install:
     name: Install PyPI
@@ -122,7 +129,7 @@ jobs:
       - name: Install package
         run: python -m pip install dist/*.whl
       - name: Test package
-        run: python -c "import $PACKAGE; print($PACKAGE.__version__)"
+        run: python -c "import $PACKAGE; print($PACKAGE._version.__version__)"
 
   pip_publish:
     name: Publish PyPI
@@ -165,6 +172,8 @@ jobs:
           name: npm
           if-no-files-found: error
           path: ./${{ env.PACKAGE }}/${{ env.TARBALL }}
+      - name: Verify size
+        run: python scripts/verify_build_size.py npm
 
   npm_publish:
     name: Publish NPM

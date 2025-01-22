@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -72,14 +71,21 @@ class ChatAreaInput(_PnTextAreaInput):
         Can only be set during initialization.""",
     )
 
+    enter_pressed = param.Event(doc="""
+        Event when the Enter/Ctrl+Enter key has been pressed.""")
+
+    max_length = param.Integer(default=50000, doc="""
+        Max count of characters in the input field.""")
+
     _widget_type: ClassVar[type[Model]] = _bkChatAreaInput
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         "value": None,
+        "enter_pressed": None,
         **_PnTextAreaInput._rename,
     }
 
-    def _get_properties(self, doc: Document) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None = None) -> dict[str, Any]:
         props = super()._get_properties(doc)
         props.update({"value_input": self.value, "value": self.value})
         return props
@@ -87,9 +93,9 @@ class ChatAreaInput(_PnTextAreaInput):
     def _get_model(
         self,
         doc: Document,
-        root: Optional[Model] = None,
-        parent: Optional[Model] = None,
-        comm: Optional[Comm] = None,
+        root: Model | None = None,
+        parent: Model | None = None,
+        comm: Comm | None = None,
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events("chat_message_event", model=model, doc=doc, comm=comm)
@@ -100,5 +106,6 @@ class ChatAreaInput(_PnTextAreaInput):
         Clear value on shift enter key down.
         """
         self.value = event.value
+        self.enter_pressed = True
         with param.discard_events(self):
             self.value = ""

@@ -5,7 +5,8 @@ import importlib.util
 import os
 import sys
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import numpy as np
 import param
@@ -27,7 +28,7 @@ __all__ = (
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 
-def isfile(path: str) -> bool:
+def isfile(path: str | os.PathLike) -> bool:
     """Safe version of os.path.isfile robust to path length issues on Windows"""
     try:
         return os.path.isfile(path)

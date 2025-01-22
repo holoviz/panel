@@ -23,10 +23,9 @@ import os
 import sys
 import time
 
+from collections.abc import Mapping
 from math import pi
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -55,7 +54,7 @@ if TYPE_CHECKING:
 try:
     from tqdm.asyncio import tqdm as _tqdm
 except ImportError:
-    _tqdm = None
+    _tqdm = None  # type: ignore
 
 RED   = "#d9534f"
 GREEN = "#5cb85c"
@@ -70,7 +69,7 @@ class Indicator(Widget):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    _linked_properties: ClassVar[tuple[str,...]] = ()
+    _linked_properties: tuple[str,...] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
@@ -135,7 +134,7 @@ class BooleanIndicator(Indicator):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         events = self._throttle_events(events)
         if not events:
@@ -1144,7 +1143,7 @@ class Trend(SyncableData, Indicator):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    name = param.String(doc="""The name or a short description of the card""")
+    name = param.String(constant=False, doc="""The name or a short description of the card""")
 
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
@@ -1222,7 +1221,7 @@ MARGIN = {
 
 
 
-class ptqdm(_tqdm or object):
+class ptqdm(_tqdm or object):  # type: ignore
 
     def __init__(self, *args, **kwargs):
         if _tqdm is None:
@@ -1350,8 +1349,8 @@ class Tqdm(Indicator):
             self._lock = params.pop('lock', None)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self.layout._get_model(doc, root, parent, comm)
         root = root or model

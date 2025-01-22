@@ -8,7 +8,7 @@ try:
     import altair as alt
     altair_version = Version(alt.__version__)
 except Exception:
-    alt = None
+    alt = None  # type: ignore
 
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
 

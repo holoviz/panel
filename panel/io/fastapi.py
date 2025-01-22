@@ -5,9 +5,7 @@ import socket
 import uuid
 
 from functools import wraps
-from typing import (
-    TYPE_CHECKING, Any, Mapping, cast,
-)
+from typing import TYPE_CHECKING, Any, cast
 
 from ..config import config
 from .application import build_applications
@@ -29,6 +27,9 @@ except ImportError:
     raise ImportError(msg) from None
 
 if TYPE_CHECKING:
+    from bokeh.application import Application as BkApplication
+    from bokeh.document.events import DocumentPatchedEvent
+    from bokeh.protocol.message import Message
     from uvicorn import Server
 
     from .application import TViewableFuncOrPath
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
 DocHandler.render_session = server_html_page_for_session
 
 
-def dispatch_fastapi(conn, events=None, msg=None):
+def dispatch_fastapi(conn, events: list[DocumentPatchedEvent] | None = None, msg: Message | None = None):
     if msg is None:
         msg = conn.protocol.create("PATCH-DOC", events)
     return [conn._socket.send_message(msg)]
@@ -49,7 +50,7 @@ def dispatch_fastapi(conn, events=None, msg=None):
 extra_socket_handlers[WSHandler] = dispatch_fastapi
 
 
-def add_liveness_handler(app, endpoint, applications):
+def add_liveness_handler(app, endpoint: str, applications: dict[str, BkApplication]):
     @app.get(endpoint, response_model=dict[str, bool])
     async def liveness_handler(request: Request, endpoint: str | None = Query(None)):
         if endpoint is not None:
@@ -78,7 +79,7 @@ def add_history_handler(app, endpoint):
 #---------------------------------------------------------------------
 
 def add_applications(
-    panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
+    panel: TViewableFuncOrPath | dict[str, TViewableFuncOrPath],
     app: FastAPI | None = None,
     title: str | dict[str, str] | None = None,
     location: bool | Location = True,
@@ -189,7 +190,7 @@ def add_application(
 
 
 def get_server(
-    panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
+    panel: TViewableFuncOrPath | dict[str, TViewableFuncOrPath],
     port: int | None = 0,
     show: bool = True,
     start: bool = False,
@@ -253,6 +254,8 @@ def get_server(
     if loop:
         config_kwargs['loop'] = loop
         asyncio.set_event_loop(loop)
+    if port:
+        config_kwargs['port'] = port
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     application = add_applications(
         panel, title=title, location=location, admin=admin, **kwargs
@@ -268,8 +271,7 @@ def get_server(
             url = f"http://{address_string}:{config.port}{prefix}"
             from bokeh.util.browser import view
             view(url, new='tab')
-
-    config = uvicorn.Config(application.app, port=port, **config_kwargs)
+    config = uvicorn.Config(application.app, **config_kwargs)
     server = uvicorn.Server(config)
 
     state._servers[server_id] = (server, panel, [])
@@ -288,7 +290,7 @@ def get_server(
 
 
 def serve(
-    panels: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
+    panels: TViewableFuncOrPath | dict[str, TViewableFuncOrPath],
     port: int = 0,
     address: str | None = None,
     websocket_origin: str | list[str] | None = None,

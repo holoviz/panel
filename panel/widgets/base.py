@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import math
 
+from collections.abc import Callable, Mapping
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, TypeVar,
+    TYPE_CHECKING, Any, ClassVar, TypeVar,
 )
 
+import numpy as np
 import param  # type: ignore
 
 from bokeh.models import ImportedStyleSheet, Tooltip
@@ -20,6 +22,7 @@ from param.parameterized import register_reference_transform
 from .._param import Margin
 from ..layout.base import Row
 from ..reactive import Reactive
+from ..util import unique_iterator
 from ..viewable import Layoutable, Viewable
 
 if TYPE_CHECKING:
@@ -68,6 +71,45 @@ class WidgetBase(param.Parameterized):
         )
         return layout[0]
 
+    @classmethod
+    def _infer_params(cls, values, **params):
+        if 'name' not in params and getattr(values, 'name', None):
+            params['name'] = values.name
+        if 'start' in cls.param and 'start' not in params:
+            params['start'] = np.nanmin(values)
+        if 'end' in cls.param and 'end' not in params:
+            params['end'] = np.nanmax(values)
+        if 'options' in cls.param and 'options' not in params:
+            if isinstance(values, dict):
+                params['options'] = values
+            else:
+                params['options'] = list(unique_iterator(values))
+        if 'value' not in params:
+            p = cls.param['value']
+            if isinstance(p, param.Tuple):
+                params['value'] = (params['start'], params['end'])
+            elif 'start' in params:
+                params['value'] = params['start']
+            elif ('options' in params and not isinstance(p, (param.List, param.ListSelector))
+                  and not getattr(cls, '_allows_none', False)):
+                params['value'] = params['options'][0]
+        return params
+
+    @classmethod
+    def from_values(cls, values, **params):
+        """
+        Creates an instance of this Widget where the parameters are
+        inferred from the data.
+
+        Arguments
+        ---------
+        values: Iterable
+            The values to infer the parameters from.
+        params: dict
+            Additional parameters to pass to the widget.
+        """
+        return cls(**cls._infer_params(values, **params))
+
     @property
     def rx(self):
         return self.param.value.rx
@@ -82,7 +124,7 @@ class Widget(Reactive, WidgetBase):
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
 
-    name = param.String(default='')
+    name = param.String(default='', constant=False)
 
     height = param.Integer(default=None, bounds=(0, None))
 
@@ -96,7 +138,7 @@ class Widget(Reactive, WidgetBase):
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     # Whether the widget supports embedding
-    _supports_embed: ClassVar[bool] = False
+    _supports_embed: bool = False
 
     # Declares the Bokeh model type of the widget
     _widget_type: ClassVar[type[Model] | None] = None
@@ -115,7 +157,7 @@ class Widget(Reactive, WidgetBase):
         super().__init__(**params)
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         props = list(super()._linked_properties)
         if 'description' in props:
             props.remove('description')
@@ -133,7 +175,7 @@ class Widget(Reactive, WidgetBase):
             renderer_options = params.pop("renderer_options", {})
             if isinstance(description, str):
                 from ..pane.markup import Markdown
-                parser = Markdown._get_parser('markdown-it', (), **renderer_options)
+                parser = Markdown._get_parser('markdown-it', (), Markdown.hard_line_break, **renderer_options)
                 html = parser.render(description)
                 params['description'] = Tooltip(
                     content=HTML(html), position='right',
@@ -145,9 +187,13 @@ class Widget(Reactive, WidgetBase):
         return params
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
+        if self._widget_type is None:
+            raise NotImplementedError(
+                'Widget {type(self).__name__} did not define a _widget_type'
+            )
         model = self._widget_type(**self._get_properties(doc))
         root = root or model
         self._models[root.ref['id']] = (model, parent)
@@ -155,8 +201,8 @@ class Widget(Reactive, WidgetBase):
         return model
 
     def _get_embed_state(
-        self, root: 'Model', values: Optional[list[Any]] = None, max_opts: int = 3
-    ) -> tuple['Widget', 'Model', list[Any], Callable[['Model'], Any], str, str]:
+        self, root: Model, values: list[Any] | None = None, max_opts: int = 3
+    ) -> tuple[Widget, Model, list[Any], Callable[[Model], Any], str, str]:
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -185,6 +231,7 @@ class Widget(Reactive, WidgetBase):
         js_getter: string
           JS snippet that returns the state value given the model
         """
+        raise NotImplementedError()
 
 
 class CompositeWidget(Widget):
@@ -195,11 +242,12 @@ class CompositeWidget(Widget):
 
     _composite_type: ClassVar[type[ListPanel]] = Row
 
-    _linked_properties: ClassVar[tuple[str]] = ()
+    _linked_properties: tuple[str, ...] = ()
 
     __abstract = True
 
     def __init__(self, **params):
+        self._composite = self._composite_type()
         super().__init__(**params)
         layout_params = [p for p in Layoutable.param if p != 'name']
         layout = {p: getattr(self, p) for p in layout_params
@@ -210,7 +258,7 @@ class CompositeWidget(Widget):
             min_width = layout.pop('width')
             if not layout.get('min_width'):
                 layout['min_width'] = min_width
-        self._composite = self._composite_type(**layout)
+        self._composite.param.update(**layout)
         self._models = self._composite._models
         self._internal_callbacks.append(
             self.param.watch(self._update_layout_params, layout_params)
@@ -221,7 +269,7 @@ class CompositeWidget(Widget):
         self._composite.param.update(**updates)
 
     def select(
-        self, selector: Optional[type | Callable[['Viewable'], bool]] = None
+        self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
@@ -247,8 +295,8 @@ class CompositeWidget(Widget):
         super()._cleanup(root)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
         root = model if root is None else root
