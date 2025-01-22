@@ -46,6 +46,8 @@ class Plotly(ModelPane):
 
     click_data = param.Dict(doc="Click event data from `plotly_click` event.")
 
+    doubleclick_data = param.Dict(doc="Click event data from `plotly_doubleclick` event.")
+
     clickannotation_data = param.Dict(doc="Clickannotation event data from `plotly_clickannotation` event.")
 
     config = param.Dict(nested_refs=True, doc="""
@@ -88,8 +90,13 @@ class Plotly(ModelPane):
     _updates: ClassVar[bool] = True
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'link_figure': None, 'object': None, 'click_data': None, 'clickannotation_data': None,
-        'hover_data': None, 'selected_data': None
+        'link_figure': None,
+        'object': None,
+        'doubleclick_data': None,
+        'click_data': None,
+        'clickannotation_data': None,
+        'hover_data': None,
+        'selected_data': None
     }
 
     @classmethod
@@ -106,7 +113,7 @@ class Plotly(ModelPane):
 
     def _to_figure(self, obj):
         import plotly.graph_objs as go
-        if isinstance(obj, go.Figure):
+        if isinstance(obj, (go.Figure, go.FigureWidget)):
             return obj
         elif isinstance(obj, dict):
             data, layout = obj['data'], obj['layout']
@@ -158,8 +165,8 @@ class Plotly(ModelPane):
         # we don't interfere with subclasses that override these methods.
         fig = self.object
         fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure('add')
-        fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure('move')
         fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure('delete')
+        fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure('move')
         fig._send_restyle_msg = self._send_restyle_msg
         fig._send_relayout_msg = self._send_relayout_msg
         fig._send_update_msg = self._send_update_msg
@@ -322,11 +329,79 @@ class Plotly(ModelPane):
 
     def _process_event(self, event):
         etype = event.data['type']
+        data = event.data['data']
         pname = f'{etype}_data'
-        if getattr(self, pname) == event.data['data']:
+        if getattr(self, pname) == data:
             self.param.trigger(pname)
         else:
-            self.param.update(**{pname: event.data['data']})
+            self.param.update(**{pname: data})
+        if data is None or not hasattr(self.object, '_handler_js2py_pointsCallback'):
+            return
+
+        points = data['points']
+        num_points = len(points)
+
+        has_nested_point_objects = True
+        for point_obj in points:
+            has_nested_point_objects = has_nested_point_objects and 'pointNumbers' in point_obj
+            if not has_nested_point_objects:
+                break
+
+        num_point_numbers = num_points
+        if has_nested_point_objects:
+            num_point_numbers = 0
+            for point_obj in points:
+                num_point_numbers += len(point_obj['pointNumbers'])
+
+        points_object = {
+            'trace_indexes': [],
+            'point_indexes': [],
+            'xs': [],
+            'ys': [],
+        }
+
+        # Add z if present
+        has_z = points[0] is not None and 'z' in points[0]
+        if has_z:
+            points_object['zs'] = []
+
+        if has_nested_point_objects:
+            for point_obj in points:
+                for i in range(len(point_obj['pointNumbers'])):
+                    points_object['point_indexes'].append(point_obj['pointNumbers'][i])
+                    points_object['xs'].append(point_obj['x'])
+                    points_object['ys'].append(point_obj['y'])
+                    points_object['trace_indexes'].append(point_obj['curveNumber'])
+                    if has_z and 'z' in point_obj:
+                        points_object['zs'].append(point_obj['z'])
+
+            single_trace = True
+            for i in range(1, num_point_numbers):
+                single_trace = single_trace and (points_object['trace_indexes'][i - 1] == points_object['trace_indexes'][i])
+                if not single_trace:
+                    break
+
+            if single_trace:
+                points_object['point_indexes'].sort()
+        else:
+            for point_obj in points:
+                points_object['trace_indexes'].append(point_obj['curveNumber'])
+                points_object['point_indexes'].append(point_obj['pointNumber'])
+                points_object['xs'].append(point_obj['x'])
+                points_object['ys'].append(point_obj['y'])
+                if has_z and 'z' in point_obj:
+                    points_object['zs'].append(point_obj['z'])
+
+        self.object._handler_js2py_pointsCallback(
+            {
+                "new": dict(
+                    event_type=f'plotly_{etype}',
+                    points=points_object,
+                    selector=data.get('selector', None),
+                    device_state=data.get('device_state', None)
+                )
+            }
+        )
 
     def _update(self, ref: str, model: Model) -> None:
         if self.object is None:
