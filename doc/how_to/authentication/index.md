@@ -22,6 +22,13 @@ In other words OAuth outsources authentication to a third party provider, e.g. G
 Discover how to add basic password based authentication to your application.
 :::
 
+:::{grid-item-card} {octicon}`unlock;2.5em;sd-mr-1 sd-animate-grow50` Configuring PAM Authentication
+:link: pam
+:link-type: doc
+
+Discover how to configure Panel apps to configure against your system credentials (using PAM).
+:::
+
 :::{grid-item-card} {octicon}`gear;2.5em;sd-mr-1 sd-animate-grow50` Configuring OAuth
 :link: configuration
 :link-type: doc
