@@ -25,6 +25,12 @@ def plotly_2d_plot():
     return plot_2d
 
 @pytest.fixture
+def plotly_2d_figure_widget():
+    trace = go.Scatter(x=[0, 1], y=[2, 3], uid='Test')
+    plot_2d = go.FigureWidget(data=[trace])
+    return plot_2d
+
+@pytest.fixture
 def plotly_3d_plot():
     xx = np.linspace(-3.5, 3.5, 100)
     yy = np.linspace(-3.5, 3.5, 100)
@@ -173,6 +179,34 @@ def test_plotly_click_data(page, plotly_2d_plot):
                     'y': 2+i
                 }]
             }
+        wait_until(check_click, page)
+        time.sleep(0.2)
+
+
+def test_plotly_click_data_figure_widget(page, plotly_2d_figure_widget):
+    fig = go.FigureWidget(plotly_2d_figure_widget)
+    serve_component(page, fig)
+
+    trace = list(fig.select_traces())[0]
+
+    events = []
+    trace.on_click(lambda a, b, c: events.append((a, b, c)))
+
+    plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
+    expect(plotly_plot).to_have_count(1)
+
+    # Select and click on points
+    for i in range(2):
+        point = page.locator('.js-plotly-plot .plot-container.plotly path.point').nth(i)
+        point.click(force=True)
+
+        def check_click(i=i):
+            if len(events) < (i+1):
+                return False
+            click_trace, points, _ = events[i]
+            assert click_trace is trace
+            assert points.xs == [0+i]
+            assert points.ys == [2+i]
         wait_until(check_click, page)
         time.sleep(0.2)
 
