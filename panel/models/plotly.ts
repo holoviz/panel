@@ -56,27 +56,27 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
       return null
     }
 
-    let selectorObject;
+    let selectorObject
     if (eventData.hasOwnProperty("range")) {
       // Box selection
       selectorObject = {
         type: "box",
         selector_state: {
-          xrange: eventData["range"]["x"],
-          yrange: eventData["range"]["y"],
+          xrange: eventData.range.x,
+          yrange: eventData.range.y,
         },
-      };
+      }
     } else if (eventData.hasOwnProperty("lassoPoints")) {
       // Lasso selection
       selectorObject = {
         type: "lasso",
         selector_state: {
-          xs: eventData["lassoPoints"]["x"],
-          ys: eventData["lassoPoints"]["y"],
+          xs: eventData.lassoPoints.x,
+          ys: eventData.lassoPoints.y,
         },
-      };
+      }
     } else {
-      selectorObject = null;
+      selectorObject = null
     }
     filteredEventData.selector = selectorObject
 
