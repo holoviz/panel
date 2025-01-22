@@ -79,7 +79,7 @@ class SingleSelectBase(SelectBase):
 
     value = param.Parameter(default=None)
 
-    value_label = param.String(allow_None=True, readonly=True)
+    value_label = param.String(allow_None=True, constant=True)
 
     _allows_values: ClassVar[bool] = True
 
@@ -89,6 +89,10 @@ class SingleSelectBase(SelectBase):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'value_label': None,
+    }
+
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value_label': None
     }
 
     __abstract = True
@@ -220,7 +224,7 @@ class Select(SingleSelectBase):
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'size': None, 'groups': None
+        'size': None, 'groups': None, 'value_label': None
     }
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
@@ -1028,7 +1032,7 @@ class _RadioGroupBase(SingleSelectBase):
         'name': None, 'options': 'labels', 'value': 'active'
     }
 
-    _source_transforms = {'value': "source.labels[value]"}
+    _source_transforms = {'value': "source.labels[value]", 'value_label': None}
 
     _target_transforms = {'value': "target.labels.indexOf(value)"}
 
@@ -1100,7 +1104,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
     _rename: ClassVar[Mapping[str, str | None]] = {**_RadioGroupBase._rename, **TooltipMixin._rename}
 
     _source_transforms = {
-        'value': "source.labels[value]", 'button_style': None, 'description': None
+        'value': "source.labels[value]", 'button_style': None, 'description': None, 'value_label': None
     }
 
     _supports_embed: bool = True
@@ -1143,7 +1147,7 @@ class _CheckGroupBase(SingleSelectBase):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
 
-    _source_transforms = {'value': "value.map((index) => source.labels[index])"}
+    _source_transforms = {'value': "value.map((index) => source.labels[index])", 'value_label': None}
 
     _target_transforms = {'value': "value.map((label) => target.labels.indexOf(label))"}
 
@@ -1202,7 +1206,7 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
 
     _source_transforms = {
         'value': "value.map((index) => source.labels[index])", 'button_style': None,
-        'description': None
+        'description': None, 'value_label': None
     }
 
     _widget_type: ClassVar[type[Model]] = _BkCheckboxButtonGroup
