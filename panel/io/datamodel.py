@@ -1,6 +1,10 @@
-import weakref
+from __future__ import annotations
+
+import sys
 
 from functools import partial
+from typing import Any
+from weakref import WeakKeyDictionary
 
 import bokeh
 import bokeh.core.properties as bp
@@ -34,6 +38,26 @@ class Parameterized(bokeh.core.property.bases.Property):
         raise ValueError(msg)
 
 
+class PolarsDataFrame(bokeh.core.property.bases.Property):
+    """ Accept Polars DataFrame values.
+
+    This property only exists to support type validation, e.g. for "accepts"
+    clauses. It is not serializable itself, and is not useful to add to
+    Bokeh models directly.
+
+    """
+
+    def validate(self, value: Any, detail: bool = True) -> None:
+        super().validate(value, detail)
+
+        import polars as pl
+        if isinstance(value, (pl.DataFrame, pl.LazyFrame)):
+            return
+
+        msg = "" if not detail else f"expected Pandas DataFrame, got {value!r}"
+        raise ValueError(msg)
+
+
 class ParameterizedList(bokeh.core.property.bases.Property):
     """ Accept a list of Parameterized objects.
 
@@ -53,7 +77,7 @@ class ParameterizedList(bokeh.core.property.bases.Property):
         raise ValueError(msg)
 
 
-_DATA_MODELS = weakref.WeakKeyDictionary()
+_DATA_MODELS: WeakKeyDictionary[type[pm.Parameterized], type[DataModel]] = WeakKeyDictionary()
 
 # The Bokeh Color property has `_default_help` set which causes
 # an error to be raise when Nullable is called on it. This converter
@@ -84,8 +108,17 @@ def class_selector_to_model(p, kwargs):
         return bp.Any(**kwargs)
 
 def bytes_param(p, kwargs):
-    kwargs.pop('default')
-    return bp.Bytes(**kwargs)
+    kwargs['default'] = None
+    return bp.Nullable(bp.Bytes, **kwargs)
+
+def df_to_dict(df):
+    if 'polars' in sys.modules:
+        import polars as pl
+        if isinstance(df, pl.LazyFrame):
+            df = df.collect()
+        if isinstance(df, pl.DataFrame):
+            df = df.to_pandas()
+    return ColumnDataSource._data_from_df(df)
 
 PARAM_MAPPING = {
     pm.Array: lambda p, kwargs: bp.Array(bp.Any, **kwargs),
@@ -97,7 +130,7 @@ PARAM_MAPPING = {
     pm.Color: color_param_to_ppt,
     pm.DataFrame: lambda p, kwargs: (
         bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs),
-        [(bp.PandasDataFrame, lambda x: ColumnDataSource._data_from_df(x))]
+        [(bp.PandasDataFrame, df_to_dict), (PolarsDataFrame, df_to_dict)]
     ),
     pm.DateRange: lambda p, kwargs: bp.Tuple(bp.Datetime, bp.Datetime, **kwargs),
     pm.Date: lambda p, kwargs: bp.Datetime(**kwargs),
@@ -115,7 +148,7 @@ PARAM_MAPPING = {
 }
 
 
-def construct_data_model(parameterized, name=None, ignore=[], types={}):
+def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={}):
     """
     Dynamically creates a Bokeh DataModel class from a Parameterized
     object.
@@ -132,6 +165,8 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}):
     types: dict
         A dictionary mapping from parameter name to a Parameter type,
         making it possible to override the default parameter types.
+    extras: dict
+        Additional properties to define on the DataModel.
 
     Returns
     -------
@@ -152,7 +187,8 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}):
         if pname == 'name' or pname is None:
             continue
         nullable = getattr(p, 'allow_None', False)
-        kwargs = {'default': p.default, 'help': p.doc}
+        default = p.default
+        kwargs = {'default': default, 'help': p.doc}
         if prop is None:
             bk_prop, accepts = bp.Any(**kwargs), []
         else:
@@ -160,9 +196,18 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}):
             bk_prop, accepts = bkp if isinstance(bkp, tuple) else (bkp, [])
             if nullable:
                 bk_prop = bp.Nullable(bk_prop, **kwargs)
+        is_valid = bk_prop.is_valid(default)
         for bkp, convert in accepts:
             bk_prop = bk_prop.accepts(bkp, convert)
         properties[pname] = bk_prop
+        if not is_valid:
+            for tp, converter in bk_prop.alternatives:
+                if tp.is_valid(default):
+                    bk_prop._default = default = converter(default)
+    for pname, ptype in extras.items():
+        if issubclass(ptype, pm.Parameter):
+            ptype = PARAM_MAPPING.get(ptype)(None, {})
+        properties[pname] = ptype
     name = name or parameterized.name
     return type(name, (DataModel,), properties)
 
@@ -192,7 +237,10 @@ def create_linked_datamodel(obj, root=None):
     else:
         _DATA_MODELS[cls] = model = construct_data_model(obj)
     properties = model.properties()
-    model = model(**{k: v for k, v in obj.param.values().items() if k in properties})
+    props = {k: v for k, v in obj.param.values().items() if k in properties}
+    if root:
+        props['name'] = f"{root.ref['id']}-{id(obj)}"
+    model = model(**props)
     _changing = []
 
     def cb_bokeh(attr, old, new):

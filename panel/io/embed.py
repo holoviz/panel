@@ -16,7 +16,6 @@ from bokeh.core.property.bases import Property
 from bokeh.models import CustomJS
 from param.parameterized import Watcher
 
-from ..util import param_watchers
 from .model import add_to_doc, diff
 from .state import state
 
@@ -82,7 +81,7 @@ def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=No
 
 
 def get_watchers(reactive):
-    return [w for pwatchers in param_watchers(reactive).values()
+    return [w for pwatchers in reactive.param.watchers.values()
             for awatchers in pwatchers.values() for w in awatchers]
 
 
@@ -158,7 +157,7 @@ def links_to_jslinks(model, widget):
 
         mappings = []
         for pname, tgt_spec in link.links.items():
-            if Watcher(*link[:-4]) in param_watchers(widget)[pname]['value']:
+            if Watcher(*link[:-4]) in widget.param.watchers[pname]['value']:
                 mappings.append((pname, tgt_spec))
 
         if mappings:
@@ -320,12 +319,12 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     if len(cross_product) > max_states:
         if config._doc_build:
             return
-        param.main.param.warning('The cross product of different application '
-                           'states is very large to explore (N=%d), consider '
-                           'reducing the number of options on the widgets or '
-                           'increase the max_states specified in the function '
-                           'to remove this warning' %
-                           len(cross_product))
+        param.main.param.warning(
+            'The cross product of different application states is very large '
+            f'to explore (N={len(cross_product)}), consider reducing the number '
+            'of options on the widgets or increase the max_states specified '
+            'in the function to remove this warning.'
+        )
 
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()

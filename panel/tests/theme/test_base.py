@@ -8,6 +8,15 @@ from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
 
 
+def _custom_repr(self):
+    try:
+        return f"ImportedStyleSheet(url={self.url!r})"
+    except Exception:
+        return "ImportedStyleSheet(...)"
+
+ImportedStyleSheet.__repr__ = _custom_repr  # type: ignore
+
+
 class DesignTest(Design):
 
     modifiers = {

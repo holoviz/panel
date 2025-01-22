@@ -6,11 +6,11 @@ package:
   version: {{ VERSION }}
 
 source:
-  url: ../../../dist/{{ project["name"] }}-{{ VERSION }}-py3-none-any.whl
+  url: ../../../dist/{{ project["name"] }}-{{ VERSION }}.tar.gz
 
 build:
   noarch: python
-  script: {{ PYTHON }} -m pip install --no-deps -vv {{ project["name"] }}-{{ VERSION }}-py3-none-any.whl
+  script: {{ PYTHON }} -m pip install --no-deps -vv .
   entry_points:
     {% for group,epoints in project.get("entry_points",{}).items() %}
     {% for entry_point in epoints %}
@@ -37,6 +37,7 @@ test:
   requires:
     - pip
     - pytest-asyncio
+    - pytest-rerunfailures
     - pytest-xdist
   commands:
     - pip check

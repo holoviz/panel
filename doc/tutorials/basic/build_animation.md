@@ -1,6 +1,6 @@
 # Build Animation
 
-In this tutorial, we will create a *bar chart race* using the [Altair](https://altair-viz.github.io) plotting library and the [`Player`](../../reference/widgets/Player.ipynb) widget.
+In this tutorial, we will create a *bar chart race* using the [Altair](https://altair-viz.github.io) plotting library and the [`Player`](../../reference/widgets/Player.md) widget.
 
 <video muted controls loop poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png" style="max-height: 400px; max-width: 100%;">
     <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race.mp4" type="video/mp4">
@@ -146,7 +146,7 @@ VALUE = "p_cap"
 
 @pn.cache()
 def get_data():
-    return pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
+    return pd.read_csv("https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz")
 
 data = get_data()
 min_year = int(data.p_year.min())
@@ -214,10 +214,10 @@ def pause_player_at_max_year(value):
     if year.value==max_year:
         year.pause()
 
-pn.bind(pause_player_at_max_year, year, watch=True)
+pn.bind(pause_player_at_max_year, year, watch=True); # semi-colon is only needed when line is run at end of cell
 ```
 
-Let's make it interactive! We introduce a [`Player`](../../reference/widgets/Player.ipynb) widget to loop continuously through the years.
+Let's make it interactive! We introduce a [`Player`](../../reference/widgets/Player.md) widget to loop continuously through the years.
 
 ---
 
@@ -257,7 +257,7 @@ Now serve the app with:
 :sync: script
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 :::
@@ -266,7 +266,7 @@ panel serve app.py --autoreload
 :sync: notebook
 
 ```bash
-panel serve app.ipynb --autoreload
+panel serve app.ipynb --dev
 ```
 
 :::
@@ -286,4 +286,4 @@ It should resemble
 
 ## Recap
 
-In this tutorial, we built a *bar chart race* using the [Altair](https://altair-viz.github.io) plotting library and the [`Player`](../../reference/widgets/Player.ipynb) widget.
+In this tutorial, we built a *bar chart race* using the [Altair](https://altair-viz.github.io) plotting library and the [`Player`](../../reference/widgets/Player.md) widget.

@@ -3,7 +3,7 @@
 This guide addresses how to programmatically control the `Pipeline` UI flow.
 
 ```{admonition} Prerequisites
-1. The [Create a Non-Linear Pipeline](./complex_pipeline.md) How-to Guide walks through the creation of branching pipeline that commonly used in the context of controlling pipeline flow.
+1. The [Create a Non-Linear Pipeline](complex_pipeline) How-to Guide walks through the creation of branching pipeline that commonly used in the context of controlling pipeline flow.
 ```
 ---
 
@@ -177,5 +177,5 @@ pn.Column(
 ```
 
 ## Related Resources
-- The [How to > Customize Pipeline Layout](./pipeline_layout.md) guide provides some context for the custom layout used here.
-- The [How to > Create a Non-Linear Pipeline](./complex_pipeline.md) guide walks through the creation of branching pipeline that commonly used in the context of controlling pipeline flow.
+- The [How to > Customize Pipeline Layout](pipeline_layout) guide provides some context for the custom layout used here.
+- The [How to > Create a Non-Linear Pipeline](complex_pipeline) guide walks through the creation of branching pipeline that commonly used in the context of controlling pipeline flow.

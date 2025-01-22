@@ -93,3 +93,47 @@ class TestChatStep:
         assert step.status == "failed", "Status should be 'failed' after an exception"
         assert step.title == "Error: 'RuntimeError'", "Title should update to 'Error: 'RuntimeError'' on failure again"
         assert step.objects[0].object == "Testing\nSecond Testing", "Error message should be streamed to the message pane"
+
+    def test_context_exception_ignore(self):
+        step = ChatStep(context_exception="ignore")
+        with step:
+            raise ValueError("Testing")
+        assert step.objects == []
+
+    def test_context_exception_raise(self):
+        step = ChatStep(context_exception="raise")
+        with pytest.raises(ValueError, match="Testing"):
+            with step:
+                raise ValueError("Testing")
+        assert step.objects[0].object == "Testing"
+
+    def test_context_exception_summary(self):
+        step = ChatStep(context_exception="summary")
+        with step:
+            raise ValueError("Testing")
+        assert step.objects[0].object == "Testing"
+
+    def test_context_exception_verbose(self):
+        step = ChatStep(context_exception="verbose")
+        with step:
+            raise ValueError("Testing")
+        assert "Traceback" in step.objects[0].object
+
+    def test_stream_none(self):
+        step = ChatStep()
+        step.stream(None)
+        assert len(step) == 1
+        assert step[0].object == ""
+        step.stream("abc")
+        assert len(step) == 1
+        assert step[0].object == "abc"
+
+    def test_header_inherits_width(self):
+        step = ChatStep(width=100)
+        assert step.header.width == 100
+
+    @pytest.mark.parametrize("width_key", ["max_width", "min_width"])
+    def test_header_inherits_stretch_width(self, width_key):
+        step = ChatStep(**{width_key: 100}, sizing_mode="stretch_width")
+        assert getattr(step.header, width_key) == 100
+        assert step.header.sizing_mode == "stretch_width"

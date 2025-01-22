@@ -59,18 +59,25 @@ def deprecated(
     remove_version: Version | str,
     old: str,
     new: str | None = None,
+    *,
     extra: str | None = None,
+    warn_version: Version | str | None = None
 ) -> None:
+    from .. import __version__
 
-    import panel as pn
-
-    current_version = Version(pn.__version__)
+    current_version = Version(__version__)
     base_version = Version(current_version.base_version)
+
+    if warn_version:
+        if isinstance(warn_version, str):
+            warn_version = Version(warn_version)
+        if base_version < warn_version:
+            return
 
     if isinstance(remove_version, str):
         remove_version = Version(remove_version)
 
-    if remove_version <= base_version and not (current_version.is_prerelease and current_version.pre[0] != 'rc'):
+    if remove_version <= base_version and not (current_version.pre and current_version.pre[0] != 'rc'):
         # This error is mainly for developers to remove the deprecated.
         raise ValueError(
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."

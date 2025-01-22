@@ -18,7 +18,9 @@ import uuid
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import (
+    TYPE_CHECKING, ClassVar, Literal, TypedDict,
+)
 
 import bokeh.embed.wrappers
 import param
@@ -42,11 +44,20 @@ from .state import state
 if TYPE_CHECKING:
     from bokeh.resources import Urls
 
-    class ResourcesType(TypedDict):
+    class TarballType(TypedDict, total=False):
+        tar: str
+        src: str
+        dest: str
+        exclude: list[str]
+
+    class ResourcesType(TypedDict, total=False):
         css: dict[str, str]
-        js:  dict[str, str]
+        font: dict[str, str]
+        js: dict[str, str]
         js_modules: dict[str, str]
         raw_css: list[str]
+        tarball: dict[str, TarballType]
+        bundle: bool
 
 logger = logging.getLogger(__name__)
 
@@ -140,12 +151,12 @@ CSS_URLS = {
 }
 
 JS_URLS = {
-    'jQuery': f'{CDN_DIST}bundled/jquery/jquery.slim.min.js',
+    'jQuery': f'{CDN_DIST}bundled/jquery/jquery.min.js',
     'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/js/bootstrap.bundle.min.js',
     'bootstrap5': f'{CDN_DIST}bundled/bootstrap5/js/bootstrap.bundle.min.js'
 }
 
-extension_dirs['panel'] = str(DIST_DIR)
+extension_dirs['panel'] = DIST_DIR
 
 bokeh.embed.wrappers._ONLOAD = """\
 (function() {
@@ -172,7 +183,7 @@ def set_resource_mode(mode):
         _settings.resources.set_value(old_resources)
 
 def use_cdn() -> bool:
-    return _settings.resources(default="server") != 'server'
+    return _settings.resources(default="server") != 'server' or state._is_pyodide
 
 def get_dist_path(cdn: bool | Literal['auto'] = 'auto') -> str:
     cdn = use_cdn() if cdn == 'auto' else cdn
@@ -222,11 +233,13 @@ def resolve_custom_path(
     path: pathlib.Path | None
     """
     if not path:
-        return
+        return None
     if not isinstance(obj, type):
         obj = type(obj)
     try:
         mod = importlib.import_module(obj.__module__)
+        if mod.__file__ is None:
+            return None
         module_path = Path(mod.__file__).parent
         assert module_path.exists()
     except Exception:
@@ -244,7 +257,7 @@ def resolve_custom_path(
     abs_path = abs_path.resolve()
     if not relative:
         return abs_path
-    return os.path.relpath(abs_path, module_path)
+    return pathlib.Path(os.path.relpath(abs_path, module_path))
 
 def component_resource_path(component, attr, path):
     """
@@ -258,7 +271,11 @@ def component_resource_path(component, attr, path):
     component_path = COMPONENT_PATH
     if state.rel_path:
         component_path = f"{state.rel_path}/{component_path}"
-    rel_path = str(resolve_custom_path(component, path, relative=True)).replace(os.path.sep, '/')
+    custom_path = resolve_custom_path(component, path, relative=True)
+    if custom_path:
+        rel_path = os.fspath(custom_path).replace(os.path.sep, '/')
+    else:
+        rel_path = path
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
@@ -299,14 +316,15 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     stylesheet: str
         The stylesheet definition
     """
-    stylesheet = str(stylesheet)
-    if not stylesheet.startswith('http') and attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet)):
-        if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
-            stylesheet = component_resource_path(cls, attribute, stylesheet)
-            if config.autoreload and '?' not in stylesheet:
-                stylesheet += f'?v={uuid.uuid4().hex}'
-        else:
-            stylesheet = custom_path.read_text(encoding='utf-8')
+    stylesheet = os.fspath(stylesheet)
+    if stylesheet.startswith('http') or not (attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet))):
+        return stylesheet
+    if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
+        stylesheet = component_resource_path(cls, attribute, stylesheet)
+        if config.autoreload and '?' not in stylesheet:
+            stylesheet += f'?v={uuid.uuid4().hex}'
+    else:
+        stylesheet = custom_path.read_text(encoding='utf-8')
     return stylesheet
 
 def patch_model_css(root, dist_url):
@@ -464,7 +482,7 @@ class ResourceComponent:
     that have to be resolved.
     """
 
-    _resources = {
+    _resources: ClassVar[ResourcesType] = {
         'css': {},
         'font': {},
         'js': {},
@@ -473,7 +491,12 @@ class ResourceComponent:
     }
 
     @classmethod
-    def _resolve_resource(cls, resource_type: str, resource: str, cdn: bool = False):
+    def _resolve_resource(
+        cls,
+        resource_type: str,
+        resource: str,
+        cdn: bool = False
+    ) -> str:
         dist_path = get_dist_path(cdn=cdn)
         if resource.startswith(CDN_DIST):
             resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
@@ -495,7 +518,7 @@ class ResourceComponent:
             is_file = bundlepath.is_file()
         except Exception:
             is_file = False
-        if is_file:
+        if is_file or (state._is_pyodide and not isurl(resource)):
             return f'{prefixed_dist}bundled/{resource_path}'
         elif isurl(resource):
             return resource
@@ -503,6 +526,9 @@ class ResourceComponent:
             return component_resource_path(
                 cls, f'_resources/{resource_type}', resource
             )
+        raise FileNotFoundError(
+            f'Could not resolve resource {resource!r}'
+        )
 
     def resolve_resources(
         self,
@@ -527,7 +553,7 @@ class ResourceComponent:
         Dictionary containing JS and CSS resources.
         """
         cls = type(self)
-        resources = {}
+        resources: ResourcesType = {}
         for rt, res in self._resources.items():
             if not isinstance(res, dict):
                 continue
@@ -538,9 +564,9 @@ class ResourceComponent:
                 for name, url in res.items()
             }
             if rt in resources:
-                resources[rt] = dict(resources[rt], **res)
+                resources[rt] = dict(resources[rt], **res)  # type: ignore
             else:
-                resources[rt] = res
+                resources[rt] = res  # type: ignore
 
         resource_types: ResourcesType = {
             'js': {},
@@ -551,20 +577,20 @@ class ResourceComponent:
 
         cdn = use_cdn() if cdn == 'auto' else cdn
         for resource_type in resource_types:
-            if resource_type not in resources or resource_type == 'raw_css':
+            if resource_type not in resources or resource_type == 'raw_css':  # type: ignore
                 continue
-            resource_files = resource_types[resource_type]
-            for rname, resource in resources[resource_type].items():
+            resource_files = resource_types[resource_type]  # type: ignore
+            for rname, resource in resources[resource_type].items():  # type: ignore
                 resolved_resource = self._resolve_resource(
                     resource_type, resource, cdn=cdn
                 )
                 if resolved_resource:
-                    resource_files[rname] = resolved_resource
+                    resource_files[rname] = resolved_resource  # type: ignore
 
         version_suffix = f'?v={JS_VERSION}'
         dist_path = get_dist_path(cdn=cdn)
         for resource_type, extra_resources in (extras or {}).items():
-            resource_files = resource_types[resource_type]
+            resource_files = resource_types[resource_type]  # type: ignore
             for name, res in extra_resources.items():
                 if not cdn:
                     res = res.replace(CDN_DIST, dist_path)
@@ -640,6 +666,8 @@ class Resources(BkResources):
             if not (getattr(model, resource_type, None) and model._loaded()):
                 continue
             for resource in getattr(model, resource_type, []):
+                if state.rel_path:
+                    resource = resource.lstrip(state.rel_path+'/')
                 if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
                     resource = component_resource_path(model, resource_type, resource)
                 if resource not in resources:
@@ -710,7 +738,7 @@ class Resources(BkResources):
     def css_files(self):
         from ..config import config
 
-        files = super(Resources, self).css_files
+        files = super().css_files
         self.extra_resources(files, '__css__')
         css_files = self.adjust_paths([
             css for css in files if self.mode != 'inline' or not is_cdn_url(css)
@@ -726,7 +754,7 @@ class Resources(BkResources):
     @property
     def css_raw(self):
         from ..config import config
-        raw = super(Resources, self).css_raw
+        raw = super().css_raw
 
         # Inline local dist resources
         css_files = self._collect_external_resources("__css__")
@@ -747,7 +775,9 @@ class Resources(BkResources):
 
         # Add loading spinner
         if config.global_loading_spinner:
-            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
+            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8').replace(
+                '../assets', self.dist_dir + 'assets'
+            )
             raw.extend([loading_base, loading_css(
                 config.loading_spinner, config.loading_color, config.loading_max_height
             )])
@@ -758,8 +788,9 @@ class Resources(BkResources):
         from ..config import config
 
         # Gather JS files
-        files = super(Resources, self).js_files
-        self.extra_resources(files, '__javascript__')
+        with set_resource_mode(self.mode):
+            files = super().js_files
+            self.extra_resources(files, '__javascript__')
         files += [js for js in config.js_files.values()]
         if config.design:
             design_js = config.design().resolve_resources(
@@ -811,6 +842,8 @@ class Resources(BkResources):
             if not (getattr(model, '__javascript_modules__', None) and model._loaded()):
                 continue
             for js_module in model.__javascript_modules__:
+                if state.rel_path:
+                    js_module = js_module.lstrip(state.rel_path+'/')
                 if not isurl(js_module) and not js_module.startswith('static/extensions'):
                     js_module = component_resource_path(model, '__javascript_modules__', js_module)
                 if js_module not in modules:
@@ -828,7 +861,7 @@ class Resources(BkResources):
 
     @property
     def js_raw(self):
-        raw_js = super(Resources, self).js_raw
+        raw_js = super().js_raw
         if not self.mode == 'inline':
             return raw_js
 

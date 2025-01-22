@@ -108,6 +108,9 @@ def test_editable_template_visible(page):
     serve_component(page, tmpl)
 
     md2_item = page.locator(".muuri-grid-item").nth(1)
+
+    page.wait_for_timeout(200)
+
     expect(md2_item).to_have_class('muuri-grid-item muuri-item-hidden muuri-item')
 
 
@@ -122,6 +125,9 @@ def test_editable_template_reset_visible(page):
     serve_component(page, tmpl)
 
     md2_item = page.locator(".muuri-grid-item").nth(1)
+
+    page.wait_for_timeout(200)
+
     expect(md2_item).to_have_class('muuri-grid-item muuri-item-hidden muuri-item')
 
     page.locator('#grid-reset').click()
@@ -140,6 +146,8 @@ def test_editable_template_delete_item(page):
 
     serve_component(page, tmpl)
 
+    page.wait_for_timeout(200)
+
     page.locator(".muuri-handle.delete").nth(1).click()
 
     wait_until(lambda: tmpl.layout.get(id(md2), {}).get('visible') == False, page)
@@ -155,6 +163,8 @@ def test_editable_template_undo_delete_item(page):
     serve_component(page, tmpl)
 
     page.locator(".muuri-handle.delete").nth(1).click()
+
+    page.wait_for_timeout(200)
 
     wait_until(lambda: tmpl.layout.get(id(md2), {}).get('visible') == False, page)
 
@@ -174,6 +184,8 @@ def test_editable_template_drag_item(page):
 
     md2_handle = page.locator(".muuri-handle.drag").nth(1)
 
+    page.wait_for_timeout(200)
+
     md2_handle.drag_to(md2_handle, target_position={'x': 0, 'y': -50}, force=True)
 
     wait_until(lambda: list(tmpl.layout) == [id(md2), id(md1)], page)
@@ -188,6 +200,8 @@ def test_editable_template_undo_drag_item(page):
     serve_component(page, tmpl)
 
     md2_handle = page.locator(".muuri-handle.drag").nth(1)
+
+    page.wait_for_timeout(200)
 
     md2_handle.drag_to(md2_handle, target_position={'x': 0, 'y': -50}, force=True)
 
@@ -209,6 +223,8 @@ def test_editable_template_resize_item(page):
 
     md2_handle = page.locator(".muuri-handle.resize").nth(1)
 
+    page.wait_for_timeout(200)
+
     md2_handle.hover()
     md2_handle.drag_to(md2_handle, target_position={'x': -50, 'y': -30}, force=True)
 
@@ -225,6 +241,8 @@ def test_editable_template_undo_resize_item(page):
     serve_component(page, tmpl)
 
     md2_handle = page.locator(".muuri-handle.resize").nth(1)
+
+    page.wait_for_timeout(200)
 
     md2_handle.hover()
     md2_handle.drag_to(md2_handle, target_position={'x': -50, 'y': -30}, force=True)

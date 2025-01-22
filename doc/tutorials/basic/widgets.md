@@ -6,15 +6,15 @@ Welcome to the tutorial on accepting user inputs with widgets in Panel! Let's di
 
 Widgets, found within the `pn.widgets` namespace, are powerful tools for capturing user input and interaction. They offer a wide range of functionality and customization options, making them essential for creating dynamic and engaging apps.
 
-You can explore the full array of available widgets and their detailed reference guides in the [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the [Component Gallery](../../reference/index.md).
+You can explore the full array of available widgets and their detailed reference guides in the [Widgets Section](../../reference/index.rst#widgets) of the [Component Gallery](../../reference/index.rst).
 
 :::{note}
 Widgets typically utilize the `value` parameter to capture user input.
-Some widgets, such as the [`Button`](../../reference/widgets/Button.ipynb), even allow you to register callback functions that trigger actions upon interaction.
+Some widgets, such as the [`Button`](../../reference/widgets/Button.md), even allow you to register callback functions that trigger actions upon interaction.
 
-For more complex scenarios, widgets like the [`Tabulator`](../../reference/widgets/Tabulator.ipynb) offer versatile input capabilities.
+For more complex scenarios, widgets like the [`Tabulator`](../../reference/widgets/Tabulator.md) offer versatile input capabilities.
 
-In some cases, Panes can accept user input too. For example, the [`ECharts`](../../reference/panes/ECharts.ipynb), [`Plotly`](../../reference/panes/Plotly.ipynb), and [`Vega`](../../reference/panes/Vega.ipynb) (Altair) panes can accept user inputs.
+In some cases, Panes can accept user input too. For example, the [`ECharts`](../../reference/panes/ECharts.md), [`Plotly`](../../reference/panes/Plotly.md), and [`Vega`](../../reference/panes/Vega.md) (Altair) panes can accept user inputs.
 
 :::
 
@@ -42,10 +42,10 @@ pn.widgets.Button(
 With features like icons, button types, and descriptions, buttons provide both functionality and visual cues to users. Hover over the button to see its description displayed as a helpful tooltip.
 
 :::{note}
-The `.servable()` method is used to include the component in the app served by `panel serve app.py --autoreload`. This is not necessary for displaying the component in a notebook.
+The `.servable()` method is used to include the component in the app served by `panel serve app.py --dev`. This is not necessary for displaying the component in a notebook.
 :::
 
-For a deeper understanding of the `Button` widget and its capabilities, refer to its detailed [reference guide](../../reference/widgets/Button.ipynb).
+For a deeper understanding of the `Button` widget and its capabilities, refer to its detailed [reference guide](../../reference/widgets/Button.md).
 
 ### Accept Text Input
 
@@ -67,7 +67,7 @@ pn.widgets.TextInput(
 
 Hover over the input field to see its description as a tooltip. Try enabling the input by changing `disabled=True` to `disabled=False`. You'll also notice how the `max_length` parameter limits input length.
 
-To delve into the details of the `TextInput` widget, check out its [reference guide](../../reference/widgets/TextInput.ipynb).
+To delve into the details of the `TextInput` widget, check out its [reference guide](../../reference/widgets/TextInput.md).
 
 ### Selecting from a List
 
@@ -103,7 +103,7 @@ pn.widgets.RadioButtonGroup(
 
 In this tutorial, we've covered various ways to accept user input using widgets in Panel. From simple clicks to text input and selection from lists, widgets provide powerful tools for building interactive applications.
 
-Don't forget to explore the [Component Gallery](https://panel.holoviz.org/reference/index.html#widgets) for more widgets and their detailed reference guides.
+Don't forget to explore the [Component Gallery](../../reference/index.rst#widgets) for more widgets and their detailed reference guides.
 
 ## Resources
 
@@ -121,4 +121,4 @@ Don't forget to explore the [Component Gallery](https://panel.holoviz.org/refere
 
 ### Component Gallery
 
-- [Widgets](https://panel.holoviz.org/reference/index.html#widgets)
+- [Widgets](../../reference/index.rst#widgets)

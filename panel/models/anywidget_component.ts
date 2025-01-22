@@ -1,7 +1,6 @@
 import type * as p from "@bokehjs/core/properties"
 
-import {ReactiveESM} from "./reactive_esm"
-import {ReactComponent, ReactComponentView} from "./react_component"
+import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
 
 class AnyWidgetModelAdapter {
   declare model: AnyWidgetComponent
@@ -91,10 +90,10 @@ class AnyWidgetAdapter extends AnyWidgetModelAdapter {
 
 }
 
-export class AnyWidgetComponentView extends ReactComponentView {
+export class AnyWidgetComponentView extends ReactiveESMView {
   declare model: AnyWidgetComponent
   adapter: AnyWidgetAdapter
-  destroyer: ((props: any) => void) | null
+  destroyer: Promise<((props: any) => void) | null>
 
   override initialize(): void {
     super.initialize()
@@ -104,7 +103,7 @@ export class AnyWidgetComponentView extends ReactComponentView {
   override remove(): void {
     super.remove()
     if (this.destroyer) {
-      this.destroyer({model: this.adapter, el: this.container})
+      this.destroyer.then((d: any) => d({model: this.adapter, el: this.container}))
     }
   }
 
@@ -112,9 +111,15 @@ export class AnyWidgetComponentView extends ReactComponentView {
     return `
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
-let props = {view, model: view.adapter, data: view.model.data, el: view.container}
+function render() {
+  const out = Promise.resolve(view.render_fn({
+    view, model: view.adapter, data: view.model.data, el: view.container
+  }) || null)
+  view.destroyer = out
+  out.then(() => view.after_rendered())
+}
 
-view.destroyer = view.render_fn(props) || null`
+export default {render}`
   }
 
   override after_rendered(): void {
@@ -126,12 +131,12 @@ view.destroyer = view.render_fn(props) || null`
 export namespace AnyWidgetComponent {
   export type Attrs = p.AttrsOf<Props>
 
-  export type Props = ReactComponent.Props
+  export type Props = ReactiveESM.Props
 }
 
 export interface AnyWidgetComponent extends AnyWidgetComponent.Attrs {}
 
-export class AnyWidgetComponent extends ReactComponent {
+export class AnyWidgetComponent extends ReactiveESM {
   declare properties: AnyWidgetComponent.Props
 
   constructor(attrs?: Partial<AnyWidgetComponent.Attrs>) {
@@ -141,10 +146,6 @@ export class AnyWidgetComponent extends ReactComponent {
   protected override _run_initializer(initialize: (props: any) => void): void {
     const props = {model: new AnyWidgetModelAdapter(this)}
     initialize(props)
-  }
-
-  override compile(): string | null {
-    return ReactiveESM.prototype.compile.call(this)
   }
 
   static override __module__ = "panel.models.esm"

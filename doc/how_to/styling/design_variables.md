@@ -7,8 +7,8 @@ The design feature was added in 1.0.0 and is actively being developed and improv
 :::
 
 ```{admonition} Prerequisites
-1. The [How-to > Apply a Design](./design.md) guides describe how to select a design system to apply to the components to achieve a consistent design language.
-2. The [How-to > Apply CSS](./apply_css.md) guide describes how to apply CSS definitions in Panel.
+1. The [How-to > Apply a Design](./design) guides describe how to select a design system to apply to the components to achieve a consistent design language.
+2. The [How-to > Apply CSS](./apply_css) guide describes how to apply CSS definitions in Panel.
 ```
 
 ---

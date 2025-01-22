@@ -14,11 +14,11 @@ class TextPosition(Enum):
 
 SCALAR_MODE = namedtuple("SCALAR_MODE",
     "Default UsePointData UseCellData UsePointFieldData UseCellFieldData UseFieldData"
-)(0, 1, 2, 3, 4, 5)
+)(0, 1, 2, 3, 4, 5)  # type: ignore
 
-COLOR_MODE = namedtuple("COLOR_MODE", "DirectScalars MapScalars")(0, 1)
+COLOR_MODE = namedtuple("COLOR_MODE", "DirectScalars MapScalars")(0, 1)  # type: ignore
 
-ACCESS_MODE = namedtuple("ACCESS_MODE", "ById ByName")(0, 1)
+ACCESS_MODE = namedtuple("ACCESS_MODE", "ById ByName")(0, 1)  # type: ignore
 
 PRESET_CMAPS = [
     'KAAMS',

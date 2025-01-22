@@ -9,9 +9,8 @@ from __future__ import annotations
 
 import datetime as dt
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -29,6 +28,7 @@ from ..config import config
 from ..io import state
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
+from ..models.datetime_slider import DatetimeSlider as _BkDatetimeSlider
 from ..util import (
     datetime_as_utctimestamp, edit_readonly, param_reprs, value_as_date,
     value_as_datetime,
@@ -48,15 +48,15 @@ class _SliderBase(Widget):
 
     bar_color = param.Color(default="#e6e6e6", doc="""""")
 
-    direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'], doc="""
+    direction = param.Selector(default='ltr', objects=['ltr', 'rtl'], doc="""
         Whether the slider should go from left-to-right ('ltr') or
         right-to-left ('rtl').""")
 
-    name = param.String(default=None, doc="""
+    name = param.String(default=None, constant=False, doc="""
         The name of the widget. Also used as the label of the widget. If not set,
         the widget has no label.""")
 
-    orientation = param.ObjectSelector(default='horizontal', objects=['horizontal', 'vertical'],
+    orientation = param.Selector(default='horizontal', objects=['horizontal', 'vertical'],
         doc="""
         Whether the slider should be oriented horizontally or
         vertically.""")
@@ -83,7 +83,7 @@ class _SliderBase(Widget):
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return super()._linked_properties + ('value_throttled',)
 
     def _process_property_change(self, msg):
@@ -96,12 +96,17 @@ class _SliderBase(Widget):
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'value_throttled' in msg:
             del msg['value_throttled']
 
         return super()._update_model(events, msg, root, model, doc, comm)
+
+    def _process_events(self, events: dict[str, Any]) -> None:
+        if config.throttled:
+            events.pop("value", None)
+        super()._process_events(events)
 
 
 class ContinuousSlider(_SliderBase):
@@ -109,7 +114,7 @@ class ContinuousSlider(_SliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A custom format string or Bokeh TickFormatter.""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     __abstract = True
 
@@ -274,8 +279,8 @@ class DateSlider(_SliderBase):
     as_datetime = param.Boolean(default=False, doc="""
         Whether to store the date as a datetime.""")
 
-    step = param.Number(default=None, doc="""
-        The step parameter in milliseconds.""")
+    step = param.Integer(default=1, bounds=(1, None), doc="""
+        The step parameter in days.""")
 
     format = param.String(default=None, doc="""
         Datetime format used for parsing and formatting the date.""")
@@ -314,6 +319,36 @@ class DateSlider(_SliderBase):
         return msg
 
 
+class DatetimeSlider(DateSlider):
+    """
+    The DatetimeSlider widget allows selecting a value within a set of
+    bounds using a slider. Supports datetime.date, datetime.datetime
+    and np.datetime64 values. The step size is fixed at 1 minute.
+
+    Reference: https://panel.holoviz.org/reference/widgets/DatetimeSlider.html
+
+    :Example:
+
+    >>> import datetime as dt
+    >>> DatetimeSlider(
+    ...     value=dt.datetime(2025, 1, 1),
+    ...     start=dt.datetime(2025, 1, 1),
+    ...     end=dt.datetime(2025, 1, 7),
+    ...     name="A datetime value"
+    ... )
+    """
+
+    as_datetime = param.Boolean(default=True, readonly=True, doc="""
+        Whether to store the date as a datetime.""")
+
+    step = param.Number(default=60, bounds=(1, None), doc="""
+        The step size in seconds. Default is 1 minute, i.e 60 seconds.""")
+
+    _property_conversion = staticmethod(value_as_datetime)
+
+    _widget_type: ClassVar[type[Model]] = _BkDatetimeSlider
+
+
 class DiscreteSlider(CompositeWidget, _SliderBase):
     """
     The DiscreteSlider widget allows selecting a value from a discrete
@@ -344,14 +379,13 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         A custom format string. Separate from format parameter since
         formatting is applied in Python, not via the bokeh TickFormatter.""")
 
-
     _rename: ClassVar[Mapping[str, str | None]] = {'formatter': None}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'value_throttled': None, 'options': None
     }
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _style_params: ClassVar[list[str]] = [
         p for p in list(Layoutable.param) if p != 'name'
@@ -527,7 +561,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     def values(self):
         """The list of option values"""
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
-
 
 
 class _RangeSliderBase(_SliderBase):

@@ -3,7 +3,7 @@
 This guide addresses how to toggle the modal area of a template.
 
 ```{admonition} Prerequisites
-1. The [How to > Set a Template](./template_set.md) guide demonstrates how to set a template for a deployable app.
+1. The [How to > Set a Template](./template_set) guide demonstrates how to set a template for a deployable app.
 ```
 
 ---
@@ -61,12 +61,12 @@ template.servable();
 Now we can activate this app on the command line. When we click the button in the sidebar, we see the modal pop up:
 
 ```bash
-panel serve app.py --show --autoreload
+panel serve app.py --show --dev
 ```
 
 <img src="../../_static/images/template_arrange_modal.png" alt="example panel app with an active modal">
 
 ## Related Resources
 
-- See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
-- Read [Explanation > Templates](../../explanation/templates/templates_overview.md) for explanation.
+- See [How-to > Apply Templates > Set a Template](./template_set) for alternate approaches to set a template.
+- Read [Explanation > Templates](../../explanation/styling/templates_overview) for explanation.

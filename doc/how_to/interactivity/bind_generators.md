@@ -66,4 +66,4 @@ pn.Row(slideshow)
 
 ## Related Resources
 
-- Learn [how to use async callbacks to perform operations concurrently](../concurrency/async.md)
+- Learn [how to use async callbacks to perform operations concurrently](../callbacks/async.md)

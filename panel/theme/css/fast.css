@@ -2,8 +2,8 @@
 :host {
   --track-width: 4;
   --thumb-size: calc(
-    (var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 0.5 -
-      var(--design-unit)
+    (var(--base-height-multiplier) + var(--density)) * var(--design-unit) *
+      0.5 - var(--design-unit)
   );
   --handle-width: calc(var(--thumb-size) * 1px);
   --handle-height: calc(var(--thumb-size) * 1px);
@@ -743,7 +743,8 @@ select:not([size]).bk-input {
     (
         (var(--base-height-multiplier) + var(--density)) * var(--design-unit) /
           2 + var(--design-unit)
-      ) * 1px
+      ) *
+      1px
   );
 }
 
@@ -764,7 +765,8 @@ select:not([size]).bk-input {
     (
         (var(--base-height-multiplier) + var(--density)) * var(--design-unit) /
           2 + var(--design-unit)
-      ) * 1px
+      ) *
+      1px
   );
   top: 0;
   width: calc(
@@ -1107,7 +1109,6 @@ table.panel-df {
 }
 
 /* Quill editor */
-
 .ql-editor {
   color: var(--neutral-foreground-rest);
 }
@@ -1117,8 +1118,25 @@ table.panel-df {
 }
 
 /* Float panel */
-
 .jsPanel .jsPanel-content {
   background-color: var(--background-color);
   color: var(--neutral-foreground-rest);
+}
+
+/* Copy Button */
+.copybtn {
+  background-color: var(--neutral-fill-input-rest);
+  color: var(--neutral-foreground-rest);
+}
+
+/* Modal */
+fast-design-system-provider .dialog-content {
+  background-color: var(--background-color);
+  border-radius: calc(var(--corner-radius) * 1px);
+}
+fast-design-system-provider .pnx-dialog-close {
+  color: var(--neutral-foreground-rest);
+}
+fast-design-system-provider .pnx-dialog-close:hover {
+  background-color: var(--neutral-fill-hover);
 }

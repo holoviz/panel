@@ -3,6 +3,8 @@ The config module supplies the global config object and the extension
 which provides convenient support for  loading and configuring panel
 components.
 """
+from __future__ import annotations
+
 import ast
 import copy
 import importlib
@@ -13,14 +15,11 @@ import warnings
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, ClassVar
 from weakref import WeakKeyDictionary
 
 import param
 
-from bokeh.core.has_props import _default_resolver
-from bokeh.document import Document
-from bokeh.model import Model
-from bokeh.settings import settings as bk_settings
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
@@ -28,7 +27,9 @@ from pyviz_comms import (
 from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
-from .util import param_watchers
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
 
 _LOCAL_DEV_VERSION = (
     any(v in __version__ for v in ('post', 'dirty'))
@@ -41,6 +42,7 @@ _LOCAL_DEV_VERSION = (
 #---------------------------------------------------------------------
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
+_config_uninitialized = True
 
 def validate_config(config, parameter, value):
     """
@@ -206,12 +208,12 @@ class _config(_base_config):
         information about user sessions. A value of -1 indicates an
         unlimited history.""")
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         Specify the default sizing mode behavior of panels.""")
 
-    template = param.ObjectSelector(default=None, doc="""
+    template = param.Selector(default=None, doc="""
         The default template to render served applications into.""")
 
     throttled = param.Boolean(default=False, doc="""
@@ -225,12 +227,12 @@ class _config(_base_config):
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of the Admin Panel logger")
 
-    _comms = param.ObjectSelector(
+    _comms = param.Selector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
         extension or use the jupyter_bokeh ipywidget model.""")
 
-    _console_output = param.ObjectSelector(default='accumulate', allow_None=True,
+    _console_output = param.Selector(default='accumulate', allow_None=True,
                                  objects=['accumulate', 'replace', 'disable',
                                           False], doc="""
         How to log errors and stdout output triggered by callbacks
@@ -274,7 +276,7 @@ class _config(_base_config):
         or filepath containing JSON to use with the basic auth
         provider.""")
 
-    _oauth_provider = param.ObjectSelector(
+    _oauth_provider = param.Selector(
         default=None, allow_None=True, objects=[], doc="""
         Select between a list of authentication providers.""")
 
@@ -313,11 +315,11 @@ class _config(_base_config):
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
-    _theme = param.ObjectSelector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
+    _theme = param.Selector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
         The theme to apply to components.""")
 
     # Global parameters that are shared across all sessions
-    _globals = {
+    _globals: ClassVar[set[str]] = {
         'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
@@ -328,7 +330,7 @@ class _config(_base_config):
 
     _truthy = ['True', 'true', '1', True, 1]
 
-    _session_config = WeakKeyDictionary()
+    _session_config: ClassVar[WeakKeyDictionary[Document, dict[str, Any]]] = WeakKeyDictionary()
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -410,7 +412,7 @@ class _config(_base_config):
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
-            watchers = param_watchers(self).get(attr, {}).get('value', [])
+            watchers = self.param.watchers.get(attr, {}).get('value', [])
             for w in watchers:
                 w.fn()
         elif f'_{attr}' in _config._parameter_set and hasattr(self, f'_{attr}_'):
@@ -435,7 +437,7 @@ class _config(_base_config):
         ensure that even on first access mutable parameters do not
         end up being modified.
         """
-        if attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param'):
+        if _config_uninitialized or attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param'):
             return super().__getattribute__(attr)
 
         from .io.state import state
@@ -621,6 +623,7 @@ else:
 _config._parameter_set = set(_params)
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
+_config_uninitialized = False
 
 class panel_extension(_pyviz_extension):
     """
@@ -656,9 +659,9 @@ class panel_extension(_pyviz_extension):
     will be using the `FastListTemplate`.
     """
 
-    _loaded = False
+    _loaded: bool = False
 
-    _imports = {
+    _imports: ClassVar[dict[str, str]] = {
         'ace': 'panel.models.ace',
         'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
@@ -668,6 +671,7 @@ class panel_extension(_pyviz_extension):
         'jsoneditor': 'panel.models.jsoneditor',
         'katex': 'panel.models.katex',
         'mathjax': 'panel.models.mathjax',
+        'modal': 'panel.models.modal',
         'perspective': 'panel.models.perspective',
         'plotly': 'panel.models.plotly',
         'tabulator': 'panel.models.tabulator',
@@ -681,7 +685,7 @@ class panel_extension(_pyviz_extension):
     # Check whether these are loaded before rendering (if any item
     # in the list is available the extension will be confidered as
     # loaded)
-    _globals = {
+    _globals: ClassVar[dict[str, list[str]]] = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
         'filedropper': ['FilePond'],
@@ -698,11 +702,15 @@ class panel_extension(_pyviz_extension):
         'vtk': ['vtk']
     }
 
-    _loaded_extensions = []
+    _loaded_extensions: list[str] = []
 
-    _comms_detected_before = False
+    _comms_detected_before: bool = False
 
     def __call__(self, *args, **params):
+        from bokeh.core.has_props import _default_resolver
+        from bokeh.model import Model
+        from bokeh.settings import settings as bk_settings
+
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
@@ -838,8 +846,7 @@ class panel_extension(_pyviz_extension):
             else:
                 with param.logging_level('ERROR'):
                     hv.plotting.Renderer.load_nb(config.inline)
-                    if hasattr(hv.plotting.Renderer, '_render_with_panel'):
-                        nb_loaded = True
+                    nb_loaded = True
 
         # Disable simple ids, old state and multiple tabs in notebooks can cause IDs to clash
         bk_settings.simple_ids.set_value(False)
@@ -855,6 +862,7 @@ class panel_extension(_pyviz_extension):
     @staticmethod
     def _display_globals():
         if config.browser_info and state.browser_info:
+            from bokeh.document import Document
             doc = Document()
             comm = state._comm_manager.get_server_comm()
             model = state.browser_info._render_model(doc, comm)

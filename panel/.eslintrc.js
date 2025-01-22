@@ -9,7 +9,7 @@ module.exports = {
   },
   "plugins": ["@typescript-eslint", "@stylistic/eslint-plugin"],
   "extends": [],
-  "ignorePatterns": ["*/dist", "*/theme/**/*.js", ".eslintrc.js", "*/_templates/*.js", "*/template/**/*.js", "examples/*"],
+  "ignorePatterns": ["*/dist", "*/theme/**/*.js", ".eslintrc.js", "*/_templates/*.js", "*/template/**/*.js", "examples/*", "scripts/*", "doc/_static/*.js"],
   "rules": {
     "@typescript-eslint/ban-types": ["error", {
       "types": {
@@ -48,6 +48,7 @@ module.exports = {
     "@typescript-eslint/no-unnecessary-type-assertion": ["error"],
     "@typescript-eslint/no-unnecessary-type-constraint": ["error"],
     "@typescript-eslint/switch-exhaustiveness-check": ["error"],
+    "no-console": ["error", { "allow": ["warn", "error"] }],
     "no-self-assign": ["error", {"props": false}],
     "brace-style": ["error", "1tbs", {"allowSingleLine": true}],
     "comma-dangle": ["off"],
@@ -84,7 +85,6 @@ module.exports = {
     "no-floating-decimal": ["error"],
     "no-multiple-empty-lines": ["error", {"max": 1, "maxBOF": 0, "maxEOF": 0}],
     "no-new-wrappers": "error",
-    "no-template-curly-in-string": "error",
     "no-throw-literal": "error",
     "no-trailing-spaces": ["error"],
     "no-var": "error",
@@ -115,7 +115,7 @@ module.exports = {
       "overrides": {},
     }],
     "guard-for-in": ["warn"],
-    "quotes": ["error", "double", {"avoidEscape": true, "allowTemplateLiterals": false}],
+    "quotes": ["error", "double", {"avoidEscape": true, "allowTemplateLiterals": true}],
     "curly": ["error", "all"],
     "prefer-template": ["error"],
     "generator-star-spacing": ["error", {

@@ -11,6 +11,7 @@ from bokeh.models.sources import DataSource
 from ..config import config
 from ..util import classproperty
 
+VIZZU_VERSION = "0.15"
 
 class VizzuEvent(ModelEvent):
 
@@ -30,7 +31,7 @@ class VizzuChart(LayoutDOM):
     __javascript_module_exports__ = ['Vizzu']
 
     __javascript_modules__ = [
-        f"{config.npm_cdn}/vizzu@0.9.3/dist/vizzu.min.js"
+        f"{config.npm_cdn}/vizzu@{VIZZU_VERSION}/dist/vizzu.min.js"
     ]
 
     @classproperty

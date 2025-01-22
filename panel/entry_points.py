@@ -6,7 +6,7 @@ Hypothesis package https://github.com/HypothesisWorks/hypothesis.
 
 import importlib.metadata
 
-from typing import Iterator
+from collections.abc import Iterator
 
 
 def entry_points_for(group: str) -> Iterator[importlib.metadata.EntryPoint]:
@@ -16,7 +16,7 @@ def entry_points_for(group: str) -> Iterator[importlib.metadata.EntryPoint]:
         # Load-time selection requires Python >= 3.10 or importlib_metadata >= 3.6,
         # so we'll retain this fallback logic for some time to come.  See also
         # https://importlib-metadata.readthedocs.io/en/latest/using.html
-        eps = importlib.metadata.entry_points().get(group, [])
+        eps = importlib.metadata.entry_points().get(group, [])  # type: ignore[arg-type]
     yield from eps
 
 

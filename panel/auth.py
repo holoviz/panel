@@ -12,6 +12,7 @@ import uuid
 
 from base64 import urlsafe_b64encode
 from functools import partial
+from typing import ClassVar
 
 import tornado
 
@@ -53,6 +54,7 @@ def decode_response_body(response):
         body = codecs.decode(response.body, 'ascii')
     except Exception:
         body = codecs.decode(response.body, 'utf-8')
+    body = re.sub("\'", '\\"', body)
     body = re.sub('"', '\"', body)
     body = re.sub("'", '"', body)
     body = json.loads(body)
@@ -101,13 +103,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         'grant_type':    'authorization_code'
     }
 
-    _access_token_header = None
+    _access_token_header: ClassVar[str | None] = None
 
-    _state_cookie = None
+    _state_cookie: ClassVar[str | None] = None
 
     _error_template = ERROR_TEMPLATE
 
-    _login_endpoint = '/login'
+    _login_endpoint: ClassVar[str] = '/login'
 
     @property
     def _SCOPE(self):
@@ -449,10 +451,17 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             log.warning(f"{provider} OAuth provider failed to fully "
                         f"authenticate returning the following response:"
                         f"{body}.")
+        if hasattr(body, "get"):
+            log_message = body.get('error_description', str(body))
+            reason = body.get('error', 'Unknown error')
+        else:
+            log_message = str(response)
+            reason = 'Unknown Error'
+
         raise HTTPError(
             status,
-            body.get('error_description', str(body)),
-            reason=body.get('error', 'Unknown error')
+            log_message=log_message,
+            reason=reason
         )
 
     def write_error(self, status_code, **kwargs):
@@ -1025,6 +1034,12 @@ class OAuthProvider(BasicAuthProvider):
                 expiry = access_json['exp']
             except Exception:
                 pass
+
+            # Try casting expiry to float as it may be stored as bytes
+            try:
+                expiry = float(expiry)
+            except Exception:
+                expiry = None
 
             if expiry is None:
                 expiry = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)

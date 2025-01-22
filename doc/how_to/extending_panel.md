@@ -3,7 +3,7 @@
         <meta http-equiv='refresh' content='0; URL=./index.html#extending-panel>
     </head>
 
-# Test and debug
+# Extending Panel
 
 ```{toctree}
 :titlesonly:

@@ -29,7 +29,7 @@ For more detail see the Reference Gallery guide.
 https://panel.holoviz.org/reference/chat/ChatInterface.html
 """
 
-import importlib as _importlib
+from typing import TYPE_CHECKING
 
 from .feed import ChatFeed  # noqa
 from .icon import ChatReactionIcons  # noqa
@@ -37,16 +37,6 @@ from .input import ChatAreaInput  # noqa
 from .interface import ChatInterface  # noqa
 from .message import ChatMessage  # noqa
 from .step import ChatStep  # noqa
-
-
-def __getattr__(name):
-    """
-    Lazily import langchain module when accessed.
-    """
-    if name == "langchain":
-        return _importlib.import_module("panel.chat.langchain")
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 
 __all__ = (
     "ChatAreaInput",
@@ -57,3 +47,17 @@ __all__ = (
     "ChatStep",
     "langchain",
 )
+
+def __getattr__(name):
+    """
+    Lazily import langchain module when accessed.
+    """
+    if name == "langchain":
+        import importlib
+        return importlib.import_module("panel.chat.langchain")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+__dir__ = lambda: list(__all__)
+
+if TYPE_CHECKING:
+    from . import langchain

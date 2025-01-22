@@ -1,13 +1,20 @@
+import asyncio
 import base64
+import html
 import json
+import sys
+
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+import pytest
 
+from panel import config
 from panel.pane import (
     HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
-from panel.tests.util import streamz_available
+from panel.tests.util import not_windows, streamz_available
 
 
 def test_get_markdown_pane_type():
@@ -21,29 +28,37 @@ def test_get_series_pane_type():
     ser = pd.Series([1, 2, 3])
     assert PaneBase.get_pane_type(ser) is DataFrame
 
-@streamz_available
-def test_get_streamz_dataframe_pane_type():
+@pytest.fixture
+async def streamz_df():
     from streamz.dataframe import Random
-    sdf = Random(interval='200ms', freq='50ms')
-    assert PaneBase.get_pane_type(sdf) is DataFrame
+    sdf = Random(interval='200ms', freq='50ms', start=False)
+    sdf.start()
+    yield sdf
+    sdf.stop()
+    sdf.loop.asyncio_loop.stop()
+    while sdf.loop.asyncio_loop.is_running():
+        await asyncio.sleep(0.1)
+    sdf.loop.asyncio_loop.close()
 
+@not_windows
 @streamz_available
-def test_get_streamz_dataframes_pane_type():
-    from streamz.dataframe import Random
-    sdf = Random(interval='200ms', freq='50ms').groupby('y').sum()
-    assert PaneBase.get_pane_type(sdf) is DataFrame
+def test_get_streamz_dataframe_pane_type(streamz_df):
+    assert PaneBase.get_pane_type(streamz_df) is DataFrame
 
+@not_windows
 @streamz_available
-def test_get_streamz_series_pane_type():
-    from streamz.dataframe import Random
-    sdf = Random(interval='200ms', freq='50ms')
-    assert PaneBase.get_pane_type(sdf.x) is DataFrame
+def test_get_streamz_dataframes_pane_type(streamz_df):
+    assert PaneBase.get_pane_type(streamz_df.groupby('y').sum()) is DataFrame
 
+@not_windows
 @streamz_available
-def test_get_streamz_seriess_pane_type():
-    from streamz.dataframe import Random
-    sdf = Random(interval='200ms', freq='50ms').groupby('y').sum()
-    assert PaneBase.get_pane_type(sdf.x) is DataFrame
+def test_get_streamz_series_pane_type(streamz_df):
+    assert PaneBase.get_pane_type(streamz_df.x) is DataFrame
+
+@not_windows
+@streamz_available
+def test_get_streamz_seriess_pane_type(streamz_df):
+    assert PaneBase.get_pane_type(streamz_df.groupby('y').sum().x) is DataFrame
 
 def test_markdown_pane(document, comm):
     pane = Markdown("**Markdown**")
@@ -73,33 +88,73 @@ def test_markdown_pane_dedent(document, comm):
     pane.dedent = False
     assert model.text.startswith('&lt;pre&gt;&lt;code&gt;ABC')
 
-def test_markdown_pane_newline(document, comm):
-    # Newlines should be separated by a br
+@pytest.mark.parametrize('renderer', ('markdown-it', 'markdown'))
+def test_markdown_pane_hard_line_break_default(document, comm, renderer):
+    assert Markdown.hard_line_break is False
+    txt = "Hello\nWorld\nI am here"
+    pane = Markdown(txt, renderer=renderer)
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    # No <br />, single <p>
+    assert html.unescape(model.text).rstrip() == f"<p>{txt}</p>"
+
+@pytest.mark.parametrize('renderer', ('markdown-it', 'markdown'))
+def test_markdown_pane_hard_line_break_enabled(document, comm, renderer):
+    assert Markdown.hard_line_break is False
+    pane = Markdown("Hello\nWorld\nI am here", renderer=renderer, hard_line_break=True)
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    # Two <br />, single <p>
+    assert html.unescape(model.text).rstrip() == "<p>Hello<br />\nWorld<br />\nI am here</p>"
+
+@pytest.mark.parametrize('hard_line_break', (False, True))
+def test_markdown_pane_hard_line_break_myst(document, comm, hard_line_break):
+    pytest.importorskip("myst_parser")
+    # hard_line_break not supported
+    assert Markdown.hard_line_break is False
+    txt = "Hello\nWorld\nI am here"
+    pane = Markdown(txt, renderer='myst', hard_line_break=hard_line_break)
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    # No <br />, single <p>
+    assert html.unescape(model.text).rstrip() == f"<p>{txt}</p>"
+
+@pytest.mark.parametrize('renderer', ('markdown-it', 'markdown', 'myst'))
+@pytest.mark.parametrize('hard_line_break', (False, True))
+def test_markdown_pane_hard_line_break_default_two_spaces(document, comm, renderer, hard_line_break):
+    if renderer == 'myst':
+        pytest.importorskip("myst_parser")
+    # Same output, whether hard_line_break is True or False
+    assert Markdown.hard_line_break is False
+    # Note the two empty spaces at the end of each line.
+    pane = Markdown("Hello  \nWorld  \nI am here", renderer=renderer, hard_line_break=hard_line_break)
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    # Two <br />, single <p>
+    assert html.unescape(model.text).rstrip() == "<p>Hello<br />\nWorld<br />\nI am here</p>"
+
+@pytest.mark.parametrize('renderer', ('markdown-it', 'markdown', 'myst'))
+def test_markdown_pane_two_new_lines(document, comm, renderer):
+    if renderer == 'myst':
+        pytest.importorskip("myst_parser")
+    assert Markdown.hard_line_break is False
+    pane = Markdown("Hello\n\nWorld", renderer=renderer)
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    # Two <p> elements
+    assert html.unescape(model.text).rstrip() == "<p>Hello</p>\n<p>World</p>"
+
+def test_markdown_pane_markdown_it_render_options_breaks(document, comm):
+    assert Markdown.hard_line_break is False
     pane = Markdown(
-        "Hello\nWorld\nI'm here!",
+        "Hello\nWorld\nI am here",
         renderer="markdown-it",
+        renderer_options={"breaks": True},
     )
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    # <p>Hello<br>World<br>I'm here!</p>
-    assert model.text == "&lt;p&gt;Hello&lt;br /&gt;\nWorld&lt;br /&gt;\nI&#x27;m here!&lt;/p&gt;\n"
-
-    # Two newlines should be separated by a div
-    pane = Markdown("Hello\n\nWorld")
-    model = pane.get_root(document, comm=comm)
-    assert pane._models[model.ref['id']][0] is model
-    # <p>Hello</p><p>World</p>
-    assert model.text == "&lt;p&gt;Hello&lt;/p&gt;\n&lt;p&gt;World&lt;/p&gt;\n"
-
-    # Disable newlines
-    pane = Markdown(
-        "Hello\nWorld\nI'm here!",
-        renderer="markdown-it",
-        renderer_options={"breaks": False},
-    )
-    model = pane.get_root(document, comm=comm)
-    assert pane._models[model.ref['id']][0] is model
-    assert model.text == "&lt;p&gt;Hello\nWorld\nI&#x27;m here!&lt;/p&gt;\n"
+    # Two <br />, single <p>
+    assert html.unescape(model.text).rstrip() == "<p>Hello<br />\nWorld<br />\nI am here</p>"
 
 def test_markdown_pane_markdown_it_renderer(document, comm):
     pane = Markdown("""
@@ -216,11 +271,10 @@ def test_dataframe_pane_supports_escape(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
+@not_windows
 @streamz_available
-def test_dataframe_pane_streamz(document, comm):
-    from streamz.dataframe import Random
-    sdf = Random(interval='200ms', freq='50ms')
-    pane = DataFrame(sdf)
+def test_dataframe_pane_streamz(streamz_df, document, comm):
+    pane = DataFrame(streamz_df)
 
     assert pane._stream is None
 
@@ -231,7 +285,7 @@ def test_dataframe_pane_streamz(document, comm):
     assert model.text == ''
 
     # Replace Pane.object
-    pane.object = sdf.x
+    pane.object = streamz_df.x
     assert pane._models[model.ref['id']][0] is model
     assert model.text == ''
 
@@ -314,3 +368,17 @@ def test_json_pane_rerenders_on_depth_change(document, comm):
     pane.depth = -1
 
     assert model.depth is None
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="Patch dot import resolution does not work for Python <=3.10")
+def test_json_theme():
+    assert JSON({"x": 1}).theme == JSON.param.theme.default
+    assert JSON({"x": 1}, theme="dark").theme == "dark"
+
+    with patch('panel.config._config.theme', new_callable=lambda: "default"):
+        assert JSON({"x": 1}).theme == JSON.param.theme.default
+
+    with patch('panel.config._config.theme', new_callable=lambda: "dark"):
+        assert JSON({"x": 1}).theme == JSON.THEME_CONFIGURATION[config.theme]
+
+    with patch('panel.config._config.theme', new_callable=lambda: "dark"):
+        assert JSON({"x": 1}, theme="light").theme == "light"

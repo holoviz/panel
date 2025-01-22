@@ -23,7 +23,7 @@ import traceback
 from contextlib import redirect_stderr, redirect_stdout
 from html import escape
 from textwrap import dedent
-from typing import Any
+from typing import IO, Any
 
 #---------------------------------------------------------------------
 # Import API
@@ -32,9 +32,10 @@ from typing import Any
 _STDLIBS = sys.stdlib_module_names
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
+    'skimage': 'scikit-image',
     'transformers_js': 'transformers-js-py',
 }
-_IGNORED_PKGS = ['js', 'pyodide']
+_IGNORED_PKGS = ['js', 'pyodide', 'PIL']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
 
 def find_requirements(code: str) -> list[str]:
@@ -104,12 +105,11 @@ class WriteCallbackStream(io.StringIO):
 
 def _convert_expr(expr: ast.Expr) -> ast.Expression:
     """
-    Converts an ast.Expr to and ast.Expression that can be compiled
+    Converts an ast.Expr to an ast.Expression that can be compiled
     and evaled.
     """
-    expr.lineno = 0
-    expr.col_offset = 0
-    return ast.Expression(expr.value, lineno=0, col_offset = 0)
+    expr.lineno, expr.col_offset = 0, 0
+    return ast.Expression(expr.value)
 
 _OUT_BUFFER = []
 
@@ -123,9 +123,9 @@ def _display(*objs, **kwargs):
 
 def exec_with_return(
     code: str,
-    global_context: dict[str, Any] = None,
-    stdout: Any = None,
-    stderr: Any = None
+    global_context: dict[str, Any] | None = None,
+    stdout: IO | None = None,
+    stderr: IO | None = None
 ) -> Any:
     """
     Executes a code snippet and returns the resulting output of the

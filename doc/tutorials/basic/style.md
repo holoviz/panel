@@ -5,7 +5,7 @@ Let's elevate the appearance of our Panel components using the power of [*CSS*](
 By employing *CSS*, we can finely adjust the look and feel of our wind turbine data apps, ensuring they are visually appealing and user-friendly.
 
 :::{note}
-To execute the code snippets below, feel free to run them directly in the Panel documentation via the convenient green *run* button, within a notebook cell, or within a `app.py` file served with `panel serve app.py --autoreload`.
+To execute the code snippets below, feel free to run them directly in the Panel documentation via the convenient green *run* button, within a notebook cell, or within a `app.py` file served with `panel serve app.py --dev`.
 :::
 
 ## Utilize `styles`

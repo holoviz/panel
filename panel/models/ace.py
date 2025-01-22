@@ -50,6 +50,10 @@ class AcePlot(HTMLBox):
 
     code = String(default='')
 
+    code_input = String(default='')
+
+    on_keyup = Bool(default=True)
+
     theme = Enum(ace_themes, default='chrome')
 
     filename = Nullable(String())
@@ -62,6 +66,6 @@ class AcePlot(HTMLBox):
 
     print_margin = Bool(default=False)
 
-    height = Override(default=300)
+    height = Override(default=300)  # type: ignore
 
-    width = Override(default=300)
+    width = Override(default=300)  # type: ignore
