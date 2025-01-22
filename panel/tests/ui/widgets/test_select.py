@@ -1,7 +1,11 @@
 import pytest
 
+pytest.importorskip('playwright')
+
+from playwright.sync_api import expect
+
 from panel.tests.util import serve_component, wait_until
-from panel.widgets import MultiSelect, Select
+from panel.widgets import MultiSelect, NestedSelect, Select
 
 pytestmark = pytest.mark.ui
 
@@ -31,3 +35,14 @@ def test_multi_select_double_click(page):
     page.locator('option').nth(1).dblclick()
 
     wait_until(lambda: bool(clicks) and clicks[0].option == 'B', page)
+
+
+def test_nested_select_update_options(page):
+    n = NestedSelect(options={"a": {"b": ["c", "d"]}})
+
+    serve_component(page, n)
+
+    expect(page.locator('option').first).to_have_text("a")
+
+    n.options = {"c": {"d": ["e", "f"]}}
+    expect(page.locator('option').first).to_have_text("c")

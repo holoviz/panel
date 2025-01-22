@@ -522,7 +522,7 @@ class NestedSelect(CompositeWidget):
                 f"The layout must be a subclass of ListLike or dict, got {self.layout!r}."
             )
 
-        self._composite = layout_type(*self._widgets, **layout_kwargs)
+        self._composite[:] = [layout_type(*self._widgets, **layout_kwargs)]
         if self.options is not None:
             self.value = self._gather_values_from_widgets()
 
