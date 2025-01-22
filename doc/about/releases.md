@@ -2,12 +2,14 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+
 ## Version 1.6.0
 
-This release adds a number of features including a standalone `Modal` component, the ability to infer widget parameters from values, and the ability to easily edit a `ChatMessage`. Additionally it includes a number of enhancements for styling, particularly in dark themes, other enhancements for chat components and a large number of bug fixes. Many thanks for our returning contributor @kdheepak, our new contributors @jonatantreijs and @etihwo, and of course the whole maintainer team including @ahuang11, @MarcSkovMadsen @hoxbro, @maximlt and @philippjfr.
+This release adds a number of features including a standalone `Modal` component, the ability to infer widget parameters from values, and the ability to easily edit a `ChatMessage`. Additionally it includes a number of enhancements for styling, particularly in dark themes, other enhancements for chat components and a large number of bug fixes. Many thanks for our returning contributor @kdheepak, our new contributors @pgierz, @jonatantreijs and @etihwo, and of course the whole maintainer team including @ahuang11, @MarcSkovMadsen @hoxbro, @maximlt and @philippjfr.
 
 ### Features
 
+- Add PAM authentication support ([#6861](https://github.com/holoviz/panel/pull/6861))
 - Add `Widget.from_values` method ([#7033](https://github.com/holoviz/panel/pull/7033))
 - Add a standalone `Modal` layout ([#7083](https://github.com/holoviz/panel/pull/7083))
 - Introduces `ChatMessage` and `ChatFeed` edit functionality ([#7559](https://github.com/holoviz/panel/pull/7559))
@@ -22,6 +24,7 @@ This release adds a number of features including a standalone `Modal` component,
 - Improve styling of chat components in dark theme ([#7601](https://github.com/holoviz/panel/pull/7601), [#7602](https://github.com/holoviz/panel/pull/7602))
 - Automatically scroll when streaming to `ChatFeed` and `ChatStep` ([#7608](https://github.com/holoviz/panel/pull/7608))
 - Add support for remote filesystems on `FileSelector` ([#7618](https://github.com/holoviz/panel/pull/7618))
+- Add support for `FigureWidget` events on `Plotly` pane ([#7654](https://github.com/holoviz/panel/pull/7654))
 
 ### Bug fixes
 
@@ -40,17 +43,24 @@ This release adds a number of features including a standalone `Modal` component,
 - Consistently apply sizing_mode to `FileSelector` components ([#7640](https://github.com/holoviz/panel/pull/7640))
 - Ensure tasks are cancelled correctly ([#7641](https://github.com/holoviz/panel/pull/7641))
 - Ensure `NotificationArea` stylesheet loads in panel-preview ([#7643](https://github.com/holoviz/panel/pull/7643))
+- Ensure `NestedSelect` updates when `options` are changed ([#7649](https://github.com/holoviz/panel/pull/7649))
+- Ensure `ButtonIcon` displays an icon during click ([#7650](https://github.com/holoviz/panel/pull/7650))
 
 ### Compatibility and Updates
 
 - Update panel convert to latest versions of pyodide and pyscript ([#7584](https://github.com/holoviz/panel/pull/7584))
+- Bump plotly.js version to 2.35.3 (#7657)
+- Bump Tabulator version to 6.3.1 (#7656)
 
 ### Documentation
 
 - Ensure Open in JupyterLite links work ([#7622](https://github.com/holoviz/panel/pull/7622))
 - Add admonitions for outdated guides and minor corrections ([#7635](https://github.com/holoviz/panel/pull/7635))
+- Add form tutorial ([#7568](https://github.com/holoviz/panel/pull/7568))
 
 ## Version 1.5.5
+
+Date: 2024-12-18
 
 This release fixes a regression causing .node_modules to be bundled into our released wheel and introduces a number of bug fixes and enhancements. Many thanks to @mayonnaisecolouredbenz7, @pmeier, @Italirz, @Coderambling and our maintainer team @MarcSkovMadsen, @hoxbro, @ahuang11, @thuydotm, @maximlt and @philippjfr.
 
@@ -91,6 +101,8 @@ This release fixes a regression causing .node_modules to be bundled into our rel
 
 ## Version 1.5.4
 
+Date: 2024-11-12
+
 This release primarily focuses on improving the ESM components including fixes for serialization of parameter values, improvements for compiling bundles, and building custom layouts. Additionally this release includes the new `DatetimeSlider`, adds a copy button to codeblocks in `Markdown` panes, improves responsive sizing for Plotly and starts adding better support for Polars. Many thanks and a warm welcome to our new contributor @MP-MaximilianLattka as well as our maintainer team, including @Hoxbro, @thuydotm, @ahuang11, @MarcSkovMadsen and @philippjfr.
 
 ### Enhancements
@@ -115,6 +127,8 @@ This release primarily focuses on improving the ESM components including fixes f
 - Ensure `Plotly` sizes correctly on initial render ([#7483](https://github.com/holoviz/panel/pull/7483))
 
 ## Version 1.5.3
+
+Date: 2024-10-23
 
 This release fixes a number of smaller regressions related to `Tabulator` `row_content`, ensures `--dev`/`--autoreload` picks up on external modules correctly and resolves OAuth guest endpoints correctly. Additionally it introduces some enhancements and bug fixes for custom components, such as adding support for loading custom components ESM Javascript bundles from the inbuilt endpoint ensuring that the bundle can be cached by the browser. Many thanks and welcome to our new contributors @chryshumble and @haojungc, our returning contributors @TheoMathurin, @aktech and @Coderambling and the core maintainer team @Hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr for their contributions to this release.
 
