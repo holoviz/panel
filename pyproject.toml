@@ -262,6 +262,7 @@ module = [
     "mdit_py_emoji.*",
     "memray.*",
     "myst_parser.*",
+    "pamela.*",
     "param.*",
     "playwright.*",
     "plotly.*",

@@ -8,7 +8,6 @@ import param
 
 from pyviz_comms import JupyterComm
 
-from ..models.modal import ModalDialogEvent
 from ..util import lazy_load
 from ..util.warnings import PanelUserWarning, warn
 from .base import ListPanel
@@ -52,6 +51,7 @@ class Modal(ListPanel):
 
     @param.depends("open", watch=True)
     def _open(self):
+        from ..models.modal import ModalDialogEvent
         if not self._models:
             msg = "To use the Modal, you must use '.servable' in a server setting or output the Modal in Jupyter Notebook."
             warn(msg, category=PanelUserWarning)
