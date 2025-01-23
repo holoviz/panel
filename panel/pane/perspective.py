@@ -79,8 +79,8 @@ def deconstruct_pandas(data, kwargs=None):
 
     https://github.com/finos/perspective/blob/master/python/perspective/perspective/core/data/pd.py
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     data: (pandas.dataframe)
       A Pandas DataFrame to parse
 

@@ -98,8 +98,8 @@ def set_values(*parameterizeds, **param_values):
     Temporarily sets parameter values to the specified values on all
     supplied Parameterized objects.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     parameterizeds: tuple(param.Parameterized)
         Any number of parameterized objects.
     param_values: dict

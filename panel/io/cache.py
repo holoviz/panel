@@ -345,8 +345,8 @@ def compute_hash(func, hash_funcs, args, kwargs):
     """
     Computes a hash given a function and its arguments.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     func: callable
         The function to cache.
     hash_funcs: dict
@@ -411,8 +411,8 @@ def cache(
 
     For global caching across user sessions use `pn.state.as_cached`.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     func: callable
         The function to cache.
     hash_funcs: dict or None

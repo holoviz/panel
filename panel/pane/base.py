@@ -62,8 +62,8 @@ def panel(obj: Any, **kwargs) -> Viewable | ServableMixin:
 
     >>> pn.panel(some_python_object, width=500)
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: object
        Any object to be turned into a Panel
     **kwargs: dict

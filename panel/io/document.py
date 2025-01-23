@@ -357,8 +357,8 @@ def with_lock(func: Callable) -> Callable:
     Wrap a callback function to execute with a lock allowing the
     function to modify bokeh models directly.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     func: callable
       The callable to wrap
 
@@ -441,8 +441,8 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
     ModelChangedEvents triggered in the context body to all sockets
     on current sessions.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     policy: Literal['combine' | 'collect']
         One of 'combine' or 'collect' determining whether events
         setting the same property are combined or accumulated to be
@@ -537,8 +537,8 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
     manager exits. This allows multiple events on the same object to
     be combined if the policy is set to 'combine'.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     doc: Document
         The Bokeh Document to hold events on.
     policy: HoldPolicyType
@@ -578,8 +578,8 @@ def immediate_dispatch(doc: Document | None = None):
     inside the execution context even when Document events are
     currently on hold.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     doc: Document
         The document to dispatch events on (if `None` then `state.curdoc` is used).
     """

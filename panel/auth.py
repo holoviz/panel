@@ -41,8 +41,8 @@ def decode_response_body(response):
     """
     Decodes the JSON-format response body
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     response: tornado.httpclient.HTTPResponse
 
     Returns

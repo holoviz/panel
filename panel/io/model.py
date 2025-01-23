@@ -181,8 +181,8 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
     manager exits. This allows multiple events on the same object to
     be combined if the policy is set to 'combine'.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     doc: Document
         The Bokeh Document to hold events on.
     policy: HoldPolicyType

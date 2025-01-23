@@ -39,8 +39,8 @@ def _scan_path(path: str, file_pattern: str = '*') -> tuple[list[str], list[str]
     filters the files with the file keyword, returning a list of sorted
     paths of all directories and files.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     path: str
         The path to search
     file_pattern: str

@@ -91,8 +91,8 @@ def add_applications(
     """
     Adds application(s) to an existing FastAPI application.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     app: FastAPI
         FastAPI app to add Panel application(s) to.
     panel: Viewable, function or {str: Viewable}
@@ -157,8 +157,8 @@ def add_application(
     """
     Decorator that adds a Panel app to a FastAPI application.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     path: str
         The path to serve the application on.
     app: FastAPI
@@ -202,8 +202,8 @@ def get_server(
     """
     Creates a FastAPI server running the provided Panel application(s).
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable, function or {str: Viewable}
         A Panel object, a function returning a Panel object or a
         dictionary mapping from the URL slug to either.
@@ -315,8 +315,8 @@ def serve(
 
     Reference: https://panel.holoviz.org/user_guide/Server_Configuration.html#serving-multiple-apps
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable, function or {str: Viewable or function}
       A Panel object, a function returning a Panel object or a
       dictionary mapping from the URL slug to either.

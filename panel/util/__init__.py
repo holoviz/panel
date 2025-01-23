@@ -447,8 +447,8 @@ def styler_update(styler, new_df):
     Updates the todo items on a pandas Styler object to apply to a new
     DataFrame.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     styler: pandas.io.formats.style.Styler
       Styler objects
     new_df: pd.DataFrame

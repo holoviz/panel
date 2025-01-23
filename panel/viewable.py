@@ -1232,8 +1232,8 @@ def is_viewable_param(parameter: param.Parameter) -> bool:
     """
     Determines if a parameter uniquely identifies a Viewable type.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     parameter : param.Parameter
         The parameter to evaluate.
 

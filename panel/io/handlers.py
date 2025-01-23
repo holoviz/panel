@@ -308,8 +308,8 @@ def parse_notebook(
     """
     Parses a notebook on disk and returns a script.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: str | os.PathLike
       The notebook file to parse.
     preamble: list[str]
