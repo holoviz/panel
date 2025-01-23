@@ -571,7 +571,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         bokeh model that can be composed in a bokeh layout.
 
         Parameters
-        -----------
+        ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
         root: bokeh.Model
@@ -592,7 +592,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         Clean up method which is called when a Viewable is destroyed.
 
         Pgarameters
-        ----------
+        -----------
         root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """

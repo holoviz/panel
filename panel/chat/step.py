@@ -223,8 +223,8 @@ class ChatStep(Card):
         """
         Stream a token to the title header.
 
-        Arguments:
-        ---------
+        Parameters
+        ----------
         token : str
             The token to stream.
         status : str

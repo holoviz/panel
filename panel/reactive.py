@@ -857,7 +857,7 @@ class Reactive(Syncable, Viewable):
         executed.
 
         Parameters
-        -----------
+        ----------
         args: dict
           A mapping of objects to make available to the JS callback
         callbacks: dict
@@ -891,7 +891,7 @@ class Reactive(Syncable, Viewable):
         executed when the property changes.
 
         Parameters
-        -----------
+        ----------
         target: panel.viewable.Viewable | bokeh.model.Model | holoviews.core.dimension.Dimensioned
           The target to link the value to.
         code: dict
@@ -934,14 +934,13 @@ class Reactive(Syncable, Viewable):
         Send an event to the frontend
 
         Parameters
-        -----------
+        ----------
         Event: Bokeh.Event
             The event to send to the frontend
         event_kwargs: dict
             Additional keyword arguments to pass to the event
             This will create the following event:
             Event(model=model, **event_kwargs)
-
         """
         for ref, (model, _) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:

@@ -104,6 +104,9 @@ extensions = [
     'nbsite.pyodide',
     'nbsite.analytics',
 ]
+
+numpydoc_show_inherited_class_members = False
+numpydoc_class_members_toctree = False
 napoleon_numpy_docstring = True
 
 autodoc_mock_imports = ["panel.pane.vtk"]

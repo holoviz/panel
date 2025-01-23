@@ -209,6 +209,7 @@ test-type = 'mypy panel'
 MOZ_HEADLESS = "1"
 PANEL_IPYWIDGET = "1"
 OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES"
+SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 
 [feature.doc.dependencies]
 lxml = "*"
@@ -217,7 +218,7 @@ selenium = "*"
 numpydoc = "*"
 
 [feature.doc.tasks]
-_docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/'
+_docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ --ext-autodoc --ext-intersphinx'
 _docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
 _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel --disable-parallel'
 _docs-generate-parallel = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
