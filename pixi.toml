@@ -214,6 +214,7 @@ OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES"
 lxml = "*"
 nbsite = ">=0.8.6rc9"
 selenium = "*"
+numpydoc = "*"
 
 [feature.doc.tasks]
 _docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/'

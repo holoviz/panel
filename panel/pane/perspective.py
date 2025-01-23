@@ -499,8 +499,8 @@ class Perspective(ModelPane, ReactiveData):
         config, column names, and row values of the row that was
         clicked.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (callable)
             The callback to run on edit events.
         """

@@ -538,8 +538,8 @@ class ResourceComponent:
         """
         Resolves the resources required for this component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cdn: bool | Literal['auto']
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on

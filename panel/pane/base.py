@@ -238,8 +238,8 @@ class PaneBase(Layoutable):
         the precedence of all types whose applies method declares that
         the object is supported.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         obj (object): The object type to return a Pane type for
 
         Returns
@@ -467,8 +467,8 @@ class Pane(PaneBase, Reactive):
         """
         Makes a copy of the Pane sharing the same parameters.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         object: Optional new object to render
         params: Keyword arguments override the parameters on the clone.
 
@@ -490,8 +490,8 @@ class Pane(PaneBase, Reactive):
         """
         Returns the root model and applies pre-processing hooks
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc: bokeh.document.Document
           Optional Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
@@ -648,8 +648,8 @@ class ReplacementPane(Pane):
         contents updating only changed parameters ensuring we don't
         have to trigger a full re-render of the entire component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         old: Reactive
           The Reactive component being updated or replaced.
         new: Reactive
@@ -772,8 +772,8 @@ class ReplacementPane(Pane):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: (type | callable | None)
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.

@@ -86,8 +86,8 @@ class BaseFileProvider:
         """
         Concrete classes must implement this method to list the content of a remote filesystem.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         path: str
             The path to search
 

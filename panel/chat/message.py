@@ -684,8 +684,8 @@ class ChatMessage(Pane):
         in a layout of `Column(Markdown(...), Image(...))` the Markdown
         pane is updated.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         token: str
           The token to stream to the text pane.
         replace: bool (default=False)
@@ -702,8 +702,8 @@ class ChatMessage(Pane):
         """
         Updates the message with a new value, user and avatar.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         value : ChatMessage | dict | Any
             The message contents to send.
         user : str | None
@@ -747,8 +747,8 @@ class ChatMessage(Pane):
         """
         Format the object to a string.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         prefix_with_viewable_label : bool
             Whether to include the name of the Viewable, or type
             of the viewable if no name is specified.

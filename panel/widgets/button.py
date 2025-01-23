@@ -106,8 +106,8 @@ class _ClickButton(Widget):
         Allows defining a JS callback to be triggered when the button
         is clicked.
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         args: dict
           A mapping of objects to make available to the JS callback
         code: str
@@ -128,8 +128,8 @@ class _ClickButton(Widget):
         properties that trigger a callback and the JS code that gets
         executed.
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         args: dict
           A mapping of objects to make available to the JS callback
         **callbacks: dict
@@ -213,8 +213,8 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
         maps from the source parameter to a JS code snippet which is
         executed when the property changes.
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         target: panel.viewable.Viewable | bokeh.model.Model | holoviews.core.dimension.Dimensioned
           The target to link the value(s) to.
         code: dict
@@ -256,8 +256,8 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
         ...    print("I was clicked!")
         >>> button.on_click(handle_click)
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback:
             The function to run on click events. Must accept a positional `Event` argument. Can
             be a sync or async function
@@ -363,8 +363,8 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
 
         The callback is given an `Event` argument declaring the number of clicks
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (Callable[[param.parameterized.Event], None])
             The function to run on click events. Must accept a positional `Event` argument
 

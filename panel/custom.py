@@ -538,8 +538,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         Message handler for messages sent from the frontend using the
         `model.send_msg` API.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         data: any
             Data received from the frontend.
         """
@@ -549,8 +549,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         Sends data to the frontend which can be observed on the frontend
         with the `model.on_msg("msg:custom", callback)` API.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         data: any
             Data to send to the frontend.
         """
@@ -561,8 +561,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         Registers a callback to be executed when a message event
         containing arbitrary data is received.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         event: str
           Name of the DOM event to add an event listener to.
         callback: callable
@@ -575,8 +575,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         Registers a callback to be executed when the specified DOM
         event is triggered.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         event: str
           Name of the DOM event to add an event listener to.
         callback: callable
@@ -780,8 +780,8 @@ class AnyWidgetComponent(ReactComponent):
         """
         Sends a custom event containing the provided message to the frontend.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         msg: dict
         """
         self._send_msg(msg)

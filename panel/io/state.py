@@ -511,8 +511,8 @@ class _state(param.Parameterized):
         >>>     return dataset
         >>> penguins = pn.state.as_cached('dataset-penguins', load_dataset, name='penguins')
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         key: (str)
           The key to cache the return value under.
         fn: (callable)
@@ -559,8 +559,8 @@ class _state(param.Parameterized):
         the period. Returns a PeriodicCallback object with the option
         to stop and start the callback.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: callable
           Callable function to be executed at periodic interval.
         period: int
@@ -592,8 +592,8 @@ class _state(param.Parameterized):
         """
         Cancel a task scheduled using the `state.schedule_task` method by name.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name: str
             The name of the scheduled task.
         wait: boolean
@@ -640,8 +640,8 @@ class _state(param.Parameterized):
         on the event loop ensuring the Bokeh Document lock is acquired
         and models can be modified directly.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: Callable[[], None]
           Callback to execute
         schedule: boolean | Literal['auto', 'thread']
@@ -671,8 +671,8 @@ class _state(param.Parameterized):
         """
         Returns the requested profiling output.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         profile: str
           The name of the profiling output to return.
 
@@ -703,8 +703,8 @@ class _state(param.Parameterized):
         """
         Logs user messages to the Panel logger.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         msg: str
           Log message
         level: str
@@ -720,8 +720,8 @@ class _state(param.Parameterized):
         """
         Callback that is triggered when a session has been served.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: Callable[[], None] | Coroutine[Any, Any, None]
            Callback that is executed when the application is loaded
         threaded: bool
@@ -769,8 +769,8 @@ class _state(param.Parameterized):
         """
         Publish parameters on a Parameterized object as a REST API.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         endpoint: str
           The endpoint at which to serve the REST API.
         parameterized: param.Parameterized
@@ -851,8 +851,8 @@ class _state(param.Parameterized):
         a task from within your application code, the task is only
         scheduled once.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name: str
           Name of the scheduled task
         callback: callable
@@ -944,8 +944,8 @@ class _state(param.Parameterized):
         Syncs the busy state with an indicator with a boolean value
         parameter.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         indicator: An BooleanIndicator to sync with the busy property
         """
         if not isinstance(indicator.param.value, param.Boolean):

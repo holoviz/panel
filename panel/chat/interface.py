@@ -583,8 +583,8 @@ class ChatInterface(ChatFeed):
         """
         Set the active input widget tab index.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         index : int
             The active index to set.
         """
@@ -602,8 +602,8 @@ class ChatInterface(ChatFeed):
         """
         Exports the chat log for use with transformers.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         messages : list(ChatMessage)
             A list of ChatMessage objects to serialize.
         role_names : dict(str, str | list(str)) | None
@@ -668,8 +668,8 @@ class ChatInterface(ChatFeed):
 
         If `respond` is `True`, additionally executes the callback, if provided.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         value : ChatMessage | dict | Any
             The message contents to send.
         user : str | None
@@ -714,8 +714,8 @@ class ChatInterface(ChatFeed):
         This method is primarily for outputs that are not generators--
         notably LangChain. For most cases, use the send method instead.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         value : str | dict | ChatMessage
             The new token value to stream.
         user : str | None

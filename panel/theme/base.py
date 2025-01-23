@@ -315,8 +315,8 @@ class Design(param.Parameterized, ResourceComponent):
         """
         Applies the Design to a Viewable and all it children.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         viewable: Viewable
             The Viewable to apply the Design to.
         root: Model
@@ -347,8 +347,8 @@ class Design(param.Parameterized, ResourceComponent):
         Applies the Bokeh theme associated with this Design system
         to a model.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         model: bokeh.model.Model
             The Model to apply the theme on.
         theme_override: str | None
@@ -371,8 +371,8 @@ class Design(param.Parameterized, ResourceComponent):
         """
         Resolves the resources required for this design component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cdn: bool | Literal['auto']
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
@@ -413,8 +413,8 @@ class Design(param.Parameterized, ResourceComponent):
         """
         Provides parameter values to apply the provided Viewable.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         viewable: Viewable
             The Viewable to return modifiers for.
         doc: Document | None

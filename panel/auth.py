@@ -124,8 +124,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         """
         Fetches the authenticated user
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         redirect_uri: (str)
           The OAuth redirect URI
         client_id: (str)
@@ -172,8 +172,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         """
         Fetches the access token.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         client_id:
           The client ID
         redirect_uri:
