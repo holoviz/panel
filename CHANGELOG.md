@@ -21,7 +21,7 @@ This release adds a number of features including a standalone `Modal` component,
 - Improve styling of chat components in dark theme ([#7601](https://github.com/holoviz/panel/pull/7601), [#7602](https://github.com/holoviz/panel/pull/7602))
 - Automatically scroll when streaming to `ChatFeed` and `ChatStep` ([#7608](https://github.com/holoviz/panel/pull/7608))
 - Add support for remote filesystems on `FileSelector` ([#7618](https://github.com/holoviz/panel/pull/7618))
-- Add support for `FigureWidget` events on `Plotly` pane ([#7654](https://github.com/holoviz/panel/pull/7654))
+- Add support for `FigureWidget` events on `Plotly` pane ([#7654](https://github.com/holoviz/panel/pull/7654), [#7662](https://github.com/holoviz/panel/pull/7662))
 
 ### Bug fixes
 
@@ -45,15 +45,16 @@ This release adds a number of features including a standalone `Modal` component,
 
 ### Compatibility and Updates
 
-- Update panel convert to latest versions of pyodide and pyscript ([#7584](https://github.com/holoviz/panel/pull/7584))
-- Bump plotly.js version to 2.35.3 (#7657)
-- Bump Tabulator version to 6.3.1 (#7656)
+- Update `panel convert` to latest versions of pyodide and pyscript ([#7584](https://github.com/holoviz/panel/pull/7584))
+- Bump plotly.js version to 2.35.3 ([#7657](https://github.com/holoviz/panel/pull/7657))
+- Bump tabulator.js version to 6.3.1 ([#7656](https://github.com/holoviz/panel/pull/7656))
 
 ### Documentation
 
 - Ensure Open in JupyterLite links work ([#7622](https://github.com/holoviz/panel/pull/7622))
 - Add admonitions for outdated guides and minor corrections ([#7635](https://github.com/holoviz/panel/pull/7635))
 - Add form tutorial ([#7568](https://github.com/holoviz/panel/pull/7568))
+- Fix and reorganize API docs ([#7659](https://github.com/holoviz/panel/pull/7659))
 
 ## Version 1.5.5
 
