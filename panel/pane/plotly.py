@@ -179,26 +179,20 @@ class Plotly(ModelPane):
 
     @param.depends('restyle_data', watch=True)
     def _update_figure_style(self):
-        if self.restyle_data is None:
+        if self._figure is None or self.restyle_data is None:
             return
-        if hasattr(self.object, '_handler_js2py_layoutDelta'):
-            self.object.plotly_update(restyle_data=self.restyle_data)
-        elif self._figure is not None:
-            self._figure.plotly_restyle(self.restyle_data)
+        self._figure.plotly_restyle(*self.restyle_data)
 
     @param.depends('relayout_data', watch=True)
     def _update_figure_layout(self):
-        if self.relayout_data is None:
+        if self._figure is None or self.relayout_data is None:
             return
         relayout_data = self._clean_relayout_data(self.relayout_data)
-        if hasattr(self.object, '_handler_js2py_layoutDelta'):
-            self.object.plotly_update(relayout_data=relayout_data)
-        elif self._figure is not None:
-            # The _compound_array_props are sometimes not correctly reset
-            # which means that they are desynchronized with _props causing
-            # incorrect lookups and potential errors when updating a property
-            self._figure.layout._compound_array_props.clear()
-            self._figure.plotly_relayout(relayout_data)
+        # The _compound_array_props are sometimes not correctly reset
+        # which means that they are desynchronized with _props causing
+        # incorrect lookups and potential errors when updating a property
+        self._figure.layout._compound_array_props.clear()
+        self._figure.plotly_relayout(relayout_data)
 
     @staticmethod
     def _clean_relayout_data(relayout_data):
