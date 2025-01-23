@@ -156,13 +156,11 @@ class Plotly(ModelPane):
     def _update_figure(self):
         import plotly.graph_objs as go
 
-        if (self.object is None or type(self.object) is not go.Figure or
+        if (self.object is None or type(self.object) not in (go.Figure, go.FigureWidget) or
             self.object is self._figure or not self.link_figure):
             return
 
         # Monkey patch the message stubs used by FigureWidget.
-        # We only patch `Figure` objects (not subclasses like FigureWidget) so
-        # we don't interfere with subclasses that override these methods.
         fig = self.object
         fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure('add')
         fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure('delete')
@@ -335,6 +333,7 @@ class Plotly(ModelPane):
             self.param.trigger(pname)
         else:
             self.param.update(**{pname: data})
+
         if data is None or not hasattr(self.object, '_handler_js2py_pointsCallback'):
             return
 
@@ -392,7 +391,7 @@ class Plotly(ModelPane):
                 if has_z and 'z' in point_obj:
                     points_object['zs'].append(point_obj['z'])
 
-        self.object._handler_js2py_pointsCallback(
+        self._figure._handler_js2py_pointsCallback(
             {
                 "new": dict(
                     event_type=f'plotly_{etype}',
