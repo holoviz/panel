@@ -101,8 +101,8 @@ class WidgetBase(param.Parameterized):
         Creates an instance of this Widget where the parameters are
         inferred from the data.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         values: Iterable
             The values to infer the parameters from.
         params: dict
@@ -207,8 +207,8 @@ class Widget(Reactive, WidgetBase):
         Returns the bokeh model and a discrete set of value states
         for the widget.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         root: bokeh.model.Model
           The root model of the widget
         values: list (optional)
@@ -275,8 +275,8 @@ class CompositeWidget(Widget):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.

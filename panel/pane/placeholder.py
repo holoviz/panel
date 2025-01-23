@@ -51,8 +51,8 @@ class Placeholder(ReplacementPane):
         """
         Updates the object on the Placeholder.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         object: The object to update the Placeholder with.
         """
         self.object = object

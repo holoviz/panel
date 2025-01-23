@@ -278,8 +278,8 @@ class FileInput(Widget):
         Saves the uploaded FileInput data object(s) to file(s) or
         BytesIO object(s).
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename (str or list[str]): File path or file-like object
         """
         value = self.value

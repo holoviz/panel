@@ -339,8 +339,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         """
         Resolves the resources required for this template component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cdn: bool | Literal['auto']
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
@@ -447,8 +447,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         """
         Saves Panel objects to file.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename: string or file-like object
            Filename to save the plot to
         title: string
@@ -486,8 +486,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         """
         Returns a servable Document with the template attached.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc : bokeh.Document (optional)
           The Bokeh Document to attach the panel to as a root,
           defaults to bokeh.io.curdoc()
@@ -512,8 +512,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         Serves the template and returns self to allow it to display
         itself in a notebook context.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         title : str
           A string title to give the Document (if served as an app)
         location : boolean or panel.io.location.Location
@@ -547,8 +547,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         Iterates over the Template and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
@@ -967,8 +967,8 @@ class Template(BaseTemplate):
         Add panels to the Template, which may then be referenced by
         the given name using the jinja2 embed macro.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name : str
           The name to refer to the panel by in the template
         panel : panel.Viewable
@@ -990,8 +990,8 @@ class Template(BaseTemplate):
         Add parameters to the template, which may then be referenced
         by the given name in the Jinja2 template.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name : str
           The name to refer to the panel by in the template
         value : object

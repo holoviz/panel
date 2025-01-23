@@ -165,8 +165,8 @@ def script_to_html(
     Converts a Panel or Bokeh script to a standalone WASM Python
     application.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: str | Path | IO
         The filename of the Panel/Bokeh application to convert.
     requirements: 'auto' | List[str] | os.PathLike
@@ -481,8 +481,8 @@ def convert_apps(
     verbose: bool = True,
 ):
     """
-    Arguments
-    ---------
+    Parameters
+    ----------
     apps: str | List[str]
         The filename(s) of the Panel/Bokeh application(s) to convert.
     dest_path: str | pathlib.Path

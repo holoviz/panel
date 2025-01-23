@@ -130,8 +130,8 @@ def import_available(module: str):
     """
     Checks whether a module can be imported
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     module: str
 
     Returns

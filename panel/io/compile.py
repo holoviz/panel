@@ -80,8 +80,8 @@ def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[ReactiveESM
     """
     Takes module specifications and extracts a set of components to bundle.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     module_spec: str
          Module specification either as a dotted module or a path to a module.
 
@@ -138,8 +138,8 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
     Creates a temporary module given a path-like object and finds all
     the ReactiveESM components defined therein.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     module_or_file : str | os.PathLike
         The path to the Python module.
     classes: list[str] | None
@@ -186,8 +186,8 @@ def packages_from_code(esm_code: str) -> tuple[str, dict[str, str]]:
     """
     Extracts package version definitions from ESM code.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     esm_code : str
         The ESM code to search for package imports.
 
@@ -215,8 +215,8 @@ def replace_imports(esm_code: str, replacements: dict[str, str]) -> str:
     Replaces imports in the code which may be aliases with the actual
     package names.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     esm_code: str
         The ESM code to replace import names in.
     replacements: dict[str, str]
@@ -248,8 +248,8 @@ def packages_from_importmap(esm_code: str, imports: dict[str, str]) -> tuple[str
     """
     Extracts package version definitions from an import map.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     esm_code: str
         The ESM code to replace import names in.
     imports : dict[str, str]
@@ -281,8 +281,8 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, A
     importmap and the associated code and replaces URL import
     specifiers with package imports.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     component: type[ReactiveESM]
         The ReactiveESM component to extract a dependency definition from.
 
@@ -406,8 +406,8 @@ def compile_components(
     Compiles a list of ReactiveESM components into a single JavaScript bundle
     including their Javascript dependencies.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     components : list[type[ReactiveESM]]
         A list of `ReactiveESM` component classes to compile.
     build_dir : str | os.PathLike, optional

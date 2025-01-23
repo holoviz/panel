@@ -98,8 +98,8 @@ def set_values(*parameterizeds, **param_values):
     Temporarily sets parameter values to the specified values on all
     supplied Parameterized objects.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     parameterizeds: tuple(param.Parameterized)
         Any number of parameterized objects.
     param_values: dict
@@ -762,8 +762,8 @@ class Param(Pane):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.

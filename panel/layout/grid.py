@@ -435,8 +435,8 @@ class GridSpec(Panel):
         """
         Makes a copy of the GridSpec sharing the same parameters.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         params: Keyword arguments override the parameters on the clone.
 
         Returns

@@ -87,8 +87,8 @@ def stream_to(obj, token: str, replace: bool = False, object_panel: Viewable | N
     in a layout of `Column(Markdown(...), Image(...))` the Markdown
     pane is updated.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     token: str
         The token to stream to the text pane.
     replace: bool (default=False)

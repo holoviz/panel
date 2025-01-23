@@ -609,8 +609,8 @@ class BaseTable(ReactiveData, Widget):
                   scalars and the filter will check if the values
                   in the column match any of the items in the list.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filter: Widget, param.Parameter or FunctionType
             The value by which to filter the DataFrame along the
             declared column, or a function accepting the DataFrame to
@@ -716,8 +716,8 @@ class BaseTable(ReactiveData, Widget):
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         stream_value: (pd.DataFrame | pd.Series | Dict)
           The new value(s) to append to the existing value.
         rollover: int
@@ -825,8 +825,8 @@ class BaseTable(ReactiveData, Widget):
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         patch_value: (pd.DataFrame | pd.Series | Dict)
           The value(s) to patch the existing value with.
         as_index: boolean
@@ -2109,8 +2109,8 @@ class Tabulator(BaseTable):
         """
         Triggers downloading of the table as a CSV or JSON.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename: str
             The filename to save the table as.
         """
@@ -2123,8 +2123,8 @@ class Tabulator(BaseTable):
         Returns a menu containing a TextInput and Button widget to set
         the filename and trigger a client-side download of the data.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         text_kwargs: dict
             Keyword arguments passed to the TextInput constructor
         button_kwargs: dict
@@ -2161,8 +2161,8 @@ class Tabulator(BaseTable):
         a TableEditEvent as the first argument containing the column,
         row and value of the edited cell.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (callable)
             The callback to run on edit events.
         """
@@ -2174,8 +2174,8 @@ class Tabulator(BaseTable):
         The callback is given a CellClickEvent declaring the column
         and row of the cell that was clicked.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (callable)
             The callback to run on edit events.
         column: (str)

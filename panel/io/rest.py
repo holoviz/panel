@@ -109,8 +109,8 @@ def tranquilizer_rest_provider(files, endpoint):
     the scripts and notebooks being served and finding all tranquilized
     functions inside them.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     files: list(str)
       A list of paths being served
     endpoint: str
@@ -130,8 +130,8 @@ def param_rest_provider(files, endpoint):
     Returns a Param based REST API given the scripts or notebooks
     containing the tranquilized functions.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     files: list(str)
       A list of paths being served
     endpoint: str

@@ -864,8 +864,8 @@ class MultiSelect(_MultiSelectBase):
         ...    print(f"Option {event.option} was double clicked.")
         >>> select.on_double_click(handle_click)
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback:
             The function to run on click events. Must accept a positional `Event` argument. Can
             be a sync or async function

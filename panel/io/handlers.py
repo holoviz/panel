@@ -308,8 +308,8 @@ def parse_notebook(
     """
     Parses a notebook on disk and returns a script.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: str | os.PathLike
       The notebook file to parse.
     preamble: list[str]
@@ -598,8 +598,8 @@ class NotebookHandler(PanelCodeHandler):
         found in the notebook and lays them out according to the
         cell metadata (if present).
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         doc (Document)
             A ``Document`` to render the template into
         path (str):
@@ -676,8 +676,8 @@ class NotebookHandler(PanelCodeHandler):
     def modify_document(self, doc: Document) -> None:
         """Run Bokeh application code to update a ``Document``
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         doc (Document) : a ``Document`` to update
         """
         path = self._runner._path

@@ -141,8 +141,8 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
 
         The callback is given an `Event` argument declaring the number of clicks.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (Callable[[param.parameterized.Event], None])
             The function to run on click events. Must accept a positional `Event` argument
 

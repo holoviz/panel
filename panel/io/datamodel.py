@@ -153,8 +153,8 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
     Dynamically creates a Bokeh DataModel class from a Parameterized
     object.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     parameterized: param.Parameterized
         The Parameterized class or instance from which to create the
         DataModel
@@ -217,8 +217,8 @@ def create_linked_datamodel(obj, root=None):
     Creates a Bokeh DataModel from a Parameterized class or instance
     which automatically links the parameters bi-directionally.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: param.Parameterized
        The Parameterized class to create a linked DataModel for.
 

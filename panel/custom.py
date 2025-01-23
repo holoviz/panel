@@ -61,30 +61,32 @@ class PyComponent(Viewable, Layoutable):
 
     Reference: https://panel.holoviz.org/reference/custom_components/PyComponent.html
 
-    ```python
-    import panel as pn
-    import param
+    :Example:
 
-    pn.extension()
+    .. code-block:: python
 
-    class CounterButton(pn.custom.PyComponent, pn.widgets.WidgetBase):
+        import panel as pn
+        import param
 
-        value = param.Integer(default=0)
+        pn.extension()
 
-        def __panel__(self):
-            return pn.widgets.Button(
-                name=self._button_name, on_click=self._on_click
-            )
+        class CounterButton(pn.custom.PyComponent, pn.widgets.WidgetBase):
 
-        def _on_click(self, event):
-            self.value += 1
+            value = param.Integer(default=0)
 
-        @param.depends("value")
-        def _button_name(self):
-            return f"count is {self.value}"
+            def __panel__(self):
+                return pn.widgets.Button(
+                    name=self._button_name, on_click=self._on_click
+                )
 
-    CounterButton().servable()
-    ```
+            def _on_click(self, event):
+                self.value += 1
+
+            @param.depends("value")
+            def _button_name(self):
+                return f"count is {self.value}"
+
+        CounterButton().servable()
     '''
 
     def __init__(self, **params):
@@ -186,32 +188,34 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     variable. Use this to define a `render` function as shown in the
     example below.
 
-    ```python
-    import panel as pn
-    import param
+    :Example:
 
-    pn.extension()
+    .. code-block:: python
 
-    class CounterButton(pn.custom.ReactiveESM):
+        import panel as pn
+        import param
 
-        value = param.Integer()
+        pn.extension()
 
-        _esm = """
-        export function render({ model }) {
-            let btn = document.createElement("button");
-            btn.innerHTML = `count is ${model.value}`;
-            btn.addEventListener("click", () => {
-                model.value += 1
-            });
-            model.on('value', () => {
+        class CounterButton(pn.custom.ReactiveESM):
+
+            value = param.Integer()
+
+            _esm = """
+            export function render({ model }) {
+                let btn = document.createElement("button");
                 btn.innerHTML = `count is ${model.value}`;
-            })
-            return btn
-        }
-        """
+                btn.addEventListener("click", () => {
+                    model.value += 1
+                });
+                model.on('value', () => {
+                    btn.innerHTML = `count is ${model.value}`;
+                })
+                return btn
+            }
+            """
 
-    CounterButton().servable()
-    ```
+        CounterButton().servable()
     '''
 
     _bokeh_model = _BkReactiveESM
@@ -534,8 +538,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         Message handler for messages sent from the frontend using the
         `model.send_msg` API.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         data: any
             Data received from the frontend.
         """
@@ -545,8 +549,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         Sends data to the frontend which can be observed on the frontend
         with the `model.on_msg("msg:custom", callback)` API.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         data: any
             Data to send to the frontend.
         """
@@ -557,8 +561,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         Registers a callback to be executed when a message event
         containing arbitrary data is received.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         event: str
           Name of the DOM event to add an event listener to.
         callback: callable
@@ -571,8 +575,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         Registers a callback to be executed when the specified DOM
         event is triggered.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         event: str
           Name of the DOM event to add an event listener to.
         callback: callable
@@ -595,32 +599,34 @@ class JSComponent(ReactiveESM):
 
     Reference: https://panel.holoviz.org/reference/custom_components/JSComponent.html
 
-    ```python
-    import panel as pn
-    import param
+    :Example:
 
-    pn.extension()
+    .. code-block:: python
 
-    class CounterButton(pn.custom.JSComponent):
+        import panel as pn
+        import param
 
-        value = param.Integer()
+        pn.extension()
 
-        _esm = """
-        export function render({ model }) {
-            let btn = document.createElement("button");
-            btn.innerHTML = `count is ${model.value}`;
-            btn.addEventListener("click", () => {
-                model.value += 1
-            });
-            model.on('value', () => {
+        class CounterButton(pn.custom.JSComponent):
+
+            value = param.Integer()
+
+            _esm = """
+            export function render({ model }) {
+                let btn = document.createElement("button");
                 btn.innerHTML = `count is ${model.value}`;
-            })
-            return btn
-        }
-        """
+                btn.addEventListener("click", () => {
+                    model.value += 1
+                });
+                model.on('value', () => {
+                    btn.innerHTML = `count is ${model.value}`;
+                })
+                return btn
+            }
+            """
 
-    CounterButton().servable()
-    ```
+        CounterButton().servable()
     '''
 
     __abstract = True
@@ -639,27 +645,29 @@ class ReactComponent(ReactiveESM):
 
     Reference: https://panel.holoviz.org/reference/custom_components/ReactComponent.html
 
-    ```python
-    import panel as pn
-    import param
+    :Example:
 
-    class CounterButton(pn.custom.ReactComponent):
+    .. code-block:: python
 
-        value = param.Integer()
+        import panel as pn
+        import param
 
-        _esm = """
-        export function render({model}) {
-        const [value, setValue] = model.useState("value");
-        return (
-            <button onClick={e => setValue(value+1)}>
-            count is {value}
-            </button>
-        )
-        }
-        """
+        class CounterButton(pn.custom.ReactComponent):
 
-    CounterButton().servable()
-    ```
+            value = param.Integer()
+
+            _esm = """
+            export function render({model}) {
+            const [value, setValue] = model.useState("value");
+            return (
+                <button onClick={e => setValue(value+1)}>
+                count is {value}
+                </button>
+            )
+            }
+            """
+
+        CounterButton().servable()
     '''
 
     __abstract = True
@@ -733,33 +741,35 @@ class AnyWidgetComponent(ReactComponent):
 
     Reference: https://panel.holoviz.org/reference/custom_components/AnyWidgetComponent.html
 
-    ```python
-    import param
-    import panel as pn
+    :Example:
 
-    pn.extension()
+    .. code-block:: python
 
-    class CounterWidget(pn.custom.AnyWidgetComponent):
-        _esm = """
-        function render({ model, el }) {
-        let count = () => model.get("value");
-        let btn = document.createElement("button");
-        btn.innerHTML = `count is ${count()}`;
-        btn.addEventListener("click", () => {
-            model.set("value", count() + 1);
-            model.save_changes();
-        });
-        model.on("change:value", () => {
+        import param
+        import panel as pn
+
+        pn.extension()
+
+        class CounterWidget(pn.custom.AnyWidgetComponent):
+            _esm = """
+            function render({ model, el }) {
+            let count = () => model.get("value");
+            let btn = document.createElement("button");
             btn.innerHTML = `count is ${count()}`;
-        });
-        el.appendChild(btn);
-        }
-        export default { render };
-        """
-        value = param.Integer()
+            btn.addEventListener("click", () => {
+                model.set("value", count() + 1);
+                model.save_changes();
+            });
+            model.on("change:value", () => {
+                btn.innerHTML = `count is ${count()}`;
+            });
+            el.appendChild(btn);
+            }
+            export default { render };
+            """
+            value = param.Integer()
 
-    CounterWidget().servable()
-    ```
+        CounterWidget().servable()
     '''
 
     __abstract = True
@@ -770,8 +780,8 @@ class AnyWidgetComponent(ReactComponent):
         """
         Sends a custom event containing the provided message to the frontend.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         msg: dict
         """
         self._send_msg(msg)

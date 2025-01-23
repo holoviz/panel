@@ -196,8 +196,8 @@ class Vizzu(ModelPane, SyncableData):
         Register a callback to be executed when any element in the
         chart is clicked on.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (callable)
             The callback to run on click events.
         """

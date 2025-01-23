@@ -201,8 +201,8 @@ def html_page_for_render_items(
     """
     Render an HTML page from a template and Bokeh render items.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     bundle (tuple):
         A tuple containing (bokehjs, bokehcss)
     docs_json (JSON-like):
@@ -735,8 +735,8 @@ def serve(
 
     Reference: https://panel.holoviz.org/user_guide/Server_Configuration.html#serving-multiple-apps
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panels: Viewable, function or {str: Viewable or function}
       A Panel object, a function returning a Panel object or a
       dictionary mapping from the URL slug to either.
@@ -874,8 +874,8 @@ def get_server(
     Returns a Server instance with this panel attached as the root
     app.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable, function or {str: Viewable}
       A Panel object, a function returning a Panel object or a
       dictionary mapping from the URL slug to either.

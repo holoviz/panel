@@ -219,8 +219,8 @@ def resolve_custom_path(
     """
     Attempts to resolve a path relative to some component.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: type | object
        The component to resolve the path relative to.
     path: str | os.PathLike
@@ -309,8 +309,8 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     - A path relative to the component
     - A raw css string
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     cls: type | object
         Object or class defining the stylesheet
     stylesheet: str
@@ -538,8 +538,8 @@ class ResourceComponent:
         """
         Resolves the resources required for this component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cdn: bool | Literal['auto']
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on

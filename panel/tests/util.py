@@ -443,8 +443,8 @@ def http_serve_directory(directory=".", port=0):
     conditions when trying to bind to an open port that turns out not to be
     free after all. The hostname is always "localhost".
 
-    Arguments
-    ----------
+    Parameters
+    -----------
     directory : str, optional
         The directory to server files from. Defaults to the current directory.
     port : int, optional

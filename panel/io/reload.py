@@ -256,8 +256,8 @@ def _check_file(path: str | os.PathLike, modify_times: dict[str | os.PathLike, i
     - 2: File modified
     - 3: File deleted
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     path: str | os.PathLike
       Path of the file to check for modification
     modify_times: dict[str, int]

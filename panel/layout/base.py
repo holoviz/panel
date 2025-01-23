@@ -326,8 +326,8 @@ class Panel(Reactive):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
@@ -438,8 +438,8 @@ class ListLike(param.Parameterized):
         """
         Makes a copy of the layout sharing the same parameters.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         objects: Objects to add to the cloned layout.
         params: Keyword arguments override the parameters on the clone.
 
@@ -465,8 +465,8 @@ class ListLike(param.Parameterized):
         """
         Appends an object to the layout.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         obj (object): Panel component to add to the layout.
         """
         new_objects = list(self)
@@ -489,8 +489,8 @@ class ListLike(param.Parameterized):
         """
         Extends the objects on this layout with a list.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         objects (list): List of panel components to add to the layout.
         """
         new_objects = list(self)
@@ -501,8 +501,8 @@ class ListLike(param.Parameterized):
         """
         Returns the integer index of the supplied object in the list of objects.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         obj (object): Panel component to look up the index for.
 
         Returns
@@ -515,8 +515,8 @@ class ListLike(param.Parameterized):
         """
         Inserts an object in the layout at the specified index.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         index (int): Index at which to insert the object.
         object (object): Panel components to insert in the layout.
         """
@@ -528,8 +528,8 @@ class ListLike(param.Parameterized):
         """
         Pops an item from the layout by index.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         index (int): The index of the item to pop from the layout.
         """
         new_objects = list(self)
@@ -541,8 +541,8 @@ class ListLike(param.Parameterized):
         """
         Removes an object from the layout.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         obj (object): The object to remove from the layout.
         """
         new_objects = list(self)
@@ -699,8 +699,8 @@ class NamedListLike(param.Parameterized):
         """
         Makes a copy of the Tabs sharing the same parameters.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         objects: Objects to add to the cloned Tabs object.
         params: Keyword arguments override the parameters on the clone.
 
@@ -727,8 +727,8 @@ class NamedListLike(param.Parameterized):
         """
         Appends an object to the tabs.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         obj (object): Panel component to add as a tab.
         """
         new_object, new_name = self._to_object_and_name(pane)
@@ -748,8 +748,8 @@ class NamedListLike(param.Parameterized):
         """
         Extends the the tabs with a list.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         objects (list): List of panel components to add as tabs.
         """
         new_objects, new_names = self._to_objects_and_names(panes)
@@ -762,8 +762,8 @@ class NamedListLike(param.Parameterized):
         """
         Inserts an object in the tabs at the specified index.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         index (int): Index at which to insert the object.
         object (object): Panel components to insert as tabs.
         """
@@ -777,8 +777,8 @@ class NamedListLike(param.Parameterized):
         """
         Pops an item from the tabs by index.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         index (int): The index of the item to pop from the tabs.
         """
         new_objects = list(self)
@@ -791,8 +791,8 @@ class NamedListLike(param.Parameterized):
         """
         Removes an object from the tabs.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         obj (object): The object to remove from the tabs.
         """
         new_objects = list(self)
@@ -989,8 +989,8 @@ class Column(ListPanel):
         """
         Scrolls to the child at the provided index.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         index: int
             Index of the child object to scroll to.
         """

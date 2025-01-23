@@ -659,8 +659,8 @@ class ChatFeed(ListPanel):
 
         If `respond` is `True`, additionally executes the callback, if provided.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         value : ChatMessage | dict | Any
             The message contents to send.
         user : str | None
@@ -711,8 +711,8 @@ class ChatFeed(ListPanel):
         This method is primarily for outputs that are not generators--
         notably LangChain. For most cases, use the send method instead.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         value : str | dict | ChatMessage
             The new token value to stream.
         user : str | None
@@ -781,8 +781,8 @@ class ChatFeed(ListPanel):
         Adds a ChatStep component either by appending it to an existing
         ChatMessage or creating a new ChatMessage.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         step : str | list(str) | ChatStep | None
             The objects to stream to the step.
         append : bool
@@ -889,8 +889,8 @@ class ChatFeed(ListPanel):
         """
         Prompts the user to interact with a form component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         component : Widget | ListPanel
             The component to prompt the user with.
         callback : Callable
@@ -1092,8 +1092,8 @@ class ChatFeed(ListPanel):
         """
         Exports the chat log.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         format : str
             The format to export the chat log as; currently only
             supports "transformers".
@@ -1155,8 +1155,8 @@ class ChatFeed(ListPanel):
         Iterates over the ChatInterface and any potential children in the
         applying the selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
