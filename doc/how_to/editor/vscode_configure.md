@@ -37,7 +37,9 @@ pip install panel watchfiles jupyter_bokeh ipykernel
 
 ::::{tab-item} conda
 
+```bash
 conda install -c conda-forge panel watchfiles jupyter_bokeh ipykernel
+```
 
 ::::
 
