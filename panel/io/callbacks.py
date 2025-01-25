@@ -86,10 +86,9 @@ class PeriodicCallback(param.Parameterized):
                     if self.count is not None and self.counter > self.count:
                         self.stop()
                 cb = self.callback() if self.running else None
-        except Exception:
-            cb = None
-        if post:
-            self._post_callback()
+        finally:
+            if post:
+                self._post_callback()
         return cb
 
     def _post_callback(self):
@@ -133,9 +132,6 @@ class PeriodicCallback(param.Parameterized):
                         await cb
                 else:
                     await cb
-        except Exception:
-            log.exception('Periodic callback failed.')
-            raise
         finally:
             self._post_callback()
 
