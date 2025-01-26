@@ -1,4 +1,4 @@
-# APIs
+# Overview of Panel APIs
 
 Panel can be used to make a simple app in minutes, but you can also create complex apps with fully customized behavior and appearance. You can even flexibly integrate GUI support into long-term, large-scale software projects, while keeping your GUI code fully separate from the core code for your project.
 
