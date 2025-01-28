@@ -645,6 +645,11 @@ class ChatFeed(ListPanel):
             self.disabled = self._disabled_stack.pop() if self._disabled_stack else False
 
     # Public API
+    def scroll_to(self, index: int):
+        """
+        Scrolls the chat log to the provided index.
+        """
+        self._chat_log.scroll_to(index)
 
     def send(
         self,
