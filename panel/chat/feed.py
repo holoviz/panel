@@ -648,6 +648,11 @@ class ChatFeed(ListPanel):
     def scroll_to(self, index: int):
         """
         Scrolls the chat log to the provided index.
+
+        Arguments
+        ---------
+        index : int
+            The index to scroll to.
         """
         self._chat_log.scroll_to(index)
 
