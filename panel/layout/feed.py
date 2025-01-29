@@ -78,6 +78,11 @@ class Feed(Column):
         self._last_synced = None
         self.param.watch(self._trigger_view_latest, 'objects')
 
+    @param.depends("objects", watch=True)
+    def _reset_visible_range(self):
+        with edit_readonly(self):
+            self.visible_range = None
+
     @param.depends("visible_range", "load_buffer", watch=True)
     def _trigger_get_objects(self):
         if self.visible_range is None:
