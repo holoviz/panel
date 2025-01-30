@@ -465,6 +465,18 @@ class TestChatInterface:
         assert msg.user == "Welcoming User"
         assert msg.avatar == "👋"
 
+    @pytest.mark.parametrize("method", ["send", "stream"])
+    async def test_send_stream_auto_avatar(self, chat_interface, method):
+        chat_interface.user = "A"
+        chat_interface.avatar = "H"
+        getattr(chat_interface, method)("Hello", user="S")
+        # will default to first letter on UI
+        assert chat_interface.objects[0].avatar == ""
+
+        getattr(chat_interface, method)("Hello", user="A")
+        assert chat_interface.objects[1].avatar == "H"
+
+
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
         chat_interface = ChatInterface()
