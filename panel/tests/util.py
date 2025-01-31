@@ -291,7 +291,7 @@ def get_open_ports(n=1):
     return tuple(ports)
 
 
-def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
+def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs):
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     if serve_and_wait.server_implementation == 'fastapi':
         from panel.io.fastapi import serve as serve_app
@@ -301,7 +301,9 @@ def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
-    if serve_and_wait.server_implementation == 'fastapi':
+    if proxy:
+        port = proxy
+    elif serve_and_wait.server_implementation == 'fastapi':
         port = port
     else:
         port = server.port
@@ -322,8 +324,10 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
     return msgs, port
 
 
-def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
-    port = serve_and_wait(app, port=port, **kwargs)
+def serve_and_request(app, suffix="", n=1, port=None, proxy=None, **kwargs):
+    port = serve_and_wait(app, port=port, proxy=proxy, **kwargs)
+    if proxy:
+        port = proxy
     reqs = [r for _ in range(n) if (r := requests.get(f"http://localhost:{port}{suffix}")).ok]
     assert len(reqs) == n, "Not all requests were successful"
     return reqs[0] if n == 1 else reqs
@@ -493,3 +497,26 @@ class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
         self.send_header('Cross-Origin-Embedder-Policy', 'credentialless')
         http.server.SimpleHTTPRequestHandler.end_headers(self)
+
+
+@contextlib.contextmanager
+def reverse_proxy():
+    port, proxy_port = get_open_ports(2)
+    config = f"""
+:{proxy_port} {{
+  handle_path /proxy/* {{
+    reverse_proxy localhost:{port}
+  }}
+}}
+"""
+    process = subprocess.Popen(
+        ['caddy', 'run', '--adapter', 'caddyfile', '--config', '-'],
+        stdin=subprocess.PIPE, close_fds=ON_POSIX, text=True
+    )
+    process.stdin.write(config)
+    process.stdin.close()
+    try:
+        yield port, proxy_port
+    finally:
+        process.terminate()
+        process.wait()

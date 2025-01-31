@@ -904,6 +904,17 @@ def test_server_template_custom_resources(port):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+def test_server_template_custom_resources_on_proxy(reverse_proxy):
+    template = CustomBootstrapTemplate()
+
+    port, proxy = reverse_proxy
+    r = serve_and_request(
+        {'template': template}, port=port, proxy=proxy,
+        suffix="/proxy/components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"
+    )
+
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 def test_server_template_custom_resources_with_prefix(port):
     template = CustomBootstrapTemplate()
@@ -913,19 +924,43 @@ def test_server_template_custom_resources_with_prefix(port):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+def test_server_template_custom_resources_with_prefix_and_proxy(reverse_proxy):
+    (port, proxy) = reverse_proxy
+    template = CustomBootstrapTemplate()
+
+    path = "/proxy/prefix/components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"
+    r = serve_and_request({'template': template}, port=port, proxy=proxy, prefix='/prefix', suffix=path)
+
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 def test_server_template_custom_resources_with_prefix_relative_url(port):
     template = CustomBootstrapTemplate()
 
-    r = serve_and_request({'template': template}, prefix='/prefix', suffix='/prefix/template')
+    r = serve_and_request({'template': template}, prefix='/prefix', port=port, suffix='/prefix/template')
 
     assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
+def test_server_template_custom_resources_with_prefix_and_proxy_relative_url(reverse_proxy):
+    template = CustomBootstrapTemplate()
+
+    (port, proxy) = reverse_proxy
+    r = serve_and_request({'template': template}, prefix='/prefix', port=port, proxy=proxy, suffix='/proxy/prefix/template')
+
+    assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
 def test_server_template_custom_resources_with_subpath_and_prefix_relative_url(port):
     template = CustomBootstrapTemplate()
 
-    r = serve_and_request({'/subpath/template': template}, prefix='/prefix', suffix='/prefix/subpath/template')
+    r = serve_and_request({'/subpath/template': template}, port=port, prefix='/prefix', suffix='/prefix/subpath/template')
+
+    assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
+
+def test_server_template_custom_resources_with_subpath_and_prefix_and_proxy_relative_url(reverse_proxy):
+    template = CustomBootstrapTemplate()
+
+    port, proxy = reverse_proxy
+    r = serve_and_request({'/subpath/template': template}, port=port, proxy=proxy, prefix='/prefix', suffix='/proxy/prefix/subpath/template')
 
     assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
@@ -941,7 +976,7 @@ def test_server_component_custom_resources(port):
     component = CustomComponent()
 
     path = "/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"
-    r = serve_and_request({'component': component}, suffix=path)
+    r = serve_and_request({'component': component}, suffix=path, port=port)
 
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
@@ -951,7 +986,8 @@ def test_server_component_custom_resources_with_prefix(port):
     component = CustomComponent()
 
     r = serve_and_request(
-        {'component': component}, prefix='/prefix', suffix="/prefix/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"
+        {'component': component}, prefix='/prefix', port=port,
+        suffix="/prefix/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"
     )
 
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
@@ -961,7 +997,7 @@ def test_server_component_custom_resources_with_prefix(port):
 def test_server_component_custom_resources_with_prefix_relative_url(port):
     component = CustomComponent()
 
-    r = serve_and_request({'component': component}, prefix='/prefix', suffix='/prefix/component')
+    r = serve_and_request({'component': component}, port=port, prefix='/prefix', suffix='/prefix/component')
 
     assert f'href="components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
@@ -969,7 +1005,7 @@ def test_server_component_custom_resources_with_prefix_relative_url(port):
 def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(port):
     component = CustomComponent()
 
-    r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component')
+    r = serve_and_request({'/subpath/component': component}, port=port, prefix='/prefix', suffix='/prefix/subpath/component')
 
     assert f'href="../components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
@@ -977,7 +1013,7 @@ def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(
 def test_server_component_css_with_prefix_relative_url(port):
     component = Terminal()
 
-    r = serve_and_request({'component': component}, suffix='/component')
+    r = serve_and_request({'component': component}, suffix='/component', port=port)
 
     assert 'href="static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in r.content.decode('utf-8')
 
@@ -985,7 +1021,7 @@ def test_server_component_css_with_prefix_relative_url(port):
 def test_server_component_css_with_subpath_and_prefix_relative_url(port):
     component = Terminal()
 
-    r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component')
+    r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component', port=port)
 
     assert 'href="../static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in r.content.decode('utf-8')
 
