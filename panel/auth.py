@@ -306,7 +306,10 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         )
 
     def get_state(self):
-        root_url = self.request.uri.replace(self._login_endpoint, '')
+        # Determine root url by removing login subpath and query parameters
+        root_url = self.request.uri.replace(self._login_endpoint, '').split('?')[0]
+        if not root_url.endswith('/'):
+            root_url += '/'
         next_url = original_next_url = self.get_argument('next', root_url)
         if next_url:
             # avoid browsers treating \ as /
