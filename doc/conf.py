@@ -326,4 +326,9 @@ def setup(app) -> None:
     nbbuild.setup(app)
     app.add_config_value('grid_item_link_domain', '', 'html')
 
+    # hv_sidebar_dropdown
+    app.add_config_value('nbsite_hv_sidebar_dropdown', {}, 'html')
+    app.connect("html-page-context", add_hv_sidebar_dropdown_context)
+
+
 grid_item_link_domain = gallery_endpoint
