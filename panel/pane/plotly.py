@@ -250,28 +250,34 @@ class Plotly(ModelPane):
         return update_sources
 
     @staticmethod
-    def _plotly_json_wrapper(fig):
+    def _convert_trace(trace):
+        trace = dict(trace)
+        for key in trace:
+            if not isdatetime(trace[key]):
+                continue
+            arr = trace[key]
+            if isinstance(arr, np.ndarray):
+                arr = arr.astype(str)
+            elif isinstance(arr, datetime_types):
+                arr = str(arr)
+            else:
+                arr = [str(v) for v in arr]
+            trace[key] = arr
+        return trace
+
+    @classmethod
+    def _plotly_json_wrapper(cls, fig):
         """Wraps around to_plotly_json and applies necessary fixes.
 
         For #382: Map datetime elements to strings.
         """
-        json = fig.to_plotly_json()
-        layout = json['layout']
-        data = json['data']
-        shapes = layout.get('shapes', [])
-        for trace in data+shapes:
-            for key in trace:
-                if not isdatetime(trace[key]):
-                    continue
-                arr = trace[key]
-                if isinstance(arr, np.ndarray):
-                    arr = arr.astype(str)
-                elif isinstance(arr, datetime_types):
-                    arr = str(arr)
-                else:
-                    arr = [str(v) for v in arr]
-                trace[key] = arr
-        return json
+        layout = dict(fig._layout)
+        data = [cls._convert_trace(trace) for trace in fig._data]
+        if 'shapes' in layout:
+            layout['shapes'] = [
+                cls._convert_trace(shape) for shape in layout['shapes']
+            ]
+        return {'data': data, 'layout': layout}
 
     def _init_params(self):
         viewport_params = [p for p in self.param if 'viewport' in p]
