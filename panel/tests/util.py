@@ -511,9 +511,11 @@ def reverse_proxy():
   }}
 }}
 """
+    env = os.environ.copy()
+    env['CADDY_ADMIN'] = 'off'
     process = subprocess.Popen(
         ['caddy', 'run', '--adapter', 'caddyfile', '--config', '-'],
-        stdin=subprocess.PIPE, close_fds=ON_POSIX, text=True
+        stdin=subprocess.PIPE, close_fds=ON_POSIX, text=True, env=env
     )
     process.stdin.write(config)
     process.stdin.close()
