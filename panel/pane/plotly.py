@@ -258,7 +258,7 @@ class Plotly(ModelPane):
             arr = trace[key]
             if isinstance(arr, np.ndarray):
                 if arr.dtype.kind == 'M' and arr.ndim == 2 and arr.shape[1] == 1:
-                    arr = [[str(try_datetime64_to_datetime(v[0]))] for v in arr]
+                    arr = np.array([[str(try_datetime64_to_datetime(v[0]))] for v in arr])
                 else:
                     arr = arr.astype(str)
             elif isinstance(arr, datetime_types):
