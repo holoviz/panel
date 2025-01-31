@@ -13,7 +13,7 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..util import lazy_load
+from ..util import lazy_load, try_datetime64_to_datetime
 from ..util.checks import datetime_types, isdatetime
 from ..viewable import Layoutable
 from .base import ModelPane
@@ -156,7 +156,7 @@ class Plotly(ModelPane):
     def _update_figure(self):
         import plotly.graph_objs as go
 
-        if (self.object is None or type(self.object) not in (go.Figure, go.FigureWidget) or
+        if (self.object is None or not isinstance(self.object, (go.Figure, go.FigureWidget)) or
             self.object is self._figure or not self.link_figure):
             return
 
@@ -257,7 +257,10 @@ class Plotly(ModelPane):
                 continue
             arr = trace[key]
             if isinstance(arr, np.ndarray):
-                arr = arr.astype(str)
+                if arr.dtype.kind == 'M' and arr.ndim == 2 and arr.shape[1] == 1:
+                    arr = np.array([[str(try_datetime64_to_datetime(v[0]))] for v in arr])
+                else:
+                    arr = arr.astype(str)
             elif isinstance(arr, datetime_types):
                 arr = str(arr)
             else:

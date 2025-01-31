@@ -7,10 +7,11 @@ from bokeh.core.properties import (
 from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource, LayoutDOM
 
-from ..io.resources import JS_URLS, bundled_files
+from ..config import config
+from ..io.resources import bundled_files
 from ..util import classproperty
 
-PLOTLY_VERSION = '2.35.3'
+PLOTLY_VERSION = '3.0.0'
 
 
 class PlotlyEvent(ModelEvent):
@@ -28,7 +29,7 @@ class PlotlyPlot(LayoutDOM):
     a bokeh plot.
     """
     __css_raw__ = [
-        "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css",
+        f"{config.npm_cdn}/maplibre-gl@4.4.1/dist/maplibre-gl.css"
     ]
 
     @classproperty
@@ -36,7 +37,6 @@ class PlotlyPlot(LayoutDOM):
         return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
-        JS_URLS['jQuery'],
         f'https://cdn.plot.ly/plotly-{PLOTLY_VERSION}.min.js'
     ]
 
