@@ -142,6 +142,7 @@ altair = "*"
 anywidget = "*"
 bokeh-fastapi = "*"
 bokeh_sampledata = "*"
+caddy = "*"
 cryptography = "*"
 diskcache = "*"
 fastapi = "*"
@@ -176,7 +177,6 @@ pytest-asyncio = "*"
 jupyter_server = "*"
 esbuild = "*"
 packaging = "*"
-caddy = "*"
 
 [feature.test-ui.tasks]
 _install-ui = 'playwright install chromium'
