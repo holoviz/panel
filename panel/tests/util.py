@@ -504,20 +504,27 @@ class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
 @contextlib.contextmanager
 def reverse_proxy():
     port, proxy_port = get_open_ports(2)
-    config = f"""
-:{proxy_port} {{
-  handle_path /proxy/* {{
-    reverse_proxy localhost:{port}
-  }}
-}}
-"""
-    env = os.environ.copy()
-    env['CADDY_ADMIN'] = 'off'
+    route_config = {
+        "match": [{"path": ["/proxy/*"]}],
+        "handle": [
+            {"handler": "rewrite", "strip_path_prefix": "/proxy"},
+            {"handler": "reverse_proxy", "upstreams": [{"dial": f"localhost:{port}"}]}
+        ]
+    }
+    proxy_config = {
+        "listen": [f":{proxy_port}"],
+        "routes": [route_config]
+    }
+    config = {
+        "admin": {"disabled": True},
+        "apps": {"http": {"servers": {"srv0": proxy_config}}}
+    }
     process = subprocess.Popen(
-        ['caddy', 'run', '--adapter', 'caddyfile', '--config', '-'],
-        stdin=subprocess.PIPE, close_fds=ON_POSIX, text=True, env=env
+        ['caddy', 'run', '--config', '-'],
+        stdin=subprocess.PIPE, close_fds=ON_POSIX, text=True
     )
-    process.stdin.write(config)
+    import json
+    process.stdin.write(json.dumps(config))
     process.stdin.close()
     try:
         yield port, proxy_port
