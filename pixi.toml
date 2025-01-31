@@ -134,7 +134,7 @@ holoviews = ">=1.16.0"
 jupyterlab = "*"
 matplotlib-base = "*"
 pillow = "*"
-plotly = ">=4.0"
+plotly = ">=6.0"
 # Optional dependencies - dev
 watchfiles = "*"
 # Test dependencies
