@@ -156,7 +156,7 @@ class Plotly(ModelPane):
     def _update_figure(self):
         import plotly.graph_objs as go
 
-        if (self.object is None or type(self.object) not in (go.Figure, go.FigureWidget) or
+        if (self.object is None or not isinstance(self.object, (go.Figure, go.FigureWidget)) or
             self.object is self._figure or not self.link_figure):
             return
 
