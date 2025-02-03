@@ -213,7 +213,7 @@ export class ReactiveESMView extends HTMLBoxView {
       this.invalidate_render()
     })
     this.on_change(class_name, () => {
-      this.container.className = this.model.class_name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
+      this.container.className = this.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
     })
     const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
     this.on_change(child_props, () => {
