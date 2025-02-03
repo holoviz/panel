@@ -205,9 +205,9 @@ export class ReactiveESMView extends HTMLBoxView {
     }
     if (this.model.css_bundle) {
       if (this.model.bundle === "url") {
-	stylesheets.push(new ImportedStyleSheet(this.model.css_bundle))
+        stylesheets.push(new ImportedStyleSheet(this.model.css_bundle))
       } else {
-	stylesheets.push(this.model.css_bundle)
+        stylesheets.push(this.model.css_bundle)
       }
     }
     return stylesheets
