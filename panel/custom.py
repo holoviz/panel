@@ -306,6 +306,14 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             return path if path.is_file() else None
         return None
 
+    @classproperty
+    def _bundle_css(cls):
+        esm_path = cls._esm_path(compiled=True)
+        css_path = esm_path.with_suffix('.css')
+        if css_path.is_file():
+            return css_path
+        return None
+
     @classmethod
     def _esm_path(cls, compiled: bool = True) -> os.PathLike | None:
         if compiled or not cls._esm:
@@ -330,17 +338,21 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return None
 
     @classmethod
+    def _component_resource_path(cls, esm_path, compiled):
+        base_cls = cls
+        for scls in cls.__mro__[1:]:
+            if not issubclass(scls, ReactiveESM):
+                continue
+            if esm_path == scls._esm_path(compiled=compiled is True):
+                base_cls = scls
+        return component_resource_path(base_cls, '_bundle_path', esm_path)
+
+    @classmethod
     def _render_esm(cls, compiled: bool | Literal['compiling'] = True, server: bool = False):
         esm_path = cls._esm_path(compiled=compiled is True)
         if esm_path:
             if esm_path == cls._bundle_path and cls.__module__ in sys.modules and server:
-                base_cls = cls
-                for scls in cls.__mro__[1:]:
-                    if not issubclass(scls, ReactiveESM):
-                        continue
-                    if esm_path == scls._esm_path(compiled=compiled is True):
-                        base_cls = scls
-                esm = component_resource_path(base_cls, '_bundle_path', esm_path)
+                esm = cls._component_resource_path(esm_path, compiled)
                 if config.autoreload:
                     modified = hashlib.sha256(str(esm_path.stat().st_mtime).encode('utf-8')).hexdigest()
                     esm += f'?{modified}'
@@ -348,6 +360,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 esm = esm_path.read_text(encoding='utf-8')
         else:
             esm = cls._esm
+        if esm is None:
+            raise ValueError(
+                f'{cls.__name__}._esm was found empty. Ensure you define an ESM module.'
+            )
         esm = textwrap.dedent(esm)
         return esm
 
@@ -417,10 +433,14 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         bundle_path = self._bundle_path
         importmap = self._process_importmap()
         is_session = False
+        css_bundle = None
         if bundle_path:
             is_session = bool(doc and doc.session_context and doc.session_context.server_context)
             if bundle_path == self._esm_path(not config.autoreload) and cls.__module__ in sys.modules and is_session:
                 bundle_hash = 'url'
+                if self._bundle_css:
+                    esm_bundle = self._component_resource_path(bundle_path, compiled=True)
+                    css_bundle = esm_bundle.replace('_bundle_path', '_bundle_css').replace('.js', '.css')
             else:
                 bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
         else:
@@ -429,6 +449,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         data_props['esm_constants'] = self._constants
         props.update({
             'bundle': bundle_hash,
+            'css_bundle': css_bundle,
             'class_name': cls.__name__,
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload or getattr(self, '_debug', False),

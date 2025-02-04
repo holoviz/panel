@@ -96,17 +96,19 @@ def npm_install(verbose, out):
         print(f"npm errors:\n{RED}{result.stderr}{RESET}")  # noqa
 
 
-def esbuild(components, minify, verbose, out):
+def esbuild(components, file_loaders, minify, verbose, out):
     extra_args = []
     if verbose:
         extra_args.append('--log-level=debug')
     if any(issubclass(c, ReactComponent) for c in components):
         extra_args.append('--loader:.js=jsx')
+    if file_loaders:
+        extra_args+= [f'--loader:.{loader}=file' for loader in file_loaders]
     if minify:
         extra_args.append('--minify')
     if out:
         extra_args.append(f'--outfile={out}')
-    build_cmd = ['esbuild', 'index.js', '--bundle', '--format=esm', '--loader:.woff2=file', '--loader:.woff=file'] + extra_args
+    build_cmd = ['esbuild', 'index.js', '--bundle', '--format=esm'] + extra_args
     if verbose:
         print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
     result = subprocess.run(build_cmd+['--color=true'], check=True, capture_output=True, text=True)
@@ -443,6 +445,7 @@ def compile_components(
     outfile: str | os.PathLike | None = None,
     skip_npm: bool = False,
     minify: bool = True,
+    file_loaders: list[str] | None = None,
     verbose: bool = True
 ) -> int | str | None:
     """
@@ -463,6 +466,8 @@ def compile_components(
         Whether to skip npm install (assumes build_dir is set)
     minify : bool, optional
         If True, minifies the compiled JavaScript bundle.
+    file_loaders: list[str]
+        List of file types (e.g. woff2 or svg) loaders to carry along
     verbose : bool, optional
         If True, prints detailed logs during the compilation process.
 
@@ -500,7 +505,7 @@ def compile_components(
                 return None
 
         try:
-            ret = esbuild(components, minify, verbose, out)
+            ret = esbuild(components, file_loaders, minify, verbose, out)
         except BuildError as e:
             print(str(e))  # noqa
         except subprocess.CalledProcessError as e:

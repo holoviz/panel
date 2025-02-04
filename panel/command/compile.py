@@ -15,6 +15,7 @@ def run_compile(
     build_dir: str | os.PathLike | None = None,
     unminified: bool = False,
     skip_npm: bool = False,
+    file_loaders: list[str] | None = None,
     verbose: bool = False
 ) -> int:
     """
@@ -27,13 +28,12 @@ def run_compile(
     build_dir : str | os.PathLike, optional
         The directory where the build output will be saved. If None, a
         temporary directory will be used.
-    outfile : str | os.PathLike, optional
-        The path to the output file where the compiled bundle will be saved.
-        If None the compiled output will be returned.
+    unminified : bool, optional
+        If True, minifies the compiled JavaScript bundle.
     skip_npm: bool
         Whether to skip npm install (assumes build_dir is set)
-    minify : bool, optional
-        If True, minifies the compiled JavaScript bundle.
+    file_loaders: list[str]
+        List of file types (e.g. woff2 or svg) loaders to carry along
     verbose : bool, optional
         If True, prints detailed logs during the compilation process.
 
@@ -42,6 +42,7 @@ def run_compile(
     int:
        Count of errors.
     """
+    file_loaders = file_loaders or []
     errors = 0
     for bundle, components in bundles.items():
         component_names = '\n- '.join(c.name for c in components)
@@ -52,6 +53,7 @@ def run_compile(
             minify=not unminified,
             outfile=bundle,
             skip_npm=skip_npm,
+            file_loaders=file_loaders,
             verbose=verbose,
         )
         if not out:
@@ -89,6 +91,11 @@ class Compile(Subcommand):
             action  = 'store_true',
             help    = "Whether to generate unminified output."
         )),
+        ('--file-loaders', Argument(
+            action  = 'store',
+            nargs   = '*',
+            help    = "List of file types to include in the compiled bundle.",
+        )),
         ('--verbose', Argument(
             action  = 'store_true',
             help    = "Whether to show verbose output. Note when setting --outfile only the result will be printed to stdout."
@@ -118,7 +125,9 @@ class Compile(Subcommand):
                 else:
                     bundles[bundle] = components
 
-        errors = run_compile(bundles, args.build_dir, args.unminified, args.skip_npm, args.verbose)
+        errors = run_compile(
+            bundles, args.build_dir, args.unminified, args.skip_npm, args.file_loaders, args.verbose
+        )
         if args.watch:
             from watchfiles import watch
             paths_to_watch = set()
@@ -129,5 +138,7 @@ class Compile(Subcommand):
                     paths_to_watch.add(mod_path)
                     paths_to_watch.add(mod_path.parent / component._esm_path(compiled=False))
             for _changes in watch(*paths_to_watch):
-                errors = run_compile(bundles, args.build_dir, args.unminified, args.skip_npm, args.verbose)
+                errors = run_compile(
+                    bundles, args.build_dir, args.unminified, args.skip_npm, args.file_loaders, args.verbose
+                )
         return int(errors>0)
