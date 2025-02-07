@@ -663,8 +663,13 @@ class Resources(BkResources):
         """
         from ..reactive import ReactiveCustomBase
         for model in param.concrete_descendents(ReactiveCustomBase).values():
-            if not (getattr(model, resource_type, None) and model._loaded()):
+            cls_files = getattr(model, resource_type, None)
+            if not (cls_files and model._loaded()):
                 continue
+            for cls in model.__mro__[1:]:
+                supcls_files = getattr(cls, resource_type, [])
+                if supcls_files == cls_files:
+                    model = cls
             for resource in getattr(model, resource_type, []):
                 if state.rel_path:
                     resource = resource.lstrip(state.rel_path+'/')
@@ -740,6 +745,7 @@ class Resources(BkResources):
 
         files = super().css_files
         self.extra_resources(files, '__css__')
+        self.extra_resources(files, '_bundle_css')
         css_files = self.adjust_paths([
             css for css in files if self.mode != 'inline' or not is_cdn_url(css)
         ])
