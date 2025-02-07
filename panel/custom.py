@@ -308,11 +308,14 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classproperty
     def _bundle_css(cls):
-        esm_path = cls._esm_path(compiled=True)
+        try:
+            esm_path = cls._esm_path(compiled=True)
+        except ValueError:
+            return []
         css_path = esm_path.with_suffix('.css')
         if css_path.is_file():
-            return css_path
-        return None
+            return [css_path]
+        return []
 
     @classmethod
     def _esm_path(cls, compiled: bool = True) -> os.PathLike | None:
