@@ -698,7 +698,7 @@ class ReactComponent(ReactiveESM):
     _react_version = '18.3.1'
 
     @classproperty  # type: ignore
-    def _exports__(cls) -> ExportSpec:
+    def _exports__(cls) -> ExportSpec:  # type: ignore
         imports = cls._importmap.get('imports', {})
         exports: dict[str, list[str | tuple[str, ...]]] = {
             "react": ["*React"],
