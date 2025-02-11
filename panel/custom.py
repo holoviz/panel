@@ -608,6 +608,42 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         """
         self._event__callbacks[event].append(callback)
 
+    def select(
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> list[Viewable]:
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Parameters
+        ----------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        selected = super().select(selector)
+        if (selector is None or
+            (isinstance(selector, type) and isinstance(self, selector)) or
+            (callable(selector) and not isinstance(selector, type) and selector(self))):
+            selected = [self]
+        else:
+            selected = []
+        for p, pobj in self.param.objects(instance='existing').items():
+            if isinstance(pobj, Children):
+                p_children = getattr(self, p, []) or []
+                for child in p_children:
+                    selected += child.select(selector)
+            elif isinstance(pobj, Child):
+                p_child = getattr(self, p, None)
+                if p_child is not None:
+                    selected += p_child.select(selector)
+        return selected
+
+
 
 class JSComponent(ReactiveESM):
     '''
