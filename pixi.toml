@@ -218,6 +218,7 @@ lxml = "*"
 nbsite = ">=0.8.6rc9"
 selenium = "*"
 numpydoc = "*"
+pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
 
 [feature.doc.tasks]
 _docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ --ext-autodoc --ext-intersphinx'
