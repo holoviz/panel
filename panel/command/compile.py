@@ -136,7 +136,7 @@ class Compile(Subcommand):
                     mod = sys.modules[component.__module__]
                     mod_path = pathlib.Path(mod.__file__)
                     paths_to_watch.add(mod_path)
-                    paths_to_watch.add(mod_path.parent / component._esm_path(compiled=False))
+                    paths_to_watch.add(mod_path.parent / component._esm_path(compiled='compiling'))
             for _changes in watch(*paths_to_watch):
                 errors = run_compile(
                     bundles, args.build_dir, args.unminified, args.skip_npm, args.file_loaders, args.verbose
