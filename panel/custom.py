@@ -308,11 +308,14 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classproperty
     def _bundle_css(cls):
-        esm_path = cls._esm_path(compiled=True)
+        try:
+            esm_path = cls._esm_path(compiled=True)
+        except ValueError:
+            return []
         css_path = esm_path.with_suffix('.css')
         if css_path.is_file():
-            return css_path
-        return None
+            return [css_path]
+        return []
 
     @classmethod
     def _esm_path(cls, compiled: bool = True) -> os.PathLike | None:
@@ -698,7 +701,7 @@ class ReactComponent(ReactiveESM):
     _react_version = '18.3.1'
 
     @classproperty  # type: ignore
-    def _exports__(cls) -> ExportSpec:
+    def _exports__(cls) -> ExportSpec:  # type: ignore
         imports = cls._importmap.get('imports', {})
         exports: dict[str, list[str | tuple[str, ...]]] = {
             "react": ["*React"],

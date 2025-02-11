@@ -2,7 +2,8 @@
 
 For scenarios where you want to leverage your system's existing user credentials, configuring PAM (Pluggable Authentication Modules) authentication is an effective solution. PAM authentication allows your application to authenticate users using the operating system's user database, eliminating the need to manage separate credentials.
 
-```{admonition} Prerequisites
+## Prerequisites
+
 PAM authentication requires the [`pamela` library](https://github.com/minrk/pamela). Install it with:
 
 :::::{tab-set}
@@ -24,8 +25,6 @@ conda install -c conda-forge pamela
 ::::
 
 :::::
-
-```
 
 ## Setting up PAM authentication
 
