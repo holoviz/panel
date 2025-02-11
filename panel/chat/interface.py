@@ -690,7 +690,7 @@ class ChatInterface(ChatFeed):
         if not isinstance(value, ChatMessage):
             if user is None:
                 user = self.user
-            if avatar is None:
+            if avatar is None and user == self.user:
                 avatar = self.avatar
         message_params["show_edit_icon"] = message_params.get(
             "show_edit_icon", user == self.user and self.edit_callback is not None)
@@ -739,6 +739,7 @@ class ChatInterface(ChatFeed):
             # ChatMessage cannot set user or avatar when explicitly streaming
             # so only set to the default when not a ChatMessage
             user = user or self.user
-            avatar = avatar or self.avatar
+            if avatar is None and user == self.user:
+                avatar = self.avatar
         message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user and self.edit_callback is not None)
         return super().stream(value, user=user, avatar=avatar, message=message, replace=replace, **message_params)
