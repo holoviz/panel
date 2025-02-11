@@ -892,19 +892,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if (selector is None or
             (isinstance(selector, type) and isinstance(self, selector)) or
             (callable(selector) and not isinstance(selector, type) and selector(self))):
-            selected = [self]
+            return [self]
         else:
-            selected = []
-        for p in self.param:
-            if isinstance(self.param[p], Children):
-                p_children = getattr(self, p, []) or []
-                for child in p_children:
-                    selected += child.select(selector)
-            elif isinstance(self.param[p], Child):
-                p_child = getattr(self, p, None)
-                if p_child is not None:
-                    selected += p_child.select(selector)
-        return selected
+            return []
 
     def embed(
         self, max_states: int = 1000, max_opts: int = 3, json: bool = False,

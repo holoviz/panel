@@ -80,3 +80,23 @@ class FlexBox(ListLike, ReactiveHTML):
             if not resolve_ref(objects) or iscoroutinefunction(objects):
                 params['objects'] = [panel(pane) for pane in objects]
         super().__init__(**params)
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Parameters
+        ----------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = super().select(selector)
+        for obj in self:
+            objects += obj.select(selector)
+        return objects
