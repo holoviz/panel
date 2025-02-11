@@ -14,6 +14,7 @@ install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-313 = ["py313", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py313", "test-core", "test-unit-task"]
 test-minimum = ["py310", "test-core", "test-unit-task", "test-minimum"]
@@ -88,7 +89,7 @@ ipywidgets = "*"
 ipywidgets_bokeh = "*"
 jupyter_bokeh = ">=3.0.7"
 networkx = ">=2.5"
-pydeck = ">=0.8"
+# pydeck = ">=0.8"  # Add back when it support ipywidgets 8.0
 pyecharts = "*"
 pygraphviz = "*"
 pyinstrument = ">=4.0"
@@ -217,6 +218,7 @@ lxml = "*"
 nbsite = ">=0.8.6rc9"
 selenium = "*"
 numpydoc = "*"
+pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
 
 [feature.doc.tasks]
 _docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ --ext-autodoc --ext-intersphinx'

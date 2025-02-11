@@ -28,7 +28,7 @@ class Sine(param.Parameterized):
     @param.depends('phase', 'frequency')
     def view(self):
         y = np.sin(np.linspace(0, np.pi * 3, 40) * self.frequency + self.phase)
-        y = ((y - y.min()) / y.ptp()) * 20
+        y = (y - y.min()) / np.ptp(y) * 20
         array = np.array(
             [list((' ' * (int(round(d)) - 1) + '*').ljust(20)) for d in y])
         return pn.pane.Str('\n'.join([''.join(r) for r in array.T]), height=380, width=500)
