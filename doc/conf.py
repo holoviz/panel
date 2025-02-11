@@ -192,7 +192,6 @@ def get_requirements():
 html_js_files = [
     (None, {'body': '{"shimMode": true}', 'type': 'esms-options'}),
     f'https://cdn.holoviz.org/panel/{js_version}/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
-    'toggle.js'
 ]
 
 nbsite_pyodide_conf = {
@@ -325,5 +324,10 @@ def setup(app) -> None:
     app.connect('source-read', update_versions)
     nbbuild.setup(app)
     app.add_config_value('grid_item_link_domain', '', 'html')
+
+    # hv_sidebar_dropdown
+    app.add_config_value('nbsite_hv_sidebar_dropdown', {}, 'html')
+    app.connect("html-page-context", add_hv_sidebar_dropdown_context)
+
 
 grid_item_link_domain = gallery_endpoint

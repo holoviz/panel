@@ -46,6 +46,11 @@ _ESM_IMPORT_ALIAS_RE = re.compile(r'(import\s+(?:\*\s+as\s+\w+|\{[^}]*\}|[\w*\s,
 _EXPORT_DEFAULT_RE = re.compile(r'\bexport\s+default\b')
 
 
+class BuildError(RuntimeError):
+    """
+    Error raised during esbuild.
+    """
+
 @contextmanager
 def setup_build_dir(build_dir: str | os.PathLike | None = None):
     original_directory = os.getcwd()
@@ -76,14 +81,53 @@ def check_cli_tool(tool_name: str) -> bool:
     return False
 
 
-def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[ReactiveESM]]:
+def npm_install(verbose, out):
+    npm_cmd = 'npm.cmd' if sys.platform == 'win32' else 'npm'
+    extra_args = []
+    if verbose:
+        extra_args.append('--log-level=debug')
+    install_cmd = [npm_cmd, 'install'] + extra_args
+    if out:
+        print(f"Running command: {' '.join(install_cmd)}\n")  # noqa
+    result = subprocess.run(install_cmd, check=True, capture_output=True, text=True)
+    if result.stdout and out:
+        print(f"npm output:\n{GREEN}{result.stdout}{RESET}")  # noqa
+    if result.stderr:
+        print(f"npm errors:\n{RED}{result.stderr}{RESET}")  # noqa
+
+
+def esbuild(components, file_loaders, minify, verbose, out):
+    extra_args = []
+    if verbose:
+        extra_args.append('--log-level=debug')
+    if any(issubclass(c, ReactComponent) for c in components):
+        extra_args.append('--loader:.js=jsx')
+    if file_loaders:
+        extra_args+= [f'--loader:.{loader}=file' for loader in file_loaders]
+    if minify:
+        extra_args.append('--minify')
+    if out:
+        extra_args.append(f'--outfile={out}')
+    build_cmd = ['esbuild', 'index.js', '--bundle', '--format=esm'] + extra_args
+    if verbose:
+        print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
+    result = subprocess.run(build_cmd+['--color=true'], check=True, capture_output=True, text=True)
+    if result.stderr:
+        if 'Done in' in result.stderr:
+            print(result.stderr)  # noqa
+            return result.stderr
+        raise BuildError(f"esbuild errored with:\n{result.stderr}")  # noqa
+    return result.stdout
+
+
+def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[type[ReactiveESM]]]:
     """
     Takes module specifications and extracts a set of components to bundle.
 
     Parameters
     ----------
     module_spec: str
-         Module specification either as a dotted module or a path to a module.
+        Module specification either as a dotted module or a path to a module.
 
     Returns
     -------
@@ -399,7 +443,9 @@ def compile_components(
     components: list[type[ReactiveESM]],
     build_dir: str | os.PathLike | None = None,
     outfile: str | os.PathLike | None = None,
+    skip_npm: bool = False,
     minify: bool = True,
+    file_loaders: list[str] | None = None,
     verbose: bool = True
 ) -> int | str | None:
     """
@@ -416,8 +462,12 @@ def compile_components(
     outfile : str | os.PathLike, optional
         The path to the output file where the compiled bundle will be saved.
         If None the compiled output will be returned.
+    skip_npm: bool
+        Whether to skip npm install (assumes build_dir is set)
     minify : bool, optional
         If True, minifies the compiled JavaScript bundle.
+    file_loaders: list[str]
+        List of file types (e.g. woff2 or svg) loaders to carry along
     verbose : bool, optional
         If True, prints detailed logs during the compilation process.
 
@@ -425,6 +475,11 @@ def compile_components(
     -------
     Returns the compiled bundle or None if outfile is provided.
     """
+    if skip_npm and not (build_dir and (pathlib.Path(build_dir) / 'node_modules').is_dir()):
+        raise RuntimeError(
+            'npm install can only be skipped if build_dir with existing '
+            'node_modules is provided.'
+        )
     npm_cmd = 'npm.cmd' if sys.platform == 'win32' else 'npm'
     if not check_cli_tool(npm_cmd):
         raise RuntimeError(
@@ -442,38 +497,18 @@ def compile_components(
     out = str(pathlib.Path(outfile).absolute()) if outfile else None
     with setup_build_dir(build_dir) as out_dir:
         generate_project(components, out_dir)
-        extra_args = []
-        if verbose:
-            extra_args.append('--log-level=debug')
-        install_cmd = [npm_cmd, 'install'] + extra_args
-        try:
-            if out:
-                print(f"Running command: {' '.join(install_cmd)}\n")  # noqa
-            result = subprocess.run(install_cmd, check=True, capture_output=True, text=True)
-            if result.stdout and out:
-                print(f"npm output:\n{GREEN}{result.stdout}{RESET}")  # noqa
-            if result.stderr:
-                print(f"npm errors:\n{RED}{result.stderr}{RESET}")  # noqa
-
-        except subprocess.CalledProcessError as e:
-            print(f"An error occurred while running npm install:\n{RED}{e.stderr}{RESET}")  # noqa
-            return None
-
-        if any(issubclass(c, ReactComponent) for c in components):
-            extra_args.append('--loader:.js=jsx')
-        if minify:
-            extra_args.append('--minify')
-        if out:
-            extra_args.append(f'--outfile={out}')
-        build_cmd = ['esbuild', 'index.js', '--bundle', '--format=esm'] + extra_args
-        try:
-            if verbose:
-                print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
-            result = subprocess.run(build_cmd+['--color=true'], check=True, capture_output=True, text=True)
-            if result.stderr:
-                print(f"esbuild output:\n{result.stderr}")  # noqa
+        if not skip_npm:
+            try:
+                npm_install(verbose, out)
+            except subprocess.CalledProcessError as e:
+                print(f"An error occurred while running npm install:\n{RED}{e.stderr}{RESET}")  # noqa
                 return None
+
+        try:
+            ret = esbuild(components, file_loaders, minify, verbose, out)
+        except BuildError as e:
+            print(str(e))  # noqa
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while running esbuild: {e.stderr}")  # noqa
             return None
-        return 0 if outfile else result.stdout
+    return 0 if outfile else ret

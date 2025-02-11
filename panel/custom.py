@@ -34,7 +34,7 @@ from .pane.base import PaneBase  # noqa
 from .reactive import (  # noqa
     Reactive, ReactiveCustomBase, ReactiveHTML, ReactiveMetaBase,
 )
-from .util import camel_to_kebab, classproperty
+from .util import classproperty
 from .util.checks import import_available
 from .viewable import (  # noqa
     Child, Children, Layoutable, Viewable, Viewer, is_viewable_param,
@@ -306,6 +306,17 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             return path if path.is_file() else None
         return None
 
+    @classproperty
+    def _bundle_css(cls):
+        try:
+            esm_path = cls._esm_path(compiled=True)
+        except ValueError:
+            return []
+        css_path = esm_path.with_suffix('.css')
+        if css_path.is_file():
+            return [css_path]
+        return []
+
     @classmethod
     def _esm_path(cls, compiled: bool = True) -> os.PathLike | None:
         if compiled or not cls._esm:
@@ -330,17 +341,21 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return None
 
     @classmethod
+    def _component_resource_path(cls, esm_path, compiled):
+        base_cls = cls
+        for scls in cls.__mro__[1:]:
+            if not issubclass(scls, ReactiveESM):
+                continue
+            if esm_path == scls._esm_path(compiled=compiled is True):
+                base_cls = scls
+        return component_resource_path(base_cls, '_bundle_path', esm_path)
+
+    @classmethod
     def _render_esm(cls, compiled: bool | Literal['compiling'] = True, server: bool = False):
         esm_path = cls._esm_path(compiled=compiled is True)
         if esm_path:
             if esm_path == cls._bundle_path and cls.__module__ in sys.modules and server:
-                base_cls = cls
-                for scls in cls.__mro__[1:]:
-                    if not issubclass(scls, ReactiveESM):
-                        continue
-                    if esm_path == scls._esm_path(compiled=compiled is True):
-                        base_cls = scls
-                esm = component_resource_path(base_cls, '_bundle_path', esm_path)
+                esm = cls._component_resource_path(esm_path, compiled)
                 if config.autoreload:
                     modified = hashlib.sha256(str(esm_path.stat().st_mtime).encode('utf-8')).hexdigest()
                     esm += f'?{modified}'
@@ -348,6 +363,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 esm = esm_path.read_text(encoding='utf-8')
         else:
             esm = cls._esm
+        if esm is None:
+            raise ValueError(
+                f'{cls.__name__}._esm was found empty. Ensure you define an ESM module.'
+            )
         esm = textwrap.dedent(esm)
         return esm
 
@@ -417,10 +436,14 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         bundle_path = self._bundle_path
         importmap = self._process_importmap()
         is_session = False
+        css_bundle = None
         if bundle_path:
             is_session = bool(doc and doc.session_context and doc.session_context.server_context)
             if bundle_path == self._esm_path(not config.autoreload) and cls.__module__ in sys.modules and is_session:
                 bundle_hash = 'url'
+                if self._bundle_css:
+                    esm_bundle = self._component_resource_path(bundle_path, compiled=True)
+                    css_bundle = esm_bundle.replace('_bundle_path', '_bundle_css').replace('.js', '.css')
             else:
                 bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
         else:
@@ -429,7 +452,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         data_props['esm_constants'] = self._constants
         props.update({
             'bundle': bundle_hash,
-            'class_name': camel_to_kebab(cls.__name__),
+            'css_bundle': css_bundle,
+            'class_name': cls.__name__,
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload or getattr(self, '_debug', False),
             'esm': self._render_esm(not config.autoreload, server=is_session),
@@ -584,6 +608,42 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         """
         self._event__callbacks[event].append(callback)
 
+    def select(
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> list[Viewable]:
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Parameters
+        ----------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        selected = super().select(selector)
+        if (selector is None or
+            (isinstance(selector, type) and isinstance(self, selector)) or
+            (callable(selector) and not isinstance(selector, type) and selector(self))):
+            selected = [self]
+        else:
+            selected = []
+        for p, pobj in self.param.objects(instance='existing').items():
+            if isinstance(pobj, Children):
+                p_children = getattr(self, p, []) or []
+                for child in p_children:
+                    selected += child.select(selector)
+            elif isinstance(pobj, Child):
+                p_child = getattr(self, p, None)
+                if p_child is not None:
+                    selected += p_child.select(selector)
+        return selected
+
+
 
 class JSComponent(ReactiveESM):
     '''
@@ -677,7 +737,7 @@ class ReactComponent(ReactiveESM):
     _react_version = '18.3.1'
 
     @classproperty  # type: ignore
-    def _exports__(cls) -> ExportSpec:
+    def _exports__(cls) -> ExportSpec:  # type: ignore
         imports = cls._importmap.get('imports', {})
         exports: dict[str, list[str | tuple[str, ...]]] = {
             "react": ["*React"],

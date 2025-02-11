@@ -4,6 +4,7 @@ import type {Transform} from "sucrase"
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {ImportedStyleSheet} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs} from "@bokehjs/core/types"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
@@ -202,6 +203,13 @@ export class ReactiveESMView extends HTMLBoxView {
     if (this.model.dev) {
       stylesheets.push(error_css)
     }
+    if (this.model.css_bundle) {
+      if (this.model.bundle === "url") {
+        stylesheets.push(new ImportedStyleSheet(this.model.css_bundle))
+      } else {
+        stylesheets.push(this.model.css_bundle)
+      }
+    }
     return stylesheets
   }
 
@@ -213,7 +221,7 @@ export class ReactiveESMView extends HTMLBoxView {
       this.invalidate_render()
     })
     this.on_change(class_name, () => {
-      this.container.className = this.model.class_name
+      this.container.className = this.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
     })
     const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
     this.on_change(child_props, () => {
@@ -477,6 +485,7 @@ export namespace ReactiveESM {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = HTMLBox.Props & {
+    css_bundle: p.Property<string | null>
     bundle: p.Property<string | null>
     children: p.Property<any>
     class_name: p.Property<string>
@@ -658,8 +667,8 @@ export class ReactiveESM extends HTMLBox {
       }
       try {
         let initialize
-        if (this.bundle != null && (mod.default || {}).hasOwnProperty(this.name)) {
-          mod = mod.default[(this.name as any)]
+        if (this.bundle != null && (mod.default || {}).hasOwnProperty(this.class_name)) {
+          mod = mod.default[(this.class_name as any)]
         }
         if (mod.initialize) {
           initialize = mod.initialize
@@ -689,6 +698,7 @@ export class ReactiveESM extends HTMLBox {
   static {
     this.prototype.default_view = ReactiveESMView
     this.define<ReactiveESM.Props>(({Any, Array, Bool, Nullable, Str}) => ({
+      css_bundle:  [ Nullable(Str),     null ],
       bundle:      [ Nullable(Str),     null ],
       children:    [ Array(Str),          [] ],
       class_name:  [ Str,                 "" ],

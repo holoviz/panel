@@ -228,6 +228,8 @@ filterwarnings = [
     # 2024-11
     "ignore:websockets.legacy is deprecated:DeprecationWarning", # https://github.com/encode/uvicorn/issues/1908
     "ignore:websockets.server.WebSocketServerProtocol is deprecated:DeprecationWarning", # https://github.com/encode/uvicorn/issues/1908
+    # 2025-01 `plotly` 6.0 triggers warnings
+    "ignore:\\*scattermapbox\\* is deprecated! Use \\*scattermap\\* instead" # https://github.com/plotly/plotly.py/issues/4997
 ]
 
 [tool.mypy]
