@@ -42,7 +42,8 @@ from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    PANEL_DIR, Resources, _env, bundle_resources, patch_inline_css, patch_model_css,
+    PANEL_DIR, Resources, _env, bundle_resources, patch_inline_css,
+    patch_model_css,
 )
 from .state import state
 
@@ -203,7 +204,7 @@ def render_model(
 
     if resources == 'inline':
          patch_inline_css(docs_json)
-         
+
     div = div_for_render_item(render_item)
     render_json = render_item.to_json()
     requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
