@@ -44,7 +44,7 @@ export class PanelMarkupView extends WidgetView {
         style_el.addEventListener("load", () => {
           this._initialized_stylesheets.set(style_el.href, true)
           if ([...this._initialized_stylesheets.values()].every((v) => v)) {
-            this.style_redraw()
+            setTimeout(() => { this.style_redraw() }, 1)
           }
         })
       }
@@ -183,6 +183,9 @@ export abstract class HTMLBoxView extends LayoutDOMView {
           }
         })
       }
+    }
+    if (Object.keys(this._initialized_stylesheets).length === 0) {
+      setTimeout(() => { this.style_redraw() }, 1)
     }
   }
 

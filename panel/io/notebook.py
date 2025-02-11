@@ -42,7 +42,7 @@ from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    PANEL_DIR, Resources, _env, bundle_resources, patch_model_css,
+    PANEL_DIR, Resources, _env, bundle_resources, patch_inline_css, patch_model_css,
 )
 from .state import state
 
@@ -200,6 +200,10 @@ def render_model(
             model.document._template_variables['dist_url'] = dist_url
 
     (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], suppress_callback_warning=True)
+
+    if resources == 'inline':
+         patch_inline_css(docs_json)
+         
     div = div_for_render_item(render_item)
     render_json = render_item.to_json()
     requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
@@ -239,12 +243,15 @@ def render_mimebundle(
     model: Model, doc: Document, comm: Comm,
     manager: CommManager | None = None,
     location: Location | None = None,
-    resources: str = 'cdn'
+    resources: str = None
 ) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     """
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
     """
+    if resources is None:
+         from ..config import config
+         resources = 'inline' if config.inline else 'cdn'
     # WARNING: Patches the client comm created by some external library
     #          e.g. HoloViews, with an on_open handler that will initialize
     #          the server comm.

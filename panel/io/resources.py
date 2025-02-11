@@ -349,6 +349,32 @@ def patch_model_css(root, dist_url):
         else:
             doc.unhold()
 
+def _visit_json_data(data, parent=None, key=None):
+     if parent is not None:
+         yield data, parent, key
+     typ = type(data)
+     if typ is dict:
+         for k, v in data.items():
+             yield from _visit_json_data(v, data, k)
+     elif typ in {list, tuple, set}:
+         for i, v in enumerate(data):
+             yield from _visit_json_data(v, data, i)
+
+
+def patch_inline_css(doc_data):
+    for data, _, _ in _visit_json_data(doc_data):
+        typ = type(data)
+        if typ is dict:
+            if 'type' in data and 'name' in data and data['name'] == 'ImportedStyleSheet' and data['type'] == 'object':
+                url = data['attributes']['url']
+                if url.startswith(CDN_DIST):
+                    path = DIST_DIR / url.replace(CDN_DIST, '')
+                    if path.exists():
+                        css = path.read_text(encoding='utf-8')
+                        data['name'] = 'InlineStyleSheet'
+                        data['attributes']['css'] = css
+                        del data['attributes']['url']
+
 def global_css(name):
     if RESOURCE_MODE == 'server':
         return f'static/extensions/panel/css/{name}.css'
