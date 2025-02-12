@@ -24,6 +24,23 @@ def test_server_index_redirect_via_proxy(page, prefix, reverse_proxy):
 
     expect(page.locator("h3")).to_have_text('App')
 
+@pytest.mark.parametrize('prefix', ['', '/prefix/'])
+def test_server_index_page_links(page, prefix):
+    serve_component(page, {'app1': '### App1', 'app2': '### App2'}, prefix=prefix, suffix=prefix, wait=False)
+
+    page.locator('.card-link').nth(0).click()
+
+    expect(page.locator("h3")).to_have_text('App1')
+
+@pytest.mark.parametrize('prefix', ['', '/prefix/'])
+def test_server_index_page_links_via_proxy(page, prefix, reverse_proxy):
+    port, proxy = reverse_proxy
+    serve_component(page, {'app1': '### App1', 'app2': '### App2'}, prefix=prefix, suffix=f"/proxy{prefix or '/'}", port=port, proxy=proxy, wait=False)
+
+    page.locator('.card-link').nth(0).click()
+
+    expect(page.locator("h3")).to_have_text('App1')
+
 
 def test_server_reuse_sessions(page, reuse_sessions):
     def app(counts=[0]):
