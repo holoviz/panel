@@ -232,6 +232,45 @@ def test_basic_auth_logout(py_file, page, logout_template):
 
 
 @linux_only
+@pytest.mark.parametrize('logout_template', [None, (pathlib.Path(__file__).parent / 'logout.html').absolute()])
+def test_basic_auth_logout_via_proxy(py_file, page, logout_template, reverse_proxy):
+    app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
+    write_file(app, py_file.file)
+
+    app_name = os.path.basename(py_file.name)[:-3]
+
+    port, proxy = reverse_proxy
+    cmd = [
+        "--port", str(port), "--basic-auth", "my_password", "--cookie-secret",
+        "secret", py_file.name, "--root-path", "/proxy/", "--allow-websocket-origin",
+        f"localhost:{proxy}"
+    ]
+    if logout_template:
+        cmd += ['--logout-template', str(logout_template)]
+    with run_panel_serve(cmd) as p:
+        wait_for_port(p.stdout)
+        page.goto(f"http://localhost:{proxy}/proxy/{app_name}")
+
+        page.locator('input[name="username"]').fill("test_user")
+        page.locator('input[name="password"]').fill("my_password")
+        page.get_by_role("button").click(force=True)
+
+        expect(page.locator('.markdown')).to_have_text('test_user', timeout=10000)
+
+        cookies = [cookie['name'] for cookie in page.context.cookies()]
+        assert 'user' in cookies
+        assert 'id_token' in cookies
+
+        page.goto(f"http://localhost:{proxy}/proxy/logout")
+
+        assert page.title() == ('Test Logout Page' if logout_template else 'Panel App | Logout')
+
+        cookies = [cookie['name'] for cookie in page.context.cookies()]
+        assert 'user' not in cookies
+        assert 'id_token' not in cookies
+
+
+@linux_only
 def test_authorize_callback_redirect(page):
 
     def authorize(user_info, uri):

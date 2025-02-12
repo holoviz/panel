@@ -814,7 +814,7 @@ class BasicLoginHandler(RequestHandler):
             errormessage = self.get_argument("error")
         except Exception:
             errormessage = ""
-        next_url = self.get_argument('next', None)
+        next_url = self.get_argument('next', state.base_url)
         if next_url:
             if state.base_url and not next_url.startswith(state.base_url):
                 next_url = next_url.replace('/', state.base_url, 1)
@@ -879,12 +879,9 @@ class LogoutHandler(tornado.web.RequestHandler):
         self.clear_cookie("refresh_token")
         self.clear_cookie("oauth_expiry")
         self.clear_cookie(STATE_COOKIE_NAME)
-        login_url = self._login_endpoint
-        if state.base_url and not login_url.startswith(state.base_url):
-            login_url = login_url.replace('/', state.base_url, 1)
         html = self._logout_template.render(
             PANEL_CDN=CDN_DIST,
-            LOGIN_ENDPOINT=login_url
+            LOGIN_ENDPOINT=self._login_endpoint
         )
         self.write(html)
 
