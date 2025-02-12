@@ -17,6 +17,7 @@ from panel.tests.util import (
 )
 
 pytestmark = pytest.mark.ui
+auth_check = pytest.mark.skipif('PANEL_TEST_AUTH' not in os.environ, reason='PANEL_TEST_AUTH environment variable is required to run this test')
 
 @linux_only
 @pytest.mark.parametrize('prefix', ['', 'prefix'])
@@ -67,6 +68,7 @@ def test_basic_auth_via_proxy(py_file, page, prefix, reverse_proxy):
 
 
 @linux_only
+@auth_check
 @pytest.mark.skipif('OKTA_OAUTH_KEY' not in os.environ, reason='OKTA_OAUTH_KEY environment variable is required to run this test')
 @pytest.mark.xdist_group("auth")
 def test_okta_oauth(py_file, page):
@@ -99,6 +101,7 @@ def test_okta_oauth(py_file, page):
 
 
 @linux_only
+@auth_check
 @pytest.mark.skipif('AZURE_OAUTH_KEY' not in os.environ, reason='AZURE_OAUTH_KEY environment variable is required to run this test')
 @pytest.mark.xdist_group("auth")
 def test_azure_oauth(py_file, page):
@@ -134,6 +137,7 @@ def test_azure_oauth(py_file, page):
 
 
 @linux_only
+@auth_check
 @pytest.mark.skipif('AUTH0_OAUTH_KEY' not in os.environ, reason='AUTH0_OAUTH_KEY environment variable is required to run this test')
 @pytest.mark.xdist_group("auth")
 def test_auth0_oauth(py_file, page):
@@ -166,6 +170,7 @@ def test_auth0_oauth(py_file, page):
 
 
 @linux_only
+@auth_check
 @pytest.mark.skipif('AUTH0_OAUTH_KEY' not in os.environ, reason='AUTH0_OAUTH_KEY environment variable is required to run this test')
 @pytest.mark.xdist_group("auth")
 def test_auth0_oauth_via_proxy(py_file, page):
