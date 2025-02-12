@@ -173,7 +173,6 @@ jobs:
     timeout-minutes: 120
     env:
       PANEL_LOG_LEVEL: info
-      PANEL_TEST_AUTH: 1
       OAUTH_COOKIE_SECRET: ${{ secrets.OAUTH_COOKIE_SECRET }}
       OAUTH_ENCRYPTION_KEY: ${{ secrets.OAUTH_ENCRYPTION_KEY }}
       AUTH0_PORT: "5701"
@@ -208,6 +207,10 @@ jobs:
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
+      - name: Check if auth should run
+        if: '!github.event.pull_request.head.repo.fork'
+        run: |
+          echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
       - name: Test UI
         run: |
           # Create a .uicoveragerc file to set the concurrency library to greenlet
