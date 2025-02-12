@@ -300,7 +300,7 @@ export class ReactiveESMView extends HTMLBoxView {
     this._rendered = false
     set_size(this.el, this.model)
     this.container = div()
-    this.container.className = this.model.class_name
+    this.container.className = this.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
     set_size(this.container, this.model, false)
     this.shadow_el.append(this.container)
     if (this.model.compile_error) {
