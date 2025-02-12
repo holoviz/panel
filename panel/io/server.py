@@ -57,7 +57,7 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from ..config import config
-from ..util import fullpath
+from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .application import build_applications
 from .document import (  # noqa
@@ -879,6 +879,7 @@ def get_server(
     oauth_refresh_tokens: str | None = None,
     oauth_guest_endpoints: list[str] | None = None,
     oauth_optional: bool | None = None,
+    root_path: str | None = None,
     login_endpoint: str | None = None,
     logout_endpoint: str | None = None,
     login_template: str | None = None,
@@ -937,8 +938,6 @@ def get_server(
       The client secret for the OAuth provider
     oauth_redirect_uri: Optional[str] = None,
       Overrides the default OAuth redirect URI
-    oauth_jwt_user: Optional[str] = None,
-      Key that identifies the user in the JWT id_token.
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
     oauth_error_template: str (optional, default=None)
@@ -948,13 +947,18 @@ def get_server(
     oauth_encryption_key: str (optional, default=None)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    oauth_jwt_user: Optional[str] = None,
+      Key that identifies the user in the JWT id_token.
+    oauth_refresh_tokens: bool (optional, default=None)
+      Whether to automatically refresh OAuth access tokens when they expire.
     oauth_guest_endpoints: list (optional, default=None)
       List of endpoints that can be accessed as a guest without authenticating.
     oauth_optional: bool (optional, default=None)
       Whether the user will be forced to go through login flow or if
       they can access all applications as a guest.
-    oauth_refresh_tokens: bool (optional, default=None)
-      Whether to automatically refresh OAuth access tokens when they expire.
+    root_path: str (optional, default=None)
+      Root path the application is being served on when behind
+      a reverse proxy.
     login_endpoint: str (optional, default=None)
       Overrides the default login endpoint `/login`
     logout_endpoint: str (optional, default=None)
@@ -1094,6 +1098,9 @@ def get_server(
         config.oauth_guest_endpoints = oauth_guest_endpoints  # type: ignore
     if oauth_jwt_user is not None:
         config.oauth_jwt_user = oauth_jwt_user  # type: ignore
+    if root_path:
+        with edit_readonly(state):
+            state.base_url = root_path  # type: ignore
     opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)
