@@ -84,6 +84,9 @@
         <p> Successfully logged out.</p>
       </div>
       <div class="form-group">
+        {% if SIGNOUT_ENDPOINT -%}
+	<button class="form-button" onclick="location.href = '{{ SIGNOUT_ENDPOINT }}'">Sign out of SSO</button>
+	{% endif %}
         <button class="form-button" type="submit">Login</button>
       </div>
       <div><small></small></div>
