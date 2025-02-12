@@ -577,6 +577,24 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
     template variable.
     """
 
+    @authenticated
+    async def get(self, *args, **kwargs):
+        if self.use_redirect and len(self.applications) == 1:
+            app_names = list(self.applications.keys())
+            redirect_to = f".{app_names[0]}"
+            self.redirect(redirect_to)
+        else:
+            apps = sorted(self.applications.keys())
+            if self.index is None:
+                index = "app_index.html"
+            else:
+                index = self.index
+                apps = [
+                    app if self.request.uri.endswith('/') or not self.prefix else f"{self.prefix}{app}"
+                    for app in apps
+                ]
+            self.render(index, prefix=self.prefix, items=apps)
+
     def render(self, *args, **kwargs):
         kwargs['PANEL_CDN'] = CDN_DIST
         return super().render(*args, **kwargs)
