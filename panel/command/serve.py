@@ -392,8 +392,6 @@ class Serve(_BkServe):
                 )
             with edit_readonly(state):
                 state.base_url = args.root_path
-            with open('/Users/philippjfr/foo', 'w') as f:
-                f.write(state.base_url)
 
         if config.autoreload:
             for f in files:
