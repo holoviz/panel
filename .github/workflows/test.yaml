@@ -173,6 +173,7 @@ jobs:
     timeout-minutes: 120
     env:
       PANEL_LOG_LEVEL: info
+      PANEL_TEST_AUTH: true
       OAUTH_COOKIE_SECRET: ${{ secrets.OAUTH_COOKIE_SECRET }}
       OAUTH_ENCRYPTION_KEY: ${{ secrets.OAUTH_ENCRYPTION_KEY }}
       AUTH0_PORT: "5701"
