@@ -386,9 +386,12 @@ class Serve(_BkServe):
         config.reuse_sessions = args.reuse_sessions
 
         if args.root_path:
-            if not args.root_path.endswith('/'):
+            root_path = args.root_path
+            if not root_path.endswith('/'):
+                root_path += '/'
+            if not root_path.startswith('/'):
                 raise ValueError(
-                    '--root-path must terminate in a slash.'
+                    '--root-path must start with a leading slash (`/`).'
                 )
             with edit_readonly(state):
                 state.base_url = args.root_path
