@@ -40,7 +40,7 @@ from ..io.reload import record_modules, watch
 from ..io.rest import REST_PROVIDERS
 from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
-from ..util import fullpath
+from ..util import edit_readonly, fullpath
 
 log = logging.getLogger(__name__)
 
@@ -176,6 +176,11 @@ class Serve(_BkServe):
                 "Whether the user will be forced to go through login flow "
                 "or if they can access all applications as a guest."
             )
+        )),
+        ('--root-path', Argument(
+            action  = 'store',
+            type    = str,
+            help    = "The root path can be used to handle cases where Panel is served behind a proxy."
         )),
         ('--login-endpoint', Argument(
             action  = 'store',
@@ -379,6 +384,16 @@ class Serve(_BkServe):
 
         config.global_loading_spinner = args.global_loading_spinner
         config.reuse_sessions = args.reuse_sessions
+
+        if args.root_path:
+            if not args.root_path.endswith('/'):
+                raise ValueError(
+                    '--root-path must terminate in a slash.'
+                )
+            with edit_readonly(state):
+                state.base_url = args.root_path
+            with open('/Users/philippjfr/foo', 'w') as f:
+                f.write(state.base_url)
 
         if config.autoreload:
             for f in files:
