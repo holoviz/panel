@@ -123,7 +123,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
     def _redirect_uri(self):
         if config.oauth_redirect_uri:
             return config.oauth_redirect_uri
-        return f"{self.request.protocol}://{self.request.host}{state.base_url[:-1]}{self._login_endpoint}"
+        return f"{self.request.protocol}://{self.request.host}{state.base_url[:-1]}"
 
     async def get_authenticated_user(self, redirect_uri, client_id, state,
                                      client_secret=None, code=None):
