@@ -2,6 +2,34 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.6.1
+
+This patch release primarily addresses issues running Panel behind a reverse proxy, improves the developer experience of working with custom ESM bundles and adds compatibility for Plotly 6.0. Many thanks to our returning contributors @ceball and @Coderambling and our core developer team including @ahuang11, @Maximlt, @hoxbro and @philippjfr for contributing to this release.
+
+### Enhancements
+
+- Add `ChatFeed.scroll_to` method ([#7671](https://github.com/holoviz/panel/pull/7671))
+- Implement watch feature for `panel compile` command ([#7683](https://github.com/holoviz/panel/pull/7683))
+- Allow ESM components to load CSS bundles ([#7685](https://github.com/holoviz/panel/pull/7685), [#7691](https://github.com/holoviz/panel/pull/7691))
+- Generalize `ReactiveESM.select` so children are automatically detected ([#7699](https://github.com/holoviz/panel/pull/7699))
+
+### Bug fixes
+
+- Ensure errors in sync periodic callbacks are logged ([#7665](https://github.com/holoviz/panel/pull/7665))
+- Ensure ESM bundles correctly resolve component implementations ([#7684](https://github.com/holoviz/panel/pull/7684), [#7698](https://github.com/holoviz/panel/pull/7698))
+- Fix default avatar in send/stream ([#7677](https://github.com/holoviz/panel/pull/7677))
+- Ensure index redirects are relative to fix index page behind a reverse proxy ([#7704](https://github.com/holoviz/panel/pull/7704))
+- Ensure root_url is correctly determined during auth ([#7680](https://github.com/holoviz/panel/pull/7680))
+
+### Compatibility
+
+- Compatibility with Plotly 6.0 ([#7681](https://github.com/holoviz/panel/pull/7681), [#7682](https://github.com/holoviz/panel/pull/7682))
+
+### Docs
+
+- Add links to other HoloViz libraries to the sidebar ([#7674](https://github.com/holoviz/panel/pull/7674))
+- Minor documentation fixes ([#7664](https://github.com/holoviz/panel/pull/7664), [#7668](https://github.com/holoviz/panel/pull/7668), [#7692](https://github.com/holoviz/panel/pull/7692))
+
 ## Version 1.6.0
 
 Date: 2025-01-25

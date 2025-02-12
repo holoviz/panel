@@ -541,14 +541,9 @@ def cache(
         # clear called before anything is cached.
         if func_hashes[0] is None:
             return
-        func_hash = func_hashes[0]
-        if to_disk:
-            from diskcache import Index
-            cache = Index(os.path.join(cache_path, func_hash))
+        cache = state._memoize_cache.get(func_hashes[0])
+        if cache:
             cache.clear()
-        else:
-            cache = state._memoize_cache.get(func_hash, {})
-        cache.clear()
 
     wrapped_func.clear = clear  # type: ignore[attr-defined]
 

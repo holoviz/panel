@@ -101,7 +101,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-310", "test-312"]
+              "environment": ["test-310", "test-313"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -109,7 +109,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-310", "test-311", "test-312"]
+              "environment": ["test-310", "test-311", "test-312", "test-313"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -181,11 +181,6 @@ jobs:
       AUTH0_OAUTH_EXTRA_PARAMS: ${{ secrets.AUTH0_OAUTH_EXTRA_PARAMS }}
       AUTH0_OAUTH_USER: ${{ secrets.AUTH0_OAUTH_USER }}
       AUTH0_OAUTH_PASSWORD: ${{ secrets.AUTH0_OAUTH_PASSWORD }}
-      AZURE_PORT: "5702"
-      AZURE_OAUTH_KEY: ${{ secrets.AZURE_OAUTH_KEY }}
-      AZURE_OAUTH_SECRET: ${{ secrets.AZURE_OAUTH_SECRET }}
-      AZURE_OAUTH_USER: ${{ secrets.AZURE_OAUTH_USER }}
-      AZURE_OAUTH_PASSWORD: ${{ secrets.AZURE_OAUTH_PASSWORD }}
       OKTA_PORT: "5703"
       OKTA_OAUTH_KEY: ${{ secrets.OKTA_OAUTH_KEY }}
       OKTA_OAUTH_SECRET: ${{ secrets.OKTA_OAUTH_SECRET }}
@@ -212,6 +207,10 @@ jobs:
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
+      - name: Check if auth should run
+        if: '!github.event.pull_request.head.repo.fork'
+        run: |
+          echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
       - name: Test UI
         run: |
           # Create a .uicoveragerc file to set the concurrency library to greenlet

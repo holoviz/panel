@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import http.server
+import json
 import os
 import platform
 import re
@@ -300,6 +301,8 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
         port = port or get_open_ports()[0]
     else:
         serve_app = serve
+    if proxy:
+        kwargs['websocket_origin'] = [f'localhost:{proxy}']
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
@@ -338,7 +341,9 @@ def serve_and_request(app, suffix="", n=1, port=None, proxy=None, **kwargs):
 def wait_for_server(port, prefix=None, timeout=3):
     start = time.time()
     prefix = prefix or ""
-    url = f"http://localhost:{port}{prefix}/liveness"
+    if not prefix.endswith('/'):
+        prefix += '/'
+    url = f"http://localhost:{port}{prefix}liveness"
     while True:
         try:
             if requests.get(url).ok:
@@ -502,28 +507,58 @@ class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 
 @contextlib.contextmanager
-def reverse_proxy():
-    port, proxy_port = get_open_ports(2)
+def reverse_proxy(port=None, proxy_port=None):
+    if port is None and proxy_port is None:
+        port, proxy_port = get_open_ports(2)
+    elif proxy_port is None:
+        proxy_port, = get_open_ports(1)
+    elif port is None:
+        port, = get_open_ports(1)
+    headers = {
+        "request": {
+            "set": {
+                "Connection": ["Upgrade"],
+                "Upgrade": ["websocket"]
+            }
+        }
+    }
     route_config = {
-        "match": [{"path": ["/proxy/*"]}],
+        "match": [
+            {"path": ["/proxy/*"]},
+            {"path_regexp": {
+                "name": "proxy_path",
+                "pattern": "^/proxy/([^/]+)"
+            }}
+        ],
         "handle": [
             {"handler": "rewrite", "strip_path_prefix": "/proxy"},
             {"handler": "reverse_proxy", "upstreams": [{"dial": f"localhost:{port}"}]}
         ]
     }
+    ws_config = {
+        "match": [
+            {"path_regexp": {
+                "name": "ws_path",
+                "pattern": "^/proxy/([^/]+)/ws"
+            }}
+        ],
+        "handle": [
+            {"handler": "rewrite", "strip_path_prefix": "/proxy"},
+            {"handler": "reverse_proxy", "upstreams": [{"dial": f"localhost:{port}"}], "headers": headers}
+        ]
+    }
     proxy_config = {
         "listen": [f":{proxy_port}"],
-        "routes": [route_config]
+        "routes": [route_config, ws_config]
     }
     config = {
         "admin": {"disabled": True},
-        "apps": {"http": {"servers": {"srv0": proxy_config}}}
+        "apps": {"http": {"servers": {"srv0": proxy_config}}},
     }
     process = subprocess.Popen(
         ['caddy', 'run', '--config', '-'],
         stdin=subprocess.PIPE, close_fds=ON_POSIX, text=True
     )
-    import json
     process.stdin.write(json.dumps(config))
     process.stdin.close()
     try:
