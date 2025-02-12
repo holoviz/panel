@@ -650,7 +650,7 @@ export class ReactiveESM extends HTMLBox {
       }
       let url
       if (this.bundle === "url") {
-	url = this.esm
+        url = this.esm
       } else {
         url = URL.createObjectURL(new Blob([this.compiled], {type: "text/javascript"}))
       }
