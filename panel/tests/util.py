@@ -300,6 +300,8 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
         port = port or get_open_ports()[0]
     else:
         serve_app = serve
+    if proxy:
+        kwargs['websocket_origin'] = [f'localhost:{proxy}']
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
@@ -338,7 +340,9 @@ def serve_and_request(app, suffix="", n=1, port=None, proxy=None, **kwargs):
 def wait_for_server(port, prefix=None, timeout=3):
     start = time.time()
     prefix = prefix or ""
-    url = f"http://localhost:{port}{prefix}/liveness"
+    if not prefix.endswith('/'):
+        prefix += '/'
+    url = f"http://localhost:{port}{prefix}liveness"
     while True:
         try:
             if requests.get(url).ok:

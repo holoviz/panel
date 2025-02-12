@@ -11,6 +11,20 @@ from panel.tests.util import serve_component
 pytestmark = pytest.mark.ui
 
 
+@pytest.mark.parametrize('prefix', ['', '/prefix/'])
+def test_server_index_redirect(page, prefix):
+    serve_component(page, '### App', prefix=prefix, suffix=prefix)
+
+    expect(page.locator("h3")).to_have_text('App')
+
+@pytest.mark.parametrize('prefix', ['', '/prefix/'])
+def test_server_index_redirect_via_proxy(page, prefix, reverse_proxy):
+    port, proxy = reverse_proxy
+    serve_component(page, '### App', prefix=prefix, suffix=f"/proxy{prefix or '/'}", port=port, proxy=proxy)
+
+    expect(page.locator("h3")).to_have_text('App')
+
+
 def test_server_reuse_sessions(page, reuse_sessions):
     def app(counts=[0]):
         content = f'### Count {counts[0]}'
