@@ -160,3 +160,17 @@ def test_feed_dynamic_objects(page):
 
     wait_until(lambda: expect(page.locator('pre').first).to_have_text('0'))
     wait_until(lambda: page.locator('pre').count() > 10, page)
+
+def test_feed_reset_visible_range(page):
+    feed = Feed(*list(range(ITEMS)), load_buffer=20, height=50, view_latest=True)
+    serve_component(page, feed)
+
+    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) == 99, page)
+
+    # set objects to 20
+    feed.objects = feed.objects[:20]
+
+    # assert view reset
+    wait_until(lambda: (
+        int(page.locator('pre').last.inner_text() or 0) == 19
+    ), page)
