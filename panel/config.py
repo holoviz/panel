@@ -6,11 +6,13 @@ components.
 from __future__ import annotations
 
 import ast
+import builtins
 import copy
 import importlib
 import inspect
 import os
 import sys
+import typing
 import warnings
 
 from concurrent.futures import ThreadPoolExecutor
@@ -627,18 +629,17 @@ _config_uninitialized = False
 
 class panel_extension(_pyviz_extension):
     """
-    Initializes and configures Panel. You should always run `pn.extension`.
-    This will
+    Initializes and configures Panel. You should always run `pn.extension`
+    as it declares which components should be loaded in your app or notebook.
 
-    - Initialize the `pyviz` notebook extension to enable bi-directional
-    communication and for example plotting with Bokeh.
+    - Initialize the notebook extension to enable bi-directional
+      communication and loading JS and CSS resources.
     - Load `.js` libraries (positional arguments).
-    - Update the global configuration `pn.config`
-    (keyword arguments).
+    - Update the global configuration `pn.config` (keyword arguments).
 
     Parameters
     ----------
-    *args : list[str]
+    *args : tuple[str]
         Positional arguments listing the extension to load. For example "plotly",
         "tabulator".
     **params : dict[str,Any]
@@ -652,11 +653,11 @@ class panel_extension(_pyviz_extension):
 
     This will
 
-    - Initialize the `pyviz` notebook extension.
+    - Initialize the notebook extension.
     - Enable you to use the `Plotly` pane by loading `plotly.js`.
     - Set the default `sizing_mode` to `stretch_width` instead of `fixed`.
     - Set the global configuration `pn.config.template` to `fast`, i.e. you
-    will be using the `FastListTemplate`.
+      will be using the `FastListTemplate`.
     """
 
     _loaded: bool = False
@@ -707,12 +708,22 @@ class panel_extension(_pyviz_extension):
 
     _comms_detected_before: bool = False
 
-    def __call__(self, *args, **params):
+    @typing.overload  # type: ignore
+    def __init__(
+        self, *extensions: str, **params: Any
+    ):
+        # Typing overload to ensure that type checkers
+        # handle the ParameterizedFunction call signature
+        ...
+
+    def __call__(self, *args: str, **params: Any):
         from bokeh.core.has_props import _default_resolver
         from bokeh.model import Model
         from bokeh.settings import settings as bk_settings
 
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
+
+        _in_ipython = hasattr(builtins, '__IPYTHON__')
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
         }
@@ -730,12 +741,8 @@ class panel_extension(_pyviz_extension):
                 from .io.resources import CSS_URLS
                 params['css_files'] = params.get('css_files', []) + [CSS_URLS['font-awesome']]
             if arg in self._imports:
-                try:
-                    if (arg == 'ipywidgets' and get_ipython() and # noqa (get_ipython)
-                        "PANEL_IPYWIDGET" not in os.environ):
-                        continue
-                except Exception:
-                    pass
+                if arg == 'ipywidgets' and _in_ipython and "PANEL_IPYWIDGET" not in os.environ:
+                    continue
 
                 # Ensure all models are registered
                 module = self._imports[arg]
@@ -818,12 +825,10 @@ class panel_extension(_pyviz_extension):
             self._load_entry_points()
 
         # Abort if IPython not found
-        try:
-            ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
-        except Exception:
+        if not (_in_ipython or 'ip' in params):
             return
-
         from .io.notebook import load_notebook
+        ip = params.get('ip') or get_ipython()  # type: ignore # noqa
 
         self._detect_comms(params)
 
