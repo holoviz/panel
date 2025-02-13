@@ -723,7 +723,7 @@ class panel_extension(_pyviz_extension):
 
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
 
-        _in_ipython = hasattr(builtins, '___IPYTHON__')
+        _in_ipython = hasattr(builtins, '__IPYTHON__')
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
         }
