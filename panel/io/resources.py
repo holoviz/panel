@@ -32,7 +32,7 @@ from bokeh.embed.bundle import (
 from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet
 from bokeh.resources import Resources as BkResources, _get_server_urls
-from bokeh.settings import settings as _settings
+from bokeh.settings import _Unset, settings as _settings
 from jinja2.environment import Environment
 from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
@@ -180,7 +180,10 @@ def set_resource_mode(mode):
         yield
     finally:
         RESOURCE_MODE = old_mode
-        _settings.resources.set_value(old_resources)
+        if old_resources is _Unset:
+            _settings.resources.unset_value()
+        else:
+            _settings.resources.set_value(old_resources)
 
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
