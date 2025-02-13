@@ -2,13 +2,13 @@
 
 This guide addresses how to convert [AnyWidget](https://anywidget.dev/) widgets to custom `JSComponent` or `ReactComponent` widgets.
 
-Please note that AnyWidget widgets are [`ipywidgets`](https://ipywidgets.readthedocs.io/en/stable/) and can be used directly in Panel via the [`IpyWidgets`](../../../reference/panes/Image.md) pane and the `Traitlets` `@observe` API without a conversion. We recommend trying this option first. If it does not work for your use case, please consider contributing to the existing `AnyWidget` before converting it to a Panel widget.
+Please note that AnyWidget widgets are [`ipywidgets`](https://ipywidgets.readthedocs.io/en/stable/) and can be used directly in Panel via the [`IPyWidgets`](../../../reference/panes/IPyWidget) pane and the `Traitlets` `@observe` API without a conversion. We recommend trying this option first. If it does not work for your use case, please consider contributing to the existing `AnyWidget` before converting it to a Panel widget.
 
 Some reasons you might still want to convert an `AnyWidget` to a custom Panel widget are:
 
 - **Familiar and Optimized API**: This enables you and your users to use the familiar `Param` parameter API for which Panel is optimized.
 - **Customization**: You might want to use the `AnyWidget` as a starting point and customize it to your exact needs.
-- **Efficiency**: You users avoid loading  `AnyWidget`/`ipywidgets` JavaScript libraries which ANECDOTALLY is not insignificant. Your users also avoid the overhead of converting between `Param/Panel/Bokeh` and `Traitlets`/`AnyWidget`/`ipywidgets` objects: ANECDOTALLY, Panel (i.e., Bokeh) utilizes faster serialization and deserialization methods and formats. IS THIS TRUE, PHILIPP? ALSO, WHEN USING THE ANYWIDGET ON THE BOKEH SERVER? DO WE HAVE NUMBERS FOR THIS?
+- **Efficiency**: You avoid loading  `AnyWidget`/`ipywidgets` JavaScript libraries can add significant overhead.
 
 ## Conversion Steps
 

@@ -69,8 +69,8 @@ def save_png(
     """
     Saves a bokeh model to png
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     model: bokeh.model.Model
       Model to save to png
     filename: str
@@ -186,8 +186,8 @@ def save(
     """
     Saves Panel objects to file.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable
       The Panel Viewable to save to file
     filename: str or file-like object

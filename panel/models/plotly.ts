@@ -37,6 +37,7 @@ interface PlotlyHTMLElement extends HTMLDivElement {
   on(event: "plotly_relayouting", callback: (eventData: any) => void): void
   on(event: "plotly_restyle", callback: (eventData: any) => void): void
   on(event: "plotly_click", callback: (eventData: any) => void): void
+  on(event: "plotly_doubleclick", callback: (eventData: any) => void): void
   on(event: "plotly_hover", callback: (eventData: any) => void): void
   on(event: "plotly_clickannotation", callback: (eventData: any) => void): void
   on(event: "plotly_selected", callback: (eventData: any) => void): void
@@ -54,6 +55,44 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
     if (eventData === undefined || eventData === null) {
       return null
     }
+
+    const event_obj = eventData.event
+    if (event_obj !== undefined) {
+      filteredEventData.device_state = {
+        // Keyboard modifiers
+        alt: event_obj.altKey,
+        ctrl: event_obj.ctrlKey,
+        meta: event_obj.metaKey,
+        shift: event_obj.shiftKey,
+        // Mouse buttons
+        button: event_obj.button,
+        buttons: event_obj.buttons,
+      }
+    }
+
+    let selectorObject
+    if (eventData.hasOwnProperty("range")) {
+      // Box selection
+      selectorObject = {
+        type: "box",
+        selector_state: {
+          xrange: eventData.range.x,
+          yrange: eventData.range.y,
+        },
+      }
+    } else if (eventData.hasOwnProperty("lassoPoints")) {
+      // Lasso selection
+      selectorObject = {
+        type: "lasso",
+        selector_state: {
+          xs: eventData.lassoPoints.x,
+          ys: eventData.lassoPoints.y,
+        },
+      }
+    } else {
+      selectorObject = null
+    }
+    filteredEventData.selector = selectorObject
 
     /*
      * remove `data`, `layout`, `xaxis`, etc
@@ -297,6 +336,12 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.container.on("plotly_click", (eventData: any) => {
       const data = filterEventData(this.container, eventData, "click")
       this.model.trigger_event(new PlotlyEvent({type: "click", data}))
+    })
+
+    //  - plotly_doubleclick
+    this.container.on("plotly_doubleclick", (eventData: any) => {
+      const data = filterEventData(this.container, eventData, "click")
+      this.model.trigger_event(new PlotlyEvent({type: "doubleclick", data}))
     })
 
     //  - plotly_hover

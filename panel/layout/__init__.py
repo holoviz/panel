@@ -38,6 +38,7 @@ from .flex import FlexBox  # noqa
 from .float import FloatPanel  # noqa
 from .grid import GridBox, GridSpec  # noqa
 from .gridstack import GridStack  # noqa
+from .modal import Modal
 from .spacer import (  # noqa
     Divider, HSpacer, Spacer, VSpacer,
 )
@@ -58,6 +59,7 @@ __all__ = (
     "HSpacer",
     "ListLike",
     "ListPanel",
+    "Modal",
     "Panel",
     "Row",
     "Spacer",

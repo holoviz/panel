@@ -728,8 +728,8 @@ class Reactive(Syncable, Viewable):
         parameter to a callback which is triggered when the parameter
         changes.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         target: param.Parameterized
           The target object of the link.
         callbacks: dict | None
@@ -797,8 +797,8 @@ class Reactive(Syncable, Viewable):
         linking are exposed, but an explicit list of parameters can
         be provided.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         parameters: list(str)
            An explicit list of parameters to return controls for.
         jslink: bool
@@ -856,7 +856,7 @@ class Reactive(Syncable, Viewable):
         properties that trigger a callback and the JS code that gets
         executed.
 
-        Arguments
+        Parameters
         ----------
         args: dict
           A mapping of objects to make available to the JS callback
@@ -890,7 +890,7 @@ class Reactive(Syncable, Viewable):
         maps from the source parameter to a JS code snippet which is
         executed when the property changes.
 
-        Arguments
+        Parameters
         ----------
         target: panel.viewable.Viewable | bokeh.model.Model | holoviews.core.dimension.Dimensioned
           The target to link the value to.
@@ -933,7 +933,7 @@ class Reactive(Syncable, Viewable):
         """
         Send an event to the frontend
 
-        Arguments
+        Parameters
         ----------
         Event: Bokeh.Event
             The event to send to the frontend
@@ -941,7 +941,6 @@ class Reactive(Syncable, Viewable):
             Additional keyword arguments to pass to the event
             This will create the following event:
             Event(model=model, **event_kwargs)
-
         """
         for ref, (model, _) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
@@ -1120,8 +1119,8 @@ class SyncableData(Reactive):
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         stream_value: (pd.DataFrame | pd.Series | Dict)
           The new value(s) to append to the existing value.
         rollover: (int | None, default=None)
@@ -1226,8 +1225,8 @@ class SyncableData(Reactive):
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         patch_value: (pd.DataFrame | pd.Series | Dict)
           The value(s) to patch the existing value with.
 
@@ -2048,7 +2047,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         for parent, child_name in self._parser.children.items():
             if (parent, child_name) in self._parser.looped:
                 for i, _ in enumerate(getattr(self, child_name)):
-                    html = html.replace('${%s[%d]}' % (child_name, i), '')
+                    html = html.replace(f'${{{child_name}[{i}]}}', '')
             else:
                 html = html.replace(f'${{{child_name}}}', '')
         return html, parser.nodes, p_attrs
@@ -2170,6 +2169,27 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                 )
             ):
                 continue
+            elif isinstance(v, list) and all(isinstance(vs, param.Parameterized) for vs in v):
+                from .io.datamodel import create_linked_datamodel
+                old = getattr(model.data, prop)
+                if isinstance(old, list):
+                    mapping = {getattr(o, "name", o): o for o in old}
+                    vals = []
+                    for vs in v:
+                        if (vname:=f"{root.ref['id']}-{id(vs)}") in mapping:
+                            vals.append(mapping[vname])
+                        else:
+                            vals.append(create_linked_datamodel(vs, root))
+                    v = vals
+                data_msg[prop] = v
+            elif isinstance(v, param.Parameterized):
+                from .io.datamodel import create_linked_datamodel
+                old = getattr(model.data, prop)
+                if old.name == f"{root.ref['id']}-{id(v)}":
+                    v = old
+                else:
+                    v = create_linked_datamodel(vs, root)
+                data_msg[prop] = v
             elif isinstance(v, str):
                 data_msg[prop] = HTML_SANITIZER.clean(v)
             else:
@@ -2199,8 +2219,8 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         give it an id of the form `id="name"`, where `name` will
         be the node identifier.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         node: str
           Named node in the HTML identifiable via id of the form `id="name"`.
         event: str

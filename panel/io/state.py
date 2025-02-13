@@ -298,7 +298,8 @@ class _state(param.Parameterized):
         return bool(
             doc is self.curdoc and
             self._thread_id in (self._current_thread, None) and
-            (not (doc and doc.session_context and doc.session_context.session) or self._loaded.get(doc))
+            (not (doc and doc.session_context and getattr(doc.session_context, 'session', None))
+             or self._loaded.get(doc))
         )
 
     @param.depends('_busy_counter', watch=True)
@@ -510,8 +511,8 @@ class _state(param.Parameterized):
         >>>     return dataset
         >>> penguins = pn.state.as_cached('dataset-penguins', load_dataset, name='penguins')
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         key: (str)
           The key to cache the return value under.
         fn: (callable)
@@ -558,8 +559,8 @@ class _state(param.Parameterized):
         the period. Returns a PeriodicCallback object with the option
         to stop and start the callback.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: callable
           Callable function to be executed at periodic interval.
         period: int
@@ -591,19 +592,20 @@ class _state(param.Parameterized):
         """
         Cancel a task scheduled using the `state.schedule_task` method by name.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name: str
             The name of the scheduled task.
         wait: boolean
             Whether to wait until after the next execution.
         """
-        if name not in self._scheduled:
+        key = f"{os.getpid()}_{name}"
+        if key not in self._scheduled:
             raise KeyError(f'No task with the name {name!r} has been scheduled.')
         if wait:
-            self._scheduled[name] = (None, self._scheduled[name][1])
+            self._scheduled[key] = (None, self._scheduled[key][1])
         else:
-            del self._scheduled[name]
+            del self._scheduled[key]
 
     def clear_caches(self):
         """
@@ -638,8 +640,8 @@ class _state(param.Parameterized):
         on the event loop ensuring the Bokeh Document lock is acquired
         and models can be modified directly.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: Callable[[], None]
           Callback to execute
         schedule: boolean | Literal['auto', 'thread']
@@ -669,8 +671,8 @@ class _state(param.Parameterized):
         """
         Returns the requested profiling output.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         profile: str
           The name of the profiling output to return.
 
@@ -701,8 +703,8 @@ class _state(param.Parameterized):
         """
         Logs user messages to the Panel logger.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         msg: str
           Log message
         level: str
@@ -718,8 +720,8 @@ class _state(param.Parameterized):
         """
         Callback that is triggered when a session has been served.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: Callable[[], None] | Coroutine[Any, Any, None]
            Callback that is executed when the application is loaded
         threaded: bool
@@ -767,8 +769,8 @@ class _state(param.Parameterized):
         """
         Publish parameters on a Parameterized object as a REST API.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         endpoint: str
           The endpoint at which to serve the REST API.
         parameterized: param.Parameterized
@@ -849,8 +851,8 @@ class _state(param.Parameterized):
         a task from within your application code, the task is only
         scheduled once.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name: str
           Name of the scheduled task
         callback: callable
@@ -877,9 +879,9 @@ class _state(param.Parameterized):
           Whether the callback should be run on a thread (requires
           config.nthreads to be set).
         """
-        name = f"{os.getpid()}_{name}"
-        if name in self._scheduled:
-            if callback is not self._scheduled[name][1]:
+        key = f"{os.getpid()}_{name}"
+        if key in self._scheduled:
+            if callback is not self._scheduled[key][1]:
                 self.param.warning(
                     "A separate task was already scheduled under the "
                     f"name {name!r}. The new task will be ignored. If "
@@ -932,9 +934,9 @@ class _state(param.Parameterized):
             call_time_seconds = (next(diter) - now)
         except StopIteration:
             return
-        self._scheduled[name] = (diter, callback)
+        self._scheduled[key] = (diter, callback)
         self._ioloop.call_later(
-            delay=call_time_seconds, callback=partial(self._scheduled_cb, name, threaded)
+            delay=call_time_seconds, callback=partial(self._scheduled_cb, key, threaded)
         )
 
     def sync_busy(self, indicator: BooleanIndicator) -> None:
@@ -942,8 +944,8 @@ class _state(param.Parameterized):
         Syncs the busy state with an indicator with a boolean value
         parameter.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         indicator: An BooleanIndicator to sync with the busy property
         """
         if not isinstance(indicator.param.value, param.Boolean):

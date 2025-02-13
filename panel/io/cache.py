@@ -345,8 +345,8 @@ def compute_hash(func, hash_funcs, args, kwargs):
     """
     Computes a hash given a function and its arguments.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     func: callable
         The function to cache.
     hash_funcs: dict
@@ -411,8 +411,8 @@ def cache(
 
     For global caching across user sessions use `pn.state.as_cached`.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     func: callable
         The function to cache.
     hash_funcs: dict or None
@@ -541,14 +541,9 @@ def cache(
         # clear called before anything is cached.
         if func_hashes[0] is None:
             return
-        func_hash = func_hashes[0]
-        if to_disk:
-            from diskcache import Index
-            cache = Index(os.path.join(cache_path, func_hash))
+        cache = state._memoize_cache.get(func_hashes[0])
+        if cache:
             cache.clear()
-        else:
-            cache = state._memoize_cache.get(func_hash, {})
-        cache.clear()
 
     wrapped_func.clear = clear  # type: ignore[attr-defined]
 

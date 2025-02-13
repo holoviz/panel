@@ -61,3 +61,7 @@
   margin-top: 10px;
   filter: invert();
 }
+
+.card-button > svg {
+  stroke: var(--background-text-color);
+}

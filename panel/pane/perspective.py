@@ -79,8 +79,8 @@ def deconstruct_pandas(data, kwargs=None):
 
     https://github.com/finos/perspective/blob/master/python/perspective/perspective/core/data/pd.py
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     data: (pandas.dataframe)
       A Pandas DataFrame to parse
 
@@ -499,8 +499,8 @@ class Perspective(ModelPane, ReactiveData):
         config, column names, and row values of the row that was
         clicked.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (callable)
             The callback to run on edit events.
         """

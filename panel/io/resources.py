@@ -151,7 +151,7 @@ CSS_URLS = {
 }
 
 JS_URLS = {
-    'jQuery': f'{CDN_DIST}bundled/jquery/jquery.slim.min.js',
+    'jQuery': f'{CDN_DIST}bundled/jquery/jquery.min.js',
     'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/js/bootstrap.bundle.min.js',
     'bootstrap5': f'{CDN_DIST}bundled/bootstrap5/js/bootstrap.bundle.min.js'
 }
@@ -183,7 +183,7 @@ def set_resource_mode(mode):
         _settings.resources.set_value(old_resources)
 
 def use_cdn() -> bool:
-    return _settings.resources(default="server") != 'server'
+    return _settings.resources(default="server") != 'server' or state._is_pyodide
 
 def get_dist_path(cdn: bool | Literal['auto'] = 'auto') -> str:
     cdn = use_cdn() if cdn == 'auto' else cdn
@@ -219,8 +219,8 @@ def resolve_custom_path(
     """
     Attempts to resolve a path relative to some component.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: type | object
        The component to resolve the path relative to.
     path: str | os.PathLike
@@ -309,8 +309,8 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     - A path relative to the component
     - A raw css string
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     cls: type | object
         Object or class defining the stylesheet
     stylesheet: str
@@ -518,7 +518,7 @@ class ResourceComponent:
             is_file = bundlepath.is_file()
         except Exception:
             is_file = False
-        if is_file:
+        if is_file or (state._is_pyodide and not isurl(resource)):
             return f'{prefixed_dist}bundled/{resource_path}'
         elif isurl(resource):
             return resource
@@ -538,8 +538,8 @@ class ResourceComponent:
         """
         Resolves the resources required for this component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cdn: bool | Literal['auto']
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
@@ -663,8 +663,13 @@ class Resources(BkResources):
         """
         from ..reactive import ReactiveCustomBase
         for model in param.concrete_descendents(ReactiveCustomBase).values():
-            if not (getattr(model, resource_type, None) and model._loaded()):
+            cls_files = getattr(model, resource_type, None)
+            if not (cls_files and model._loaded()):
                 continue
+            for cls in model.__mro__[1:]:
+                supcls_files = getattr(cls, resource_type, [])
+                if supcls_files == cls_files:
+                    model = cls
             for resource in getattr(model, resource_type, []):
                 if state.rel_path:
                     resource = resource.lstrip(state.rel_path+'/')
@@ -740,6 +745,7 @@ class Resources(BkResources):
 
         files = super().css_files
         self.extra_resources(files, '__css__')
+        self.extra_resources(files, '_bundle_css')
         css_files = self.adjust_paths([
             css for css in files if self.mode != 'inline' or not is_cdn_url(css)
         ])

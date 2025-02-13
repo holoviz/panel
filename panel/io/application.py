@@ -232,8 +232,8 @@ def build_applications(
     """
     Converts a variety of objects into a dictionary of Applications.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable, function or {str: Viewable}
         A Panel object, a function returning a Panel object or a
         dictionary mapping from the URL slug to either.

@@ -223,8 +223,8 @@ class ChatStep(Card):
         """
         Stream a token to the title header.
 
-        Arguments:
-        ---------
+        Parameters
+        ----------
         token : str
             The token to stream.
         status : str
@@ -242,8 +242,8 @@ class ChatStep(Card):
         """
         Stream a token to the last available string-like object.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         token : str
             The token to stream.
         replace : bool
@@ -265,6 +265,9 @@ class ChatStep(Card):
         else:
             stream_to(self.objects[-1], token, replace=replace)
 
+        if self._instance is not None:
+            self._instance._chat_log.scroll_to_latest(self._instance.auto_scroll_limit)
+
     def serialize(
         self,
         prefix_with_viewable_label: bool = True,
@@ -273,8 +276,8 @@ class ChatStep(Card):
         """
         Format the object to a string.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         prefix_with_viewable_label : bool
             Whether to include the name of the Viewable, or type
             of the viewable if no name is specified.

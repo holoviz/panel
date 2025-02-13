@@ -130,8 +130,8 @@ class Callback(param.Parameterized):
         arbitrary Javascript code and will make all objects referenced
         in the args available in the JS namespace.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         source (Reactive):
            The source object the callback is attached to.
         target (Reactive | Model, optional):
@@ -368,8 +368,8 @@ class CallbackGenerator:
         """
         Resolves a model given the supplied object and a model_spec.
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         root_model: bokeh.model.Model
           The root bokeh model often used to index models
         obj: holoviews.plotting.ElementPlot or bokeh.model.Model or panel.Viewable

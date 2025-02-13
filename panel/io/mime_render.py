@@ -32,9 +32,10 @@ from typing import IO, Any
 _STDLIBS = sys.stdlib_module_names
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
+    'skimage': 'scikit-image',
     'transformers_js': 'transformers-js-py',
 }
-_IGNORED_PKGS = ['js', 'pyodide']
+_IGNORED_PKGS = ['js', 'pyodide', 'PIL']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
 
 def find_requirements(code: str) -> list[str]:
@@ -130,8 +131,8 @@ def exec_with_return(
     Executes a code snippet and returns the resulting output of the
     last line.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     code: str
         The code to execute
     global_context: Dict[str, Any]

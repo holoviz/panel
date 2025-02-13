@@ -12,6 +12,7 @@ import os
 import pathlib
 import signal
 import sys
+import threading
 import uuid
 
 from collections.abc import Callable, Mapping
@@ -56,7 +57,7 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from ..config import config
-from ..util import fullpath
+from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .application import build_applications
 from .document import (  # noqa
@@ -107,9 +108,11 @@ def _origin_url(url: str) -> str:
 
 def _server_url(url: str, port: int) -> str:
     if url.startswith("http"):
-        return '%s:%d%s' % (url.rsplit(':', 1)[0], port, "/")
+        return f"{url.rsplit(':', 1)[0]}:{port}/"
     else:
-        return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
+        return f"http://{url.split(':')[0]}:{port}/"
+
+_tasks = set()
 
 def async_execute(func: Callable[..., None]) -> None:
     """
@@ -117,13 +120,29 @@ def async_execute(func: Callable[..., None]) -> None:
     is propagated from function to partial wrapping it.
     """
     if not state.curdoc or not state.curdoc.session_context:
-        ioloop = IOLoop.current()
-        event_loop = ioloop.asyncio_loop # type: ignore
-        wrapper = state._handle_exception_wrapper(func)
-        if event_loop.is_running():
-            ioloop.add_callback(wrapper)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        # Avoid creating IOLoop if one is not already associated
+        # with the asyncio loop or we're on a child thread
+        if hasattr(IOLoop, '_ioloop_for_asyncio') and loop in IOLoop._ioloop_for_asyncio:
+            ioloop = IOLoop._ioloop_for_asyncio[loop]
+        elif threading.current_thread() is not threading.main_thread():
+            ioloop = IOLoop.current()
         else:
-            event_loop.run_until_complete(wrapper())
+            ioloop = None
+        wrapper = state._handle_exception_wrapper(func)
+        if loop.is_running():
+            if ioloop is None:
+                task = asyncio.ensure_future(wrapper())
+                _tasks.add(task)
+                task.add_done_callback(_tasks.discard)
+            else:
+                ioloop.add_callback(wrapper)
+        else:
+            loop.run_until_complete(wrapper())
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
@@ -182,8 +201,8 @@ def html_page_for_render_items(
     """
     Render an HTML page from a template and Bokeh render items.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     bundle (tuple):
         A tuple containing (bokehjs, bokehcss)
     docs_json (JSON-like):
@@ -249,7 +268,8 @@ def server_html_page_for_session(
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
     if resources.mode == 'server':
-        dist_url = f'{state.rel_path}/{LOCAL_DIST}' if state.rel_path else LOCAL_DIST
+        with set_curdoc(session.document):
+            dist_url = f'{state.rel_path}/{LOCAL_DIST}' if state.rel_path else LOCAL_DIST
     else:
         dist_url = CDN_DIST
 
@@ -557,6 +577,24 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
     template variable.
     """
 
+    @authenticated
+    async def get(self, *args, **kwargs):
+        if self.use_redirect and len(self.applications) == 1:
+            app_names = list(self.applications.keys())
+            redirect_to = f".{app_names[0]}"
+            self.redirect(redirect_to)
+        else:
+            apps = sorted(self.applications.keys())
+            if self.index is None:
+                index = "app_index.html"
+            else:
+                index = self.index
+                apps = [
+                    app if self.request.uri.endswith('/') or not self.prefix else f"{self.prefix}{app}"
+                    for app in apps
+                ]
+            self.render(index, prefix=self.prefix, items=apps)
+
     def render(self, *args, **kwargs):
         kwargs['PANEL_CDN'] = CDN_DIST
         return super().render(*args, **kwargs)
@@ -610,7 +648,7 @@ class ComponentResourceHandler(StaticFileHandler):
 
     _resource_attrs = [
         '__css__', '__javascript__', '__js_module__', '__javascript_modules__',  '_resources',
-        '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path'
+        '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path', '_bundle_css'
     ]
 
     def initialize(self, path: str | Literal['root'] = 'root', default_filename: str | None = None):
@@ -715,8 +753,8 @@ def serve(
 
     Reference: https://panel.holoviz.org/user_guide/Server_Configuration.html#serving-multiple-apps
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panels: Viewable, function or {str: Viewable or function}
       A Panel object, a function returning a Panel object or a
       dictionary mapping from the URL slug to either.
@@ -841,6 +879,7 @@ def get_server(
     oauth_refresh_tokens: str | None = None,
     oauth_guest_endpoints: list[str] | None = None,
     oauth_optional: bool | None = None,
+    root_path: str | None = None,
     login_endpoint: str | None = None,
     logout_endpoint: str | None = None,
     login_template: str | None = None,
@@ -854,8 +893,8 @@ def get_server(
     Returns a Server instance with this panel attached as the root
     app.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable, function or {str: Viewable}
       A Panel object, a function returning a Panel object or a
       dictionary mapping from the URL slug to either.
@@ -899,8 +938,6 @@ def get_server(
       The client secret for the OAuth provider
     oauth_redirect_uri: Optional[str] = None,
       Overrides the default OAuth redirect URI
-    oauth_jwt_user: Optional[str] = None,
-      Key that identifies the user in the JWT id_token.
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
     oauth_error_template: str (optional, default=None)
@@ -910,13 +947,18 @@ def get_server(
     oauth_encryption_key: str (optional, default=None)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    oauth_jwt_user: Optional[str] = None,
+      Key that identifies the user in the JWT id_token.
+    oauth_refresh_tokens: bool (optional, default=None)
+      Whether to automatically refresh OAuth access tokens when they expire.
     oauth_guest_endpoints: list (optional, default=None)
       List of endpoints that can be accessed as a guest without authenticating.
     oauth_optional: bool (optional, default=None)
       Whether the user will be forced to go through login flow or if
       they can access all applications as a guest.
-    oauth_refresh_tokens: bool (optional, default=None)
-      Whether to automatically refresh OAuth access tokens when they expire.
+    root_path: str (optional, default=None)
+      Root path the application is being served on when behind
+      a reverse proxy.
     login_endpoint: str (optional, default=None)
       Overrides the default login endpoint `/login`
     logout_endpoint: str (optional, default=None)
@@ -1056,6 +1098,9 @@ def get_server(
         config.oauth_guest_endpoints = oauth_guest_endpoints  # type: ignore
     if oauth_jwt_user is not None:
         config.oauth_jwt_user = oauth_jwt_user  # type: ignore
+    if root_path:
+        with edit_readonly(state):
+            state.base_url = root_path  # type: ignore
     opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)

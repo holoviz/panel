@@ -367,8 +367,8 @@ class ServableMixin:
         DOM if in a pyodide context and returns the Panel object to
         allow it to display itself in a notebook context.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         title : str
           A string title to give the Document (if served as an app)
         location : boolean or panel.io.location.Location
@@ -436,8 +436,8 @@ class ServableMixin:
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         title : str | None
           A string title to give the Document (if served as an app)
         port: int (optional, default=0)
@@ -570,7 +570,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         Converts the objects being wrapped by the viewable into a
         bokeh model that can be composed in a bokeh layout.
 
-        Arguments
+        Parameters
         ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
@@ -591,8 +591,8 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         Clean up method which is called when a Viewable is destroyed.
 
-        Arguments
-        ---------
+        Pgarameters
+        -----------
         root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
@@ -666,8 +666,8 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         Returns the root model and applies pre-processing hooks
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
@@ -861,8 +861,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         Makes a copy of the object sharing the same parameters.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         params: Keyword arguments override the parameters on the clone.
 
         Returns
@@ -879,8 +879,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
@@ -907,8 +907,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         this will only work well for simple apps with a relatively
         small state space.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         max_states: int
           The maximum number of states to embed
         max_opts: int
@@ -943,8 +943,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         Saves Panel objects to file.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename: str or file-like object
            Filename to save the plot to
         title: string
@@ -991,8 +991,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         Returns a serveable bokeh Document with the panel attached
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc : bokeh.Document (optional)
           The bokeh Document to attach the panel to as a root,
           defaults to bokeh.io.curdoc()
@@ -1232,8 +1232,8 @@ def is_viewable_param(parameter: param.Parameter) -> bool:
     """
     Determines if a parameter uniquely identifies a Viewable type.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     parameter : param.Parameter
         The parameter to evaluate.
 

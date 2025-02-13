@@ -78,6 +78,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
+          channels: "conda-forge"
       - name: conda setup
         run: |
           conda install -y anaconda-client
@@ -128,7 +129,7 @@ jobs:
       - name: Install package
         run: python -m pip install dist/*.whl
       - name: Test package
-        run: python -c "import $PACKAGE; print($PACKAGE.__version__)"
+        run: python -c "import $PACKAGE; print($PACKAGE._version.__version__)"
 
   pip_publish:
     name: Publish PyPI

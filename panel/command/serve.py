@@ -2,15 +2,19 @@
 Subclasses the bokeh serve commandline handler to extend it in various
 ways.
 """
+from __future__ import annotations
 
 import argparse
 import ast
 import base64
+import contextlib
+import importlib
 import logging
 import os
 import pathlib
 import sys
 
+from collections.abc import Iterator
 from glob import glob
 from types import ModuleType
 
@@ -36,9 +40,19 @@ from ..io.reload import record_modules, watch
 from ..io.rest import REST_PROVIDERS
 from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
-from ..util import fullpath
+from ..util import edit_readonly, fullpath
 
 log = logging.getLogger(__name__)
+
+@contextlib.contextmanager
+def add_sys_path(path: str | os.PathLike) -> Iterator[None]:
+    """Temporarily add the given path to `sys.path`."""
+    path = os.fspath(path)
+    try:
+        sys.path.insert(0, path)
+        yield
+    finally:
+        sys.path.remove(path)
 
 def parse_var(s):
     """
@@ -163,6 +177,11 @@ class Serve(_BkServe):
                 "or if they can access all applications as a guest."
             )
         )),
+        ('--root-path', Argument(
+            action  = 'store',
+            type    = str,
+            help    = "The root path can be used to handle cases where Panel is served behind a proxy."
+        )),
         ('--login-endpoint', Argument(
             action  = 'store',
             type    = str,
@@ -264,6 +283,10 @@ class Serve(_BkServe):
             help    = "The endpoint for the liveness API.",
             default = "liveness"
         )),
+        ('--plugins', dict(
+            action  = 'append',
+            type    = str
+        )),
         ('--reuse-sessions', Argument(
             action  = 'store_true',
             help    = "Whether to reuse sessions when serving the initial request.",
@@ -361,6 +384,17 @@ class Serve(_BkServe):
 
         config.global_loading_spinner = args.global_loading_spinner
         config.reuse_sessions = args.reuse_sessions
+
+        if args.root_path:
+            root_path = args.root_path
+            if not root_path.endswith('/'):
+                root_path += '/'
+            if not root_path.startswith('/'):
+                raise ValueError(
+                    '--root-path must start with a leading slash (`/`).'
+                )
+            with edit_readonly(state):
+                state.base_url = args.root_path
 
         if config.autoreload:
             for f in files:
@@ -547,9 +581,30 @@ class Serve(_BkServe):
                     "Supply OAuth provider either using environment variable "
                     "or via explicit argument, not both."
                 )
+
+        for plugin in (args.plugins or []):
+            try:
+                with add_sys_path('./'):
+                    plugin_module = importlib.import_module(plugin)
+            except ModuleNotFoundError as e:
+                raise Exception(
+                    f'Specified plugin module {plugin!r} could not be found. '
+                    'Ensure the module exists and is in the right path. '
+                ) from e
+            try:
+                routes = plugin_module.ROUTES
+            except AttributeError as e:
+                raise Exception(
+                    f'The plugin module {plugin!r} does not declare '
+                    'a ROUTES variable. Ensure that the module provides '
+                    'a list of ROUTES to serve.'
+                ) from e
+            patterns.extend(routes)
+
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
         if config.oauth_provider:
+            is_pam = config.oauth_provider
             config.oauth_refresh_tokens = args.oauth_refresh_tokens
             config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
@@ -559,7 +614,7 @@ class Serve(_BkServe):
                 )
             elif args.oauth_key:
                 config.oauth_key = args.oauth_key
-            elif not config.oauth_key:
+            elif not (config.oauth_key or is_pam):
                 raise ValueError(
                     "When enabling an OAuth provider you must supply "
                     "a valid oauth_key either using the --oauth-key "
@@ -582,7 +637,7 @@ class Serve(_BkServe):
                 )
             elif args.oauth_secret:
                 config.oauth_secret = args.oauth_secret
-            elif not config.oauth_secret:
+            elif not (config.oauth_secret or is_pam):
                 raise ValueError(
                     "When enabling an OAuth provider you must supply "
                     "a valid OAuth secret either using the --oauth-secret "
@@ -613,7 +668,7 @@ class Serve(_BkServe):
                         "base64-encoded bytes."
                     )
                 config.oauth_encryption_key = encryption_key
-            elif not config.oauth_encryption_key:
+            elif not (config.oauth_encryption_key or is_pam):
                 print("WARNING: OAuth has not been configured with an " # noqa: T201
                       "encryption key and will potentially leak "
                       "credentials in cookies and a JWT token embedded "

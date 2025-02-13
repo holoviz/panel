@@ -4,6 +4,10 @@ When you're working on custom applications and dashboards, there are times when 
 
 This page will walk you through using the `ReactiveHTML` class to craft custom components without the need for complex JavaScript build tools. You'll be able to leverage basic HTML, CSS, and JavaScript to tailor your components to your specific needs.
 
+:::{admonition} warn
+`ReactiveHTML` was the recommended approach for building custom components before so called ESM components were added. Refer to the [custom component how-to guides](../../how_to/custom_components/index) for more details.
+:::
+
 ## Why Use `ReactiveHTML`?
 
 `ReactiveHTML` empowers you to design and build custom components that seamlessly integrate with your Panel applications. These components can enhance your applications' interactivity and functionality, all while keeping the development process straightforward and free from the complexities of JavaScript build tools.
@@ -189,7 +193,7 @@ class CustomComponent(ReactiveHTML):
 <p>value: {{value}} ({{ param.value.default }}, {{ param.value.doc }})</p>
 <h2>List of parameters</p>
 <p id="loop">
-{% for object in param.params().values() %}{% if loop.index0 < 3 %}
+{% for object in param.objects().values() %}{% if loop.index0 < 3 %}
 <div>{{ loop.index0 }}. {{object.name}}: {{object.owner[object.name]}} ({{object.default}}, {{object.doc | replace("`", "'")}})</div><hr/>
 {% endif %}{% endfor %}
 </p>

@@ -33,7 +33,7 @@ from panel.io.reload import (
 )
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
-from panel.tests.util import get_open_ports
+from panel.tests.util import get_open_ports, reverse_proxy as reverse_proxy_ctx
 from panel.theme import Design
 
 CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
@@ -52,13 +52,8 @@ if os.name != 'nt':
 
 
 for e in os.environ:
-    if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", ):
+    if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", "PANEL_TEST_AUTH"):
         os.environ.pop(e, None)
-
-try:
-    asyncio.get_event_loop()
-except (RuntimeError, DeprecationWarning):
-    asyncio.set_event_loop(asyncio.new_event_loop())
 
 @cache
 def internet_available(host="8.8.8.8", port=53, timeout=3):
@@ -242,6 +237,14 @@ def stop_event():
         event.set()
 
 @pytest.fixture
+def asyncio_loop():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(asyncio.new_event_loop())
+    yield
+    loop.stop()
+    loop.close()
+
+@pytest.fixture
 async def watch_files():
     tasks = []
     stop_event = asyncio.Event()
@@ -272,6 +275,31 @@ def dataframe():
         'float': [3.14, 6.28, 9.42],
         'str': ['A', 'B', 'C']
     }, index=[1, 2, 3], columns=['int', 'float', 'str'])
+
+
+@pytest.fixture
+def df_mixed():
+    df = pd.DataFrame({
+        'int': [1, 2, 3, 4],
+        'float': [3.14, 6.28, 9.42, -2.45],
+        'str': ['A', 'B', 'C', 'D'],
+        'bool': [True, True, True, False],
+        'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
+        'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
+    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+    return df
+
+
+@pytest.fixture
+def df_multiindex(df_mixed):
+    df_mi = df_mixed.copy()
+    df_mi.index = pd.MultiIndex.from_tuples([
+        ('group0', 'subgroup0'),
+        ('group0', 'subgroup1'),
+        ('group1', 'subgroup0'),
+        ('group1', 'subgroup1'),
+    ], names=['groups', 'subgroups'])
+    return df_mi
 
 
 @pytest.fixture
@@ -329,9 +357,8 @@ def tmpdir(request, tmpdir_factory):
     yield tmp_dir
     shutil.rmtree(str(tmp_dir))
 
-
-@pytest.fixture()
-def html_server_session():
+@pytest.fixture
+def html_server_session(asyncio_loop):
     port = 5050
     html = HTML('<h1>Title</h1>')
     server = serve(html, port=port, show=False, start=False)
@@ -345,7 +372,6 @@ def html_server_session():
         server.stop()
     except AssertionError:
         pass  # tests may already close this
-
 
 @pytest.fixture()
 def markdown_server_session():
@@ -365,7 +391,7 @@ def markdown_server_session():
 
 
 @pytest.fixture
-def multiple_apps_server_sessions(port):
+def multiple_apps_server_sessions(asyncio_loop, port):
     """Serve multiple apps and yield a factory to allow
     parameterizing the slugs and the titles."""
     servers = []
@@ -544,18 +570,6 @@ def exception_handler_accumulator():
 
 
 @pytest.fixture
-def df_mixed():
-    df = pd.DataFrame({
-        'int': [1, 2, 3, 4],
-        'float': [3.14, 6.28, 9.42, -2.45],
-        'str': ['A', 'B', 'C', 'D'],
-        'bool': [True, True, True, False],
-        'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
-        'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
-    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
-    return df
-
-@pytest.fixture
 def df_strings():
     descr = [
         'Under the Weather',
@@ -575,3 +589,9 @@ def df_strings():
     code = [f'{i:02d}' for i in range(len(descr))]
 
     return pd.DataFrame(dict(code=code, descr=descr))
+
+
+@pytest.fixture
+def reverse_proxy():
+    with reverse_proxy_ctx() as (port, proxy):
+        yield port, proxy

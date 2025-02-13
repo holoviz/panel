@@ -36,7 +36,7 @@ class Accordion(NamedListPanel):
     >>> pn.Accordion(some_pane_with_a_name, ("Plot", some_plot))
     """
 
-    active_header_background = param.String(default='#ddd', doc="""
+    active_header_background = param.String(default=None, doc="""
         Color for currently active headers.""")
 
     active = param.List(default=[], doc="""

@@ -143,8 +143,8 @@ def _doc_json(doc: Document, root_els=None) -> tuple[str, str, str]:
     Document, the individual render_items and the ids of DOM nodes to
     render each item into.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     doc: bokeh.document.Document
         The Bokeh document to serialize to JSON.
     root_els:
@@ -174,8 +174,8 @@ def _model_json(viewable: Viewable | TemplateBase, target: str) -> tuple[Documen
     Renders a Bokeh Model to JSON representation given a particular
     DOM target and returns the Document and the serialized JSON string.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     model: Viewable
         The bokeh model to render.
     target: str
@@ -211,8 +211,8 @@ def _serialize_buffers(obj, buffers={}):
     Recursively iterates over a JSON patch and converts Buffer objects
     to a reference or base64 serialized representation.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: dict
         Dictionary containing events to patch the JS Document with.
     buffers: dict
@@ -290,8 +290,8 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     Links Python and JS documents in Pyodide ensuring that messages
     are passed between them.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     pydoc: bokeh.document.Document
         The Python Bokeh Document instance to sync.
     jsdoc: Javascript Document
@@ -336,8 +336,8 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
     sync messages between a WebWorker and the main thread in the
     browser.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     doc: bokeh.document.Document
         The document to dispatch messages from.
     dispatch_fn: JS function
@@ -364,8 +364,8 @@ async def _link_model(ref: str, doc: Document) -> None:
     Links a rendered Bokeh model on the frontend to a Python Document
     in Python.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     ref: str
         The ID of the rendered bokeh Model
     doc: bokeh.document.Document
@@ -407,8 +407,8 @@ def render_script(obj: Any, target: ID) -> str:
     """
     Generates a script to render the supplied object to the target.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: Viewable
         Object to render into the DOM node
     target: str
@@ -453,8 +453,8 @@ async def show(obj: Any, target: str) -> None:
     """
     Renders the object into a DOM node specified by the target.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: Viewable
         Object to render into the DOM node
     target: str
@@ -468,8 +468,8 @@ async def write(target: str, obj: Any) -> None:
     """
     Renders the object into a DOM node specified by the target.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     target: str
         Target ID of the DOM node to render the object into.
     obj: Viewable
@@ -518,8 +518,8 @@ async def write_doc(doc: Document | None = None) -> tuple[str, str, str]:
     If invoked by a WebWorker the JSON return values can be sent
     to the main thread for rendering.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     doc: Document
        The document to render to JSON.
 
@@ -565,8 +565,8 @@ def pyrender(
     Executes Python code and returns a MIME representation of the
     return value.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     code: str
         Python code to execute
     stdout_callback: Callable[[str, str], None] | None

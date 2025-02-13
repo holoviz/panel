@@ -109,6 +109,9 @@ class ChatInterface(ChatFeed):
     show_button_name = param.Boolean(default=None, doc="""
         Whether to show the button name.""")
 
+    show_button_tooltips = param.Boolean(default=False, doc="""
+        Whether to show the button tooltips.""")
+
     user = param.String(default="User", doc="""
         Name of the ChatInterface user.""")
 
@@ -306,12 +309,14 @@ class ChatInterface(ChatFeed):
                     visible = self.param[f'show_{action}'] if action != "stop" else False
                 except KeyError:
                     visible = True
-                show_expr = self.param.show_button_name.rx()
+                show_name_expr = self.param.show_button_name.rx()
+                show_tooltip_expr = self.param.show_button_tooltips.rx()
                 button = Button(
-                    name=show_expr.rx.where(button_data.name.title(), ""),
+                    name=show_name_expr.rx.where(button_data.name.title(), ""),
+                    description=show_tooltip_expr.rx.where(f"Click to {button_data.name.lower()}", None),
                     icon=button_data.icon,
                     sizing_mode="stretch_width",
-                    max_width=show_expr.rx.where(90, 45),
+                    max_width=show_name_expr.rx.where(90, 45),
                     max_height=50,
                     margin=(0, 5, 0, 0),
                     align="center",
@@ -357,11 +362,11 @@ class ChatInterface(ChatFeed):
         self._input_layout = input_layout
 
     def _wrap_callbacks(
-            self,
-            callback: Callable | None = None,
-            post_callback: Callable | None = None,
-            name: str = ""
-        ):
+        self,
+        callback: Callable | None = None,
+        post_callback: Callable | None = None,
+        name: str = ""
+    ):
         """
         Wrap the callback and post callback around the default callback.
         """
@@ -578,8 +583,8 @@ class ChatInterface(ChatFeed):
         """
         Set the active input widget tab index.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         index : int
             The active index to set.
         """
@@ -597,8 +602,8 @@ class ChatInterface(ChatFeed):
         """
         Exports the chat log for use with transformers.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         messages : list(ChatMessage)
             A list of ChatMessage objects to serialize.
         role_names : dict(str, str | list(str)) | None
@@ -649,7 +654,6 @@ class ChatInterface(ChatFeed):
         await super()._cleanup_response()
         await self._update_input_disabled()
 
-
     def send(
         self,
         value: ChatMessage | dict | Any,
@@ -664,8 +668,8 @@ class ChatInterface(ChatFeed):
 
         If `respond` is `True`, additionally executes the callback, if provided.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         value : ChatMessage | dict | Any
             The message contents to send.
         user : str | None
@@ -686,8 +690,10 @@ class ChatInterface(ChatFeed):
         if not isinstance(value, ChatMessage):
             if user is None:
                 user = self.user
-            if avatar is None:
+            if avatar is None and user == self.user:
                 avatar = self.avatar
+        message_params["show_edit_icon"] = message_params.get(
+            "show_edit_icon", user == self.user and self.edit_callback is not None)
         return super().send(value, user=user, avatar=avatar, respond=respond, **message_params)
 
     def stream(
@@ -708,8 +714,8 @@ class ChatInterface(ChatFeed):
         This method is primarily for outputs that are not generators--
         notably LangChain. For most cases, use the send method instead.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         value : str | dict | ChatMessage
             The new token value to stream.
         user : str | None
@@ -733,5 +739,7 @@ class ChatInterface(ChatFeed):
             # ChatMessage cannot set user or avatar when explicitly streaming
             # so only set to the default when not a ChatMessage
             user = user or self.user
-            avatar = avatar or self.avatar
+            if avatar is None and user == self.user:
+                avatar = self.avatar
+        message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user and self.edit_callback is not None)
         return super().stream(value, user=user, avatar=avatar, message=message, replace=replace, **message_params)

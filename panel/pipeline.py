@@ -239,7 +239,7 @@ class Pipeline(Viewer):
             else:
                 cls_name = stage.__name__
             params = ', '.join(param_reprs(stage))
-            repr_str += '\n    [%d] %s: %s(%s)' % (i, name, cls_name, params)
+            repr_str += f'\n    [{i}] {name}: {cls_name}({params})'
         return repr_str
 
     def __str__(self):
@@ -539,8 +539,8 @@ class Pipeline(Viewer):
         """
         Adds a new, named stage to the Pipeline.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name: str
           A string name for the Pipeline stage
         stage: param.Parameterized
@@ -574,8 +574,8 @@ class Pipeline(Viewer):
         the default linear flow. The graph should be defined as an
         adjacency mapping.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         graph: dict
           Dictionary declaring the relationship between different
           pipeline stages. Should map from a single stage name to

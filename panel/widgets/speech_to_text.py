@@ -39,7 +39,7 @@ class Language(param.Parameterized):
 
     country = param.String(doc="A country like 'United States'")
 
-    name = param.String(doc="""
+    name = param.String(constant=False, doc="""
         The bcp 47 code uniquely identifying the language. For example
         'en-US'.""")
 

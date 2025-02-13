@@ -203,8 +203,8 @@ def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[Sequence[P
     with the supplied profiling engine and returns the profiling object
     in a list.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     engine: str
       The profiling engine, e.g. 'pyinstrument', 'snakeviz' or 'memray'
 
@@ -249,8 +249,8 @@ def profile(name: str, engine: ProfilingEngine = 'pyinstrument') -> Callable[[Ca
     A decorator which may be added to any function to record profiling
     output.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     name: str
       A unique name for the profiling session.
     engine: str

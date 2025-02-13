@@ -609,8 +609,8 @@ class BaseTable(ReactiveData, Widget):
                   scalars and the filter will check if the values
                   in the column match any of the items in the list.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filter: Widget, param.Parameter or FunctionType
             The value by which to filter the DataFrame along the
             declared column, or a function accepting the DataFrame to
@@ -716,8 +716,8 @@ class BaseTable(ReactiveData, Widget):
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         stream_value: (pd.DataFrame | pd.Series | Dict)
           The new value(s) to append to the existing value.
         rollover: int
@@ -825,8 +825,8 @@ class BaseTable(ReactiveData, Widget):
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         patch_value: (pd.DataFrame | pd.Series | Dict)
           The value(s) to patch the existing value with.
         as_index: boolean
@@ -1671,7 +1671,7 @@ class Tabulator(BaseTable):
 
     @updating
     def _patch(self, patch):
-        if self.filters or self.sorters:
+        if self.filters or self._filters or self.sorters:
             self._updating = False
             self._update_cds()
             return
@@ -1711,7 +1711,7 @@ class Tabulator(BaseTable):
         super()._update_cds(*events)
         if self.pagination:
             self._update_max_page()
-            self._update_selected()
+        self._update_selected()
         self._update_style(recompute)
         self._update_selectable()
 
@@ -1735,7 +1735,7 @@ class Tabulator(BaseTable):
 
     def _update_selected(self, *events: param.parameterized.Event, indices=None):
         kwargs = {}
-        if self.pagination == 'remote' and self.value is not None:
+        if self.value is not None:
             # Compute integer indexes of the selected rows
             # on the displayed page
             index = self.value.iloc[self.selection].index
@@ -1743,16 +1743,20 @@ class Tabulator(BaseTable):
             for ind in index.values:
                 try:
                     iloc = self._processed.index.get_loc(ind)
-                    self._validate_iloc(ind ,iloc)
+                    self._validate_iloc(ind, iloc)
                     indices.append((ind, iloc))
                 except KeyError:
                     continue
-            nrows = self.page_size or self.initial_page_size
-            start = (self.page - 1) * nrows
-            end = start+nrows
-            p_range = self._processed.index[start:end]
-            kwargs['indices'] = [iloc - start for ind, iloc in indices
-                                 if ind in p_range]
+            if self.pagination == 'remote':
+                nrows = self.page_size or self.initial_page_size
+                start = (self.page - 1) * nrows
+                end = start+nrows
+                p_range = self._processed.index[start:end]
+                indices = [iloc - start for ind, iloc in indices
+                           if ind in p_range]
+            else:
+                indices = [iloc for _, iloc in indices]
+            kwargs['indices'] = indices
         super()._update_selected(*events, **kwargs)
 
     def _update_column(self, column: str, array: TDataColumn) -> None:
@@ -2109,8 +2113,8 @@ class Tabulator(BaseTable):
         """
         Triggers downloading of the table as a CSV or JSON.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename: str
             The filename to save the table as.
         """
@@ -2123,8 +2127,8 @@ class Tabulator(BaseTable):
         Returns a menu containing a TextInput and Button widget to set
         the filename and trigger a client-side download of the data.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         text_kwargs: dict
             Keyword arguments passed to the TextInput constructor
         button_kwargs: dict
@@ -2161,8 +2165,8 @@ class Tabulator(BaseTable):
         a TableEditEvent as the first argument containing the column,
         row and value of the edited cell.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (callable)
             The callback to run on edit events.
         """
@@ -2174,8 +2178,8 @@ class Tabulator(BaseTable):
         The callback is given a CellClickEvent declaring the column
         and row of the cell that was clicked.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (callable)
             The callback to run on edit events.
         column: (str)

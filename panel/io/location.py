@@ -233,8 +233,8 @@ class Location(Syncable):
         parameters in the URL. If no parameters are supplied all
         parameters except the name are synced.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         parameterized (param.Parameterized):
           The Parameterized object to sync query parameters with
         parameters (list or dict):
@@ -273,8 +273,8 @@ class Location(Syncable):
         params in the URL. If no parameters are supplied all
         parameters except the name are unsynced.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         parameterized (param.Parameterized):
           The Parameterized object to unsync query parameters with
         parameters (list):

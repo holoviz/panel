@@ -236,8 +236,8 @@ class _InteractFactory:
     """
     Factory for instances of :class:`interactive`.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     cls: class
       The subclass of :class:`interactive` to construct.
     options: dict

@@ -27,7 +27,8 @@ from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
 from panel.tests.util import (
-    get_open_ports, serve_and_request, serve_and_wait, wait_until,
+    get_open_ports, reverse_proxy_available, serve_and_request, serve_and_wait,
+    wait_until,
 )
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
@@ -321,6 +322,68 @@ def test_server_periodic_async_callback(server_implementation, threads):
     serve_and_request(app)
 
     wait_until(lambda: len(counts) >= 5 and counts == list(range(len(counts))))
+
+
+def test_server_cancel_task(server_implementation):
+    state.cache['count'] = 0
+    def periodic_cb():
+        state.cache['count'] += 1
+
+    def app():
+        state.schedule_task('periodic', periodic_cb, period='0.1s')
+        return '# state.schedule test'
+
+    serve_and_request(app)
+
+    wait_until(lambda: state.cache['count'] > 0)
+    state.cancel_task('periodic')
+    count = state.cache['count']
+    time.sleep(0.5)
+    assert state.cache['count'] == count
+
+
+async def _async_erroring_cb():
+    raise ValueError("An erroring callback")
+
+def _sync_erroring_cb():
+    raise ValueError("An erroring callback")
+
+@pytest.mark.parametrize(
+    'threadpool, cb', [
+        (2, _async_erroring_cb),
+        (None, _async_erroring_cb),
+        (2, _sync_erroring_cb),
+        (None, _sync_erroring_cb)
+])
+def test_server_periodic_callback_error_logged(caplog, server_implementation, threadpool, cb):
+    """Ensure errors in periodic callbacks appear in the logs"""
+    loggers_to_check = [logging.getLogger(x) for x in ('panel','bokeh')]
+    orig_level_propagate = [(l.level,l.propagate) for l in loggers_to_check]
+    orig_threads = config.nthreads
+    repeats = 3
+
+    try:
+        config.nthreads = threadpool
+        for l in loggers_to_check:
+            l.propagate = True
+            l.setLevel(logging.WARNING)
+
+        def app():
+            state.add_periodic_callback(cb, 100, repeats)
+            def loaded():
+                state._schedule_on_load(state.curdoc, None)
+            state.execute(loaded, schedule=True)
+            return Row()
+
+        serve_and_request(app)
+        time.sleep(1)
+        num_errors_logged = caplog.text.count('ValueError: An erroring callback')
+        assert num_errors_logged == repeats
+    finally:
+        for l,level_prop in zip(loggers_to_check,orig_level_propagate):
+            l.setLevel(level_prop[0])
+            l.propagate = level_prop[1]
+        config.nthreads = orig_threads
 
 
 def test_server_schedule_repeat(server_implementation):
@@ -842,6 +905,18 @@ def test_server_template_custom_resources(port):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+@reverse_proxy_available
+def test_server_template_custom_resources_on_proxy(reverse_proxy):
+    template = CustomBootstrapTemplate()
+
+    port, proxy = reverse_proxy
+    r = serve_and_request(
+        {'template': template}, port=port, proxy=proxy,
+        suffix="/proxy/components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"
+    )
+
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 def test_server_template_custom_resources_with_prefix(port):
     template = CustomBootstrapTemplate()
@@ -851,19 +926,46 @@ def test_server_template_custom_resources_with_prefix(port):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+@reverse_proxy_available
+def test_server_template_custom_resources_with_prefix_and_proxy(reverse_proxy):
+    (port, proxy) = reverse_proxy
+    template = CustomBootstrapTemplate()
+
+    path = "/proxy/prefix/components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"
+    r = serve_and_request({'template': template}, port=port, proxy=proxy, prefix='/prefix', suffix=path)
+
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 def test_server_template_custom_resources_with_prefix_relative_url(port):
     template = CustomBootstrapTemplate()
 
-    r = serve_and_request({'template': template}, prefix='/prefix', suffix='/prefix/template')
+    r = serve_and_request({'template': template}, prefix='/prefix', port=port, suffix='/prefix/template')
 
     assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
+@reverse_proxy_available
+def test_server_template_custom_resources_with_prefix_and_proxy_relative_url(reverse_proxy):
+    template = CustomBootstrapTemplate()
+
+    (port, proxy) = reverse_proxy
+    r = serve_and_request({'template': template}, prefix='/prefix', port=port, proxy=proxy, suffix='/proxy/prefix/template')
+
+    assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
 def test_server_template_custom_resources_with_subpath_and_prefix_relative_url(port):
     template = CustomBootstrapTemplate()
 
-    r = serve_and_request({'/subpath/template': template}, prefix='/prefix', suffix='/prefix/subpath/template')
+    r = serve_and_request({'/subpath/template': template}, port=port, prefix='/prefix', suffix='/prefix/subpath/template')
+
+    assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
+
+@reverse_proxy_available
+def test_server_template_custom_resources_with_subpath_and_prefix_and_proxy_relative_url(reverse_proxy):
+    template = CustomBootstrapTemplate()
+
+    port, proxy = reverse_proxy
+    r = serve_and_request({'/subpath/template': template}, port=port, proxy=proxy, prefix='/prefix', suffix='/proxy/prefix/subpath/template')
 
     assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
@@ -879,7 +981,7 @@ def test_server_component_custom_resources(port):
     component = CustomComponent()
 
     path = "/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"
-    r = serve_and_request({'component': component}, suffix=path)
+    r = serve_and_request({'component': component}, suffix=path, port=port)
 
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
@@ -889,7 +991,8 @@ def test_server_component_custom_resources_with_prefix(port):
     component = CustomComponent()
 
     r = serve_and_request(
-        {'component': component}, prefix='/prefix', suffix="/prefix/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"
+        {'component': component}, prefix='/prefix', port=port,
+        suffix="/prefix/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"
     )
 
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
@@ -899,7 +1002,7 @@ def test_server_component_custom_resources_with_prefix(port):
 def test_server_component_custom_resources_with_prefix_relative_url(port):
     component = CustomComponent()
 
-    r = serve_and_request({'component': component}, prefix='/prefix', suffix='/prefix/component')
+    r = serve_and_request({'component': component}, port=port, prefix='/prefix', suffix='/prefix/component')
 
     assert f'href="components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
@@ -907,7 +1010,7 @@ def test_server_component_custom_resources_with_prefix_relative_url(port):
 def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(port):
     component = CustomComponent()
 
-    r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component')
+    r = serve_and_request({'/subpath/component': component}, port=port, prefix='/prefix', suffix='/prefix/subpath/component')
 
     assert f'href="../components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
@@ -915,7 +1018,7 @@ def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(
 def test_server_component_css_with_prefix_relative_url(port):
     component = Terminal()
 
-    r = serve_and_request({'component': component}, suffix='/component')
+    r = serve_and_request({'component': component}, suffix='/component', port=port)
 
     assert 'href="static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in r.content.decode('utf-8')
 
@@ -923,7 +1026,7 @@ def test_server_component_css_with_prefix_relative_url(port):
 def test_server_component_css_with_subpath_and_prefix_relative_url(port):
     component = Terminal()
 
-    r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component')
+    r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component', port=port)
 
     assert 'href="../static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in r.content.decode('utf-8')
 

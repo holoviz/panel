@@ -25,6 +25,12 @@ def plotly_2d_plot():
     return plot_2d
 
 @pytest.fixture
+def plotly_2d_figure_widget():
+    trace = go.Scatter(x=[0, 1], y=[2, 3], uid='Test')
+    plot_2d = go.FigureWidget(data=[trace])
+    return plot_2d
+
+@pytest.fixture
 def plotly_3d_plot():
     xx = np.linspace(-3.5, 3.5, 100)
     yy = np.linspace(-3.5, 3.5, 100)
@@ -135,15 +141,26 @@ def test_plotly_hover_data(page, plotly_2d_plot):
     point = plotly_plot.locator('g.points path.point').nth(0)
     point.hover(force=True)
 
-    wait_until(lambda: {
-        'points': [{
-            'curveNumber': 0,
-            'pointIndex': 0,
-            'pointNumber': 0,
-            'x': 0,
-            'y': 2
-        }]
-    } in hover_data, page)
+    def check_hover():
+        assert plotly_2d_plot.hover_data == {
+            'selector': None,
+            'device_state': {
+                'alt': False,
+                'button': 0,
+                'buttons': 0,
+                'ctrl': False,
+                'meta': False,
+                'shift': False,
+            },
+            'points': [{
+                'curveNumber': 0,
+                'pointIndex': 0,
+                'pointNumber': 0,
+                'x': 0,
+                'y': 2
+            }]
+        }
+    wait_until(check_hover, page)
 
     # Hover somewhere else
     plot = page.locator('.js-plotly-plot .plot-container.plotly g.scatterlayer')
@@ -164,7 +181,16 @@ def test_plotly_click_data(page, plotly_2d_plot):
         point.click(force=True)
 
         def check_click(i=i):
-            return plotly_2d_plot.click_data == {
+            assert plotly_2d_plot.click_data == {
+                'selector': None,
+                'device_state': {
+                    'alt': False,
+                    'button': 0,
+                    'buttons': 1,
+                    'ctrl': False,
+                    'meta': False,
+                    'shift': False,
+                },
                 'points': [{
                     'curveNumber': 0,
                     'pointIndex': i,
@@ -173,6 +199,38 @@ def test_plotly_click_data(page, plotly_2d_plot):
                     'y': 2+i
                 }]
             }
+        wait_until(check_click, page)
+        time.sleep(0.2)
+
+
+def test_plotly_click_data_figure_widget(page, plotly_2d_figure_widget):
+    fig = go.FigureWidget(plotly_2d_figure_widget)
+    serve_component(page, fig)
+
+    trace = list(fig.select_traces())[0]
+
+    events = []
+    trace.on_click(lambda a, b, c: events.append((a, b, c)))
+
+    plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
+    expect(plotly_plot).to_have_count(1)
+
+    # Select and click on points
+    for i in range(2):
+        point = page.locator('.js-plotly-plot .plot-container.plotly path.point').nth(i)
+        point.click(force=True)
+
+        def check_click(i=i):
+            if len(events) < (i+1):
+                return False
+            click_trace, points, device_state = events[i]
+            assert click_trace is trace
+            assert points.xs == [0+i]
+            assert points.ys == [2+i]
+            assert not device_state.ctrl
+            assert not device_state.alt
+            assert not device_state.shift
+            assert not device_state.meta
         wait_until(check_click, page)
         time.sleep(0.2)
 
@@ -223,4 +281,17 @@ def test_plotly_img_plot(page, plotly_img_plot):
     point = plotly_plot.locator('image')
     point.hover(force=True)
 
-    wait_until(lambda: plotly_img_plot.hover_data == {'points': [{'curveNumber': 0, 'x': 15, 'y': 3, 'colormodel': 'rgb'}]}, page)
+    def check_hover():
+        assert plotly_img_plot.hover_data == {
+            'selector': None,
+            'device_state': {
+                'alt': False,
+                'button': 0,
+                'buttons': 0,
+                'ctrl': False,
+                'meta': False,
+                'shift': False,
+            },
+            'points': [{'curveNumber': 0, 'x': 15, 'y': 3, 'colormodel': 'rgb'}]
+        }
+    wait_until(check_hover, page)

@@ -29,7 +29,7 @@ class Card(Column):
     ... )
     """
 
-    active_header_background = param.String(doc="""
+    active_header_background = param.String(default=None, doc="""
         A valid CSS color for the header background when not collapsed.""")
 
     button_css_classes = param.List(default=['card-button'], doc="""

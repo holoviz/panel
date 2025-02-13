@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import http.server
+import json
 import os
 import platform
 import re
@@ -24,12 +25,16 @@ from packaging.version import Version
 
 import panel as pn
 
+from panel.io.compile import check_cli_tool
 from panel.io.server import serve
 from panel.io.state import state
 
 # Ignore tests which are not yet working with Bokeh 3.
 # Will begin to fail again when the first rc is released.
 pnv = Version(pn.__version__)
+
+not_osx = pytest.mark.skipif(sys.platform == 'darwin', reason="Sometimes fails on OSX")
+not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
 
 try:
     import holoviews as hv
@@ -63,6 +68,7 @@ ON_POSIX = 'posix' in sys.builtin_module_names
 
 linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 unix_only = pytest.mark.skipif(platform.system() == 'Windows', reason="Only supported on unix-like systems")
+reverse_proxy_available = pytest.mark.skipif(not check_cli_tool('caddy'), reason="No reverse proxy available")
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
@@ -241,6 +247,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
         except AssertionError as e:
             if timed_out():
                 raise TimeoutError(timeout_msg) from e
+            raise e
         else:
             if result not in (None, True, False):
                 raise ValueError(
@@ -287,17 +294,21 @@ def get_open_ports(n=1):
     return tuple(ports)
 
 
-def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
+def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs):
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     if serve_and_wait.server_implementation == 'fastapi':
         from panel.io.fastapi import serve as serve_app
         port = port or get_open_ports()[0]
     else:
         serve_app = serve
+    if proxy:
+        kwargs['websocket_origin'] = [f'localhost:{proxy}']
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
-    if serve_and_wait.server_implementation == 'fastapi':
+    if proxy:
+        port = proxy
+    elif serve_and_wait.server_implementation == 'fastapi':
         port = port
     else:
         port = server.port
@@ -318,8 +329,10 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
     return msgs, port
 
 
-def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
-    port = serve_and_wait(app, port=port, **kwargs)
+def serve_and_request(app, suffix="", n=1, port=None, proxy=None, **kwargs):
+    port = serve_and_wait(app, port=port, proxy=proxy, **kwargs)
+    if proxy:
+        port = proxy
     reqs = [r for _ in range(n) if (r := requests.get(f"http://localhost:{port}{suffix}")).ok]
     assert len(reqs) == n, "Not all requests were successful"
     return reqs[0] if n == 1 else reqs
@@ -328,7 +341,9 @@ def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
 def wait_for_server(port, prefix=None, timeout=3):
     start = time.time()
     prefix = prefix or ""
-    url = f"http://localhost:{port}{prefix}/liveness"
+    if not prefix.endswith('/'):
+        prefix += '/'
+    url = f"http://localhost:{port}{prefix}liveness"
     while True:
         try:
             if requests.get(url).ok:
@@ -439,8 +454,8 @@ def http_serve_directory(directory=".", port=0):
     conditions when trying to bind to an open port that turns out not to be
     free after all. The hostname is always "localhost".
 
-    Arguments
-    ----------
+    Parameters
+    -----------
     directory : str, optional
         The directory to server files from. Defaults to the current directory.
     port : int, optional
@@ -468,7 +483,7 @@ def http_serve_directory(directory=".", port=0):
     httpd.timeout = 0.5
     httpd.server_bind()
 
-    address = "http://%s:%d" % (httpd.server_name, httpd.server_port)
+    address = f"http://{httpd.server_name}:{httpd.server_port}"
 
     httpd.server_activate()
 
@@ -489,3 +504,65 @@ class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
         self.send_header('Cross-Origin-Embedder-Policy', 'credentialless')
         http.server.SimpleHTTPRequestHandler.end_headers(self)
+
+
+@contextlib.contextmanager
+def reverse_proxy(port=None, proxy_port=None):
+    if port is None and proxy_port is None:
+        port, proxy_port = get_open_ports(2)
+    elif proxy_port is None:
+        proxy_port, = get_open_ports(1)
+    elif port is None:
+        port, = get_open_ports(1)
+    headers = {
+        "request": {
+            "set": {
+                "Connection": ["Upgrade"],
+                "Upgrade": ["websocket"]
+            }
+        }
+    }
+    route_config = {
+        "match": [
+            {"path": ["/proxy/*"]},
+            {"path_regexp": {
+                "name": "proxy_path",
+                "pattern": "^/proxy/([^/]+)"
+            }}
+        ],
+        "handle": [
+            {"handler": "rewrite", "strip_path_prefix": "/proxy"},
+            {"handler": "reverse_proxy", "upstreams": [{"dial": f"localhost:{port}"}]}
+        ]
+    }
+    ws_config = {
+        "match": [
+            {"path_regexp": {
+                "name": "ws_path",
+                "pattern": "^/proxy/([^/]+)/ws"
+            }}
+        ],
+        "handle": [
+            {"handler": "rewrite", "strip_path_prefix": "/proxy"},
+            {"handler": "reverse_proxy", "upstreams": [{"dial": f"localhost:{port}"}], "headers": headers}
+        ]
+    }
+    proxy_config = {
+        "listen": [f":{proxy_port}"],
+        "routes": [route_config, ws_config]
+    }
+    config = {
+        "admin": {"disabled": True},
+        "apps": {"http": {"servers": {"srv0": proxy_config}}},
+    }
+    process = subprocess.Popen(
+        ['caddy', 'run', '--config', '-'],
+        stdin=subprocess.PIPE, close_fds=ON_POSIX, text=True
+    )
+    process.stdin.write(json.dumps(config))
+    process.stdin.close()
+    try:
+        yield port, proxy_port
+    finally:
+        process.terminate()
+        process.wait()

@@ -13,7 +13,7 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..util import lazy_load
+from ..util import lazy_load, try_datetime64_to_datetime
 from ..util.checks import datetime_types, isdatetime
 from ..viewable import Layoutable
 from .base import ModelPane
@@ -45,6 +45,8 @@ class Plotly(ModelPane):
     """
 
     click_data = param.Dict(doc="Click event data from `plotly_click` event.")
+
+    doubleclick_data = param.Dict(doc="Click event data from `plotly_doubleclick` event.")
 
     clickannotation_data = param.Dict(doc="Clickannotation event data from `plotly_clickannotation` event.")
 
@@ -88,8 +90,13 @@ class Plotly(ModelPane):
     _updates: ClassVar[bool] = True
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'link_figure': None, 'object': None, 'click_data': None, 'clickannotation_data': None,
-        'hover_data': None, 'selected_data': None
+        'link_figure': None,
+        'object': None,
+        'doubleclick_data': None,
+        'click_data': None,
+        'clickannotation_data': None,
+        'hover_data': None,
+        'selected_data': None
     }
 
     @classmethod
@@ -106,7 +113,7 @@ class Plotly(ModelPane):
 
     def _to_figure(self, obj):
         import plotly.graph_objs as go
-        if isinstance(obj, go.Figure):
+        if isinstance(obj, (go.Figure, go.FigureWidget)):
             return obj
         elif isinstance(obj, dict):
             data, layout = obj['data'], obj['layout']
@@ -149,17 +156,15 @@ class Plotly(ModelPane):
     def _update_figure(self):
         import plotly.graph_objs as go
 
-        if (self.object is None or type(self.object) is not go.Figure or
+        if (self.object is None or not isinstance(self.object, (go.Figure, go.FigureWidget)) or
             self.object is self._figure or not self.link_figure):
             return
 
         # Monkey patch the message stubs used by FigureWidget.
-        # We only patch `Figure` objects (not subclasses like FigureWidget) so
-        # we don't interfere with subclasses that override these methods.
         fig = self.object
         fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure('add')
-        fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure('move')
         fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure('delete')
+        fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure('move')
         fig._send_restyle_msg = self._send_restyle_msg
         fig._send_relayout_msg = self._send_relayout_msg
         fig._send_update_msg = self._send_update_msg
@@ -245,28 +250,37 @@ class Plotly(ModelPane):
         return update_sources
 
     @staticmethod
-    def _plotly_json_wrapper(fig):
+    def _convert_trace(trace):
+        trace = dict(trace)
+        for key in trace:
+            if not isdatetime(trace[key]):
+                continue
+            arr = trace[key]
+            if isinstance(arr, np.ndarray):
+                if arr.dtype.kind == 'M' and arr.ndim == 2 and arr.shape[1] == 1:
+                    arr = np.array([[str(try_datetime64_to_datetime(v[0]))] for v in arr])
+                else:
+                    arr = arr.astype(str)
+            elif isinstance(arr, datetime_types):
+                arr = str(arr)
+            else:
+                arr = [str(v) for v in arr]
+            trace[key] = arr
+        return trace
+
+    @classmethod
+    def _plotly_json_wrapper(cls, fig):
         """Wraps around to_plotly_json and applies necessary fixes.
 
         For #382: Map datetime elements to strings.
         """
-        json = fig.to_plotly_json()
-        layout = json['layout']
-        data = json['data']
-        shapes = layout.get('shapes', [])
-        for trace in data+shapes:
-            for key in trace:
-                if not isdatetime(trace[key]):
-                    continue
-                arr = trace[key]
-                if isinstance(arr, np.ndarray):
-                    arr = arr.astype(str)
-                elif isinstance(arr, datetime_types):
-                    arr = str(arr)
-                else:
-                    arr = [str(v) for v in arr]
-                trace[key] = arr
-        return json
+        layout = dict(fig._layout)
+        data = [cls._convert_trace(trace) for trace in fig._data]
+        if 'shapes' in layout:
+            layout['shapes'] = [
+                cls._convert_trace(shape) for shape in layout['shapes']
+            ]
+        return {'data': data, 'layout': layout}
 
     def _init_params(self):
         viewport_params = [p for p in self.param if 'viewport' in p]
@@ -322,11 +336,80 @@ class Plotly(ModelPane):
 
     def _process_event(self, event):
         etype = event.data['type']
+        data = event.data['data']
         pname = f'{etype}_data'
-        if getattr(self, pname) == event.data['data']:
+        if getattr(self, pname) == data:
             self.param.trigger(pname)
         else:
-            self.param.update(**{pname: event.data['data']})
+            self.param.update(**{pname: data})
+
+        if data is None or not hasattr(self.object, '_handler_js2py_pointsCallback'):
+            return
+
+        points = data['points']
+        num_points = len(points)
+
+        has_nested_point_objects = True
+        for point_obj in points:
+            has_nested_point_objects = has_nested_point_objects and 'pointNumbers' in point_obj
+            if not has_nested_point_objects:
+                break
+
+        num_point_numbers = num_points
+        if has_nested_point_objects:
+            num_point_numbers = 0
+            for point_obj in points:
+                num_point_numbers += len(point_obj['pointNumbers'])
+
+        points_object = {
+            'trace_indexes': [],
+            'point_indexes': [],
+            'xs': [],
+            'ys': [],
+        }
+
+        # Add z if present
+        has_z = points[0] is not None and 'z' in points[0]
+        if has_z:
+            points_object['zs'] = []
+
+        if has_nested_point_objects:
+            for point_obj in points:
+                for i in range(len(point_obj['pointNumbers'])):
+                    points_object['point_indexes'].append(point_obj['pointNumbers'][i])
+                    points_object['xs'].append(point_obj['x'])
+                    points_object['ys'].append(point_obj['y'])
+                    points_object['trace_indexes'].append(point_obj['curveNumber'])
+                    if has_z and 'z' in point_obj:
+                        points_object['zs'].append(point_obj['z'])
+
+            single_trace = True
+            for i in range(1, num_point_numbers):
+                single_trace = single_trace and (points_object['trace_indexes'][i - 1] == points_object['trace_indexes'][i])
+                if not single_trace:
+                    break
+
+            if single_trace:
+                points_object['point_indexes'].sort()
+        else:
+            for point_obj in points:
+                points_object['trace_indexes'].append(point_obj['curveNumber'])
+                points_object['point_indexes'].append(point_obj['pointNumber'])
+                points_object['xs'].append(point_obj['x'])
+                points_object['ys'].append(point_obj['y'])
+                if has_z and 'z' in point_obj:
+                    points_object['zs'].append(point_obj['z'])
+
+        self._figure._handler_js2py_pointsCallback(
+            {
+                "new": dict(
+                    event_type=f'plotly_{etype}',
+                    points=points_object,
+                    selector=data.get('selector', None),
+                    device_state=data.get('device_state', None)
+                )
+            }
+        )
 
     def _update(self, ref: str, model: Model) -> None:
         if self.object is None:

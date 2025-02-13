@@ -377,10 +377,13 @@ def parse_timedelta(time_str: str) -> dt.timedelta | None:
     return dt.timedelta(**time_params)
 
 
-def fullpath(path: AnyStr | os.PathLike) -> AnyStr:
-    """Expanduser and then abspath for a given path
+def fullpath(path: AnyStr | os.PathLike) -> str:
     """
-    return os.path.abspath(os.path.expanduser(path))
+    Expanduser and then abspath for a given path.
+    """
+    if '://' in str(path):
+        return str(path)
+    return str(os.path.abspath(os.path.expanduser(path)))
 
 
 def base_version(version: str) -> str:
@@ -444,8 +447,8 @@ def styler_update(styler, new_df):
     Updates the todo items on a pandas Styler object to apply to a new
     DataFrame.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     styler: pandas.io.formats.style.Styler
       Styler objects
     new_df: pd.DataFrame
@@ -505,6 +508,16 @@ async def to_async_gen(sync_gen):
             break
         yield value
 
+def unique_iterator(seq):
+    """
+    Returns an iterator containing all non-duplicate elements
+    in the input sequence.
+    """
+    seen = set()
+    for item in seq:
+        if item not in seen:
+            seen.add(item)
+            yield item
 
 def prefix_length(a: str, b: str) -> int:
     """

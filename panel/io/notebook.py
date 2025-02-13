@@ -374,8 +374,8 @@ def push_notebook(*objs: Viewable) -> None:
     object.  This is required when modifying any Bokeh object directly
     in a notebook session.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     objs: panel.viewable.Viewable
     """
     for obj in objs:
@@ -447,8 +447,8 @@ def show_server(panel: Any, notebook_url: str, port: int = 0) -> Server:
     """
     Displays a bokeh server inline in the notebook.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable
       Panel Viewable object to launch a server for
     notebook_url: str
@@ -502,8 +502,8 @@ def render_embed(
     this will only work well for simple apps with a relatively
     small state space.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     max_states: int
       The maximum number of states to embed
     max_opts: int
@@ -542,8 +542,8 @@ def ipywidget(obj: Any, doc=None, **kwargs: Any):
 
     Requires `jupyter_bokeh` to be installed.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: object
       Any Panel object or object which can be rendered with Panel
     doc: bokeh.Document

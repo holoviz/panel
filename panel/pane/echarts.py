@@ -139,8 +139,8 @@ class ECharts(ModelPane):
 
         Reference: https://apache.github.io/echarts-handbook/en/concepts/event/
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         event: str
             The name of the event to register a handler on, e.g. 'click'.
         callback: str | CustomJS
@@ -162,8 +162,8 @@ class ECharts(ModelPane):
 
         Reference: https://apache.github.io/echarts-handbook/en/concepts/event/
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         event: str
             The name of the event to register a handler on, e.g. 'click'.
         code: str

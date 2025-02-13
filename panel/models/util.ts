@@ -1,5 +1,5 @@
 import {concat, uniq} from "@bokehjs/core/util/array"
-import {isPlainObject, isArray} from "@bokehjs/core/util/types"
+import {isArray, isPlainObject} from "@bokehjs/core/util/types"
 
 export const get = (obj: any, path: string, defaultValue: any = undefined) => {
   const travel = (regexp: RegExp) =>
@@ -106,6 +106,13 @@ export async function loadScript(type: string, src: string) {
       reject()
     }
   })
+}
+
+export function ID() {
+  // Math.random should be unique because of its seeding algorithm.
+  // Convert it to base 36 (numbers + letters), and grab the first 9 characters
+  // after the decimal.
+  return `_${  Math.random().toString(36).substring(2, 11)}`
 }
 
 export function convertUndefined(obj: any): any {
