@@ -369,7 +369,7 @@ class Mimebundle:
 def replace_inline_css(stylesheet: ImportedStyleSheet):
     if not stylesheet.url.startswith(CDN_DIST):
         return stylesheet
-    path = DIST_DIR / stylesheet.url.replace(CDN_DIST, '')
+    path = DIST_DIR / stylesheet.url.replace(CDN_DIST, '')  # type: ignore
     if not path.exists():
         return stylesheet
     return InlineStyleSheet(css=path.read_text(encoding='utf-8'))
