@@ -30,6 +30,7 @@ import param  # type: ignore
 
 from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
+from bokeh.models import UIElement
 from bokeh.resources import Resources
 from jinja2 import Template
 from param import Undefined
@@ -44,8 +45,8 @@ from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    JupyterCommManagerBinary as JupyterCommManager, ipywidget, render_embed,
-    render_mimebundle, render_model,
+    JupyterCommManagerBinary as JupyterCommManager, ipywidget,
+    patch_inline_stylesheets, render_embed, render_mimebundle, render_model,
 )
 from .io.save import save
 from .io.state import curdoc_locked, set_curdoc, state
@@ -536,7 +537,10 @@ class MimeRenderMixin:
         )
         self._comms[ref] = (comm, client_comm)
         manager.client_comm_id = client_comm.id
-        return render_mimebundle(model, doc, comm, manager, location)
+        return render_mimebundle(
+            model, doc, comm, manager, location,
+            resources='inline' if config.inline else 'cdn'
+        )
 
 
 class Renderable(param.Parameterized, MimeRenderMixin):
@@ -612,6 +616,13 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         Panel object that was changed and any old, unchanged models
         so they can be skipped (see https://github.com/holoviz/panel/pull/4989)
         """
+        ref = root.ref['id']
+        if changed is not None and ref in changed._models and ref in state._views:
+            _, _, _, comm = state._views[ref]
+            if comm is not None and config.inline:
+                for model in changed._models[ref][0].select({'type': UIElement}):
+                    patch_inline_stylesheets(model)
+
         changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
         for hook in hooks:
@@ -838,6 +849,12 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         model = self._render_model(doc, comm)
         if config.embed:
             return render_model(model)
+
+        if config.inline:
+            for submodel in model.select({'type': UIElement}):
+                if not isinstance(submodel, UIElement):
+                    continue
+                patch_inline_stylesheets(submodel)
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 
