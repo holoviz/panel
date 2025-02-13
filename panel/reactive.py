@@ -443,24 +443,18 @@ class Syncable(Renderable):
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         named_events = {event.name: event for event in events}
-        applied = False
         for ref, (model, _) in self._models.copy().items():
             properties = self._update_properties(*events, doc=model.document)
             if not properties:
                 return
-            applied &= self._apply_update(named_events, properties, model, ref)
-            if ref not in state._views:
-                continue
-            doc = state._views[ref][2]
-            if applied and doc in self._in_process__events:
-                del self._in_process__events[doc]
+            self._apply_update(named_events, properties, model, ref)
 
     def _process_events(self, events: dict[str, Any]) -> None:
         self._log('received events %s', events)
         if any(e for e in events if e not in self._busy__ignore):
             with edit_readonly(state):
                 state._busy_counter += 1
-        if events:
+        if events and state.curdoc:
             self._in_process__events[state.curdoc] = events
         params = self._process_property_change(events)
         try:
@@ -488,6 +482,8 @@ class Syncable(Renderable):
             log.exception(f'Callback failed for object named {self.name!r} {msg_end}')
             raise
         finally:
+            if state.curdoc and state.curdoc in self._in_process__events:
+                del self._in_process__events[state.curdoc]
             self._log('finished processing events %s', events)
             if any(e for e in events if e not in self._busy__ignore):
                 with edit_readonly(state):
