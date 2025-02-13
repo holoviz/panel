@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 import param
 
 from ..models.feed import Feed as PnFeed, ScrollButtonClick, ScrollLatestEvent
-from ..util import edit_readonly
+from ..util import edit_readonly, isIn
 from .base import Column
 
 if TYPE_CHECKING:
@@ -77,11 +77,6 @@ class Feed(Column):
         super().__init__(*objects, **params)
         self._last_synced = None
         self.param.watch(self._trigger_view_latest, 'objects')
-
-    @param.depends("objects", watch=True)
-    def _reset_visible_range(self):
-        with edit_readonly(self):
-            self.visible_range = None
 
     @param.depends("visible_range", "load_buffer", watch=True)
     def _trigger_get_objects(self):
@@ -159,6 +154,16 @@ class Feed(Column):
         self, model: Model, old_objects: list[Viewable], doc: Document,
         root: Model, comm: Comm | None = None
     ):
+        # If no previously visible objects are visible now, reset the visible range
+        events = self._in_process__events.get(doc, {})
+        if (
+            self._last_synced and
+            'visible_range' not in events and
+            not any(isIn(old_objects[i], self.objects) for i in range(*self._last_synced))
+        ):
+            with edit_readonly(self):
+                self.visible_range = None
+
         from ..pane.base import RerenderError
         new_models, old_models = [], []
         self._last_synced = self._synced_range
