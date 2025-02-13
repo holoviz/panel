@@ -4,7 +4,7 @@ See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual su
 
 ## Version 1.6.1
 
-This patch release primarily addresses issues running Panel behind a reverse proxy, improves the developer experience of working with custom ESM bundles and adds compatibility for Plotly 6.0. Many thanks to our returning contributors @ceball and @Coderambling and our core developer team including @ahuang11, @Maximlt, @hoxbro and @philippjfr for contributing to this release.
+This patch release primarily addresses issues running Panel behind a reverse proxy, improves the developer experience of working with custom ESM bundles and adds compatibility for Plotly 6.0. Congratulations to @fabiovincenzi and @pankajp for their first contribution fixing inlining of stylesheets. Next we want to thank our returning contributors @ceball, @Azaya89 and @Coderambling as well as our core developer team including @ahuang11, @Maximlt, @hoxbro and @philippjfr for contributing to this release.
 
 ### Enhancements
 
@@ -20,6 +20,12 @@ This patch release primarily addresses issues running Panel behind a reverse pro
 - Fix default avatar in send/stream ([#7677](https://github.com/holoviz/panel/pull/7677))
 - Ensure index redirects are relative to fix index page behind a reverse proxy ([#7704](https://github.com/holoviz/panel/pull/7704))
 - Ensure root_url is correctly determined during auth ([#7680](https://github.com/holoviz/panel/pull/7680))
+- Ensure the modal is on top in EditableTemplate ([#7710](https://github.com/holoviz/panel/pull/7710))
+- Ensure Tabulator selection is recalculated after filtering ([#7712](https://github.com/holoviz/panel/pull/7712))
+- Fix custom login endpoints ([#7714](https://github.com/holoviz/panel/pull/7714))
+- Ensure type checkers can correctly infer extension argument types ([#7709](https://github.com/holoviz/panel/pull/7709))
+- Ensure custom components and extensions respect resource mode in notebooks ([#7701](https://github.com/holoviz/panel/pull/7701), [#7716](https://github.com/holoviz/panel/pull/7716))
+- Ensure in process events are cleaned up after they are applied ([#7717](https://github.com/holoviz/panel/pull/7717))
 
 ### Compatibility
 
