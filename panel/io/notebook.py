@@ -28,7 +28,6 @@ from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
-from bokeh.settings import _Unset, settings
 from bokeh.util.serialization import make_id
 from param.display import (
     register_display_accessor, unregister_display_accessor,
@@ -43,7 +42,7 @@ from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
     PANEL_DIR, Resources, _env, bundle_resources, patch_inline_css,
-    patch_model_css,
+    patch_model_css, set_resource_mode,
 )
 from .state import state
 
@@ -410,11 +409,9 @@ def load_notebook(
     from IPython.display import publish_display_data
 
     resources = INLINE if inline and not state._is_pyodide else CDN
-    prev_resources = settings.resources(default="server")
-    user_resources = settings.resources._user_value is not _Unset
     nb_endpoint = not state._is_pyodide
-    resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
-    try:
+    with set_resource_mode(resources.mode):
+        resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
         bundle = bundle_resources(
             None, resources, notebook=nb_endpoint, reloading=reloading,
             enable_mathjax=enable_mathjax
@@ -431,11 +428,6 @@ def load_notebook(
             reloading=reloading,
             load_timeout=load_timeout
         )
-    finally:
-        if user_resources:
-            settings.resources = prev_resources
-        else:
-            settings.resources.unset_value()
 
     CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text(encoding='utf-8')
     shim = '<script type="esms-options">{"shimMode": true}</script>'

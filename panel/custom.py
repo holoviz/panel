@@ -355,7 +355,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         esm_path = cls._esm_path(compiled=compiled is True)
         if esm_path:
             if esm_path == cls._bundle_path and cls.__module__ in sys.modules and server:
-                esm = cls._component_resource_path(esm_path, compiled)
+                # Generate relative path to handle apps served on subpaths
+                esm = (state.rel_path or './') + cls._component_resource_path(esm_path, compiled)
                 if config.autoreload:
                     modified = hashlib.sha256(str(esm_path.stat().st_mtime).encode('utf-8')).hexdigest()
                     esm += f'?{modified}'

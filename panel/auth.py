@@ -807,6 +807,8 @@ class GoogleLoginHandler(OAuthLoginHandler):
 
 class BasicLoginHandler(RequestHandler):
 
+    _login_endpoint = '/login'
+
     _login_template = BASIC_LOGIN_TEMPLATE
 
     def get(self):
@@ -820,6 +822,7 @@ class BasicLoginHandler(RequestHandler):
                 next_url = next_url.replace('/', state.base_url, 1)
             self.set_cookie("next_url", next_url)
         html = self._login_template.render(
+            login_endpoint=self._login_endpoint,
             errormessage=errormessage,
             PANEL_CDN=CDN_DIST
         )
