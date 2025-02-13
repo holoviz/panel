@@ -6,6 +6,7 @@ components.
 from __future__ import annotations
 
 import ast
+import builtins
 import copy
 import importlib
 import inspect
@@ -721,6 +722,8 @@ class panel_extension(_pyviz_extension):
         from bokeh.settings import settings as bk_settings
 
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
+
+        _in_ipython = hasattr(builtins, '___IPYTHON__')
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
         }
@@ -738,8 +741,7 @@ class panel_extension(_pyviz_extension):
                 from .io.resources import CSS_URLS
                 params['css_files'] = params.get('css_files', []) + [CSS_URLS['font-awesome']]
             if arg in self._imports:
-                ipy_fn = globals().get('get_ipython', None)
-                if arg == 'ipywidgets' and ipy_fn is not None and "PANEL_IPYWIDGET" not in os.environ:
+                if arg == 'ipywidgets' and _in_ipython and "PANEL_IPYWIDGET" not in os.environ:
                     continue
 
                 # Ensure all models are registered
@@ -823,12 +825,10 @@ class panel_extension(_pyviz_extension):
             self._load_entry_points()
 
         # Abort if IPython not found
-        ipy_fn = globals().get('get_ipython', None)
-        if 'ip' not in params and ipy_fn is None:
+        if not (_in_ipython or 'ip' in params):
             return
-        ip = params.pop('ip', None) or ipy_fn
-
         from .io.notebook import load_notebook
+        ip = params.get('ip') or get_ipython()  # type: ignore # noqa
 
         self._detect_comms(params)
 
