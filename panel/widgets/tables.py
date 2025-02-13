@@ -1711,7 +1711,7 @@ class Tabulator(BaseTable):
         super()._update_cds(*events)
         if self.pagination:
             self._update_max_page()
-            self._update_selected()
+        self._update_selected()
         self._update_style(recompute)
         self._update_selectable()
 
@@ -1735,7 +1735,7 @@ class Tabulator(BaseTable):
 
     def _update_selected(self, *events: param.parameterized.Event, indices=None):
         kwargs = {}
-        if self.pagination == 'remote' and self.value is not None:
+        if self.value is not None:
             # Compute integer indexes of the selected rows
             # on the displayed page
             index = self.value.iloc[self.selection].index
@@ -1743,16 +1743,20 @@ class Tabulator(BaseTable):
             for ind in index.values:
                 try:
                     iloc = self._processed.index.get_loc(ind)
-                    self._validate_iloc(ind ,iloc)
+                    self._validate_iloc(ind, iloc)
                     indices.append((ind, iloc))
                 except KeyError:
                     continue
-            nrows = self.page_size or self.initial_page_size
-            start = (self.page - 1) * nrows
-            end = start+nrows
-            p_range = self._processed.index[start:end]
-            kwargs['indices'] = [iloc - start for ind, iloc in indices
-                                 if ind in p_range]
+            if self.pagination == 'remote':
+                nrows = self.page_size or self.initial_page_size
+                start = (self.page - 1) * nrows
+                end = start+nrows
+                p_range = self._processed.index[start:end]
+                indices = [iloc - start for ind, iloc in indices
+                           if ind in p_range]
+            else:
+                indices = [iloc for _, iloc in indices]
+            kwargs['indices'] = indices
         super()._update_selected(*events, **kwargs)
 
     def _update_column(self, column: str, array: TDataColumn) -> None:
