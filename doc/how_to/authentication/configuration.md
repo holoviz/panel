@@ -37,7 +37,7 @@ pn.serve(app, oauth_provider=...)
 The login and logout endpoints are configurable:
 
 ```
-panel serve oauth_example.py --login-endpoint="/signin" --logout-endpoint="/signoff" ...
+panel serve oauth_example.py --login-endpoint /signin --logout-endpoint /signoff ...
 ```
 
 or in Python:
