@@ -76,8 +76,7 @@ def check_cli_tool(tool_name: str) -> bool:
     if cmd:
         return True
     if sys.platform == 'win32':
-        tool_name = f'{tool_name}.cmd'
-        return check_cli_tool(tool_name)
+        return shutil.which(f'{tool_name}.cmd')
     return False
 
 
