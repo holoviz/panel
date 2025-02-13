@@ -44,7 +44,7 @@ export class PanelMarkupView extends WidgetView {
         style_el.addEventListener("load", () => {
           this._initialized_stylesheets.set(style_el.href, true)
           if ([...this._initialized_stylesheets.values()].every((v) => v)) {
-            setTimeout(() => { this.style_redraw() }, 1)
+            requestAnimationFrame(() => this.style_redraw())
           }
         })
       }
