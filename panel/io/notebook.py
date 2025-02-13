@@ -241,7 +241,7 @@ def render_mimebundle(
     model: Model, doc: Document, comm: Comm,
     manager: CommManager | None = None,
     location: Location | None = None,
-    resources: str | None = 'cdn'
+    resources: str = 'cdn'
 ) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     """
     Displays bokeh output inside a notebook using the PyViz display
