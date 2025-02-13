@@ -59,6 +59,9 @@ if TYPE_CHECKING:
     from .cache import _Stack
     from .callbacks import PeriodicCallback
     from .location import Location
+    from .middlewares import (
+        BokehEventMiddleware, PropertyChangeEventMiddleware,
+    )
     from .notifications import NotificationArea
     from .server import StoppableThread
 
@@ -234,6 +237,10 @@ class _state(param.Parameterized):
 
     # Watchers
     _watch_events: ClassVar[list[asyncio.Event]] = []
+
+    # Middlewares
+    _bokeh_event_middlewares: List[BokehEventMiddleware] = []
+    _property_change_event_middlewares: List[PropertyChangeEventMiddleware] = []
 
     def __repr__(self) -> str:
         server_info = []
@@ -953,6 +960,34 @@ class _state(param.Parameterized):
                              "of Boolean type.")
         if indicator not in self._indicators:
             self._indicators.append(indicator)
+
+    def add_bokeh_event_middleware(self, middleware: BokehEventMiddleware) -> None:
+        """
+        Adds a middleware to be triggered during processing of bokeh events.
+        Users should provide their own implementation for BokehEventMiddleware.
+
+        Arguments
+        ---------
+        middleware: BokehEventMiddleware
+          Middleware whose preprocess and postprocess methods will be
+          executed before and after processing of a bokeh event on all
+          Panel components.
+        """
+        self._bokeh_event_middlewares.append(middleware)
+
+    def add_property_change_event_middleware(self, middleware: PropertyChangeEventMiddleware) -> None:
+        """
+        Adds a middleware to be triggered during processing of property change
+        events. Users should provide their own implementation for PropertyChangeEventMiddleware.
+
+        Arguments
+        ---------
+        middleware: PropertyChangeEventMiddleware
+          Middleware whose preprocess and postprocess methods will be
+          executed before and after processing of property change event(s)
+          on all Panel components.
+        """
+        self._property_change_event_middlewares.append(middleware)
 
     #----------------------------------------------------------------
     # Public Properties
