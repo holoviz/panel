@@ -537,7 +537,10 @@ class MimeRenderMixin:
         )
         self._comms[ref] = (comm, client_comm)
         manager.client_comm_id = client_comm.id
-        return render_mimebundle(model, doc, comm, manager, location)
+        return render_mimebundle(
+            model, doc, comm, manager, location,
+            resources='inline' if config.inline else 'cdn'
+        )
 
 
 class Renderable(param.Parameterized, MimeRenderMixin):
