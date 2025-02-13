@@ -26,7 +26,9 @@ from bokeh.embed import server_document
 from bokeh.embed.elements import div_for_render_item, script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.models import Model
+from bokeh.models import (
+    ImportedStyleSheet, InlineStyleSheet, Model, UIElement,
+)
 from bokeh.resources import CDN, INLINE
 from bokeh.util.serialization import make_id
 from param.display import (
@@ -41,7 +43,7 @@ from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    PANEL_DIR, Resources, _env, bundle_resources, patch_inline_css,
+    CDN_DIST, DIST_DIR, PANEL_DIR, Resources, _env, bundle_resources,
     patch_model_css, set_resource_mode,
 )
 from .state import state
@@ -200,9 +202,6 @@ def render_model(
             model.document._template_variables['dist_url'] = dist_url
 
     (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], suppress_callback_warning=True)
-
-    if resources == 'inline':
-         patch_inline_css(docs_json)
 
     div = div_for_render_item(render_item)
     render_json = render_item.to_json()
@@ -370,6 +369,23 @@ class Mimebundle:
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         return self._mimebundle
+
+def replace_inline_css(stylesheet: ImportedStyleSheet):
+    if not stylesheet.url.startswith(CDN_DIST):
+        return stylesheet
+    path = DIST_DIR / stylesheet.url.replace(CDN_DIST, '')
+    if not path.exists():
+        return stylesheet
+    return InlineStyleSheet(css=path.read_text(encoding='utf-8'))
+
+def patch_inline_stylesheets(model: UIElement):
+    stylesheets = []
+    for sts in model.stylesheets:
+        if isinstance(sts, ImportedStyleSheet):
+            sts = replace_inline_css(sts)
+        stylesheets.append(sts)
+    if stylesheets != model.stylesheets:
+        model.stylesheets = stylesheets
 
 #---------------------------------------------------------------------
 # Public API
