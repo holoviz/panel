@@ -1,5 +1,7 @@
 import asyncio
 import datetime as dt
+import random
+import string
 
 from zoneinfo import ZoneInfo
 
@@ -2173,6 +2175,47 @@ def test_tabulator_function_filter(document, comm):
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
+
+def test_tabulator_function_filter_selection(document, comm):
+    # issue https://github.com/holoviz/panel/issues/7695
+    def generate_random_string(min_length=5, max_length=20):
+        length = random.randint(min_length, max_length)
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+    def df_strings():
+        num_strings = 12
+        randomized_descr = [generate_random_string() for _ in range(num_strings)]
+        code = [f'{i:02d}' for i in range(num_strings)]
+        return pd.DataFrame(dict(code=code, descr=randomized_descr))
+
+    df = df_strings()
+    tbl = Tabulator(df)
+
+    descr_filter = TextInput(name='descr', value='')
+
+    def contains_filter(df, pattern=None):
+        if not pattern:
+            return df
+        return df[df.descr.str.contains(pattern, case=False)]
+
+    filter_fn = param.bind(contains_filter, pattern=descr_filter)
+
+    tbl.add_filter(filter_fn)
+
+    model = tbl.get_root()
+
+    tbl.selection = [0, 1, 2]
+
+    assert model.source.selected.indices == [0, 1, 2]
+
+    descr_filter.value = df.iloc[5, -1]
+
+    assert model.source.selected.indices == []
+
+    descr_filter.value = ""
+
+    assert model.source.selected.indices == [0, 1, 2]
+
 
 def test_tabulator_function_mask_filter(document, comm):
     df = makeMixedDataFrame()
