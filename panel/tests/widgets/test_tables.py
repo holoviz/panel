@@ -2202,7 +2202,7 @@ def test_tabulator_function_filter_selection(document, comm):
 
     tbl.add_filter(filter_fn)
 
-    model = tbl.get_root()
+    model = tbl.get_root(document, comm)
 
     tbl.selection = [0, 1, 2]
 
