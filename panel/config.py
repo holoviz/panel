@@ -707,7 +707,7 @@ class panel_extension(_pyviz_extension):
 
     _comms_detected_before: bool = False
 
-    @typing.overload
+    @typing.overload  # type: ignore
     def __init__(
         self, *extensions: str, **params: Any
     ):
@@ -738,12 +738,9 @@ class panel_extension(_pyviz_extension):
                 from .io.resources import CSS_URLS
                 params['css_files'] = params.get('css_files', []) + [CSS_URLS['font-awesome']]
             if arg in self._imports:
-                try:
-                    if (arg == 'ipywidgets' and get_ipython() and # noqa (get_ipython)
-                        "PANEL_IPYWIDGET" not in os.environ):
-                        continue
-                except Exception:
-                    pass
+                ipy_fn = globals().get('get_ipython', None)
+                if arg == 'ipywidgets' and ipy_fn is not None and "PANEL_IPYWIDGET" not in os.environ:
+                    continue
 
                 # Ensure all models are registered
                 module = self._imports[arg]
@@ -826,10 +823,10 @@ class panel_extension(_pyviz_extension):
             self._load_entry_points()
 
         # Abort if IPython not found
-        try:
-            ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
-        except Exception:
+        ipy_fn = globals().get('get_ipython', None)
+        if 'ip' not in params and ipy_fn is None:
             return
+        ip = params.pop('ip', None) or ipy_fn
 
         from .io.notebook import load_notebook
 
