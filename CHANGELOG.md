@@ -14,6 +14,7 @@ This patch release primarily addresses issues running Panel behind a reverse pro
 ### Bug fixes
 
 - Ensure errors in sync periodic callbacks are logged ([#7665](https://github.com/holoviz/panel/pull/7665))
+- Reset `visible_range` when `Feed.objects` are updated ([#7673](https://github.com/holoviz/panel/pull/7673))
 - Ensure ESM bundles correctly resolve component implementations ([#7684](https://github.com/holoviz/panel/pull/7684), [#7698](https://github.com/holoviz/panel/pull/7698))
 - Fix default avatar in send/stream ([#7677](https://github.com/holoviz/panel/pull/7677))
 - Ensure index redirects are relative to fix index page behind a reverse proxy ([#7704](https://github.com/holoviz/panel/pull/7704))
@@ -28,6 +29,7 @@ This patch release primarily addresses issues running Panel behind a reverse pro
 ### Compatibility
 
 - Compatibility with Plotly 6.0 ([#7681](https://github.com/holoviz/panel/pull/7681), [#7682](https://github.com/holoviz/panel/pull/7682))
+- Bump pyodide version to 0.27.2 and PyScript version to 2025.2.1 ([#7718](https://github.com/holoviz/panel/pull/7718))
 
 ### Docs
 
