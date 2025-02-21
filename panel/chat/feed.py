@@ -1105,10 +1105,13 @@ class ChatFeed(ListPanel):
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages
 
-    def _run_post_hook(self, message: ChatMessage | ChatStep):
+    def _run_post_hook(self, message: ChatMessage | ChatStep | None):
         """
         Runs the post hook callback, only if idle or stopped.
         """
+        if self.post_hook is None:
+            return
+
         if isinstance(message, ChatStep):
             for obj in self._chat_log.objects[::-1]:
                 if obj.object is message._layout:
