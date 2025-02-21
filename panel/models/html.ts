@@ -123,7 +123,7 @@ export class HTMLView extends PanelMarkupView {
     return [...super.stylesheets(), html_css]
   }
 
-  protected rerender() {
+  override rerender() {
     this.render()
     this.invalidate_layout()
   }
