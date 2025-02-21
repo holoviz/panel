@@ -680,7 +680,7 @@ class ChatFeed(ListPanel):
         respond : bool
             Whether to execute the callback.
         trigger_post_hook: bool
-            Whether to trigger the post hook after streaming.
+            Whether to trigger the post hook after sending.
         message_params : dict
             Additional parameters to pass to the ChatMessage.
 

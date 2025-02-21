@@ -660,6 +660,7 @@ class ChatInterface(ChatFeed):
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
+        trigger_post_hook: bool = True,
         **message_params
     ) -> ChatMessage | None:
 
@@ -680,6 +681,8 @@ class ChatInterface(ChatFeed):
             Will default to the avatar parameter.
         respond : bool
             Whether to execute the callback.
+        trigger_post_hook: bool
+            Whether to trigger the post hook after sending.
         message_params : dict
             Additional parameters to pass to the ChatMessage.
 
@@ -694,7 +697,9 @@ class ChatInterface(ChatFeed):
                 avatar = self.avatar
         message_params["show_edit_icon"] = message_params.get(
             "show_edit_icon", user == self.user and self.edit_callback is not None)
-        return super().send(value, user=user, avatar=avatar, respond=respond, **message_params)
+        return super().send(
+            value, user=user, avatar=avatar, respond=respond,
+            trigger_post_hook=trigger_post_hook, **message_params)
 
     def stream(
         self,
@@ -703,6 +708,7 @@ class ChatInterface(ChatFeed):
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
         replace: bool = False,
+        trigger_post_hook: bool = False,
         **message_params
     ) -> ChatMessage | None:
         """
@@ -728,6 +734,8 @@ class ChatInterface(ChatFeed):
             The message to update.
         replace : bool
             Whether to replace the existing text when streaming a string or dict.
+        trigger_post_hook: bool
+            Whether to trigger the post hook after streaming.
         message_params : dict
             Additional parameters to pass to the ChatMessage.
 
@@ -742,4 +750,6 @@ class ChatInterface(ChatFeed):
             if avatar is None and user == self.user:
                 avatar = self.avatar
         message_params["show_edit_icon"] = message_params.get("show_edit_icon", user == self.user and self.edit_callback is not None)
-        return super().stream(value, user=user, avatar=avatar, message=message, replace=replace, **message_params)
+        return super().stream(
+            value, user=user, avatar=avatar, message=message, replace=replace,
+            trigger_post_hook=trigger_post_hook, **message_params)
