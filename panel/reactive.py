@@ -490,6 +490,10 @@ class Syncable(Renderable):
                     state._busy_counter -= 1
 
     def _process_bokeh_event(self, doc: Document, event: Event) -> None:
+
+        for bokeh_event_middleware in state._bokeh_event_middlewares:
+            bokeh_event_middleware.preprocess(self, doc, event)
+
         self._log('received bokeh event %s', event)
         with edit_readonly(state):
             state._busy_counter += 1
@@ -497,6 +501,9 @@ class Syncable(Renderable):
             with set_curdoc(doc):
                 self._process_event(event)
         finally:
+            for bokeh_event_middleware in state._bokeh_event_middlewares:
+                bokeh_event_middleware.postprocess()
+
             self._log('finished processing bokeh event %s', event)
             with edit_readonly(state):
                 state._busy_counter -= 1
@@ -524,9 +531,16 @@ class Syncable(Renderable):
 
     def _change_event(self, doc: Document) -> None:
         events = self._events
+
+        for property_change_event_middleware in state._property_change_event_middlewares:
+            property_change_event_middleware.preprocess(self, doc, events)
+
         self._events = {}
         with set_curdoc(doc):
             self._process_events(events)
+
+        for property_change_event_middleware in state._property_change_event_middlewares:
+            property_change_event_middleware.postprocess()
 
     def _schedule_change(self, doc: Document, comm: Comm | None) -> None:
         with hold(doc, comm=comm):
