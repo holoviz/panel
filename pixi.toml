@@ -156,6 +156,7 @@ polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+libsqlite = "!=3.49.*" # 2025-02; Breaks diskcache tests, https://github.com/conda-forge/sqlite-feedstock/issues/130 (remove dependency after problem is solved)
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
