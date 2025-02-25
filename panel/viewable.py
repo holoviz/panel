@@ -1261,7 +1261,7 @@ def is_viewable_param(parameter: param.Parameter) -> bool:
     """
     if isinstance(parameter, (Child, Children)):
         return True
-    if isinstance(parameter, param.ClassSelector) and _is_viewable_class_selector(parameter):
+    if isinstance(parameter, param.ClassSelector) and _is_viewable_class_selector(parameter) and parameter.is_instance:
         return True
     if isinstance(parameter, param.List) and _is_viewable_list(parameter):
         return True
