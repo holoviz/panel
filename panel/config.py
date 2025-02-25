@@ -827,9 +827,12 @@ class panel_extension(_pyviz_extension):
         # Abort if IPython not found
         if not (_in_ipython or 'ip' in params):
             return
-        from .io.notebook import load_notebook
-        ip = params.get('ip') or get_ipython()  # type: ignore # noqa
+        try:
+            ip = params.get('ip') or get_ipython()  # type: ignore # noqa
+        except Exception:
+            return
 
+        from .io.notebook import load_notebook
         self._detect_comms(params)
 
         panel_extension._loaded_extensions += newly_loaded
