@@ -1618,7 +1618,7 @@ class ReactiveCustomBase(Reactive):
         try:
             model.update(**transformed)
         finally:
-            if old:
+            if prev_changing:
                 self._changing[root.ref['id']] = prev_changing
             else:
                 del self._changing[root.ref['id']]
