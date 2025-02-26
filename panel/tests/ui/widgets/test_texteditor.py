@@ -149,3 +149,25 @@ def test_texteditor_space(page):
     serve_component(page, widget)
 
     wait_until(lambda: widget.value == f'<p>{text}</p>', page)
+
+
+def test_texteditor_nested_lists(page):
+    nested_bullets = """
+    <ul>
+    <li>Coffee</li>
+    <li>Tea
+        <ul>
+        <li>Black</li>
+        <li>Green</li>
+        </ul>
+    </li>
+    <li>Milk</li>
+    </ul>
+    """
+
+    widget = TextEditor(value=nested_bullets)
+
+    serve_component(page, widget)
+
+    expected = '<ul><li>Coffee</li><li>Tea<ul><li>Black</li><li>Green</li></ul></li><li>Milk</li></ul>'
+    wait_until(lambda: widget.value == expected, page)
