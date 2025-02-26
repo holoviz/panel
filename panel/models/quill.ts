@@ -155,7 +155,7 @@ export class QuillInputView extends HTMLBoxView {
     this._editor = (this.shadow_el.querySelector(".ql-editor") as HTMLDivElement)
     this._toolbar = (this.shadow_el.querySelector(".ql-toolbar") as HTMLDivElement)
 
-    const delta = this.quill.clipboard.convert({ html: this.model.text })
+    const delta = this.quill.clipboard.convert({html: this.model.text})
     this.quill.setContents(delta)
 
     this.quill.on("text-change", () => {
@@ -181,7 +181,7 @@ export class QuillInputView extends HTMLBoxView {
       this.container.style.visibility = "visible"
     }
 
-    const delta = this.quill.clipboard.convert({ html: this.model.text })
+    const delta = this.quill.clipboard.convert({html: this.model.text})
     this.quill.setContents(delta)
 
     this.invalidate_layout()
