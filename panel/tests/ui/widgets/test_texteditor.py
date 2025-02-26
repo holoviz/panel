@@ -137,3 +137,15 @@ def test_texteditor_regression_click_toolbar_cursor_stays_in_place(page):
     page.locator('.ql-bold').click()
     editor.press('B')
     wait_until(lambda: widget.value == '<p>A</p><p><strong>B</strong></p>', page)
+
+
+def test_texteditor_space(page):
+    # Quill 2.0.3 has &nbsp; instead of white spaces, this tests aims
+    # at preventing us from introducing this weird behavior.
+    # https://github.com/slab/quill/issues/4509
+    text = 'text with space'
+    widget = TextEditor(value=text)
+
+    serve_component(page, widget)
+
+    wait_until(lambda: widget.value == f'<p>{text}</p>', page)
