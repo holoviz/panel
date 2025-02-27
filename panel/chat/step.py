@@ -157,7 +157,7 @@ class ChatStep(Card):
             self.status = "failed"
             if self.context_exception == "raise":
                 return False
-        else:
+        elif self.status in ("pending", "running"):
             self.status = "success"
         return True  # suppress exception if any
 
