@@ -511,7 +511,9 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         children = self._get_children(model.data, doc, root, model, comm)
         model.data.update(**children)
         model.children = list(children)  # type: ignore
-        self._models[root.ref['id']] = (model, parent)
+        ref = root.ref['id']
+        self._models[ref] = (model, parent)
+        self._patch_datamodel_ref(model.data, ref)
         self._link_props(props['data'], self._linked_properties, doc, root, comm)
         self._register_events('dom_event', 'data_event', model=model, doc=doc, comm=comm)
         self._setup_autoreload()
@@ -572,7 +574,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     def _send_msg(self, data: Any) -> None:
         """
         Sends data to the frontend which can be observed on the frontend
-        with the `model.on_msg("msg:custom", callback)` API.
+        with the `model.on("msg:custom", callback)` API.
 
         Parameters
         ----------
