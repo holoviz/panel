@@ -614,7 +614,7 @@ export class ReactiveESM extends HTMLBox {
       const remaining = []
       for (const [wview, cb] of this._esm_watchers[p]) {
         if (wview === view) {
-          prop.change.disconnect(cb)
+          prop?.change.disconnect(cb)
         } else {
           remaining.push([wview, cb])
         }
