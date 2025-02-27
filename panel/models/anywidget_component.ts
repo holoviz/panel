@@ -67,7 +67,7 @@ class AnyWidgetModelAdapter {
         }
       }
       if (targetModel && targetModel.attributes && propPath[propPath.length - 1] in targetModel.attributes) {
-        targetModel.setv({ [propPath[propPath.length - 1]]: this.data_changes[key] })
+        targetModel.setv({[propPath[propPath.length - 1]]: this.data_changes[key]})
       } else {
         console.warn(`Skipping '${key}': Final property '${propPath[propPath.length - 1]}' not found.`)
       }
