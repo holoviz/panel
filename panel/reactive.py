@@ -2103,10 +2103,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
 
         ref = root.ref['id']
         data_model: DataModel = model.data # type: ignore
-        for v in data_model.properties_with_values():
-            if isinstance(v, DataModel):
-                v.tags.append(f"__ref:{ref}")
-        self._patch_datamodel_ref(data_model.properties_with_values(), ref)
+        self._patch_datamodel_ref(data_model, ref)
         model.update(children=self._get_children(doc, root, model, comm))
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
         self._link_props(data_model, self._linked_properties, doc, root, comm)
