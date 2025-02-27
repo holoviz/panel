@@ -534,78 +534,78 @@ export class ReactiveESM extends HTMLBox {
       this._esm_watchers[prop] = [[view, cb]]
     }
 
-    const propPath = prop.split(".");
-    let target: any = this.data;
-    let resolvedProp: string | null = null;
+    const propPath = prop.split(".")
+    let target: any = this.data
+    let resolvedProp: string | null = null
     for (let i = 0; i < propPath.length - 1; i++) {
       if (target && target.properties && propPath[i] in target.properties) {
-        target = target[propPath[i]];
+        target = target[propPath[i]]
       } else {
         // Break if any level of the path is invalid
-        target = null;
-        break;
+        target = null
+        break
       }
     }
 
     if (target && target.properties && propPath[propPath.length - 1] in target.properties) {
-      resolvedProp = propPath[propPath.length - 1];
+      resolvedProp = propPath[propPath.length - 1]
     }
 
     // Attach watcher if property is found
     if (resolvedProp && target) {
-      target.property(resolvedProp).change.connect(cb);
+      target.property(resolvedProp).change.connect(cb)
     } else if (prop in this.properties) {
-      this.property(prop).change.connect(cb);
+      this.property(prop).change.connect(cb)
     }
   }
 
   unwatch(view: ReactiveESMView | null, prop: string, cb: any): boolean {
     if (!(prop in this._esm_watchers)) {
-      return false;
+      return false
     }
 
     // Filter out the specific callback for this view
-    const remaining = [];
+    const remaining = []
     for (const [wview, wcb] of this._esm_watchers[prop]) {
       if (wview !== view || wcb !== cb) {
-        remaining.push([wview, wcb]);
+        remaining.push([wview, wcb])
       }
     }
 
     // Update or delete watcher list
     if (remaining.length > 0) {
-      this._esm_watchers[prop] = remaining;
+      this._esm_watchers[prop] = remaining
     } else {
-      delete this._esm_watchers[prop];
+      delete this._esm_watchers[prop]
     }
 
     // Resolve nested properties
-    const propPath = prop.split(".");
-    let target: any = this.data;
-    let resolvedProp: string | null = null;
+    const propPath = prop.split(".")
+    let target: any = this.data
+    let resolvedProp: string | null = null
 
     for (let i = 0; i < propPath.length - 1; i++) {
       if (target && target.properties && propPath[i] in target.properties) {
-        target = target[propPath[i]];
+        target = target[propPath[i]]
       } else {
         // Stop if the path does not exist
-        target = null;
-        break;
+        target = null
+        break
       }
     }
 
     if (target && target.properties && propPath[propPath.length - 1] in target.properties) {
-      resolvedProp = propPath[propPath.length - 1];
+      resolvedProp = propPath[propPath.length - 1]
     }
 
     // Detach watcher if property is found
     if (resolvedProp && target) {
-      return target.property(resolvedProp).change.disconnect(cb);
+      return target.property(resolvedProp).change.disconnect(cb)
     } else if (prop in this.properties) {
-      return this.property(prop).change.disconnect(cb);
+      return this.property(prop).change.disconnect(cb)
     }
 
-    return false;
+    return false
   }
 
   disconnect_watchers(view: ReactiveESMView): void {
