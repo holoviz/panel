@@ -17,21 +17,36 @@ class AnyWidgetModelAdapter {
 
   get(name: any) {
     let value
-    if (name in this.model.data.attributes) {
-      value = this.model.data.attributes[name]
+    const propPath = name.split(".")
+    let targetModel: any = this.model.data
+
+    for (let i = 0; i < propPath.length - 1; i++) {
+      if (targetModel && targetModel.attributes && propPath[i] in targetModel.attributes) {
+        targetModel = targetModel.attributes[propPath[i]]
+      } else {
+        // Stop if any part of the path is missing
+        targetModel = null
+        break
+      }
+    }
+
+    if (targetModel && targetModel.attributes && propPath[propPath.length - 1] in targetModel.attributes) {
+      value = targetModel.attributes[propPath[propPath.length - 1]]
     } else {
       value = this.model.attributes[name]
     }
+
     if (value instanceof ArrayBuffer) {
       value = new DataView(value)
     }
+
     return value
   }
 
   set(name: string, value: any) {
     if (name in this.model.data.attributes) {
       this.data_changes = {...this.data_changes, [name]: value}
-    } else if (name in this.model.attributes) {
+    } else if (name.split(".")[0] in this.model.attributes) {
       this.model_changes = {...this.model_changes, [name]: value}
     }
   }
@@ -39,7 +54,24 @@ class AnyWidgetModelAdapter {
   save_changes() {
     this.model.setv(this.model_changes)
     this.model_changes = {}
-    this.model.data.setv(this.data_changes)
+    for (const key in this.data_changes) {
+      const propPath = key.split(".")
+      let targetModel: any = this.model.data
+      for (let i = 0; i < propPath.length - 1; i++) {
+        if (targetModel && targetModel.attributes && propPath[i] in targetModel.attributes) {
+          targetModel = targetModel.attributes[propPath[i]]
+        } else {
+          console.warn(`Skipping '${key}': '${propPath[i]}' does not exist.`)
+          targetModel = null
+          break
+        }
+      }
+      if (targetModel && targetModel.attributes && propPath[propPath.length - 1] in targetModel.attributes) {
+        targetModel.setv({ [propPath[propPath.length - 1]]: this.data_changes[key] })
+      } else {
+        console.warn(`Skipping '${key}': Final property '${propPath[propPath.length - 1]}' not found.`)
+      }
+    }
     this.data_changes = {}
   }
 
