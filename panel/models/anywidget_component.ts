@@ -44,9 +44,9 @@ class AnyWidgetModelAdapter {
   }
 
   set(name: string, value: any) {
-    if (name in this.model.data.attributes) {
+    if (name.split(".")[0] in this.model.data.attributes) {
       this.data_changes = {...this.data_changes, [name]: value}
-    } else if (name.split(".")[0] in this.model.attributes) {
+    } else if (name in this.model.attributes) {
       this.model_changes = {...this.model_changes, [name]: value}
     }
   }
