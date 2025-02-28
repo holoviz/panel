@@ -243,8 +243,7 @@ class Panel(Reactive, SizingModeMixin):
                     width=msg.get('width', model.width),
                     min_width=msg.get('min_width', model.min_width),
                     margin=msg.get('margin', model.margin)
-                ),
-                self._direction
+                )
             ))
         else:
             old_children = None
@@ -312,7 +311,7 @@ class Panel(Reactive, SizingModeMixin):
         objects, _ = self._get_objects(model, [], doc, root, comm)
         props = self._get_properties(doc)
         props[self._property_mapping['objects']] = objects
-        props.update(self._compute_sizing_mode(objects, props, self._direction))
+        props.update(self._compute_sizing_mode(objects, props))
         model.update(**props)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
