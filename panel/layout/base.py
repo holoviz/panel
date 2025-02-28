@@ -20,7 +20,7 @@ from ..io.resources import CDN_DIST
 from ..models.layout import Column as PnColumn, ScrollToEvent
 from ..reactive import Reactive
 from ..util import param_name, param_reprs
-from ..viewable import Children
+from ..viewable import Children, Viewable
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -42,7 +42,137 @@ _row = namedtuple("row", ["children"]) # type: ignore
 _col = namedtuple("col", ["children"]) # type: ignore
 
 
-class Panel(Reactive):
+class SizingModeMixin:
+    """
+    Mixin class to add support for computing sizing modes from the children
+    based on the direction the layout flows in.
+    """
+
+    # Direction the layout flows in
+    _direction: ClassVar[str | None] = None
+
+    def _compute_sizing_mode(self, children, props):
+        """
+        Handles inference of correct layout sizing mode by inspecting
+        the children and adapting to their layout properties. This
+        aims to provide a layer of backward compatibility for the
+        layout behavior before v1.0 and provide general usability
+        improvements.
+
+        The code iterates over the children and extracts their sizing_mode,
+        width and height. Based on these values we infer a few overrides
+        for the container sizing_mode, width and height:
+
+        - If a child is responsive in width then the container should
+          also be responsive in width (unless it has a fixed size).
+        - If a container is vertical (e.g. a Column) and a child is
+          responsive in height then the container should also be
+          responsive.
+        - If a container is horizontal (e.g. a Row) and all children
+          are responsive in height then the container should also be
+          responsive. This behavior is asymmetrical with height
+          because there isn't always vertical space to expand into
+          and it is better for the component to match the height of
+          the other children.
+        - Always compute the fixed sizes of the children (if available)
+          and provide this as min_width and min_height settings to
+          ensure sufficient space is available.
+        """
+        margin = props.get('margin', self.margin)
+        if margin is None:
+            margin = 0
+        sizing_mode = props.get('sizing_mode', self.sizing_mode)
+        if sizing_mode == 'fixed':
+            return {}
+
+        # Iterate over children and determine responsiveness along
+        # each axis, scaling and the widths of each component.
+        heights, widths = [], []
+        all_expand_height, expand_width, expand_height, scale = True, self.width_policy=="max", self.height_policy=="max", False
+
+        for child in children:
+            smode = child.sizing_mode
+            if smode and 'scale' in smode:
+                scale = True
+
+            width_expanded = smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
+            height_expanded = smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both')
+            expand_width |= width_expanded
+            expand_height |= height_expanded
+            if width_expanded:
+                width = child.min_width
+            else:
+                width = child.width
+                if not child.width:
+                    width = child.min_width
+            if width:
+                if isinstance(margin, tuple):
+                    if len(margin) == 2:
+                        width += margin[1]*2
+                    else:
+                        width += margin[1] + margin[3]
+                else:
+                    width += margin*2
+                widths.append(width)
+
+            if height_expanded:
+                height = child.min_height
+            else:
+                height = child.height
+                if height:
+                    all_expand_height = False
+                else:
+                    height = child.min_height
+            if height:
+                if isinstance(margin, tuple):
+                    if len(margin) == 2:
+                        height += margin[0]*2
+                    else:
+                        height += margin[0] + margin[2]
+                else:
+                    height += margin*2
+                heights.append(height)
+
+        # Infer new sizing mode based on children
+        mode = 'scale' if scale else 'stretch'
+        if self._direction == 'horizontal':
+            allow_height_scale = all_expand_height
+        else:
+            allow_height_scale = True
+
+        if expand_width and expand_height and not self.width and not self.height:
+            if allow_height_scale or 'both' in (sizing_mode or ''):
+                sizing_mode = f'{mode}_both'
+            else:
+                sizing_mode = f'{mode}_width'
+        elif expand_width and not self.width:
+            sizing_mode = f'{mode}_width'
+        elif expand_height and not self.height and allow_height_scale:
+            sizing_mode = f'{mode}_height'
+        if sizing_mode is None:
+            return {'sizing_mode': props.get('sizing_mode')}
+
+        properties = {'sizing_mode': sizing_mode}
+        if (sizing_mode.endswith(("_width", "_both")) and
+            widths and 'min_width' not in properties):
+            width_op = max if self._direction in ('vertical', None) else sum
+            min_width = width_op(widths)
+            op_widths = [min_width]
+            if 'max_width' in properties:
+                op_widths.append(properties['max_width'])
+            properties['min_width'] = min(op_widths)
+        if (sizing_mode.endswith(("_height", "_both")) and
+            heights and 'min_height' not in properties):
+            height_op = max if self._direction in ('horizontal', None) else sum
+            min_height = height_op(heights)
+            op_heights = [min_height]
+            if 'max_height' in properties:
+                op_heights.append(properties['max_height'])
+            properties['min_height'] = min(op_heights)
+        return properties
+
+
+class Panel(Reactive, SizingModeMixin):
     """
     Abstract baseclass for a layout of Viewables.
     """
@@ -52,9 +182,6 @@ class Panel(Reactive):
 
     # Bokeh model used to render this Panel
     _bokeh_model: ClassVar[type[Model]]
-
-    # Direction the layout flows in
-    _direction: ClassVar[str | None] = None
 
     # Parameters which require the preprocessors to be re-run
     _preprocess_params: ClassVar[list[str]] = []
@@ -116,7 +243,8 @@ class Panel(Reactive):
                     width=msg.get('width', model.width),
                     min_width=msg.get('min_width', model.min_width),
                     margin=msg.get('margin', model.margin)
-                )
+                ),
+                self._direction
             ))
         else:
             old_children = None
@@ -184,128 +312,10 @@ class Panel(Reactive):
         objects, _ = self._get_objects(model, [], doc, root, comm)
         props = self._get_properties(doc)
         props[self._property_mapping['objects']] = objects
-        props.update(self._compute_sizing_mode(objects, props))
+        props.update(self._compute_sizing_mode(objects, props, self._direction))
         model.update(**props)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
-
-    def _compute_sizing_mode(self, children, props):
-        """
-        Handles inference of correct layout sizing mode by inspecting
-        the children and adapting to their layout properties. This
-        aims to provide a layer of backward compatibility for the
-        layout behavior before v1.0 and provide general usability
-        improvements.
-
-        The code iterates over the children and extracts their sizing_mode,
-        width and height. Based on these values we infer a few overrides
-        for the container sizing_mode, width and height:
-
-        - If a child is responsive in width then the container should
-          also be responsive in width (unless it has a fixed size).
-        - If a container is vertical (e.g. a Column) and a child is
-          responsive in height then the container should also be
-          responsive.
-        - If a container is horizontal (e.g. a Row) and all children
-          are responsive in height then the container should also be
-          responsive. This behavior is asymmetrical with height
-          because there isn't always vertical space to expand into
-          and it is better for the component to match the height of
-          the other children.
-        - Always compute the fixed sizes of the children (if available)
-          and provide this as min_width and min_height settings to
-          ensure sufficient space is available.
-        """
-        margin = props.get('margin', self.margin)
-        if margin is None:
-            margin = 0
-        sizing_mode = props.get('sizing_mode', self.sizing_mode)
-        if sizing_mode == 'fixed':
-            return {}
-
-        # Iterate over children and determine responsiveness along
-        # each axis, scaling and the widths of each component.
-        heights, widths = [], []
-        all_expand_height, expand_width, expand_height, scale = True, False, False, False
-        for child in children:
-            smode = child.sizing_mode
-            if smode and 'scale' in smode:
-                scale = True
-
-            width_expanded = smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
-            height_expanded = smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both')
-            expand_width |= width_expanded
-            expand_height |= height_expanded
-            if width_expanded:
-                width = child.min_width
-            else:
-                width = child.width
-                if not child.width:
-                    width = child.min_width
-            if width:
-                if isinstance(margin, tuple):
-                    if len(margin) == 2:
-                        width += margin[1]*2
-                    else:
-                        width += margin[1] + margin[3]
-                else:
-                    width += margin*2
-                widths.append(width)
-
-            if height_expanded:
-                height = child.min_height
-            else:
-                height = child.height
-                if height:
-                    all_expand_height = False
-                else:
-                    height = child.min_height
-            if height:
-                if isinstance(margin, tuple):
-                    if len(margin) == 2:
-                        height += margin[0]*2
-                    else:
-                        height += margin[0] + margin[2]
-                else:
-                    height += margin*2
-                heights.append(height)
-
-        # Infer new sizing mode based on children
-        mode = 'scale' if scale else 'stretch'
-        if self._direction == 'horizontal':
-            allow_height_scale = all_expand_height
-        else:
-            allow_height_scale = True
-        if expand_width and expand_height and not self.width and not self.height:
-            if allow_height_scale or 'both' in (sizing_mode or ''):
-                sizing_mode = f'{mode}_both'
-            else:
-                sizing_mode = f'{mode}_width'
-        elif expand_width and not self.width:
-            sizing_mode = f'{mode}_width'
-        elif expand_height and not self.height and allow_height_scale:
-            sizing_mode = f'{mode}_height'
-        if sizing_mode is None:
-            return {'sizing_mode': props.get('sizing_mode')}
-
-        properties = {'sizing_mode': sizing_mode}
-        if (sizing_mode.endswith(("_width", "_both")) and
-            widths and 'min_width' not in properties):
-            width_op = max if self._direction in ('vertical', None) else sum
-            min_width = width_op(widths)
-            op_widths = [min_width]
-            if 'max_width' in properties:
-                op_widths.append(properties['max_width'])
-            properties['min_width'] = min(op_widths)
-        if (sizing_mode.endswith(("_height", "_both")) and
-            heights and 'min_height' not in properties):
-            height_op = max if self._direction in ('horizontal', None) else sum
-            min_height = height_op(heights)
-            op_heights = [min_height]
-            if 'max_height' in properties:
-                op_heights.append(properties['max_height'])
-            properties['min_height'] = min(op_heights)
-        return properties
 
     #----------------------------------------------------------------
     # Public API
