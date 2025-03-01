@@ -27,7 +27,6 @@ from ..layout import (
     Column, Feed, ListPanel, WidgetBox,
 )
 from ..layout.card import Card
-from ..layout.spacer import VSpacer
 from ..pane.image import SVG, ImageBase
 from ..pane.markup import HTML, Markdown
 from ..util import to_async_gen
@@ -273,12 +272,13 @@ class ChatFeed(ListPanel):
             load_buffer=self.load_buffer,
             auto_scroll_limit=self.auto_scroll_limit,
             scroll_button_threshold=self.scroll_button_threshold,
+            height=None,
             view_latest=self.view_latest,
             css_classes=["chat-feed-log"],
             stylesheets=self._stylesheets,
+            height_policy="max",
             **linked_params
         )
-        self._chat_log.height = None
         card_params = linked_params.copy()
         card_stylesheets = (
             self._stylesheets +
@@ -307,7 +307,6 @@ class ChatFeed(ListPanel):
         # we have a card for the title
         self._card = self._card_type(
             self._chat_log,
-            VSpacer(),
             **card_params
         )
 
