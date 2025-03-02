@@ -155,7 +155,7 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
 
     Parameters
     ----------
-    parameterized: param.Parameterized
+    parameterized: param.Parameterized | type[param.Parameterized]
         The Parameterized class or instance from which to create the
         DataModel
     name: str or None
@@ -172,7 +172,6 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
     -------
     DataModel
     """
-
     properties = {}
     for pname in parameterized.param:
         if pname in ignore:
@@ -182,7 +181,7 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
             continue
         ptype = types.get(pname, type(p))
         prop = PARAM_MAPPING.get(ptype)
-        if isinstance(parameterized, Syncable):
+        if isinstance(parameterized, Syncable) or (isinstance(parameterized, type) and issubclass(parameterized, Syncable)):
             pname = parameterized._property_mapping.get(pname, pname)
         if pname == 'name' or pname is None:
             continue
