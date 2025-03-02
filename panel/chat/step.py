@@ -20,10 +20,10 @@ from .utils import (
 )
 
 DEFAULT_STATUS_BADGES = {
-    "pending": BooleanStatus(value=False, margin=0, color="primary"),
-    "running": BooleanStatus(value=True, margin=0, color="warning"),
-    "success": BooleanStatus(value=True, margin=0, color="success"),
-    "failed": BooleanStatus(value=True, margin=0, color="danger"),
+    "pending": lambda: BooleanStatus(value=False, margin=0, color="primary"),
+    "running": lambda: BooleanStatus(value=True, margin=0, color="warning"),
+    "success": lambda: BooleanStatus(value=True, margin=0, color="success"),
+    "failed": lambda: BooleanStatus(value=True, margin=0, color="danger"),
 }
 
 
