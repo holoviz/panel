@@ -171,6 +171,11 @@ export class FeedView extends ColumnView {
     return created
   }
 
+  override _update_layout(): void {
+    super._update_layout()
+    this.style.append(":host > div", {max_height: "unset"})
+  }
+
   override render(): void {
     this._rendered = false
     super.render()
