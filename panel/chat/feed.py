@@ -286,19 +286,19 @@ class ChatFeed(ListPanel):
             self.param.card_params.rx().get('stylesheets', [])
         )
         card_params.update(
-            margin=self.param.margin,
             align=self.param.align,
-            header=self.param.header,
-            height=self.param.height,
-            hide_header=self.param.header.rx().rx.in_((None, "")),
             collapsible=False,
             css_classes=["chat-feed"] + self.param.css_classes.rx(),
+            header=self.header,
             header_css_classes=["chat-feed-header"],
+            height=self.param.height,
+            hide_header=self.param.header.rx().rx.in_((None, "")),
+            margin=self.param.margin,
             max_height=self.param.max_height,
             min_height=self.param.min_height,
-            title_css_classes=["chat-feed-title"],
             styles={"padding": "0px"},
-            stylesheets=card_stylesheets
+            stylesheets=card_stylesheets,
+            title_css_classes=["chat-feed-title"],
         )
         card_overrides = self.card_params.copy()
         card_overrides.pop('stylesheets', None)
@@ -309,6 +309,7 @@ class ChatFeed(ListPanel):
             self._chat_log,
             **card_params
         )
+        self.link(self._card, header='header')
 
         # handle async callbacks using this trick
         self.param.watch(self._prepare_response, '_callback_trigger')
