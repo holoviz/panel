@@ -16,7 +16,7 @@ import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 import {convertUndefined, formatError} from "./util"
 
-import error_css from "styles/models/esm.css"
+import esm_css from "styles/models/esm.css"
 
 const MODULE_CACHE = new Map()
 
@@ -200,9 +200,7 @@ export class ReactiveESMView extends HTMLBoxView {
 
   override stylesheets(): StyleSheetLike[] {
     const stylesheets = super.stylesheets()
-    if (this.model.dev) {
-      stylesheets.push(error_css)
-    }
+    stylesheets.push(esm_css)
     if (this.model.css_bundle) {
       if (this.model.bundle === "url") {
         stylesheets.push(new ImportedStyleSheet(this.model.css_bundle))
