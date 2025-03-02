@@ -183,7 +183,7 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
         ptype = types.get(pname, type(p))
         prop = PARAM_MAPPING.get(ptype)
         if isinstance(parameterized, Syncable):
-            pname = parameterized._rename.get(pname, pname)
+            pname = parameterized._property_mapping.get(pname, pname)
         if pname == 'name' or pname is None:
             continue
         nullable = getattr(p, 'allow_None', False)
