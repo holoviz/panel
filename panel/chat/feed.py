@@ -226,6 +226,8 @@ class ChatFeed(ListPanel):
 
     _card_type: ClassVar[type[Card]] = Card
     _message_type: ClassVar[type[ChatMessage]] = ChatMessage
+    _step_type: ClassVar[type[ChatStep]] = ChatStep
+
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
@@ -836,7 +838,7 @@ class ChatFeed(ListPanel):
             ]
             if "context_exception" not in step_params:
                 step_params["context_exception"] = self.callback_exception
-            step = ChatStep(**step_params)
+            step = self._step_type(**step_params)
 
         step._instance = self
 
