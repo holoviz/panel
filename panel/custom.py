@@ -170,7 +170,10 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
         # Create model with unique name
         ReactiveMetaBase._name_counter[name] += 1
         model_name = f'{name}{ReactiveMetaBase._name_counter[name]}'
-        ignored = [p for p in Reactive.param if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)]
+        ignored = [
+            p for p in Reactive.param
+            if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)
+        ]
         mcs._data_model = construct_data_model(
             mcs, name=model_name, ignore=ignored, extras={'esm_constants': param.Dict}
         )
@@ -426,10 +429,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         ]
         for k, v in self.param.values().items():
             p = self.param[k]
-            is_viewable = is_viewable_param(p)
-            if (k in ignored and k != 'name') or ((p.precedence or 0) < 0) or is_viewable:
-                if is_viewable and k in props:
-                    props.pop(k)
+            if is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
+                props.pop(k, None)
+                continue
+            elif (k in ignored and k != 'name') or ((p.precedence or 0) < 0):
                 continue
             if k in props:
                 props.pop(k)
@@ -486,7 +489,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         children = {}
         for k, v in self.param.values().items():
             p = self.param[k]
-            if not is_viewable_param(p):
+            if not is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
                 continue
             children[k] = self._get_child_model(v, doc, root, parent, comm)
         return children
@@ -511,7 +514,9 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         children = self._get_children(model.data, doc, root, model, comm)
         model.data.update(**children)
         model.children = list(children)  # type: ignore
-        self._models[root.ref['id']] = (model, parent)
+        ref = root.ref['id']
+        self._models[ref] = (model, parent)
+        self._patch_datamodel_ref(model.data, ref)
         self._link_props(props['data'], self._linked_properties, doc, root, comm)
         self._register_events('dom_event', 'data_event', model=model, doc=doc, comm=comm)
         self._setup_autoreload()
@@ -572,7 +577,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     def _send_msg(self, data: Any) -> None:
         """
         Sends data to the frontend which can be observed on the frontend
-        with the `model.on_msg("msg:custom", callback)` API.
+        with the `model.on("msg:custom", callback)` API.
 
         Parameters
         ----------

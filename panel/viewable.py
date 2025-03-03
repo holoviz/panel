@@ -105,10 +105,10 @@ class Layoutable(param.Parameterized):
         Minimal height of the component (in pixels) if height is adjustable.""")
 
     max_width = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""")
+        Maximum width of the component (in pixels) if width is adjustable.""")
 
     max_height = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""")
+        Maximum height of the component (in pixels) if height is adjustable.""")
 
     margin = Margin(default=0, doc="""
         Allows to create additional space around the component. May
@@ -1261,7 +1261,7 @@ def is_viewable_param(parameter: param.Parameter) -> bool:
     """
     if isinstance(parameter, (Child, Children)):
         return True
-    if isinstance(parameter, param.ClassSelector) and _is_viewable_class_selector(parameter):
+    if isinstance(parameter, param.ClassSelector) and _is_viewable_class_selector(parameter) and parameter.is_instance:
         return True
     if isinstance(parameter, param.List) and _is_viewable_list(parameter):
         return True

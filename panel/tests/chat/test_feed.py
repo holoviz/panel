@@ -48,9 +48,9 @@ class TestChatFeed:
 
     def test_update_header(self):
         chat_feed = ChatFeed(header="1")
-        assert chat_feed._card.header == "1"
+        assert chat_feed._card.header.object == "1"
         chat_feed.header = "2"
-        assert chat_feed._card.header == "2"
+        assert chat_feed._card.header.object == "2"
         chat_feed.header = HTML("<b>3</b>")
         assert chat_feed._card.header.object == "<b>3</b>"
 
@@ -73,7 +73,7 @@ class TestChatFeed:
             "hide_header": False
         }
         assert chat_feed._card.header_background == "red"
-        assert chat_feed._card.header == "Test"
+        assert chat_feed._card.header.object == "Test"
         assert not chat_feed._card.hide_header
 
     async def test_send(self, chat_feed):

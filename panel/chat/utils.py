@@ -5,6 +5,7 @@ import re
 from collections.abc import Iterable
 from io import BytesIO
 from textwrap import indent
+from types import FunctionType
 from typing import Any, Union
 
 import param
@@ -48,6 +49,8 @@ def avatar_lookup(
 
     # now lookup the avatar
     avatar = updated_avatars.get(alpha_numeric_key, avatar)
+    if isinstance(avatar, FunctionType):
+        avatar = avatar()
     if isinstance(avatar, str):
         avatar = avatar.format(dist_path=CDN_DIST)
     return avatar
