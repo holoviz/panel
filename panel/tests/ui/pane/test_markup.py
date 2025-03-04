@@ -25,6 +25,23 @@ def test_update_markdown_pane(page):
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Updated\n')
 
+def test_markdown_pane_css_id(page):
+    md = Markdown('Initial', css_id='foo')
+
+    serve_component(page, md)
+
+    expect(page.locator("#foo").locator("div")).to_have_text('Initial\n')
+
+def test_markdown_pane_css_id_added(page):
+    md = Markdown('Initial', css_id='foo')
+    row = Row()
+
+    serve_component(page, row)
+
+    row.append(md)
+
+    expect(page.locator("#foo").locator("div")).to_have_text('Initial\n')
+
 def test_update_markdown_pane_empty(page):
     md = Markdown('Initial')
 
