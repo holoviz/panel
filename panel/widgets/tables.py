@@ -234,7 +234,7 @@ class BaseTable(ReactiveData, Widget):
             if isinstance(data, pd.DataFrame):
                 raise ValueError("DataFrame contains duplicate column names.")
 
-            col_kwargs = {}
+            col_kwargs: dict[str, Any] = {}
             kind = data.dtype.kind
             editor: CellEditor
             formatter: CellFormatter | None = self.formatters.get(col)
@@ -314,9 +314,11 @@ class BaseTable(ReactiveData, Widget):
             elif col in self.indexes and col.startswith('level_'):
                 title = ''
 
+            if formatter:
+                col_kwargs["formatter"] = formatter
+
             column = TableColumn(field=str(col_name), title=title,
-                                 editor=editor, formatter=formatter,
-                                 **col_kwargs)
+                                 editor=editor, **col_kwargs)
             columns.append(column)
         return columns
 
@@ -385,7 +387,7 @@ class BaseTable(ReactiveData, Widget):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         properties = self._get_properties(doc)
-        model = self._widget_type(**properties)  # type: ignore
+        model = cast(Model, self._widget_type(**properties))  # type: ignore[misc]
         root = root or model
         self._link_props(model.source, ['data'], doc, root, comm)
         self._link_props(model.source.selected, ['indices'], doc, root, comm)

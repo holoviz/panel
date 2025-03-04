@@ -162,7 +162,8 @@ class DeckGL(ModelPane):
         # Create index of sources by columns
         source_columns = defaultdict(list)
         for i, source in enumerate(sources):
-            key = tuple(sorted(source.data.keys()))
+            # source.data = cast("DataDict", source.data)
+            key = tuple(sorted(source.data.keys()))  # type: ignore[operator]
             source_columns[key].append((i, source))
 
         # Process
@@ -187,7 +188,8 @@ class DeckGL(ModelPane):
                     if not np.array_equal(data[col], cds.data[col]):
                         updates[col] = values
                 if updates:
-                    cds.data.update(updates)
+                    # cds.data = cast("DataDict", cds.data)
+                    cds.data.update(updates)  # type: ignore[arg-type]
                 unused.remove(cds)
             else:
                 unprocessed.append((layer, data))
