@@ -31,7 +31,7 @@ nomkl = "*"
 pip = "*"
 # Required
 bleach = "*"
-bokeh = ">=3.7.0.dev8,<3.8.0"
+bokeh = ">=3.7.0.dev9,<3.8.0"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
