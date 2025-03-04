@@ -81,7 +81,7 @@ export function model_getter(target: ReactiveESMView, name: string) {
         if (p.startsWith("change:")) {
           p = p.slice("change:".length)
         }
-        if (p in model.attributes || p in model.data.attributes) {
+        if (p in model.attributes || p.split(".")[0] in model.data.attributes) {
           model.unwatch(target, p, callback)
           continue
         } else if (p === "msg:custom") {
@@ -108,7 +108,7 @@ export function model_getter(target: ReactiveESMView, name: string) {
         if (p.startsWith("change:")) {
           p = p.slice("change:".length)
         }
-        if (p in model.attributes || p in model.data.attributes) {
+        if (p in model.attributes || p.split(".")[0] in model.data.attributes) {
           model.watch(target, p, callback)
           continue
         } else if (p === "msg:custom") {
@@ -533,8 +533,27 @@ export class ReactiveESM extends HTMLBox {
     } else {
       this._esm_watchers[prop] = [[view, cb]]
     }
-    if (prop in this.data.properties) {
-      this.data.property(prop).change.connect(cb)
+
+    const propPath = prop.split(".")
+    let target: any = this.data
+    let resolvedProp: string | null = null
+    for (let i = 0; i < propPath.length - 1; i++) {
+      if (target && target.properties && propPath[i] in target.properties) {
+        target = target[propPath[i]]
+      } else {
+        // Break if any level of the path is invalid
+        target = null
+        break
+      }
+    }
+
+    if (target && target.properties && propPath[propPath.length - 1] in target.properties) {
+      resolvedProp = propPath[propPath.length - 1]
+    }
+
+    // Attach watcher if property is found
+    if (resolvedProp && target) {
+      target.property(resolvedProp).change.connect(cb)
     } else if (prop in this.properties) {
       this.property(prop).change.connect(cb)
     }
@@ -544,22 +563,48 @@ export class ReactiveESM extends HTMLBox {
     if (!(prop in this._esm_watchers)) {
       return false
     }
+
+    // Filter out the specific callback for this view
     const remaining = []
     for (const [wview, wcb] of this._esm_watchers[prop]) {
       if (wview !== view || wcb !== cb) {
-        remaining.push([wview, cb])
+        remaining.push([wview, wcb])
       }
     }
+
+    // Update or delete watcher list
     if (remaining.length > 0) {
       this._esm_watchers[prop] = remaining
     } else {
       delete this._esm_watchers[prop]
     }
-    if (prop in this.data.properties) {
-      return this.data.property(prop).change.disconnect(cb)
+
+    // Resolve nested properties
+    const propPath = prop.split(".")
+    let target: any = this.data
+    let resolvedProp: string | null = null
+
+    for (let i = 0; i < propPath.length - 1; i++) {
+      if (target && target.properties && propPath[i] in target.properties) {
+        target = target[propPath[i]]
+      } else {
+        // Stop if the path does not exist
+        target = null
+        break
+      }
+    }
+
+    if (target && target.properties && propPath[propPath.length - 1] in target.properties) {
+      resolvedProp = propPath[propPath.length - 1]
+    }
+
+    // Detach watcher if property is found
+    if (resolvedProp && target) {
+      return target.property(resolvedProp).change.disconnect(cb)
     } else if (prop in this.properties) {
       return this.property(prop).change.disconnect(cb)
     }
+
     return false
   }
 
@@ -569,7 +614,7 @@ export class ReactiveESM extends HTMLBox {
       const remaining = []
       for (const [wview, cb] of this._esm_watchers[p]) {
         if (wview === view) {
-          prop.change.disconnect(cb)
+          prop?.change.disconnect(cb)
         } else {
           remaining.push([wview, cb])
         }

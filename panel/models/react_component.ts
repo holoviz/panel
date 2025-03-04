@@ -124,14 +124,35 @@ class Child extends React.Component {
 function react_getter(target, name) {
   if (name == "useState") {
     return (prop) => {
-      const data_model = target.model.data
-      if (Reflect.has(data_model, prop)) {
-        const [value, setValue] = React.useState(data_model.attributes[prop]);
-        react_proxy.on(prop, () => setValue(data_model.attributes[prop]))
-        React.useEffect(() => data_model.setv({[prop]: value}), [value])
-        return [value, setValue]
+      const data_model = target.model.data;
+      const propPath = prop.split(".");
+      let targetModel = data_model;
+      let resolvedProp = null;
+
+      for (let i = 0; i < propPath.length - 1; i++) {
+        if (targetModel && targetModel.properties && propPath[i] in targetModel.properties) {
+          targetModel = targetModel[propPath[i]];
+        } else {
+          // Stop if any part of the path is missing
+          targetModel = null;
+          break;
+        }
       }
-      return undefined
+      if (targetModel && targetModel.attributes && propPath[propPath.length - 1] in targetModel.attributes) {
+        resolvedProp = propPath[propPath.length - 1];
+      }
+      if (resolvedProp && targetModel) {
+        const [value, setValue] = React.useState(targetModel.attributes[resolvedProp]);
+
+        react_proxy.on(prop, () => setValue(targetModel.attributes[resolvedProp]));
+
+        React.useEffect(() => {
+            targetModel.setv({ [resolvedProp]: value });
+        }, [value]);
+
+        return [value, setValue];
+      }
+      throw ReferenceError("Could not resolve " + prop + " on " + target.model.class_name)
     }
   } else if (name === "get_child") {
     return (child) => {

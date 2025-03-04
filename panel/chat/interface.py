@@ -163,11 +163,12 @@ class ChatInterface(ChatFeed):
         The rendered buttons.""")
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_interface.css"]
+    _input_type: ClassVar[type[WidgetBase]] = ChatAreaInput
 
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
         if widgets is None:
-            params["widgets"] = [ChatAreaInput(placeholder="Send a message")]
+            params["widgets"] = [self._input_type(placeholder="Send a message")]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
@@ -204,15 +205,7 @@ class ChatInterface(ChatFeed):
         if self.show_button_name is None:
             self.show_button_name = self.width is None or self.width >= 400
 
-    @param.depends("widgets", "button_properties", watch=True)
-    def _init_widgets(self):
-        """
-        Initialize the input widgets.
-
-        Returns
-        -------
-        The input widgets.
-        """
+    def _init_button_data(self):
         default_button_properties = {
             "send": {"icon": "send", "_default_callback": self._click_send},
             "stop": {"icon": "player-stop", "_default_callback": self._click_stop},
@@ -221,7 +214,6 @@ class ChatInterface(ChatFeed):
             "clear": {"icon": "trash", "_default_callback": self._click_clear},
         }
         self._allow_revert = len(self.button_properties) == 0
-
         button_properties = {**default_button_properties, **self.button_properties}
         for index, (name, properties) in enumerate(button_properties.items()):
             name = name.lower()
@@ -256,6 +248,16 @@ class ChatInterface(ChatFeed):
                 js_on_click=js_on_click,
             )
 
+    @param.depends("widgets", "button_properties", watch=True)
+    def _init_widgets(self):
+        """
+        Initialize the input widgets.
+
+        Returns
+        -------
+        The input widgets.
+        """
+        self._init_button_data()
         widgets = self.widgets
         if isinstance(self.widgets, WidgetBase):
             widgets = [self.widgets]
@@ -290,7 +292,7 @@ class ChatInterface(ChatFeed):
             # TextAreaInput will trigger auto send!
             auto_send = (
                 isinstance(widget, tuple(self.auto_send_types)) or
-                type(widget) in (TextInput, ChatAreaInput)
+                type(widget) in (TextInput, self._input_type)
             )
             if auto_send and widget in new_widgets:
                 callback = partial(self._button_data["send"].callback, self)
@@ -299,7 +301,7 @@ class ChatInterface(ChatFeed):
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-widget"]
             )
-            if isinstance(widget, ChatAreaInput):
+            if isinstance(widget, self._input_type):
                 self.link(widget, disabled="disabled_enter")
 
             self._buttons = {}

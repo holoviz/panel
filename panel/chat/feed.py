@@ -225,6 +225,8 @@ class ChatFeed(ListPanel):
     _disabled_stack = param.List(doc="""
         The previous disabled state of the feed.""")
 
+    _card_type: ClassVar[type[Card]] = Card
+    _message_type: ClassVar[type[ChatMessage]] = ChatMessage
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
@@ -238,7 +240,7 @@ class ChatFeed(ListPanel):
         # forward message params to ChatMessage for convenience
         message_params = params.get("message_params", {})
         for param_key in params.copy():
-            if param_key not in self.param and param_key in ChatMessage.param:
+            if param_key not in self.param and param_key in self._message_type.param:
                 message_params[param_key] = params.pop(param_key)
         params["message_params"] = message_params
 
@@ -246,7 +248,7 @@ class ChatFeed(ListPanel):
 
         if self.help_text:
             self.objects = [
-                ChatMessage(
+                self._message_type(
                     self.help_text,
                     user="Help",
                     show_edit_icon=False,
@@ -303,7 +305,7 @@ class ChatFeed(ListPanel):
         card_params.update(card_overrides)
         self.link(self._chat_log, objects='objects', bidirectional=True)
         # we have a card for the title
-        self._card = Card(
+        self._card = self._card_type(
             self._chat_log,
             VSpacer(),
             **card_params
@@ -359,7 +361,7 @@ class ChatFeed(ListPanel):
             PLACEHOLDER_SVG, sizing_mode="fixed", width=35, height=35,
             css_classes=["rotating-placeholder"]
         )
-        self._placeholder = ChatMessage(
+        self._placeholder = self._message_type(
             self.placeholder_text,
             avatar=loading_avatar,
             css_classes=["message"],
@@ -436,7 +438,7 @@ class ChatFeed(ListPanel):
                 (isinstance(user, str) and user.lower() not in (self.callback_user.lower(), "help"))
             )
 
-        message = ChatMessage(**message_params)
+        message = self._message_type(**message_params)
         message.param.watch(self._on_edit_message, "edited")
         return message
 
@@ -863,7 +865,7 @@ class ChatFeed(ListPanel):
             if default_layout == "column":
                 layout = Column
             elif default_layout == "card":
-                layout = Card
+                layout = self._card_type
                 input_layout_params["header_css_classes"] = ["card-header"]
                 title = layout_params.pop("title", None)
                 input_layout_params["header"] = HTML(

@@ -1591,6 +1591,17 @@ class ReactiveCustomBase(Reactive):
             ] + props['stylesheets']
         return props
 
+    @classmethod
+    def _patch_datamodel_ref(cls, props, ref):
+        """
+        Ensure all DataModels have reference to the root model to ensure
+        that they can be cleaned up correctly.
+        """
+        ref_str = f"__ref:{ref}"
+        for m in props.select({'type': DataModel}):
+            if ref_str not in m.tags:
+                m.tags.append(ref_str)
+
     def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
         if not msg:
             return
@@ -1618,10 +1629,12 @@ class ReactiveCustomBase(Reactive):
         try:
             model.update(**transformed)
         finally:
-            if old:
+            if prev_changing:
                 self._changing[root.ref['id']] = prev_changing
             else:
                 del self._changing[root.ref['id']]
+        if isinstance(model, DataModel):
+            self._patch_datamodel_ref(model, root.ref['id'])
 
 
 
@@ -2063,21 +2076,6 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                 linked_properties.append(children_param)
         return tuple(linked_properties)
 
-    @classmethod
-    def _patch_datamodel_ref(cls, props, ref):
-        """
-        Ensure all DataModels have reference to the root model to ensure
-        that they can be cleaned up correctly.
-        """
-        if isinstance(props, dict):
-            for v in props.values():
-                cls._patch_datamodel_ref(v, ref)
-        elif isinstance(props, list):
-            for v in props:
-                cls._patch_datamodel_ref(v, ref)
-        elif isinstance(props, DataModel):
-            props.tags.append(f"__ref:{ref}")
-
     def _get_model(
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
@@ -2105,10 +2103,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
 
         ref = root.ref['id']
         data_model: DataModel = model.data # type: ignore
-        for v in data_model.properties_with_values():
-            if isinstance(v, DataModel):
-                v.tags.append(f"__ref:{ref}")
-        self._patch_datamodel_ref(data_model.properties_with_values(), ref)
+        self._patch_datamodel_ref(data_model, ref)
         model.update(children=self._get_children(doc, root, model, comm))
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
         self._link_props(data_model, self._linked_properties, doc, root, comm)
@@ -2137,11 +2132,6 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         )
         for cb in event_cbs:
             cb(event)
-
-    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
-        super()._set_on_model(msg, root, model)
-        if isinstance(model, DataModel):
-            self._patch_datamodel_ref(model.properties_with_values(), root.ref['id'])
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],

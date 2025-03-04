@@ -281,6 +281,70 @@ def test_unwatch(page, component):
     expect(page.locator('h2')).to_have_text('Foo!')
 
 
+class Nested(param.Parameterized):
+
+    text = param.String()
+
+
+class JSParent(JSComponent):
+
+    child = param.ClassSelector(class_=Nested)
+
+    _esm = """
+    export function render({ model, el }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = model.child.text
+      const cb = () => {
+        h1.textContent = model.child.text
+      }
+      model.on("change:child.text", cb)
+      el.append(h1)
+    }
+    """
+
+
+class ReactParent(ReactComponent):
+
+    child = param.ClassSelector(class_=Nested)
+
+    _esm = """
+    export function render({ model, el }) {
+      const [text] = model.useState("child.text")
+      return <h1>{text}</h1>
+    }
+    """
+
+
+class AnyWidgetParent(AnyWidgetComponent):
+
+    child = param.ClassSelector(class_=Nested)
+
+    _esm = """
+    export function render({ model, el }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = model.get("child.text")
+      const cb = () => {
+        h1.textContent = model.get("child.text")
+      }
+      model.on("change:child.text", cb)
+      el.append(h1)
+    }
+    """
+
+
+@pytest.mark.parametrize('component', [JSParent, ReactParent, AnyWidgetParent])
+def test_nested_update(page, component):
+    example = component(child=Nested(text='Hello World!'))
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('Hello World!')
+
+    example.child.text = "Foo!"
+
+    expect(page.locator('h1')).to_have_text('Foo!')
+
+
 class JSInput(JSComponent):
 
     text = param.String()
@@ -294,6 +358,24 @@ class JSInput(JSComponent):
         model.text = event.target.value;
       })
       return inp
+    }
+    """
+
+
+class AnyWidgetInput(AnyWidgetComponent):
+
+    text = param.String()
+
+    _esm = """
+    export function render({ model, el }) {
+      const inp = document.createElement('input')
+      inp.id = 'input'
+      inp.value = model.get("text")
+      inp.addEventListener('change', (event) => {
+        model.set("text", event.target.value)
+        model.save_changes()
+      })
+      el.append(inp)
     }
     """
 
@@ -314,7 +396,7 @@ class ReactInput(ReactComponent):
     }
     """
 
-@pytest.mark.parametrize('component', [JSInput, ReactInput])
+@pytest.mark.parametrize('component', [JSInput, ReactInput, AnyWidgetInput])
 def test_gather_input(page, component):
     example = component(text='Hello World!')
 
@@ -329,6 +411,73 @@ def test_gather_input(page, component):
     inp.press('Enter')
 
     wait_until(lambda: example.text == 'Foo!', page)
+
+
+class JSNestedInput(JSComponent):
+
+    child = param.ClassSelector(class_=Nested)
+
+    _esm = """
+    export function render({ model }) {
+      const inp = document.createElement('input')
+      inp.id = 'input'
+      inp.value = model.child.text
+      inp.addEventListener('change', (event) => {
+        model.child.text = event.target.value;
+      })
+      return inp
+    }
+    """
+
+class AnyWidgetNestedInput(AnyWidgetComponent):
+
+    child = param.ClassSelector(class_=Nested)
+
+    _esm = """
+    export function render({ model, el }) {
+      const inp = document.createElement('input')
+      inp.id = 'input'
+      inp.value = model.get("child.text")
+      inp.addEventListener('change', (event) => {
+        model.set("child.text", event.target.value)
+        model.save_changes()
+      })
+      el.append(inp)
+    }
+    """
+
+class ReactNestedInput(ReactComponent):
+
+    child = param.ClassSelector(class_=Nested)
+
+    _esm = """
+    export function render({ model }) {
+      const [text, setText ] = model.useState("child.text")
+      return (
+        <input
+          id="input"
+          value={text}
+          onChange={e => setText(e.target.value)}
+        />
+      )
+    }
+    """
+
+@pytest.mark.parametrize('component', [JSNestedInput, ReactNestedInput, AnyWidgetNestedInput])
+def test_gather_nested_input(page, component):
+    example = component(child=Nested(text='Hello World!'))
+
+    serve_component(page, example)
+
+    inp = page.locator('#input')
+
+    inp.click()
+    for _ in example.child.text:
+        inp.press('Backspace')
+    inp.press_sequentially('Foo!')
+    inp.press('Enter')
+
+    wait_until(lambda: example.child.text == 'Foo!', page)
 
 
 class JSSendEvent(JSComponent):

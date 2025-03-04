@@ -275,7 +275,7 @@ class Select(SingleSelectBase):
             )
 
     def _process_param_change(self, msg: dict[str, Any]) -> dict[str, Any]:
-        groups_provided = 'groups' in msg
+        groups_provided = msg.get('groups') is not None
         msg = super()._process_param_change(msg)
         if groups_provided or 'options' in msg and self.groups:
             groups: dict[str, list[str | tuple[str, str]]] = self.groups
