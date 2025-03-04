@@ -9,7 +9,9 @@ import sys
 
 from collections import defaultdict
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, cast,
+)
 
 import numpy as np
 import param
@@ -24,6 +26,7 @@ from .base import ModelPane
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
+    from bokeh.models import DataDict
     from pyviz_comms import Comm
 
 
@@ -162,6 +165,7 @@ class DeckGL(ModelPane):
         # Create index of sources by columns
         source_columns = defaultdict(list)
         for i, source in enumerate(sources):
+            source.data = cast("DataDict", source.data)
             key = tuple(sorted(source.data.keys()))
             source_columns[key].append((i, source))
 
@@ -187,6 +191,7 @@ class DeckGL(ModelPane):
                     if not np.array_equal(data[col], cds.data[col]):
                         updates[col] = values
                 if updates:
+                    cds.data = cast("DataDict", cds.data)
                     cds.data.update(updates)
                 unused.remove(cds)
             else:
