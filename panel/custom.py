@@ -229,6 +229,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _esm: ClassVar[str | os.PathLike] = ""
 
+    _esm_shared: ClassVar[dict[str, str | os.PathLike]] = {}
+
     # Specifies exports to make available to JS in a bundled file
     # 1. Default export: "<export>"
     # 2. Import all (`* as`): "*<export>"
