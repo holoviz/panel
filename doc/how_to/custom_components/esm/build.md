@@ -256,6 +256,35 @@ panel compile my_package.my_module my_package.subpackage.other_module
 
 you will end up with a single `custom.bundle.js` file placed in the `my_package/dist` directory.
 
+### Shared Modules
+
+When developing multiple components you may also have some shared code for utilities that will be reused. Such shared modules can be included by defining a dictionary of modules under `_esm_shared` variable:
+
+```python
+class Base(JSComponent):
+    _bundle = './dist/custom.bundle.js'
+
+    _esm_shared = {
+        'utils': pathlib.Path(__file__).parent / 'utilities.js'
+    }
+```
+
+Inside `utilities.js` you might export a few functions:
+
+```javascript
+export function log(msg) {
+  console.log(msg)
+}
+```
+
+You can import from the shared bundle by name:
+
+```javascript
+import {log} from "./utils"
+```
+
+When running the `panel compile` command the shared code will be included in the bundle.
+
 (build-dir)=
 #### Using the `--build-dir` Option
 
