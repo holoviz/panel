@@ -428,10 +428,12 @@ def generate_project(
         shared_modules.update(component._esm_shared)
 
     for name, shared_module in shared_modules.items():
-        if isinstance(shared_module, pathlib.Path):
-            shared_module = shared_module.read_text(encoding='utf-8')
+        if isinstance(shared_module, os.PathLike):
+            code = shared_module.read_text(encoding='utf-8')
+        else:
+            code = shared_module
         with open(path / f'{name}.js', 'w') as shared_file:
-            shared_file.write(shared_module)
+            shared_file.write(code)
 
     # Create package.json and write to temp directory
     package_json = {"dependencies": dependencies}
