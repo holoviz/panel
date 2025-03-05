@@ -588,10 +588,11 @@ class TemplateActions(ReactiveHTML):
 class BasicTemplate(BaseTemplate):
     """
     BasicTemplate provides a baseclass for templates with a basic
-    organization including a header, sidebar and main area. Unlike the
-    more generic Template class these default templates make it easy
-    for a user to generate an application with a polished look and
-    feel without having to write any Jinja2 template themselves.
+    organization including a header, sidebar, main area and secondary
+    right sidebar. Unlike the more generic Template class these default
+    templates make it easy for a user to generate an application with a
+    polished look and feel without having to write any Jinja2 template
+    themselves.
     """
 
     busy_indicator = param.ClassSelector(default=LoadingSpinner(width=20, height=20),
@@ -601,6 +602,9 @@ class BasicTemplate(BaseTemplate):
 
     collapsed_sidebar = param.Selector(default=False, constant=True, doc="""
         Whether the sidebar (if present) is initially collapsed.""")
+
+    collapsed_right_sidebar = param.Selector(default=False, constant=True, doc="""
+       Whether the secondary sidebar in the right (if present) is initially collapsed.""")
 
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
@@ -615,8 +619,14 @@ class BasicTemplate(BaseTemplate):
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
 
+    right_sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
+        A list-like container which populates the secondary sidebar (right sidebar).""")
+
     sidebar_width = param.Integer(default=330, doc="""
         The width of the sidebar in pixels. Default is 330.""")
+
+    right_sidebar_width = param.Integer(default=330, doc="""
+        The width of the secondary sidebar (right sidebar) in pixels. Default is 330.""")
 
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the modal""")
@@ -714,6 +724,10 @@ class BasicTemplate(BaseTemplate):
             params['sidebar'] = ListLike()
         else:
             params['sidebar'] = self._get_params(params['sidebar'], self.param.sidebar.class_)
+        if 'right_sidebar' not in params:
+            params['right_sidebar'] = ListLike()
+        else:
+            params['right_sidebar'] = self._get_params(params['right_sidebar'], self.param.right_sidebar.class_)
         if 'modal' not in params:
             params['modal'] = ListLike()
         else:
@@ -745,9 +759,11 @@ class BasicTemplate(BaseTemplate):
         self.main.param.watch(self._update_render_items, ['objects'])
         self.modal.param.watch(self._update_render_items, ['objects'])
         self.sidebar.param.watch(self._update_render_items, ['objects'])
+        self.right_sidebar.param.watch(self._update_render_items, ['objects'])
         self.header.param.watch(self._update_render_items, ['objects'])
         self.main.param.trigger('objects')
         self.sidebar.param.trigger('objects')
+        self.right_sidebar.param.trigger('objects')
         self.header.param.trigger('objects')
         self.modal.param.trigger('objects')
 
@@ -811,8 +827,10 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
+        self._render_variables['right_sidebar_width'] = self.right_sidebar_width
         self._render_variables['theme'] = self._design.theme
         self._render_variables['collapsed_sidebar'] = self.collapsed_sidebar
+        self._render_variables['collapsed_right_sidebar'] = self.collapsed_right_sidebar
 
     def _update_busy(self) -> None:
         if self.busy_indicator:
@@ -828,6 +846,8 @@ class BasicTemplate(BaseTemplate):
             tag = 'main'
         elif event.obj is self.sidebar:
             tag = 'nav'
+        elif event.obj is self.right_sidebar:
+            tag = 'right_nav'
         elif event.obj is self.header:
             tag = 'header'
         elif event.obj is self.modal:
@@ -857,6 +877,7 @@ class BasicTemplate(BaseTemplate):
             self._render_items[ref] = (obj, [tag])
         tags = [tags for _, tags in self._render_items.values()]
         self._render_variables['nav'] = any('nav' in ts for ts in tags)
+        self._render_variables['right_nav'] = any('right_nav' in ts for ts in tags)
         self._render_variables['header'] = any('header' in ts for ts in tags)
         self._render_variables['root_labels'] = labels
 

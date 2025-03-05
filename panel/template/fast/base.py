@@ -46,6 +46,9 @@ class FastBaseTemplate(BasicTemplate):
     sidebar_footer = param.String("", doc="""
         A HTML string appended to the sidebar""")
 
+    right_sidebar_footer = param.String("", doc="""
+        A HTML string appended to a secondary sidebar (right sidebar).""")
+
     # Might be extended to accordion or tabs in the future
     main_layout = param.Selector(default="card", label="Layout", objects=[None, "card"], doc="""
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
@@ -101,6 +104,7 @@ class FastBaseTemplate(BasicTemplate):
         self._render_variables["theme_toggle"] = self.theme_toggle
         self._render_variables["theme"] = self.theme.__name__[:-5].lower()
         self._render_variables["sidebar_footer"] = self.sidebar_footer
+        self._render_variables["right_sidebar_footer"] = self.right_sidebar_footer
         self._render_variables["main_layout"] = self.main_layout
 
 
