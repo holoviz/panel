@@ -271,7 +271,7 @@ class BaseTable(ReactiveData, Widget):
                         date_format = '%Y-%m-%d %H:%M:%S'
                     formatter = DateFormatter(format=date_format, text_align='right')
                 else:
-                    params = {}
+                    params: dict[str, Any] = {}
                     if BOKEH_GE_3_6:
                         params['null_format'] = ''
                     formatter = StringFormatter(**params)

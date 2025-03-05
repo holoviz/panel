@@ -493,7 +493,7 @@ class CallbackGenerator:
         else:
             code = f"try {{ {code} }} catch(err) {{ console.log(err) }}"
 
-        src_cb = CustomJS(args=references, code=code, tags=[link_id])  # type: ignore [call-arg]
+        src_cb = CustomJS(args=references, code=code, tags=[link_id])
         changes, events = self._get_triggers(link, src_spec)
         for ch in changes:
             src_model.js_on_change(ch, src_cb)
@@ -508,7 +508,7 @@ class CallbackGenerator:
         reverse_references = dict(references)
         reverse_references['source'] = tgt_model
         reverse_references['target'] = src_model
-        tgt_cb = CustomJS(args=reverse_references, code=code, tags=[link_id])  # type: ignore [call-arg]
+        tgt_cb = CustomJS(args=reverse_references, code=code, tags=[link_id])
         changes, events = self._get_triggers(link, (None, tgt_prop))
         properties = tgt_model.properties()
         for ch in changes:
