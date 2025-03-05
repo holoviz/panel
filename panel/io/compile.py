@@ -430,8 +430,8 @@ def generate_project(
     for name, shared_module in shared_modules.items():
         if isinstance(shared_module, pathlib.Path):
             shared_module = shared_module.read_text(encoding='utf-8')
-        with open(path / f'{name}.js', 'w') as component_file:
-            component_file.write(shared_module)
+        with open(path / f'{name}.js', 'w') as shared_file:
+            shared_file.write(shared_module)
 
     # Create package.json and write to temp directory
     package_json = {"dependencies": dependencies}
