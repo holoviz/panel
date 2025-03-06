@@ -267,6 +267,7 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: ${{ matrix.environment }}
+          install: false
       - name: Test Type
         run: |
           pixi run -e ${{ matrix.environment }} test-type
