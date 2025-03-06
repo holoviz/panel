@@ -27,7 +27,6 @@ from ..layout import (
     Column, Feed, ListPanel, WidgetBox,
 )
 from ..layout.card import Card
-from ..layout.spacer import VSpacer
 from ..pane.image import SVG, ImageBase
 from ..pane.markup import HTML, Markdown
 from ..util import to_async_gen
@@ -227,6 +226,8 @@ class ChatFeed(ListPanel):
 
     _card_type: ClassVar[type[Card]] = Card
     _message_type: ClassVar[type[ChatMessage]] = ChatMessage
+    _step_type: ClassVar[type[ChatStep]] = ChatStep
+
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
@@ -273,12 +274,13 @@ class ChatFeed(ListPanel):
             load_buffer=self.load_buffer,
             auto_scroll_limit=self.auto_scroll_limit,
             scroll_button_threshold=self.scroll_button_threshold,
+            height=None,
             view_latest=self.view_latest,
             css_classes=["chat-feed-log"],
             stylesheets=self._stylesheets,
+            height_policy="max",
             **linked_params
         )
-        self._chat_log.height = None
         card_params = linked_params.copy()
         card_stylesheets = (
             self._stylesheets +
@@ -286,19 +288,19 @@ class ChatFeed(ListPanel):
             self.param.card_params.rx().get('stylesheets', [])
         )
         card_params.update(
-            margin=self.param.margin,
             align=self.param.align,
-            header=self.param.header,
-            height=self.param.height,
-            hide_header=self.param.header.rx().rx.in_((None, "")),
             collapsible=False,
             css_classes=["chat-feed"] + self.param.css_classes.rx(),
+            header=self.header,
             header_css_classes=["chat-feed-header"],
+            height=self.param.height,
+            hide_header=self.param.header.rx().rx.in_((None, "")),
+            margin=self.param.margin,
             max_height=self.param.max_height,
             min_height=self.param.min_height,
-            title_css_classes=["chat-feed-title"],
             styles={"padding": "0px"},
-            stylesheets=card_stylesheets
+            stylesheets=card_stylesheets,
+            title_css_classes=["chat-feed-title"],
         )
         card_overrides = self.card_params.copy()
         card_overrides.pop('stylesheets', None)
@@ -307,9 +309,9 @@ class ChatFeed(ListPanel):
         # we have a card for the title
         self._card = self._card_type(
             self._chat_log,
-            VSpacer(),
             **card_params
         )
+        self.link(self._card, header='header')
 
         # handle async callbacks using this trick
         self.param.watch(self._prepare_response, '_callback_trigger')
@@ -836,7 +838,7 @@ class ChatFeed(ListPanel):
             ]
             if "context_exception" not in step_params:
                 step_params["context_exception"] = self.callback_exception
-            step = ChatStep(**step_params)
+            step = self._step_type(**step_params)
 
         step._instance = self
 

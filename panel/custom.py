@@ -170,7 +170,10 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
         # Create model with unique name
         ReactiveMetaBase._name_counter[name] += 1
         model_name = f'{name}{ReactiveMetaBase._name_counter[name]}'
-        ignored = [p for p in Reactive.param if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)]
+        ignored = [
+            p for p in Reactive.param
+            if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)
+        ]
         mcs._data_model = construct_data_model(
             mcs, name=model_name, ignore=ignored, extras={'esm_constants': param.Dict}
         )
@@ -225,6 +228,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     _constants: ClassVar[dict[str, Any]] = {}
 
     _esm: ClassVar[str | os.PathLike] = ""
+
+    _esm_shared: ClassVar[dict[str, str | os.PathLike]] = {}
 
     # Specifies exports to make available to JS in a bundled file
     # 1. Default export: "<export>"
@@ -426,10 +431,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         ]
         for k, v in self.param.values().items():
             p = self.param[k]
-            is_viewable = is_viewable_param(p)
-            if (k in ignored and k != 'name') or ((p.precedence or 0) < 0) or is_viewable:
-                if is_viewable and k in props:
-                    props.pop(k)
+            if is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
+                props.pop(k, None)
+                continue
+            elif (k in ignored and k != 'name') or ((p.precedence or 0) < 0):
                 continue
             if k in props:
                 props.pop(k)
@@ -486,7 +491,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         children = {}
         for k, v in self.param.values().items():
             p = self.param[k]
-            if not is_viewable_param(p):
+            if not is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
                 continue
             children[k] = self._get_child_model(v, doc, root, parent, comm)
         return children

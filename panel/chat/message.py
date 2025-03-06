@@ -32,7 +32,7 @@ from ..pane.markup import (
 from ..pane.media import Audio, Video
 from ..pane.placeholder import Placeholder
 from ..param import ParamFunction
-from ..viewable import ServableMixin, Viewable
+from ..viewable import Children, ServableMixin, Viewable
 from ..widgets.base import Widget
 from ..widgets.icon import ToggleIcon
 from .icon import ChatCopyIcon, ChatReactionIcons
@@ -188,10 +188,10 @@ class ChatMessage(Pane):
     edited = param.Event(doc="""
         An event that is triggered when the message is edited.""")
 
-    footer_objects = param.List(doc="""
+    footer_objects = Children(default=[], doc="""
         A list of objects to display in the column of the footer of the message.""")
 
-    header_objects = param.List(doc="""
+    header_objects = Children(default=[], doc="""
         A list of objects to display in the row of the header of the message.""")
 
     max_width = param.Integer(default=1200, bounds=(0, None), allow_None=True)

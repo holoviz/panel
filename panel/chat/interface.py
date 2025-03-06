@@ -641,13 +641,11 @@ class ChatInterface(ChatFeed):
     async def _update_input_disabled(self):
         busy_states = (CallbackState.RUNNING, CallbackState.GENERATING)
         if not self.show_stop or self._callback_state not in busy_states or self._callback_future is None:
-            with param.parameterized.batch_call_watchers(self):
-                self._buttons["send"].visible = True
-                self._buttons["stop"].visible = False
+            self._buttons["send"].visible = True
+            self._buttons["stop"].visible = False
         else:
-            with param.parameterized.batch_call_watchers(self):
-                self._buttons["send"].visible = False
-                self._buttons["stop"].visible = True
+            self._buttons["send"].visible = False
+            self._buttons["stop"].visible = True
 
     async def _cleanup_response(self):
         """

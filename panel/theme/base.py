@@ -163,7 +163,8 @@ class Design(param.Parameterized, ResourceComponent):
                 stylesheets.extend(inherited)
                 continue
             resolved = resolve_stylesheet(defining_cls, stylesheet, 'modifiers')
-            stylesheets.append(resolved)
+            if resolved not in stylesheets:
+                stylesheets.append(resolved)
         return stylesheets
 
     @classmethod

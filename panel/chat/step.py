@@ -13,16 +13,17 @@ from ..pane.image import ImageBase
 from ..pane.markup import HTML, HTMLBasePane, Markdown
 from ..pane.placeholder import Placeholder
 from ..util import edit_readonly
+from ..viewable import Child
 from ..widgets.indicators import BooleanStatus
 from .utils import (
     avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
 )
 
 DEFAULT_STATUS_BADGES = {
-    "pending": BooleanStatus(value=False, margin=0, color="primary"),
-    "running": BooleanStatus(value=True, margin=0, color="warning"),
-    "success": BooleanStatus(value=True, margin=0, color="success"),
-    "failed": BooleanStatus(value=True, margin=0, color="danger"),
+    "pending": lambda: BooleanStatus(value=False, margin=0, color="primary"),
+    "running": lambda: BooleanStatus(value=True, margin=0, color="warning"),
+    "success": lambda: BooleanStatus(value=True, margin=0, color="success"),
+    "failed": lambda: BooleanStatus(value=True, margin=0, color="danger"),
 }
 
 
@@ -53,9 +54,6 @@ class ChatStep(Card):
         If "ignore", the exception will be ignored.
         """)
 
-    success_title = param.String(default=None, doc="""
-        Title to display when status is success.""")
-
     default_badges = param.Dict(default=DEFAULT_STATUS_BADGES, doc="""
         Mapping from status to default status badge; keys must be one of
         'pending', 'running', 'success', 'failed'.
@@ -67,7 +65,7 @@ class ChatStep(Card):
     failed_title = param.String(default=None, doc="""
         Title to display when status is failed.""")
 
-    header = param.Parameter(doc="""
+    header = Child(doc="""
         A Panel component to display in the header bar of the Card.
         Will override the given title if defined.""", readonly=True)
 
@@ -85,6 +83,9 @@ class ChatStep(Card):
     status = param.Selector(default="pending", objects=[
         "pending", "running", "success", "failed"])
 
+    success_title = param.String(default=None, doc="""
+        Title to display when status is success.""")
+
     title = param.String(default="", constant=True, doc="""
         The title of the chat step. Will redirect to default_title on init.
         After, it cannot be set directly; instead use the *_title params.""")
@@ -98,8 +99,7 @@ class ChatStep(Card):
         "running_title": None,
         "success_title": None,
         "failed_title": None,
-        "status": None,
-        **Card._rename,
+        "status": None
     }
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_step.css"]
