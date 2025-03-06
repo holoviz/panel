@@ -111,7 +111,6 @@ def test_texteditor_regression_preserve_formatting_on_view_change(page):
     # inner_html() in Quill v2 not longer contains the semantic HTML but:
     # <ol><li data-list="bullet"><span class="ql-ui" contenteditable="false"></span>aaa</li>...
     # We just count the number of closed li tags
-    assert html == expected
     assert html.count('</li>') == expected.count('</li>')
 
     page.locator('button', has_text='1').click()
