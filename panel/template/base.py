@@ -590,8 +590,8 @@ class BasicTemplate(BaseTemplate):
     BasicTemplate provides a baseclass for templates with a basic
     organization including a header, sidebar, and main area. Unlike the
     more generic Template class these default templates make it easy
-    for a user to generate an application with a polished look
-    and feel without having to write any Jinja2 template themselves.
+    for a user to generate an application with a polished look and
+    feel without having to write any Jinja2 template themselves.
     """
 
     busy_indicator = param.ClassSelector(default=LoadingSpinner(width=20, height=20),
