@@ -604,7 +604,7 @@ class BasicTemplate(BaseTemplate):
         Whether the sidebar (if present) is initially collapsed.""")
 
     collapsed_right_sidebar = param.Selector(default=False, constant=True, doc="""
-       Whether the secondary sidebar in the right (if present) is initially collapsed.""")
+       Whether the secondary sidebar on the right (if present) is initially collapsed.""")
 
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")

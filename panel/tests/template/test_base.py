@@ -52,7 +52,9 @@ def test_template_multi_refs():
     button = Button(name="Click me", button_type="primary")
     tmpl.sidebar.append(button)
     tmpl.main.append(button)
+    tmpl.right_sidebar.append(button)
 
-    assert len(tmpl._render_items) == 6
+    assert len(tmpl._render_items) == 7
     assert f'nav-{id(button)}' in tmpl._render_items
     assert f'main-{id(button)}' in tmpl._render_items
+    assert f'right_nav-{id(button)}' in tmpl._render_items

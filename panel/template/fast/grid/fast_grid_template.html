@@ -39,6 +39,7 @@
     --header-background: {{ style.header_background }};
     --header-color: {{ style.header_color }};
     --sidebar-width: {{ sidebar_width }}px;
+    --right-sidebar-width:  {{ right_sidebar_width }}px;
   }
   body {
     color: {{ style.color }};
@@ -60,6 +61,13 @@
   #sidebar {
     min-width: var(--sidebar-width);
     max-width: var(--sidebar-width);
+    {% if not main_layout %}
+    background-color: var(--panel-surface-color);
+    {% endif %}
+  }
+  #right-sidebar {
+    min-width: var(--right-sidebar-width);
+    max-width: var(--right-sidebar-width);
     {% if not main_layout %}
     background-color: var(--panel-surface-color);
     {% endif %}
@@ -153,6 +161,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	  Busy Indicator
 	</fast-tooltip>
 	{% endif %}
+	{% if right_sidebar_footer %}
+	<span onclick="{{ 'openNavRight()' if collapsed_right_sidebar else 'closeNavRight()' }}" id="right-sidebar-button">
+	  <div class="pn-bar"></div>
+	  <div class="pn-bar"></div>
+	  <div class="pn-bar"></div>
+	</span>
+	<fast-tooltip anchor="right-sidebar-button" position="left">
+	  Toggle the Secondary Sidebar
+	</fast-tooltip>
+	{% endif %}
       </nav>
     </fast-design-system-provider>
 
@@ -184,6 +202,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	</div>
 	{% endif %}
       </div>
+      {% if right_nav or right_sidebar_footer %}
+      <div class="sidenav {{'hidden' if collapsed_right_sidebar else ''}}" id="right-sidebar">
+	<ul class="nav flex-column">
+      {% if right_nav %}
+      {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "right_nav" in root.tags %}
+      {{ embed(root) | indent(8) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+      {% endif %}
+      {% if right_sidebar_footer %}
+      {{ right_sidebar_footer }}
+      {% endif %}
+	</ul>
+      </div>
+      {% endif %}
       <fast-dialog id="pn-Modal" hidden>
         <fast-button class="pn-modalclose" id="pn-closeModal">&times;</fast-button>
 	<div class="pn-modal-content">
@@ -213,6 +249,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
   function closeNav() {
     document.getElementById("sidebar").classList.add("hidden");
     document.getElementById("sidebar-button").onclick = openNav;
+  }
+
+  function openNavRight() {
+    document.getElementById("right-sidebar").classList.remove("hidden");
+    document.getElementById("right-sidebar-button").onclick = closeNavRight;
+  }
+
+  function closeNavRight() {
+    document.getElementById("right-sidebar").classList.add("hidden");
+    document.getElementById("right-sidebar-button").onclick = openNavRight;
   }
 
   var modal = document.getElementById("pn-Modal");
