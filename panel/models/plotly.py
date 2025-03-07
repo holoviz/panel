@@ -11,7 +11,7 @@ from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 
-PLOTLY_VERSION = '3.0.0'
+PLOTLY_VERSION = '3.0.1'
 
 
 class PlotlyEvent(ModelEvent):
