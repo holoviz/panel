@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	  Busy Indicator
 	</fast-tooltip>
 	{% endif %}
-	{% if right_sidebar_footer %}
+	{% if right_nav or right_sidebar_footer %}
 	<span onclick="{{ 'openNavRight()' if collapsed_right_sidebar else 'closeNavRight()' }}" id="right-sidebar-button">
 	  <div class="pn-bar"></div>
 	  <div class="pn-bar"></div>

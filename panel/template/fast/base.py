@@ -95,12 +95,12 @@ class FastBaseTemplate(BasicTemplate):
             params["right_sidebar"] = self._get_params(params["right_sidebar"], self.param.right_sidebar.class_)
 
         super().__init__(**params)
+        self.right_sidebar.param.watch(self._update_right_sidebar_render_items, ['objects'])
+        self.right_sidebar.param.trigger('objects')
         self.param.update({
             p: v for p, v in self._design.theme.style.param.values().items()
             if p != 'name' and p in self.param and p not in params
         })
-        self.right_sidebar.param.watch(self._update_render_items, ['objects'])
-        self.right_sidebar.param.trigger('objects')
 
     @staticmethod
     def _get_theme_from_query_args():
@@ -126,19 +126,9 @@ class FastBaseTemplate(BasicTemplate):
         self._render_variables['collapsed_right_sidebar'] = self.collapsed_right_sidebar
         self._render_variables["main_layout"] = self.main_layout
 
-    def _update_render_items(self, event: param.parameterized.Event) -> None:
-        if event.obj is self and event.name == 'busy_indicator':
-            return self._update_busy()
-        if event.obj is self.main:
-            tag = 'main'
-        elif event.obj is self.sidebar:
-            tag = 'nav'
-        elif event.obj is self.right_sidebar:
+    def _update_right_sidebar_render_items(self, event: param.parameterized.Event) -> None:
+        if event.obj is self.right_sidebar:
             tag = 'right_nav'
-        elif event.obj is self.header:
-            tag = 'header'
-        elif event.obj is self.modal:
-            tag = 'modal'
 
         old = event.old if isinstance(event.old, list) else list(event.old.values())
         for obj in old:
@@ -163,10 +153,7 @@ class FastBaseTemplate(BasicTemplate):
                 labels[ref] = obj.name
             self._render_items[ref] = (obj, [tag])
         tags = [tags for _, tags in self._render_items.values()]
-        self._render_variables['nav'] = any('nav' in ts for ts in tags)
         self._render_variables['right_nav'] = any('right_nav' in ts for ts in tags)
-        self._render_variables['header'] = any('header' in ts for ts in tags)
-        self._render_variables['root_labels'] = labels
 
 
 class FastGridBaseTemplate(FastBaseTemplate, ReactTemplate):
