@@ -8,7 +8,9 @@ import sys
 import weakref
 
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import (
+    TYPE_CHECKING, Any, TypeAlias, cast,
+)
 
 import param
 
@@ -23,12 +25,9 @@ from .viewable import Viewable
 
 if TYPE_CHECKING:
     from bokeh.model import Model
+    from holoviews.core.dimension import Dimensioned
 
-    try:
-        from holoviews.core.dimension import Dimensioned
-        JSLinkTarget: TypeAlias = Reactive | BkModel | Dimensioned
-    except Exception:
-        JSLinkTarget: TypeAlias = Reactive | BkModel # type: ignore
+    JSLinkTarget: TypeAlias = Reactive | BkModel | Dimensioned
     SourceModelSpec = tuple[str | None, str]
     TargetModelSpec = tuple[str | None, str | None]
 
@@ -70,6 +69,10 @@ def assert_source_syncable(source: Reactive, properties: Iterable[str]) -> None:
 def assert_target_syncable(
     source: Reactive, target: JSLinkTarget, properties: dict[str, str]
 ) -> None:
+    if not hasattr(target, "_rename") and not hasattr(target, "param"):
+        return
+
+    target = cast(Reactive, target)
     for k, p in properties.items():
         if k.startswith('event:'):
             continue
@@ -388,16 +391,16 @@ class CallbackGenerator:
 
         model = None
         if 'holoviews' in sys.modules and is_bokeh_element_plot(obj):
-            if model_spec is None:
+            if model_spec is None and hasattr(obj, "state"):
                 return obj.state
             else:
-                model_specs = model_spec.split('.')
+                model_specs = str(model_spec).split('.')
                 handle_spec = model_specs[0]
                 if len(model_specs) > 1:
                     model_spec = '.'.join(model_specs[1:])
                 else:
                     model_spec = None
-                model = obj.handles[handle_spec]
+                model = obj.handles[handle_spec]  # type: ignore
         elif isinstance(obj, Viewable):
             model, _ = obj._models.get(root_model.ref['id'], (None, None))
         elif isinstance(obj, BkModel):

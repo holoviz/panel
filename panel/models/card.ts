@@ -42,7 +42,7 @@ export class CardView extends ColumnView {
     return [...super.stylesheets(), card_css]
   }
 
-  protected override *_stylesheets(): Iterable<DOM.StyleSheet> {
+  protected override *_stylesheets(): Iterable<DOM.StyleSheetLike> {
     yield* super._stylesheets()
     yield this.collapsed_style
   }
