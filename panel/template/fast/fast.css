@@ -79,15 +79,13 @@ body {
   margin-top: 5px;
 }
 
-#sidebar-button,
-#right-sidebar-button {
+#sidebar-button {
   font-size: 30px;
   cursor: pointer;
   opacity: 0.9;
 }
 
-#sidebar-button:hover,
-#right-sidebar-button:hover {
+#sidebar-button:hover {
   opacity: 1;
 }
 
@@ -141,14 +139,12 @@ img.app-logo {
   display: flex;
 }
 
-#sidebar-button,
-#right-sidebar-button {
+#sidebar-button {
   margin-left: 10px;
   margin-right: 10px;
 }
 
-#sidebar,
-#right-sidebar {
+#sidebar {
   border-right: 2px solid var(--neutral-fill-rest);
   transition: all 0.2s cubic-bezier(0.945, 0.02, 0.27, 0.665);
   transform-origin: center left;
@@ -157,8 +153,7 @@ img.app-logo {
   padding: 15px 10px 5px 5px;
 }
 
-#sidebar.hidden,
-#right-sidebar.hidden {
+#sidebar.hidden {
   border: 0px;
   margin: 0px;
   max-width: 0px;
@@ -272,8 +267,7 @@ div.pn-wrapper {
   box-shadow: 2px 2px 10px silver;
 }
 
-#sidebar.shadow,
-#right-sidebar.shadow {
+#sidebar.shadow {
   box-shadow: 2px 2px 10px silver;
 }
 
