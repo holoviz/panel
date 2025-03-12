@@ -639,6 +639,7 @@ class NamedListLike(param.Parameterized):
         return self
 
     def __add__(self, other: Iterable[Any]) -> NamedListLike:
+        added: Iterable
         if isinstance(other, NamedListLike):
             added = zip(other._names, other.objects)
         elif isinstance(other, ListLike):
@@ -649,6 +650,7 @@ class NamedListLike(param.Parameterized):
         return self.clone(*objects, *added)
 
     def __radd__(self, other: Iterable[Any]) -> NamedListLike:
+        added: Iterable
         if isinstance(other, NamedListLike):
             added = zip(other._names, other.objects)
         elif isinstance(other, ListLike):
