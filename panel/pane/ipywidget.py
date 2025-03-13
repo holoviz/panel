@@ -130,7 +130,7 @@ def _ipywidget_transform(obj):
     Transforms an ipywidget into a Parameter that listens updates
     when the ipywidget updates.
     """
-    if not (isinstance(obj, Model) and IPyWidget.applies(obj) and hasattr(obj, 'value')):
+    if isinstance(obj, Model) or not (IPyWidget.applies(obj) and hasattr(obj, 'value')):
         return obj
     name = type(obj).__name__
     if name in _ipywidget_classes:
