@@ -114,35 +114,18 @@ export class QuillInputView extends HTMLBoxView {
     this.quill.selection.getNativeRange = () => {
       const rootNode = (this.quill.root.getRootNode() as ShadowRoot)
       const range = getNativeRange(rootNode)
-      if (!!range) {
-        // If there was a cached selection when the user clicked on the toolbar
-        if (blurred_selection !== null) {
-          if (timeout) {
-            clearTimeout(timeout)
-          }
-          timeout = setTimeout(() => {
-            if (!blurred_selection) {
-              return
-            }
-            this._editor.focus()
-            blurred_selection = null
-          }, 50)
-          return blurred_selection
-        } else {
-          return this.quill.selection.normalizeNative(range)
-        }
-      }
-      return null
+      return !!range ? this.quill.selection.normalizeNative(range) : null
     }
 
     /**
      * Original implementation relies on Selection.addRange to programmatically set the range, which does not work
      * in Webkit with Native Shadow. Selection.addRange works fine in Chromium and Gecko.
      **/
-    this.quill.selection.setNativeRange = (startNode: Element, startOffset: number) => {
-      let endNode = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : startNode
-      let endOffset = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : startOffset
-      const force = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false
+    this.quill.selection.setNativeRange = (startNode: Element, startOffset: number, endNode: any = undefined, endOffset: any = undefined, force: boolean = false) => {
+      endNode = endNode === undefined ? startNode : endNode
+      endOffset = endOffset === undefined ? startOffset : endOffset
+      force = force || false
+
       if (startNode != null && (this.quill.selection.root.parentNode == null || startNode.parentNode == null || endNode.parentNode == null)) {
         return
       }
@@ -175,19 +158,6 @@ export class QuillInputView extends HTMLBoxView {
 
     this._editor = (this.shadow_el.querySelector(".ql-editor") as HTMLDivElement)
     this._toolbar = (this.shadow_el.querySelector(".ql-toolbar") as HTMLDivElement)
-
-    // If a user clicked on the toolbar we cache the selection
-    this._editor.addEventListener("blur", (e) => {
-      let root = (e.relatedTarget as any)
-      while (root !== null && root.parentElement !== null) {
-        root = root.parentElement
-        if (root === this._toolbar || root === this.quill.theme.tooltip.root) {
-          blurred_selection = this.quill.selection.getNativeRange()
-          return
-        }
-      }
-      blurred_selection = null
-    })
 
     const delta = this.quill.clipboard.convert({html: this.model.text})
     this.quill.setContents(delta)
