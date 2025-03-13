@@ -1,5 +1,7 @@
 import pytest
 
+pytest.importorskip("IPython")
+
 from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 
 from panel.config import config, panel_extension
