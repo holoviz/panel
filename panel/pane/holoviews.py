@@ -667,7 +667,8 @@ class HoloViews(Pane):
                     options = dict(zip(labels, vals))
                     widget_type = widget_type or DiscreteSlider
                 else:
-                    options = list(vals)
+                    val = next(iter(vals))
+                    options = {str(dim.pprint_value(val)): val}
                     widget_type = widget_type or Select
                 default = vals[0] if dim.default is None else dim.default
                 widget_name = dim.pprint_label
