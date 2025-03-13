@@ -95,6 +95,9 @@ export class QuillInputView extends HTMLBoxView {
       }
     }
 
+    let blurred_selection: any = null
+    let timeout: any = null
+
     /**
      * Original implementation uses document.active element which does not work in Native Shadow.
      * Replace document.activeElement with shadowRoot.activeElement
@@ -110,8 +113,26 @@ export class QuillInputView extends HTMLBoxView {
      **/
     this.quill.selection.getNativeRange = () => {
       const rootNode = (this.quill.root.getRootNode() as ShadowRoot)
-      const nativeRange = getNativeRange(rootNode)
-      return !!nativeRange ? this.quill.selection.normalizeNative(nativeRange) : null
+      const range = getNativeRange(rootNode)
+      if (!!range) {
+	// If there was a cached selection when the user clicked on the toolbar
+	if (blurred_selection !== null) {
+	  if (timeout) {
+	    clearTimeout(timeout)
+	  }
+	  timeout = setTimeout(() => {
+	    if (!blurred_selection) {
+	      return
+	    }
+	    this._editor.focus()
+	    blurred_selection = null
+	  }, 50)
+	  return blurred_selection
+	} else {
+	  return this.quill.selection.normalizeNative(range)
+	}
+      }
+      return null
     }
 
     /**
@@ -154,6 +175,19 @@ export class QuillInputView extends HTMLBoxView {
 
     this._editor = (this.shadow_el.querySelector(".ql-editor") as HTMLDivElement)
     this._toolbar = (this.shadow_el.querySelector(".ql-toolbar") as HTMLDivElement)
+
+    // If a user clicked on the toolbar we cache the selection
+    this._editor.addEventListener("blur", (e) => {
+      let root = (e.relatedTarget as any)
+      while (root !== null && root.parentElement !== null) {
+	root = root.parentElement
+	if (root === this._toolbar || root === this.quill.theme.tooltip.root) {
+	  blurred_selection = this.quill.selection.getNativeRange()
+	  return
+	}
+      }
+      blurred_selection = null
+    })
 
     const delta = this.quill.clipboard.convert({html: this.model.text})
     this.quill.setContents(delta)
