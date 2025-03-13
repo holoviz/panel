@@ -95,9 +95,6 @@ export class QuillInputView extends HTMLBoxView {
       }
     }
 
-    let blurred_selection: any = null
-    let timeout: any = null
-
     /**
      * Original implementation uses document.active element which does not work in Native Shadow.
      * Replace document.activeElement with shadowRoot.activeElement
