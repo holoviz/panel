@@ -115,22 +115,22 @@ export class QuillInputView extends HTMLBoxView {
       const rootNode = (this.quill.root.getRootNode() as ShadowRoot)
       const range = getNativeRange(rootNode)
       if (!!range) {
-	// If there was a cached selection when the user clicked on the toolbar
-	if (blurred_selection !== null) {
-	  if (timeout) {
-	    clearTimeout(timeout)
-	  }
-	  timeout = setTimeout(() => {
-	    if (!blurred_selection) {
-	      return
-	    }
-	    this._editor.focus()
-	    blurred_selection = null
-	  }, 50)
-	  return blurred_selection
-	} else {
-	  return this.quill.selection.normalizeNative(range)
-	}
+        // If there was a cached selection when the user clicked on the toolbar
+        if (blurred_selection !== null) {
+          if (timeout) {
+            clearTimeout(timeout)
+          }
+          timeout = setTimeout(() => {
+            if (!blurred_selection) {
+              return
+            }
+            this._editor.focus()
+            blurred_selection = null
+          }, 50)
+          return blurred_selection
+        } else {
+          return this.quill.selection.normalizeNative(range)
+        }
       }
       return null
     }
@@ -180,11 +180,11 @@ export class QuillInputView extends HTMLBoxView {
     this._editor.addEventListener("blur", (e) => {
       let root = (e.relatedTarget as any)
       while (root !== null && root.parentElement !== null) {
-	root = root.parentElement
-	if (root === this._toolbar || root === this.quill.theme.tooltip.root) {
-	  blurred_selection = this.quill.selection.getNativeRange()
-	  return
-	}
+        root = root.parentElement
+        if (root === this._toolbar || root === this.quill.theme.tooltip.root) {
+          blurred_selection = this.quill.selection.getNativeRange()
+          return
+        }
       }
       blurred_selection = null
     })
