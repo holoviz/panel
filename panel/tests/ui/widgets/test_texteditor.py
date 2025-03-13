@@ -170,3 +170,35 @@ def test_texteditor_nested_lists(page):
 
     expected = '<ul><li>Coffee</li><li>Tea<ul><li>Black</li><li>Green</li></ul></li><li>Milk</li></ul>'
     wait_until(lambda: widget.value == expected, page)
+
+
+def test_texteditor_select_and_style(page):
+    widget = TextEditor(value='<p>xxx</p></br><p>yyy</p>')
+
+    serve_component(page, widget)
+
+    # Select yyy
+    page.get_by_text('yyy').dblclick()
+    # Bold and underline
+    page.locator('.ql-bold').click()
+    page.locator('.ql-underline').click()
+    wait_until(lambda: widget.value == '<p>xxx</p><p></p><p><strong><u>yyy</u></strong></p>', page)
+
+
+def test_texteditor_link(page):
+    widget = TextEditor(value='<p>xxx</p></br><p>yyy</p>')
+
+    serve_component(page, widget)
+
+    # Select yyy
+    page.get_by_text('yyy').dblclick()
+    # Enter and save link
+    page.locator('.ql-link').click()
+    inp = page.locator('input')
+    inp.fill('http://example.com')
+    inp.press('Enter')
+
+    wait_until(
+        lambda: widget.value == '<p>xxx</p><p></p><p><a href="http://example.com" rel="noopener noreferrer" target="_blank">yyy</a></p>',
+        page
+    )
