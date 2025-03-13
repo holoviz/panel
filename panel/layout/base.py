@@ -719,11 +719,11 @@ class NamedListLike(param.Parameterized):
         """
         if objects:
             overrides = objects
-        elif 'objects' in params:
-            raise ValueError(
-                'Tabs objects should be supplied either as positional '
-                'arguments or as a keyword, not both.'
-            )
+            if 'objects' in params:
+                raise ValueError(
+                    'Tabs objects should be supplied either as positional '
+                    'arguments or as a keyword, not both.'
+                )
         elif 'objects' in params:
             overrides = params.pop('objects')
         else:
