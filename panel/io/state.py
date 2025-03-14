@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from .cache import _Stack
     from .callbacks import PeriodicCallback
     from .location import Location
-    from .notifications import NotificationArea
+    from .notifications import NotificationAreaBase
     from .server import StoppableThread
 
     T = TypeVar("T")
@@ -158,8 +158,8 @@ class _state(param.Parameterized):
     _locations: ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
 
     # Notifications
-    _notification: ClassVar[NotificationArea | None] = None # Global location, e.g. for notebook context
-    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationArea]] = WeakKeyDictionary() # Server notifications indexed by document
+    _notification_area: ClassVar[NotificationAreaBase | None] = None # Global location, e.g. for notebook context
+    _notification_areas: ClassVar[WeakKeyDictionary[Document, NotificationAreaBase]] = WeakKeyDictionary() # Server notifications indexed by document
 
     # Templates
     _template: ClassVar[BaseTemplate | None] = None
@@ -236,7 +236,7 @@ class _state(param.Parameterized):
     _watch_events: ClassVar[list[asyncio.Event]] = []
 
     # Types
-    _notification_type = None
+    _notification_type: ClassVar[type[NotificationAreaBase]] = None
 
     def __repr__(self) -> str:
         server_info = []
@@ -1122,7 +1122,7 @@ class _state(param.Parameterized):
         return log_terminal
 
     @property
-    def notifications(self) -> NotificationArea | None:
+    def notifications(self) -> NotificationAreaBase | None:
         if self.curdoc is None:
             return self._notification
 
