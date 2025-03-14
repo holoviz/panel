@@ -1548,7 +1548,7 @@ class Tabulator(BaseTable):
             if r not in styles:
                 styles[int(r)] = {}
             c = column_mapper.get(int(c), int(c))
-            styles[int(r)][offset+c] = s
+            styles[int(r)][offset+c-len(frozen_cols)] = s
         return {'id': uuid.uuid4().hex, 'data': styles}
 
     def _get_selectable(self):
