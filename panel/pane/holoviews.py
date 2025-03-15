@@ -661,11 +661,15 @@ class HoloViews(Pane):
             widget_kwargs.update(kwargs)
 
             if vals:
-                if all(isnumeric(v) or isinstance(v, datetime_types) for v in vals) and len(vals) > 1:
+                if len(vals) > 1 and all(isnumeric(v) or isinstance(v, datetime_types) for v in vals):
                     vals = sorted(vals)
                     labels = [str(dim.pprint_value(v)) for v in vals]
                     options = dict(zip(labels, vals))
                     widget_type = widget_type or DiscreteSlider
+                elif len(vals) == 1:
+                    val = next(iter(vals))
+                    options = {str(dim.pprint_value(val)): val}
+                    widget_type = widget_type or Select
                 else:
                     options = list(vals)
                     widget_type = widget_type or Select

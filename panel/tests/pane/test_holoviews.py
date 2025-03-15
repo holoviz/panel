@@ -781,3 +781,15 @@ def test_holoviews_datetime_picker_widget(document, comm):
     assert isinstance(layout, pn.Row)
     assert isinstance(widget_box, pn.WidgetBox)
     assert isinstance(widget_box[0], pn.widgets.DatetimePicker)
+
+
+@hv_available
+def test_single_datetime_value():
+    ts = np.datetime64("2020-01-01T12:15:54.293837280")
+    dmap = hv.DynamicMap(lambda x: hv.Curve([]), kdims=["timestamp"]).redim.values(
+        timestamp=[ts]
+    )
+    widget = pn.panel(dmap)[0][1][0]
+    assert isinstance(widget, Select)
+    assert widget.options == {"2020-01-01 12:15:54": ts}
+    assert widget.value == ts
