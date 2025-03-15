@@ -1,4 +1,4 @@
-import type * as p from "@bokehjs/core/properties"
+import * as p from "@bokehjs/core/properties"
 import type {Transform} from "sucrase"
 
 import {
@@ -13,8 +13,12 @@ export class ReactComponentView extends ReactiveESMView {
 
   override render_esm(): void {
     if (this.model.usesMui) {
-      this.style_cache = document.createElement("head")
-      this.shadow_el.insertBefore(this.style_cache, this.container)
+      if (this.model.root_node) {
+	this.style_cache = document.head
+      } else {
+	this.style_cache = document.createElement("head")
+	this.shadow_el.insertBefore(this.style_cache, this.container)
+      }
     }
     super.render_esm()
   }
@@ -36,7 +40,18 @@ export class ReactComponentView extends ReactiveESMView {
     let render_code = `
 if (rendered) {
   view._changing = true
-  const root = createRoot(view.container)
+  let container
+  if (view.model.root_node) {
+    container = document.querySelector(view.model.root_node)
+    if (container == null) {
+      container = document.createElement('div')
+      container.id = view.model.root_node.replace('#', '')
+      document.body.append(container)
+    }
+  } else {
+    container = view.container
+  }
+  const root = createRoot(container)
   try {
     root.render(rendered)
   } catch(e) {
@@ -250,7 +265,9 @@ export default {render}`
 export namespace ReactComponent {
   export type Attrs = p.AttrsOf<Props>
 
-  export type Props = ReactiveESM.Props
+  export type Props = ReactiveESM.Props & {
+    root_node: p.Property<string | null>
+  }
 }
 
 export interface ReactComponent extends ReactComponent.Attrs {}
@@ -287,5 +304,8 @@ ${compiled}`
 
   static {
     this.prototype.default_view = ReactComponentView
+    this.define<ReactComponent.Props>(({Nullable, Str}) => ({
+      root_node:  [ Nullable(Str),     null ],
+    }))
   }
 }
