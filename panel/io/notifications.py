@@ -55,14 +55,15 @@ class NotificationAreaBase(param.Parameterized):
 
         will trigger a warning on the Bokeh ConnectionLost event.""")
 
+    max_notifications = param.Integer(default=5, doc="""
+        The maximum number of notifications to display at once.""")
+
     notifications = param.List(item_type=Notification)
 
     position = param.Selector(default='bottom-right', objects=[
         'bottom-right', 'bottom-left', 'bottom-center', 'top-left',
         'top-right', 'top-center', 'center-center', 'center-left',
         'center-right'])
-
-    _extension_name = 'notifications'
 
     __abstract = True
 
@@ -149,6 +150,8 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
     @classproperty
     def __css__(cls):
         return bundled_files(cls, 'css')
+
+    _extension_name = 'notifications'
 
     _notification_type = Notification
 
@@ -239,23 +242,33 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
         return root
 
     @classmethod
-    def demo(cls):
+    def demo(cls, **params):
         """
         Generates a layout which allows demoing the component.
+
+        Parameters
+        ----------
+        **params: dict
+            Additional parameters to pass to the component.
+
+        Returns
+        -------
+        layout: Layout
+            A layout containing the demo components.
         """
         from ..layout import Column
         from ..widgets import (
             Button, ColorPicker, NumberInput, Select, TextInput,
         )
 
-        msg = TextInput(name='Message', value='This is a message')
-        duration = NumberInput(name='Duration', value=0, end=10000)
+        msg = TextInput(name='Message', value='This is a message', **params)
+        duration = NumberInput(name='Duration', value=0, end=10000, **params)
         ntype = Select(
             name='Type', options=['info', 'warning', 'error', 'success', 'custom'],
-            value='info'
+            value='info', **params
         )
-        background = ColorPicker(name='Color', value='#000000')
-        button = Button(name='Notify')
+        background = ColorPicker(name='Color', value='#000000', **params)
+        button = Button(name='Notify', **params)
         notifications = cls()
         button.js_on_click(
             args={

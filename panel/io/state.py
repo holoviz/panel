@@ -158,8 +158,8 @@ class _state(param.Parameterized):
     _locations: ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
 
     # Notifications
-    _notification_area: ClassVar[NotificationAreaBase | None] = None # Global location, e.g. for notebook context
-    _notification_areas: ClassVar[WeakKeyDictionary[Document, NotificationAreaBase]] = WeakKeyDictionary() # Server notifications indexed by document
+    _notification: ClassVar[NotificationAreaBase | None] = None # Global location, e.g. for notebook context
+    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationAreaBase]] = WeakKeyDictionary() # Server notifications indexed by document
 
     # Templates
     _template: ClassVar[BaseTemplate | None] = None
