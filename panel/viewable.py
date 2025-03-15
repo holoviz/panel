@@ -48,6 +48,7 @@ from .io.notebook import (
     JupyterCommManagerBinary as JupyterCommManager, ipywidget,
     patch_inline_stylesheets, render_embed, render_mimebundle, render_model,
 )
+from .io.resources import set_resource_mode
 from .io.save import save
 from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
@@ -846,11 +847,14 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         doc = Document()
         comm = state._comm_manager.get_server_comm()
-        model = self._render_model(doc, comm)
+
+        resources = 'inline' if config.inline and not state._is_pyodide else 'cdn'
+        with set_resource_mode(resources):
+            model = self._render_model(doc, comm)
         if config.embed:
             return render_model(model)
 
-        if config.inline:
+        if resources == 'inline':
             for submodel in model.select({'type': UIElement}):
                 if not isinstance(submodel, UIElement):
                     continue

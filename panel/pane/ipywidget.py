@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
+from bokeh.model import Model
 from param.parameterized import register_reference_transform
 from pyviz_comms import JupyterComm
 
@@ -15,7 +16,6 @@ from .base import Pane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
-    from bokeh.model import Model
     from pyviz_comms import Comm
 
 
@@ -130,7 +130,7 @@ def _ipywidget_transform(obj):
     Transforms an ipywidget into a Parameter that listens updates
     when the ipywidget updates.
     """
-    if not (IPyWidget.applies(obj) and hasattr(obj, 'value')):
+    if isinstance(obj, Model) or not (IPyWidget.applies(obj) and hasattr(obj, 'value')):
         return obj
     name = type(obj).__name__
     if name in _ipywidget_classes:
