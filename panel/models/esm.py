@@ -62,6 +62,8 @@ class ReactComponent(ReactiveESM):
     Renders jsx/tsx based ESM bundles using React.
     """
 
+    root_node = bp.Nullable(bp.String)
+
 
 class AnyWidgetComponent(ReactComponent):
     """
