@@ -14,10 +14,10 @@ export class ReactComponentView extends ReactiveESMView {
   override render_esm(): void {
     if (this.model.usesMui) {
       if (this.model.root_node) {
-	this.style_cache = document.head
+        this.style_cache = document.head
       } else {
-	this.style_cache = document.createElement("head")
-	this.shadow_el.insertBefore(this.style_cache, this.container)
+        this.style_cache = document.createElement("head")
+        this.shadow_el.insertBefore(this.style_cache, this.container)
       }
     }
     super.render_esm()
