@@ -41,11 +41,11 @@ class AcePlot(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            ('ace', ('ace', 'ext-language_tools', 'ext-modelist')): f"{config.npm_cdn[-6:]}/ace-builds@1.4.11/src-min-noconflict"},
-        'exports': {'ace': 'ace'},
+            ('ace', ('ace/ace', 'ace/ext-language_tools', 'ace/ext-modelist')): "//cdn.jsdelivr.net/npm/ace-builds@1.4.11/src-min-noconflict"},
+        'exports': {'ace': 'ace/ace'},
         'shim': {
-            'ext-language_tools': { 'deps': ["ace"] },
-            'ext-modelist': { 'deps': ["ace"] }
+            'ace/ext-language_tools': { 'deps': ["ace/ace"] },
+            'ace/ext-modelist': { 'deps': ["ace/ace"] }
         }
     }
 
