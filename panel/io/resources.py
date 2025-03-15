@@ -811,17 +811,6 @@ class Resources(BkResources):
         js_files = self.adjust_paths([
             js for js in files if self.mode != 'inline' or not is_cdn_url(js)
         ])
-
-        # Load requirejs last to avoid interfering with other libraries
-        dist_dir = self.dist_dir
-        require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
-        if require_index:
-            requirejs = js_files.pop(require_index[0])
-            if any('ace' in jsf for jsf in js_files):
-                js_files.append(dist_dir + 'pre_require.js')
-            js_files.append(requirejs)
-            if any('ace' in jsf for jsf in js_files):
-                js_files.append(dist_dir + 'post_require.js')
         return js_files
 
     @property
