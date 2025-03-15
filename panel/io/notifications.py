@@ -291,6 +291,10 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
 
         return Column(msg, duration, ntype, background, button, notifications)
 
+    def clear(self):
+        self._clear += 1
+        self.notifications[:] = []
+
     def send(self, message, duration=3000, type=None, background=None, icon=None):
         """
         Sends a notification to the frontend.
