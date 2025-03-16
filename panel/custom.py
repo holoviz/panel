@@ -800,6 +800,7 @@ class ReactComponent(ReactiveESM):
             'scopes': cls._importmap.get('scopes', {})
         }
 
+
 class AnyWidgetComponent(ReactComponent):
     '''
     The `AnyWidgetComponent` allows you to create custom Panel components
