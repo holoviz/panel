@@ -44,8 +44,8 @@ if (rendered) {
   if (view.model.root_node) {
     container = document.querySelector(view.model.root_node)
     if (container == null) {
-      container = document.createElement('div')
-      container.id = view.model.root_node.replace('#', '')
+      container = document.createElement("div")
+      container.id = view.model.root_node.replace("#", "")
       document.body.append(container)
     }
   } else {

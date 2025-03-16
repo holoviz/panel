@@ -743,7 +743,6 @@ class ReactComponent(ReactiveESM):
     _bokeh_model = _BkReactComponent
 
     _react_version = '18.3.1'
-    _root_node = None
 
     @classproperty  # type: ignore
     def _exports__(cls) -> ExportSpec:  # type: ignore
@@ -800,12 +799,6 @@ class ReactComponent(ReactiveESM):
             'imports': imports_with_deps,
             'scopes': cls._importmap.get('scopes', {})
         }
-
-    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
-        props = super()._get_properties(doc)
-        if self._root_node:
-            props['root_node'] = self._root_node
-        return props
 
 
 class AnyWidgetComponent(ReactComponent):
