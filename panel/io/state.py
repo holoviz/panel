@@ -236,7 +236,7 @@ class _state(param.Parameterized):
     _watch_events: ClassVar[list[asyncio.Event]] = []
 
     # Types
-    _notification_type: ClassVar[type[NotificationAreaBase]] = None
+    _notification_type: ClassVar[type[NotificationAreaBase] | None] = None
 
     def __repr__(self) -> str:
         server_info = []
@@ -1134,15 +1134,17 @@ class _state(param.Parameterized):
         if not (config.notifications and is_session):
             return None if is_session else self._notification
 
-        if self._notification_type is None:
-            from panel.io.notifications import NotificationArea
-            self._notification_type = NotificationArea
         js_events = {}
         if config.ready_notification:
             js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
         if config.disconnect_notification:
             js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
-        self._notifications[self.curdoc] = notifications = self._notification_type(js_events=js_events)
+
+        if _state._notification_type is None:
+            from panel.io.notifications import NotificationArea
+            _state._notification_type = NotificationArea
+        notifications = _state._notification_type(js_events=js_events)
+        self._notifications[self.curdoc] = notifications
         return notifications
 
     @property
