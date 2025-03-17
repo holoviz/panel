@@ -388,16 +388,12 @@ class ListLike(param.Parameterized):
     def __add__(self, other: Iterable[Any]) -> ListLike:
         if isinstance(other, ListLike):
             other = other.objects
-        else:
-            other = list(other)
-        return self.clone(*(self.objects+other))
+        return self.clone(*self.objects, *other)
 
     def __radd__(self, other: Iterable[Any]) -> ListLike:
         if isinstance(other, ListLike):
             other = other.objects
-        else:
-            other = list(other)
-        return self.clone(*(other+self.objects))
+        return self.clone(*other, *self.objects)
 
     def __contains__(self, obj: Viewable) -> bool:
         return obj in self.objects
@@ -643,24 +639,26 @@ class NamedListLike(param.Parameterized):
         return self
 
     def __add__(self, other: Iterable[Any]) -> NamedListLike:
+        added: Iterable
         if isinstance(other, NamedListLike):
-            added = list(zip(other._names, other.objects))
+            added = zip(other._names, other.objects)
         elif isinstance(other, ListLike):
             added = other.objects
         else:
-            added = list(other)
-        objects = list(zip(self._names, self.objects))
-        return self.clone(*(objects+added))
+            added = other
+        objects = zip(self._names, self.objects)
+        return self.clone(*objects, *added)
 
     def __radd__(self, other: Iterable[Any]) -> NamedListLike:
+        added: Iterable
         if isinstance(other, NamedListLike):
-            added = list(zip(other._names, other.objects))
+            added = zip(other._names, other.objects)
         elif isinstance(other, ListLike):
             added = other.objects
         else:
-            added = list(other)
-        objects = list(zip(self._names, self.objects))
-        return self.clone(*(added+objects))
+            added = other
+        objects = zip(self._names, self.objects)
+        return self.clone(*added, *objects)
 
     def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
         new_objects = list(self)
@@ -719,11 +717,11 @@ class NamedListLike(param.Parameterized):
         """
         if objects:
             overrides = objects
-        elif 'objects' in params:
-            raise ValueError(
-                'Tabs objects should be supplied either as positional '
-                'arguments or as a keyword, not both.'
-            )
+            if 'objects' in params:
+                raise ValueError(
+                    'Tabs objects should be supplied either as positional '
+                    'arguments or as a keyword, not both.'
+                )
         elif 'objects' in params:
             overrides = params.pop('objects')
         else:

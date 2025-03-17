@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, TypeVar,
+    TYPE_CHECKING, Any, ClassVar, TypeVar, cast,
 )
 
 import numpy as np
@@ -386,6 +386,7 @@ class Pane(PaneBase, Reactive):
                         parent.children[node] = new_models  # type: ignore
                         break
             elif isinstance(parent, _BkTabs):
+                parent.tabs = cast(list[_BkTabPanel], parent.tabs)
                 index = [tab.child for tab in parent.tabs].index(old_model)
                 old_tab = parent.tabs[index]  # type: ignore
                 props = dict(old_tab.properties_with_values(), child=new_model)

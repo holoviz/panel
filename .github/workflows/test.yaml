@@ -170,7 +170,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         environment: ["test-ui"]
-    timeout-minutes: 120
+    timeout-minutes: 60
     env:
       PANEL_LOG_LEVEL: info
       OAUTH_COOKIE_SECRET: ${{ secrets.OAUTH_COOKIE_SECRET }}
@@ -242,8 +242,8 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        environment: ["test-core", "test-minimum"]
-    timeout-minutes: 120
+        environment: ["test-core", "test-bokeh35", "test-bokeh36"]
+    timeout-minutes: 30
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
@@ -262,11 +262,12 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         environment: ["test-type"]
-    timeout-minutes: 120
+    timeout-minutes: 30
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: ${{ matrix.environment }}
+          install: false
       - name: Test Type
         run: |
           pixi run -e ${{ matrix.environment }} test-type

@@ -108,7 +108,7 @@ def test_layout_radd_list(panel, document, comm):
     assert model.children == [div3, div4, div1, div2]
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Column, Row, Accordion, Tabs])
 def test_layout_add_error(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -388,7 +388,7 @@ def test_layout_clear(panel, document, comm):
     assert p1._models == p2._models == {}
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Column, Row, Accordion, Tabs])
 def test_layout_clone_args(panel):
     div1 = Div()
     div2 = Div()
@@ -399,7 +399,7 @@ def test_layout_clone_args(panel):
     assert layout.objects[1].object is clone.objects[0].object
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Column, Row, Accordion, Tabs])
 def test_layout_clone_kwargs(panel):
     div1 = Div()
     div2 = Div()

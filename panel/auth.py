@@ -1081,6 +1081,7 @@ class OAuthProvider(BasicAuthProvider):
                     pass
 
             if refresh_token is None:
+                handler.clear_cookie('state')
                 log.debug("%s access_token is expired and refresh_token not available, forcing user to reauthenticate.", type(self).__name__)
                 return
 
