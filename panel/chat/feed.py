@@ -991,7 +991,10 @@ class ChatFeed(ListPanel):
 
     def trigger_post_hook(self):
         """
-        Triggers the post hook callback.
+        Triggers the post hook with the latest message in the chat log.
+
+        Typically called after streaming is completed, i.e. after a for loop where `stream` is called multiple times.
+        If not streaming, use the `trigger_post_hook` keyword argument inside the `send` method instead.
         """
         message = self._chat_log.objects[-1]
         self._run_post_hook(message)
@@ -999,6 +1002,9 @@ class ChatFeed(ListPanel):
     def respond(self):
         """
         Executes the callback with the latest message in the chat log.
+
+        Typically called after streaming is completed, i.e. after a for loop where `stream` is called multiple times.
+        If not streaming, use the `respond` keyword argument inside the `send` method instead.
         """
         self.param.trigger("_callback_trigger")
 
