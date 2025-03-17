@@ -91,7 +91,9 @@ def color_param_to_ppt(p, kwargs):
 
 def list_param_to_ppt(p, kwargs):
     item_type = bp.Any
-    if not isinstance(p.item_type, type):
+    if isinstance(p.item_type, tuple) and all(issubclass(t, pm.Parameterized) or t is dict for t in p.item_type):
+        return bp.List(bp.Either(bp.Dict(bp.String, bp.Any), bp.Instance(DataModel))), [(ParameterizedList, lambda ps: [create_linked_datamodel(p) for p in ps])]
+    elif not isinstance(p.item_type, type):
         pass
     elif issubclass(p.item_type, Viewable):
         item_type = bp.Instance(Model)
