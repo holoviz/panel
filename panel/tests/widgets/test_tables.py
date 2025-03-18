@@ -2618,6 +2618,39 @@ def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(
     assert list(model.cell_styles['data'][0]) == [1, 6, 4]
 
 @mpl_available
+def test_tabulator_style_background_with_frozen_index(document, comm):
+    df = pd.DataFrame([[1, 2, 3, 4, 5]], columns=list("abcde")).set_index("a")
+    table = Tabulator(df, frozen_columns=["a"])
+    table.style.background_gradient(vmin=0, vmax=1, subset=["c"])
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [3]
+
+
+@mpl_available
+def test_tabulator_style_background_with_frozen_indexes(document, comm):
+    df = pd.DataFrame([[1, 2, 3, 4, 5]], columns=list("abcde")).set_index(["a", "b"])
+    table = Tabulator(df, frozen_columns=["a", "b"])
+    table.style.background_gradient(vmin=0, vmax=1, subset=["c"])
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [3]
+
+
+@mpl_available
+def test_tabulator_style_background_with_frozen_index_and_column(document, comm):
+    df = pd.DataFrame([[1, 2, 3, 4, 5]], columns=list("abcde")).set_index(["a", "d"])
+    table = Tabulator(df, frozen_columns=["a", "b"])
+    table.style.background_gradient(vmin=0, vmax=1, subset=["c"])
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [4]
+
+
+@mpl_available
 def test_tabulator_style_background_gradient(document, comm):
     df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
     table = Tabulator(df)
