@@ -169,9 +169,9 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
         })
       """,
       "notifications": """
-        for (notification of data.notifications) {
+      for (notification of [...data.notifications]) {
           if (notification._destroyed || notification._rendered) {
-            return
+            continue
           }
           var config = {
             duration: notification.duration,
