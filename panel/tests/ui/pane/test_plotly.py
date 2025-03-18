@@ -219,16 +219,16 @@ def test_plotly_click_data_figure_widget(page, plotly_2d_figure_widget):
 
     # Select and click on points
     for i in range(2):
-        for _ in range(3):
+        for _ in range(5):
             # Simulating click is unreliable
             point = page.locator('.js-plotly-plot .plot-container.plotly path.point').nth(i)
             point.click(force=True)
             time.sleep(0.1)
 
         def check_click(i=i):
-            if len(events) < ((i+1)*3):
+            if len(events) < ((i+1)*5):
                 return False
-            click_trace, points, device_state = events[-1 if i else 2]
+            click_trace, points, device_state = events[-1 if i else 4]
             assert click_trace is trace
             assert points.xs == [0+i]
             assert points.ys == [2+i]
