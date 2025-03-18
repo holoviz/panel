@@ -10,6 +10,7 @@ import traceback
 
 from collections.abc import Callable
 from enum import Enum
+from functools import partial
 from inspect import (
     getfullargspec, isasyncgen, isasyncgenfunction, isawaitable,
     iscoroutinefunction, isgenerator, isgeneratorfunction, ismethod,
@@ -219,8 +220,6 @@ class ChatFeed(ListPanel):
 
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
 
-    _post_hook_trigger = param.Event(doc="Triggers the append callback.")
-
     _disabled_stack = param.List(doc="""
         The previous disabled state of the feed.""")
 
@@ -315,7 +314,6 @@ class ChatFeed(ListPanel):
 
         # handle async callbacks using this trick
         self.param.watch(self._prepare_response, '_callback_trigger')
-        self.param.watch(self._after_append_completed, '_post_hook_trigger')
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -549,7 +547,8 @@ class ChatFeed(ListPanel):
                 response_message = self._upsert_message(await response, response_message)
             else:
                 response_message = self._upsert_message(response, response_message)
-            self.param.trigger("_post_hook_trigger")
+            if response_message is not None:
+                self._run_post_hook(response_message)
         finally:
             if response_message:
                 response_message.show_activity_dot = False
@@ -666,6 +665,7 @@ class ChatFeed(ListPanel):
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
+        trigger_post_hook: bool = True,
         **message_params
     ) -> ChatMessage | None:
         """
@@ -683,6 +683,8 @@ class ChatFeed(ListPanel):
             The avatar to use; overrides the message message's avatar if provided.
         respond : bool
             Whether to execute the callback.
+        trigger_post_hook: bool
+            Whether to trigger the post hook after sending.
         message_params : dict
             Additional parameters to pass to the ChatMessage.
 
@@ -702,7 +704,8 @@ class ChatFeed(ListPanel):
                 value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar, **message_params)
         self.append(message)
-        self.param.trigger("_post_hook_trigger")
+        if trigger_post_hook:
+            self._run_post_hook(message)
         if respond:
             self.respond()
         return message
@@ -714,6 +717,7 @@ class ChatFeed(ListPanel):
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
         replace: bool = False,
+        trigger_post_hook: bool = False,
         **message_params
     ) -> ChatMessage | None:
         """
@@ -737,6 +741,8 @@ class ChatFeed(ListPanel):
             The message to update.
         replace : bool
             Whether to replace the existing text when streaming a string or dict.
+        trigger_post_hook: bool
+            Whether to trigger the post hook after streaming.
         message_params : dict
             Additional parameters to pass to the ChatMessage.
 
@@ -765,6 +771,8 @@ class ChatFeed(ListPanel):
             if message_params:
                 message.param.update(**message_params)
             self._chat_log.scroll_to_latest(scroll_limit=self.auto_scroll_limit)
+            if trigger_post_hook:
+                self._run_post_hook(message)
             return message
 
         if isinstance(value, ChatMessage):
@@ -774,10 +782,20 @@ class ChatFeed(ListPanel):
                 value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar, **message_params)
         self._replace_placeholder(message)
-
-        self.param.trigger("_post_hook_trigger")
         self._chat_log.scroll_to_latest(scroll_limit=self.auto_scroll_limit)
+        if trigger_post_hook:
+            self._run_post_hook(message)
         return message
+
+    def _match_step_status(self, event):
+        """
+        Matches the status of the ChatStep with the ChatFeed.
+        """
+        if event.new in ("running", "pending"):
+            self._callback_state = CallbackState.RUNNING
+        elif event.new in ("failed", "success"):
+            self._callback_state = CallbackState.IDLE
+            self._run_post_hook(event.obj)
 
     def add_step(
         self,
@@ -821,6 +839,7 @@ class ChatFeed(ListPanel):
         step_params : dict
             Parameters to pass to the ChatStep.
         """
+        self._callback_state = CallbackState.RUNNING
         if not isinstance(step, ChatStep):
             if step is None:
                 step = []
@@ -841,6 +860,7 @@ class ChatFeed(ListPanel):
             step = self._step_type(**step_params)
 
         step._instance = self
+        step.param.watch(self._match_step_status, "status")
 
         if append:
             for i in range(1, last_messages + 1):
@@ -883,10 +903,11 @@ class ChatFeed(ListPanel):
             if layout_params:
                 input_layout_params.update(layout_params)
             steps_layout = layout(step, **input_layout_params)
-            self.stream(steps_layout, user=user or self.callback_user, avatar=avatar)
+            self.stream(steps_layout, user=user or self.callback_user, avatar=avatar, trigger_post_hook=False)
         else:
             steps_layout.append(step)
             self._chat_log.scroll_to_latest(scroll_limit=self.auto_scroll_limit)
+        step._layout = steps_layout
         return step
 
     def prompt_user(
@@ -968,9 +989,22 @@ class ChatFeed(ListPanel):
 
         param.parameterized.async_executor(_prepare_prompt)
 
+    def trigger_post_hook(self):
+        """
+        Triggers the post hook with the latest message in the chat log.
+
+        Typically called after streaming is completed, i.e. after a for loop where `stream` is called multiple times.
+        If not streaming, use the `trigger_post_hook` keyword argument inside the `send` method instead.
+        """
+        message = self._chat_log.objects[-1]
+        self._run_post_hook(message)
+
     def respond(self):
         """
         Executes the callback with the latest message in the chat log.
+
+        Typically called after streaming is completed, i.e. after a for loop where `stream` is called multiple times.
+        If not streaming, use the `respond` keyword argument inside the `send` method instead.
         """
         self.param.trigger("_callback_trigger")
 
@@ -1081,16 +1115,23 @@ class ChatFeed(ListPanel):
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages
 
-    async def _after_append_completed(self, message):
+    def _run_post_hook(self, message: ChatMessage | ChatStep | None):
         """
-        Trigger the append callback after a message is added to the chat feed.
+        Runs the post hook callback, only if idle or stopped.
         """
         if self.post_hook is None:
             return
 
-        message = self._chat_log.objects[-1]
+        if isinstance(message, ChatStep):
+            for obj in self._chat_log.objects[::-1]:
+                if obj.object is message._layout:
+                    message = obj
+                    break
+            else:
+                raise ValueError("Could not find the ChatStep layout in the chat log.")
+
         if iscoroutinefunction(self.post_hook):
-            await self.post_hook(message, self)
+            param.parameterized.async_executor(partial(self.post_hook, message, self))
         else:
             self.post_hook(message, self)
 
