@@ -8,7 +8,9 @@ from collections import defaultdict, namedtuple
 from collections.abc import (
     Generator, Iterable, Iterator, Mapping,
 )
-from typing import TYPE_CHECKING, Any, ClassVar, overload
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, overload,
+)
 
 import param
 
