@@ -170,7 +170,7 @@ nbval = "*"
 channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
-playwright = { version = "*", channel = "microsoft" }
+playwright = { version = "!=1.51.0", channel = "microsoft" }  # https://github.com/microsoft/playwright-python/issues/2791
 pytest-playwright = { version = "*", channel = "microsoft" }
 pytest-asyncio = "*"
 jupyter_server = "*"
