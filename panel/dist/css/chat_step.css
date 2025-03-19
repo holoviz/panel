@@ -1,5 +1,29 @@
 /* inherit from chat_message */
 
+@keyframes warning-glow {
+  0% {
+    background-color: rgba(255, 193, 7, 0.45);
+    box-shadow: 0 0 4px rgba(255, 193, 7, 0.3);
+  }
+  50% {
+    background-color: rgba(255, 193, 7, 1);
+    box-shadow: 0 0 10px rgba(255, 193, 7, 1);
+  }
+  100% {
+    background-color: rgba(255, 193, 7, 0.45);
+    box-shadow: 0 0 4px rgba(255, 193, 7, 0.3);
+  }
+}
+
+:host(.dot-filled.warning) div {
+  height: 100%;
+  width: 100%;
+  border: 1px solid var(--jp-inverse-layout-color0, black) !important;
+  border-radius: 50%;
+  display: inline-block;
+  animation: warning-glow 3s infinite;
+}
+
 :host(.card) {
   box-shadow:
     color-mix(in srgb, var(--panel-shadow-color) 30%, transparent) 0px 1px 2px

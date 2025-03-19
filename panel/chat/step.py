@@ -19,11 +19,17 @@ from .utils import (
     avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
 )
 
+_STATUS_KWARGS = dict(
+    stylesheets=[f"{CDN_DIST}css/chat_step.css"],
+    css_classes=["step-status"],
+    margin=0
+)
+
 DEFAULT_STATUS_BADGES = {
-    "pending": lambda: BooleanStatus(value=False, margin=0, color="primary"),
-    "running": lambda: BooleanStatus(value=True, margin=0, color="warning"),
-    "success": lambda: BooleanStatus(value=True, margin=0, color="success"),
-    "failed": lambda: BooleanStatus(value=True, margin=0, color="danger"),
+    "pending": lambda: BooleanStatus(value=False, color="primary", **_STATUS_KWARGS),
+    "running": lambda: BooleanStatus(value=True, color="warning", **_STATUS_KWARGS),
+    "success": lambda: BooleanStatus(value=True, color="success", **_STATUS_KWARGS),
+    "failed": lambda: BooleanStatus(value=True, color="danger", **_STATUS_KWARGS),
 }
 
 
