@@ -469,16 +469,17 @@ class ChatMessage(Pane):
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if obj.css_classes or not is_markup:
             return obj
+        params = {"sizing_mode": None}
         if len(str(obj.object)) > 0:  # only show a background if there is content
-            obj.css_classes = [*(css for css in obj.css_classes if css != "message"), "message"]
-        obj.sizing_mode = None
+            params["css_classes"] = [*(css for css in obj.css_classes if css != "message"), "message"]
+        obj.param.update(**params)
         return obj
 
     def _set_params(self, obj, **params):
         """
         Set the sizing mode and height of the object.
         """
-        self._include_stylesheets_inplace(obj)
+        obj = self._include_stylesheets_inplace(obj)
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if is_markup:
             self._include_message_css_class_inplace(obj)

@@ -187,6 +187,7 @@ export class ReactiveESMView extends HTMLBoxView {
 
   override initialize(): void {
     super.initialize()
+    this._child_callbacks = new Map()
     this.model_proxy = new Proxy(this, {
       get: model_getter,
       set: model_setter,
@@ -290,6 +291,7 @@ export class ReactiveESMView extends HTMLBoxView {
     this._update_stylesheets()
     this._update_css_classes()
     this._apply_styles()
+    this._update_css_variables()
     this._apply_visible()
 
     this._child_callbacks = new Map()

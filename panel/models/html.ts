@@ -124,7 +124,7 @@ export class HTMLView extends PanelMarkupView {
   }
 
   set_html(html: string | null): void {
-    if (html === null) {
+    if (html === null || this.container == null) {
       return
     }
     this.container.innerHTML = html
