@@ -473,12 +473,11 @@ class ChatMessage(Pane):
         """
         self._include_styles(obj)
         if not isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase):
-            params = {}
             if obj.sizing_mode is None and not obj.width:
                 params['sizing_mode'] = "stretch_width"
             if obj.height is None and not isinstance(obj, ParamFunction):
                 params['height'] = 500
-            obj.param.update(params)
+        obj.param.update(params)
 
     @staticmethod
     def _is_widget_renderer(renderer):
