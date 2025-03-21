@@ -472,7 +472,7 @@ class ChatMessage(Pane):
         Set the sizing mode and height of the object.
         """
         self._include_styles(obj)
-        if not isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase):
+        if not isinstance(obj, (FileBase, HTMLBasePane)):
             if obj.sizing_mode is None and not obj.width:
                 params['sizing_mode'] = "stretch_width"
             if obj.height is None and not isinstance(obj, ParamFunction):
@@ -489,7 +489,7 @@ class ChatMessage(Pane):
         """
         if isinstance(value, Viewable):
             self._internal = False
-            self._set_params(value)
+            self._include_styles(value)
             return value
 
         renderer = None
