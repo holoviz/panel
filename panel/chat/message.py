@@ -450,16 +450,12 @@ class ChatMessage(Pane):
         return contents, renderer
 
     def _include_stylesheets_inplace(self, obj):
-        if hasattr(obj, "objects"):
-            obj.objects[:] = [
-                self._include_stylesheets_inplace(o) for o in obj.objects
-            ]
-        else:
-            obj = _panel(obj)
-        obj.stylesheets = [
-            stylesheet for stylesheet in self._stylesheets + self.stylesheets
-            if stylesheet not in obj.stylesheets
-        ] + obj.stylesheets
+        obj = _panel(obj)
+        for o in obj.select():
+            o.stylesheets = [
+                stylesheet for stylesheet in self._stylesheets + self.stylesheets
+                if stylesheet not in obj.stylesheets
+            ] + o.stylesheets
         return obj
 
     def _include_message_css_class_inplace(self, obj):
@@ -692,6 +688,7 @@ class ChatMessage(Pane):
             Whether to replace the existing text.
         """
         stream_to(obj=self.object, token=token, replace=replace, object_panel=self)
+        self._include_message_css_class_inplace(self.object)
 
     def update(
         self,
