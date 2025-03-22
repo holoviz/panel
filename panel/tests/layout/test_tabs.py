@@ -573,17 +573,6 @@ def test_tabs_setitem_replace_all(document, comm):
     assert p2._models == {}
 
 
-def test_tabs_setitem_replace_all_error(document, comm):
-    div1 = Div()
-    div2 = Div()
-    layout = Tabs(div1, div2)
-    layout.get_root(document, comm=comm)
-
-    div3 = Div()
-    with pytest.raises(IndexError):
-        layout[:] = div3
-
-
 def test_tabs_setitem_replace_slice(document, comm):
     div1 = Div()
     div2 = Div()
@@ -608,29 +597,29 @@ def test_tabs_setitem_replace_slice(document, comm):
     assert p3._models == {}
 
 
-def test_tabs_setitem_replace_slice_error(document, comm):
+def test_tabs_setitem_replace_slice_resize(document, comm):
     div1 = Div()
     div2 = Div()
     div3 = Div()
     layout = Tabs(div1, div2, div3)
-    layout.get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     div3 = Div()
-    with pytest.raises(IndexError):
-        layout[1:] = [div3]
-
+    layout[1:] = [div3]
+    assert len(layout) == 2
+    assert [t.child for t in model.tabs] == [div3, div2]
 
 def test_tabs_setitem_replace_slice_out_of_bounds(document, comm):
     div1 = Div()
     div2 = Div()
     div3 = Div()
     layout = Tabs(div1, div2, div3)
-    layout.get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
-    div3 = Div()
-    with pytest.raises(IndexError):
-        layout[3:4] = [div3]
-
+    div4 = Div()
+    layout[3:4] = [div4]
+    assert len(layout) == 4
+    assert [t.child for t in model.tabs] == [div1, div2, div3, div4]
 
 def test_tabs_pop(document, comm):
     div1 = Div()
