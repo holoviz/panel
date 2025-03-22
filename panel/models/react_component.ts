@@ -11,6 +11,8 @@ export class ReactComponentView extends ReactiveESMView {
   model_getter = model_getter
   model_setter = model_setter
 
+  _force_update_callbacks: (() => void)[] = []
+
   override render_esm(): void {
     if (this.model.usesMui) {
       if (this.model.root_node) {
@@ -21,6 +23,21 @@ export class ReactComponentView extends ReactiveESMView {
       }
     }
     super.render_esm()
+  }
+
+  on_force_update(cb: () => void): void {
+    this._force_update_callbacks.push(cb)
+  }
+
+  force_update(): void {
+    for (const cb of this._force_update_callbacks) {
+      cb()
+    }
+  }
+
+  override render(): void {
+    this._force_update_callbacks = []
+    super.render()
   }
 
   override after_rendered(): void {
@@ -69,6 +86,7 @@ const {React, createRoot} = ns.default`
 import * as React from "react"
 import { createRoot } from "react-dom/client"`
     }
+    let extra_code = ""
     if (this.model.usesMui) {
       if (this.model.bundle) {
         import_code = `
@@ -80,7 +98,7 @@ ${import_code}
 import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
       }
-      render_code = `
+      extra_code = `
   if (rendered) {
     const cache = createCache({
       key: 'css-${this.model.id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()}',
@@ -88,8 +106,7 @@ import { CacheProvider } from "@emotion/react"`
       container: view.style_cache,
     })
     rendered = React.createElement(CacheProvider, {value: cache}, rendered)
-  }
-  ${render_code}`
+  }`
     }
     return `
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
@@ -100,8 +117,7 @@ class Child extends React.Component {
 
   get view() {
     const model = this.props.parent.model.data[this.props.name]
-    const models = Array.isArray(model) ? model : [model]
-    return this.props.parent.get_child_view(models[this.props.index])
+    return this.props.parent.get_child_view(this.props.index == null ? model : model[this.props.index])
   }
 
   get element() {
@@ -111,28 +127,27 @@ class Child extends React.Component {
 
   componentDidMount() {
     this.view.render()
-    this.view.after_render()
+    this.view.r_after_render()
     this.props.parent.on_child_render(this.props.name, (new_views) => {
       this.forceUpdate()
       const view = this.view
       if (new_views.includes(view)) {
         view.render()
-        view.after_render()
+        view.r_after_render()
+      } else if (view.force_update) {
+        view.force_update()
       }
     })
   }
-
-  append_child(ref) {
-    if (ref != null) {
-       const view = this.view
-       if (view != null) {
-         ref.appendChild(this.element)
-       }
-    }
-  }
-
   render() {
-    return React.createElement('div', {className: "child-wrapper", ref: (ref) => this.append_child(ref)})
+    return React.createElement('div', {
+      className: "child-wrapper",
+      ref: (ref) => {
+        if (ref != null && this.view != null) {
+          ref.appendChild(this.element)
+        }
+      }
+    })
   }
 }
 
@@ -174,32 +189,20 @@ function react_getter(target, name) {
       const data_model = target.model.data
       const value = data_model.attributes[child]
       if (Array.isArray(value)) {
-        const children = []
-        for (let i = 0; i<value.length; i++) {
-          children.push(
-            React.createElement(Child, {parent: target, name: child, index: i, key: child+i})
-          )
-        }
-        const [children_state, set_children] = React.useState(children);
-        target.on_child_render(child, (new_views) => {
-          const value = data_model.attributes[child]
-          if (new_views.length && children_state.length !== value.length) {
-            const children = []
-            for (let i = 0; i<value.length; i++) {
-              let new_child
-              if (i < children_state.length) {
-                new_child = children_state[i]
-              } else {
-                new_child = React.createElement(Child, {parent: target, name: child, index: i, key: child+i})
-              }
-              children.push(new_child)
-            }
-            set_children(children)
-          }
-        })
+        const [children_state, set_children] = React.useState(value.map((model, i) =>
+          React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
+        ));
+
+        React.useEffect(() => {
+          target.on_child_render(child, () => {
+            set_children(data_model.attributes[child].map((model, i) => {
+              return React.createElement(Child, { parent: target, name: child, key: child+i, index: i });
+            }))
+          });
+        }, [])
         return children_state
       } else {
-        return React.createElement(Child, {parent: target, name: child, index: 0})
+        return React.createElement(Child, {parent: target, name: child})
       }
     }
   }
@@ -238,6 +241,9 @@ class ErrorBoundary extends React.Component {
 class Component extends React.Component {
 
   componentDidMount() {
+    this.props.view.on_force_update(() => {
+      this.forceUpdate()
+    })
     this.props.view._changing = false
     this.props.view.after_rendered()
   }
@@ -247,14 +253,14 @@ class Component extends React.Component {
     if (this.props.view.model.dev) {
        rendered = React.createElement(ErrorBoundary, {view}, rendered)
     }
+    ${extra_code}
     return rendered
   }
 }
 
 function render() {
   const props = {view, model: react_proxy, data: view.model.data, el: view.container}
-  let rendered = React.createElement(Component, props)
-
+  const rendered = React.createElement(Component, props)
   ${render_code}
 }
 
