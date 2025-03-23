@@ -115,6 +115,11 @@ ${import_code}
 
 class Child extends React.Component {
 
+  constructor(props) {
+    super(props);
+    this.render_callback = null
+  }
+
   get view() {
     const model = this.props.parent.model.data[this.props.name]
     return this.props.parent.get_child_view(this.props.index == null ? model : model[this.props.index])
@@ -128,16 +133,26 @@ class Child extends React.Component {
   componentDidMount() {
     this.view.render()
     this.view.r_after_render()
-    this.props.parent.on_child_render(this.props.name, (new_views) => {
-      this.forceUpdate()
+    this.render_callback = (new_views) => {
       const view = this.view
+      if (view == null) {
+        return
+      }
+      this.forceUpdate()
       if (new_views.includes(view)) {
         view.render()
         view.r_after_render()
       } else if (view.force_update) {
         view.force_update()
       }
-    })
+    }
+    this.props.parent.on_child_render(this.props.name, this.render_callback)
+  }
+
+  componentWillUnmount() {
+    if (this.render_callback) {
+      this.props.parent.remove_on_child_render(this.props.name, this.render_callback)
+    }
   }
 
   render() {

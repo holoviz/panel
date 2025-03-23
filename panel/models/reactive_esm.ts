@@ -181,12 +181,13 @@ export class ReactiveESMView extends HTMLBoxView {
     ["resize", []],
     ["remove", []],
   ])
-  _module_cache: Map<string, any> = MODULE_CACHE
+  _module_cache: Map<string, any>
   _rendered: boolean = false
   _stale_children: boolean = false
 
   override initialize(): void {
     super.initialize()
+    this._module_cache = MODULE_CACHE
     this._child_callbacks = new Map()
     this.model_proxy = new Proxy(this, {
       get: model_getter,
@@ -476,8 +477,17 @@ export default {render}`
     callbacks.push(callback)
   }
 
-  remove_on_child_render(child: string): void {
-    this._child_callbacks.delete(child)
+  remove_on_child_render(child: string, callback?: (new_views: UIElementView[]) => void): void {
+    if (!this._child_callbacks.has(child)) {
+      return
+    }
+    if (callback === undefined) {
+      this._child_callbacks.delete(child)
+    } else {
+      let callbacks = this._child_callbacks.get(child) || []
+      callbacks = callbacks.filter((cb) => cb !== callback)
+      this._child_callbacks.set(child, callbacks)
+    }
   }
 }
 
