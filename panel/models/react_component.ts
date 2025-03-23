@@ -2,7 +2,7 @@ import type * as p from "@bokehjs/core/properties"
 import type {Transform} from "sucrase"
 
 import {
-  ReactiveESM, ReactiveESMView, model_getter, model_setter,
+  ReactiveESM, ReactiveESMView, model_getter, model_setter
 } from "./reactive_esm"
 
 export class ReactComponentView extends ReactiveESMView {
@@ -54,27 +54,6 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   protected override _render_code(): string {
-    const render_code = `
-if (rendered) {
-  view._changing = true
-  let container
-  if (view.model.root_node) {
-    container = document.querySelector(view.model.root_node)
-    if (container == null) {
-      container = document.createElement("div")
-      container.id = view.model.root_node.replace("#", "")
-      document.body.append(container)
-    }
-  } else {
-    container = view.container
-  }
-  const root = createRoot(container)
-  try {
-    root.render(rendered)
-  } catch(e) {
-    view.render_error(e)
-  }
-}`
     let import_code
     const cache_key = (this.model.bundle === "url") ? this.model.esm : (this.model.bundle || `${this.model.class_name}-${this.model.esm.length}`)
     if (this.model.bundle) {
@@ -98,10 +77,11 @@ ${import_code}
 import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
       }
+      const css_key = this.model.id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
       extra_code = `
   if (rendered) {
     const cache = createCache({
-      key: 'css-${this.model.id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()}',
+      key: 'css-${css_key}',
       prepend: true,
       container: view.style_cache,
     })
@@ -116,13 +96,14 @@ ${import_code}
 class Child extends React.Component {
 
   constructor(props) {
-    super(props);
+    super(props)
     this.render_callback = null
   }
 
   get view() {
-    const model = this.props.parent.model.data[this.props.name]
-    return this.props.parent.get_child_view(this.props.index == null ? model : model[this.props.index])
+    const child = this.props.parent.model.data[this.props.name]
+    const model = this.props.index == null ? child : child[this.props.index]
+    return this.props.parent.get_child_view(model)
   }
 
   get element() {
@@ -170,33 +151,33 @@ class Child extends React.Component {
 function react_getter(target, name) {
   if (name == "useState") {
     return (prop) => {
-      const data_model = target.model.data;
-      const propPath = prop.split(".");
-      let targetModel = data_model;
-      let resolvedProp = null;
+      const data_model = target.model.data
+      const propPath = prop.split(".")
+      let targetModel = data_model
+      let resolvedProp = null
 
       for (let i = 0; i < propPath.length - 1; i++) {
         if (targetModel && targetModel.properties && propPath[i] in targetModel.properties) {
-          targetModel = targetModel[propPath[i]];
+          targetModel = targetModel[propPath[i]]
         } else {
           // Stop if any part of the path is missing
-          targetModel = null;
-          break;
+          targetModel = null
+          break
         }
       }
       if (targetModel && targetModel.attributes && propPath[propPath.length - 1] in targetModel.attributes) {
-        resolvedProp = propPath[propPath.length - 1];
+        resolvedProp = propPath[propPath.length - 1]
       }
       if (resolvedProp && targetModel) {
-        const [value, setValue] = React.useState(targetModel.attributes[resolvedProp]);
+        const [value, setValue] = React.useState(targetModel.attributes[resolvedProp])
 
-        react_proxy.on(prop, () => setValue(targetModel.attributes[resolvedProp]));
+        react_proxy.on(prop, () => setValue(targetModel.attributes[resolvedProp]))
 
         React.useEffect(() => {
-            targetModel.setv({ [resolvedProp]: value });
-        }, [value]);
+            targetModel.setv({ [resolvedProp]: value })
+        }, [value])
 
-        return [value, setValue];
+        return [value, setValue]
       }
       throw ReferenceError("Could not resolve " + prop + " on " + target.model.class_name)
     }
@@ -207,14 +188,14 @@ function react_getter(target, name) {
       if (Array.isArray(value)) {
         const [children_state, set_children] = React.useState(value.map((model, i) =>
           React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
-        ));
+        ))
 
         React.useEffect(() => {
           target.on_child_render(child, () => {
-            set_children(data_model.attributes[child].map((model, i) => {
-              return React.createElement(Child, { parent: target, name: child, key: child+i, index: i });
-            }))
-          });
+            set_children(data_model.attributes[child].map((model, i) => (
+              React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
+            )))
+          })
         }, [])
         return children_state
       } else {
@@ -232,14 +213,14 @@ const react_proxy = new Proxy(view, {
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
-    super(props);
+    super(props)
     // initialize the error state
-    this.state = { hasError: false };
+    this.state = { hasError: false }
   }
 
   // if an error happened, set the state to true
   static getDerivedStateFromError(error) {
-    return { hasError: true };
+    return { hasError: true }
   }
 
   componentDidCatch(error) {
@@ -250,7 +231,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return React.createElement('div')
     }
-    return React.createElement('div', {className: "error-wrapper"}, this.props.children);
+    return React.createElement('div', {className: "error-wrapper"}, this.props.children)
   }
 }
 
@@ -277,7 +258,26 @@ class Component extends React.Component {
 function render() {
   const props = {view, model: react_proxy, data: view.model.data, el: view.container}
   const rendered = React.createElement(Component, props)
-  ${render_code}
+  if (rendered) {
+    view._changing = true
+    let container
+    if (view.model.root_node) {
+      container = document.querySelector(view.model.root_node)
+      if (container == null) {
+        container = document.createElement("div")
+        container.id = view.model.root_node.replace("#", "")
+        document.body.append(container)
+      }
+    } else {
+      container = view.container
+    }
+    const root = createRoot(container)
+    try {
+      root.render(rendered)
+    } catch(e) {
+      view.render_error(e)
+    }
+  }
 }
 
 export default {render}`
@@ -327,7 +327,7 @@ ${compiled}`
   static {
     this.prototype.default_view = ReactComponentView
     this.define<ReactComponent.Props>(({Nullable, Str}) => ({
-      root_node:  [ Nullable(Str),     null ],
+      root_node:  [ Nullable(Str),     null ]
     }))
   }
 }
