@@ -54,7 +54,7 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   protected override _render_code(): string {
-    let render_code = `
+    const render_code = `
 if (rendered) {
   view._changing = true
   let container
@@ -139,6 +139,7 @@ class Child extends React.Component {
       }
     })
   }
+
   render() {
     return React.createElement('div', {
       className: "child-wrapper",
