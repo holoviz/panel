@@ -2,7 +2,7 @@ import type * as p from "@bokehjs/core/properties"
 import type {Transform} from "sucrase"
 
 import {
-  ReactiveESM, ReactiveESMView, model_getter, model_setter
+  ReactiveESM, ReactiveESMView, model_getter, model_setter,
 } from "./reactive_esm"
 
 export class ReactComponentView extends ReactiveESMView {
@@ -332,7 +332,7 @@ ${compiled}`
   static {
     this.prototype.default_view = ReactComponentView
     this.define<ReactComponent.Props>(({Nullable, Str}) => ({
-      root_node:  [ Nullable(Str),     null ]
+      root_node:  [ Nullable(Str),     null ],
     }))
   }
 }
