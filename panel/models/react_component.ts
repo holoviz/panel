@@ -192,9 +192,14 @@ function react_getter(target, name) {
 
         React.useEffect(() => {
           target.on_child_render(child, () => {
-            set_children(data_model.attributes[child].map((model, i) => (
-              React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
-            )))
+            const current_models = data_model.attributes[child]
+            const previous_models = children_state.map(child => child.props.index)
+            if (current_models.length !== previous_models.length ||
+                current_models.some((model, i) => i !== previous_models[i])) {
+              set_children(current_models.map((model, i) => (
+                React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
+              )))
+            }
           })
         }, [])
         return children_state
