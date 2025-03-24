@@ -65,7 +65,8 @@ const {React, createRoot} = ns.default`
 import * as React from "react"
 import { createRoot } from "react-dom/client"`
     }
-    let extra_code = ""
+    let init_code = ""
+    let render_code = ""
     if (this.model.usesMui) {
       if (this.model.bundle) {
         import_code = `
@@ -78,14 +79,15 @@ import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
       }
       const css_key = this.model.id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
-      extra_code = `
+      init_code = `
+this.mui_cache = createCache({
+  key: 'css-${css_key}',
+  prepend: true,
+  container: view.style_cache,
+})`
+      render_code = `
   if (rendered) {
-    const cache = createCache({
-      key: 'css-${css_key}',
-      prepend: true,
-      container: view.style_cache,
-    })
-    rendered = React.createElement(CacheProvider, {value: cache}, rendered)
+    rendered = React.createElement(CacheProvider, {value: this.mui_cache}, rendered)
   }`
     }
     return `
@@ -242,6 +244,11 @@ class ErrorBoundary extends React.Component {
 
 class Component extends React.Component {
 
+  constructor(props) {
+    super(props)
+    ${init_code}
+  }
+
   componentDidMount() {
     this.props.view.on_force_update(() => {
       this.forceUpdate()
@@ -255,7 +262,7 @@ class Component extends React.Component {
     if (this.props.view.model.dev) {
        rendered = React.createElement(ErrorBoundary, {view}, rendered)
     }
-    ${extra_code}
+    ${render_code}
     return rendered
   }
 }
