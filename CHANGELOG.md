@@ -12,6 +12,7 @@ This release primarily introduces improvements for ESM and React components and 
 - Allow defining root node for `ReactComponent` ([#7787](https://github.com/holoviz/panel/pull/7787))
 - Improve pretty printing in `HoloViews` pane ([#7775](https://github.com/holoviz/panel/pull/7775))
 - Allow serializing joint dict/Parameterized types on `DataModel` ([#7789](https://github.com/holoviz/panel/pull/7789))
+- Improve rendering of ReactComponent children ([#7802](https://github.com/holoviz/panel/pull/7802))
 
 ### Performance
 
@@ -38,6 +39,8 @@ This release primarily introduces improvements for ESM and React components and 
 - Use Ace version with no require.js dependency ([#7781](https://github.com/holoviz/panel/pull/7781))
 - Ensure multiple sequential notifications render ([#7790](https://github.com/holoviz/panel/pull/7790))
 - Style correct column when frozen `Tabulator` column is an index ([#7792](https://github.com/holoviz/panel/pull/7792))
+- Ensure IconButton tooltip timer is cleared on multiple mouseenter events ([#7798](https://github.com/holoviz/panel/pull/7798))
+- Ensure pre-processors are applied to ESM children ([#7799](https://github.com/holoviz/panel/pull/7799))
 
 ### Compatibility
 
