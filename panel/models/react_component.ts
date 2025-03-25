@@ -251,6 +251,7 @@ class Component extends React.Component {
 
   componentDidMount() {
     this.props.view.on_force_update(() => {
+      ${init_code}
       this.forceUpdate()
     })
     this.props.view._changing = false
