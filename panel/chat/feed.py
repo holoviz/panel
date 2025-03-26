@@ -797,6 +797,36 @@ class ChatFeed(ListPanel):
             self._callback_state = CallbackState.IDLE
             self._run_post_hook(event.obj)
 
+    def _build_steps_layout(self, step, layout_params, default_layout):
+        layout_params = layout_params or {}
+        input_layout_params = dict(
+            min_width=100,
+            styles={
+                "margin-inline": "10px",
+            },
+            css_classes=["chat-steps"],
+            stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
+        )
+        if default_layout == "column":
+            layout = Column
+        elif default_layout == "card":
+            layout = self._card_type
+            input_layout_params["header_css_classes"] = ["card-header"]
+            title = layout_params.pop("title", None)
+            input_layout_params["header"] = HTML(
+                title or "🪜 Steps",
+                css_classes=["card-title"],
+                stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
+            )
+        else:
+            raise ValueError(
+                f"Invalid default_layout {default_layout!r}; "
+                f"expected 'column' or 'card'."
+            )
+        if layout_params:
+            input_layout_params.update(layout_params)
+        return layout(step, **input_layout_params)
+
     def add_step(
         self,
         step: str | list[str] | ChatStep | None = None,
@@ -875,34 +905,7 @@ class ChatFeed(ListPanel):
                     steps_layout = last.object
 
         if steps_layout is None:
-            layout_params = layout_params or {}
-            input_layout_params = dict(
-                min_width=100,
-                styles={
-                    "margin-inline": "10px",
-                },
-                css_classes=["chat-steps"],
-                stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
-            )
-            if default_layout == "column":
-                layout = Column
-            elif default_layout == "card":
-                layout = self._card_type
-                input_layout_params["header_css_classes"] = ["card-header"]
-                title = layout_params.pop("title", None)
-                input_layout_params["header"] = HTML(
-                    title or "🪜 Steps",
-                    css_classes=["card-title"],
-                    stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
-                )
-            else:
-                raise ValueError(
-                    f"Invalid default_layout {default_layout!r}; "
-                    f"expected 'column' or 'card'."
-                )
-            if layout_params:
-                input_layout_params.update(layout_params)
-            steps_layout = layout(step, **input_layout_params)
+            steps_layout = self._build_steps_layout(step, layout_params, default_layout)
             self.stream(steps_layout, user=user or self.callback_user, avatar=avatar, trigger_post_hook=False)
         else:
             steps_layout.append(step)
