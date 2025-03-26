@@ -142,6 +142,7 @@ class Child extends React.PureComponent {
     this.render_callback = (new_views) => {
       const view = this.view
       if (new_views.includes(view)) {
+        if (this.props.id === undefined) { this.forceUpdate() }
         view.render()
         view.after_render()
       } else {
