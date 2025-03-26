@@ -126,8 +126,7 @@ class Child extends React.PureComponent {
 
   get view() {
     const child = this.props.parent.model.data[this.props.name]
-    const children = Array.isArray(child) ? child : [child]
-    const model = children.find(m => (this.props.id === undefined) || (m.id === this.props.id))
+    const model = this.props.index == null ? child : child[this.props.index]
     return this.props.parent.get_child_view(model)
   }
 
@@ -141,7 +140,9 @@ class Child extends React.PureComponent {
     this.view.after_render()
     this.render_callback = (new_views) => {
       const view = this.view
-      if (new_views.includes(view)) {
+      if (!view) {
+        return
+      } else if (new_views.includes(view)) {
         if (this.props.id === undefined) { this.forceUpdate() }
         view.render()
         view.after_render()
@@ -215,18 +216,17 @@ function react_getter(target, name) {
       const data_model = target.model.data
       const value = data_model.attributes[child]
       if (Array.isArray(value)) {
-        const [children_state, set_children] = React.useState(value.map((model, i) => (
-          React.createElement(Child, { parent: target, name: child, key: model.id, id: model.id })
-        )))
-
+        const [children_state, set_children] = React.useState(value.map((model, i) =>
+          React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
+        ))
         React.useEffect(() => {
           target.on_child_render(child, () => {
             const current_models = data_model.attributes[child]
-            const previous_models = children_state.map(child => child.props.id)
+            const previous_models = children_state.map(child => child.props.index)
             if (current_models.length !== previous_models.length ||
-                current_models.some((model, i) => model.id !== previous_models[i])) {
+                current_models.some((model, i) => i !== previous_models[i])) {
               set_children(current_models.map((model, i) => (
-                React.createElement(Child, {parent: target, name: child, key: model.id, id: model.id})
+                React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
               )))
             }
           })
