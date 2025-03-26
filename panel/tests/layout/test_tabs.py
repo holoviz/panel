@@ -607,7 +607,7 @@ def test_tabs_setitem_replace_slice_resize(document, comm):
     div3 = Div()
     layout[1:] = [div3]
     assert len(layout) == 2
-    assert [t.child for t in model.tabs] == [div3, div2]
+    assert [t.child for t in model.tabs] == [div1, div3]
 
 def test_tabs_setitem_replace_slice_out_of_bounds(document, comm):
     div1 = Div()

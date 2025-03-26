@@ -738,7 +738,7 @@ class NamedListLike(param.Parameterized):
         self.objects = new_objects
         return obj
 
-    def remove(self, pane: Viewable, /) -> None:
+    def remove(self, pane: Viewable) -> None:
         """
         Removes an object from the tabs.
 
