@@ -84,6 +84,7 @@ graphviz = "*"
 hvplot = "*"
 ipyleaflet = "*"
 ipympl = "*"
+ipython_genutils = "*"  # 2025-03: https://github.com/widgetti/ipyvolume/pull/446 (interim dependency)
 ipyvolume = "*"
 ipyvuetify = "*"
 ipywidgets = "*"
