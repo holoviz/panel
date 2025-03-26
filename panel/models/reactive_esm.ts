@@ -175,15 +175,17 @@ export class ReactiveESMView extends HTMLBoxView {
   _child_callbacks: Map<string, ((new_views: UIElementView[]) => void)[]>
   _child_rendered: Map<UIElementView, boolean> = new Map()
   _event_handlers: ((data: unknown) => void)[] = []
-  _lifecycle_handlers: Map<string, (() => void)[]> =  new Map([
+  _lifecycle_handlers: Map<string, ((...args: any[]) => void)[]> =  new Map([
     ["after_layout", []],
     ["after_render", []],
     ["resize", []],
     ["remove", []],
+    ["mounted", []],
   ])
   _module_cache: Map<string, any>
   _rendered: boolean = false
   _stale_children: boolean = false
+  _mounted: Map<string, Set<string>> = new Map()
 
   override initialize(): void {
     super.initialize()
@@ -193,6 +195,18 @@ export class ReactiveESMView extends HTMLBoxView {
       get: model_getter,
       set: model_setter,
     })
+  }
+
+  init_module(): void {
+    if (this.model.compile_error) {
+      return
+    }
+    const code = this._render_code()
+    const render_url = URL.createObjectURL(
+      new Blob([code], {type: "text/javascript"}),
+    )
+    // @ts-ignore
+    this.render_module = importShim(render_url)
   }
 
   override async lazy_initialize(): Promise<void> {
@@ -238,6 +252,27 @@ export class ReactiveESMView extends HTMLBoxView {
     super.disconnect_signals()
     this._child_callbacks = new Map()
     this.model.disconnect_watchers(this)
+  }
+
+  notify_mount(child: string, id: string, remove: boolean): void {
+    if (!this._mounted.has(child)) {
+      this._mounted.set(child, new Set())
+    }
+    if (remove) {
+      this._mounted.get(child)?.delete(id)
+    } else {
+      this._mounted.get(child)?.add(id)
+    }
+    let children = this.model.data[child]
+    if (!isArray(children)) {
+      children = [children]
+    }
+    if (children.every((model: UIElement) => this._mounted.get(child)?.has(model.id))) {
+      this.update_layout()
+      for (const cb of this._lifecycle_handlers.get('mounted') || []) {
+        cb(child)
+      }
+    }
   }
 
   on_event(callback: (data: unknown) => void): void {
@@ -307,12 +342,9 @@ export class ReactiveESMView extends HTMLBoxView {
     if (this.model.compile_error) {
       this.render_error(this.model.compile_error)
     } else {
-      const code = this._render_code()
-      const render_url = URL.createObjectURL(
-        new Blob([code], {type: "text/javascript"}),
-      )
-      // @ts-ignore
-      this.render_module = importShim(render_url)
+      if (this.render_module == null) {
+	this.init_module()
+      }
       this.render_esm()
     }
   }
@@ -390,6 +422,7 @@ export default {render}`
     }
     this._child_callbacks.clear()
     this._child_rendered.clear()
+    this._mounted.clear()
   }
 
   override after_resize(): void {
