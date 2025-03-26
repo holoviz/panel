@@ -10,10 +10,14 @@ export class ReactComponentView extends ReactiveESMView {
   declare style_cache: HTMLHeadElement
   model_getter = model_getter
   model_setter = model_setter
+  react_root: any
 
   _force_update_callbacks: (() => void)[] = []
 
   override render_esm(): void {
+    if (this.model.compiled === null || this.render_module === null) {
+      return
+    }
     if (this.model.usesMui) {
       if (this.model.root_node) {
         this.style_cache = document.head
@@ -22,7 +26,14 @@ export class ReactComponentView extends ReactiveESMView {
         this.shadow_el.insertBefore(this.style_cache, this.container)
       }
     }
-    super.render_esm()
+    this.accessed_properties = []
+    for (const lf of this._lifecycle_handlers.keys()) {
+      (this._lifecycle_handlers.get(lf) || []).splice(0)
+    }
+    this.model.disconnect_watchers(this)
+    this.render_module.then((mod: any) => {
+      this.react_root = mod.default.render()
+    })
   }
 
   on_force_update(cb: () => void): void {
@@ -35,7 +46,18 @@ export class ReactComponentView extends ReactiveESMView {
     }
   }
 
+  override remove(): void {
+    super.remove()
+    this._force_update_callbacks = []
+    if (this.react_root) {
+      this.react_root.unmount()
+    }
+  }
+
   override render(): void {
+    if (this.react_root) {
+      this.react_root.unmount()
+    }
     this._force_update_callbacks = []
     super.render()
   }
@@ -95,7 +117,7 @@ const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
 ${import_code}
 
-class Child extends React.Component {
+class Child extends React.PureComponent {
 
   constructor(props) {
     super(props)
@@ -115,21 +137,22 @@ class Child extends React.Component {
 
   componentDidMount() {
     this.view.render()
-    this.view.r_after_render()
+    this.view.after_render()
     this.render_callback = (new_views) => {
       const view = this.view
-      if (view == null) {
+      if (!view) {
         return
-      }
-      this.forceUpdate()
-      if (new_views.includes(view)) {
+      } else if (new_views.includes(view)) {
+        if (this.props.id === undefined) { this.forceUpdate() }
         view.render()
-        view.r_after_render()
-      } else if (view.force_update) {
-        view.force_update()
+        view.after_render()
+      } else {
+        this.forceUpdate()
+        if (view.force_update) { view.force_update() }
       }
     }
     this.props.parent.on_child_render(this.props.name, this.render_callback)
+    this.props.parent.notify_mount(this.props.name, this.view.model.id)
   }
 
   componentWillUnmount() {
@@ -151,7 +174,12 @@ class Child extends React.Component {
 }
 
 function react_getter(target, name) {
-  if (name == "useState") {
+  if (name === "useMount") {
+    return (callback) => React.useEffect(() => {
+      target.model_proxy.on('lifecycle:mounted', callback)
+      return () => target.model_proxy.off('lifecycle:mounted', callback)
+    }, [])
+  } if (name == "useState") {
     return (prop) => {
       const data_model = target.model.data
       const propPath = prop.split(".")
@@ -191,7 +219,6 @@ function react_getter(target, name) {
         const [children_state, set_children] = React.useState(value.map((model, i) =>
           React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
         ))
-
         React.useEffect(() => {
           target.on_child_render(child, () => {
             const current_models = data_model.attributes[child]
@@ -251,6 +278,7 @@ class Component extends React.Component {
 
   componentDidMount() {
     this.props.view.on_force_update(() => {
+      ${init_code}
       this.forceUpdate()
     })
     this.props.view._changing = false
@@ -289,6 +317,7 @@ function render() {
     } catch(e) {
       view.render_error(e)
     }
+    return root
   }
 }
 
