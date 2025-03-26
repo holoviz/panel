@@ -269,7 +269,7 @@ export class ReactiveESMView extends HTMLBoxView {
     }
     if (children.every((model: UIElement) => this._mounted.get(child)?.has(model.id))) {
       this.update_layout()
-      for (const cb of this._lifecycle_handlers.get('mounted') || []) {
+      for (const cb of this._lifecycle_handlers.get("mounted") || []) {
         cb(child)
       }
     }
@@ -343,7 +343,7 @@ export class ReactiveESMView extends HTMLBoxView {
       this.render_error(this.model.compile_error)
     } else {
       if (this.render_module == null) {
-	this.init_module()
+        this.init_module()
       }
       this.render_esm()
     }
