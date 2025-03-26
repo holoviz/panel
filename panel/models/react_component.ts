@@ -141,15 +141,12 @@ class Child extends React.PureComponent {
     this.view.after_render()
     this.render_callback = (new_views) => {
       const view = this.view
-      if (view == null) {
-        return
-      }
-      this.forceUpdate()
       if (new_views.includes(view)) {
         view.render()
         view.after_render()
-      } else if (view.force_update) {
-        view.force_update()
+      } else {
+        this.forceUpdate()
+        if (view.force_update) { view.force_update() }
       }
     }
     this.props.parent.on_child_render(this.props.name, this.render_callback)
