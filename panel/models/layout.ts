@@ -1,5 +1,5 @@
 import {div, px} from "@bokehjs/core/dom"
-import {DOMView} from "@bokehjs/core/dom_view"
+import type {DOMView} from "@bokehjs/core/dom_view"
 import {isArray} from "@bokehjs/core/util/types"
 import {unreachable} from "@bokehjs/core/util/assert"
 import {WidgetView} from "@bokehjs/models/widgets/widget"

@@ -1,5 +1,5 @@
 import type {StyleSheetLike} from "@bokehjs/core/dom"
-import {DOMView} from "@bokehjs/core/dom_view"
+import type {DOMView} from "@bokehjs/core/dom_view"
 import * as DOM from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 

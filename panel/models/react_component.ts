@@ -1,4 +1,3 @@
-
 import type * as p from "@bokehjs/core/properties"
 import type {Transform} from "sucrase"
 
