@@ -12,7 +12,9 @@ This release primarily introduces improvements for ESM and React components and 
 - Allow defining root node for `ReactComponent` ([#7787](https://github.com/holoviz/panel/pull/7787))
 - Improve pretty printing in `HoloViews` pane ([#7775](https://github.com/holoviz/panel/pull/7775))
 - Allow serializing joint dict/Parameterized types on `DataModel` ([#7789](https://github.com/holoviz/panel/pull/7789))
+- Improve ListLike and NamedListLike to better match Python list behavior ([#7794](https://github.com/holoviz/panel/pull/7794))
 - Improve rendering of ReactComponent children ([#7802](https://github.com/holoviz/panel/pull/7802))
+- Allow overriding Param input widgets ([#7813](https://github.com/holoviz/panel/pull/7813))
 
 ### Performance
 
@@ -41,10 +43,12 @@ This release primarily introduces improvements for ESM and React components and 
 - Style correct column when frozen `Tabulator` column is an index ([#7792](https://github.com/holoviz/panel/pull/7792))
 - Ensure IconButton tooltip timer is cleared on multiple mouseenter events ([#7798](https://github.com/holoviz/panel/pull/7798))
 - Ensure pre-processors are applied to ESM children ([#7799](https://github.com/holoviz/panel/pull/7799))
+- Ensure outputs are laid out correctly after initial render of `EditableTemplate` ([#7816](https://github.com/holoviz/panel/pull/7816))
+- Fix regressiong related to providing Path to ESM component stylesheets ([#7809](https://github.com/holoviz/panel/pull/7809))
 
 ### Compatibility
 
-- Compatibility with Bokeh 3.7 ([#7724](https://github.com/holoviz/panel/pull/7724))
+- Compatibility with Bokeh 3.7 ([#7724](https://github.com/holoviz/panel/pull/7724), [#7815](https://github.com/holoviz/panel/pull/7815))
 - Update `TextEditor` widget to Quill.js 2.0.2 ([#7739](https://github.com/holoviz/panel/pull/7739))
 - Update `Plotly` pane to Plotly.js 3.0.1 ([#7731](https://github.com/holoviz/panel/pull/7731))
 
