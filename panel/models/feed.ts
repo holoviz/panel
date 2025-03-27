@@ -124,7 +124,7 @@ export class FeedView extends ColumnView {
       } else {
         if (is_new) {
           child_view.render()
-	  child_view.r_after_render()
+          child_view.r_after_render()
           if (is_appended) {
             target.append(child_view.el)
           } else if (is_prepended) {
