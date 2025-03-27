@@ -84,6 +84,25 @@ The first time you run it, it will create a `pixi.lock` file with information fo
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
+:::{admonition} Note
+:class: info
+
+There is a current [issue](https://github.com/prefix-dev/pixi/issues/2458) with regard to `pixi` memory use. If you experience OOM issues while installing, workaround guidance is to make use of sharding, and limit the number of [concurrent resolvers](https://pixi.sh/latest/reference/cli/pixi/install/#arg---concurrent-solves_ in `pixi` .
+
+For example:
+  
+```bash
+pixi config set --global repodata-config.disable-sharded false
+pixi install --concurrent-solvers 8
+```
+
+The first time you run `pixi`, it will create a `.pixi` directory in the source directory.
+
+
+This directory will contain all the files needed for the virtual environments.
+The `.pixi` directory can be large, so it is advised not to put the source directory into a cloud-synced directory.
+:::
+
 ### Editable install
 
 It can be advantageous to install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
