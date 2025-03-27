@@ -8,7 +8,9 @@ from collections import defaultdict, namedtuple
 from collections.abc import (
     Generator, Iterable, Iterator, Mapping,
 )
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, overload,
+)
 
 import param
 
@@ -398,45 +400,15 @@ class ListLike(param.Parameterized):
     def __contains__(self, obj: Viewable) -> bool:
         return obj in self.objects
 
-    def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
-        new_objects = list(self)
-        name = type(self).__name__
-        if not isinstance(index, slice):
-            start, end = index, index+1
-            if start > len(self.objects):
-                raise IndexError(
-                    f'Index {end} out of bounds on {name} containing '
-                    f'{len(self.objects)} objects.'
-                )
-            panes = [panes]
-        else:
-            start = index.start or 0
-            end = len(self) if index.stop is None else index.stop
-            if index.start is None and index.stop is None:
-                if not isinstance(panes, list):
-                    raise IndexError(
-                        'Expected a list of objects to replace the '
-                        f'objects in the {name}, got a '
-                        f'{type(panes).__name__} type.'
-                    )
-                expected = len(panes)
-                new_objects = [None]*expected # type: ignore
-                end = expected
-            elif end > len(self.objects):
-                raise IndexError(
-                    f'Index {end} out of bounds on {name} containing '
-                    f'{len(self.objects)} objects.'
-                )
-            else:
-                expected = end-start
-            if not isinstance(panes, list) or len(panes) != expected:
-                raise IndexError(
-                    f'Expected a list of {expected} objects to set '
-                    f'on the {name} to match the supplied slice.'
-                )
-        for i, pane in zip(range(start, end), panes):
-            new_objects[i] = pane
+    @overload
+    def __setitem__(self, index: int, panes: Any) -> None: ...
 
+    @overload
+    def __setitem__(self, index: slice, panes: Iterable[Any]) -> None: ...
+
+    def __setitem__(self, index, panes) -> None:
+        new_objects = list(self)
+        new_objects[index] = panes
         self.objects = new_objects
 
     def clone(self, *objects: Any, **params: Any) -> ListLike:
@@ -502,19 +474,19 @@ class ListLike(param.Parameterized):
         new_objects.extend(objects)
         self.objects = new_objects
 
-    def index(self, object) -> int:
+    def index(self, obj: Viewable) -> int:
         """
         Returns the integer index of the supplied object in the list of objects.
 
         Parameters
         ----------
-        obj (object): Panel component to look up the index for.
+        obj (Viewable): Panel component to look up the index for.
 
         Returns
         -------
         index (int): Integer index of the object in the layout.
         """
-        return self.objects.index(object)
+        return self.objects.index(obj)
 
     def insert(self, index: int, obj: Any) -> None:
         """
@@ -529,7 +501,7 @@ class ListLike(param.Parameterized):
         new_objects.insert(index, obj)
         self.objects = new_objects
 
-    def pop(self, index: int) -> Viewable:
+    def pop(self, index: int = -1) -> Viewable:
         """
         Pops an item from the layout by index.
 
@@ -660,46 +632,18 @@ class NamedListLike(param.Parameterized):
         objects = zip(self._names, self.objects)
         return self.clone(*added, *objects)
 
-    def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
+    @overload
+    def __setitem__(self, index: int, panes: Any) -> None: ...
+
+    @overload
+    def __setitem__(self, index: slice, panes: Iterable[Any]) -> None: ...
+
+    def __setitem__(self, index, panes):
         new_objects = list(self)
-        name = type(self).__name__
-        if not isinstance(index, slice):
-            if index > len(self.objects):
-                raise IndexError(
-                    f'Index {index} out of bounds on {name} '
-                    f'containing {len(self.objects)} objects.'
-                )
-            start, end = index, index+1
-            panes = [panes]
+        if isinstance(index, slice):
+            new_objects[index], self._names[index] = self._to_objects_and_names(panes)
         else:
-            start = index.start or 0
-            end = len(self.objects) if index.stop is None else index.stop
-            if index.start is None and index.stop is None:
-                if not isinstance(panes, list):
-                    raise IndexError(
-                        'Expected a list of objects to replace '
-                        f'the objects in the {name}, got a '
-                        f'{type(panes).__name__} type.'
-                    )
-                expected = len(panes)
-                new_objects = [None]*expected # type: ignore
-                self._names = [None]*len(panes)
-                end = expected
-            else:
-                expected = end-start
-                nobjs = len(self.objects)
-                if end > nobjs:
-                    raise IndexError(
-                        f'Index {end} out of bounds on {name} '
-                        'containing {nobjs} objects.'
-                    )
-            if not isinstance(panes, list) or len(panes) != expected:
-                raise IndexError(
-                    f'Expected a list of {expected} objects to set '
-                    f'on the {name} to match the supplied slice.'
-                )
-        for i, pane in zip(range(start, end), panes):
-            new_objects[i], self._names[i] = self._to_object_and_name(pane)
+            new_objects[index], self._names[index] = self._to_object_and_name(panes)
         self.objects = new_objects
 
     def clone(self, *objects: Any, **params: Any) -> NamedListLike:
@@ -780,7 +724,7 @@ class NamedListLike(param.Parameterized):
         self._names.insert(index, new_name)
         self.objects = new_objects
 
-    def pop(self, index: int) -> Viewable:
+    def pop(self, index: int = -1) -> Viewable:
         """
         Pops an item from the tabs by index.
 
@@ -805,9 +749,11 @@ class NamedListLike(param.Parameterized):
         new_objects = list(self)
         if pane in new_objects:
             index = new_objects.index(pane)
-        new_objects.remove(pane)
-        self._names.pop(index)
-        self.objects = new_objects
+            new_objects.remove(pane)
+            self._names.pop(index)
+            self.objects = new_objects
+        else:
+            raise ValueError(f'{pane!r} is not in list')
 
     def reverse(self) -> None:
         """
