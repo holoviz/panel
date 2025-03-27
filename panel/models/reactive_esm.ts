@@ -268,7 +268,6 @@ export class ReactiveESMView extends HTMLBoxView {
       children = [children]
     }
     if (children.every((model: UIElement) => this._mounted.get(child)?.has(model.id))) {
-      this.update_layout()
       for (const cb of this._lifecycle_handlers.get("mounted") || []) {
         cb(child)
       }
