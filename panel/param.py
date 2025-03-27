@@ -17,6 +17,7 @@ from collections import defaultdict, namedtuple
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import partial
+from types import FunctionType
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
@@ -495,6 +496,8 @@ class Param(Pane):
                             widget_class = self.input_widgets[int]
                     elif not issubclass(widget_class, LiteralInput):
                         widget_class = self.input_widgets['literal']
+                    if isinstance(widget_class, FunctionType):
+                        widget_class = widget_class(p_obj)
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
             if hasattr(widget_class, 'fixed_start') and getattr(p_obj, 'bounds', None):
