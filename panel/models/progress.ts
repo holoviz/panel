@@ -16,7 +16,7 @@ export class ProgressView extends HTMLBoxView {
       active, bar_color, css_classes, value, max,
     } = this.model.properties
 
-    this.on_change([width, height, height_policy, width_policy, sizing_mode], () => this.render())
+    this.on_change([width, height, height_policy, width_policy, sizing_mode], () => this.rerender_())
     this.on_change([active, bar_color, css_classes], () => this.setCSS())
     this.on_change(value, () => this.setValue())
     this.on_change(max, () => this.setMax())

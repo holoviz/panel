@@ -51,7 +51,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   override connect_signals(): void {
     super.connect_signals()
     const {data, mapbox_api_key, tooltip, configuration, layers, initialViewState, data_sources} = this.model.properties
-    this.on_change([mapbox_api_key, tooltip, configuration], () => this.render())
+    this.on_change([mapbox_api_key, tooltip, configuration], () => this.rerender_())
     this.on_change([data, initialViewState], () => this.updateDeck())
     this.on_change([layers], () => this._update_layers())
     this.on_change([data_sources], () => this._connect_sources(true))
@@ -193,9 +193,19 @@ export class DeckGLPlotView extends LayoutDOMView {
     this._view_cb(event)
   }
 
+  rerender_(): void {
+    // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
+    if (this.rerender) {
+      this.rerender()
+    } else {
+      this.render()
+      this.r_after_render()
+    }
+  }
+
   updateDeck(): void {
     if (!this.deckGL) {
-      this.render()
+      this.rerender_()
       return
     }
     const data = this.getData()

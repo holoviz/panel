@@ -406,12 +406,12 @@ export default {render}`
         }
         const parent = view.el.parentNode
         if (parent && !this._child_rendered.has(view)) {
-          view.render()
+          this.rerender_(view)
           this._child_rendered.set(view, true)
         }
       }
     }
-    this.r_after_render()
+    this.after_render()
   }
 
   override remove(): void {
