@@ -56,6 +56,7 @@ export class PanelMarkupView extends WidgetView {
   }
 
   rerender_(view: DOMView | null = null): void {
+    // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
     view = view == null ? this : view
     if (view.rerender) {
       view.rerender()
@@ -181,6 +182,7 @@ export abstract class HTMLBoxView extends LayoutDOMView {
   }
 
   rerender_(view: DOMView | null = null): void {
+    // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
     view = view == null ? this : view
     if (view.rerender) {
       view.rerender()

@@ -57,16 +57,6 @@ export class CardView extends ColumnView {
     return header_background
   }
 
-  rerender_(view: DOMView | null = null): void {
-    view = view == null ? this : view
-    if (view.rerender) {
-      view.rerender()
-    } else {
-      view.render()
-      view.r_after_render()
-    }
-  }
-
   override render(): void {
     this.empty()
 

@@ -194,6 +194,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   }
 
   rerender_(): void {
+    // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
     if (this.rerender) {
       this.rerender()
     } else {
