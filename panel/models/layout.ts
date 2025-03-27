@@ -1,4 +1,5 @@
 import {div, px} from "@bokehjs/core/dom"
+import {DOMView} from "@bokehjs/core/dom_view"
 import {isArray} from "@bokehjs/core/util/types"
 import {unreachable} from "@bokehjs/core/util/assert"
 import {WidgetView} from "@bokehjs/models/widgets/widget"
@@ -51,6 +52,16 @@ export class PanelMarkupView extends WidgetView {
     }
     if (this._initialized_stylesheets.size == 0) {
       this.style_redraw()
+    }
+  }
+
+  rerender_(view: DOMView | null = null): void {
+    view = view == null ? this : view
+    if (view.rerender) {
+      view.rerender()
+    } else {
+      view.render()
+      view.r_after_render()
     }
   }
 
@@ -167,6 +178,16 @@ export abstract class HTMLBoxView extends LayoutDOMView {
   override render(): void {
     super.render()
     set_size(this.el, this.model)
+  }
+
+  rerender_(view: DOMView | null = null): void {
+    view = view == null ? this : view
+    if (view.rerender) {
+      view.rerender()
+    } else {
+      view.render()
+      view.r_after_render()
+    }
   }
 
   watch_stylesheets(): void {

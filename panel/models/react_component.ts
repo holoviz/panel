@@ -1,3 +1,4 @@
+
 import type * as p from "@bokehjs/core/properties"
 import type {Transform} from "sucrase"
 
@@ -136,16 +137,14 @@ class Child extends React.PureComponent {
   }
 
   componentDidMount() {
-    this.view.render()
-    this.view.after_render()
+    this.props.parent.rerender_(this.view)
     this.render_callback = (new_views) => {
       const view = this.view
       if (!view) {
         return
       } else if (new_views.includes(view)) {
         if (this.props.id === undefined) { this.forceUpdate() }
-        view.render()
-        view.after_render()
+        this.props.parent.rerender_(view)
       } else {
         this.forceUpdate()
         if (view.force_update) { view.force_update() }

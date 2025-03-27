@@ -15,15 +15,24 @@ export class SingleSelectView extends InputWidgetView {
 
     const {value, options, disabled_options, size, disabled} = this.model.properties
     this.on_change(value, () => this.render_selection())
-    this.on_change(options, () => this.render())
-    this.on_change(disabled_options, () => this.render())
-    this.on_change(size, () => this.render())
-    this.on_change(disabled, () => this.render())
+    this.on_change(options, () => this.rerender_())
+    this.on_change(disabled_options, () => this.rerender_())
+    this.on_change(size, () => this.rerender_())
+    this.on_change(disabled, () => this.rerender_())
   }
 
   override render(): void {
     super.render()
     this.render_selection()
+  }
+
+  rerender_(): void {
+    if (this.rerender) {
+      this.rerender()
+    } else {
+      this.render()
+      this.r_after_render()
+    }
   }
 
   _render_input(): HTMLElement {

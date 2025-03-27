@@ -520,7 +520,7 @@ export class DataTabulatorView extends HTMLBoxView {
   override invalidate_render(): void {
     this.tabulator.destroy()
     this.tabulator = null
-    this.render()
+    this.rerender_()
   }
 
   redraw(columns: boolean = true, rows: boolean = true): void {
@@ -898,8 +898,7 @@ export class DataTabulatorView extends HTMLBoxView {
       display(view.el)
       viewEl.appendChild(view.el)
       if (view.shadow_el.children.length === 0) {
-        view.render()
-        view.after_render()
+        this.rerender_(view)
       }
       if (resize) {
         this._update_children()
