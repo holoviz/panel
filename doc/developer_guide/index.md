@@ -87,20 +87,11 @@ All available tasks can be found by running `pixi task list`, the following sect
 :::{admonition} Note
 :class: info
 
-There is a current [issue](https://github.com/prefix-dev/pixi/issues/2458) with regard to `pixi` memory use. If you experience OOM issues while installing, workaround guidance is to make use of sharding, and limit the number of [concurrent resolvers](https://pixi.sh/latest/reference/cli/pixi/install/#arg---concurrent-solves_ in `pixi` .
+If a pixi command fails to lock or install an environment, you can try to limit the number of [concurrent solves](https://pixi.sh/latest/reference/cli/pixi/install/#arg---concurrent-solves) and/or [concurrent downloads](https://pixi.sh/latest/reference/cli/pixi/install/#arg---concurrent-downloads), An example of this is:
 
-For example:
-  
 ```bash
-pixi config set --global repodata-config.disable-sharded false
-pixi install --concurrent-solvers 8
+pixi install --concurrent-solves 4 --concurrent-downloads 4
 ```
-
-The first time you run `pixi`, it will create a `.pixi` directory in the source directory.
-
-
-This directory will contain all the files needed for the virtual environments.
-The `.pixi` directory can be large, so it is advised not to put the source directory into a cloud-synced directory.
 :::
 
 ### Editable install
