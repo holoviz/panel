@@ -44,14 +44,12 @@
 }
 
 /* Help Icon */
-
 .bk-description > .bk-icon {
   background-color: var(--background-text-color);
   opacity: 0.4;
 }
 
 /* Input widgets */
-
 textarea.bk-input {
   padding: 0.5em var(--padding-horizontal);
 }
@@ -68,7 +66,6 @@ textarea.bk-input {
 }
 
 /* Quill editor */
-
 .ql-editor,
 .ql-editor.ql-blank::before {
   color: var(--background-text-color);
@@ -90,8 +87,16 @@ textarea.bk-input {
 }
 
 /* Float panel */
-
 .jsPanel .jsPanel-content {
   background-color: var(--background-color);
   color: var(--background-text-color);
+}
+
+/* Copy Button */
+.copybtn {
+  background-color: #bbb;
+}
+
+.copybtn:active {
+  background-color: #bbb;
 }

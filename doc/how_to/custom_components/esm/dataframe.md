@@ -18,8 +18,6 @@ class GridJS(JSComponent):
 
     object = param.DataFrame()
 
-    _extension_name = 'gridjs'
-
     _esm = """
     import * as gridjs from "https://esm.sh/gridjs@6.2.0"
 
@@ -85,8 +83,6 @@ from panel.custom import PaneBase, ReactComponent
 class GridJS(ReactComponent):
 
     object = param.DataFrame()
-
-    _extension_name = 'gridjs'
 
     _esm = """
 	import { useEffect, useState } from "react"

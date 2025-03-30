@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from panel.layout import GridBox, Row
@@ -38,6 +39,32 @@ def test_select_text_option_with_equality(widget):
 
     select.value = 'DEF'
     assert select.value == 'DEF'
+
+def test_select_from_list(document, comm):
+    select = Select.from_values(['A', 'B', 'A', 'B', 'C'])
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == 'A'
+
+def test_select_from_array(document, comm):
+    select = Select.from_values(np.array(['A', 'B', 'A', 'B', 'C']))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == 'A'
+
+def test_select_from_index(document, comm):
+    select = Select.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == 'A'
+    assert select.name == 'index'
+
+def test_select_from_series(document, comm):
+    select = Select.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == 'A'
+    assert select.name == 'Series'
 
 def test_select(document, comm):
     opts = {'A': 'a', '1': 1}
@@ -275,6 +302,31 @@ def test_nested_select_defaults(document, comm):
     assert select._max_depth == 3
 
 
+def test_nested_select_from_multi_index(df_multiindex):
+    select = NestedSelect.from_values(df_multiindex.index)
+
+    assert select.options == {
+        'group0': ['subgroup0', 'subgroup1'],
+        'group1': ['subgroup0', 'subgroup1'],
+    }
+    assert select.value == {'groups': 'group0', 'subgroups': 'subgroup0'}
+    assert select._max_depth == 2
+    assert select.levels == ['groups', 'subgroups']
+
+def test_nested_select_from_index():
+    select = NestedSelect.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == {'index': 'A'}
+    assert select._max_depth == 1
+
+def test_nested_select_from_series():
+    select = NestedSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == {'Series': 'A'}
+    assert select._max_depth == 1
+
 def test_nested_select_init_value(document, comm):
     options = {
         "Andrew": {
@@ -300,6 +352,15 @@ def test_nested_select_init_empty(document, comm):
     assert select.options is None
     assert select.levels == []
 
+def test_nested_select_max_depth_empty_first_sublevel(document, comm):
+    select = NestedSelect(options={'foo': ['a', 'b'], 'bar': []})
+
+    assert select._max_depth == 2
+
+def test_nested_select_max_depth_empty_second_sublevel(document, comm):
+    select = NestedSelect(options={'foo': {'0': ['a', 'b'], '1': []}, 'bar': {'0': []}})
+
+    assert select._max_depth == 3
 
 def test_nested_select_init_levels(document, comm):
     options = {
@@ -500,7 +561,7 @@ def test_nested_select_partial_options_set(document, comm):
     select.options = {"Ben": []}
     assert select._widgets[0].value == 'Ben'
     assert select._widgets[0].visible
-    assert select.value == {0: 'Ben'}
+    assert select.value == {0: 'Ben', 1: None}
 
 
 def test_nested_select_partial_value_init(document, comm):
@@ -739,8 +800,8 @@ def test_nested_select_layout_dict(document, comm):
         options=options,
         layout={"type": GridBox, "ncols": 2},
     )
-    assert isinstance(select._composite, GridBox)
-    assert select._composite.ncols == 2
+    assert isinstance(select._composite[0], GridBox)
+    assert select._composite[0].ncols == 2
 
 
 def test_nested_select_layout_dynamic_update(document, comm):
@@ -758,8 +819,8 @@ def test_nested_select_layout_dynamic_update(document, comm):
         options=options,
         layout={"type": GridBox, "ncols": 2},
     )
-    assert isinstance(select._composite, GridBox)
-    assert select._composite.ncols == 2
+    assert isinstance(select._composite[0], GridBox)
+    assert select._composite[0].ncols == 2
 
     select.layout = Row
     assert isinstance(select._composite, Row)
@@ -846,6 +907,32 @@ def test_select_disabled_options_set_value_and_disabled_options(options, size, d
     assert select.value == 20
     assert widget.disabled_options == [10]
 
+
+def test_multi_select_from_list():
+    select = MultiSelect.from_values(['A', 'B', 'A', 'B', 'C'])
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == []
+
+def test_multi_select_from_array():
+    select = MultiSelect.from_values(np.array(['A', 'B', 'A', 'B', 'C']))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == []
+
+def test_multi_select_from_index():
+    select = MultiSelect.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == []
+    assert select.name == 'index'
+
+def test_multi_select_from_series(document, comm):
+    select = MultiSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
+
+    assert select.options == ['A', 'B', 'C']
+    assert select.value == []
+    assert select.name == 'Series'
 
 def test_multi_select(document, comm):
     select = MultiSelect(options={'A': 'A', '1': 1, 'C': object},

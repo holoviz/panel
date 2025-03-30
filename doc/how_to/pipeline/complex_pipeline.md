@@ -3,8 +3,8 @@
 This guide addresses how to build a non-linear Panel Pipeline with branching and converging steps, i.e., an acyclic graph.
 
 ```{admonition} Prerequisites
-1. The [How-to > Param with Panel](../param/index.md) guides describe how to set up classes that declare parameters and link them to some computation or visualization.
-2. The [How-to > Create a Pipeline](./simple_pipeline.md) guide walks through the essential steps of pipeline construction.
+1. The [How-to > Param with Panel](../param/index) guides describe how to set up classes that declare parameters and link them to some computation or visualization.
+2. The [How-to > Create a Pipeline](./simple_pipeline) guide walks through the essential steps of pipeline construction.
 ```
 
 ---
@@ -151,5 +151,5 @@ dag
 
 
 ## Related Resources
-- The [How to > Param with Panel](../param/index.md) guide describe how to set up classes that declare parameters and link them to some computation or visualization.
-- The [How to > Create a Pipeline](./simple_pipeline.md) guide walks through the essential components of a pipeline.
+- The [How to > Param with Panel](../param/index) guide describe how to set up classes that declare parameters and link them to some computation or visualization.
+- The [How to > Create a Pipeline](./simple_pipeline) guide walks through the essential components of a pipeline.

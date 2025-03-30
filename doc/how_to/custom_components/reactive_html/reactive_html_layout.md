@@ -182,10 +182,8 @@ The component will trigger a rerendering if you update the `List` value.
 
 You must
 
-- wrap the `{% for object in objects %}` loop in an HTML element with an `id`. Here it is wrapped
-with `<div id="container">...</div>`.
-- close all HTML tags! `<hr>` is valid HTML, but not valid with `ReactiveHTML`. You must close it
-as `<hr/>`.
+- wrap the `{% for object in objects %}` loop in an HTML element with an `id`. Here it is wrapped with `<div id="container">...</div>`.
+- close all HTML tags! `<hr>` is valid HTML, but not valid with `ReactiveHTML`. You must close it as `<hr/>`.
 
 You can optionally
 
@@ -232,11 +230,9 @@ You can now use `[...]` indexing and the `.append`, `.insert`, `pop`, ... method
 expect.
 
 :::{note}
-
 You must list `ListLike, ReactiveHTML` in exactly that order when you define the class! The other
 way around `ReactiveHTML, NamedListLike` will not work.
-
-::::
+:::
 
 ## Layout a dictionary
 
@@ -271,10 +267,6 @@ LayoutOfDict(object={
 ```
 
 :::{note}
-
-Please note
-
 - We can insert the `key` as a literal value only using `{{ key }}`. Inserting it as a template variable `${key}` will not work.
 - We must not give the HTML element containing `{{ key }}` an `id`. If we do, an exception will be raised.
-
 :::

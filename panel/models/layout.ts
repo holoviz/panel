@@ -1,4 +1,5 @@
 import {div, px} from "@bokehjs/core/dom"
+import type {DOMView} from "@bokehjs/core/dom_view"
 import {isArray} from "@bokehjs/core/util/types"
 import {unreachable} from "@bokehjs/core/util/assert"
 import {WidgetView} from "@bokehjs/models/widgets/widget"
@@ -44,13 +45,24 @@ export class PanelMarkupView extends WidgetView {
         style_el.addEventListener("load", () => {
           this._initialized_stylesheets.set(style_el.href, true)
           if ([...this._initialized_stylesheets.values()].every((v) => v)) {
-            this.style_redraw()
+            requestAnimationFrame(() => this.style_redraw())
           }
         })
       }
     }
     if (this._initialized_stylesheets.size == 0) {
       this.style_redraw()
+    }
+  }
+
+  rerender_(view: DOMView | null = null): void {
+    // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
+    view = view == null ? this : view
+    if (view.rerender) {
+      view.rerender()
+    } else {
+      view.render()
+      view.r_after_render()
     }
   }
 
@@ -169,6 +181,17 @@ export abstract class HTMLBoxView extends LayoutDOMView {
     set_size(this.el, this.model)
   }
 
+  rerender_(view: DOMView | null = null): void {
+    // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
+    view = view == null ? this : view
+    if (view.rerender) {
+      view.rerender()
+    } else {
+      view.render()
+      view.r_after_render()
+    }
+  }
+
   watch_stylesheets(): void {
     this._initialized_stylesheets = new Map()
     for (const stylesheet of this._applied_stylesheets) {
@@ -183,6 +206,9 @@ export abstract class HTMLBoxView extends LayoutDOMView {
           }
         })
       }
+    }
+    if (Object.keys(this._initialized_stylesheets).length === 0) {
+      requestAnimationFrame(() => this.style_redraw())
     }
   }
 

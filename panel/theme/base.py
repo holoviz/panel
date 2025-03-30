@@ -57,7 +57,7 @@ class Theme(param.Parameterized):
        A stylesheet that overrides variables specifically for the
        Theme subclass. In most cases, this is not necessary.""")
 
-    modifiers: ClassVar[dict[Viewable, dict[str, Any]]] = {}
+    modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
 
 
 BOKEH_DARK = dict(_dark_minimal.json)
@@ -97,16 +97,18 @@ class Design(param.Parameterized, ResourceComponent):
     theme = param.ClassSelector(class_=Theme, constant=True)
 
     # Defines parameter overrides to apply to each model
-    modifiers: ClassVar[dict[Viewable, dict[str, Any]]] = {}
+    modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
 
     # Defines the resources required to render this theme
-    _resources: ClassVar[dict[str, dict[str, str]]] = {}
+    _resources = {}
 
     # Declares valid themes for this Design
     _themes: ClassVar[dict[str, type[Theme]]] = {
         'default': DefaultTheme,
         'dark': DarkTheme
     }
+
+    _cache: ClassVar[dict[str, ImportedStyleSheet]] = {}
 
     def __init__(self, theme=None, **params):
         if isinstance(theme, type) and issubclass(theme, Theme):
@@ -117,29 +119,37 @@ class Design(param.Parameterized, ResourceComponent):
         super().__init__(theme=theme, **params)
 
     def _reapply(
-        self, viewable: Viewable, root: Model, old_models: list[Model] = None,
-        isolated: bool=True, cache=None, document=None
+        self, viewable: Viewable, root: Model, old_models: list[Model] | None = None,
+        isolated: bool = True, cache=None, document: Document | None = None
     ) -> None:
         ref = root.ref['id']
+        seen = set()
         for o in viewable.select():
             if o.design and not isolated:
                 continue
             elif not o.design and not isolated:
                 o._design = self
 
-            if old_models and ref in o._models:
-                if o._models[ref][0] in old_models:
+            if ref in o._models:
+                model = o._models[ref][0]
+                if (old_models and model in old_models) or model in seen:
                     continue
+                seen.add(model)
             self._apply_modifiers(o, ref, self.theme, isolated, cache, document)
 
     def _apply_hooks(self, viewable: Viewable, root: Model, changed: Viewable, old_models=None) -> None:
         from ..io.state import state
-        if root.document in state._stylesheets:
+        if root.document is None:
+            cache: dict[str, ImportedStyleSheet] = {}
+        elif root.document in state._stylesheets:
             cache = state._stylesheets[root.document]
         else:
             state._stylesheets[root.document] = cache = {}
-        with root.document.models.freeze():
-            self._reapply(changed, root, old_models, isolated=False, cache=cache, document=root.document)
+        if root.document:
+            with root.document.models.freeze():
+                self._reapply(changed, root, old_models, isolated=False, cache=cache, document=root.document)
+        else:
+            self._reapply(changed, root, old_models, isolated=False, cache=cache)
 
     def _wrapper(self, viewable):
         return viewable
@@ -153,7 +163,8 @@ class Design(param.Parameterized, ResourceComponent):
                 stylesheets.extend(inherited)
                 continue
             resolved = resolve_stylesheet(defining_cls, stylesheet, 'modifiers')
-            stylesheets.append(resolved)
+            if resolved not in stylesheets:
+                stylesheets.append(resolved)
         return stylesheets
 
     @classmethod
@@ -181,14 +192,14 @@ class Design(param.Parameterized, ResourceComponent):
 
     @classmethod
     def _get_modifiers(
-        cls, viewable: Viewable, theme: Theme = None, isolated: bool = True
+        cls, viewable: Viewable, theme: Theme | None = None, isolated: bool = True
     ):
         from ..io.resources import (
             CDN_DIST, component_resource_path, resolve_custom_path,
         )
         theme_type = type(theme) if isinstance(theme, Theme) else theme
         is_server = bool(state.curdoc.session_context) if not state._is_pyodide and state.curdoc else False
-        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme_type, is_server=is_server)
+        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme_type, is_server=is_server)  # type: ignore
         modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
             if isolated:
@@ -210,7 +221,7 @@ class Design(param.Parameterized, ResourceComponent):
         return modifiers, child_modifiers
 
     @classmethod
-    def _patch_modifiers(cls, doc, modifiers, cache):
+    def _patch_modifiers(cls, doc: Document | None, modifiers: dict[str, Any], cache: dict[str, ImportedStyleSheet]):
         if 'stylesheets' in modifiers:
             stylesheets = []
             for sts in modifiers['stylesheets']:
@@ -227,10 +238,12 @@ class Design(param.Parameterized, ResourceComponent):
     @classmethod
     def _apply_modifiers(
         cls, viewable: Viewable, mref: str, theme: Theme, isolated: bool,
-        cache={}, document=None
+        cache=None, document=None
     ) -> None:
         if mref not in viewable._models:
             return
+        if cache is None:
+            cache = cls._cache
         model, _ = viewable._models[mref]
         modifiers, child_modifiers = cls._get_modifiers(viewable, theme, isolated)
         cls._patch_modifiers(model.document or document, modifiers, cache)
@@ -285,8 +298,8 @@ class Design(param.Parameterized, ResourceComponent):
                 del props['stylesheets']
             else:
                 props['stylesheets'] = stylesheets
-
-        model.update(**props)
+        if props:
+            model.update(**props)
         if hasattr(viewable, '_synced_properties') and 'objects' in viewable._property_mapping:
             obj_key = viewable._property_mapping['objects']
             child_props = {
@@ -299,12 +312,12 @@ class Design(param.Parameterized, ResourceComponent):
     # Public API
     #----------------------------------------------------------------
 
-    def apply(self, viewable: Viewable, root: Model, isolated: bool=True):
+    def apply(self, viewable: Viewable, root: Model, isolated: bool = True):
         """
         Applies the Design to a Viewable and all it children.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         viewable: Viewable
             The Viewable to apply the Design to.
         root: Model
@@ -335,8 +348,8 @@ class Design(param.Parameterized, ResourceComponent):
         Applies the Bokeh theme associated with this Design system
         to a model.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         model: bokeh.model.Model
             The Model to apply the theme on.
         theme_override: str | None
@@ -359,8 +372,8 @@ class Design(param.Parameterized, ResourceComponent):
         """
         Resolves the resources required for this design component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cdn: bool | Literal['auto']
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
@@ -401,8 +414,8 @@ class Design(param.Parameterized, ResourceComponent):
         """
         Provides parameter values to apply the provided Viewable.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         viewable: Viewable
             The Viewable to return modifiers for.
         doc: Document | None

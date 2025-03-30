@@ -25,7 +25,13 @@ def get_bbox(page, obj):
         with page.expect_response(obj.object):
             page.goto(f"http://localhost:{port}")
     wait_until(lambda: page.locator("img") is not None, page)
-    return page.locator("img").bounding_box()
+    for _ in range(5):
+        bbox = page.locator("img").bounding_box()
+        if bbox["width"] and bbox["height"]:
+            return bbox
+        page.wait_for_timeout(100)
+
+    raise TimeoutError("Image has not been loaded")
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_png_native_size(embed, page):

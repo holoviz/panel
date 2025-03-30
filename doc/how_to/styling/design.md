@@ -50,5 +50,5 @@ pn.Tabs(
 
 ## Related Resources
 
-- Discover [how to customize a design](design_variables.md) next.
-- Discover [how to toggle between themes](themes.md) next.
+- Discover [how to customize a design](design_variables) next.
+- Discover [how to toggle between themes](themes) next.

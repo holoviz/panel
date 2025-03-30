@@ -11,12 +11,12 @@ import pytest
 try:
     import vtk
 except Exception:
-    vtk = None
+    vtk = None  # type: ignore
 
 try:
     import pyvista as pv
 except Exception:
-    pv = None
+    pv = None  # type: ignore
 
 from bokeh.models import ColorBar
 
@@ -407,7 +407,7 @@ def test_vtkvol_serialization_coherence(document, comm):
     vd_f = p_f._get_volume_data()
     vd_id = p_id._get_volume_data()
     data_decoded = np.frombuffer(base64.b64decode(vd_c["buffer"]), dtype=vd_c["dtype"]).reshape(vd_c["dims"], order="F")
-    assert (data_decoded==data_matrix).all()
+    assert np.all(data_decoded==data_matrix)
     assert vd_id == vd_c == vd_f
 
     p_c_ds = VTKVolume(data_matrix_c, origin=origin, spacing=spacing, max_data_size=0.1)

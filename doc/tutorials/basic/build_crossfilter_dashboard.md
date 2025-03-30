@@ -19,7 +19,7 @@ holoviews panel
 
 :::::{dropdown} Code
 
-```{pyodide}
+```python
 import holoviews as hv
 import numpy as np
 import pandas as pd
@@ -80,7 +80,7 @@ def get_plots():
         active_tools=["box_select"],
     )
 
-    return (plot_by_year + plot_by_manufacturer).opts(shared_axes=False).cols(1)
+    return (plot_by_year + plot_by_manufacturer).cols(1)
 
 crossfilter_plots = hv.link_selections(get_plots()).opts(shared_axes=False)
 
@@ -149,6 +149,8 @@ def get_plots():
 
     # Define shared dataset
     ds = hv.Dataset(data, ["t_manu", "p_year", "t_cap"], "t_cap")
+
+    ... # continues in next section
 ```
 
 The function starts by calling `get_data()` to retrieve the preprocessed dataset. It then uses HoloViews to define a dataset (`ds`) that encapsulates our data, specifying columns for manufacturers (`t_manu`), production year (`p_year`), and turbine capacity (`t_cap`).
@@ -164,10 +166,9 @@ In order for [HoloViews linked brushing](https://holoviews.org/user_guide/Linked
 Next, we aggregate the data by year and manufacturer to create two separate plots. The plots are formatted to be responsive and use an accent color for consistency.
 
 ```python
-
 @pn.cache
 def get_plots():
-    ...
+    ... # continues from previous section
 
     # Create plots
     ds_by_year = ds.aggregate("p_year", function=np.sum).sort("p_year")[1995:]
@@ -228,12 +229,12 @@ pn.template.FastListTemplate(
     main=[crossfilter_plots],
     main_layout=None,
     accent=ACCENT,
-)
+).servable()
 ```
 
 The [`FastListTemplate`](https://panel.holoviz.org/reference/templates/FastListTemplate.html) is a pre-built Panel template that provides a clean and modern layout for our dashboard. It takes our crossfiltering plot and other configurations as input, creating a cohesive and interactive web application.
 
-Now serve the app with `panel serve app.py --autoreload`. It should look like
+Now serve the app with `panel serve app.py --dev`. It should look like
 
 <video muted controls loop poster="../../_static/images/panel_crossfilter_dashboard.png" style="max-height: 400px; max-width: 100%;">
     <source src="https://assets.holoviz.org/panel/tutorials/panel_crossfilter_dashboard.mp4" type="video/mp4">

@@ -24,3 +24,5 @@ class BrowserInfo(Model):
     timezone_offset = Nullable(Float())
 
     webdriver = Nullable(Bool())
+
+    webgl = Nullable(Bool())

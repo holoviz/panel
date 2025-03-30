@@ -1,7 +1,8 @@
-import {Column, ColumnView} from "./column"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import * as DOM from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
+
+import {Column, ColumnView} from "./column"
 
 import card_css from "styles/models/card.css"
 
@@ -42,7 +43,7 @@ export class CardView extends ColumnView {
     return [...super.stylesheets(), card_css]
   }
 
-  protected override *_stylesheets(): Iterable<DOM.StyleSheet> {
+  protected override *_stylesheets(): Iterable<DOM.StyleSheetLike> {
     yield* super._stylesheets()
     yield this.collapsed_style
   }
@@ -86,8 +87,7 @@ export class CardView extends ColumnView {
       this.button_el.style.backgroundColor = header_background != null ? header_background : ""
       header.el.style.backgroundColor = header_background != null ? header_background : ""
       this.button_el.appendChild(header.el)
-
-      this.button_el.onclick = () => this._toggle_button()
+      this.button_el.addEventListener("click", (e: MouseEvent) => this._toggle_button(e))
       header_el = this.button_el
     } else {
       header_el = DOM.create_element((header_tag as any), {class: header_css_classes})
@@ -100,7 +100,7 @@ export class CardView extends ColumnView {
       header_el.style.color = header_color != null ? header_color : ""
       this.shadow_el.appendChild(header_el)
       header.render()
-      header.after_render()
+      header.r_after_render()
     }
 
     if (this.model.collapsed) {
@@ -110,7 +110,7 @@ export class CardView extends ColumnView {
     for (const child_view of this.child_views.slice(1)) {
       this.shadow_el.appendChild(child_view.el)
       child_view.render()
-      child_view.after_render()
+      child_view.r_after_render()
     }
   }
 
@@ -120,7 +120,12 @@ export class CardView extends ColumnView {
     this.invalidate_layout()
   }
 
-  _toggle_button(): void {
+  _toggle_button(e: MouseEvent): void {
+    for (const path of e.composedPath()) {
+      if (path instanceof HTMLInputElement) {
+        return
+      }
+    }
     this.model.collapsed = !this.model.collapsed
   }
 

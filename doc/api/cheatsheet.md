@@ -42,7 +42,7 @@ All of Panel's documentation is built from Jupyter notebooks that you can explor
 
 #### ``pn.extension()``
 
-> The Panel extension loads BokehJS, any custom models required, and optionally additional custom JS and CSS in Jupyter notebook environments. It also allows passing any [`pn.config`](#pn.config) variables
+> The Panel extension loads BokehJS, any custom models required, and optionally additional custom JS and CSS in Jupyter notebook environments. It also allows passing any [`pn.config`](../api/config.md) variables.
 
 #### ``pn.ipywidget()``
 

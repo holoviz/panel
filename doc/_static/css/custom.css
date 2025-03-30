@@ -12,6 +12,10 @@
   --sd-color-card-border-hover: var(--holoviz-main-color);
 }
 
+.bd-header-announcement {
+  color: black;
+}
+
 /* Fix breadcrumb overlap https://github.com/holoviz/panel/issues/5199 */
 .header-article__inner .header-article-item {
   height: unset;

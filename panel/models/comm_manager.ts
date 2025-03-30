@@ -52,7 +52,7 @@ export class CommManager extends Model {
     this._blocked = false
     this._timeout = Date.now()
     if (((window as any).PyViz == undefined) || (!(window as any).PyViz.comm_manager)) {
-      console.log("Could not find comm manager on window.PyViz, ensure the extension is loaded.")
+      console.warn("Could not find comm manager on window.PyViz, ensure the extension is loaded.")
     } else {
       this.ns = (window as any).PyViz
       this.ns.comm_manager.register_target(this.plot_id, this.comm_id, (msg: any) => {
@@ -163,9 +163,10 @@ export class CommManager extends Model {
       this._blocked = false
     }
     if ((metadata.msg_type == "Ready") && metadata.content) {
+      // eslint-disable-next-line no-console
       console.log("Python callback returned following output:", metadata.content)
     } else if (metadata.msg_type == "Error") {
-      console.log("Python failed with the following traceback:", metadata.traceback)
+      console.warn("Python failed with the following traceback:", metadata.traceback)
     }
   }
 
@@ -176,9 +177,10 @@ export class CommManager extends Model {
     const plot_id = this.plot_id
     if ((metadata.msg_type == "Ready")) {
       if (metadata.content) {
+        // eslint-disable-next-line no-console
         console.log("Python callback returned following output:", metadata.content)
       } else if (metadata.msg_type == "Error") {
-        console.log("Python failed with the following traceback:", metadata.traceback)
+        console.warn("Python failed with the following traceback:", metadata.traceback)
       }
     } else if (plot_id != null) {
       let plot = null

@@ -1,6 +1,6 @@
 {
   "gallery/altair_brushing.ipynb": ["altair"],
-  "gallery/gapminders.ipynb": ["altair", "plotly", "hvplot"],
+  "gallery/gapminders.ipynb": ["altair", "plotly", "hvplot", "matplotlib"],
   "gallery/glaciers.ipynb": ["holoviews", "colorcet", "hvplot"],
   "gallery/hvplot_explorer.ipynb": ["hvplot", "scipy"],
   "gallery/iris_kmeans.ipynb": ["hvplot", "scikit-learn"],

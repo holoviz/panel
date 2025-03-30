@@ -5,6 +5,7 @@ from bokeh.core.properties import (
     Any, Bool, Dict, Enum, List, Nullable, Override, String,
 )
 
+from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 from .enums import ace_themes
@@ -18,9 +19,9 @@ class AcePlot(HTMLBox):
     """
 
     __javascript_raw__ = [
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-language_tools.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-modelist.js'
+        f"{config.npm_cdn}/ace-builds@1.4.11/src-min-noconflict/ace.js",
+        f"{config.npm_cdn}/ace-builds@1.4.11/src-min-noconflict/ext-language_tools.js",
+        f"{config.npm_cdn}/ace-builds@1.4.11/src-min-noconflict/ext-modelist.js"
     ]
 
     __tarball__ = {
@@ -40,8 +41,8 @@ class AcePlot(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            ('ace', ('ace/ace', 'ace/ext-language_tools', 'ace/ext-modelist')): '//cdnjs.cloudflare.com/ajax/libs/ace/1.4.7'},
-        'exports': {'ace/ace': 'ace'},
+            ('ace', ('ace/ace', 'ace/ext-language_tools', 'ace/ext-modelist')): "//cdn.jsdelivr.net/npm/ace-builds@1.4.11/src-min-noconflict"},
+        'exports': {'ace': 'ace/ace'},
         'shim': {
             'ace/ext-language_tools': { 'deps': ["ace/ace"] },
             'ace/ext-modelist': { 'deps': ["ace/ace"] }
@@ -49,6 +50,10 @@ class AcePlot(HTMLBox):
     }
 
     code = String(default='')
+
+    code_input = String(default='')
+
+    on_keyup = Bool(default=True)
 
     theme = Enum(ace_themes, default='chrome')
 
@@ -62,6 +67,6 @@ class AcePlot(HTMLBox):
 
     print_margin = Bool(default=False)
 
-    height = Override(default=300)
+    height = Override(default=300)  # type: ignore
 
-    width = Override(default=300)
+    width = Override(default=300)  # type: ignore

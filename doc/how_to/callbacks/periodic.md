@@ -77,4 +77,4 @@ pn.serve(panel_app)
 ```
 
 ## Related Resources
-- See the related [How-to > Link Parameters with Callbacks API](../links/index.md) guides, including [How to > Create High-Level Python Links with `.link`](../links/links.md).
+- See the related [How-to > Link Parameters with Callbacks API](../links/index) guides, including [How to > Create High-Level Python Links with `.link`](../links/links).

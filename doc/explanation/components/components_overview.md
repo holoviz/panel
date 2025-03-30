@@ -11,16 +11,16 @@ pn.extension(notifications=True)
 The main objects that Panel provides, and that we are going to call *components* hereafter, short for *visual components*, include:
 
 - *Widgets*: widgets are components, usually quite small even if there are exceptions, that allow your users to interact with your app. Most importantly, they allow you to get user input! Examples include a text input, a checkbox, a slider, etc.
-- *Panes*: panes are wrappers around some data that allow you to render that data, possibly customizing the rendering. Panel is known to support many date types, especially from the PyData ecosystem. You can indeed display a Pandas DataFrame, a Plotly plot, a Matplotlib plot, an Altair plot, all together on the same app! You can of course display HTML text or just raw text. Panes aren't limited to rendering data statically, they can allow for some user interactions and state syncing, like for instance the `Audio` or `Vega` panes.
-- *Indicators*: indicators are useful to display some static state, they are indeed implemented as widgets that you can only control programmatically. You'll find for instance a progress indicator or a tooltip.
+- *Panes*: panes are wrappers around some data that allow you to render that data, possibly customizing the rendering. Panel is known to support many data types, especially from the PyData ecosystem. You can indeed display a Pandas DataFrame, a Plotly plot, a Matplotlib plot, an Altair plot, all together on the same app! You can of course display HTML text or just raw text. Panes aren't limited to rendering data statically, they can allow for some user interactions and state syncing, like for instance the `Audio` or `Vega` panes.
+- *Indicators*: indicators are useful to display some static state. They are implemented as widgets that you can only control programmatically. Examples include a progress indicator or a tooltip.
 - *Layouts*: after having built various widgets, panes and indicators, it's time to display them together. Panel provides a dozen of layout components, including of course the most common `Row` and `Column` layouts.
-- *Templates*: templates are components that render multiple Panel objects in an HTML document. The basic template, which you get when you serve an app without setting any template, is basically a blank canvas. Instead when you use one of the built-in templates you can easily improve the design and branding of your app, which will get for free a header, a sidebar, etc.
+- *Templates*: templates are components that render multiple Panel objects in an HTML document. The basic template, which you get when you serve an app without setting any template, is basically a blank canvas. When you use one of the built-in templates instead, you can easily improve the design and branding of your app, as the templates include elements like a header, a sidebar, etc.
 - *Notifications*: notifications are components that display so called "toasts", designed to mimic the push notifications that have been popularized by mobile and desktop operating systems.
 
-All the Panel components can be visualized on the [Component Gallery](../../reference/index.md).
+All the Panel components can be found in the [Component Gallery](../../reference/index).
 
 :::{tip}
-Components usually have in their docstring a link to their documentation page, use `<component>?` in a notebook or your IDE inspection capabilities to access the link.
+Components usually have a link to their documentation page in their docstring, use `<component>?` in a notebook or your IDE inspection capabilities to access the link.
 :::
 
 ## Parameterized components
@@ -31,7 +31,7 @@ All components in Panel are built on the [Param](https://param.holoviz.org/) lib
 pn.widgets.IntRangeSlider.width = 350
 ```
 
-or on each instance:
+and on each instance:
 
 ```{pyodide}
 pn.widgets.IntRangeSlider(width=100)
@@ -60,9 +60,9 @@ w_text.width = 100
 w_text.value = 'new text'
 ```
 
-What you just experimented is one-way syncing from your code to the user interface, i.e. from your running Python interpreter to your browser tab.
+What you just experienced is one-way syncing from your code to the user interface, i.e. from your running Python interpreter to your browser tab.
 
-This can also work the other way around, i.e. when you modify a component from the user interface directly its Python state gets updated accordingly. Try this out by typing some text in one of the widgets above and then execute the cell below. You will see that what you typed is now reflected in the widget `value`. In this case we say that the `value` *Parameter* is bi-directionally synced (or linked).
+This can also work the other way around, i.e. when you modify a component from the user interface directly, its Python state gets updated accordingly. Try this out by typing some text in one of the widgets above and then execute the cell below. You will see that what you typed is now reflected in the widget `value`. In this case we say that the `value` *Parameter* is bi-directionally synced (or linked).
 
 ```{pyodide}
 w_text.value
@@ -80,7 +80,7 @@ Widgets **all** have a `value` *Parameter* that holds the widget state and that 
 
 :::{note}
 
-One gotcha that doesn't only apply to the `value` *Parameter* but that you are more likely to encounter with this *Parameter* than others is when it is referencing a mutable data structure that you mutate inplace. Take for example a `MultiSelect` widget whose `value` is a `list`. If you programmatically update that list directly, with for example `append` or `extend`, Panel will not be able to detect that change. In which case you need to explicitly trigger updates with `w_multiselect.param.trigger('value')` that will run all the same underlying machinery as if you were setting the *Parameter* to a new value. A notable widget that holds a multable datastructure is the `Tabulator` widget whose `value` is a Pandas DataFrame that can be updated inplace with e.g. `df.loc[0, 'A'] = new_value`, its `patch` method allows to both update the data and the user interface.
+One gotcha that doesn't only apply to the `value` *Parameter* but that you are more likely to encounter with this *Parameter* than others is when it is referencing a mutable data structure that you mutate in-place. Take for example a `MultiSelect` widget whose `value` is a `list`. If you programmatically update that list directly, with for example `append` or `extend`, Panel will not be able to detect that change. In which case you need to explicitly trigger updates with `w_multiselect.param.trigger('value')` that will run all the same underlying machinery as if you were setting the *Parameter* to a new value. A notable widget that holds a multable datastructure is the `Tabulator` widget whose `value` is a Pandas DataFrame that can be updated in-place with e.g. `df.loc[0, 'A'] = new_value`, its `patch` method allows to both update the data and the user interface.
 :::
 
 ```{pyodide}
@@ -276,7 +276,7 @@ tabs.insert(0, ('Slider', pn.widgets.FloatSlider()))
 
 #### Grid-like API
 
-Grid-like layouts are initialized empty and populated setting 2D assignments to specify the index or span on indices the object in the grid should occupy. Just like a Python array, the indexing is zero-based and specifies the rows first and the columns second, i.e. `gridlike[0, 1]` would assign an object to the first row and second column.
+Grid-like layouts are initialized empty and populated by setting 2D assignments to specify the index or span on indices the object in the grid should occupy. Just like a Python array, the indexing is zero-based and specifies the rows first and the columns second, i.e. `gridlike[0, 1]` would assign an object to the first row and second column.
 
 To demonstrate the abilities, let us declare a grid with a wide range of different objects, including `Spacers`, HoloViews objects, images, and widgets.
 
@@ -340,7 +340,7 @@ w_text.visible = True
 
 #### Style
 
-A few *Parameters* allow to control the style of components, including `styles`, `stylesheets`, `css_classes` and `design`. These will be explored in more details in one of the next guides. As a teaser, the next cell is a simple example leveraging the `styles` *Parameter* only, that accepts a dictionary of CSS styles.
+A few *Parameters* allow to control the style of components, including `styles`, `stylesheets`, `css_classes` and `design`. These will be explored in more detail in one of the next guides. As a teaser, the next cell is a simple example leveraging the `styles` *Parameter* only, that accepts a dictionary of CSS styles.
 
 ```{pyodide}
 custom_style = {
@@ -355,11 +355,11 @@ pn.widgets.FloatSlider(name='Number', styles=custom_style)
 
 #### Size and responsivity
 
-A few *Parameters* allow to control the size and responsivity of components, including `height`, `width`, `min_height`, `min_width` and `sizing_mode`. These will be explored in more details in one of the next guides.
+A few *Parameters* allow to control the size and responsivity of components, including `height`, `width`, `min_height`, `min_width` and `sizing_mode`. These will be explored in more detail in one of the next guides.
 
 #### `margin`
 
-The `margin` *Parameter* can be used to create space around an element defined as the number of pixels at the (top, right, bottom, and left). When you set it with a single value the margin is going to be applied to each side of the element, `margin` allows for more fine-grained distributio of the margin.
+The `margin` *Parameter* can be used to create space around an element defined as the number of pixels at the (top, right, bottom, and left). When you set it with a single value, the margin is going to be applied to each side of the element. `margin` allows for more fine-grained distributio of the margin.
 
 ```{pyodide}
 pn.widgets.Button(name='Click', margin=(25, 0, 0, 0))
@@ -377,12 +377,11 @@ pn.Row(
     styles={'background': 'lightgrey'},
 )
 ```
-
 ## Templates
 
-A template is the HTML document that ends up being served by your app, it defines what resources (Javascript, CSS) need to be loaded, the page title, where the Panel objects are supposed to be rendered on the page, etc.
+A template is the HTML document that ends up being served by your app. It defines what resources (Javascript, CSS) need to be loaded, the page title, where the Panel objects are supposed to be rendered on the page, etc.
 
-When you serve an app without defining a particular template Panel serves it with its default template, that is pretty much a blank canvas where the served objects, if there are a few of them, will be rendered vertically one after the other.
+When you serve an app without defining a particular template Panel serves it with its default template, which is pretty much a blank canvas where the served objects, if there are a few of them, will be rendered vertically one after the other.
 
 Try saving the following snippet in a `app.py` file and serving it with `panel serve app.py --show`
 
@@ -394,7 +393,7 @@ pn.panel('Some text').servable()
 pn.panel('More text').servable()
 ```
 
-When developing an app, someone (possibly you!) will require at some point to make it prettier! A quick way to achieve that is to wrap your app in one of the templates that Panel provides, that are defined by declaring four main content areas on the page, which can be populated as desired:
+When developing an app, someone (possibly you!) will be required at some point to make it prettier! A quick way to achieve that is to wrap your app in one of the templates that Panel provides, that are defined by declaring four main content areas on the page, which can be populated as desired:
 
 - `header`: The header area of the HTML page
 - `sidebar`: A collapsible sidebar
@@ -429,7 +428,6 @@ template.sidebar.append(w_number)
 template.main.append(p_hearts)
 template.show()
 ```
-
 ## Notifications
 
 The web apps you end up building with Panel are often quite interactive. Therefore you will be interested in finding a way to let your users know what's going on, when their operations succeed or abort, etc. This is exactly what notifications are for! Contrary to the components we have just covered, notifications are objects you don't manipulate directly, instead you just call `pn.state.notifications` with one the following methods: `success`, `info`, `warning` and `error`.

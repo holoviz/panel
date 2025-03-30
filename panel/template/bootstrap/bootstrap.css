@@ -91,7 +91,7 @@ a.navbar-brand {
 }
 
 #header .title {
-  color: var(--bs-primary-color);
+  color: var(--header-color);
   text-decoration: none;
   text-decoration-line: none;
   text-decoration-style: initial;

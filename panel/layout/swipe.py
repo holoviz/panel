@@ -9,6 +9,7 @@ import param
 
 from ..io.resources import CDN_DIST
 from ..reactive import ReactiveHTML
+from ..viewable import Children
 from .base import ListLike
 
 
@@ -20,7 +21,7 @@ class Swipe(ListLike, ReactiveHTML):
     the other side.
     """
 
-    objects = param.List(default=[], bounds=(0, 2), doc="""
+    objects = Children(default=[], bounds=(0, 2), doc="""
         The list of child objects that make up the layout.""", precedence=-1)
 
     slider_width = param.Integer(default=5, bounds=(0, 25), doc="""
@@ -131,8 +132,8 @@ class Swipe(ListLike, ReactiveHTML):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.

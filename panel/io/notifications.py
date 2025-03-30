@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import param
 
@@ -10,7 +10,8 @@ from ..config import config
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
-from .resources import CSS_URLS, bundled_files, get_dist_path
+from .document import create_doc_if_none_exists
+from .resources import CDN_DIST, CSS_URLS, bundled_files
 from .state import state
 
 if TYPE_CHECKING:
@@ -33,6 +34,8 @@ class Notification(param.Parameterized):
 
     notification_type = param.String(default=None, constant=True, label='type')
 
+    _rendered = param.Boolean(default=False)
+
     _destroyed = param.Boolean(default=False)
 
     def destroy(self) -> None:
@@ -42,7 +45,7 @@ class Notification(param.Parameterized):
             push_on_root(ref)
 
 
-class NotificationAreaBase(ReactiveHTML):
+class NotificationAreaBase(param.Parameterized):
 
     js_events = param.Dict(default={}, doc="""
         A dictionary that configures notifications for specific Bokeh Document
@@ -52,6 +55,9 @@ class NotificationAreaBase(ReactiveHTML):
 
         will trigger a warning on the Bokeh ConnectionLost event.""")
 
+    max_notifications = param.Integer(default=5, doc="""
+        The maximum number of notifications to display at once.""")
+
     notifications = param.List(item_type=Notification)
 
     position = param.Selector(default='bottom-right', objects=[
@@ -59,58 +65,29 @@ class NotificationAreaBase(ReactiveHTML):
         'top-right', 'top-center', 'center-center', 'center-left',
         'center-right'])
 
-    _clear = param.Integer(default=0)
-
-    _notification_type = Notification
-
-    _template = """
-    <div id="pn-notifications" class="notifications" style="position: absolute; bottom: 0; ${position}: 0;">
-    ${notifications}
-    </div>
-    """
-
-    _extension_name = 'notifications'
-
     __abstract = True
 
-    def __init__(self, **params):
-        super().__init__(**params)
-        self._notification_watchers = {}
-
-    def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
-        preprocess: bool = True
-    ) -> 'Model':
-        root = super().get_root(doc, comm, preprocess)
-        for event, notification in self.js_events.items():
-            doc.js_on_event(event, CustomJS(code=f"""
-            var config = {{
-              message: {notification['message']!r},
-              duration: {notification.get('duration', 0)},
-              notification_type: {notification['type']!r},
-              _destroyed: false
-            }}
-            notifications.data.notifications.push(config)
-            notifications.data.properties.notifications.change.emit()
-            """, args={'notifications': root}))
-        self._documents[doc] = root
-        state._views[root.ref['id']] = (self, root, doc, comm)
-        return root
+    def clear(self):
+        raise NotImplementedError
 
     def send(self, message, duration=3000, type=None, background=None, icon=None):
         """
         Sends a notification to the frontend.
+
+        Parameters
+        ----------
+        message: str
+            The message to display in the notification.
+        duration: int
+            The duration of the notification in milliseconds.
+        type: str
+            The type of the notification.
+        background: str
+            The background color of the notification.
+        icon: str
+            The icon of the notification.
         """
-        notification = self._notification_type(
-            message=message, duration=duration, notification_type=type,
-            notification_area=self, background=background, icon=icon
-        )
-        self._notification_watchers[notification] = (
-            notification.param.watch(self._remove_notification, '_destroyed')
-        )
-        self.notifications.append(notification)
-        self.param.trigger('notifications')
-        return notification
+        raise NotImplementedError
 
     def error(self, message, duration=3000):
         return self.send(message, duration, type='error')
@@ -124,17 +101,13 @@ class NotificationAreaBase(ReactiveHTML):
     def warning(self, message, duration=3000):
         return self.send(message, duration, type='warning')
 
-    def clear(self):
-        self._clear += 1
-        self.notifications[:] = []
 
-    def _remove_notification(self, event):
-        if event.obj in self.notifications:
-            self.notifications.remove(event.obj)
-        event.obj.param.unwatch(self._notification_watchers.pop(event.obj))
+class NotificationArea(NotificationAreaBase, ReactiveHTML):
+    """
+    A notification area that displays notifications using the Notyf library.
+    """
 
-
-class NotificationArea(NotificationAreaBase):
+    _clear = param.Integer(default=0)
 
     types = param.List(default=[
         {'type': 'warning',
@@ -176,9 +149,13 @@ class NotificationArea(NotificationAreaBase):
 
     @classproperty
     def __css__(cls):
-        return bundled_files(cls, 'css') + [
-            f"{get_dist_path()}css/notifications.css"
-        ]
+        return bundled_files(cls, 'css')
+
+    _extension_name = 'notifications'
+
+    _notification_type = Notification
+
+    _stylesheets = [f"{CDN_DIST}css/notifications.css"]
 
     _template = ""
 
@@ -192,67 +169,106 @@ class NotificationArea(NotificationAreaBase):
         })
       """,
       "notifications": """
-        var notification = state.current || data.notifications[data.notifications.length-1]
-        if (notification._destroyed) {
-          return
-        }
-        var config = {
-          duration: notification.duration,
-          type: notification.notification_type,
-          message: notification.message
-        }
-        if (notification.background != null) {
-          config.background = notification.background;
-        }
-        if (notification.icon != null) {
-          config.icon = notification.icon;
-        }
-        var toast = state.toaster.open(config);
-        function destroy() {
-          if (state.current !== notification) {
+      for (notification of [...data.notifications]) {
+          if (notification._destroyed || notification._rendered) {
+            continue
+          }
+          var config = {
+            duration: notification.duration,
+            type: notification.notification_type,
+            message: notification.message
+          }
+          if (notification.background != null) {
+            config.background = notification.background;
+          }
+          if (notification.icon != null) {
+            config.icon = notification.icon;
+          }
+          let toast = state.toaster.open(config);
+          function destroy() {
             notification._destroyed = true;
           }
+          notification._rendered = true
+          toast.on('dismiss', destroy)
+          if (notification.duration) {
+            setTimeout(destroy, notification.duration)
+          }
+          if (notification.properties === undefined)
+            return
+          view.connect(notification.properties._destroyed.change, function () {
+            state.toaster.dismiss(toast)
+          })
         }
-        toast.on('dismiss', destroy)
-        if (notification.duration) {
-          setTimeout(destroy, notification.duration)
-        }
-        if (notification.properties === undefined)
-          return
-        view.connect(notification.properties._destroyed.change, function () {
-          state.toaster.dismiss(toast)
-        })
       """,
       "_clear": "state.toaster.dismissAll()",
       "position": """
         script('_clear');
         script('render');
         for (notification of data.notifications) {
-          state.current = notification;
-          script('notifications');
+          notification._rendered = false;
         }
-        state.current = undefined
+        script('notifications');
       """
     }
 
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._notification_watchers = {}
+
+    def _remove_notification(self, event):
+        if event.obj in self.notifications:
+            self.notifications.remove(event.obj)
+        event.obj.param.unwatch(self._notification_watchers.pop(event.obj))
+
+    def get_root(
+        self, doc: Document | None = None, comm: Comm | None = None,
+        preprocess: bool = True
+    ) -> Model:
+        doc = create_doc_if_none_exists(doc)
+        root = super().get_root(doc, comm, preprocess)
+        for event, notification in self.js_events.items():
+            doc.js_on_event(event, CustomJS(code=f"""
+            var config = {{
+              message: {notification['message']!r},
+              duration: {notification.get('duration', 0)},
+              notification_type: {notification['type']!r},
+              _destroyed: false
+            }}
+            notifications.data.notifications.push(config)
+            notifications.data.properties.notifications.change.emit()
+            """, args={'notifications': root}))
+        self._documents[doc] = root
+        state._views[root.ref['id']] = (self, root, doc, comm)
+        return root
+
     @classmethod
-    def demo(cls):
+    def demo(cls, **params):
         """
         Generates a layout which allows demoing the component.
+
+        Parameters
+        ----------
+        **params: dict
+            Additional parameters to pass to the component.
+
+        Returns
+        -------
+        layout: Layout
+            A layout containing the demo components.
         """
         from ..layout import Column
         from ..widgets import (
             Button, ColorPicker, NumberInput, Select, TextInput,
         )
 
-        msg = TextInput(name='Message', value='This is a message')
-        duration = NumberInput(name='Duration', value=0, end=10000)
+        msg = TextInput(name='Message', value='This is a message', **params)
+        duration = NumberInput(name='Duration', value=0, end=10000, **params)
         ntype = Select(
             name='Type', options=['info', 'warning', 'error', 'success', 'custom'],
-            value='info'
+            value='info', **params
         )
-        background = ColorPicker(name='Color', value='#000000')
-        button = Button(name='Notify')
+        background = ColorPicker(name='Color', value='#000000', **params)
+        button = Button(name='Notify', **params)
         notifications = cls()
         button.js_on_click(
             args={
@@ -275,6 +291,37 @@ class NotificationArea(NotificationAreaBase):
 
         return Column(msg, duration, ntype, background, button, notifications)
 
+    def clear(self):
+        self._clear += 1
+        self.notifications[:] = []
+
+    def send(self, message, duration=3000, type=None, background=None, icon=None):
+        """
+        Sends a notification to the frontend.
+
+        Parameters
+        ----------
+        message: str
+            The message to display in the notification.
+        duration: int
+            The duration of the notification in milliseconds.
+        type: str
+            The type of the notification.
+        background: str
+            The background color of the notification.
+        icon: str
+            The icon of the notification.
+        """
+        notification = self._notification_type(
+            message=message, duration=duration, notification_type=type,
+            notification_area=self, background=background, icon=icon
+        )
+        self._notification_watchers[notification] = (
+            notification.param.watch(self._remove_notification, '_destroyed')
+        )
+        self.notifications.append(notification)
+        self.param.trigger('notifications')
+        return notification
 
 # Construct a DataModel for Notification
 _DATA_MODELS[Notification] = construct_data_model(Notification)

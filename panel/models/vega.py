@@ -1,6 +1,11 @@
 """
 Defines custom VegaPlot bokeh model to render Vega json plots.
 """
+from __future__ import annotations
+
+from typing import Literal
+
+from bokeh.core.enums import enumeration
 from bokeh.core.properties import (
     Any, Bool, Dict, Enum, Instance, Int, List, Nullable, String,
 )
@@ -11,6 +16,12 @@ from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 
+VegaThemeType = Literal[
+    'excel', 'ggplot2', 'quartz', 'vox',
+    'fivethirtyeight', 'dark', 'latimes',
+    'urbaninstitute', 'googlecharts'
+]
+VegaTheme = enumeration(VegaThemeType)
 
 class VegaEvent(ModelEvent):
 
@@ -62,7 +73,6 @@ class VegaPlot(LayoutDOM):
 
     show_actions = Bool(False)
 
-    theme = Nullable(Enum('excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
-                 'latimes', 'urbaninstitute', 'googlecharts', default=None))
+    theme = Nullable(Enum(VegaTheme))
 
     throttle = Dict(String, Int)

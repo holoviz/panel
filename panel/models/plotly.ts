@@ -37,6 +37,7 @@ interface PlotlyHTMLElement extends HTMLDivElement {
   on(event: "plotly_relayouting", callback: (eventData: any) => void): void
   on(event: "plotly_restyle", callback: (eventData: any) => void): void
   on(event: "plotly_click", callback: (eventData: any) => void): void
+  on(event: "plotly_doubleclick", callback: (eventData: any) => void): void
   on(event: "plotly_hover", callback: (eventData: any) => void): void
   on(event: "plotly_clickannotation", callback: (eventData: any) => void): void
   on(event: "plotly_selected", callback: (eventData: any) => void): void
@@ -54,6 +55,44 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
     if (eventData === undefined || eventData === null) {
       return null
     }
+
+    const event_obj = eventData.event
+    if (event_obj !== undefined) {
+      filteredEventData.device_state = {
+        // Keyboard modifiers
+        alt: event_obj.altKey,
+        ctrl: event_obj.ctrlKey,
+        meta: event_obj.metaKey,
+        shift: event_obj.shiftKey,
+        // Mouse buttons
+        button: event_obj.button,
+        buttons: event_obj.buttons,
+      }
+    }
+
+    let selectorObject
+    if (eventData.hasOwnProperty("range")) {
+      // Box selection
+      selectorObject = {
+        type: "box",
+        selector_state: {
+          xrange: eventData.range.x,
+          yrange: eventData.range.y,
+        },
+      }
+    } else if (eventData.hasOwnProperty("lassoPoints")) {
+      // Lasso selection
+      selectorObject = {
+        type: "lasso",
+        selector_state: {
+          xs: eventData.lassoPoints.x,
+          ys: eventData.lassoPoints.y,
+        },
+      }
+    } else {
+      selectorObject = null
+    }
+    filteredEventData.selector = selectorObject
 
     /*
      * remove `data`, `layout`, `xaxis`, etc
@@ -140,6 +179,12 @@ export class PlotlyPlotView extends HTMLBoxView {
   _end_relayouting = debounce(() => {
     this._relayouting = false
   }, 2000, false)
+  _throttled_resize: any
+
+  override initialize(): void {
+    super.initialize()
+    this._throttled_resize = throttle(() => this.resize_layout(), 25)
+  }
 
   override connect_signals(): void {
     super.connect_signals()
@@ -205,28 +250,33 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.container = div() as PlotlyHTMLElement
     set_size(this.container, this.model)
     this._rendered = false
-    this.shadow_el.appendChild(this.container)
     this.watch_stylesheets()
-    this.plot().then(() => {
+    this.plot(true).then(() => {
+      this.shadow_el.appendChild(this.container)
       this._rendered = true
+      this.resize_layout()
       if (this.model.relayout != null) {
         (window as any).Plotly.relayout(this.container, this.model.relayout)
       }
-      (window as any).Plotly.Plots.resize(this.container)
     })
   }
 
   override style_redraw(): void {
-    if (this._rendered && this.container != null) {
-      (window as any).Plotly.Plots.resize(this.container)
+    this.resize_layout()
+  }
+
+  resize_layout(): void {
+    if (!this._rendered || this.container == null) {
+      return
     }
+    const width: number = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity)
+    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity);
+    (window as any).Plotly.relayout(this.container, {width, height})
   }
 
   override after_layout(): void {
     super.after_layout()
-    if (this._rendered && this.container != null) {
-      (window as any).Plotly.Plots.resize(this.container)
-    }
+    this._throttled_resize()
   }
 
   _trace_data(): any {
@@ -288,6 +338,12 @@ export class PlotlyPlotView extends HTMLBoxView {
       this.model.trigger_event(new PlotlyEvent({type: "click", data}))
     })
 
+    //  - plotly_doubleclick
+    this.container.on("plotly_doubleclick", (eventData: any) => {
+      const data = filterEventData(this.container, eventData, "click")
+      this.model.trigger_event(new PlotlyEvent({type: "doubleclick", data}))
+    })
+
     //  - plotly_hover
     this.container.on("plotly_hover", (eventData: any) => {
       const data = filterEventData(this.container, eventData, "hover")
@@ -299,6 +355,10 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     //  - plotly_selected
     this.container.on("plotly_selected", (eventData: any) => {
+      if (eventData === undefined || eventData === null) {
+        // filter out the empty events that come from single-click
+        return
+      }
       const data = filterEventData(this.container, eventData, "selected")
       this.model.trigger_event(new PlotlyEvent({type: "selected", data}))
     })

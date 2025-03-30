@@ -12,13 +12,13 @@ or even serve a number of apps at once:
 
     panel serve apps/*.py
 
-For development it can be particularly helpful to use the ``--autoreload`` option to `panel serve` as that will automatically reload the page whenever the application code or any of its imports change.
+For development it can be particularly helpful to use the `--dev` option to `panel serve` as that will automatically reload the page whenever the application code or any of its imports change.
 
 ```{note}
-We recommend installing `watchfiles`, which will provide a significantly better user experience when using `--autoreload`.
+We recommend installing `watchfiles`, which will provide a significantly better user experience when using `--dev`.
 ```
 
-The ``panel serve`` command has the following options:
+The `panel serve` command has the following options:
 
 ```bash
 positional arguments:
@@ -142,6 +142,6 @@ options:
                         Whether to add a global loading spinner to the application(s).
 ```
 
-To turn a notebook into a deployable app simply append ``.servable()`` to one or more Panel objects, which will add the app to Bokeh's ``curdoc``, ensuring it can be discovered by Bokeh server on deployment. In this way it is trivial to build dashboards that can be used interactively in a notebook and then seamlessly deployed on Bokeh server.
+To turn a notebook into a deployable app simply append `.servable()` to one or more Panel objects, which will add the app to Bokeh's `curdoc`, ensuring it can be discovered by Bokeh server on deployment. In this way it is trivial to build dashboards that can be used interactively in a notebook and then seamlessly deployed on Bokeh server.
 
 When called on a notebook, `panel serve` first converts it to a python script using [`nbconvert.PythonExporter()`](https://nbconvert.readthedocs.io/en/stable/api/exporters.html), albeit with [IPython magics](https://ipython.readthedocs.io/en/stable/interactive/magics.html) stripped out. This means that non-code cells, such as raw cells, are entirely handled by `nbconvert` and [may modify the served app](https://nbsphinx.readthedocs.io/en/latest/raw-cells.html).

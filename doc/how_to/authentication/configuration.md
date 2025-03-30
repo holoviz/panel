@@ -16,7 +16,7 @@ The first step in configuring a OAuth is to specify a specific OAuth provider. P
 * `password`: Generic password grant based OAuth Provider with configurable endpoints
 * `auth_code`: Generic code challenge grant based OAuth Provider with configurable endpoints
 
-We will go through the process of configuring each of these individually in [Providers](./providers.md) but for now all we need to know that the `oauth_provider` can be set on the commandline using the `--oauth-provider` CLI argument to `panel serve` or the `PANEL_OAUTH_PROVIDER` environment variable.
+We will go through the process of configuring each of these individually in [Providers](providers) but for now all we need to know that the `oauth_provider` can be set on the commandline using the `--oauth-provider` CLI argument to `panel serve` or the `PANEL_OAUTH_PROVIDER` environment variable.
 
 Examples:
 
@@ -37,7 +37,7 @@ pn.serve(app, oauth_provider=...)
 The login and logout endpoints are configurable:
 
 ```
-panel serve oauth_example.py --login-endpoint="/signin" --logout-endpoint="/signoff"
+panel serve oauth_example.py --login-endpoint /signin --logout-endpoint /signoff ...
 ```
 
 or in Python:
@@ -92,7 +92,7 @@ or in Python:
 pn.serve(app, oauth_extra_params={'tenant_id': ...}, ...)
 ```
 
-The `oauth_extra_params` can also be used to provide the authentication URLs for the `'generic'`, `'password'`, and `'auth_code'` OAuth providers. Specifically you can provide a `'AUTHORIZE_URL'`, `'TOKEN_URL'` and `'USER_URL'` as extra parameters. Lastly it may be used to define the [scopes](#Scopes).
+The `oauth_extra_params` can also be used to provide the authentication URLs for the `'generic'`, `'password'`, and `'auth_code'` OAuth providers. Specifically you can provide a `'AUTHORIZE_URL'`, `'TOKEN_URL'` and `'USER_URL'` as extra parameters. Lastly it may be used to define the [scopes](#scopes).
 
 ## `cookie_secret`
 

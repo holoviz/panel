@@ -582,8 +582,13 @@ div .tabulator .tabulator-header .tabulator-col {
 }
 
 /* Float panel */
-
 .jsPanel .jsPanel-content {
+  background-color: var(--mdc-theme-background);
+  color: var(--mdc-theme-on-background);
+}
+
+/* Copy Button */
+.copybtn {
   background-color: var(--mdc-theme-background);
   color: var(--mdc-theme-on-background);
 }

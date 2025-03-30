@@ -49,7 +49,7 @@ class ToggleIcon(_ClickableIcon):
     """
 
 
-class ButtonIcon(_ClickableIcon, AbstractButton):
+class ButtonIcon(_ClickableIcon, AbstractButton):  # type: ignore
     """
     A ButtonIcon is a clickable icon that toggles between an active
     and inactive state and keeps track of the number of times it has

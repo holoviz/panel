@@ -32,28 +32,73 @@ The `panel.state` object holds session state and provide various methods to atta
 
 ::::
 
+
+-------
+
 ## Module Structure
 
+[`panel.auth`](panel.auth)
+: Module containing authentication handlers.
+
+[`panel.chat`](panel.chat)
+: Subpackage containing Panel Chat components
+
+[`panel.command`](panel.chat)
+: Subpackage containing Panel CLI commands
+
+[`panel.compiler`](panel.compiler)
+: Utilities for bundling and compiling external JS and CSS resources.
+
+[`panel.config`](panel.config)
+: Module containing Panel config and extension objects.
+
+[`panel.custom`](panel.custom)
+: Baseclasses for creating custom components.
+
+[`panel.depends`](panel.depends)
+: Module exposing `param.bind` and `param.depends`.
+
+[`panel.interact`](panel.interact)
+: Module implementing the `interact` API.
+
 [`panel.io`](panel.io)
-: Utilities for working with Panel components
+: Subpackage containing all IO related functionality.
 
 [`panel.layout`](panel.layout)
-: Panel layout components
+: Subpackage containing layout components
+
+[`panel.links`](panel.links)
+: Module containing implementation responsible Javascript linking and callbacks.
+
+[`panel.models`](panel.models)
+: Subpackage containing Bokeh model implementations of custom components.
 
 [`panel.pane`](panel.pane)
-: Panel layout components
+: Subpackage containing `Pane` components.
 
 [`panel.param`](panel.param)
-: Components for integration with the param library
+: Module implementing components for integration with the param library.
 
 [`panel.pipeline`](panel.pipeline)
-: Panel Pipeline component
+: Module containing the `Pipeline` component.
 
-[`panel.widgets`](panel.widgets)
-: Widget components
+[`panel.reactive`](panel.reactive)
+: Module containing baseclasses for Panel components with reactive APIs.
+
+[`panel.template`](panel.template)
+: Subpackage containing implementations for `Template` components.
+
+[`panel.theme`](panel.theme)
+: Subpackage implementing `Design` and `Theme` components.
+
+[`panel.util`](panel.util)
+: Subpackage containing generic utilities.
 
 [`panel.viewable`](panel.viewable)
-: Baseclasses for all Panel components
+: Module containing baseclasses for all Panel components.
+
+[`panel.widgets`](panel.widgets)
+: Subpackage containing `Widget` components.
 
 ```{toctree}
 :titlesonly:
@@ -63,12 +108,23 @@ The `panel.state` object holds session state and provide various methods to atta
 cheatsheet
 config
 state
+panel.auth
+panel.chat
+panel.command
+panel.compiler
+panel.config
+panel.custom
+panel.depends
 panel.io
 panel.layout
+panel.links
+panel.models
 panel.pane
 panel.param
 panel.pipeline
+panel.reactive
 panel.template
+panel.theme
 panel.util
 panel.viewable
 panel.widgets

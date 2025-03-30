@@ -110,18 +110,19 @@ export class QuillInputView extends HTMLBoxView {
      **/
     this.quill.selection.getNativeRange = () => {
       const rootNode = (this.quill.root.getRootNode() as ShadowRoot)
-      const nativeRange = getNativeRange(rootNode)
-      return !!nativeRange ? this.quill.selection.normalizeNative(nativeRange) : null
+      const range = getNativeRange(rootNode)
+      return !!range ? this.quill.selection.normalizeNative(range) : null
     }
 
     /**
      * Original implementation relies on Selection.addRange to programmatically set the range, which does not work
      * in Webkit with Native Shadow. Selection.addRange works fine in Chromium and Gecko.
      **/
-    this.quill.selection.setNativeRange = (startNode: Element, startOffset: number) => {
-      let endNode = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : startNode
-      let endOffset = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : startOffset
-      const force = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false
+    this.quill.selection.setNativeRange = (startNode: Element, startOffset: number, endNode: any = undefined, endOffset: any = undefined, force: boolean = false) => {
+      endNode = endNode === undefined ? startNode : endNode
+      endOffset = endOffset === undefined ? startOffset : endOffset
+      force = force || false
+
       if (startNode != null && (this.quill.selection.root.parentNode == null || startNode.parentNode == null || endNode.parentNode == null)) {
         return
       }
@@ -155,7 +156,7 @@ export class QuillInputView extends HTMLBoxView {
     this._editor = (this.shadow_el.querySelector(".ql-editor") as HTMLDivElement)
     this._toolbar = (this.shadow_el.querySelector(".ql-toolbar") as HTMLDivElement)
 
-    const delta = this.quill.clipboard.convert(this.model.text)
+    const delta = this.quill.clipboard.convert({html: this.model.text})
     this.quill.setContents(delta)
 
     this.quill.on("text-change", () => {
@@ -163,7 +164,7 @@ export class QuillInputView extends HTMLBoxView {
         return
       }
       this._editing = true
-      this.model.text = this._editor.innerHTML
+      this.model.text = this.quill.getSemanticHTML()
       this._editing = false
     })
     if (!this.model.disabled) {
@@ -181,7 +182,7 @@ export class QuillInputView extends HTMLBoxView {
       this.container.style.visibility = "visible"
     }
 
-    const delta = this.quill.clipboard.convert(this.model.text)
+    const delta = this.quill.clipboard.convert({html: this.model.text})
     this.quill.setContents(delta)
 
     this.invalidate_layout()

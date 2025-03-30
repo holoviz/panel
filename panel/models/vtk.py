@@ -71,13 +71,13 @@ class AbstractVTKPlot(HTMLBox):
 
     color_mappers = List(Instance(ColorMapper))
 
-    height = Override(default=300)
+    height = Override(default=300)  # type: ignore
 
     orientation_widget = Bool(default=False)
 
     interactive_orientation_widget = Bool(default=False)
 
-    width = Override(default=300)
+    width = Override(default=300)  # type: ignore
 
     annotations = List(Dict(String, Any))
 

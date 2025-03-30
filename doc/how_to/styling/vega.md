@@ -1,6 +1,6 @@
 # Style Vega Plots
 
-This guide addresses how to style Vega plots displayed using the [Vega pane](../../../examples/reference/panes/Vega.ipynb).
+This guide addresses how to style Vega plots displayed using the [Vega pane](../../reference/panes/Vega).
 
 The gif below displays an example of what can be achieved with a little styling of the Vega plot and the `FastListTemplate`.
 

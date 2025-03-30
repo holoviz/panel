@@ -1,6 +1,6 @@
 # Set Up Manual Threading
 
-Enabling threading in Panel, as demonstrated in the [automatic threading guide](threading.md), provides a simple method to achieve concurrency. However, there are situations where greater control is necessary.
+Enabling threading in Panel, as demonstrated in the [automatic threading guide](threading), provides a simple method to achieve concurrency. However, there are situations where greater control is necessary.
 
 Below, we will demonstrate how to safely implement threads either per session or globally across multiple sessions.
 
@@ -87,7 +87,7 @@ class SessionTaskRunner(pn.viewable.Viewer):
 
     def __panel__(self):
         return pn.Column(
-            f"## TaskRunner {id(self)}",
+            f"## Session TaskRunner {id(self)}",
             pn.pane.Str(self.param.status),
             pn.pane.Str(pn.rx("Last Result: {value}").format(value=self.param.value)),
         )
@@ -118,6 +118,13 @@ button = pn.widgets.Button(name="Add Task", on_click=add_task, button_type="prim
 pn.Column(button, task_runner).servable()
 ```
 
+The application should look like:
+
+<video muted controls loop poster="../../_static/images/session-task-runner.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/how_to/concurrency/session-task-runner.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
 Since processing occurs on a separate thread, the application remains responsive to further user interactions, such as queuing new tasks.
 
 :::{note}
@@ -133,7 +140,7 @@ To use threading efficiently:
 
 When we need to share data periodically across all sessions, it is often inefficient to fetch and process this data separately for each session.
 
-Instead, we can utilize a single thread. When initiating global threads, it's crucial to avoid starting them multiple times, especially in sessions or modules subject to `--autoreload`. To circumvent this issue, we can globally share a worker or thread through the Panel cache (`pn.state.cache`).
+Instead, we can utilize a single thread. When initiating global threads, it's crucial to avoid starting them multiple times, especially in sessions or modules subject to the `--dev` flag. To circumvent this issue, we can globally share a worker or thread through the Panel cache (`pn.state.cache`).
 
 Let's create a `GlobalTaskRunner` that accepts a function (`worker`) and executes it repeatedly, pausing for `sleep` seconds between each execution.
 
@@ -231,7 +238,7 @@ class GlobalTaskRunner(pn.viewable.Viewer):
 
     def __panel__(self):
         return pn.Column(
-            f"## TaskRunner {id(self)}",
+            f"## Global TaskRunner {id(self)}",
             self.param.seconds,
             pn.pane.Str(pn.rx("Last Result: {value}").format(value=self.param.value)),
             pn.pane.Str(
@@ -262,6 +269,13 @@ pn.Column(
     task_runner, result_view,
 ).servable()
 ```
+
+The application should look like:
+
+<video muted controls loop poster="../../_static/images/global-task-runner.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/how_to/concurrency/global-task-runner.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 
 :::{note}
 

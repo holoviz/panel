@@ -71,13 +71,16 @@ if not panel_wheels:
     raise RuntimeError("Panel wheel not found.")
 panel_wheel = sorted(panel_wheels)[-1]
 
-if bokeh_dev:
-    zin = zipfile.ZipFile(panel_wheel, "r")
-    zout = zipfile.ZipFile(out / os.path.basename(panel_wheel).replace(".dirty", ""), "w")
+with (
+    zipfile.ZipFile(panel_wheel, "r") as zin,
+    zipfile.ZipFile(out / os.path.basename(panel_wheel).replace(".dirty", ""), "w") as zout,
+):
     for item in zin.infolist():
         filename = item.filename
+        if filename.startswith("panel/tests"):
+            continue
         buffer = zin.read(filename)
-        if filename.startswith("panel-") and filename.endswith("METADATA"):
+        if bokeh_dev and filename.startswith("panel-") and filename.endswith("METADATA"):
             lines = buffer.decode("utf-8").split("\n")
             lines = [
                 f"Requires-Dist: {bokeh_requirement}"
@@ -86,8 +89,6 @@ if bokeh_dev:
             ]
             buffer = "\n".join(lines).encode('utf-8')
         zout.writestr(item, buffer)
-else:
-    shutil.copyfile(panel_wheel, out / os.path.basename(panel_wheel).replace(".dirty", ""))
 
 bokeh_wheels = PANEL_BASE.glob("build/bokeh-*-py3-none-any.whl")
 

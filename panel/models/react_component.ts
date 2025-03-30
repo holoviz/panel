@@ -10,13 +10,56 @@ export class ReactComponentView extends ReactiveESMView {
   declare style_cache: HTMLHeadElement
   model_getter = model_getter
   model_setter = model_setter
+  react_root: any
+
+  _force_update_callbacks: (() => void)[] = []
 
   override render_esm(): void {
-    if (this.model.usesMui) {
-      this.style_cache = document.createElement("head")
-      this.shadow_el.insertBefore(this.style_cache, this.container)
+    if (this.model.compiled === null || this.render_module === null) {
+      return
     }
-    super.render_esm()
+    if (this.model.usesMui) {
+      if (this.model.root_node) {
+        this.style_cache = document.head
+      } else {
+        this.style_cache = document.createElement("head")
+        this.shadow_el.insertBefore(this.style_cache, this.container)
+      }
+    }
+    this.accessed_properties = []
+    for (const lf of this._lifecycle_handlers.keys()) {
+      (this._lifecycle_handlers.get(lf) || []).splice(0)
+    }
+    this.model.disconnect_watchers(this)
+    this.render_module.then((mod: any) => {
+      this.react_root = mod.default.render()
+    })
+  }
+
+  on_force_update(cb: () => void): void {
+    this._force_update_callbacks.push(cb)
+  }
+
+  force_update(): void {
+    for (const cb of this._force_update_callbacks) {
+      cb()
+    }
+  }
+
+  override remove(): void {
+    super.remove()
+    this._force_update_callbacks = []
+    if (this.react_root) {
+      this.react_root.unmount()
+    }
+  }
+
+  override render(): void {
+    if (this.react_root) {
+      this.react_root.unmount()
+    }
+    this._force_update_callbacks = []
+    super.render()
   }
 
   override after_rendered(): void {
@@ -24,119 +67,171 @@ export class ReactComponentView extends ReactiveESMView {
     for (const cb of handlers) {
       cb()
     }
+    if (!this._rendered) {
+      for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
+        cb()
+      }
+    }
     this._rendered = true
   }
 
   protected override _render_code(): string {
-    let render_code = `
-if (rendered && view.model.usesReact) {
-  view._changing = true
-  const root = createRoot(view.container)
-  try {
-    root.render(rendered)
-  } catch(e) {
-    view.render_error(e)
-  }
-  view._changing = false
-  view.after_rendered()
-}`
-    let import_code = `
+    let import_code
+    const cache_key = (this.model.bundle === "url") ? this.model.esm : (this.model.bundle || `${this.model.class_name}-${this.model.esm.length}`)
+    if (this.model.bundle) {
+      import_code = `
+const ns = await view._module_cache.get("${cache_key}")
+const {React, createRoot} = ns.default`
+    } else {
+      import_code = `
 import * as React from "react"
 import { createRoot } from "react-dom/client"`
+    }
+    let init_code = ""
+    let render_code = ""
     if (this.model.usesMui) {
-      import_code = `
+      if (this.model.bundle) {
+        import_code = `
+const ns = await view._module_cache.get("${cache_key}")
+const {CacheProvider, React, createCache, createRoot} = ns.default`
+      } else {
+        import_code = `
 ${import_code}
 import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
+      }
+      const css_key = this.model.id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
+      init_code = `
+this.mui_cache = createCache({
+  key: 'css-${css_key}',
+  prepend: true,
+  container: view.style_cache,
+})`
       render_code = `
-if (rendered) {
-  const cache = createCache({
-    key: 'css',
-    prepend: true,
-    container: view.style_cache,
-  })
-  rendered = React.createElement(CacheProvider, {value: cache}, rendered)
-}
-${render_code}`
+  if (rendered) {
+    rendered = React.createElement(CacheProvider, {value: this.mui_cache}, rendered)
+  }`
     }
     return `
-${import_code}
-
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
-class Child extends React.Component {
+${import_code}
+
+class Child extends React.PureComponent {
+
+  constructor(props) {
+    super(props)
+    this.render_callback = null
+  }
 
   get view() {
-    const model = this.props.parent.model.data[this.props.name]
-    const models = Array.isArray(model) ? model : [model]
-    return this.props.parent.get_child_view(models[this.props.index])
+    const child = this.props.parent.model.data[this.props.name]
+    const model = this.props.index == null ? child : child[this.props.index]
+    return this.props.parent.get_child_view(model)
   }
 
   get element() {
-    return this.view.el
+    const view = this.view
+    return view == null ? null : view.el
   }
 
   componentDidMount() {
-    this.view.render()
-    this.view.after_render()
-    this.props.parent.on_child_render(this.props.name, (new_views) => {
-      this.forceUpdate()
+    this.props.parent.rerender_(this.view)
+    this.render_callback = (new_views) => {
       const view = this.view
-      if (new_views.includes(view)) {
-        view.render()
-        view.after_render()
+      if (!view) {
+        return
+      } else if (new_views.includes(view)) {
+        if (this.props.id === undefined) { this.forceUpdate() }
+        this.props.parent.rerender_(view)
+      } else {
+        this.forceUpdate()
+        if (view.force_update) { view.force_update() }
       }
-    })
+    }
+    this.props.parent.on_child_render(this.props.name, this.render_callback)
+    this.props.parent.notify_mount(this.props.name, this.view.model.id)
+  }
+
+  componentWillUnmount() {
+    if (this.render_callback) {
+      this.props.parent.remove_on_child_render(this.props.name, this.render_callback)
+    }
   }
 
   render() {
-    return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && ref.appendChild(this.element)})
+    return React.createElement('div', {
+      className: "child-wrapper",
+      ref: (ref) => {
+        if (ref != null && this.view != null) {
+          ref.appendChild(this.element)
+        }
+      }
+    })
   }
 }
 
 function react_getter(target, name) {
-  if (name == "useState") {
+  if (name === "useMount") {
+    return (callback) => React.useEffect(() => {
+      target.model_proxy.on('lifecycle:mounted', callback)
+      return () => target.model_proxy.off('lifecycle:mounted', callback)
+    }, [])
+  } if (name == "useState") {
     return (prop) => {
       const data_model = target.model.data
-      if (Reflect.has(data_model, prop)) {
-        const [value, setValue] = React.useState(data_model.attributes[prop]);
-        react_proxy.on(prop, () => setValue(data_model.attributes[prop]))
-        React.useEffect(() => data_model.setv({[prop]: value}), [value])
+      const propPath = prop.split(".")
+      let targetModel = data_model
+      let resolvedProp = null
+
+      for (let i = 0; i < propPath.length - 1; i++) {
+        if (targetModel && targetModel.properties && propPath[i] in targetModel.properties) {
+          targetModel = targetModel[propPath[i]]
+        } else {
+          // Stop if any part of the path is missing
+          targetModel = null
+          break
+        }
+      }
+      if (targetModel && targetModel.attributes && propPath[propPath.length - 1] in targetModel.attributes) {
+        resolvedProp = propPath[propPath.length - 1]
+      }
+      if (resolvedProp && targetModel) {
+        const [value, setValue] = React.useState(targetModel.attributes[resolvedProp])
+
+        react_proxy.on(prop, () => setValue(targetModel.attributes[resolvedProp]))
+
+        React.useEffect(() => {
+            targetModel.setv({ [resolvedProp]: value })
+        }, [value])
+
         return [value, setValue]
       }
-      return undefined
+      throw ReferenceError("Could not resolve " + prop + " on " + target.model.class_name)
     }
   } else if (name === "get_child") {
     return (child) => {
       const data_model = target.model.data
       const value = data_model.attributes[child]
       if (Array.isArray(value)) {
-        const children = []
-        for (let i = 0; i<value.length; i++) {
-          children.push(
-            React.createElement(Child, {parent: target, name: child, index: i, key: child+i})
-          )
-        }
-        const [children_state, set_children] = React.useState(children);
-        target.on_child_render(child, (new_views) => {
-          const value = data_model.attributes[child]
-          if (new_views.length && children_state.length !== value.length) {
-            const children = []
-            for (let i = 0; i<value.length; i++) {
-              let new_child
-              if (i < children_state.length) {
-                new_child = children_state[i]
-              } else {
-                new_child = React.createElement(Child, {parent: target, name: child, index: i, key: child+i})
-              }
-              children.push(new_child)
+        const [children_state, set_children] = React.useState(value.map((model, i) =>
+          React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
+        ))
+        React.useEffect(() => {
+          target.on_child_render(child, () => {
+            const current_models = data_model.attributes[child]
+            const previous_models = children_state.map(child => child.props.index)
+            if (current_models.length !== previous_models.length ||
+                current_models.some((model, i) => i !== previous_models[i])) {
+              set_children(current_models.map((model, i) => (
+                React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
+              )))
             }
-            set_children(children)
-          }
-        })
+          })
+        }, [])
         return children_state
       } else {
-        return React.createElement(Child, {parent: target, name: child, index: 0})
+        return React.createElement(Child, {parent: target, name: child})
       }
     }
   }
@@ -150,14 +245,14 @@ const react_proxy = new Proxy(view, {
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
-    super(props);
+    super(props)
     // initialize the error state
-    this.state = { hasError: false };
+    this.state = { hasError: false }
   }
 
   // if an error happened, set the state to true
   static getDerivedStateFromError(error) {
-    return { hasError: true };
+    return { hasError: true }
   }
 
   componentDidCatch(error) {
@@ -168,13 +263,23 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return React.createElement('div')
     }
-    return React.createElement('div', {}, this.props.children);
+    return React.createElement('div', {className: "error-wrapper"}, this.props.children)
   }
 }
 
 class Component extends React.Component {
 
+  constructor(props) {
+    super(props)
+    ${init_code}
+  }
+
   componentDidMount() {
+    this.props.view.on_force_update(() => {
+      ${init_code}
+      this.forceUpdate()
+    })
+    this.props.view._changing = false
     this.props.view.after_rendered()
   }
 
@@ -183,14 +288,38 @@ class Component extends React.Component {
     if (this.props.view.model.dev) {
        rendered = React.createElement(ErrorBoundary, {view}, rendered)
     }
+    ${render_code}
     return rendered
   }
 }
 
-const props = {view, model: react_proxy, data: view.model.data, el: view.container}
-let rendered = React.createElement(Component, props)
+function render() {
+  const props = {view, model: react_proxy, data: view.model.data, el: view.container}
+  const rendered = React.createElement(Component, props)
+  if (rendered) {
+    view._changing = true
+    let container
+    if (view.model.root_node) {
+      container = document.querySelector(view.model.root_node)
+      if (container == null) {
+        container = document.createElement("div")
+        container.id = view.model.root_node.replace("#", "")
+        document.body.append(container)
+      }
+    } else {
+      container = view.container
+    }
+    const root = createRoot(container)
+    try {
+      root.render(rendered)
+    } catch(e) {
+      view.render_error(e)
+    }
+    return root
+  }
+}
 
-${render_code}`
+export default {render}`
   }
 }
 
@@ -198,7 +327,7 @@ export namespace ReactComponent {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = ReactiveESM.Props & {
-    react_version: p.Property<string>
+    root_node: p.Property<string | null>
   }
 }
 
@@ -219,39 +348,11 @@ export class ReactComponent extends ReactiveESM {
     return false
   }
 
-  get usesReact(): boolean {
-    return this.compiled !== null && this.compiled.includes("React")
-  }
-
-  protected override _declare_importmap(): void {
-    const react_version = this.react_version
-    const imports = this.importmap?.imports
-    const scopes = this.importmap?.scopes
-    const pkg_suffix = this.dev ? "?dev": ""
-    const path_suffix = this.dev ? "&dev": ""
-    const importMap = {
-      imports: {
-        react: `https://esm.sh/react@${react_version}${pkg_suffix}`,
-        "react/": `https://esm.sh/react@${react_version}${path_suffix}/`,
-        "react-dom/": `https://esm.sh/react-dom@${react_version}&deps=react@${react_version},react-dom@${react_version}${path_suffix}/`,
-        ...imports,
-      },
-      scopes: scopes || {},
-    }
-    if (this.usesMui) {
-      importMap.imports = {
-        ...importMap.imports,
-        "@emotion/cache": "https://esm.sh/@emotion/cache",
-        "@emotion/react": `https://esm.sh/@emotion/react?external=react${path_suffix}`,
-      }
-    }
-    // @ts-ignore
-    importShim.addImportMap(importMap)
-  }
-
   override compile(): string | null {
     const compiled = super.compile()
-    if (compiled === null || !compiled.includes("React")) {
+    if (this.bundle) {
+      return compiled
+    } else if (compiled === null || !compiled.includes("React")) {
       return compiled
     }
     return `
@@ -264,9 +365,8 @@ ${compiled}`
 
   static {
     this.prototype.default_view = ReactComponentView
-
-    this.define<ReactComponent.Props>(({String}) => ({
-      react_version: [ String,    "18.3.1" ],
+    this.define<ReactComponent.Props>(({Nullable, Str}) => ({
+      root_node:  [ Nullable(Str),     null ],
     }))
   }
 }

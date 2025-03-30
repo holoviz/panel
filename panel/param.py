@@ -14,19 +14,18 @@ import textwrap
 import types
 
 from collections import defaultdict, namedtuple
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Generator, Mapping, Optional,
-)
+from types import FunctionType
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
 try:
     from param import Skip
 except Exception:
-    class Skip(Exception):
+    class Skip(Exception):  # type: ignore
         """
         Exception that allows skipping an update for function-level updates.
         """
@@ -36,18 +35,10 @@ from param.parameterized import (
 )
 from param.reactive import rx
 
-try:
-    from param import Skip
-except Exception:
-    class Skip(RuntimeError):
-        """
-        Exception that allows skipping an update for function-level updates.
-        """
-
 from .config import config
 from .io import state
 from .layout import (
-    Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
+    Column, HSpacer, ListLike, Panel, Row, Spacer, Tabs, WidgetBox,
 )
 from .pane import DataFrame as DataFramePane
 from .pane.base import Pane, ReplacementPane
@@ -85,13 +76,13 @@ def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
 
 def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     if isinstance(pobj, param.Tuple):
-        return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
+        return type('TupleInput', (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
-        return type(str('NumberInput'), (LiteralInput,), {'type': (int, float)})
+        return type('NumberInput', (LiteralInput,), {'type': (int, float)})
     elif isinstance(pobj, param.Dict):
-        return type(str('DictInput'), (LiteralInput,), {'type': dict})
+        return type('DictInput', (LiteralInput,), {'type': dict})
     elif isinstance(pobj, param.List):
-        return type(str('ListInput'), (LiteralInput,), {'type': list})
+        return type('ListInput', (LiteralInput,), {'type': list})
     return LiteralInput
 
 
@@ -108,8 +99,8 @@ def set_values(*parameterizeds, **param_values):
     Temporarily sets parameter values to the specified values on all
     supplied Parameterized objects.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     parameterizeds: tuple(param.Parameterized)
         Any number of parameterized objects.
     param_values: dict
@@ -129,14 +120,31 @@ def set_values(*parameterizeds, **param_values):
 
 class Param(Pane):
     """
-    Param panes render a Parameterized class to a set of widgets which
-    are linked to the parameter values on the class.
+    Param panes render a Parameterized class into a set of interactive widgets
+    that are dynamically linked to the parameter values of the class.
+
+    Reference: https://panel.holoviz.org/reference/panes/Param.html
+
+    Example:
+
+    >>> import param
+    >>> import panel as pn
+    >>> pn.extension()
+
+    >>> class App(param.Parameterized):
+    >>>     some_text = param.String(default="Hello")
+    >>>     some_float = param.Number(default=1, bounds=(0, 10), step=0.1)
+    >>>     some_boolean = param.Boolean(default=True)
+
+    >>> app = App()
+
+    >>> pn.Param(app, parameters=["some_text", "some_float"], show_name=False).servable()
     """
 
     display_threshold = param.Number(default=0, precedence=-10, doc="""
         Parameters with precedence below this value are not displayed.""")
 
-    default_layout = param.ClassSelector(default=Column, class_=Panel,
+    default_layout = param.ClassSelector(default=Column, class_=ListLike,
                                          is_instance=False)
 
     default_precedence = param.Number(default=1e-8, precedence=-10, doc="""
@@ -167,7 +175,7 @@ class Param(Pane):
         usually to update the default Parameter values of the
         underlying parameterized object.""")
 
-    name = param.String(default='', doc="""
+    name = param.String(default='', constant=False, doc="""
         Title of the pane.""")
 
     object = param.Parameter(default=None, allow_refs=False, doc="""
@@ -197,7 +205,7 @@ class Param(Pane):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    mapping: ClassVar[Mapping[param.Parameter, Widget | Callable[[param.Parameter], Widget]]] = {
+    mapping: ClassVar[dict[param.Parameter, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
         param.Action:            Button,
         param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
@@ -222,6 +230,12 @@ class Param(Pane):
         param.Range:             RangeSlider,
         param.Selector:          Select,
         param.String:            TextInput,
+    }
+
+    input_widgets: ClassVar[dict[Any, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]]  = {
+        float: FloatInput,
+        int: IntInput,
+        "literal": LiteralInput,
     }
 
     if hasattr(param, 'Event'):
@@ -477,11 +491,13 @@ class Param(Pane):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
                     if isinstance(p_obj, param.Number):
-                        widget_class = FloatInput
+                        widget_class = self.input_widgets[float]
                         if isinstance(p_obj, param.Integer):
-                            widget_class = IntInput
+                            widget_class = self.input_widgets[int]
                     elif not issubclass(widget_class, LiteralInput):
-                        widget_class = LiteralInput
+                        widget_class = self.input_widgets['literal']
+                    if isinstance(widget_class, FunctionType):
+                        widget_class = widget_class(p_obj)
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
             if hasattr(widget_class, 'fixed_start') and getattr(p_obj, 'bounds', None):
@@ -495,16 +511,9 @@ class Param(Pane):
         # Update kwargs
         onkeyup = kw_widget.pop('onkeyup', False)
         throttled = kw_widget.pop('throttled', False)
-        ignored_kws = [repr(k) for k in kw_widget if k not in widget_class.param]
-        if ignored_kws:
-            self.param.warning(
-                f'Param pane was given unknown keyword argument(s) for {p_name!r} '
-                f'parameter with a widget of type {widget_class!r}. The following '
-                f'keyword arguments could not be applied: {", ".join(ignored_kws)}.'
-            )
         kw.update(kw_widget)
-
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
+        non_param_kwargs = {k: v for k, v in kw_widget.items() if k not in widget_class.param}
 
         if isinstance(widget_class, type) and issubclass(widget_class, Button):
             kwargs.pop('value', None)
@@ -512,7 +521,7 @@ class Param(Pane):
         if isinstance(widget_class, WidgetBase):
             widget = widget_class
         else:
-            widget = widget_class(**kwargs)
+            widget = widget_class(**kwargs, **non_param_kwargs)
         widget._param_pane = self
         widget._param_name = p_name
 
@@ -713,10 +722,11 @@ class Param(Pane):
         return dict(widgets)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self.layout._get_model(doc, root, parent, comm)
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -748,7 +758,7 @@ class Param(Pane):
             return wtype
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Comm | None = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         root = super().get_root(doc, comm, preprocess)
@@ -761,8 +771,8 @@ class Param(Pane):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
@@ -910,8 +920,8 @@ class ParamRef(ReplacementPane):
         self._replace_pane()
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if not self._evaled:
             deferred = self.defer_load and not state.loaded
@@ -1227,9 +1237,9 @@ class ReactiveExpr(Pane):
         return self.widget_layout(*widgets)
 
     def _get_model(
-        self, doc: Document, root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional[Comm] = None
-    ) -> 'Model':
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         return self.layout._get_model(doc, root, parent, comm)
 
     def _generate_layout(self):
@@ -1302,7 +1312,7 @@ class JSONInit(param.Parameterized):
         if self.json_file or env_var.endswith('.json'):
             try:
                 fname = self.json_file if self.json_file else env_var
-                with open(fullpath(fname), 'r') as f:
+                with open(fullpath(fname)) as f:
                     spec = json.load(f)
             except Exception:
                 warnobj.warning(f'Could not load JSON file {spec!r}')
