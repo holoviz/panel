@@ -1,4 +1,5 @@
 import type * as p from "@bokehjs/core/properties"
+import type {Transform} from "sucrase"
 
 import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
 
@@ -170,6 +171,7 @@ export interface AnyWidgetComponent extends AnyWidgetComponent.Attrs {}
 
 export class AnyWidgetComponent extends ReactiveESM {
   declare properties: AnyWidgetComponent.Props
+  override sucrase_transforms: Transform[] = ["typescript", "jsx"]
 
   constructor(attrs?: Partial<AnyWidgetComponent.Attrs>) {
     super(attrs)
