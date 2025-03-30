@@ -71,7 +71,32 @@ class AnyWidgetUpdate(AnyWidgetComponent):
     }
     """
 
-@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate])
+class AnyWidgetReactUpdate(AnyWidgetComponent):
+
+    text = param.String()
+
+    _importmap = {
+        "imports": {
+            "@anywidget/react": "https://esm.sh/@anywidget/react",
+            "react": "https://esm.sh/react",
+        }
+    }
+
+    _esm = """
+    import * as React from "react"
+    import { createRender, useModelState } from "@anywidget/react"
+
+    function H1() {
+      let [text] = useModelState("text")
+      return <h1>{text}</h1>
+    }
+
+    const render = createRender(H1)
+
+    export default { render }
+    """
+
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate, AnyWidgetReactUpdate])
 def test_update(page, component):
     example = component(text='Hello World!')
 
