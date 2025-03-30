@@ -871,6 +871,8 @@ class AnyWidgetComponent(ReactComponent):
 
     _bokeh_model = _BkAnyWidgetComponent
 
+    _react_version = "19"
+
     def send(self, msg: dict):
         """
         Sends a custom event containing the provided message to the frontend.
