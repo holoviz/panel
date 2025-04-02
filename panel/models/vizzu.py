@@ -31,7 +31,7 @@ class VizzuChart(LayoutDOM):
 
     __javascript_module_exports__ = ['Vizzu']
 
-    __javascript_raw__ = [
+    __javascript_modules__ = [
         f"{config.npm_cdn}/vizzu@{VIZZU_VERSION}/dist/vizzu.min.js"
     ]
 
