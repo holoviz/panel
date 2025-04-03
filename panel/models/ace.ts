@@ -23,13 +23,15 @@ export class AcePlotView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {code, theme, language, filename, print_margin, annotations, readonly} = this.model.properties
+    const {code, theme, language, filename, print_margin, annotations, soft_tabs, indent, readonly} = this.model.properties
     this.on_change(code, () => this._update_code_from_model())
     this.on_change(theme, () => this._update_theme())
     this.on_change(language, () => this._update_language())
     this.on_change(filename, () => this._update_filename())
     this.on_change(print_margin, () => this._update_print_margin())
     this.on_change(annotations, () => this._add_annotations())
+    this.on_change(indent, () => this._editor.setOptions({tabSize: this.model.indent}))
+    this.on_change(soft_tabs, () => this._editor.setOptions({useSoftTabs: this.model.indent}))
     this.on_change(readonly, () => {
       this._editor.setReadOnly(this.model.readonly)
     })
@@ -54,6 +56,8 @@ export class AcePlotView extends HTMLBoxView {
     this._modelist = ace.require("ace/ext/modelist")
     this._editor.setOptions({
       enableBasicAutocompletion: true,
+      tabSize: this.model.indent,
+      useSoftTabs: this.model.soft_tabs,
       enableSnippets: true,
       fontFamily: "monospace", //hack for cursor position
     })
@@ -158,16 +162,18 @@ export class AcePlot extends HTMLBox {
   static {
     this.prototype.default_view = AcePlotView
 
-    this.define<AcePlot.Props>(({Any, List, Bool, Str, Nullable}) => ({
-      code:         [ Str,       "" ],
-      code_input:   [ Str,       "" ],
-      on_keyup:     [ Bool,       true ],
-      filename:     [ Nullable(Str), null],
-      language:     [ Str,       "" ],
-      theme:        [ Str, "chrome" ],
-      annotations:  [ List(Any),   [] ],
-      readonly:     [ Bool,   false ],
-      print_margin: [ Bool,   false ],
+    this.define<AcePlot.Props>(({Any, Bool, Int, List, Str, Nullable}) => ({
+      annotations:  [ List(Any),      []  ],
+      code:         [ Str,            ""  ],
+      code_input:   [ Str,            ""  ],
+      filename:     [ Nullable(Str), null ],
+      indent:       [ Int,              4 ],
+      language:     [ Str,             "" ],
+      on_keyup:     [ Bool,          true ],
+      print_margin: [ Bool,         false ],
+      theme:        [ Str,       "chrome" ],
+      readonly:     [ Bool,         false ],
+      soft_tabs:    [ Bool,         false ],
     }))
 
     this.override<AcePlot.Props>({
