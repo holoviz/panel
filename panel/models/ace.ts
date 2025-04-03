@@ -141,10 +141,12 @@ export namespace AcePlot {
     on_keyup: p.Property<boolean>
     language: p.Property<string>
     filename: p.Property<string | null>
+    indent: p.Property<number>
     theme: p.Property<string>
     annotations: p.Property<any[]>
     print_margin: p.Property<boolean>
     readonly: p.Property<boolean>
+    soft_tabs: p.Property<boolean>
   }
 }
 
