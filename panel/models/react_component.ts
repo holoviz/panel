@@ -62,6 +62,45 @@ export class ReactComponentView extends ReactiveESMView {
     super.render()
   }
 
+  override async update_children(): Promise<void> {
+    const created_children = new Set(await this.build_child_views())
+
+    const all_views = this.child_views
+    const new_views = new Map()
+    for (const child_view of this.child_views) {
+      if (!created_children.has(child_view)) {
+        continue
+      }
+      const child = this._lookup_child(child_view)
+      if (!child) {
+        continue
+      }
+
+      if (new_views.has(child)) {
+        new_views.get(child).push(child_view)
+      } else {
+        new_views.set(child, [child_view])
+      }
+    }
+
+    for (const view of this._child_rendered.keys()) {
+      if (!all_views.includes(view)) {
+        this._child_rendered.delete(view)
+        view.el.remove()
+      }
+    }
+
+    for (const child of this.model.children) {
+      const callbacks = this._child_callbacks.get(child) || []
+      const new_children = new_views.get(child) || []
+      for (const callback of callbacks) {
+        callback(new_children)
+      }
+    }
+    this._update_children()
+    this.invalidate_layout()
+  }
+
   override after_rendered(): void {
     const handlers = (this._lifecycle_handlers.get("after_render") || [])
     for (const cb of handlers) {
@@ -154,11 +193,21 @@ async function render(id) {
     constructor(props) {
       super(props)
       this.render_callback = null
+      this.containerRef = React.createRef()
+    }
+
+    updateElement() {
+      const childView = this.view
+      const el = childView?.el
+      if (el && this.containerRef.current && !this.containerRef.current.contains(el)) {
+        this.containerRef.current.innerHTML = ""
+        this.containerRef.current.appendChild(el)
+      }
     }
 
     get view() {
       const child = this.props.parent.model.data[this.props.name]
-      const model = this.props.index == null ? child : child[this.props.index]
+      const model = this.props.id == null ? child : child.find(item => item.id === this.props.id)
       return this.props.parent.get_child_view(model)
     }
 
@@ -170,17 +219,16 @@ async function render(id) {
     componentDidMount() {
       const view = this.view
       if (view == null) { return }
+      this.updateElement()
       this.props.parent.rerender_(view)
       this.render_callback = (new_views) => {
         const view = this.view
         if (!view) {
           return
-        } else if (new_views.includes(view)) {
-          if (this.props.id === undefined) { this.forceUpdate() }
+        }
+        this.updateElement()
+        if (new_views.includes(view)) {
           this.props.parent.rerender_(view)
-        } else {
-          this.forceUpdate()
-          if (view.force_update) { view.force_update() }
         }
       }
       this.props.parent.on_child_render(this.props.name, this.render_callback)
@@ -193,15 +241,12 @@ async function render(id) {
       }
     }
 
+    componentDidUpdate() {
+      this.updateElement()
+    }
+
     render() {
-      return React.createElement('div', {
-        className: "child-wrapper",
-        ref: (ref) => {
-          if (ref != null && this.view != null) {
-            ref.appendChild(this.element)
-          }
-        }
-      })
+      return React.createElement('div', {className: "child-wrapper", ref: this.containerRef})
     }
   }
 
@@ -248,17 +293,16 @@ async function render(id) {
         const data_model = target.model.data
         const value = data_model.attributes[child]
         if (Array.isArray(value)) {
-          const [children_state, set_children] = React.useState(value.map((model, i) =>
-            React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
+          const [children_state, set_children] = React.useState(value.map((model) =>
+            React.createElement(Child, { parent: target, name: child, key: model.id, id: model.id })
           ))
           React.useEffect(() => {
             target.on_child_render(child, () => {
               const current_models = data_model.attributes[child]
               const previous_models = children_state.map(child => child.props.index)
-              if (current_models.length !== previous_models.length ||
-                  current_models.some((model, i) => i !== previous_models[i])) {
+              if (current_models.some((model, i) => model.id !== previous_models[i])) {
                 set_children(current_models.map((model, i) => (
-                  React.createElement(Child, { parent: target, name: child, key: child+i, index: i })
+                  React.createElement(Child, { parent: target, name: child, key: model.id, id: model.id })
                 )))
               }
             })
