@@ -666,7 +666,7 @@ export class ReactiveESM extends HTMLBox {
     } else {
       const code = this._render_code()
       const render_url = URL.createObjectURL(
-	new Blob([code], {type: "text/javascript"}),
+        new Blob([code], {type: "text/javascript"}),
       )
       // @ts-ignore
       this.render_module = importShim(render_url)
@@ -698,7 +698,7 @@ export default {render}`
   }
 
   protected get _render_cache_key() {
-    return 'reactive_esm'
+    return "reactive_esm"
   }
 
   compile(): string | null {
@@ -772,7 +772,7 @@ export default {render}`
         if (initialize) {
           this._run_initializer(initialize)
         }
-	this.init_module()
+        this.init_module()
         return mod
       } catch (e: any) {
         if (this.dev) {

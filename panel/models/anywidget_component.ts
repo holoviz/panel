@@ -140,7 +140,6 @@ export class AnyWidgetComponentView extends ReactiveESMView {
     }
   }
 
-
   override after_rendered(): void {
     this.render_children()
     this._rendered = true
