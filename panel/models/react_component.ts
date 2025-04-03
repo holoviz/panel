@@ -200,7 +200,7 @@ async function render(id) {
       const childView = this.view
       const el = childView?.el
       if (el && this.containerRef.current && !this.containerRef.current.contains(el)) {
-        this.containerRef.current.innerHTML = '' // Clear old content
+        this.containerRef.current.innerHTML = ""
         this.containerRef.current.appendChild(el)
       }
     }
@@ -228,7 +228,6 @@ async function render(id) {
         }
         this.updateElement()
         if (new_views.includes(view)) {
-          if (this.props.id === undefined) { this.forceUpdate() }
           this.props.parent.rerender_(view)
         }
       }
@@ -301,8 +300,7 @@ async function render(id) {
             target.on_child_render(child, () => {
               const current_models = data_model.attributes[child]
               const previous_models = children_state.map(child => child.props.index)
-              if (current_models.length !== previous_models.length ||
-                  current_models.some((model, i) => model.id !== previous_models[i])) {
+              if (current_models.some((model, i) => model.id !== previous_models[i])) {
                 set_children(current_models.map((model, i) => (
                   React.createElement(Child, { parent: target, name: child, key: model.id, id: model.id })
                 )))

@@ -692,7 +692,7 @@ def test_children(page, component):
 
     page.wait_for_timeout(400)
 
-    assert example.render_count == (3 if issubclass(component, JSChildren) else 2)
+    assert example.render_count == (3 if issubclass(component, (JSChildren, ReactChildren)) else 2)
 
 @pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children_add_and_remove_without_error(page, component):
