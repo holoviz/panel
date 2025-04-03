@@ -102,12 +102,12 @@ export class ReactComponent extends ReactiveESM {
   }
 
   protected override _render_code(): string {
-    let import_code
+    let [import_code, bundle_code] = ["", ""]
     const cache_key = (this.bundle === "url") ? this.esm : (this.bundle || `${this.class_name}-${this.esm.length}`)
     if (this.bundle) {
-      import_code = `
-const ns = await view._module_cache.get("${cache_key}")
-const {React, createRoot} = ns.default`
+      bundle_code = `
+  const ns = await view._module_cache.get("${cache_key}")
+  const {React, createRoot} = ns.default`
     } else {
       import_code = `
 import * as React from "react"
@@ -117,9 +117,9 @@ import { createRoot } from "react-dom/client"`
     let render_code = ""
     if (this.usesMui) {
       if (this.bundle) {
-        import_code = `
-const ns = await view._module_cache.get("${cache_key}")
-const {CacheProvider, React, createCache, createRoot} = ns.default`
+        bundle_code = `
+  const ns = await view._module_cache.get("${cache_key}")
+  const {CacheProvider, React, createCache, createRoot} = ns.default`
       } else {
         import_code = `
 ${import_code}
@@ -127,25 +127,27 @@ import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
       }
       init_code = `
-const css_key = id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
-this.mui_cache = createCache({
-  key: 'css-'+css_key,
-  prepend: true,
-  container: view.style_cache,
-})`
+  const css_key = id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
+  this.mui_cache = createCache({
+    key: 'css-'+css_key,
+    prepend: true,
+    container: view.style_cache,
+  })`
       render_code = `
   if (rendered) {
     rendered = React.createElement(CacheProvider, {value: this.mui_cache}, rendered)
   }`
     }
     return `
+${import_code}
+
 async function render(id) {
   const view = Bokeh.index.find_one_by_id(id)
   if (view == null) {
     return null
   }
 
-  ${import_code}
+  ${bundle_code}
 
   class Child extends React.PureComponent {
 
