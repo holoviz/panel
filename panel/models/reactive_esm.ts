@@ -170,7 +170,6 @@ export class ReactiveESMView extends HTMLBoxView {
   accessed_children: string[] = []
   compiled_module: any = null
   model_proxy: any
-  render_module: Promise<any> | null = null
   _changing: boolean = false
   _child_callbacks: Map<string, ((new_views: UIElementView[]) => void)[]>
   _child_rendered: Map<UIElementView, boolean> = new Map()
@@ -195,18 +194,6 @@ export class ReactiveESMView extends HTMLBoxView {
       get: model_getter,
       set: model_setter,
     })
-  }
-
-  init_module(): void {
-    if (this.model.compile_error) {
-      return
-    }
-    const code = this._render_code()
-    const render_url = URL.createObjectURL(
-      new Blob([code], {type: "text/javascript"}),
-    )
-    // @ts-ignore
-    this.render_module = importShim(render_url)
   }
 
   override async lazy_initialize(): Promise<void> {
@@ -341,31 +328,8 @@ export class ReactiveESMView extends HTMLBoxView {
     if (this.model.compile_error) {
       this.render_error(this.model.compile_error)
     } else {
-      if (this.render_module == null) {
-        this.init_module()
-      }
       this.render_esm()
     }
-  }
-
-  protected _render_code(): string {
-    return `
-const view = Bokeh.index.find_one_by_id('${this.model.id}')
-
-function render() {
-  const output = view.render_fn({
-    view: view, model: view.model_proxy, data: view.model.data, el: view.container
-  })
-
-  Promise.resolve(output).then((out) => {
-    if (out instanceof Element) {
-      view.container.replaceChildren(out)
-    }
-    view.after_rendered()
-  })
-}
-
-export default {render}`
   }
 
   after_rendered(): void {
@@ -384,7 +348,7 @@ export default {render}`
   }
 
   render_esm(): void {
-    if (this.model.compiled === null || this.render_module === null) {
+    if (this.model.compiled === null || this.model.render_module === null) {
       return
     }
     this.accessed_properties = []
@@ -392,7 +356,7 @@ export default {render}`
       (this._lifecycle_handlers.get(lf) || []).splice(0)
     }
     this.model.disconnect_watchers(this)
-    this.render_module.then((mod: any) => mod.default.render())
+    this.model.render_module.then((mod: any) => mod.default.render(this.model.id))
   }
 
   render_children() {
@@ -546,6 +510,7 @@ export class ReactiveESM extends HTMLBox {
   compiled_module: Promise<any> | null = null
   compile_error: Error | null = null
   model_proxy: any
+  render_module: Promise<any> | null = null
   sucrase_transforms: Transform[] = ["typescript"]
   _destroyer: any | null = null
   _esm_watchers: any = {}
@@ -693,6 +658,49 @@ export class ReactiveESM extends HTMLBox {
     }
   }
 
+  init_module(): void {
+    if (this.compile_error) {
+      return
+    } else if (MODULE_CACHE.has(this._render_cache_key)) {
+      this.render_module = MODULE_CACHE.get(this._render_cache_key)
+    } else {
+      const code = this._render_code()
+      const render_url = URL.createObjectURL(
+        new Blob([code], {type: "text/javascript"}),
+      )
+      // @ts-ignore
+      this.render_module = importShim(render_url)
+      MODULE_CACHE.set(this.data.type, this.render_module)
+    }
+  }
+
+  protected _render_code(): string {
+    return `
+function render(id) {
+  const view = Bokeh.index.find_one_by_id(id)
+  if (view == null) {
+    return null
+  }
+
+  const output = view.render_fn({
+    view: view, model: view.model_proxy, data: view.model.data, el: view.container
+  })
+
+  Promise.resolve(output).then((out) => {
+    if (out instanceof Element) {
+      view.container.replaceChildren(out)
+    }
+    view.after_rendered()
+  })
+}
+
+export default {render}`
+  }
+
+  protected get _render_cache_key() {
+    return "reactive_esm"
+  }
+
   compile(): string | null {
     if (this.bundle != null) {
       return this.esm
@@ -764,6 +772,7 @@ export class ReactiveESM extends HTMLBox {
         if (initialize) {
           this._run_initializer(initialize)
         }
+        this.init_module()
         return mod
       } catch (e: any) {
         if (this.dev) {
