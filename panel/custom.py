@@ -159,6 +159,8 @@ class PyComponent(Viewable, Layoutable):
     def select(
         self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
+        if self._view__ is None:
+            self._view__ = self._create__view()
         return super().select(selector) + self._view__.select(selector)
 
 
