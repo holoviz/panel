@@ -2,7 +2,7 @@
 Defines custom AcePlot bokeh model to render Ace editor.
 """
 from bokeh.core.properties import (
-    Any, Bool, Dict, Enum, List, Nullable, Override, String,
+    Any, Bool, Dict, Enum, Int, List, Nullable, Override, String,
 )
 
 from ..config import config
@@ -49,23 +49,27 @@ class AcePlot(HTMLBox):
         }
     }
 
+    annotations = List(Dict(String, Any), default=[])
+
     code = String(default='')
 
     code_input = String(default='')
 
-    on_keyup = Bool(default=True)
-
-    theme = Enum(ace_themes, default='chrome')
-
     filename = Nullable(String())
+
+    indent = Int(default=4)
 
     language = String(default='')
 
-    annotations = List(Dict(String, Any), default=[])
+    on_keyup = Bool(default=True)
+
+    print_margin = Bool(default=False)
 
     readonly = Bool(default=False)
 
-    print_margin = Bool(default=False)
+    soft_tabs = Bool(default=False)
+
+    theme = Enum(ace_themes, default='chrome')
 
     height = Override(default=300)  # type: ignore
 

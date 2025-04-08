@@ -39,6 +39,8 @@ class CodeEditor(Widget):
 
     language = param.String(default='text', doc="Language of the editor")
 
+    indent = param.Integer(default=4, doc="The default indent size.")
+
     on_keyup = param.Boolean(default=True, doc="""
         Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
 
@@ -47,6 +49,8 @@ class CodeEditor(Widget):
 
     readonly = param.Boolean(default=False, doc="""
         Define if editor content can be modified. Alias for disabled.""")
+
+    soft_tabs = param.Boolean(default=False, doc="Whether to use spaces instead of tabs.")
 
     theme = param.Selector(default="chrome", objects=list(ace_themes), doc="""
         If no value is provided, it defaults to the current theme
