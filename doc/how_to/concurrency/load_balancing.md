@@ -4,7 +4,7 @@ Setting up load balancing is a huge topic, dependent on the precise system you
 are using, so the example below will be very generic. In most cases
 you set up a reverse proxy (like NGINX) to distribute the load across multiple
 application servers. If you are using a system like Kubernetes, it will also
-handle spinning up the servers for you and can even do so dynamically depending
+handle spinning up and shutting down the servers for you, and can even do so dynamically, depending
 on the amount of concurrent users to ensure that you are not wasting resources
 when there are fewer users, and / or when there is less computing demand.
 
