@@ -148,3 +148,9 @@ server {
 
 You can use any container framework to run the app. The commands below are for Podman, but you can use Docker as well.
 First, build the container with `podman build -t my-container .` and the run it `podman run -dt -p 8000:80 localhost/my-container`
+
+:::{seealso}
+[admin](../profiling/admin): An app for monitoring resource usage and user behavior.
+
+[profile](../profiling/profile): To profile an application in terms of execution time and memory usage.
+:::
