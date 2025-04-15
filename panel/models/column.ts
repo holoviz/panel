@@ -141,6 +141,58 @@ export class ColumnView extends BkColumnView {
     })
   }
 
+  override async update_children(): Promise<void> {
+    // Get reference to existing child elements that are part of child_views
+    const existing_elements = Array.from(this.shadow_el.children).filter(el => {
+      return this.child_views.some(view => view.el === el)
+    })
+
+    const created = await this.build_child_views()
+    const created_children = new Set(created)
+
+    // Remove any elements that were previously part of child_views but no longer are
+    const current_elements = new Set(this.child_views.map(view => view.el))
+    for (const el of existing_elements) {
+      if (!current_elements.has(el as HTMLElement) && el.parentNode) {
+        el.remove()
+      }
+    }
+
+    for (let i = 0; i < this.child_views.length; i++) {
+      const child_view = this.child_views[i]
+      const is_new = created_children.has(child_view)
+      const target = child_view.rendering_target()
+
+      if (is_new) {
+        child_view.render()
+      }
+
+      if (target != null) {
+        if (!target.contains(child_view.el)) {
+          if (child_view.el.parentNode) {
+            child_view.el.remove()
+          }
+          target.append(child_view.el)
+        }
+      } else {
+        // For shadow_el children, insert at correct position
+        if (is_new || !this.shadow_el.contains(child_view.el)) {
+          // Find the next existing element that is part of child_views
+          const nextIndex = existing_elements.findIndex((_, idx) => idx >= i)
+          if (nextIndex >= 0) {
+            this.shadow_el.insertBefore(child_view.el, existing_elements[nextIndex])
+          } else {
+            this.shadow_el.append(child_view.el)
+          }
+        }
+      }
+    }
+
+    this.r_after_render()
+    this._update_children()
+    this.invalidate_layout()
+  }
+
   override after_render(): void {
     super.after_render()
     requestAnimationFrame(() => {
