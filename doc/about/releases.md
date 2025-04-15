@@ -2,6 +2,63 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.6.2
+
+This release primarily introduces improvements for ESM and React components and refactoring to make it easy to subclass existing components. This is an effort to make it easier to provide alternative implementations for Panel components. Additionally this release includes compatibility for Bokeh 3.7, bug fixes for `TextEditor` and a variety of other bug fixes. Many thanks to our new contributor @s-alexey, our returning contributors @Coderambling and the core maintainer team including @Hoxbro, @ahuang11 and @philippjfr.
+
+### Enhancements
+
+- Make it easier to subclass components ([#7730](https://github.com/holoviz/panel/pull/7730), [#7744](https://github.com/holoviz/panel/pull/7744), [#7785](https://github.com/holoviz/panel/pull/7785))
+- Allow `model.useState` in `ReactComponent`s  to reference nested parameter values ([#7743](https://github.com/holoviz/panel/pull/7743))
+- Allow providing shared ESM modules ([#7757](https://github.com/holoviz/panel/pull/7757))
+- Allow defining root node for `ReactComponent` ([#7787](https://github.com/holoviz/panel/pull/7787))
+- Improve pretty printing in `HoloViews` pane ([#7775](https://github.com/holoviz/panel/pull/7775))
+- Allow serializing joint dict/Parameterized types on `DataModel` ([#7789](https://github.com/holoviz/panel/pull/7789))
+- Improve ListLike and NamedListLike to better match Python list behavior ([#7794](https://github.com/holoviz/panel/pull/7794))
+- Improve rendering of ReactComponent children ([#7802](https://github.com/holoviz/panel/pull/7802))
+- Allow overriding Param input widgets ([#7813](https://github.com/holoviz/panel/pull/7813))
+
+### Performance
+
+- Avoid redundant list operations in ListLike ([#7764](https://github.com/holoviz/panel/pull/7764))
+- Optimize ipywidget reference transform ([#7778](https://github.com/holoviz/panel/pull/7778))
+
+### Bug fixes
+
+- Correctly handle empty source files ([#7732](https://github.com/holoviz/panel/pull/7732))
+- Add extra guard around `get_ipython` check ([#7734](https://github.com/holoviz/panel/pull/7734))
+- Ensure `ReactComponent` children are sized correctly ([#7741](https://github.com/holoviz/panel/pull/7741))
+- Ensure `ChatStep` does not toggle from failed to success ([#7742](https://github.com/holoviz/panel/pull/7742))
+- Ensure `Feed` and scrollable layout children heights are not fixed ([#7747](https://github.com/holoviz/panel/pull/7747))
+- Declare more `Child` parameters on various components ([#7749](https://github.com/holoviz/panel/pull/7749))
+- Do not sync parameters mapped to None on on ESM components ([#7750](https://github.com/holoviz/panel/pull/7750), [#7753](https://github.com/holoviz/panel/pull/7753))
+- Always include esm.css for ESM components ([#7752](https://github.com/holoviz/panel/pull/7752))
+- Do not duplicate stylesheets (d133eb9)
+- Ensure `ChatStep` text does not overflow container ([#7770](https://github.com/holoviz/panel/pull/7770))
+- Refactor `ChatFeed` post hook ensuring it processes correct message ([#7722](https://github.com/holoviz/panel/pull/7722))
+- Ensure hooks are applied to root components with `Fast` design ([#7777](https://github.com/holoviz/panel/pull/7777))
+- Ensure resource mode is set in notebooks ([#7776](https://github.com/holoviz/panel/pull/7776))
+- Clear state cookie if OAuth access token expired and can't be refreshed ([#7780](https://github.com/holoviz/panel/pull/7780))
+- Fix formatting in `TextEditor` widget ([#7739](https://github.com/holoviz/panel/pull/7739))
+- Use Ace version with no require.js dependency ([#7781](https://github.com/holoviz/panel/pull/7781))
+- Ensure multiple sequential notifications render ([#7790](https://github.com/holoviz/panel/pull/7790))
+- Style correct column when frozen `Tabulator` column is an index ([#7792](https://github.com/holoviz/panel/pull/7792))
+- Ensure IconButton tooltip timer is cleared on multiple mouseenter events ([#7798](https://github.com/holoviz/panel/pull/7798))
+- Ensure pre-processors are applied to ESM children ([#7799](https://github.com/holoviz/panel/pull/7799))
+- Ensure outputs are laid out correctly after initial render of `EditableTemplate` ([#7816](https://github.com/holoviz/panel/pull/7816))
+- Fix regressiong related to providing Path to ESM component stylesheets ([#7809](https://github.com/holoviz/panel/pull/7809))
+
+### Compatibility
+
+- Compatibility with Bokeh 3.7 ([#7724](https://github.com/holoviz/panel/pull/7724), [#7815](https://github.com/holoviz/panel/pull/7815))
+- Update `TextEditor` widget to Quill.js 2.0.2 ([#7739](https://github.com/holoviz/panel/pull/7739))
+- Update `Plotly` pane to Plotly.js 3.0.1 ([#7731](https://github.com/holoviz/panel/pull/7731))
+
+### Documentation
+
+- Incorrect hover text for max_width and max_height: both said Minimum instead of Maximum ([#7729](https://github.com/holoviz/panel/pull/7729))
+- Various minor documentation updates ([#7719](https://github.com/holoviz/panel/pull/7719), [#7738](https://github.com/holoviz/panel/pull/7738), [#7746](https://github.com/holoviz/panel/pull/7746), [#7755](https://github.com/holoviz/panel/pull/7755), [#7760](https://github.com/holoviz/panel/pull/7760), [#7761](https://github.com/holoviz/panel/pull/7761), [#7763](https://github.com/holoviz/panel/pull/7763))
+
 ## Version 1.6.1
 
 This patch release primarily addresses issues running Panel behind a reverse proxy, improves the developer experience of working with custom ESM bundles and adds compatibility for Plotly 6.0. Congratulations to @fabiovincenzi and @pankajp for their first contribution fixing inlining of stylesheets. Next we want to thank our returning contributors @ceball, @Azaya89 and @Coderambling as well as our core developer team including @ahuang11, @Maximlt, @hoxbro and @philippjfr for contributing to this release.

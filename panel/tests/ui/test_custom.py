@@ -71,7 +71,32 @@ class AnyWidgetUpdate(AnyWidgetComponent):
     }
     """
 
-@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate])
+class AnyWidgetReactUpdate(AnyWidgetComponent):
+
+    text = param.String()
+
+    _importmap = {
+        "imports": {
+            "@anywidget/react": "https://esm.sh/@anywidget/react",
+            "react": "https://esm.sh/react",
+        }
+    }
+
+    _esm = """
+    import * as React from "react"
+    import { createRender, useModelState } from "@anywidget/react"
+
+    function H1() {
+      let [text] = useModelState("text")
+      return <h1>{text}</h1>
+    }
+
+    const render = createRender(H1)
+
+    export default { render }
+    """
+
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate, AnyWidgetReactUpdate])
 def test_update(page, component):
     example = component(text='Hello World!')
 
@@ -667,7 +692,7 @@ def test_children(page, component):
 
     page.wait_for_timeout(400)
 
-    assert example.render_count == (3 if issubclass(component, JSChildren) else 2)
+    assert example.render_count == (3 if issubclass(component, (JSChildren, ReactChildren)) else 2)
 
 @pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children_add_and_remove_without_error(page, component):

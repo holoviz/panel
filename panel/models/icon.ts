@@ -92,10 +92,14 @@ export class ClickableIconView extends ControlView {
     }
     let timer: ReturnType<typeof setTimeout> | undefined
     this.el.addEventListener("mouseenter", () => {
+      if (timer) {
+        clearTimeout(timer)
+      }
       timer = setTimeout(() => toggle_tooltip(true), this.model.tooltip_delay)
     })
-    this.el.addEventListener("mouseleave", () => {
+    this.el.addEventListener("pointerleave", () => {
       clearTimeout(timer)
+      timer = undefined
       toggle_tooltip(false)
     })
   }

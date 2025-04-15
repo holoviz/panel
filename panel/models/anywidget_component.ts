@@ -1,4 +1,5 @@
 import type * as p from "@bokehjs/core/properties"
+import type {Transform} from "sucrase"
 
 import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
 
@@ -139,21 +140,6 @@ export class AnyWidgetComponentView extends ReactiveESMView {
     }
   }
 
-  protected override _render_code(): string {
-    return `
-const view = Bokeh.index.find_one_by_id('${this.model.id}')
-
-function render() {
-  const out = Promise.resolve(view.render_fn({
-    view, model: view.adapter, data: view.model.data, el: view.container
-  }) || null)
-  view.destroyer = out
-  out.then(() => view.after_rendered())
-}
-
-export default {render}`
-  }
-
   override after_rendered(): void {
     this.render_children()
     this._rendered = true
@@ -170,9 +156,26 @@ export interface AnyWidgetComponent extends AnyWidgetComponent.Attrs {}
 
 export class AnyWidgetComponent extends ReactiveESM {
   declare properties: AnyWidgetComponent.Props
+  override sucrase_transforms: Transform[] = ["typescript", "jsx"]
 
   constructor(attrs?: Partial<AnyWidgetComponent.Attrs>) {
     super(attrs)
+  }
+
+  protected override _render_code(): string {
+    return `
+function render(id) {
+  const view = Bokeh.index.find_one_by_id(id)
+  if (!view) { return }
+
+  const out = Promise.resolve(view.render_fn({
+    view, model: view.adapter, data: view.model.data, el: view.container
+  }) || null)
+  view.destroyer = out
+  out.then(() => view.after_rendered())
+}
+
+export default {render}`
   }
 
   protected override _run_initializer(initialize: (props: any) => void): void {

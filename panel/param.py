@@ -17,6 +17,7 @@ from collections import defaultdict, namedtuple
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import partial
+from types import FunctionType
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
@@ -37,7 +38,7 @@ from param.reactive import rx
 from .config import config
 from .io import state
 from .layout import (
-    Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
+    Column, HSpacer, ListLike, Panel, Row, Spacer, Tabs, WidgetBox,
 )
 from .pane import DataFrame as DataFramePane
 from .pane.base import Pane, ReplacementPane
@@ -143,7 +144,7 @@ class Param(Pane):
     display_threshold = param.Number(default=0, precedence=-10, doc="""
         Parameters with precedence below this value are not displayed.""")
 
-    default_layout = param.ClassSelector(default=Column, class_=Panel,
+    default_layout = param.ClassSelector(default=Column, class_=ListLike,
                                          is_instance=False)
 
     default_precedence = param.Number(default=1e-8, precedence=-10, doc="""
@@ -229,6 +230,12 @@ class Param(Pane):
         param.Range:             RangeSlider,
         param.Selector:          Select,
         param.String:            TextInput,
+    }
+
+    input_widgets: ClassVar[dict[Any, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]]  = {
+        float: FloatInput,
+        int: IntInput,
+        "literal": LiteralInput,
     }
 
     if hasattr(param, 'Event'):
@@ -484,11 +491,13 @@ class Param(Pane):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
                     if isinstance(p_obj, param.Number):
-                        widget_class = FloatInput
+                        widget_class = self.input_widgets[float]
                         if isinstance(p_obj, param.Integer):
-                            widget_class = IntInput
+                            widget_class = self.input_widgets[int]
                     elif not issubclass(widget_class, LiteralInput):
-                        widget_class = LiteralInput
+                        widget_class = self.input_widgets['literal']
+                    if isinstance(widget_class, FunctionType):
+                        widget_class = widget_class(p_obj)
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
             if hasattr(widget_class, 'fixed_start') and getattr(p_obj, 'bounds', None):

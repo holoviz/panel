@@ -1519,7 +1519,10 @@ class Tabulator(BaseTable):
         frozen_cols = self.frozen_columns
         column_mapper = {}
         if isinstance(frozen_cols, list):
-            nfrozen = len(frozen_cols)
+            if len(self.indexes) > 1:
+                nfrozen = len(frozen_cols)
+            else:
+                nfrozen = len([col for col in frozen_cols if col not in self.indexes])
             non_frozen = [col for col in df.columns if col not in frozen_cols]
             for i, col in enumerate(df.columns):
                 if col in frozen_cols:

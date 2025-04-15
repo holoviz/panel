@@ -674,6 +674,8 @@ class Resources(BkResources):
                 if supcls_files == cls_files:
                     model = cls
             for resource in getattr(model, resource_type, []):
+                if isinstance(resource, pathlib.PurePath):
+                    continue
                 if state.rel_path:
                     resource = resource.lstrip(state.rel_path+'/')
                 if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):

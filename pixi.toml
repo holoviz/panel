@@ -84,6 +84,7 @@ graphviz = "*"
 hvplot = "*"
 ipyleaflet = "*"
 ipympl = "*"
+ipython_genutils = "*"  # 2025-03: https://github.com/widgetti/ipyvolume/pull/446 (interim dependency)
 ipyvolume = "*"
 ipyvuetify = "*"
 ipywidgets = "*"
@@ -154,7 +155,6 @@ polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
-libsqlite = "!=3.49.*" # 2025-02; Breaks diskcache tests, https://github.com/conda-forge/sqlite-feedstock/issues/130 (remove dependency after problem is solved)
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
@@ -171,7 +171,7 @@ nbval = "*"
 channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
-playwright = { version = "*", channel = "microsoft" }
+playwright = { version = "!=1.51.0", channel = "microsoft" }  # https://github.com/microsoft/playwright-python/issues/2791
 pytest-playwright = { version = "*", channel = "microsoft" }
 pytest-asyncio = "*"
 jupyter_server = "*"

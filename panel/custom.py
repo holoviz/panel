@@ -22,8 +22,10 @@ from param.parameterized import ParameterizedMetaclass
 
 from .config import config
 from .io.datamodel import construct_data_model
+from .io.document import freeze_doc, hold
 from .io.resources import component_resource_path
 from .io.state import state
+from .layout.base import Panel
 from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
     ReactComponent as _BkReactComponent, ReactiveESM as _BkReactiveESM,
@@ -157,6 +159,8 @@ class PyComponent(Viewable, Layoutable):
     def select(
         self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
+        if self._view__ is None:
+            self._view__ = self._create__view()
         return super().select(selector) + self._view__.select(selector)
 
 
@@ -474,27 +478,38 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     def _get_child_model(
         self, child: Viewable, doc: Document, root: Model, parent: Model, comm: Comm | None
-    ) -> list[UIElement] | UIElement | None:
+    ) -> tuple[list[UIElement] | UIElement | None, list[UIElement]]:
         if child is None:
-            return None
+            return None, []
         ref = root.ref['id']
+        old = []
         if isinstance(child, list):
-            return [
-                sv._models[ref][0] if ref in sv._models else sv._get_model(doc, root, parent, comm)
-                for sv in child
-            ]
+            models = []
+            for sv in child:
+                if ref in sv._models:
+                    model = sv._models[ref][0]
+                    old.append(model)
+                else:
+                    model = sv._get_model(doc, root, parent, comm)
+                models.append(model)
+            return models, old
         elif ref in child._models:
-            return child._models[ref][0]
-        return child._get_model(doc, root, parent, comm)
+            model = child._models[ref][0]
+            old.append(model)
+        else:
+            model = child._get_model(doc, root, parent, comm)
+        return model, old
 
-    def _get_children(self, data_model, doc, root, parent, comm) -> dict[str, list[UIElement] | UIElement | None]:
+    def _get_children(self, data_model, doc, root, parent, comm) -> tuple[dict[str, list[UIElement] | UIElement | None], list[UIElement]]:
         children = {}
+        old_models = []
         for k, v in self.param.values().items():
             p = self.param[k]
             if not is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
                 continue
-            children[k] = self._get_child_model(v, doc, root, parent, comm)
-        return children
+            children[k], old = self._get_child_model(v, doc, root, parent, comm)
+            old_models += old
+        return children, old_models
 
     def _setup_autoreload(self):
         from .config import config
@@ -513,7 +528,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         props = self._get_properties(doc)
         model = self._bokeh_model(**props)
         root = root or model
-        children = self._get_children(model.data, doc, root, model, comm)
+        children, _ = self._get_children(model.data, doc, root, model, comm)
         model.data.update(**children)
         model.children = list(children)  # type: ignore
         ref = root.ref['id']
@@ -558,12 +573,25 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 if old is None or old is new or (isinstance(new, list) and old in new):
                     continue
                 old._cleanup(root)
-        if any(e in model.children for e in events):
-            children = self._get_children(model.data, doc, root, model, comm)
+
+        update_children = any(e in model.children for e in events)
+        if update_children:
+            children, old_children = self._get_children(model.data, doc, root, model, comm)
             data_msg.update(children)
             model_msg['children'] = list(children)
-        self._set_on_model(model_msg, root, model)
-        self._set_on_model(data_msg, root, model.data)
+
+        with hold(doc):
+            update = Panel._batch_update
+            Panel._batch_update = True
+            try:
+                with freeze_doc(doc, model, msg, force=update_children):
+                    self._set_on_model(model_msg, root, model)
+                    self._set_on_model(data_msg, root, model.data)
+                    ref = root.ref['id']
+                    if update and update_children and ref in state._views:
+                        state._views[ref][0]._preprocess(root, self, old_children)
+            finally:
+                Panel._batch_update = update
 
     def _handle_msg(self, data: Any) -> None:
         """
@@ -844,6 +872,8 @@ class AnyWidgetComponent(ReactComponent):
     __abstract = True
 
     _bokeh_model = _BkAnyWidgetComponent
+
+    _react_version = "19"
 
     def send(self, msg: dict):
         """
