@@ -330,6 +330,10 @@ export class ReactiveESMView extends HTMLBoxView {
     } else {
       this.render_esm()
     }
+    for (const element_view of this.element_views) {
+      const target = element_view.rendering_target() ?? this.self_target
+      element_view.render_to(target)
+    }
   }
 
   after_rendered(): void {
