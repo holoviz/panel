@@ -142,50 +142,6 @@ export class ColumnView extends BkColumnView {
   }
 
   override async update_children(): Promise<void> {
-    let current_views = [...this.child_views]
-    const created = await this.build_child_views()
-    const created_children = new Set(created)
-    const current_elements = Array.from(this.shadow_el.children).filter(el => {
-      return this.child_views.some(view => view.el === el)
-    })
-    // Generate previous ordering
-    current_views = current_views.filter(view => !current_elements.includes(view.el))
-
-    const added = new Set()
-    for (let i = 0; i < this.child_views.length; i++) {
-      const child_view = this.child_views[i]
-      const is_new = created_children.has(child_view)
-      const target = child_view.rendering_target()
-
-      if (is_new) {
-        child_view.render()
-      }
-
-      if (target != null) {
-        if (!target.contains(child_view.el)) {
-          if (child_view.el.parentNode) {
-            child_view.el.remove()
-          }
-          target.append(child_view.el)
-        }
-      } else {
-	// Compute insertion point for view in previous ordering
-        const next_view = current_views.find(view => current_elements.includes(view.el) && !added.has(view))
-        if (next_view) {
-          this.shadow_el.insertBefore(child_view.el, next_view.el)
-        } else {
-          this.shadow_el.appendChild(child_view.el)
-        }
-      }
-      added.add(child_view)
-    }
-
-    this.r_after_render()
-    this._update_children()
-    this.invalidate_layout()
-  }
-
-  override async update_children(): Promise<void> {
     // Can be removed after https://github.com/bokeh/bokeh/pull/14459 is released
     let current_views = [...this.child_views]
     const created = await this.build_child_views()
