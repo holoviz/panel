@@ -137,9 +137,10 @@ class Compile(Subcommand):
                     mod_path = pathlib.Path(mod.__file__)
                     paths_to_watch.add(mod_path)
                     paths_to_watch.add(mod_path.parent / component._esm_path(compiled='compiling'))
-                    for shared in component._esm_shared:
+                    for shared in component._esm_shared.values():
                         if isinstance(shared, os.PathLike):
-                            paths_to_watch.append(shared)
+                            paths_to_watch.add(shared)
+
             for _changes in watch(*paths_to_watch):
                 errors = run_compile(
                     bundles, args.build_dir, args.unminified, args.skip_npm, args.file_loaders, args.verbose
