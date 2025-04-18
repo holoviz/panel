@@ -68,7 +68,7 @@ class StopCallback(Exception):
 
 def _stretches_height(obj: Viewable) -> param.rx:
     return obj.param.sizing_mode.rx().rx.pipe(
-        lambda sm: 'max' if sm is not None and 'height' in sm or 'both' in sm else 'auto'
+        lambda sm: 'max' if sm is not None and ('height' in sm or 'both' in sm) else 'auto'
     )
 
 
