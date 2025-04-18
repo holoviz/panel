@@ -31,7 +31,7 @@ from ..layout.card import Card
 from ..pane.image import SVG, ImageBase
 from ..pane.markup import HTML, Markdown
 from ..util import to_async_gen
-from ..viewable import Children
+from ..viewable import Children, Viewable
 from ..widgets import Widget
 from ..widgets.button import Button
 from ._param import CallbackException
@@ -64,6 +64,12 @@ class CallbackState(Enum):
 
 class StopCallback(Exception):
     pass
+
+
+def _stretches_height(obj: Viewable) -> param.rx:
+    return obj.param.sizing_mode.rx().rx.pipe(
+        lambda sm: sm is not None and 'height' in sm or 'both' in sm
+    )
 
 
 class ChatFeed(ListPanel):
@@ -265,7 +271,7 @@ class ChatFeed(ListPanel):
             width=self.param.width,
             max_width=self.param.max_width,
             min_width=self.param.min_width,
-            visible=self.param.visible
+            visible=self.param.visible,
         )
         # we separate out chat log for the auto scroll feature
         self._chat_log = Feed(
@@ -277,7 +283,7 @@ class ChatFeed(ListPanel):
             view_latest=self.view_latest,
             css_classes=["chat-feed-log"],
             stylesheets=self._stylesheets,
-            height_policy="max",
+            height_policy=_stretches_height(self),
             **linked_params
         )
         card_params = linked_params.copy()
