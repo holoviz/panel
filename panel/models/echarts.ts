@@ -80,7 +80,9 @@ export class EChartsView extends HTMLBoxView {
 
   override after_layout(): void {
     super.after_layout()
-    this._chart.resize()
+    if (this._chart != null) {
+      this._chart.resize()
+    }
   }
 
   _plot(): void {
