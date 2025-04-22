@@ -375,7 +375,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 resource_types[rname].update(res)  # type: ignore
             else:
                 resource_types[rname] += [  # type: ignore
-                    r for r in res if res not in resource_types[rname]  # type: ignore
+                    r for r in res if r not in resource_types[rname]  # type: ignore
                 ]
 
         for rname, js in self.config.js_files.items():

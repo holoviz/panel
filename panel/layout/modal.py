@@ -60,16 +60,14 @@ class Modal(ListPanel):
     def create_button(self, action: Literal["show", "hide", "toggle"], **kwargs):
         """Create a button to show, hide or toggle the modal."""
         from panel.widgets import Button
-
-        button = Button(**kwargs)
         match action:
             case "show":
-                button.on_click(lambda *e: self.show())
+                kwargs["on_click"] = lambda *e: self.show()
             case "hide":
-                button.on_click(lambda *e: self.hide())
+                kwargs["on_click"] = lambda *e: self.hide()
             case "toggle":
-                button.on_click(lambda *e: self.toggle())
+                kwargs["on_click"] = lambda *e: self.toggle()
             case _:
                 raise TypeError(f"Invalid action: {action}")
-
+        button = Button(**kwargs)
         return button

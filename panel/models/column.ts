@@ -141,6 +141,29 @@ export class ColumnView extends BkColumnView {
     })
   }
 
+  override async update_children(): Promise<void> {
+    // Can be removed after https://github.com/bokeh/bokeh/pull/14459 is released
+    const created = await this.build_child_views()
+    const created_children = new Set(created)
+
+    // Since appending to a DOM node will move the node to the end if it has
+    // already been added appending all the children in order will result in
+    // correct ordering
+    for (const child_view of this.child_views) {
+      const is_new = created_children.has(child_view)
+      const target = child_view.rendering_target() ?? this.shadow_el
+      if (is_new) {
+        child_view.render_to(target)
+      } else {
+        target.append(child_view.el)
+      }
+    }
+
+    this.r_after_render()
+    this._update_children()
+    this.invalidate_layout()
+  }
+
   override after_render(): void {
     super.after_render()
     requestAnimationFrame(() => {

@@ -61,8 +61,8 @@ The app should look like this:
 The default Bokeh and Panel packages are very large. Therefore we recommend installing specialized wheels:
 
 ```javascript
-const bk_whl = "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl";
-const pn_whl = "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl";
+const bk_whl = "https://cdn.holoviz.org/panel/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl";
+const pn_whl = "https://cdn.holoviz.org/panel/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl";
 await micropip.install(bk_whl, pn_whl);
 ```
 
