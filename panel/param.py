@@ -435,27 +435,29 @@ class Param(Pane):
                     toggle_pane(namedtuple('Change', 'new')(True))
 
     @bothmethod
-    def widget(self_or_cls, p_name, parameterized=None):
+    def widget(self_or_cls, p_name: str, parameterized: param.Parameterized | None = None, widget_spec: type[WidgetBase] | dict | None = None):
         """Get widget for param_name"""
         parameterized = self_or_cls.object if parameterized is None else parameterized
         p_obj = parameterized.param[p_name]
         kw_widget = {}
 
         widget_class_overridden = True
-        if self_or_cls.widgets is None or p_name not in self_or_cls.widgets:
+        if widget_spec is None and self_or_cls.widgets is not None:
+            widget_spec = self_or_cls.widgets.get(p_name)
+        if widget_spec is None:
             widget_class_overridden = False
             widget_class = self_or_cls.widget_type(p_obj)
-        elif isinstance(self_or_cls.widgets[p_name], dict):
-            kw_widget = dict(self_or_cls.widgets[p_name])
-            if 'widget_type' in self_or_cls.widgets[p_name]:
+        elif isinstance(widget_spec, dict):
+            kw_widget = dict(widget_spec)
+            if 'widget_type' in widget_spec:
                 widget_class = kw_widget.pop('widget_type')
-            elif 'type' in self_or_cls.widgets[p_name]:
+            elif 'type' in widget_spec:
                 widget_class = kw_widget.pop('type')
             else:
                 widget_class_overridden = False
                 widget_class = self_or_cls.widget_type(p_obj)
         else:
-            widget_class = self_or_cls.widgets[p_name]
+            widget_class = widget_spec
 
         if not self_or_cls.show_labels and not issubclass(widget_class, _ButtonBase):
             label = ''

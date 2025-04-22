@@ -63,7 +63,7 @@ class WidgetBase(param.Parameterized):
         Widget instance linked to the supplied parameter
         """
         from ..param import Param
-        return Param.widget(parameter.name, parameter.owner)
+        return Param.widget(parameter.name, parameter.owner, dict(type=cls, **params))
 
     @classmethod
     def _infer_params(cls, values, **params):
