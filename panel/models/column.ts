@@ -155,7 +155,7 @@ export class ColumnView extends BkColumnView {
       if (is_new) {
         child_view.render_to(target)
       } else {
-	target.append(child_view.el)
+        target.append(child_view.el)
       }
     }
 
