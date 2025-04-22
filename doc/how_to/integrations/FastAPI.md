@@ -8,7 +8,7 @@ By the end of this guide, you'll be able to run a FastAPI application that serve
 
 ## Setup
 
-Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutorial/) make sure you first have [FastAPI](https://fastapi.tiangolo.com/) and [bokeh-fastapi] installed using:
+Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutorial/) make sure you first have [FastAPI](https://fastapi.tiangolo.com/) and [bokeh-fastapi](https://github.com/bokeh/bokeh-fastapi) installed using:
 
 ::::{tab-set}
 
@@ -48,9 +48,9 @@ Next we will define a simple Panel application that allows you to control the nu
 ```python
 import panel as pn
 
-from panel.io.fastapi import add_panel_app
+from panel.io.fastapi import add_application
 
-@add_panel_app('/panel', app=app, title='My Panel App')
+@add_application('/panel', app=app, title='My Panel App')
 def create_panel_app():
     slider = pn.widgets.IntSlider(name='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
