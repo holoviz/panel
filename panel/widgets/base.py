@@ -5,8 +5,6 @@ parameters.
 """
 from __future__ import annotations
 
-import math
-
 from collections.abc import Callable, Mapping
 from typing import (
     TYPE_CHECKING, Any, ClassVar, TypeVar,
@@ -65,11 +63,7 @@ class WidgetBase(param.Parameterized):
         Widget instance linked to the supplied parameter
         """
         from ..param import Param
-        layout = Param(
-            parameter, widgets={parameter.name: dict(type=cls, **params)},
-            display_threshold=-math.inf
-        )
-        return layout[0]
+        return Param.widget(parameter.name, parameter.owner)
 
     @classmethod
     def _infer_params(cls, values, **params):
