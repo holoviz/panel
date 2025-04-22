@@ -81,7 +81,7 @@ Some OAuth providers will require some additional configuration options which wi
 Examples:
 
 ```
-panel serve oauth_example.py --oauth-extra-params={'tenant_id': ...}
+panel serve oauth_example.py --oauth-extra-params="{'tenant_id': ...}"
 
 PANEL_OAUTH_EXTRA_PARAMS={'tenant_id': ...} panel serve oauth_example.py ...
 ```
@@ -167,7 +167,7 @@ OAuth allows the application to request specific scopes to perform certain actio
 Examples:
 
 ```
-panel serve oauth_example.py --oauth-extra-params {'scope': 'openid'}
+panel serve oauth_example.py --oauth-extra-params="{'scope': 'openid'}"
 
 PANEL_OAUTH_SCOPE=openid panel serve oauth_example.py
 ```

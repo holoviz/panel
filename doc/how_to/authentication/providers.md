@@ -22,7 +22,7 @@ GitHub provides detailed instructions on [creating an OAuth app](https://develop
 
 ## **GitLab**
 
-GitLab provides a detailed guide on [configuring an OAuth](https://docs.gitlab.com/ee/api/oauth2.html) application. In addition to the `oauth_key` and `oauth_secret` you will also have to supply a custom url using the `oauth_extra_params` if you have a custom GitLab instance (the default `oauth_extra_params={'url': 'gitlab.com'}`).
+GitLab provides a detailed guide on [configuring an OAuth](https://docs.gitlab.com/ee/api/oauth2.html) application. In addition to the `oauth_key` and `oauth_secret` you will also have to supply a custom url using the `oauth_extra_params` if you have a custom GitLab instance (the default `oauth_extra_params="{'url': 'gitlab.com'}"`).
 
 ## **Google**
 
@@ -38,7 +38,7 @@ Auth0 provides detailed documentation about [configuring a OAuth application](ht
 
 ## **Generic**/**Password**/**Code**
 
-The `'generic'`, `'password'` and `'code'` OAuth providers allows you to provide custom authentication endpoints using the `--oauth-extra-param` or using environment variables. Specifically you must provide:
+The `'generic'`, `'password'` and `'code'` OAuth providers allows you to provide custom authentication endpoints using the `--oauth-extra-params` or using environment variables. Specifically you must provide:
 
 - `AUTHORIZE_URL`: The authorization endpoint of the authentication server, may also be provided using the `PANEL_OAUTH_AUTHORIZE_URL` environment variable.
 - `TOKEN_URL`: The token endpoint of the authentication server, may also be provided using the `PANEL_OAUTH_TOKEN_URL` environment variable.
