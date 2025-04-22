@@ -1365,7 +1365,7 @@ The three main features we want to highlight as part of this release are:
 - Add unified Design and Theme system ([#4413](https://github.com/holoviz/panel/pull/4413), [#4475](https://github.com/holoviz/panel/pull/4475), [#4466](https://github.com/holoviz/panel/pull/4466), [#4540](https://github.com/holoviz/panel/pull/4540), [#4548](https://github.com/holoviz/panel/pull/4548), [#4770](https://github.com/holoviz/panel/pull/4770), [#4792](https://github.com/holoviz/panel/pull/4792), [#4793](https://github.com/holoviz/panel/pull/4793), [#4801](https://github.com/holoviz/panel/pull/4801))
 - Implement support for passing parameters, widgets and bound functions by reference for simple and powerful reactivity ([#4495](https://github.com/holoviz/panel/pull/4495), [#4505](https://github.com/holoviz/panel/pull/4505), [#4603](https://github.com/holoviz/panel/pull/4603), [#4606](https://github.com/holoviz/panel/pull/4606))
 
-Some of the changes related to the new layout engine and design system will require small updates to your existing applications. To make this transition as smooth as possible we have provided an [upgrade/migration guide](https://panel.holoviz.org/panel/upgrade.html).
+Some of the changes related to the new layout engine and design system will require small updates to your existing applications. To make this transition as smooth as possible we have provided an [upgrade/migration guide](https://panel.holoviz.org/upgrade.html).
 
 ### New Components
 
