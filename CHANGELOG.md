@@ -1,5 +1,40 @@
 # Releases
 
+## Version 1.6.3
+
+This release introduces a number of performance improvements related to rendering of children in layouts and ESM components, a number of bug fixes and a number of documentation improvements. We are pleased to welcome @malemburg as a new contributor and want to thank @s-alexey, @Coderambling, @etihwo and our core maintainer team including @hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr for their contributions to this release.
+
+### Enhancements
+
+- Implement smarter `Column` child rendering [#7846](https://github.com/holoviz/panel/pull/7846)
+- Optimize `ReactComponent` child renders [#7828](https://github.com/holoviz/panel/pull/7828)
+- Add `indent` and `soft_tabs` options to `CodeEditor` [#7831](https://github.com/holoviz/panel/pull/7831)
+- Allow creating `Param.widget` without instantiating object, speeding up `Widget.from_param` [#7867](https://github.com/holoviz/panel/pull/7867)
+
+### Bug fixes
+
+- Fix handling of React based `AnyWidgetComponent` types [#7820](https://github.com/holoviz/panel/pull/7820)
+- Cache ESM render modules [#7827](https://github.com/holoviz/panel/pull/7827)
+- Check for `None` in `select` function for `PyComponent` [#7837](https://github.com/holoviz/panel/pull/7837)
+- Fix for `AttributeError` in `auth.py:CodeChallenge` OAuth login [#7844](https://github.com/holoviz/panel/pull/7844)
+- Fix error when `old_objects` is empty in `_get_objects()` [#7842](https://github.com/holoviz/panel/pull/7842)
+- Ensure `ReactiveESM` renders elements [#7853](https://github.com/holoviz/panel/pull/7853)
+- Ensure ESM shared resources are watched properly [#7856](https://github.com/holoviz/panel/pull/7856)
+- Fix Material design `Tabulator` header color [#7855](https://github.com/holoviz/panel/pull/7855)
+- Ensure current view and selection lookups on `Tabulator` handle `None` case [#7858](https://github.com/holoviz/panel/pull/7858)
+- Ensure `Modal` events are targeted to correct model [#7860](https://github.com/holoviz/panel/pull/7860)
+- Ensure `ChatFeed` has inherent height [#7861](https://github.com/holoviz/panel/pull/7861)
+- Ensure `Markdown` code blocks are always left aligned [#7862](https://github.com/holoviz/panel/pull/7862)
+- Gracefully handle `ECharts` delayed rendering [#7869](https://github.com/holoviz/panel/pull/7869)
+
+### Documentation
+
+- List version agnostic wheel URLs in WASM standalone docs [#7857](https://github.com/holoviz/panel/pull/7857)
+- Correct `ClassSelector` keyword in `build_todo.md` [#7819](https://github.com/holoviz/panel/pull/7819)
+- Fix documentation of `--oauth-extra-params` [#7865](https://github.com/holoviz/panel/pull/7865)
+- Fix minor issues in FastAPI docs [#7866](https://github.com/holoviz/panel/pull/7866)
+- Clarify OAuth redirect uri [#7868](https://github.com/holoviz/panel/pull/7868)
+
 ## Version 1.6.2
 
 This release primarily introduces improvements for ESM and React components and refactoring to make it easy to subclass existing components. This is an effort to make it easier to provide alternative implementations for Panel components. Additionally this release includes compatibility for Bokeh 3.7, bug fixes for `TextEditor` and a variety of other bug fixes. Many thanks to our new contributor @s-alexey, our returning contributors @Coderambling and the core maintainer team including @Hoxbro, @ahuang11 and @philippjfr.
