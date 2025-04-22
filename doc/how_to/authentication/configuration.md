@@ -150,7 +150,7 @@ pn.serve(app, oauth_encryption_key=...)
 
 ## Redirect URI
 
-Once the OAuth provider has authenticated a user it has to redirect them back to the application, this is what is known as the redirect URI. For security reasons this has to match the URL registered with the OAuth provider exactly. By default Panel will redirect the user straight back to the original URL of your app, e.g. when you're hosting your app at `https://myapp.myprovider.com` Panel will use that as the redirect URI. However in certain scenarios you may override this to provide a specific redirect URI. This can be achieved with the `--oauth-redirect-uri` CLI argument or the `PANEL_OAUTH_REDIRECT_URI` environment variable.
+Once the OAuth provider has authenticated a user it has to redirect them back to the application, this is what is known as the redirect URI. For security reasons this has to match the URL registered with the OAuth provider exactly. By default Panel will redirect the user straight back to the original URL of your app, e.g. when you're hosting your app at `https://myapp.myprovider.com` Panel will use that as the redirect URI. However in certain scenarios you may override this to provide a specific redirect URI (simply the protocol and domain `https://myapp.otherprovider.com` without the suffix `/oauth2/...`). This can be achieved with the `--oauth-redirect-uri` CLI argument or the `PANEL_OAUTH_REDIRECT_URI` environment variable.
 
 Examples:
 
@@ -183,9 +183,9 @@ pn.serve(app, ..., oauth_extra_params={'scope': 'openid'})
 A fully configured OAuth configuration may look like this:
 
 ```
-panel serve oauth_example.py --oauth-provider=github --oauth-key=... --oauth-secret=... --cookie-secret=... --oauth-encryption-key=...
+panel serve oauth_example.py --oauth-provider=github --oauth-key=... --oauth-secret=... --cookie-secret=... --oauth-encryption-key=... --oauth-redirect-uri=...
 
-PANEL_OAUTH_PROVIDER=... PANEL_OAUTH_KEY=... PANEL_OAUTH_SECRET=... PANEL_COOKIE_SECRET=... PANEL_OAUTH_ENCRYPTION=... panel serve oauth_example.py ...`
+PANEL_OAUTH_PROVIDER=... PANEL_OAUTH_KEY=... PANEL_OAUTH_SECRET=... PANEL_COOKIE_SECRET=... PANEL_OAUTH_ENCRYPTION=... PANEL_OAUTH_REDIRECT_URI=... panel serve oauth_example.py ...`
 ```
 
 or in Python:
