@@ -26,8 +26,10 @@ documentation](https://docs.bokeh.org/en/latest/docs/user_guide/server/deploy.ht
 ## Use NGINX and Containers with Panel along with other Bokeh extensions
 
 Panel is built on top of Bokeh and uses the Bokeh server to serve applications. To serve Panel-specific resources, Panel is defined as a Bokeh extension.
-Panel's resources are available on a CDN, but if you use other Bokeh Extensions, serving them directly from the Bokeh server can be beneficial.
-An example of this is [ipywidget_bokeh](https://github.com/bokeh/ipywidgets_bokeh), which is a Bokeh extension that allows you to embed ipywidgets inside a Bokeh application.
+While Panel's resources are available via a CDN, other Bokeh extensions may require being served directly by the Bokeh server.
+To enable this, set the `BOKEH_RESOURCES` environment variable to `server`.
+
+An example is given below with [ipywidget_bokeh](https://github.com/bokeh/ipywidgets_bokeh) as a Bokeh extension - but this will also work for other Bokeh extensions.
 
 ### Files
 
