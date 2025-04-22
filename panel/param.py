@@ -531,9 +531,9 @@ class Param(Pane):
         if is_instance:
             watchers = self_or_cls._internal_callbacks
             updating = self_or_cls._updating
-            widgets = self_or_cls._widgets
         else:
-            watchers, updating, widgets = [], [], {p_name: widget}
+            watchers, updating = [], []
+            widgets = {p_name: widget}
 
         def link_widget(change):
             if p_name in updating:
@@ -562,9 +562,12 @@ class Param(Pane):
 
         def link(change, watchers=[watcher]):
             updates = {}
-            if p_name not in widgets:
+            if is_instance and p_name not in self_or_cls._widgets:
                 return
-            widget = widgets[p_name]
+            if is_instance:
+                widget = self_or_cls._widgets[p_name]
+            else:
+                widget = widgets[p_name]
             if change.what == 'constant':
                 updates['disabled'] = change.new
                 if self_or_cls.hide_constant:
