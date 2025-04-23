@@ -42,82 +42,98 @@
 }
 
 :host(.loader.spin.primary-light) div::after {
-  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
     linear-gradient(45deg, #f0f0f0 50%, var(--primary-bg-color) 50%);
 }
 
 :host(.loader.spin.secondary-light) div::after {
-  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
     linear-gradient(45deg, #f0f0f0 50%, var(--secondary-bg-color) 50%);
 }
 
 :host(.loader.spin.success-light) div::after {
-  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
     linear-gradient(45deg, #f0f0f0 50%, var(--success-bg-color) 50%);
 }
 
 :host(.loader.spin.danger-light) div::after {
-  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
     linear-gradient(45deg, #f0f0f0 50%, var(--danger-bg-color) 50%);
 }
 
 :host(.loader.spin.warning-light) div::after {
-  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
     linear-gradient(45deg, #f0f0f0 50%, var(--warning-bg-color) 50%);
 }
 
 :host(.loader.spin.info-light) div::after {
-  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
     linear-gradient(45deg, #f0f0f0 50%, var(--info-bg-color) 50%);
 }
 
 :host(.loader.spin.light-light) div::after {
-  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
     linear-gradient(45deg, #f0f0f0 50%, var(--light-bg-color) 50%);
 }
 
 :host(.loader.dark-light) div::after {
-  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
     linear-gradient(45deg, #f0f0f0 50%, #343a40 50%);
 }
 
 :host(.loader.spin.primary-dark) div::after {
-  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
     linear-gradient(45deg, #0f0f0f 50%, var(--primary-bg-color) 50%);
 }
 
 :host(.loader.spin.secondary-dark) div::after {
-  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
     linear-gradient(45deg, #0f0f0f 50%, var(--secondary-bg-color) 50%);
 }
 
 :host(.loader.spin.success-dark) div::after {
-  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
     linear-gradient(45deg, #0f0f0f 50%, var(--success-bg-color) 50%);
 }
 
 :host(.loader.spin.danger-dark) div::after {
-  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
     linear-gradient(45deg, #0f0f0f 50%, var(--danger-bg-color) 50%);
 }
 
 :host(.loader.spin.warning-dark) div::after {
-  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
     linear-gradient(45deg, #0f0f0f 50%, var(--warning-bg-color) 50%);
 }
 
 :host(.loader.spin.info-dark) div::after {
-  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
     linear-gradient(45deg, #0f0f0f 50%, var(--info-bg-color) 50%);
 }
 
 :host(.loader.spin.light-dark) div::after {
-  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
     linear-gradient(45deg, #0f0f0f 50%, var(--light-bg-color) 50%);
 }
 
 :host(.loader.spin.dark-dark) div::after {
-  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
+  background:
+    linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
     linear-gradient(45deg, #0f0f0f 50%, var(--dark-bg-color) 50%);
 }
 

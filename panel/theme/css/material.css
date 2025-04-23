@@ -566,6 +566,18 @@ div .tabulator .tabulator-header .tabulator-col {
   color: var(--mdc-theme-on-primary);
 }
 
+.pnx-tabulator.tabulator .tabulator-header {
+  background-color: var(--mdc-theme-surface);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pnx-tabulator.tabulator
+    .tabulator-header
+    .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
+    background-color: var(--mdc-theme-surface);
+  }
+}
+
 .tabulator-row .tabulator-cell.tabulator-editing {
   border: 1px solid var(--mdc-theme-on-background);
 }

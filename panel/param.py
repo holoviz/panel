@@ -30,7 +30,7 @@ except Exception:
         Exception that allows skipping an update for function-level updates.
         """
 from param.parameterized import (
-    Undefined, classlist, discard_events, eval_function_with_deps,
+    Undefined, bothmethod, classlist, discard_events, eval_function_with_deps,
     get_method_owner, iscoroutinefunction, resolve_ref, resolve_value,
 )
 from param.reactive import rx
@@ -434,36 +434,40 @@ class Param(Pane):
                 else:
                     toggle_pane(namedtuple('Change', 'new')(True))
 
-    def widget(self, p_name):
+    @bothmethod
+    def widget(self_or_cls, p_name: str, parameterized: param.Parameterized | None = None, widget_spec: type[WidgetBase] | dict | None = None):
         """Get widget for param_name"""
-        p_obj = self.object.param[p_name]
+        parameterized = self_or_cls.object if parameterized is None else parameterized
+        p_obj = parameterized.param[p_name]
         kw_widget = {}
 
         widget_class_overridden = True
-        if self.widgets is None or p_name not in self.widgets:
+        if widget_spec is None and self_or_cls.widgets is not None:
+            widget_spec = self_or_cls.widgets.get(p_name)
+        if widget_spec is None:
             widget_class_overridden = False
-            widget_class = self.widget_type(p_obj)
-        elif isinstance(self.widgets[p_name], dict):
-            kw_widget = dict(self.widgets[p_name])
-            if 'widget_type' in self.widgets[p_name]:
+            widget_class = self_or_cls.widget_type(p_obj)
+        elif isinstance(widget_spec, dict):
+            kw_widget = dict(widget_spec)
+            if 'widget_type' in widget_spec:
                 widget_class = kw_widget.pop('widget_type')
-            elif 'type' in self.widgets[p_name]:
+            elif 'type' in widget_spec:
                 widget_class = kw_widget.pop('type')
             else:
                 widget_class_overridden = False
-                widget_class = self.widget_type(p_obj)
+                widget_class = self_or_cls.widget_type(p_obj)
         else:
-            widget_class = self.widgets[p_name]
+            widget_class = widget_spec
 
-        if not self.show_labels and not issubclass(widget_class, _ButtonBase):
+        if not self_or_cls.show_labels and not issubclass(widget_class, _ButtonBase):
             label = ''
         else:
             label = p_obj.label
         kw = dict(disabled=p_obj.constant, name=label)
-        if self.hide_constant:
+        if self_or_cls.hide_constant:
             kw['visible'] = not p_obj.constant
 
-        value = getattr(self.object, p_name)
+        value = getattr(parameterized, p_name)
         allow_None = p_obj.allow_None or False
         if isinstance(widget_class, type) and issubclass(widget_class, WidgetBase):
             allow_None &= widget_class.param.value.allow_None
@@ -491,11 +495,11 @@ class Param(Pane):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
                     if isinstance(p_obj, param.Number):
-                        widget_class = self.input_widgets[float]
+                        widget_class = self_or_cls.input_widgets[float]
                         if isinstance(p_obj, param.Integer):
-                            widget_class = self.input_widgets[int]
+                            widget_class = self_or_cls.input_widgets[int]
                     elif not issubclass(widget_class, LiteralInput):
-                        widget_class = self.input_widgets['literal']
+                        widget_class = self_or_cls.input_widgets['literal']
                     if isinstance(widget_class, FunctionType):
                         widget_class = widget_class(p_obj)
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
@@ -522,27 +526,33 @@ class Param(Pane):
             widget = widget_class
         else:
             widget = widget_class(**kwargs, **non_param_kwargs)
-        widget._param_pane = self
+        widget._param_pane = self_or_cls
         widget._param_name = p_name
 
-        watchers = self._internal_callbacks
+        is_instance = isinstance(self_or_cls, param.Parameterized)
+        if is_instance:
+            watchers = self_or_cls._internal_callbacks
+            updating = self_or_cls._updating
+        else:
+            watchers, updating = [], []
+            widgets = {p_name: widget}
 
         def link_widget(change):
-            if p_name in self._updating:
+            if p_name in updating:
                 return
             try:
-                self._updating.append(p_name)
-                self.object.param.update(**{p_name: change.new})
+                updating.append(p_name)
+                parameterized.param.update(**{p_name: change.new})
             finally:
-                self._updating.remove(p_name)
+                updating.remove(p_name)
 
         if hasattr(param, 'Event') and isinstance(p_obj, param.Event):
             def event(change):
-                self.object.param.trigger(p_name)
+                parameterized.param.trigger(p_name)
             watcher = widget.param.watch(event, 'clicks')
         elif isinstance(p_obj, param.Action):
             def action(change):
-                value(self.object)
+                value(parameterized)
             watcher = widget.param.watch(action, 'clicks')
         elif onkeyup and hasattr(widget, 'value_input'):
             watcher = widget.param.watch(link_widget, 'value_input')
@@ -554,23 +564,26 @@ class Param(Pane):
 
         def link(change, watchers=[watcher]):
             updates = {}
-            if p_name not in self._widgets:
+            if is_instance and p_name not in self_or_cls._widgets:
                 return
-            widget = self._widgets[p_name]
+            if is_instance:
+                widget = self_or_cls._widgets[p_name]
+            else:
+                widget = widgets[p_name]
             if change.what == 'constant':
                 updates['disabled'] = change.new
-                if self.hide_constant:
+                if self_or_cls.hide_constant:
                     updates['visible'] = not change.new
             elif change.what == 'precedence':
-                if change.new is change.old:
+                if change.new is change.old or not is_instance:
                     return
                 elif change.new is None:
-                    self._rerender()
-                elif (change.new < self.display_threshold and
-                      widget in self._widget_box.objects):
-                    self._widget_box.remove(widget)
-                elif change.new >= self.display_threshold:
-                    self._rerender()
+                    self_or_cls._rerender()
+                elif (change.new < self_or_cls.display_threshold and
+                      widget in self_or_cls._widget_box.objects):
+                    self_or_cls._widget_box.remove(widget)
+                elif change.new >= self_or_cls.display_threshold:
+                    self_or_cls._rerender()
                 return
             elif change.what == 'objects':
                 options = p_obj.get_range()
@@ -588,14 +601,14 @@ class Param(Pane):
                 if supports_bounds:
                     updates['start'] = start
                     updates['end'] = end
-                if rerender:
-                    self._rerender_widget(p_name)
+                if rerender and is_instance:
+                    self_or_cls._rerender_widget(p_name)
                     return
             elif change.what == 'step':
                 updates['step'] = p_obj.step
             elif change.what == 'label':
                 updates['name'] = p_obj.label
-            elif p_name in self._updating:
+            elif p_name in updating:
                 return
             elif hasattr(param, 'Event') and isinstance(p_obj, param.Event):
                 return
@@ -603,10 +616,10 @@ class Param(Pane):
                 prev_watcher = watchers[0]
                 widget.param.unwatch(prev_watcher)
                 def action(event):
-                    change.new(self.object)
+                    change.new(parameterized)
                 watchers[0] = widget.param.watch(action, 'clicks')
-                idx = self._internal_callbacks.index(prev_watcher)
-                self._internal_callbacks[idx] = watchers[0]
+                idx = self_or_cls._internal_callbacks.index(prev_watcher)
+                self_or_cls._internal_callbacks[idx] = watchers[0]
                 return
             elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
@@ -618,7 +631,7 @@ class Param(Pane):
                 updates['value'] = change.new
 
             try:
-                self._updating.append(p_name)
+                updating.append(p_name)
                 if change.type == 'triggered':
                     with discard_events(widget):
                         widget.param.update(**updates)
@@ -626,25 +639,25 @@ class Param(Pane):
                 else:
                     widget.param.update(**updates)
             finally:
-                self._updating.remove(p_name)
+                updating.remove(p_name)
 
         # Set up links to parameterized object
-        watchers.append(self.object.param.watch(link, p_name, 'constant'))
-        watchers.append(self.object.param.watch(link, p_name, 'precedence'))
-        watchers.append(self.object.param.watch(link, p_name, 'label'))
+        watchers.append(parameterized.param.watch(link, p_name, 'constant'))
+        watchers.append(parameterized.param.watch(link, p_name, 'precedence'))
+        watchers.append(parameterized.param.watch(link, p_name, 'label'))
         if hasattr(p_obj, 'get_range'):
-            watchers.append(self.object.param.watch(link, p_name, 'objects'))
+            watchers.append(parameterized.param.watch(link, p_name, 'objects'))
         if hasattr(p_obj, 'get_soft_bounds'):
-            watchers.append(self.object.param.watch(link, p_name, 'bounds'))
+            watchers.append(parameterized.param.watch(link, p_name, 'bounds'))
         if 'step' in kw:
-            watchers.append(self.object.param.watch(link, p_name, 'step'))
-        watchers.append(self.object.param.watch(link, p_name))
+            watchers.append(parameterized.param.watch(link, p_name, 'step'))
+        watchers.append(parameterized.param.watch(link, p_name))
 
         options = resolve_value(kwargs.get('options', []), recursive=False)
         if isinstance(options, dict):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
-            and (self.expand_button or (self.expand_button is None and not self.expand))):
+            and (self_or_cls.expand_button or (self_or_cls.expand_button is None and not self_or_cls.expand))):
             toggle = Toggle(
                 name='\u22EE', button_type='primary',
                 disabled=not is_parameterized(value), max_height=30,

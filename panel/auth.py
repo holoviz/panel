@@ -572,12 +572,12 @@ class CodeChallengeLoginHandler(GenericLoginHandler):
             log.warning("OAuth state mismatch: %s != %s", cookie_state, url_state)
             raise HTTPError(400, "OAuth state mismatch")
 
-        state = _deserialize_state(url_state)
+        decoded_state = _deserialize_state(url_state)
         user = await self.get_authenticated_user(redirect_uri, config.oauth_key, url_state, code=code)
         if user is None:
             raise HTTPError(403)
         log.debug("%s authorized user, redirecting to app.", type(self).__name__)
-        self.redirect(state.get('next_url', state.base_url))
+        self.redirect(decoded_state.get('next_url', state.base_url))
 
     def _authorize_redirect(self, redirect_uri):
         state = self.get_state()

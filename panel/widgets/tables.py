@@ -937,6 +937,8 @@ class BaseTable(ReactiveData, Widget):
         Returns the current view of the table after filtering and
         sorting are applied.
         """
+        if self.value is None:
+            return
         df = self._processed
         return self._sort_df(df)
 
@@ -945,7 +947,9 @@ class BaseTable(ReactiveData, Widget):
         """
         Returns a DataFrame of the currently selected rows.
         """
-        if not self.selection:
+        if self.value is None:
+            return
+        elif not self.selection:
             return self.current_view.iloc[:0]
         df = self.value.iloc[self.selection]
         return self._filter_dataframe(df)
