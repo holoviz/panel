@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" >
+  <head>
+    <meta charset="utf-8">
+    <title>Streaming Indicator</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/1.6.3/dist/images/apple-touch-icon.png">
+    <link rel="icon" href="https://cdn.holoviz.org/panel/1.6.3/dist/images/favicon.ico" type="">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="name" content="Streaming Indicator">
+    <link rel="manifest" href="">
+    <style>
+      html, body {
+	display: flow-root;
+        box-sizing: border-box;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans" type="text/css" />
+
+<style type="text/css">
+
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 400px));
+  -webkit-mask-size: auto calc(min(50%, 400px));
+}
+.py-error { display: none; }</style>
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./serviceWorker.js').then(reg => {
+    reg.onupdatefound = () => {
+      const installingWorker = reg.installing;
+      installingWorker.onstatechange = () => {
+        if (installingWorker.state === 'installed' &&
+            navigator.serviceWorker.controller) {
+          // Reload page if service worker is replaced
+          location.reload();
+        }
+      }
+    }
+  })
+}
+</script>
+
+<script type="esms-options">{"shimMode": true}</script>
+
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.6.3/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.7.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.7.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.7.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.7.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.6.3/dist/panel.min.js"></script>
+
+<script type="module" src="https://cdn.holoviz.org/panel/1.6.3/dist/bundled/@microsoft/fast-components@2.30.6/dist/fast-components.js"></script>
+<script type="module" src="https://cdn.holoviz.org/panel/1.6.3/dist/bundled/fast/js/fast_design.js"></script>
+<script type="text/javascript">
+  Bokeh.set_log_level("info");
+</script>    <!-- Template CSS -->
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.6.3/dist/css/loadingspinner.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.6.3/dist/css/markdown.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.6.3/dist/css/listpanel.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.6.3/dist/css/button.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.6.3/dist/css/loading.css?v=1.6.3">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.6.3/dist/bundled/theme/default.css?v=1.6.3">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.6.3/dist/bundled/fastbasetemplate/fast.css?v=1.6.3">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.6.3/dist/bundled/fastlisttemplate/fast_list_template.css?v=1.6.3">
+
+<style>
+  :root {
+    --background-color: #ffffff;
+    --body-font: Open Sans, sans-serif;
+    --corner-radius: 3;
+    --header-background: #0072B5;
+    --header-color: #ffffff;
+    --sidebar-width: 330px;
+  }
+  body {
+    color: #2B2B2B;
+    background-color: var(--background-color);
+    font-family: var(--body-font);
+  }
+  #header a {
+    color: currentColor;
+  }
+  #header-design-provider {
+    --neutral-fill-hover: var(--header-background);
+    --neutral-fill-rest: var(--header-background);
+    --neutral-foreground-rest: var(--header-color);
+    --design-background-text-color: var(--header-color);
+    --design-background-color: var(--header-background);
+    background: var(--header-background);
+    color: var(--header-color);
+  }
+  #sidebar {
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+  }
+</style>
+
+    <style type="text/css">
+    
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 400px));
+  -webkit-mask-size: auto calc(min(50%, 400px));
+}
+    </style>
+
+    <!-- Template JS -->
+    <script src="https://cdn.holoviz.org/panel/1.6.3/dist/bundled/fastbasetemplate/fast_template.js"></script>
+    <script src="https://cdn.holoviz.org/panel/1.6.3/dist/bundled/@microsoft/fast-components@2.30.6/dist/fast-components.js" type="module"></script>
+    <script src="https://cdn.holoviz.org/panel/1.6.3/dist/bundled/fast/js/fast_design.js" type="module"></script>
+
+<!-- Fast Script -->
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', (event) => {
+  const header_design = new window.fastDesignProvider("#header-design-provider");
+  const body_design = window.bodyDesign = new window.fastDesignProvider("#body-design-provider");
+  body_design.setLuminance(1.0);
+  body_design.setAccentColor("#0072B5")
+  body_design.setNeutralColor("#000000");
+  header_design.setLuminance("0.23");
+  header_design.setAccentColor("#ffffff");
+  header_design.setNeutralColor("#0072B5");
+});
+</script>
+  </head>
+  <body class="pn-loading pn-arc">
+<fast-design-system-provider id="body-design-provider" use-defaults>
+  <div id="container">
+    <fast-design-system-provider id="header-design-provider">
+      <nav id="header" class="shadow" >
+	<div class="app-header">
+	  <a class="title" href="" >Streaming Indicator</a>
+	</div>
+	<div id="header-items">
+	</div>
+	<div class="pn-toggle-theme">
+	  <fast-switch id="theme-switch" style="float: right;" onChange="toggleLightDarkTheme('default')" checked>
+	    <span slot="checked-message">
+              <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+	    </span>
+	    <span slot="unchecked-message">
+              <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
+	    </span>
+	  </fast-switch>
+	  <fast-tooltip anchor="theme-switch" position="bottom">
+	    Toggle the Theme
+	  </fast-tooltip>
+	</div>
+	<div class="pn-busy-container" id="busy-container">
+	  <div id="f017c3fe-e4e5-4168-a621-63cf09b36ca5" data-root-id="p1015" style="display: contents;"></div>
+	</div>
+	<fast-tooltip anchor="busy-container" position="left">
+	  Busy Indicator
+	</fast-tooltip>
+      </nav>
+    </fast-design-system-provider>
+
+    <div class="row" id="content">
+
+      <div class="main" id="main">
+        <div class="card-margin None">
+	  <fast-card class="pn-wrapper">
+	    <span class="fullscreen-button" onclick="toggleFullScreen(this)">
+	      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+		<path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/>
+	      </svg>
+	    </span>
+	    <div id="bea454d6-82d8-4ac1-a9f2-6e79c2af6cf2" data-root-id="p1017" style="display: contents;"></div>
+	  </fast-card>
+	</div>
+        <div class="card-margin stretch_width">
+	  <fast-card class="pn-wrapper">
+	    <span class="fullscreen-button" onclick="toggleFullScreen(this)">
+	      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+		<path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/>
+	      </svg>
+	    </span>
+	    <div id="e633ece9-ddeb-45c1-94c8-b3000ecc928c" data-root-id="p1018" style="display: contents;"></div>
+	  </fast-card>
+	</div>
+      </div>
+      <fast-dialog id="pn-Modal" hidden>
+        <fast-button class="pn-modal-close" id="pn-closeModal">&times;</fast-button>
+        <div class="pn-modal-content">
+	</div>
+      </fast-dialog>
+    </div>
+  </div>
+</fast-design-system-provider>
+
+<script type="text/javascript">
+  
+</script>
+
+<script type="text/javascript">
+  function openNav() {
+    document.getElementById("sidebar").classList.remove("hidden");
+    document.getElementById("sidebar-button").onclick = closeNav;
+  }
+
+  function closeNav() {
+    document.getElementById("sidebar").classList.add("hidden");
+    document.getElementById("sidebar-button").onclick = openNav;
+  }
+
+  var modal = document.getElementById("pn-Modal");
+  var span = document.getElementById("pn-closeModal");
+
+  span.onclick = function() {
+    modal.style.display = "none";
+  }
+
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+
+<div id="face4214-84a9-4b1a-85fe-8dda77864b6d" data-root-id="p1010" style="display: contents;"></div>
+<div id="b5c35149-47a5-4431-b646-1a92079c639b" data-root-id="p1012" style="display: contents;"></div>
+<div id="dd3324a4-7445-47ee-b390-b2d8f505960f" data-root-id="p1003" style="display: contents;"></div>
+<div id="db36a027-5e97-4f9c-b691-90f29a47a016" data-root-id="p1013" style="display: contents;"></div>
+
+
+  
+    <script type="text/javascript">
+      const pyodideWorker = new Worker("./streaming_indicator.js");
+      pyodideWorker.busy = false
+      pyodideWorker.queue = []
+      
+      let patching = 0
+      
+      function send_change(jsdoc, event) {
+        if ((event.setter_id != null && event.setter_id == 'py') || (patching > 0)) {
+          return
+        } else if (pyodideWorker.busy && event.model && event.attr) {
+          let events = []
+          for (const old_event of pyodideWorker.queue) {
+            if (!(old_event.model === event.model && old_event.attr === event.attr)) {
+              events.push(old_event)
+            }
+          }
+          events.push(event)
+          pyodideWorker.queue = events
+          return
+        }
+        const patch = jsdoc.create_json_patch([event])
+        pyodideWorker.busy = true
+        pyodideWorker.postMessage({type: 'patch', patch: patch})
+      }
+      
+      pyodideWorker.onmessage = async (event) => {
+        const msg = event.data
+      
+        const body = document.getElementsByTagName('body')[0]
+        const loading_msgs = document.getElementsByClassName('pn-loading-msg')
+        if (msg.type === 'idle') {
+          if (pyodideWorker.queue.length) {
+            const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
+            pyodideWorker.busy = true
+            pyodideWorker.queue = []
+            pyodideWorker.postMessage({type: 'patch', patch: patch})
+          } else {
+            pyodideWorker.busy = false
+          }
+        } else if (msg.type === 'status') {
+          let loading_msg
+          if (loading_msgs.length) {
+            loading_msg = loading_msgs[0]
+          } else if (body.classList.contains('pn-loading')) {
+            loading_msg = document.createElement('div')
+            loading_msg.classList.add('pn-loading-msg')
+            body.appendChild(loading_msg)
+          }
+          if (loading_msg != null) {
+            loading_msg.innerHTML = msg.msg
+          }
+        } else if (msg.type === 'render') {
+          const docs_json = JSON.parse(msg.docs_json)
+          const render_items = JSON.parse(msg.render_items)
+          const root_ids = JSON.parse(msg.root_ids)
+      
+          // Remap roots in message to element IDs
+          const root_els = document.querySelectorAll('[data-root-id]')
+          const data_roots = []
+          for (const el of root_els) {
+             el.innerHTML = ''
+             data_roots.push([el.getAttribute('data-root-id'), el.id])
+          }
+          data_roots.sort((a, b) => a[0]<b[0] ? -1: 1)
+          const roots = {}
+          for (let i=0; i<data_roots.length; i++) {
+            roots[root_ids[i]] = data_roots[i][1]
+          }
+          render_items[0]['roots'] = roots
+          render_items[0]['root_ids'] = root_ids
+      
+          // Clear pre-rendered contents
+          Bokeh.index.roots.map((v) => v.remove())
+      
+          // Embed content
+          const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
+      
+          // Remove loading spinner and message
+          body.classList.remove("pn-loading", "arc")
+          for (const loading_msg of loading_msgs) {
+            loading_msg.remove()
+          }
+      
+          // Setup bi-directional syncing
+          pyodideWorker.jsdoc = jsdoc = [...views.roots.values()][0].model.document
+          jsdoc.on_change(send_change.bind(null, jsdoc), false)
+          pyodideWorker.postMessage({'type': 'rendered'})
+          pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
+        } else if (msg.type === 'patch') {
+          try {
+            patching += 1
+            pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers)
+          } finally {
+            patching -= 1
+          }
+        }
+      };
+    </script>
+    <script type="application/json" id="p1221">
+      {"aa033f44-9a56-42a8-b136-e3b7ca421a20":{"version":"3.7.2","title":"Streaming Indicator","roots":[{"type":"object","name":"panel.models.location.Location","id":"p1003","attributes":{"name":"location","reload":false}},{"type":"object","name":"panel.models.markup.HTML","id":"p1010","attributes":{"name":"js_area","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"type":"object","name":"ImportedStyleSheet","id":"p1007","attributes":{"url":"https://cdn.holoviz.org/panel/1.6.3/dist/css/loading.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1006","attributes":{"url":"https://cdn.holoviz.org/panel/1.6.3/dist/bundled/theme/fast.css"}}],"width":0,"height":0,"margin":0,"sizing_mode":"fixed","align":"start","disable_math":true}},{"type":"object","name":"panel.models.reactive_html.ReactiveHTML","id":"p1012","attributes":{"name":"actions","subscribed_events":{"type":"set","entries":["dom_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1006"}],"margin":0,"align":"start","data":{"type":"object","name":"TemplateActions1","id":"p1011","attributes":{"name":"TemplateActions00122","tags":["__ref:p1012"]}},"scripts":{"type":"map","entries":[["open_modal",["document.getElementById(&amp;#x27;pn-Modal&amp;#x27;).style.display = &amp;#x27;block&amp;#x27;\nwindow.dispatchEvent(new Event(&amp;#x27;resize&amp;#x27;));"]],["close_modal",["document.getElementById(&amp;#x27;pn-Modal&amp;#x27;).style.display = &amp;#x27;none&amp;#x27;"]]]}}},{"type":"object","name":"panel.models.browser.BrowserInfo","id":"p1013","attributes":{"name":"browser_info"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1015","attributes":{"name":"busy_indicator","css_classes":["loader","light"],"stylesheets":[":host { --loading-spinner-size: 20px; }","\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"type":"object","name":"ImportedStyleSheet","id":"p1014","attributes":{"url":"https://cdn.holoviz.org/panel/1.6.3/dist/css/loadingspinner.css"}},{"id":"p1006"}],"min_width":20,"min_height":20,"margin":[5,10],"align":"start"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1017","attributes":{"name":"main-4493973328","tags":["main"],"css_classes":["markdown"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"type":"object","name":"ImportedStyleSheet","id":"p1016","attributes":{"url":"https://cdn.holoviz.org/panel/1.6.3/dist/css/markdown.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1005","attributes":{"url":"https://cdn.holoviz.org/panel/1.6.3/dist/bundled/theme/default.css"}},{"id":"p1006"}],"margin":[5,10],"align":"start","text":"&amp;lt;p&amp;gt;This example demonstrates how to use &amp;lt;code&amp;gt;add_periodic_callback&amp;lt;/code&amp;gt; to stream data to the &amp;lt;code&amp;gt;Trend&amp;lt;/code&amp;gt; indicator.&amp;lt;/p&amp;gt;\n"}},{"type":"object","name":"panel.models.layout.Column","id":"p1018","attributes":{"name":"main-4497015696","tags":["main"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"type":"object","name":"ImportedStyleSheet","id":"p1008","attributes":{"url":"https://cdn.holoviz.org/panel/1.6.3/dist/css/listpanel.css"}},{"id":"p1005"},{"id":"p1006"}],"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"Row","id":"p1019","attributes":{"name":"Row00174","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1008"},{"id":"p1005"},{"id":"p1006"}],"margin":0,"align":"start","children":[{"type":"object","name":"Spinner","id":"p1022","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":300,"min_width":300,"margin":[5,10],"align":"start","title":"Period","description":{"type":"object","name":"Tooltip","id":"p1021","attributes":{"syncable":false,"stylesheets":[":host { white-space: initial; max-width: 300px; }"],"position":"right","content":{"type":"object","name":"bokeh.models.dom.HTML","id":"p1020","attributes":{"html":["&lt;p&gt;Period in milliseconds at which the callback is executed.&lt;/p&gt;\n"]}}}},"value":500,"placeholder":"0","mode":"int"}},{"type":"object","name":"Toggle","id":"p1024","attributes":{"css_classes":["solid"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"type":"object","name":"ImportedStyleSheet","id":"p1023","attributes":{"url":"https://cdn.holoviz.org/panel/1.6.3/dist/css/button.css"}},{"id":"p1005"},{"id":"p1006"}],"margin":[5,10],"align":"end","label":"Running","active":true}}]}},{"type":"object","name":"panel.models.reactive_html.ReactiveHTML","id":"p1026","attributes":{"subscribed_events":{"type":"set","entries":["dom_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"margin":0,"sizing_mode":"stretch_width","align":"start","attrs":{"type":"map","entries":[["flexbox",[["style",["flex_wrap","justify_content","flex_direction","align_content","align_items","gap"],"display: flex; flex-wrap: {flex_wrap}; justify-content: {justify_content}; flex-direction: {flex_direction}; align-content: {align_content}; align-items: {align_items}; gap: {gap}; height: 100%;"]]]]},"children":{"type":"map","entries":[["flex-item",[{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1030","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1031","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1032"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1027","attributes":{"selected":{"type":"object","name":"Selection","id":"p1028","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1029"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"tXeJg4RD+D8ez8evQHnlP/SHePR7mvA/+vIM0jCN+T8HNCQiqFwDQHSHUTb+8AFArFIVwdnE/D9oJh4g5s/3P1FXBGA3XwFAlvDAq0q25z8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"line","pos_color":"#5cb85c","neg_color":"#d9534f","value":0.7410024027408493,"value_change":-0.6587589144714137}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1036","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1037","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1038"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1033","attributes":{"selected":{"type":"object","name":"Selection","id":"p1034","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1035"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"8kKQCZ0y9T/QLd9UUarUPxbV1Ugk8wFArZY/cB3ZBkClDE1rZi4HQArB4ceAnwNA50JmLYlc8T93nTBhlWEDQBiqg/KINPg/3kZFc/Aa6j8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"step","pos_color":"#5cb85c","neg_color":"#d9534f","value":0.8157884837512162,"value_change":-0.46075191116464764}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1042","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1043","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1044"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1039","attributes":{"selected":{"type":"object","name":"Selection","id":"p1040","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1041"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"6kRPLjuRy7/llHeIcyvwv6AjXvw7rOW/sFLSHWsBvb/aQ/MMat3mv8RCM0D23c2/Wkh58MrB2j+QH/zFfzT0P3gEjN6RP+8/Un2CGl078D8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"area","pos_color":"#5cb85c","neg_color":"#d9534f","value":1.0144930873428462,"value_change":0.03889678784803108}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1048","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1049","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1050"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1045","attributes":{"selected":{"type":"object","name":"Selection","id":"p1046","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1047"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"BEtvSHHQ+78sKNHq/Cj7vxBqTULoHwLAgUPLwg9NAcAOJ2+oHYUHwPxwVBkskwfA8Ovnzc7BCMCMvDjo/nYLwMxJfYYOgxDAOU1q5GzTB8A="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"bar","pos_color":"#5cb85c","neg_color":"#d9534f","value":-2.978235039228505,"value_change":-0.2785257288915043}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1054","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1055","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1056"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1051","attributes":{"selected":{"type":"object","name":"Selection","id":"p1052","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1053"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"PUYFGkDk87+AZHkK6zmCP8Wqf5YtOce/J4/0jO7J+r+ybEtekU0BwD/2m/VLQATA4s7v9stMB8B1mUTlxJgQwMMc8CSgHRDAduvX/JtV/78="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"line","pos_color":"#5cb85c","neg_color":"#d9534f","value":-1.9584007145592444,"value_change":-0.5139155745522757}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1060","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1061","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1062"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1057","attributes":{"selected":{"type":"object","name":"Selection","id":"p1058","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1059"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"inegwNn04L+6UgMLrUHnvxfBThXCCdS/gWubIBha2D/WmgdX9wPKv8ITcbtIq+Q/yiYgKxS55j8cwwXp3VbzP5lI697iBwBAlPUME2tu6T8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"step","pos_color":"#5cb85c","neg_color":"#d9534f","value":0.7947287914354768,"value_change":-0.6033991977366979}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1066","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1067","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1068"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1063","attributes":{"selected":{"type":"object","name":"Selection","id":"p1064","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1065"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"s815cWk32r9TqMiz6qTSP7MCYcRnSvI/frzkXuDE7T8Yj0A8RUbAv0Azi7aVCOA/5PzLrL7q+z/Aj/egsBi/vz8ZNeW4f+C/esSpJQXFA8A="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"area","pos_color":"#5cb85c","neg_color":"#d9534f","value":-2.4712012236055303,"value_change":3.792947840286087}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1072","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1073","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1074"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1069","attributes":{"selected":{"type":"object","name":"Selection","id":"p1070","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1071"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"z15tBXmV+z9WxaR+EtADQO6bCtQOqQpAKCqb3PifB0BPi6hyKyD7P3w0tWtp3uI/1hWiHY0E0T+MYmXwJtHXvyykZJQzpAbAMdd+ABthD8A="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"bar","pos_color":"#5cb85c","neg_color":"#d9534f","value":-3.922414783354633,"value_change":0.3859258515775317}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1078","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1079","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1080"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1075","attributes":{"selected":{"type":"object","name":"Selection","id":"p1076","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1077"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"yQ8eh6Ro8b87qe4Z1AQBwGEkJt3LHQXADR4M1T3mAsC5rU0MhLMQwPp8lLlGPwfAbKKrsr2IAcA7lDNQ1hEJwKbUGKklrAzAw3DlbZVdEMA="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"line","pos_color":"#5cb85c","neg_color":"#d9534f","value":-4.091390339974342,"value_change":0.1415530627688808}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1084","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1085","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1086"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1081","attributes":{"selected":{"type":"object","name":"Selection","id":"p1082","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1083"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"JMMfQ7tWAsDX2HkQDYcMwKQI9p4UAwDAOiqht98B7L/AVCsC/CLBv/jC/6mmA++/3jdkw5FG4z+sxu6t7g7Dv1qtrbozufO/bLr7TFqe3b8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"step","pos_color":"#5cb85c","neg_color":"#d9534f","value":-0.4627900840559167,"value_change":-0.6245766837906667}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1090","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1091","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1092"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1087","attributes":{"selected":{"type":"object","name":"Selection","id":"p1088","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1089"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"qXZnXRFN8D/ONv8Pryf2P/Q9gaTNWOS/3UYiB+fB47+8zYGwyKQBwBNwt1DrWv6/5gK97ajs9r+4IdJnqGf+vyAotQhWx6u/MAUrzD7azD8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"area","pos_color":"#5cb85c","neg_color":"#d9534f","value":0.22541031808035816,"value_change":-5.154631551522132}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1096","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1097","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1098"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1093","attributes":{"selected":{"type":"object","name":"Selection","id":"p1094","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1095"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"8IfhZi0V/D/skvo4d0zSP03UIMrWk/c/5OqJaGpxCkDmgs6/VskCQGezwpT5PfA/XPBpqtlb9T+yDEu1RsUIQOq1fmftVApApDRF/V4+9D8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"bar","pos_color":"#5cb85c","neg_color":"#d9534f","value":1.2652273076412621,"value_change":-0.615603998160674}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1102","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1103","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1104"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1099","attributes":{"selected":{"type":"object","name":"Selection","id":"p1100","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1101"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"Ldji3BcQpL9gxNrxxXbiv6xRjXWdLPI/f4CwfgL08T8AoaA+aiWnP6Im10H0ku4/UpG6DFpQB0ARhl6frD8MQIDnXaGZtAVA/J1fn6mv/T8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"line","pos_color":"#5cb85c","neg_color":"#d9534f","value":1.8553863740470424,"value_change":-0.31615894377769593}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1108","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1109","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1110"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1105","attributes":{"selected":{"type":"object","name":"Selection","id":"p1106","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1107"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"RM171F9Gwr+Q/yQ1xwLNP8VyFnmYPug/CGLjqOogxD9MDwfw4brXPwRehpPAacq/ror5ThEW3b88oE5Avfn2P7rtbpA8oQdAP0jxuFD0C0A="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"step","pos_color":"#5cb85c","neg_color":"#d9534f","value":3.4942945908196914,"value_change":0.18301131534298087}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1114","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1115","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1116"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1111","attributes":{"selected":{"type":"object","name":"Selection","id":"p1112","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1113"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"BLDcTilL5j9e1aFTfKzrP7crD8Na+vM/O2QY46ILBkDItFQyduQHQHGEP6CTkfc/qeCBiMXPA0AteBoq5VcCQHx4sswXCgxADrYkip1oDEA="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"area","pos_color":"#5cb85c","neg_color":"#d9534f","value":3.551081732983909,"value_change":0.013168180239872651}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1120","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1121","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1122"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1117","attributes":{"selected":{"type":"object","name":"Selection","id":"p1118","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1119"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"zKaRFGOZ8b+QxGeuRYLaP9w6/XFilvY/bdC+7CgoAEAaBWqRDDfwP+jgAsGO3gBA3qWxQtu++j8agzMSLNECQGkHob0z3gJAOmhk4KAcEEA="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"bar","pos_color":"#5cb85c","neg_color":"#d9534f","value":4.027957445267072,"value_change":0.7078492071729439}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1126","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1127","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1128"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1123","attributes":{"selected":{"type":"object","name":"Selection","id":"p1124","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1125"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"7GgaUZ2x4r+6/M7A3CLuv15uNxu8iQDAAju6R+gHC8DtiozXFFQNwCol/fphCPK/BpprHOYC97+8Ew0gujzov8MnGv0nvN2/LFqZ4vKzuT8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"line","pos_color":"#5cb85c","neg_color":"#d9534f","value":0.10040205032542165,"value_change":-1.216100031063746}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1132","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1133","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1134"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1129","attributes":{"selected":{"type":"object","name":"Selection","id":"p1130","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1131"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"lEg0lzM29T89SvqmJZ0BQJYCEyZp9Pw/UPh+MfQyEUDphsRbJkYQQDbg5bLdkgtA6gjUACjPEkCqu/VEO1sWQFJ2aRMkkhtA5RQRSbFyE0A="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"step","pos_color":"#5cb85c","neg_color":"#d9534f","value":4.862004415195064,"value_change":-0.2946170136383237}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1138","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1139","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1140"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1135","attributes":{"selected":{"type":"object","name":"Selection","id":"p1136","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1137"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"/JjjALCh578EywOJWDLwvwKBtqB1yQTA77tvyfa/BMDByeW7t30FwE8k5/7c9grAKKrEWy+tD8D4FOaShhkTwCD+1Xf5sBnARQkIkAahI8A="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"area","pos_color":"#5cb85c","neg_color":"#d9534f","value":-9.81450319383715,"value_change":0.5280660269725139}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1144","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1145","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1146"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1141","attributes":{"selected":{"type":"object","name":"Selection","id":"p1142","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1143"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"fVXsCrhF17+Sxwiw+UTDPwB8ndqBib+/rg/X6Osp/L+Eqtx87S8CwEINHquNj/6/IN0ddHXBB8B6AUJkl4INwElkTUibjg7A245Ci+TzB8A="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"bar","pos_color":"#5cb85c","neg_color":"#d9534f","value":-2.994088256806078,"value_change":-0.21613177225472224}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1150","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1151","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1152"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1147","attributes":{"selected":{"type":"object","name":"Selection","id":"p1148","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1149"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"Rjfet04i9D/cgwmtH9f0P/l+1tboCvU/0emXp+vQ9D/4TuADxU3pPwakq0KvD9Q/BtnwAoq77z+SDNw/AFUJQEXARvwXowxAmw5UXg/6DUA="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"line","pos_color":"#5cb85c","neg_color":"#d9534f","value":3.7470996255304505,"value_change":0.046782424868392125}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1156","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1157","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1158"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1153","attributes":{"selected":{"type":"object","name":"Selection","id":"p1154","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1155"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"8JpfroIW6T8S8EJUToAFQFvpziMU1gNA3lzXAm+ACEDt+nUZhygHQO4g9QrrIQhAzmwi0kVEFEAgy3cnOmgQQMRdeYxtmPU/Om6Hoyc8AkA="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"step","pos_color":"#5cb85c","neg_color":"#d9534f","value":2.2793724799828654,"value_change":0.6887820199794008}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1162","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1163","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1164"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1159","attributes":{"selected":{"type":"object","name":"Selection","id":"p1160","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1161"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"SERH9Yd2vL+cuVAByh7bPwglNetMgQBAdqRy6Onj+D9jh8nCpmz1P7ZcCUO4CAFAV0DYEOLRAUB1ONgb9KsBQD6mzWSzoglAf1q7ah/fEkA="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"area","pos_color":"#5cb85c","neg_color":"#d9534f","value":4.71789328354373,"value_change":0.4722971231864397}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1168","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1169","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1170"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1165","attributes":{"selected":{"type":"object","name":"Selection","id":"p1166","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1167"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"TFCLrXNu8j8QkjjpMxf7PzQVjHaHoPU/tUlqXgQT8j9M+bU5SujwPxjy+opb2vo/uUQbYHweAkBKm4EA94j4P5e+tpVWnwFAyz7t5DBVAEA="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"bar","pos_color":"#5cb85c","neg_color":"#d9534f","value":2.0415971646214977,"value_change":-0.0731816619735316}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1174","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1175","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1176"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1171","attributes":{"selected":{"type":"object","name":"Selection","id":"p1172","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1173"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"SVkf47Th8r/ZyImszP3ov/SDGp5Lpv+/dLdKmO4cBcAMef/Rsar7v4Mk9tbZRfW/TlLYVTbFAMBQ+wgIJ9vSP2APkpk5A9C/KNmuxVoZ1b8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"line","pos_color":"#5cb85c","neg_color":"#d9534f","value":-0.32967252068501063,"value_change":0.3176526244583764}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1180","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1181","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1182"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1177","attributes":{"selected":{"type":"object","name":"Selection","id":"p1178","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1179"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"nnkH2kt77z/YrW8NL7b5PyRvzCu8PN0/xqVM4SuZ4r8IvdwwdhHdP8ex7GZGu9w/IHb45Okx8z8UNKXbK5P4P5rdulbGPe0/hMZM7utO378="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"step","pos_color":"#5cb85c","neg_color":"#d9534f","value":-0.4891919924876691,"value_change":-1.535343492218624}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1186","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1187","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1188"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1183","attributes":{"selected":{"type":"object","name":"Selection","id":"p1184","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1185"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"Wc6jeAtu+z/amvWqbE7yP5SDH5fOL+s/zySclPrO2T8Lb0VSck/+P3YmdRvL0ARA16ITuwnFAkCqelrSkU0MQPtAnE86uQpAHAYAIGYOFEA="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"area","pos_color":"#5cb85c","neg_color":"#d9534f","value":5.014061450959641,"value_change":0.5010168036944749}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1192","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1193","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1194"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1189","attributes":{"selected":{"type":"object","name":"Selection","id":"p1190","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1191"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"chMNJZjGyL+IVd9gk+eUPxohSNARqNu/vnrqlRtn8r9+GtyldCT9v/z356IthQfAHFwte6bfCcD9ElQ74yQLwBdrq91S/Q/AvNNIuGxaEMA="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"bar","pos_color":"#5cb85c","neg_color":"#d9534f","value":-4.088305358357442,"value_change":0.022410358393868846}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1198","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1199","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1200"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1195","attributes":{"selected":{"type":"object","name":"Selection","id":"p1196","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1197"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"8vHuoWz7t79nWb8OGd7kP1FzKcn5puq/LLnw2id48r+o4hzG7urpP9qQX91SHNE/9FDDFXK/3r9w1QWelxmpPxzwz3E7/eQ/FvMz+SA77j8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"line","pos_color":"#5cb85c","neg_color":"#d9534f","value":0.9447178714031874,"value_change":0.4403116237514584}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1204","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1205","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1206"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1201","attributes":{"selected":{"type":"object","name":"Selection","id":"p1202","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1203"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"C7EOrckX8b/ODhYnLCbxv/bpsCr8Wv6/LRDTpN/4/7/OLFC0XL0AwOYm+gTMU/6/3cECPIG0CcAccBx/DlQOwMykZvxy8wjAnG81rdXdD8A="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"step","pos_color":"#5cb85c","neg_color":"#d9534f","value":-3.983317712014424,"value_change":0.27716627795598847}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1210","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1211","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1212"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1207","attributes":{"selected":{"type":"object","name":"Selection","id":"p1208","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1209"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"GairXm8O0D/QiHxqih+Vv46GylDFMbi/RBhE1UsvsD8pfQT8uw3DP2BtR/v2XNI/Nm0q/f+B7z80ds19KIbyP/QgHilYNvM/QdafO5fjAEA="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"area","pos_color":"#5cb85c","neg_color":"#d9534f","value":2.111128297629677,"value_change":0.7581488491969948}},{"type":"object","name":"panel.models.trend.TrendIndicator","id":"p1216","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1007"},{"id":"p1005"},{"id":"p1006"}],"width":150,"height":100,"margin":[5,10],"sizing_mode":"fixed","align":"start","change_formatter":{"type":"object","name":"NumeralTickFormatter","id":"p1217","attributes":{"format":"0.00%"}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1218"},"layout":"column","source":{"type":"object","name":"ColumnDataSource","id":"p1213","attributes":{"selected":{"type":"object","name":"Selection","id":"p1214","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1215"},"data":{"type":"map","entries":[["x",[0,1,2,3,4,5,6,7,8,9]],["y",{"type":"ndarray","array":{"type":"bytes","data":"oGTLvncb3D9qf92hvnrcv4hxMuiW8Pq/GClU1Iqyxj9L9rDIqbTNPxhWSJy3L98/or0VeMoy5D+wp7iYBo2qP3JhbXlw+uO/6DDg1xU52D8="},"shape":[10],"dtype":"float64","order":"little"}]]}}},"plot_x":"x","plot_y":"y","plot_color":"#428bca","plot_type":"bar","pos_color":"#5cb85c","neg_color":"#d9534f","value":0.3784842117463669,"value_change":-1.6062331467297069}}]]]},"data":{"type":"object","name":"FlexBox1","id":"p1025","attributes":{"name":"FlexBox00170","tags":["__ref:p1018"]}},"html":"&amp;lt;div id=&amp;quot;flexbox-${id}&amp;quot; style=&amp;quot;display: flex; flex-wrap: ${flex_wrap}; justify-content: ${justify_content}; flex-direction: ${flex_direction}; align-content: ${align_content}; align-items: ${align_items}; gap: ${gap}; height: 100%;&amp;quot;&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-0-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-1-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-2-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-3-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-4-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-5-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-6-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-7-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-8-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-9-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-10-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-11-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-12-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-13-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-14-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-15-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-16-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-17-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-18-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-19-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-20-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-21-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-22-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-23-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-24-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-25-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-26-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-27-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-28-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-29-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-30-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n  &amp;lt;div id=&amp;quot;flex-item-31-${id}&amp;quot; style=&amp;quot;display: contents;&amp;quot;&amp;gt;\n\n  &amp;lt;/div&amp;gt;\n\n&amp;lt;/div&amp;gt;","looped":["flex-item"],"nodes":["flexbox","flex-item-0","flex-item-1","flex-item-2","flex-item-3","flex-item-4","flex-item-5","flex-item-6","flex-item-7","flex-item-8","flex-item-9","flex-item-10","flex-item-11","flex-item-12","flex-item-13","flex-item-14","flex-item-15","flex-item-16","flex-item-17","flex-item-18","flex-item-19","flex-item-20","flex-item-21","flex-item-22","flex-item-23","flex-item-24","flex-item-25","flex-item-26","flex-item-27","flex-item-28","flex-item-29","flex-item-30","flex-item-31"]}}]}}],"defs":[{"type":"model","name":"ReactiveHTML1"},{"type":"model","name":"FlexBox1","properties":[{"name":"align_content","kind":"Any","default":"flex-start"},{"name":"align_items","kind":"Any","default":"flex-start"},{"name":"flex_direction","kind":"Any","default":"row"},{"name":"flex_wrap","kind":"Any","default":"wrap"},{"name":"gap","kind":"Any","default":""},{"name":"justify_content","kind":"Any","default":"flex-start"}]},{"type":"model","name":"FloatPanel1","properties":[{"name":"config","kind":"Any","default":{"type":"map"}},{"name":"contained","kind":"Any","default":true},{"name":"position","kind":"Any","default":"right-top"},{"name":"offsetx","kind":"Any","default":null},{"name":"offsety","kind":"Any","default":null},{"name":"theme","kind":"Any","default":"primary"},{"name":"status","kind":"Any","default":"normalized"}]},{"type":"model","name":"GridStack1","properties":[{"name":"ncols","kind":"Any","default":null},{"name":"nrows","kind":"Any","default":null},{"name":"allow_resize","kind":"Any","default":true},{"name":"allow_drag","kind":"Any","default":true},{"name":"state","kind":"Any","default":[]}]},{"type":"model","name":"drag1","properties":[{"name":"slider_width","kind":"Any","default":5},{"name":"slider_color","kind":"Any","default":"black"},{"name":"value","kind":"Any","default":50}]},{"type":"model","name":"click1","properties":[{"name":"terminal_output","kind":"Any","default":""},{"name":"debug_name","kind":"Any","default":""},{"name":"clears","kind":"Any","default":0}]},{"type":"model","name":"FastWrapper1","properties":[{"name":"object","kind":"Any","default":null},{"name":"style","kind":"Any","default":null}]},{"type":"model","name":"NotificationArea1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"max_notifications","kind":"Any","default":5},{"name":"notifications","kind":"Any","default":[]},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0},{"name":"types","kind":"Any","default":[{"type":"map","entries":[["type","warning"],["background","#ffc107"],["icon",{"type":"map","entries":[["className","fas fa-exclamation-triangle"],["tagName","i"],["color","white"]]}]]},{"type":"map","entries":[["type","info"],["background","#007bff"],["icon",{"type":"map","entries":[["className","fas fa-info-circle"],["tagName","i"],["color","white"]]}]]}]}]},{"type":"model","name":"Notification","properties":[{"name":"background","kind":"Any","default":null},{"name":"duration","kind":"Any","default":3000},{"name":"icon","kind":"Any","default":null},{"name":"message","kind":"Any","default":""},{"name":"notification_type","kind":"Any","default":null},{"name":"_rendered","kind":"Any","default":false},{"name":"_destroyed","kind":"Any","default":false}]},{"type":"model","name":"TemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"BootstrapTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"TemplateEditor1","properties":[{"name":"layout","kind":"Any","default":[]}]},{"type":"model","name":"MaterialTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"ReactiveESM1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"JSComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"ReactComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"AnyWidgetComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"request_value1","properties":[{"name":"fill","kind":"Any","default":"none"},{"name":"_synced","kind":"Any","default":null},{"name":"_request_sync","kind":"Any","default":0}]}]}}
+    </script>
+    <script type="text/javascript">
+      (function() {
+        const fn = function() {
+          Bokeh.safely(function() {
+            (function(root) {
+              function embed_document(root) {
+              const docs_json = document.getElementById('p1221').textContent;
+              const render_items = [{"docid":"aa033f44-9a56-42a8-b136-e3b7ca421a20","roots":{"p1003":"dd3324a4-7445-47ee-b390-b2d8f505960f","p1010":"face4214-84a9-4b1a-85fe-8dda77864b6d","p1012":"b5c35149-47a5-4431-b646-1a92079c639b","p1013":"db36a027-5e97-4f9c-b691-90f29a47a016","p1015":"f017c3fe-e4e5-4168-a621-63cf09b36ca5","p1017":"bea454d6-82d8-4ac1-a9f2-6e79c2af6cf2","p1018":"e633ece9-ddeb-45c1-94c8-b3000ecc928c"},"root_ids":["p1003","p1010","p1012","p1013","p1015","p1017","p1018"]}];
+              root.Bokeh.embed.embed_items(docs_json, render_items);
+              }
+              if (root.Bokeh !== undefined) {
+                embed_document(root);
+              } else {
+                let attempts = 0;
+                const timer = setInterval(function(root) {
+                  if (root.Bokeh !== undefined) {
+                    clearInterval(timer);
+                    embed_document(root);
+                  } else {
+                    attempts++;
+                    if (attempts > 100) {
+                      clearInterval(timer);
+                      console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                    }
+                  }
+                }, 10, root)
+              }
+            })(window);
+          });
+        };
+        if (document.readyState != "loading") fn();
+      else document.addEventListener("DOMContentLoaded", fn, {once: true});
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1618 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+            <link rel="manifest" href="../../../site.webmanifest"/>
+            
+    <title>Streaming Bokeh &#8212; Panel v1.6.3</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/runbutton.css?v=880c2f88" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nbsite.css?v=d9d93254" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/notebook.css?v=19946987" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/gallery.css?v=0a3248cd" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alert.css?v=c26666be" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/dataframe.css?v=a0f274c1" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/scroller.css?v=2dcde208" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/hv-sidebar-dropdown.css?v=3e2b0152" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=b266fffd" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=452006c5"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/run_cell.js?v=da6c9fe8"></script>
+    <script src="../../../_static/WorkerHandler.js"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/ServiceHandler.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.7.2.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.7.2.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.7.2.min.js"></script>
+    <script src="https://cdn.holoviz.org/panel/1.6.3/dist/panel.min.js"></script>
+    <script>
+    window.goatcounter = {
+        path: function(p) { return location.host + p }
+    }
+</script>
+    <script async="async" data-goatcounter="https://holoviz.goatcounter.com/count" src="../../../_static/js/goatcounter.js?v=f53f84b8"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'how_to/callbacks/examples/streaming_bokeh';</script>
+    <script type="esms-options">{"shimMode": true}</script>
+    <script src="https://cdn.holoviz.org/panel/1.6.3/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js"></script>
+    <link rel="icon" href="../../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.6.3" />
+    <meta name="docbuild:last-update" content="2025-04-23"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+<aside class="bd-header-announcement" aria-label="Announcement">
+  <div class="bd-header-announcement__content">Panel 1.6.3 has just been released! Check out the <a href='https://panel.holoviz.org/about/releases.html'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>.</div>
+</aside>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/logo_horizontal_light_theme.png" class="logo__image only-light" alt="Panel v1.6.3 - Home"/>
+    <img src="../../../_static/logo_horizontal_dark_theme.png" class="logo__image only-dark pst-js-only" alt="Panel v1.6.3 - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../explanation/index.html">
+    Explanation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Component Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../index.html">
+    How-to
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../gallery/index.html">
+    App Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../community.html">
+    Community
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../upgrade.html">
+    Upgrade Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../FAQ.html">
+    FAQ
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../about/index.html">
+    About
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../developer_guide/index.html">
+    Developer Guide
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/holoviz/panel" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/Panel_Org" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discourse.holoviz.org/c/panel/5" title="Discourse" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/UXdtYyGVQX" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../explanation/index.html">
+    Explanation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference/index.html">
+    Component Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../index.html">
+    How-to
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../gallery/index.html">
+    App Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../community.html">
+    Community
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../upgrade.html">
+    Upgrade Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../FAQ.html">
+    FAQ
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../about/index.html">
+    About
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../developer_guide/index.html">
+    Developer Guide
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/holoviz/panel" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/Panel_Org" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discourse.holoviz.org/c/panel/5" title="Discourse" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discourse</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/UXdtYyGVQX" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><!-- Adapted from sidebar-nav-bs.html (1.15.2) with the following changes
+
+  - Commented out the tag that adds the "Section Navigation" title
+  - Call generate_toctree_html with startdepth=0
+
+Please update this file when required when bumping the max pin of pydata-sphinx-theme.
+-->
+
+
+<nav class="bd-docs-nav bd-links"
+      aria-label="Section Navigation">
+  <!-- <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p> -->
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">FOR USERS</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../getting_started/index.html">Getting Started</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../getting_started/installation.html"><svg aria-hidden="true" class="sd-octicon sd-octicon-desktop-download sd-mr-1" height="2.0em" version="1.1" viewbox="0 0 24 24" width="2.0em"><path d="M11.25 9.331V.75a.75.75 0 0 1 1.5 0v8.58l1.949-2.11A.75.75 0 1 1 15.8 8.237l-3.25 3.52a.75.75 0 0 1-1.102 0l-3.25-3.52A.75.75 0 1 1 9.3 7.22l1.949 2.111Z"></path><path d="M2.5 3.75v11.5c0 .138.112.25.25.25h18.5a.25.25 0 0 0 .25-.25V3.75a.25.25 0 0 0-.25-.25h-5.5a.75.75 0 0 1 0-1.5h5.5c.966 0 1.75.784 1.75 1.75v11.5A1.75 1.75 0 0 1 21.25 17h-6.204c.171 1.375.805 2.652 1.769 3.757A.752.752 0 0 1 16.25 22h-8.5a.75.75 0 0 1-.566-1.243c.965-1.105 1.599-2.382 1.77-3.757H2.75A1.75 1.75 0 0 1 1 15.25V3.75C1 2.784 1.784 2 2.75 2h5.5a.75.75 0 0 1 0 1.5h-5.5a.25.25 0 0 0-.25.25ZM10.463 17c-.126 1.266-.564 2.445-1.223 3.5h5.52c-.66-1.055-1.098-2.234-1.223-3.5Z"></path></svg> Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../getting_started/build_app.html"><svg aria-hidden="true" class="sd-octicon sd-octicon-mortar-board sd-mr-1" height="2.0em" version="1.1" viewbox="0 0 24 24" width="2.0em"><path d="M12.292 2.06v-.001l11.25 4.75a.749.749 0 0 1 0 1.382L19 10.108V15a.75.75 0 0 1-.11.391h-.001a2.84 2.84 0 0 1-.392.482c-.249.256-.625.58-1.163.896-1.08.638-2.776 1.23-5.334 1.23-.673 0-1.286-.041-1.846-.113a.75.75 0 0 1 .192-1.487c.492.063 1.042.1 1.654.1 2.317 0 3.746-.533 4.572-1.021.31-.178.596-.397.849-.65l.079-.085V10.74l-5.208 2.2a.75.75 0 0 1-.584 0L5.75 10.424v3.17c.502.129.96.391 1.327.758.579.578.923 1.41.923 2.428v4.5a.761.761 0 0 1-.345.634 2.157 2.157 0 0 1-.21.117 3.923 3.923 0 0 1-.52.213A6.121 6.121 0 0 1 5 22.532a6.092 6.092 0 0 1-1.925-.288 4.065 4.065 0 0 1-.52-.213 1.816 1.816 0 0 1-.22-.124.757.757 0 0 1-.335-.624v-4.5c0-1.02.344-1.85.923-2.43a2.904 2.904 0 0 1 1.327-.757V9.793L.458 8.19a.75.75 0 0 1 0-1.38l11.25-4.75a.75.75 0 0 1 .584 0ZM12 11.436 21.322 7.5 12 3.564 2.678 7.5ZM5 15c-.377 0-.745.141-1.017.413-.265.265-.483.7-.483 1.368v4.022c.299.105.797.228 1.5.228s1.201-.123 1.5-.228V16.78c0-.669-.218-1.103-.483-1.368A1.433 1.433 0 0 0 5 15Z"></path></svg> Build an App</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../getting_started/core_concepts.html"><svg aria-hidden="true" class="sd-octicon sd-octicon-telescope sd-mr-1" height="2.0em" version="1.1" viewbox="0 0 24 24" width="2.0em"><path d="M.408 15.13a2 2 0 0 1 .59-2.642L17.038 1.33a1.999 1.999 0 0 1 2.85.602l2.828 4.644a2 2 0 0 1-.851 2.847l-17.762 8.43a2 2 0 0 1-2.59-.807Zm5.263-4.066 1.987 3.44 8.712-4.135-2.857-4.76Zm12.06-1.34.001-.001 3.49-1.656a.498.498 0 0 0 .212-.712l-2.826-4.644a.503.503 0 0 0-.713-.151l-3.148 2.19Zm-13.295 2.2L1.854 13.72a.5.5 0 0 0-.147.66l1.105 1.915a.5.5 0 0 0 .648.201l2.838-1.347ZM17.155 22.87a.75.75 0 0 0 .226-1.036l-4-6.239a.75.75 0 0 0-.941-.278l-2.75 1.25a.75.75 0 0 0-.318.274l-3.25 4.989a.75.75 0 0 0 1.256.819l3.131-4.806.51-.232v5.64a.75.75 0 1 0 1.5 0v-6.22l3.6 5.613a.75.75 0 0 0 1.036.226Z"></path></svg> Core Concepts</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../tutorials/index.html">Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../tutorials/basic/index.html">Basic Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/serve.html">Build Hello World App</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/develop_notebook.html">Develop in a Notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/develop_editor.html">Develop in an Editor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/pn_panel.html">Display Content with <code class="docutils literal notranslate"><span class="pre">pn.panel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/panes.html">Display Content with Panes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/indicators_performance.html">Display Performance with Indicators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/layouts.html">Layout Content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/size.html">Control the Size</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/align.html">Aligning Content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/widgets.html">Accept Inputs with Widgets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/pn_bind.html">React to User Input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/pn_rx.html">Reactive Expressions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/templates.html">Utilize Templates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/design.html">Apply a Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/style.html">Enhance the Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/caching.html">Optimize Performance with Caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/indicators_activity.html">Display Activity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/progressive_layouts.html">Update Progressively</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/build_dashboard.html">Build a Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/deploy.html">Deploy a Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/build_report.html">Build a Report</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/build_animation.html">Build Animation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/build_image_classifier.html">Build an Image Classifier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/build_monitoring_dashboard.html">Build a Monitoring Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/build_crossfilter_dashboard.html">Build Crossfiltering Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/build_streaming_dashboard.html">Build Streaming Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/build_chatbot.html">Build a Chat Bot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/basic/build_todo.html">Build a Todo App</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../tutorials/intermediate/index.html">Intermediate Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/parameters.html">Reactive Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/reusable_components.html">Reusable Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/interactivity.html">Interactivity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/structure_data_store.html">Structure with a DataStore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/develop_editor.html">Develop in an Editor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/serve.html">Serve Apps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/advanced_layouts.html">Advanced Layouts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/create_form.html">Create a Form with HoloViz Panel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/build_todo.html">Build a Todo App</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/test_todo.html">Testing the Todo App</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/intermediate/build_server_video_stream.html">Build a Server Side Video Camera Application</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../tutorials/expert/index.html">Expert Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/expert/custom_anywidget_components.html">Creating a <code class="docutils literal notranslate"><span class="pre">MarioButton</span></code> with <code class="docutils literal notranslate"><span class="pre">AnyWidgetComponent</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/expert/custom_js_components.html">Creating a <code class="docutils literal notranslate"><span class="pre">MarioButton</span></code> with <code class="docutils literal notranslate"><span class="pre">JSComponent</span></code></a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../explanation/index.html">Explanation</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../explanation/develop_seamlessly.html">Develop Seamlessly Across Environments</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../explanation/apis.html">APIs</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../explanation/api/index.html">API context</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../explanation/api/param.html">Param in Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../explanation/api/reactivity.html">Reactivity in Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../explanation/api/functions_vs_classes.html">Functions vs. Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../explanation/api/reactive.html">Reactive API</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../explanation/api/parameterized.html">Declarative API</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../explanation/api/callbacks.html">Callbacks</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../explanation/components.html">Components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../explanation/components/components_overview.html">Components overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../explanation/components/reactive_html_components.html">Custom components</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../explanation/dependencies.html">Dependencies</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../explanation/dependencies/param.html">Panel and Param</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../explanation/dependencies/bokeh.html">Panel and Bokeh</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../explanation/comparisons.html">Technology comparisons</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../explanation/comparisons/compare_dash.html">Panel vs Dash</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../explanation/comparisons/compare_ipywidgets.html">Panel vs ipywidgets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../explanation/comparisons/compare_voila.html">Panel vs Voila</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../explanation/comparisons/compare_streamlit.html">Panel vs Streamlit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../explanation/comparisons/compare_js.html">Panel vs JavaScript</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../explanation/comparisons/compare_bokeh.html">Panel vs Bokeh</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../reference/index.html">Component Gallery</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/panes/index.html">Panes</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Alert.html">Alert</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Audio.html">Audio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Bokeh.html">Bokeh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/DataFrame.html">DataFrame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/DeckGL.html">DeckGL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/ECharts.html">ECharts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Folium.html">Folium</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/GIF.html">GIF</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/HTML.html">HTML</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/HoloViews.html">HoloViews</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/IPyWidget.html">IPyWidget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Image.html">Image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/JPG.html">JPG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/JSON.html">JSON</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/LaTeX.html">LaTeX</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Markdown.html">Markdown</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Matplotlib.html">Matplotlib</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/PDF.html">PDF</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/PNG.html">PNG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Param.html">Param</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Perspective.html">Perspective</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Placeholder.html">Placeholder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Plotly.html">Plotly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/ReactiveExpr.html">ReactiveExpr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Reacton.html">Reacton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/SVG.html">SVG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Str.html">Str</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Streamz.html">Streamz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Textual.html">Textual</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/VTK.html">VTK</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/VTKJS.html">VTKJS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/VTKVolume.html">VTKVolume</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Vega.html">Vega</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Video.html">Video</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/Vizzu.html">Vizzu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/panes/WebP.html">WebP</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/widgets/index.html">Widgets</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/ArrayInput.html">ArrayInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/AutocompleteInput.html">AutocompleteInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/Button.html">Button</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/ButtonIcon.html">ButtonIcon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/CheckBoxGroup.html">CheckBoxGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/CheckButtonGroup.html">CheckButtonGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/Checkbox.html">Checkbox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/CodeEditor.html">CodeEditor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/ColorMap.html">ColorMap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/ColorPicker.html">ColorPicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/CrossSelector.html">CrossSelector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DataFrame.html">DataFrame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DatePicker.html">DatePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DateRangePicker.html">DateRangePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DateRangeSlider.html">DateRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DateSlider.html">DateSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DatetimeInput.html">DatetimeInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DatetimePicker.html">DatetimePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DatetimeRangeInput.html">DatetimeRangeInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DatetimeRangePicker.html">DatetimeRangePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DatetimeRangeSlider.html">DatetimeRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DatetimeSlider.html">DatetimeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/Debugger.html">Debugger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DiscretePlayer.html">DiscretePlayer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/DiscreteSlider.html">DiscreteSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/EditableFloatSlider.html">EditableFloatSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/EditableIntSlider.html">EditableIntSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/EditableRangeSlider.html">EditableRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/FileDownload.html">FileDownload</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/FileDropper.html">FileDropper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/FileInput.html">FileInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/FileSelector.html">FileSelector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/FloatInput.html">FloatInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/FloatSlider.html">FloatSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/IntInput.html">IntInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/IntRangeSlider.html">IntRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/IntSlider.html">IntSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/JSONEditor.html">JSONEditor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/LiteralInput.html">LiteralInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/MenuButton.html">MenuButton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/MultiChoice.html">MultiChoice</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/MultiSelect.html">MultiSelect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/NestedSelect.html">NestedSelect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/PasswordInput.html">PasswordInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/Player.html">Player</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/RadioBoxGroup.html">RadioBoxGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/RadioButtonGroup.html">RadioButtonGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/RangeSlider.html">RangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/Select.html">Select</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/SpeechToText.html">SpeechToText</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/StaticText.html">StaticText</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/Switch.html">Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/Tabulator.html">Tabulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/Terminal.html">Terminal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/TextAreaInput.html">TextAreaInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/TextEditor.html">TextEditor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/TextInput.html">TextInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/TextToSpeech.html">TextToSpeech</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/TimePicker.html">TimePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/Toggle.html">Toggle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/ToggleGroup.html">ToggleGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/ToggleIcon.html">ToggleIcon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/widgets/VideoStream.html">VideoStream</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/layouts/index.html">Layouts</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/Accordion.html">Accordion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/Card.html">Card</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/Column.html">Column</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/Divider.html">Divider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/Feed.html">Feed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/FlexBox.html">FlexBox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/FloatPanel.html">FloatPanel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/GridBox.html">GridBox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/GridSpec.html">GridSpec</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/GridStack.html">GridStack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/Modal.html">Modal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/Row.html">Row</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/Swipe.html">Swipe</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/Tabs.html">Tabs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/layouts/WidgetBox.html">WidgetBox</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/chat/index.html">Chat</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/chat/ChatAreaInput.html">ChatAreaInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/chat/ChatFeed.html">ChatFeed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/chat/ChatInterface.html">ChatInterface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/chat/ChatMessage.html">ChatMessage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/chat/ChatStep.html">ChatStep</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/chat/PanelCallbackHandler.html">PanelCallbackHandler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/global/index.html">Global</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/global/Notifications.html">Notifications</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/indicators/index.html">Indicators</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/indicators/BooleanStatus.html">BooleanStatus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/indicators/Dial.html">Dial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/indicators/Gauge.html">Gauge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/indicators/LinearGauge.html">LinearGauge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/indicators/LoadingSpinner.html">LoadingSpinner</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/indicators/Number.html">Number</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/indicators/Progress.html">Progress</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/indicators/TooltipIcon.html">TooltipIcon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/indicators/Tqdm.html">Tqdm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/indicators/Trend.html">Trend</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/templates/index.html">Templates</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/templates/Bootstrap.html">Bootstrap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/templates/EditableTemplate.html">EditableTemplate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/templates/FastGridTemplate.html">FastGridTemplate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/templates/FastListTemplate.html">FastListTemplate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/templates/GoldenLayout.html">GoldenLayout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/templates/Material.html">Material</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/templates/React.html">React</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/templates/Slides.html">Slides</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/templates/Vanilla.html">Vanilla</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/custom_components/index.html">Custom Components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/custom_components/AnyWidgetComponent.html">AnyWidgetComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/custom_components/JSComponent.html">JSComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/custom_components/PyComponent.html">PyComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/custom_components/ReactComponent.html">ReactComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/custom_components/Viewer.html">Viewer</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../index.html">How-to</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../prepare_to_develop.html">Prepare to develop</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../notebook/index.html">Develop in a notebook</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../notebook/notebook.html">Display Output in Notebooks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../notebook/jupyterlabpreview.html">Preview Apps in JupyterLab</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../notebook/layout_builder.html">Publish a Notebook as a Dashboard Using the Layout Builder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../notebook/other_nb.html">Develop in other notebook environments</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../editor/index.html">Develop in an editor</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../editor/vscode_configure.html">Configure VS Code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../editor/pycharm_configure.html">Configure PyCharm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../editor/markdown.html">Write apps in Markdown</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../build_apps.html">Build apps</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../components/index.html">Construct individual components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../components/construct_panes.html">Construct Panes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../components/pane_type.html">Access Pane Type</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../components/widget_values.html">Access and Set Widget Values</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../components/widget_from_values.html">Construct Widgets from Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../components/add_remove.html">Add or Remove Components from Panels</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../styling/index.html">Styling components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/design.html">Apply a Design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/themes.html">Toggling themes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/apply_css.html">Apply CSS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/design_variables.html">Customize a Design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/load_icon.html">Customize Loading Icon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/visibility.html">Control Visibility</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/altair.html">Style Altair Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/echarts.html">Style Echarts Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/matplotlib.html">Style Matplotlib Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/plotly.html">Style Plotly Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../styling/vega.html">Style Vega Plots</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../interactivity/index.html">Interactivity</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../interactivity/bind_function.html">Add interactivity to a function</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../interactivity/bind_generators.html">Add interactivity with generators</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../interactivity/bind_component.html">Add reactivity to components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../interactivity/hvplot_interactive.html">Make interactive data workflows</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../layout/index.html">Arranging components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../layout/spacing.html">Customize Spacing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../layout/align.html">Align Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../layout/size.html">Control Size</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../use_specialized_uis.html">Use specialized UIs and APIs</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../pipeline/index.html">Build a sequential UI</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline/simple_pipeline.html">Create a <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline/complex_pipeline.html">Create a Non-Linear <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline/pipeline_layout.html">Customize <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> Layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline/control_flow.html">Control <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> Flow</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../custom_components/index.html">Build custom components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/custom_viewer.html">Combine Existing Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/python/create_custom_widget.html">Build a Widget in Python</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/plot_viewer.html">Plot Viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/table_viewer.html">Reactive Tables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/build.html">Compile and Bundle ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/callbacks.html">ESM component with callback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/custom_panes.html">Create Panes using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/custom_widgets.html">Create Custom Widgets using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/custom_layout.html">Create Custom Layouts using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/dataframe.html">Rendering DataFrames using ESM components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/esm_canvas.html">Build a Custom Canvas Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/esm_leaflet.html">Build a Custom Leaflet Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/esm_material_ui.html">Wrapping Material UI components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_layout.html">Create Layouts With ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_styling.html">Style your ReactiveHTML template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_panes.html">Create Panes with ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_indicators.html">Create Indicators With ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_callbacks.html">ReactiveHTML component with callback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_widgets.html">Widgets with ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_dataframe.html">DataFrames and ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/canvas_draw.html">Build a Custom Canvas Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/leaflet.html">Build a Custom Leaflet Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/vue.html">Wrap a Vue component</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../links/index.html">Explicitly link parameters (Callbacks API)</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../links/links.html">Create High-Level Python Links with <code class="docutils literal notranslate"><span class="pre">.link</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../links/watchers.html">Create Low-Level Python Links Using <code class="docutils literal notranslate"><span class="pre">.watch</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../links/jslinks.html">Link Two Objects in Javascript</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../links/link_plots.html">Link Plot Parameters in Javascript</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../links/jscallbacks.html">Link Many Objects in Javascript</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../param/index.html">Generate UIs from declared parameters (Declarative API)</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../param/uis.html">Generate Widgets from <code class="docutils literal notranslate"><span class="pre">Parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../param/custom.html">Declare Custom Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../param/dependencies.html">Declare parameter dependencies</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../param/subobjects.html">Create nested UIs</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../manage_session_tasks.html">Manage session tasks</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../index.html">Register Session Callbacks</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../async.html">Use Asynchronous Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../defer_load.html">Defer Bound Functions to Improve the User Experience</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../load.html">Defer Long Running Tasks to Improve the User Experience</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../session.html">Run Tasks at Session Start or End</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../periodic.html">Periodically Run Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../schedule.html">Schedule Global Tasks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../server.html">Modify Bokeh Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../notifications.html">Add notifications on connect and disconnect</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../state/index.html">Access Session State</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../state/url.html">Access and Manipulate the URL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../state/request.html">Access HTTP Request State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../state/busy.html">Access Busyness state</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../extending_panel.html">Extending Panel</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../custom_components/index.html">Create Custom Components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/custom_viewer.html">Combine Existing Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/python/create_custom_widget.html">Build a Widget in Python</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/plot_viewer.html">Plot Viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/table_viewer.html">Reactive Tables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/build.html">Compile and Bundle ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/callbacks.html">ESM component with callback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/custom_panes.html">Create Panes using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/custom_widgets.html">Create Custom Widgets using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/custom_layout.html">Create Custom Layouts using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/esm/dataframe.html">Rendering DataFrames using ESM components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/esm_canvas.html">Build a Custom Canvas Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/esm_leaflet.html">Build a Custom Leaflet Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/esm_material_ui.html">Wrapping Material UI components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_layout.html">Create Layouts With ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_styling.html">Style your ReactiveHTML template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_panes.html">Create Panes with ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_indicators.html">Create Indicators With ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_callbacks.html">ReactiveHTML component with callback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_widgets.html">Widgets with ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/reactive_html/reactive_html_dataframe.html">DataFrames and ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/canvas_draw.html">Build a Custom Canvas Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/leaflet.html">Build a Custom Leaflet Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../custom_components/examples/vue.html">Wrap a Vue component</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../test_and_debug.html">Test and debug</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../profiling/index.html">Enable profiling and debugging</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../profiling/admin.html">Enable the admin panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../profiling/profile.html">Profile your Application</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../profiling/logs.html">View application logs</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../test/index.html">Set up testing for an application</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../test/pytest.html">Test functionality and performance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../test/uitests.html">Test UI rendering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../test/loadtests.html">Test operating capacity</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../prepare_to_share.html">Prepare to share</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../templates/index.html">Apply Templates</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../templates/template_set.html">Set a Template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../templates/template_arrange.html">Arrange Components in a Template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../templates/template_modal.html">Toggle Modal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../templates/template_theme.html">Customize Template Theme</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../templates/template_custom.html">Build a Custom Template</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../performance/index.html">Improve Performance</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../performance/reuse_sessions.html">Reuse sessions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../performance/throttling.html">Enable Throttling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../performance/hold.html">Batching Updates with <code class="docutils literal notranslate"><span class="pre">hold</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../caching/index.html">Cache Data</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../caching/manual.html">Manually Cache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../caching/memoization.html">Automatically Cache</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../concurrency/index.html">Improve Scalability</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../concurrency/load_balancing.html">Load balancing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../concurrency/processes.html">Launch multiple processes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../concurrency/threading.html">Enable Automatic Threading</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../concurrency/manual_threading.html">Set Up Manual Threading</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../async.html">Use Asynchronous Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../concurrency/sync_to_async.html">Run synchronous functions asynchronously</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../concurrency/dask.html">Scaling with Dask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../best_practices/index.html">Best Practices</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../best_practices/dev_experience.html">Developer Experience</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../best_practices/user_experience.html">User Experience</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../authentication/index.html">Add Authentication</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../authentication/basic.html">Configuring Basic Authentication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../authentication/pam.html">Configuring PAM Authentication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../authentication/configuration.html">Configuring OAuth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../authentication/providers.html">OAuth Providers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../authentication/templates.html">Authentication Templates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../authentication/user_info.html">Accessing User information</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../authentication/access_tokens.html">Access Tokens</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../authentication/authorization.html">Authorization callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../authentication/guest_users.html">Allowing Guest Users</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../share_your_work.html">Share your work</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../server/index.html">Configure the server</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../server/commandline.html">Launch a server on the command line</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../server/programmatic.html">Launching a server dynamically</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../server/multiple.html">Serving multiple applications</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../server/ssh.html">Connect to a remote server via SSH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../server/proxy.html">Configuring a reverse proxy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../server/static_files.html">Serving static files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../server/endpoints.html">Add custom endpoints to the Panel Server</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../integrations/index.html">Integrate with other servers</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../integrations/FastAPI.html">Running Panel apps in FastAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../integrations/FastAPI_Tornado.html">Embedding a Panel Server in FastAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../integrations/flask.html">Integrating Panel with Flask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../integrations/Django.html">Running Panel apps inside Django</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../deployment/index.html">Deploy applications</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../deployment/aws.html">AWS: Amazon Web Services</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../deployment/azure.html">Microsoft Azure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../deployment/binder.html">MyBinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../deployment/gcp.html">Google Cloud Platform (GCP)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../deployment/heroku.html">Heroku</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../deployment/huggingface.html">Hugging Face</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../deployment/ploomber.html">Ploomber Cloud</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../deployment/pycafe.html">PyCafe Guide</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../export/index.html">Export apps</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../export/embedding.html">Embedding state</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../export/saving.html">Save App to File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../export/bokeh.html">Access the Bokeh Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../wasm/index.html">Run panel in WebAssembly</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../wasm/convert.html">Converting Panel applications</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../wasm/standalone.html">Using Panel in Pyodide &amp; PyScript</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../wasm/sphinx.html">Embedding in Sphinx documentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../wasm/jupyterlite.html">Setting up JupyterLite</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../migrate_to_panel.html">Migrate to Panel</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../streamlit_migration/index.html">Migrate from Streamlit</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/get_started.html">Serve Apps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/panes.html">Display Objects with Panes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/layouts.html">Layout Objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/widgets.html">Accepting User Inputs with Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/templates.html">Organize and Style with Templates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/activity.html">Show Activity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/interactivity.html">Add Interactivity with <code class="docutils literal notranslate"><span class="pre">pn.bind</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/caching.html">Improve the performance with Caching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/session_state.html">Session State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/chat.html">Create Chat Interfaces</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../streamlit_migration/multipage_apps.html">Multi Page Apps</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../gallery/index.html">App Gallery</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/altair_brushing.html">Altair Brushing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/deckgl_game_of_life.html">Deckgl Game Of Life</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/gapminders.html">Gapminders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/glaciers.html">Glaciers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/hvplot_explorer.html">Hvplot Explorer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/iris_kmeans.html">Iris Kmeans</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/nyc_deckgl.html">Nyc Deckgl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/penguin_crossfilter.html">Penguin Crossfilter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/penguin_kmeans.html">Penguin Kmeans</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/portfolio_analyzer.html">Portfolio Analyzer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/portfolio_optimizer.html">Portfolio Optimizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/streaming_videostream.html">Streaming Videostream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/vtk_interactive.html">Vtk Interactive</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/vtk_slicer.html">Vtk Slicer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/vtk_warp.html">Vtk Warp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/webllm.html">Webllm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/windturbines.html">Windturbines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery/xgboost_classifier.html">Xgboost Classifier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../api/index.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/cheatsheet.html">Cheat Sheet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/config.html">Config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/state.html">State</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/panel.auth.html">panel.auth module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/panel.chat.html">panel.chat package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.chat.feed.html">panel.chat.feed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.chat.icon.html">panel.chat.icon module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.chat.input.html">panel.chat.input module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.chat.interface.html">panel.chat.interface module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.chat.langchain.html">panel.chat.langchain module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.chat.message.html">panel.chat.message module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.chat.step.html">panel.chat.step module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.chat.utils.html">panel.chat.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/panel.command.html">panel.command package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.command.bundle.html">panel.command.bundle module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.command.compile.html">panel.command.compile module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.command.convert.html">panel.command.convert module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.command.oauth_secret.html">panel.command.oauth_secret module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.command.serve.html">panel.command.serve module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/panel.compiler.html">panel.compiler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/panel.config.html">panel.config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/panel.custom.html">panel.custom module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/panel.depends.html">panel.depends module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/panel.io.html">panel.io package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.admin.html">panel.io.admin module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.application.html">panel.io.application module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.browser.html">panel.io.browser module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.cache.html">panel.io.cache module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.callbacks.html">panel.io.callbacks module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.compile.html">panel.io.compile module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.convert.html">panel.io.convert module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.datamodel.html">panel.io.datamodel module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.django.html">panel.io.django module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.document.html">panel.io.document module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.embed.html">panel.io.embed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.fastapi.html">panel.io.fastapi module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.handlers.html">panel.io.handlers module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.ipywidget.html">panel.io.ipywidget module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.jupyter_executor.html">panel.io.jupyter_executor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.jupyter_server_extension.html">panel.io.jupyter_server_extension module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.liveness.html">panel.io.liveness module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.loading.html">panel.io.loading module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.location.html">panel.io.location module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.logging.html">panel.io.logging module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.mime_render.html">panel.io.mime_render module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.model.html">panel.io.model module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.notebook.html">panel.io.notebook module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.notifications.html">panel.io.notifications module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.profile.html">panel.io.profile module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.pyodide.html">panel.io.pyodide module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.reload.html">panel.io.reload module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.resources.html">panel.io.resources module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.rest.html">panel.io.rest module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.save.html">panel.io.save module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.server.html">panel.io.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.session.html">panel.io.session module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.state.html">panel.io.state module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.io.threads.html">panel.io.threads module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/panel.layout.html">panel.layout package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.accordion.html">panel.layout.accordion module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.base.html">panel.layout.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.card.html">panel.layout.card module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.feed.html">panel.layout.feed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.flex.html">panel.layout.flex module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.float.html">panel.layout.float module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.grid.html">panel.layout.grid module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.gridstack.html">panel.layout.gridstack module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.modal.html">panel.layout.modal module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.spacer.html">panel.layout.spacer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.swipe.html">panel.layout.swipe module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.layout.tabs.html">panel.layout.tabs module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/panel.links.html">panel.links module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/panel.models.html">panel.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.ace.html">panel.models.ace module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.browser.html">panel.models.browser module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.chatarea_input.html">panel.models.chatarea_input module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.comm_manager.html">panel.models.comm_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.datetime_picker.html">panel.models.datetime_picker module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.datetime_slider.html">panel.models.datetime_slider module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.deckgl.html">panel.models.deckgl module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.echarts.html">panel.models.echarts module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.enums.html">panel.models.enums module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.esm.html">panel.models.esm module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.feed.html">panel.models.feed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.file_dropper.html">panel.models.file_dropper module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.icon.html">panel.models.icon module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.ipywidget.html">panel.models.ipywidget module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.jsoneditor.html">panel.models.jsoneditor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.katex.html">panel.models.katex module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.layout.html">panel.models.layout module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.location.html">panel.models.location module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.markup.html">panel.models.markup module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.mathjax.html">panel.models.mathjax module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.modal.html">panel.models.modal module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.perspective.html">panel.models.perspective module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.plotly.html">panel.models.plotly module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.quill.html">panel.models.quill module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.reactive_html.html">panel.models.reactive_html module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.speech_to_text.html">panel.models.speech_to_text module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.state.html">panel.models.state module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.tabs.html">panel.models.tabs module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.tabulator.html">panel.models.tabulator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.terminal.html">panel.models.terminal module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.text_to_speech.html">panel.models.text_to_speech module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.time_picker.html">panel.models.time_picker module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.trend.html">panel.models.trend module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.vega.html">panel.models.vega module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.vizzu.html">panel.models.vizzu module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.vtk.html">panel.models.vtk module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.models.widgets.html">panel.models.widgets module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/panel.pane.html">panel.pane package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../api/panel.pane.vtk.html">panel.pane.vtk package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/panel.pane.vtk.enums.html">panel.pane.vtk.enums module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/panel.pane.vtk.synchronizable_deserializer.html">panel.pane.vtk.synchronizable_deserializer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/panel.pane.vtk.synchronizable_serializer.html">panel.pane.vtk.synchronizable_serializer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/panel.pane.vtk.vtk.html">panel.pane.vtk.vtk module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.alert.html">panel.pane.alert module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.base.html">panel.pane.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.deckgl.html">panel.pane.deckgl module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.echarts.html">panel.pane.echarts module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.equation.html">panel.pane.equation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.holoviews.html">panel.pane.holoviews module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.image.html">panel.pane.image module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.ipywidget.html">panel.pane.ipywidget module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.markup.html">panel.pane.markup module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.media.html">panel.pane.media module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.perspective.html">panel.pane.perspective module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.placeholder.html">panel.pane.placeholder module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.plot.html">panel.pane.plot module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.plotly.html">panel.pane.plotly module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.streamz.html">panel.pane.streamz module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.textual.html">panel.pane.textual module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.vega.html">panel.pane.vega module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.pane.vizzu.html">panel.pane.vizzu module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/panel.param.html">panel.param module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/panel.pipeline.html">panel.pipeline module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/panel.reactive.html">panel.reactive module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/panel.template.html">panel.template package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.template.bootstrap.html">panel.template.bootstrap package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.template.editable.html">panel.template.editable package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../api/panel.template.fast.html">panel.template.fast package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/panel.template.fast.grid.html">panel.template.fast.grid package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/panel.template.fast.list.html">panel.template.fast.list package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/panel.template.fast.base.html">panel.template.fast.base module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.template.golden.html">panel.template.golden package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.template.material.html">panel.template.material package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.template.react.html">panel.template.react package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.template.slides.html">panel.template.slides package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.template.vanilla.html">panel.template.vanilla package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.template.base.html">panel.template.base module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/panel.theme.html">panel.theme package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.theme.base.html">panel.theme.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.theme.bootstrap.html">panel.theme.bootstrap module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.theme.fast.html">panel.theme.fast module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.theme.material.html">panel.theme.material module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.theme.native.html">panel.theme.native module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/panel.util.html">panel.util package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.util.checks.html">panel.util.checks module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.util.parameters.html">panel.util.parameters module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.util.warnings.html">panel.util.warnings module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/panel.viewable.html">panel.viewable module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/panel.widgets.html">panel.widgets package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.base.html">panel.widgets.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.button.html">panel.widgets.button module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.codeeditor.html">panel.widgets.codeeditor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.debugger.html">panel.widgets.debugger module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.file_selector.html">panel.widgets.file_selector module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.icon.html">panel.widgets.icon module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.indicators.html">panel.widgets.indicators module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.input.html">panel.widgets.input module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.misc.html">panel.widgets.misc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.player.html">panel.widgets.player module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.select.html">panel.widgets.select module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.slider.html">panel.widgets.slider module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.speech_to_text.html">panel.widgets.speech_to_text module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.tables.html">panel.widgets.tables module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.terminal.html">panel.widgets.terminal module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.text_to_speech.html">panel.widgets.text_to_speech module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.texteditor.html">panel.widgets.texteditor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/panel.widgets.widget.html">panel.widgets.widget module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../upgrade.html">Upgrade Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../about/index.html">About</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../about/releases.html">Releases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../about/people.html">People</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../about/roadmap.html">Roadmap</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">FOR DEVELOPERS</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../developer_guide/index.html">Developer Guide</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer_guide/extensions.html">Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer_guide/wasm.html">WASM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer_guide/custom_models.html">Developing custom models</a></li>
+
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+        <div class="sidebar-primary-item">
+<div class="hv-sb-dd">
+  <div class="btn-group">
+    
+    <a href="https://holoviz.org" class="btn hv-sb-dd-value" target="_blank">HoloViz.org<i class="fa fa-external-link hv-icon" aria-hidden="true"></i></a>
+    
+    <button type="button" class="btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+      <span class="visually-hidden"></span>
+    </button>
+    <ul class="dropdown-menu">
+      
+      
+      
+      
+        <li><a class="dropdown-item" href="https://hvplot.holoviz.org" target="_blank" title="Quickly return interactive HoloViews, GeoViews, or Panel objects from Pandas, Xarray, or other data structures">hvPlot<i class="fa fa-external-link hv-icon" aria-hidden="true"></i></a></li>
+      
+      
+      
+        <li><a class="dropdown-item" href="https://holoviews.org" target="_blank" title="Declarative objects for instantly visualizable data, building Bokeh plots from convenient high-level specifications">HoloViews<i class="fa fa-external-link hv-icon" aria-hidden="true"></i></a></li>
+      
+      
+      
+        <li><a class="dropdown-item" href="https://geoviews.org" target="_blank" title="Visualizable geographic data that that can be mixed and matched with HoloViews objects">GeoViews<i class="fa fa-external-link hv-icon" aria-hidden="true"></i></a></li>
+      
+      
+      
+        <li><a class="dropdown-item" href="https://datashader.org" target="_blank" title="Rasterizing huge datasets quickly as fixed-size images">Datashader<i class="fa fa-external-link hv-icon" aria-hidden="true"></i></a></li>
+      
+      
+      
+        <li><a class="dropdown-item" href="https://param.holoviz.org" target="_blank" title="Make your Python code clearer and more reliable by declaring Parameters">Param<i class="fa fa-external-link hv-icon" aria-hidden="true"></i></a></li>
+      
+      
+      
+        <li><a class="dropdown-item" href="https://lumen.holoviz.org" target="_blank" title="Framework for visual analytics that allows users to build data-driven dashboards from a simple YAML specification">Lumen<i class="fa fa-external-link hv-icon" aria-hidden="true"></i></a></li>
+      
+      
+      
+        <li><a class="dropdown-item" href="https://colorcet.holoviz.org" target="_blank" title="A wide range of perceptually uniform continuous colormaps and perceptually based categorical color sets for use with the other libraries">Colorcet<i class="fa fa-external-link hv-icon" aria-hidden="true"></i></a></li>
+      
+      
+      
+      <li><hr class="dropdown-divider"></li>
+      
+      
+      <li><a class="dropdown-item" href="https://examples.holoviz.org" target="_blank" title=" Visualization-focused examples using HoloViz for specific topics ">Examples Gallery<i class="fa fa-external-link hv-icon" aria-hidden="true"></i></a></li>
+      
+      
+      
+      <li><a class="dropdown-item" href="https://blog.holoviz.org" target="_blank" title="HoloViz blog">Blog<i class="fa fa-external-link hv-icon" aria-hidden="true"></i></a></li>
+      
+      
+      
+    </ul>
+  </div>
+</div>
+</div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Streaming Bokeh</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="streaming-bokeh">
+<h1>Streaming Bokeh<a class="headerlink" href="#streaming-bokeh" title="Link to this heading">#</a></h1>
+<div class="pyodide highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panel</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pn</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bokeh.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">figure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bokeh.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ColumnDataSource</span>
+
+<span class="n">pn</span><span class="o">.</span><span class="n">extension</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="s1">&#39;fast&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<pre id="stdout-codecell0-py" class="pyodide-stdout" ></pre><pre id="stderr-codecell0-py" class="pyodide-stderr" ></pre><p>This example demonstrates how to use <code class="docutils literal notranslate"><span class="pre">add_periodic_callback</span></code> to stream data to a Bokeh plot.</p>
+<div class="pyodide highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">sizing_mode</span><span class="o">=</span><span class="s1">&#39;stretch_width&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Bokeh streaming example&#39;</span><span class="p">)</span>
+
+<span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">ys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">xs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">ys</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">cds</span> <span class="o">=</span> <span class="n">ColumnDataSource</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">xs</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">ys</span><span class="p">})</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">cds</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">stream</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span>
+    <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">y</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span>
+    <span class="n">cds</span><span class="o">.</span><span class="n">stream</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">y</span><span class="p">]})</span>
+    <span class="n">pn</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">push_notebook</span><span class="p">(</span><span class="n">bk_pane</span><span class="p">)</span> <span class="c1"># Only needed when running in notebook context</span>
+
+<span class="n">cb</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">add_periodic_callback</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+<span class="n">bk_pane</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">pane</span><span class="o">.</span><span class="n">Bokeh</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+<span class="n">pn</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
+	<span class="n">pn</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span>
+        <span class="n">cb</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">period</span><span class="p">,</span>
+	    <span class="n">pn</span><span class="o">.</span><span class="n">widgets</span><span class="o">.</span><span class="n">Toggle</span><span class="o">.</span><span class="n">from_param</span><span class="p">(</span><span class="n">cb</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">running</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="s1">&#39;end&#39;</span><span class="p">)</span>
+    <span class="p">),</span>
+	<span class="n">bk_pane</span>
+<span class="p">)</span><span class="o">.</span><span class="n">servable</span><span class="p">()</span>
+</pre></div>
+</div>
+<pre id="stdout-codecell1-py" class="pyodide-stdout" ></pre><pre id="stderr-codecell1-py" class="pyodide-stderr" ></pre><div id="output-codecell1-py" class="pyodide-output embedded"></div>
+
+            <script>
+              async function embed_bokeh_1 () {
+                if (window.Bokeh && window.Bokeh.Panel) {
+                  await Bokeh.embed.embed_item({"target_id": "output-codecell1-py", "root_id": "p1049", "doc": {"version": "3.7.2", "title": "Panel Application", "roots": [{"type": "object", "name": "panel.models.layout.Column", "id": "p1049", "attributes": {"name": "Column00124", "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"type": "object", "name": "ImportedStyleSheet", "id": "p1053", "attributes": {"url": "https://cdn.holoviz.org/panel/1.6.3/dist/css/loading.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1061", "attributes": {"url": "https://cdn.holoviz.org/panel/1.6.3/dist/css/listpanel.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1051", "attributes": {"url": "https://cdn.holoviz.org/panel/1.6.3/dist/bundled/theme/default.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1052", "attributes": {"url": "https://cdn.holoviz.org/panel/1.6.3/dist/bundled/theme/native.css"}}], "margin": 0, "sizing_mode": "stretch_width", "align": "start", "children": [{"type": "object", "name": "Row", "id": "p1050", "attributes": {"name": "Row00118", "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1053"}, {"id": "p1061"}, {"id": "p1051"}, {"id": "p1052"}], "margin": 0, "align": "start", "children": [{"type": "object", "name": "Spinner", "id": "p1056", "attributes": {"stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1053"}, {"id": "p1051"}, {"id": "p1052"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Period", "description": {"type": "object", "name": "Tooltip", "id": "p1055", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1054", "attributes": {"html": ["<p>Period in milliseconds at which the callback is executed.</p>\n"]}}}}, "value": 100, "placeholder": "0", "mode": "int"}}, {"type": "object", "name": "Toggle", "id": "p1059", "attributes": {"css_classes": ["solid"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1053"}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1058", "attributes": {"url": "https://cdn.holoviz.org/panel/1.6.3/dist/css/button.css"}}, {"id": "p1051"}, {"id": "p1052"}], "margin": [5, 10], "align": "end", "label": "Running", "active": true}}]}}, {"type": "object", "name": "Figure", "id": "p1002", "attributes": {"sizing_mode": "stretch_width", "x_range": {"type": "object", "name": "DataRange1d", "id": "p1003"}, "y_range": {"type": "object", "name": "DataRange1d", "id": "p1004"}, "x_scale": {"type": "object", "name": "LinearScale", "id": "p1012"}, "y_scale": {"type": "object", "name": "LinearScale", "id": "p1013"}, "title": {"type": "object", "name": "Title", "id": "p1005", "attributes": {"text": "Bokeh streaming example"}}, "renderers": [{"type": "object", "name": "GlyphRenderer", "id": "p1046", "attributes": {"data_source": {"type": "object", "name": "ColumnDataSource", "id": "p1037", "attributes": {"selected": {"type": "object", "name": "Selection", "id": "p1038", "attributes": {"indices": [], "line_indices": []}}, "selection_policy": {"type": "object", "name": "UnionRenderers", "id": "p1039"}, "data": {"type": "map", "entries": [["x", {"type": "ndarray", "array": {"type": "bytes", "data": "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owIAAKQCAAClAgAApgIAAKcCAACoAgAAqQIAAKoCAACrAgAArAIAAK0CAACuAgAArwIAALACAACxAgAAsgIAALMCAAC0AgAAtQIAALYCAAC3AgAAuAIAALkCAAC6AgAAuwIAALwCAAC9AgAAvgIAAL8CAADAAgAAwQIAAMICAADDAgAAxAIAAMUCAADGAgAAxwIAAMgCAADJAgAAygIAAMsCAADMAgAAzQIAAM4CAADPAgAA0AIAANECAADSAgAA0wIAANQCAADVAgAA1gIAANcCAADYAgAA2QIAANoCAADbAgAA3AIAAN0CAADeAgAA3wIAAOACAADhAgAA4gIAAOMCAADkAgAA5QIAAOYCAADnAgAA6AIAAOkCAADqAgAA6wIAAOwCAADtAgAA7gIAAO8CAADwAgAA8QIAAPICAADzAgAA9AIAAPUCAAD2AgAA9wIAAPgCAAD5AgAA+gIAAPsCAAD8AgAA/QIAAP4CAAD/AgAAAAMAAAEDAAACAwAAAwMAAAQDAAAFAwAABgMAAAcDAAAIAwAACQMAAAoDAAALAwAADAMAAA0DAAAOAwAADwMAABADAAARAwAAEgMAABMDAAAUAwAAFQMAABYDAAAXAwAAGAMAABkDAAAaAwAAGwMAABwDAAAdAwAAHgMAAB8DAAAgAwAAIQMAACIDAAAjAwAAJAMAACUDAAAmAwAAJwMAACgDAAApAwAAKgMAACsDAAAsAwAALQMAAC4DAAAvAwAAMAMAADEDAAAyAwAAMwMAADQDAAA1AwAANgMAADcDAAA4AwAAOQMAADoDAAA7AwAAPAMAAD0DAAA+AwAAPwMAAEADAABBAwAAQgMAAEMDAABEAwAARQMAAEYDAABHAwAASAMAAEkDAABKAwAASwMAAEwDAABNAwAATgMAAE8DAABQAwAAUQMAAFIDAABTAwAAVAMAAFUDAABWAwAAVwMAAFgDAABZAwAAWgMAAFsDAABcAwAAXQMAAF4DAABfAwAAYAMAAGEDAABiAwAAYwMAAGQDAABlAwAAZgMAAGcDAABoAwAAaQMAAGoDAABrAwAAbAMAAG0DAABuAwAAbwMAAHADAABxAwAAcgMAAHMDAAB0AwAAdQMAAHYDAAB3AwAAeAMAAHkDAAB6AwAAewMAAHwDAAB9AwAAfgMAAH8DAACAAwAAgQMAAIIDAACDAwAAhAMAAIUDAACGAwAAhwMAAIgDAACJAwAAigMAAIsDAACMAwAAjQMAAI4DAACPAwAAkAMAAJEDAACSAwAAkwMAAJQDAACVAwAAlgMAAJcDAACYAwAAmQMAAJoDAACbAwAAnAMAAJ0DAACeAwAAnwMAAKADAAChAwAAogMAAKMDAACkAwAApQMAAKYDAACnAwAAqAMAAKkDAACqAwAAqwMAAKwDAACtAwAArgMAAK8DAACwAwAAsQMAALIDAACzAwAAtAMAALUDAAC2AwAAtwMAALgDAAC5AwAAugMAALsDAAC8AwAAvQMAAL4DAAC/AwAAwAMAAMEDAADCAwAAwwMAAMQDAADFAwAAxgMAAMcDAADIAwAAyQMAAMoDAADLAwAAzAMAAM0DAADOAwAAzwMAANADAADRAwAA0gMAANMDAADUAwAA1QMAANYDAADXAwAA2AMAANkDAADaAwAA2wMAANwDAADdAwAA3gMAAN8DAADgAwAA4QMAAOIDAADjAwAA5AMAAOUDAADmAwAA5wMAAA=="}, "shape": [1000], "dtype": "int32", "order": "little"}], ["y", {"type": "ndarray", "array": {"type": "bytes", "data": "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"}, "shape": [1000], "dtype": "float64", "order": "little"}]]}}}, "view": {"type": "object", "name": "CDSView", "id": "p1047", "attributes": {"filter": {"type": "object", "name": "AllIndices", "id": "p1048"}}}, "glyph": {"type": "object", "name": "Line", "id": "p1043", "attributes": {"x": {"type": "field", "field": "x"}, "y": {"type": "field", "field": "y"}, "line_color": "#1f77b4"}}, "nonselection_glyph": {"type": "object", "name": "Line", "id": "p1044", "attributes": {"x": {"type": "field", "field": "x"}, "y": {"type": "field", "field": "y"}, "line_color": "#1f77b4", "line_alpha": 0.1}}, "muted_glyph": {"type": "object", "name": "Line", "id": "p1045", "attributes": {"x": {"type": "field", "field": "x"}, "y": {"type": "field", "field": "y"}, "line_color": "#1f77b4", "line_alpha": 0.2}}}}], "toolbar": {"type": "object", "name": "Toolbar", "id": "p1011", "attributes": {"tools": [{"type": "object", "name": "PanTool", "id": "p1024"}, {"type": "object", "name": "WheelZoomTool", "id": "p1025", "attributes": {"renderers": "auto"}}, {"type": "object", "name": "BoxZoomTool", "id": "p1026", "attributes": {"dimensions": "both", "overlay": {"type": "object", "name": "BoxAnnotation", "id": "p1027", "attributes": {"syncable": false, "line_color": "black", "line_alpha": 1.0, "line_width": 2, "line_dash": [4, 4], "fill_color": "lightgrey", "fill_alpha": 0.5, "level": "overlay", "visible": false, "left": {"type": "number", "value": "nan"}, "right": {"type": "number", "value": "nan"}, "top": {"type": "number", "value": "nan"}, "bottom": {"type": "number", "value": "nan"}, "left_units": "canvas", "right_units": "canvas", "top_units": "canvas", "bottom_units": "canvas", "handles": {"type": "object", "name": "BoxInteractionHandles", "id": "p1033", "attributes": {"all": {"type": "object", "name": "AreaVisuals", "id": "p1032", "attributes": {"fill_color": "white", "hover_fill_color": "lightgray"}}}}}}}}, {"type": "object", "name": "SaveTool", "id": "p1034"}, {"type": "object", "name": "ResetTool", "id": "p1035"}, {"type": "object", "name": "HelpTool", "id": "p1036"}]}}, "left": [{"type": "object", "name": "LinearAxis", "id": "p1019", "attributes": {"ticker": {"type": "object", "name": "BasicTicker", "id": "p1020", "attributes": {"mantissas": [1, 2, 5]}}, "formatter": {"type": "object", "name": "BasicTickFormatter", "id": "p1021"}, "major_label_policy": {"type": "object", "name": "AllLabels", "id": "p1022"}}}], "below": [{"type": "object", "name": "LinearAxis", "id": "p1014", "attributes": {"ticker": {"type": "object", "name": "BasicTicker", "id": "p1015", "attributes": {"mantissas": [1, 2, 5]}}, "formatter": {"type": "object", "name": "BasicTickFormatter", "id": "p1016"}, "major_label_policy": {"type": "object", "name": "AllLabels", "id": "p1017"}}}], "center": [{"type": "object", "name": "Grid", "id": "p1018", "attributes": {"axis": {"id": "p1014"}}}, {"type": "object", "name": "Grid", "id": "p1023", "attributes": {"dimension": 1, "axis": {"id": "p1019"}}}]}}]}}, {"type": "object", "name": "panel.models.location.Location", "id": "p1064", "attributes": {"name": "location", "reload": false}}], "defs": [{"type": "model", "name": "ReactiveHTML1"}, {"type": "model", "name": "FlexBox1", "properties": [{"name": "align_content", "kind": "Any", "default": "flex-start"}, {"name": "align_items", "kind": "Any", "default": "flex-start"}, {"name": "flex_direction", "kind": "Any", "default": "row"}, {"name": "flex_wrap", "kind": "Any", "default": "wrap"}, {"name": "gap", "kind": "Any", "default": ""}, {"name": "justify_content", "kind": "Any", "default": "flex-start"}]}, {"type": "model", "name": "FloatPanel1", "properties": [{"name": "config", "kind": "Any", "default": {"type": "map"}}, {"name": "contained", "kind": "Any", "default": true}, {"name": "position", "kind": "Any", "default": "right-top"}, {"name": "offsetx", "kind": "Any", "default": null}, {"name": "offsety", "kind": "Any", "default": null}, {"name": "theme", "kind": "Any", "default": "primary"}, {"name": "status", "kind": "Any", "default": "normalized"}]}, {"type": "model", "name": "GridStack1", "properties": [{"name": "ncols", "kind": "Any", "default": null}, {"name": "nrows", "kind": "Any", "default": null}, {"name": "allow_resize", "kind": "Any", "default": true}, {"name": "allow_drag", "kind": "Any", "default": true}, {"name": "state", "kind": "Any", "default": []}]}, {"type": "model", "name": "drag1", "properties": [{"name": "slider_width", "kind": "Any", "default": 5}, {"name": "slider_color", "kind": "Any", "default": "black"}, {"name": "value", "kind": "Any", "default": 50}]}, {"type": "model", "name": "click1", "properties": [{"name": "terminal_output", "kind": "Any", "default": ""}, {"name": "debug_name", "kind": "Any", "default": ""}, {"name": "clears", "kind": "Any", "default": 0}]}, {"type": "model", "name": "FastWrapper1", "properties": [{"name": "object", "kind": "Any", "default": null}, {"name": "style", "kind": "Any", "default": null}]}, {"type": "model", "name": "NotificationArea1", "properties": [{"name": "js_events", "kind": "Any", "default": {"type": "map"}}, {"name": "max_notifications", "kind": "Any", "default": 5}, {"name": "notifications", "kind": "Any", "default": []}, {"name": "position", "kind": "Any", "default": "bottom-right"}, {"name": "_clear", "kind": "Any", "default": 0}, {"name": "types", "kind": "Any", "default": [{"type": "map", "entries": [["type", "warning"], ["background", "#ffc107"], ["icon", {"type": "map", "entries": [["className", "fas fa-exclamation-triangle"], ["tagName", "i"], ["color", "white"]]}]]}, {"type": "map", "entries": [["type", "info"], ["background", "#007bff"], ["icon", {"type": "map", "entries": [["className", "fas fa-info-circle"], ["tagName", "i"], ["color", "white"]]}]]}]}]}, {"type": "model", "name": "Notification", "properties": [{"name": "background", "kind": "Any", "default": null}, {"name": "duration", "kind": "Any", "default": 3000}, {"name": "icon", "kind": "Any", "default": null}, {"name": "message", "kind": "Any", "default": ""}, {"name": "notification_type", "kind": "Any", "default": null}, {"name": "_rendered", "kind": "Any", "default": false}, {"name": "_destroyed", "kind": "Any", "default": false}]}, {"type": "model", "name": "TemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "BootstrapTemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "TemplateEditor1", "properties": [{"name": "layout", "kind": "Any", "default": []}]}, {"type": "model", "name": "MaterialTemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "ReactiveESM1", "properties": [{"name": "esm_constants", "kind": "Any", "default": {"type": "map"}}]}, {"type": "model", "name": "JSComponent1", "properties": [{"name": "esm_constants", "kind": "Any", "default": {"type": "map"}}]}, {"type": "model", "name": "ReactComponent1", "properties": [{"name": "esm_constants", "kind": "Any", "default": {"type": "map"}}]}, {"type": "model", "name": "AnyWidgetComponent1", "properties": [{"name": "esm_constants", "kind": "Any", "default": {"type": "map"}}]}, {"type": "model", "name": "request_value1", "properties": [{"name": "fill", "kind": "Any", "default": "none"}, {"name": "_synced", "kind": "Any", "default": null}, {"name": "_request_sync", "kind": "Any", "default": 0}]}]}, "version": "3.7.2"})
+                } else {
+                   setTimeout(embed_bokeh_1, 200)
+                }
+              };
+              embed_bokeh_1()
+            </script>
+            </section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div class="github-star-badge">
+    <a href="https://github.com/holoviz/panel">
+        <img src="https://img.shields.io/github/stars/holoviz/panel?style=social&label=Star%20on%20%20GitHub%E2%AD%90" alt="Support us with a star on GitHub">
+    </a>
+</div></div>
+
+  <div class="sidebar-secondary-item">
+<div class="tocsection">
+
+
+
+  <a href="https://panel.holoviz.org/pyodide/streaming_bokeh" target=”_blank”>
+    <img src="../../../_static/launch_pyodide.svg" alt="launch pyodide"></img>
+  </a>
+
+</div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2019-2025 Holoviz contributors.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
