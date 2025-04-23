@@ -34,6 +34,7 @@ This release introduces a number of performance improvements related to renderin
 - Fix documentation of `--oauth-extra-params` [#7865](https://github.com/holoviz/panel/pull/7865)
 - Fix minor issues in FastAPI docs [#7866](https://github.com/holoviz/panel/pull/7866)
 - Clarify OAuth redirect uri [#7868](https://github.com/holoviz/panel/pull/7868)
+- Add section in load balancing about Bokeh extensions ([#7832](https://github.com/holoviz/panel/pull/7832))
 
 ## Version 1.6.2
 
