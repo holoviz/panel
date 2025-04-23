@@ -357,12 +357,14 @@ class _config(_base_config):
 
     @param.depends('notifications', watch=True)
     def _setup_notifications(self):
-        from .io.notifications import NotificationArea
-        from .reactive import ReactiveHTMLMetaclass
-        if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
-            ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
+        if state._notification_type is None:
+            from .io.notifications import NotificationArea
+            from .reactive import ReactiveHTMLMetaclass
+            state._notification_type = NotificationArea
+            if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
+                ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
         if not state.curdoc:
-            state._notification = NotificationArea()
+            state._notification = state._notification_type()
 
     @param.depends('disconnect_notification', 'ready_notification', watch=True)
     def _enable_notifications(self):
