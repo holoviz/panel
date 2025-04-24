@@ -173,7 +173,7 @@ export class AcePlot extends HTMLBox {
       language:     [ Str,             "" ],
       on_keyup:     [ Bool,          true ],
       print_margin: [ Bool,         false ],
-      theme:        [ Str,       "chrome" ],
+      theme:        [ Str, "github_light_default" ],
       readonly:     [ Bool,         false ],
       soft_tabs:    [ Bool,         false ],
     }))

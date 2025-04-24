@@ -69,7 +69,7 @@ class AcePlot(HTMLBox):
 
     soft_tabs = Bool(default=False)
 
-    theme = Enum(ace_themes, default='chrome')
+    theme = Enum(ace_themes, default='github_light_default')
 
     height = Override(default=300)  # type: ignore
 
