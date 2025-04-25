@@ -36,16 +36,14 @@ Create a class `ReactiveTables` that inherits from `Viewer`. This class will man
 
 ```python
 class ReactiveTables(Viewer):
-    dataset = param.Selector(objects=list(DATASETS))
+    dataset = param.Selector(objects=DATASETS)
     rows = param.Integer(default=10, bounds=(0, 19))
 
     @pn.cache(max_items=3)
     @param.depends("dataset")
     def data(self):
         # The dataset name will only be printed once for each 'dataset' across all user session
-        print("data", self.dataset)
-        url = DATASETS[self.dataset]
-        return pd.read_csv(url)
+        return pd.read_csv(self.dataset)
 
     @param.depends("data")
     def summary(self):
