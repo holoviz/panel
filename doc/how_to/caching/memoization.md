@@ -4,7 +4,9 @@ This guide addresses how to use the `panel.cache` decorator to memoize (i.e., ca
 
 ---
 
-The `pn.cache` decorator provides an easy way to cache the outputs of a function depending on its inputs (i.e., `memoization`). If you've ever used the Python `@lru_cache` decorator, you will be familiar with this concept. However, the `pn.cache` functions support additional cache `policy`s apart from LRU (least-recently used), including `LFU` (least-frequently-used) and 'FIFO' (first-in-first-out). This means that if the specified number of `max_items` is reached, Panel will automatically evict items from the cache based on this `policy`. Additionally, items can be deleted from the cache based on a `ttl` (time-to-live) value given in seconds.
+The `pn.cache` decorator provides an easy way to cache the outputs of a function depending on its inputs and/ or Parameter dependencies (i.e., `memoization`).
+
+If you've ever used the Python `@lru_cache` decorator, you will be familiar with this concept. However, the `pn.cache` functions support additional cache `policy`s apart from LRU (least-recently used), including `LFU` (least-frequently-used) and 'FIFO' (first-in-first-out). This means that if the specified number of `max_items` is reached, Panel will automatically evict items from the cache based on this `policy`. Additionally, items can be deleted from the cache based on a `ttl` (time-to-live) value given in seconds.
 
 ## Caching Functions
 
