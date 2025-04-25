@@ -37,7 +37,6 @@ select = pn.widgets.Select(options=DATASETS)
 
 @pn.cache
 def fetch_data(url):
-    print(url)
     return pd.read_csv(url)
 
 pn.Column(select, pn.bind(pn.widgets.Tabulator, pn.bind(fetch_data, select), page_size=10))
@@ -53,7 +52,6 @@ select = pn.widgets.Select(options=DATASETS)
 @pn.cache
 @pn.depends(select)
 def fetch_data(url):
-    print(url)
     return pd.read_csv(url)
 
 pn.Column(select, pn.widgets.Tabulator(fetch_data, page_size=10))
