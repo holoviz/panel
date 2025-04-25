@@ -42,7 +42,7 @@ class ReactiveTables(Viewer):
     @pn.cache(max_items=3)
     @param.depends("dataset")
     def data(self):
-        # The dataset name will only be printed once for each 'dataset' across all user session
+        # Each dataset will only be read once across all user session
         return pd.read_csv(self.dataset)
 
     @param.depends("data")
