@@ -2063,24 +2063,23 @@ class Tabulator(BaseTable):
                 col_dict["headerTooltip"] = self.header_tooltips[field]
 
             if isinstance(index, tuple):
-                if columns:
-                    children = columns
+                children = columns
+                last = cast(GroupSpec, children[-1] if len(children) > 0 else children)
+                for group in index[:-1]:
+                    if 'title' in last and last['title'] == group:
+                        new = False
+                        children = last['columns']
+                    else:
+                        new = True
+                        children.append({
+                            'columns': [],
+                            'title': group,
+                        })
                     last = cast(GroupSpec, children[-1])
-                    for group in index[:-1]:
-                        if 'title' in last and last['title'] == group:
-                            new = False
-                            children = last['columns']
-                        else:
-                            new = True
-                            children.append({
-                                'columns': [],
-                                'title': group,
-                            })
-                        last = cast(GroupSpec, children[-1])
-                        if new:
-                            children = last['columns']
-                    children.append(col_dict)
-                    column.title = index[-1]
+                    if new:
+                        children = last['columns']
+                children.append(col_dict)
+                column.title = index[-1]
             elif matching_groups:
                 group = matching_groups[0]
                 if group in groups:
