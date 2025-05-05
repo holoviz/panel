@@ -166,12 +166,13 @@ def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[type[Reacti
                 path = (module_path / bundle_path).absolute()
             else:
                 path = bundle_path.absolute()
-            bundles[path].append(component)
         elif len(components) > 1 and not classes:
             component_module = module_name or component.__module__
-            bundles[module_path / f'{component_module}.bundle.js'].append(component)
+            path = module_path / f'{component_module}.bundle.js'
         else:
-            bundles[component._module_path / f'{component.__name__}.bundle.js'].append(component)
+            path = component._module_path / f'{component.__name__}.bundle.js'
+        if component not in bundles[path]:
+            bundles[path].append(component)
 
     return dict(bundles)
 
