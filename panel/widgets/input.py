@@ -630,6 +630,9 @@ class DateRangePicker(Widget):
 
 class _DatetimePickerBase(Widget):
 
+    allow_input = param.Boolean(default=False, doc="""
+      Enable manual date input in the widget.""")
+
     disabled_dates = param.List(default=None, item_type=(date, str), doc="""
       Dates to make unavailable for selection.""")
 
