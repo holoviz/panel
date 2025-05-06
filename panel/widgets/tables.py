@@ -2064,7 +2064,7 @@ class Tabulator(BaseTable):
 
             if isinstance(index, tuple):
                 children = columns
-                last = cast(GroupSpec, children[-1] if len(children) > 0 else children)
+                last = cast(GroupSpec, children[-1] if len(children) > 0 else {})
                 for group in index[:-1]:
                     if 'title' in last and last['title'] == group:
                         new = False
