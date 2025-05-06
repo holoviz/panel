@@ -409,10 +409,11 @@ def generate_project(
     for component in components:
         esm_path = component._esm_path(compiled='compiling')
         name = component.__name__
-        imprt = esm_path.stem
         if esm_path:
+            imprt = esm_path.stem
             ext = esm_path.suffix.lstrip('.')
         else:
+            imprt = name
             ext = 'jsx' if issubclass(component, ReactComponent) else 'js'
         code, component_deps = extract_dependencies(component)
         # Detect default export in component code and handle import accordingly
