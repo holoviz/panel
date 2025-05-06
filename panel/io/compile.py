@@ -407,8 +407,9 @@ def generate_project(
     shared_modules = {}
     index = ''
     for component in components:
+        esm_path = component._esm_path(compiled='compiling')
         name = component.__name__
-        esm_path = component._esm_path(compiled=False)
+        imprt = esm_path.stem
         if esm_path:
             ext = esm_path.suffix.lstrip('.')
         else:
@@ -416,11 +417,11 @@ def generate_project(
         code, component_deps = extract_dependencies(component)
         # Detect default export in component code and handle import accordingly
         if _EXPORT_DEFAULT_RE.search(code):
-            index += f'import {name} from "./{name}"\n'
+            index += f'import {name} from "./{imprt}"\n'
         else:
-            index += f'import * as {name} from "./{name}"\n'
+            index += f'import * as {name} from "./{imprt}"\n'
 
-        with open(path / f'{name}.{ext}', 'w') as component_file:
+        with open(path / f'{imprt}.{ext}', 'w') as component_file:
             component_file.write(code)
         # TODO: Improve merging of dependencies
         dependencies.update(component_deps)
