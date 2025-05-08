@@ -345,6 +345,12 @@ class ICO(ImageBase):
 
     filetype: ClassVar[str] = 'ico'
 
+    def _b64(self, data: str | bytes) -> str:
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        b64 = base64.b64encode(data).decode("utf-8")
+        return f"data:image/x-icon;base64,{b64}"
+
     @classmethod
     def _imgshape(cls, data):
         import struct
