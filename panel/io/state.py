@@ -732,7 +732,7 @@ class _state(param.Parameterized):
         """
         if self.curdoc is None or self._is_pyodide or self.loaded:
             if self._thread_pool:
-                self.execute(callback, schedule='threaded')
+                self.execute(callback, schedule='thread')
             else:
                 self.execute(callback, schedule=False)
         elif self.curdoc in self._onload:

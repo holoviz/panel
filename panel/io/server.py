@@ -79,9 +79,9 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from bokeh.application.application import SessionContext
-    from bokeh.bundle import Bundle
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson
+    from bokeh.embed.bundle import Bundle
     from bokeh.server.session import ServerSession
     from jinja2 import Template
 
