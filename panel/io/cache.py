@@ -379,7 +379,7 @@ def cache(
     policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
     ttl: float | None = ...,
     to_disk: bool = ...,
-    cache_path: str | os.PathLike = ...,
+    cache_path: str | os.PathLike | None = ...,
     per_session: bool = ...,
 ) -> Callable[[Callable[_P, _R]], _CachedFunc[Callable[_P, _R]]]:
     ...
@@ -392,7 +392,7 @@ def cache(
     policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
     ttl: float | None = ...,
     to_disk: bool = ...,
-    cache_path: str | os.PathLike = ...,
+    cache_path: str | os.PathLike | None = ...,
     per_session: bool = ...,
 ) -> _CachedFunc[Callable[_P, _R]]:
     ...
@@ -404,7 +404,7 @@ def cache(
     policy: Literal['FIFO', 'LRU', 'LFU'] = 'LRU',
     ttl: float | None = None,
     to_disk: bool = False,
-    cache_path: str | os.PathLike = None,
+    cache_path: str | os.PathLike | None = None,
     per_session: bool = False
 ) -> _CachedFunc[Callable[_P, _R]] | Callable[[Callable[_P, _R]], _CachedFunc[Callable[_P, _R]]]:
     """
@@ -434,7 +434,8 @@ def cache(
     to_disk: bool
         Whether to cache to disk using diskcache.
     cache_path: str
-        Directory to cache to on disk.
+        Directory to cache to on disk (if not provided default will be
+        inherited from config.cache_path).
     per_session: bool
         Whether to cache data only for the current session.
     """
