@@ -26,6 +26,7 @@ import param
 
 from param.parameterized import iscoroutinefunction
 
+from ..config import config
 from .state import state
 
 #---------------------------------------------------------------------
@@ -403,7 +404,7 @@ def cache(
     policy: Literal['FIFO', 'LRU', 'LFU'] = 'LRU',
     ttl: float | None = None,
     to_disk: bool = False,
-    cache_path: str | os.PathLike = './cache',
+    cache_path: str | os.PathLike = None,
     per_session: bool = False
 ) -> _CachedFunc[Callable[_P, _R]] | Callable[[Callable[_P, _R]], _CachedFunc[Callable[_P, _R]]]:
     """
@@ -441,6 +442,9 @@ def cache(
         raise ValueError(
             f"Cache policy must be one of 'FIFO', 'LRU' or 'LFU', not {policy}."
         )
+
+    if cache_path is None:
+        cache_path = config.cache_path
 
     hash_funcs = hash_funcs or {}
     if func is None:

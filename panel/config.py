@@ -135,6 +135,9 @@ class _config(_base_config):
     browser_info = param.Boolean(default=True, doc="""
         Whether to request browser info from the frontend.""")
 
+    cache_path = param.String(default="./cache", doc="""
+        Path the cache decorator will write to if diskcache is enabled.""")
+
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
