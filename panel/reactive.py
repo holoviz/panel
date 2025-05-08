@@ -1602,9 +1602,9 @@ class ReactiveCustomBase(Reactive):
             if ref_str not in m.tags:
                 m.tags.append(ref_str)
 
-    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
+    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> list[str]:
         if not msg:
-            return
+            return []
         prev_changing = self._changing.get(root.ref['id'], [])
         changing = []
         transformed = {}
@@ -1635,7 +1635,7 @@ class ReactiveCustomBase(Reactive):
                 del self._changing[root.ref['id']]
         if isinstance(model, DataModel):
             self._patch_datamodel_ref(model, root.ref['id'])
-
+        return changing
 
 
 class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
