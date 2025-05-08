@@ -285,6 +285,27 @@ textarea.bk-input:not([type='file']) {
   border-bottom: 5px solid var(--mdc-theme-on-background);
 }
 
+/* FileDropper */
+
+.filepond--root {
+  box-shadow:
+    0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+}
+
+.bk-input.filepond--root:not([disabled]):hover {
+  border: none;
+  box-shadow:
+    0px 3px 5px -1px rgba(0, 0, 0, 0.2),
+    0px 6px 10px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 18px 0px rgba(0, 0, 0, 0.12);
+}
+
+.filepond--panel-root {
+  background-color: var(--mdc-theme-surface);
+}
+
 /* Select widgets */
 
 select:not([multiple]).bk-input,
@@ -534,10 +555,26 @@ div .tabulator .tabulator-header .tabulator-col {
 .pnx-tabulator.tabulator
   .tabulator-tableholder
   .tabulator-table
+  .tabulator-row {
+  min-height: 35px;
+}
+
+.pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row
+  .tabulator-cell {
+  min-height: 35px;
+  padding: 6px 10px;
+}
+
+.pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
   .tabulator-row.tabulator-selectable:hover {
   background-color: color-mix(
     in srgb,
-    var(--mdc-theme-primary) 25%,
+    var(--mdc-theme-primary) 75%,
     transparent
   );
   color: var(--mdc-theme-on-primary);
