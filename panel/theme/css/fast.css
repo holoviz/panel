@@ -450,6 +450,12 @@ input[type='file']:active {
   border: 3px dashed var(--neutral-stroke-active);
 }
 
+/* FileDropper */
+
+.filepond--root {
+  height: auto;
+}
+
 /* Buttons */
 
 .bk-btn {
