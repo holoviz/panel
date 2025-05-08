@@ -327,7 +327,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return []
 
     @classmethod
-    def _esm_path(cls, compiled: bool = True) -> os.PathLike | None:
+    def _esm_path(cls, compiled: bool | Literal['compiling'] = True) -> os.PathLike | None:
         if compiled or not cls._esm:
             bundle_path = cls._bundle_path
             if bundle_path:

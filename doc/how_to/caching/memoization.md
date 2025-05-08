@@ -62,9 +62,10 @@ pn.Column(select, pn.widgets.Tabulator(fetch_data, page_size=10))
 ## Caching Methods with Dependencies
 
 ```{pyodide}
+import param
+
 class DataExplorer(pn.viewable.Viewer):
     dataset = param.Selector(objects=DATASETS)
-
 
     @pn.cache
     @param.depends("dataset")
