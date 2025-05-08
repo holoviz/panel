@@ -132,7 +132,7 @@ def _cleanup_doc(doc, destroy=True):
     # Clean up templates
     if doc in state._templates:
         tmpl = state._templates[doc]
-        tmpl._documents = {}
+        tmpl._documents = []
         del state._templates[doc]
 
     # Destroy document
