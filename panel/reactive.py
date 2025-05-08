@@ -454,10 +454,10 @@ class Syncable(Renderable):
         if any(e for e in events if e not in self._busy__ignore):
             with edit_readonly(state):
                 state._busy_counter += 1
-        if events and state.curdoc:
-            self._in_process__events[state.curdoc] = events
-        params = self._process_property_change(events)
         try:
+            if events and state.curdoc:
+                self._in_process__events[state.curdoc] = events
+            params = self._process_property_change(events)
             with edit_readonly(self):
                 self_params = {k: v for k, v in params.items() if '.' not in k}
                 with _syncing(self, list(self_params)):
@@ -472,7 +472,7 @@ class Syncable(Renderable):
                 with edit_readonly(obj):
                     with _syncing(obj, [p]):
                         obj.param.update(**{p: v})
-        except Exception:
+        except Exception as e:
             if len(params) > 1:
                 msg_end = f"changing properties {pformat(params)} \n"
             elif len(params) == 1:
@@ -480,7 +480,7 @@ class Syncable(Renderable):
             else:
                 msg_end = "\n"
             log.exception(f'Callback failed for object named {self.name!r} {msg_end}')
-            raise
+            raise e
         finally:
             if state.curdoc and state.curdoc in self._in_process__events:
                 del self._in_process__events[state.curdoc]
@@ -1602,9 +1602,9 @@ class ReactiveCustomBase(Reactive):
             if ref_str not in m.tags:
                 m.tags.append(ref_str)
 
-    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
+    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> list[str]:
         if not msg:
-            return
+            return []
         prev_changing = self._changing.get(root.ref['id'], [])
         changing = []
         transformed = {}
@@ -1635,7 +1635,7 @@ class ReactiveCustomBase(Reactive):
                 del self._changing[root.ref['id']]
         if isinstance(model, DataModel):
             self._patch_datamodel_ref(model, root.ref['id'])
-
+        return changing
 
 
 class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
