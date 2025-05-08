@@ -52,7 +52,7 @@ class CodeEditor(Widget):
 
     soft_tabs = param.Boolean(default=False, doc="Whether to use spaces instead of tabs.")
 
-    theme = param.Selector(default="chrome", objects=list(ace_themes), doc="""
+    theme = param.Selector(default="github_light_default", objects=list(ace_themes), doc="""
         If no value is provided, it defaults to the current theme
         set by pn.config.theme, as specified in the
         CodeEditor.THEME_CONFIGURATION dictionary. If not defined there, it
@@ -67,7 +67,7 @@ class CodeEditor(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
 
-    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"dark": "chaos"}
+    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"dark": "github_dark", "default": "github_light_default"}
 
     def __init__(self, **params):
         if 'readonly' in params:
