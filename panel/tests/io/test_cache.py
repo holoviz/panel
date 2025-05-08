@@ -17,6 +17,7 @@ except Exception:
     diskcache = None
 diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires diskcache")
 
+from panel.config import config
 from panel.io.cache import _generate_hash, cache, is_equal
 from panel.io.state import set_curdoc, state
 from panel.tests.util import serve_and_wait
@@ -288,6 +289,20 @@ def test_disk_cache(tmp_path):
     global OFFSET
     OFFSET.clear()
     fn = cache(function_with_args, to_disk=True, cache_path=tmp_path)
+
+    assert fn(0, 0) == 0
+    assert tmp_path.exists()
+    assert list(tmp_path.glob('*'))
+    assert fn(0, 0) == 0
+    fn.clear()
+    assert fn(0, 0) == 1
+
+@diskcache_available
+def test_disk_cache_global_default(tmp_path):
+    global OFFSET
+    OFFSET.clear()
+    with config.set(cache_path=tmp_path):
+        fn = cache(function_with_args, to_disk=True)
 
     assert fn(0, 0) == 0
     assert tmp_path.exists()
