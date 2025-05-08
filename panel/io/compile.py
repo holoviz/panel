@@ -157,7 +157,7 @@ def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[type[Reacti
         module_file = module
     assert module_file is not None
 
-    bundles = defaultdict(list)
+    bundles: defaultdict[str, list[type[ReactiveESM]]] = defaultdict(list)
     module_path = pathlib.Path(module_file).parent
     for component in components:
         if component._bundle:
@@ -407,7 +407,10 @@ def generate_project(
     shared_modules = {}
     index = ''
     for component in components:
-        esm_path = component._esm_path(compiled='compiling')
+        try:
+            esm_path = component._esm_path(compiled='compiling')
+        except Exception:
+            esm_path = None
         name = component.__name__
         if esm_path:
             imprt = esm_path.stem
