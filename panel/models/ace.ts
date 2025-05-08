@@ -31,7 +31,7 @@ export class AcePlotView extends HTMLBoxView {
     this.on_change(print_margin, () => this._update_print_margin())
     this.on_change(annotations, () => this._add_annotations())
     this.on_change(indent, () => this._editor.setOptions({tabSize: this.model.indent}))
-    this.on_change(soft_tabs, () => this._editor.setOptions({useSoftTabs: this.model.indent}))
+    this.on_change(soft_tabs, () => this._editor.setOptions({useSoftTabs: this.model.soft_tabs}))
     this.on_change(readonly, () => {
       this._editor.setReadOnly(this.model.readonly)
     })
@@ -52,8 +52,8 @@ export class AcePlotView extends HTMLBoxView {
     this._container.textContent = this.model.code
     this._editor = ace.edit(this._container)
     this._editor.renderer.attachToShadowRoot()
-    this._langTools = ace.require("ace/ext/language_tools")
-    this._modelist = ace.require("ace/ext/modelist")
+    this._langTools = (ace as any).require("ace/ext/language_tools")
+    this._modelist = (ace as any).require("ace/ext/modelist")
     this._editor.setOptions({
       enableBasicAutocompletion: true,
       tabSize: this.model.indent,
