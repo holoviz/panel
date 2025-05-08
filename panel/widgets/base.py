@@ -18,6 +18,7 @@ from bokeh.models.dom import HTML
 from param.parameterized import register_reference_transform
 
 from .._param import Margin
+from ..io.state import state
 from ..layout.base import Row
 from ..reactive import Reactive
 from ..util import unique_iterator
@@ -162,7 +163,7 @@ class Widget(Reactive, WidgetBase):
         if self._widget_type is not None and 'stylesheets' in params:
             css = getattr(self._widget_type, '__css__', [])
             params['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
+                ImportedStyleSheet(url=(f'{state.rel_path}/' if state.rel_path else '') + ss) for ss in css
             ] + params['stylesheets']
         if "description" in params:
             description = params["description"]
