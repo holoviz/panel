@@ -348,9 +348,6 @@ class Markdown(HTMLBasePane):
     dedent = param.Boolean(default=True, doc="""
         Whether to dedent common whitespace across all lines.""")
 
-    disable_anchors = param.Boolean(default=False, doc="""
-        Whether to disable automatically adding anchors to headings.""")
-
     disable_math = param.Boolean(default=False, doc="""
         Whether to disable support for MathJax math rendering for
         strings escaped with $$ delimiters.""")
@@ -379,13 +376,13 @@ class Markdown(HTMLBasePane):
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'hard_line_break': None, 'disable_anchors': None,
+        'hard_line_break': None,
         'dedent': None, 'disable_math': None, 'extensions': None,
         'plugins': None, 'renderer': None, 'renderer_options': None
     }
 
     _rerender_params: ClassVar[list[str]] = [
-        'object', 'dedent', 'extensions', 'css_classes', 'plugins', 'disable_anchors'
+        'object', 'dedent', 'extensions', 'css_classes', 'plugins',
     ]
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -407,7 +404,7 @@ class Markdown(HTMLBasePane):
 
     @classmethod
     @functools.cache
-    def _get_parser(cls, renderer, plugins, hard_line_break, disable_anchors, **renderer_options):
+    def _get_parser(cls, renderer, plugins, hard_line_break, **renderer_options):
         if renderer == 'markdown':
             return None
         from markdown_it import MarkdownIt
@@ -445,10 +442,8 @@ class Markdown(HTMLBasePane):
         parser = (
             parser
             .enable('strikethrough').enable('table')
-            .use(deflist_plugin).use(footnote_plugin).use(tasklists_plugin)
+            .use(anchors_plugin, permalink=True).use(deflist_plugin).use(footnote_plugin).use(tasklists_plugin)
         )
-        if not disable_anchors:
-            parser = parser.use(anchors_plugin, permalink=True)
         for plugin in plugins:
             parser = parser.use(plugin)
         try:
@@ -478,7 +473,7 @@ class Markdown(HTMLBasePane):
             )
         else:
             parser = self._get_parser(
-                self.renderer, tuple(self.plugins), self.hard_line_break, self.disable_anchors, **self.renderer_options
+                self.renderer, tuple(self.plugins), self.hard_line_break, **self.renderer_options
             )
             try:
                 html = parser.render(obj)
