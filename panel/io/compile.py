@@ -157,7 +157,7 @@ def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[type[Reacti
         module_file = module
     assert module_file is not None
 
-    bundles: defaultdict[str, list[type[ReactiveESM]]] = defaultdict(list)
+    bundles: defaultdict[pathlib.Path, list[type[ReactiveESM]]] = defaultdict(list)
     module_path = pathlib.Path(module_file).parent
     for component in components:
         if component._bundle:
