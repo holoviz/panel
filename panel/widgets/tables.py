@@ -228,6 +228,10 @@ class BaseTable(ReactiveData, Widget):
             elif col in self.indexes:
                 if len(self.indexes) == 1:
                     data = df.index
+                elif df.index.nlevels == 1:
+                    # Look in the column with the tuple format
+                    index_col = tuple([col[: -(df.columns.nlevels - 1)]] + [""] * (df.columns.nlevels - 1))
+                    data: pd.Series | pd.Index = df[index_col]
                 else:
                     data = df.index.get_level_values(self.indexes.index(col))
 
@@ -683,6 +687,8 @@ class BaseTable(ReactiveData, Widget):
         else:
             default_index = ('level_0' if 'index' in df.columns else 'index')
             indexes = [df.index.name or default_index]
+        if df.columns.nlevels > 1 and len(indexes) > 1:
+            indexes = [i + "_" * (df.columns.nlevels - 1) for i in indexes]
         data = ColumnDataSource.from_df(df.reset_index() if len(indexes) > 1 else df)
         if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
@@ -706,10 +712,13 @@ class BaseTable(ReactiveData, Widget):
         if self.value is None or not self.show_index:
             return []
         elif isinstance(self.value.index, pd.MultiIndex):
-            return [
+            indexes = [
                 f'level_{i}' if n is None else n
                 for i, n in enumerate(self.value.index.names)
             ]
+            if self.value.columns.nlevels > 1:
+                indexes = [i + "_" * (self.value.columns.nlevels - 1) for i in indexes]
+            return indexes
         default_index = ('level_0' if 'index' in self.value.columns else 'index')
         return [self.value.index.name or default_index]
 
@@ -881,7 +890,7 @@ class BaseTable(ReactiveData, Widget):
         if not isinstance(self.value, pd.DataFrame):
             raise ValueError(
                 f"Patching an object of type {type(self.value).__name__} "
-                "is not supported. Please provide a dict."
+                "is not supported. Please provide a DataFrame."
             )
 
         if isinstance(patch_value, pd.DataFrame):

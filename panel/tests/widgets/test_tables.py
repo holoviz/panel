@@ -317,6 +317,18 @@ def test_tabulator_multi_index(document, comm):
     assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3', 'foo4', 'foo5']))
 
 
+def test_tabulator_multi_index_hide_index(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df.set_index(['A', 'C']), show_index=False)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'B', 'sorter': 'number'},
+        {'field': 'D', 'sorter': 'timestamp'}
+    ]
+
+
 def test_tabulator_multi_index_remote_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df.set_index(['A', 'C']), pagination='remote', page_size=3)
@@ -370,6 +382,9 @@ def test_tabulator_multi_index_columns(document, comm):
             ]},
         ]}
     ]
+    for field in ("index", "A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
+
 
 def test_tabulator_multi_index_columns_hide_index(document, comm):
     level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
@@ -406,6 +421,98 @@ def test_tabulator_multi_index_columns_hide_index(document, comm):
             ]},
         ]}
     ]
+    for field in ("A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
+
+
+def test_tabulator_multi_index_multi_index_columns(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_columns = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create multiIndex
+    numbers = [0, 1, 2]
+    colors = ['green', 'purple']
+    multi_index = pd.MultiIndex.from_product([numbers, colors], names=['number', 'color'])
+
+    # Create a DataFrame with MultiIndex as columns and MultiIndex as index
+    df = pd.DataFrame(np.random.randn(6, 6), index=multi_index, columns=multi_columns)
+
+    table = Tabulator(df, show_index=True)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'number__', 'sorter': 'number'},
+        {'field': 'color__'},
+        {'title': 'A', 'columns': [
+            {'title': 'one', 'columns': [
+                {'field': 'A_one_X', 'sorter': 'number'},
+                {'field': 'A_one_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'two', 'columns': [
+                {'field': 'A_two_X', 'sorter': 'number'}
+            ]},
+        ]},
+        {'title': 'B', 'columns': [
+            {'title': 'two', 'columns': [
+                {'field': 'B_two_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'three', 'columns': [
+                {'field': 'B_three_X', 'sorter': 'number'},
+                {'field': 'B_three_Y', 'sorter': 'number'}
+            ]},
+        ]}
+    ]
+    for field in ("number__", "color__", "A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
+
+
+def test_tabulator_multi_index_multi_index_columns_hide_index(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_columns = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create multiIndex
+    numbers = [0, 1, 2]
+    colors = ['green', 'purple']
+    multi_index = pd.MultiIndex.from_product([numbers, colors], names=['number', 'color'])
+
+    # Create a DataFrame with MultiIndex as columns and MultiIndex as index
+    df = pd.DataFrame(np.random.randn(6, 6), index=multi_index, columns=multi_columns)
+
+    table = Tabulator(df, show_index=False)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'title': 'A', 'columns': [
+            {'title': 'one', 'columns': [
+                {'field': 'A_one_X', 'sorter': 'number'},
+                {'field': 'A_one_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'two', 'columns': [
+                {'field': 'A_two_X', 'sorter': 'number'}
+            ]},
+        ]},
+        {'title': 'B', 'columns': [
+            {'title': 'two', 'columns': [
+                {'field': 'B_two_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'three', 'columns': [
+                {'field': 'B_three_X', 'sorter': 'number'},
+                {'field': 'B_three_Y', 'sorter': 'number'}
+            ]},
+        ]}
+    ]
+    for field in ("A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
 
 
 def test_tabulator_expanded_content(document, comm):
