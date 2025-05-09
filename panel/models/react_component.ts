@@ -62,6 +62,15 @@ export class ReactComponentView extends ReactiveESMView {
     super.render()
   }
 
+  override r_after_render(): void {
+    // If the DOM node was re-inserted, e.g. due to the parent
+    // children changing order we must force an update in the
+    // React component to ensure anything depending on the DOM
+    // structure (e.g. emotion caches) is updated
+    super.r_after_render()
+    this.force_update()
+  }
+
   override async update_children(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
