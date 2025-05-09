@@ -224,6 +224,9 @@ class _config(_base_config):
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
 
+    titles = param.List(default=[], doc="""
+        Custom titles to use for Multi Page Apps.""")
+
     _admin = param.Boolean(default=False, doc="Whether the admin panel is enabled.")
 
     _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")

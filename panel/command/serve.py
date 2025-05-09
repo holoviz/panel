@@ -104,6 +104,12 @@ class Serve(_BkServe):
 
     args = (
         tuple((arg, arg_obj) for arg, arg_obj in _BkServe.args if arg != '--dev') + (
+        ('--titles', Argument(
+            action  = 'store',
+            nargs   = '*',
+            help    = "List of custom titles to use for Multi Page Apps.",
+            default=[],
+        )),
         ('--static-dirs', Argument(
             metavar="KEY=VALUE",
             nargs='+',
@@ -374,6 +380,10 @@ class Serve(_BkServe):
                     f"The specified application {index!r} could not be "
                     "found."
                 )
+
+        # Handle custom titles for Multi Page Apps
+        if len(args.titles):
+            config.titles = args.titles
 
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
