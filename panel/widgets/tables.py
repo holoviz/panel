@@ -231,7 +231,7 @@ class BaseTable(ReactiveData, Widget):
                 elif df.index.nlevels == 1:
                     # Look in the column with the tuple format
                     index_col = tuple([col[: -(df.columns.nlevels - 1)]] + [""] * (df.columns.nlevels - 1))
-                    data: pd.Series | pd.Index = df[index_col]
+                    data = df[index_col]
                 else:
                     data = df.index.get_level_values(self.indexes.index(col))
 
