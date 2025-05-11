@@ -115,6 +115,11 @@ class Serve(_BkServe):
             type   = str,
             help   = "Password or filepath to use with Basic Authentication."
         )),
+        ('--cookie-path', Argument(
+            action = 'store',
+            type   = str,
+            help   = "The path the cookies should apply to ."
+        )),
         ('--oauth-provider', Argument(
             action = 'store',
             type   = str,
