@@ -246,6 +246,9 @@ class _config(_base_config):
     _cookie_secret = param.String(default=None, doc="""
         Configure to enable getting/setting secure cookies.""")
 
+    _cookie_path = param.String(default="/", doc="""
+        Configure to set the cookie path.""")
+
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
 
@@ -564,6 +567,10 @@ class _config(_base_config):
             'PANEL_COOKIE_SECRET',
             os.environ.get('BOKEH_COOKIE_SECRET', self._cookie_secret)
         )
+
+    @property
+    def cookie_path(self):
+        return os.environ.get('PANEL_COOKIE_PATH', self._cookie_path)
 
     @property
     def oauth_secret(self):
