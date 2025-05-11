@@ -37,7 +37,7 @@ Discover how to configure Panel apps to authenticate against your system credent
 :::
 
 :::{grid-item-card} {octicon}`shield;2.5em;sd-mr-1 sd-animate-grow50` OAuth Providers
-:link: providers
+:link: providers/index
 :link-type: doc
 
 A list of OAuth providers and how to configure them.
@@ -98,7 +98,7 @@ Note that since Panel is built on Bokeh server and Tornado, it is also possible 
 basic
 configuration
 pam
-providers
+providers/index
 templates
 user_info
 access_tokens
