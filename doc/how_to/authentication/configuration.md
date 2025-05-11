@@ -114,6 +114,32 @@ or in Python:
 pn.serve(app, cookie_secret="my-super-secret-secret", ...)
 ```
 
+## `cookie_path`
+
+Path setting that controls the scope of cookies. Specifies the URL path
+prefix that must exist in the requested URL for the browser to send the
+Cookie header. The default value '/' allows cookies to be sent to all paths.
+A more restrictive path like '/app1/' would limit cookies to only be sent
+to URLs under that path.
+
+If you are serving multiple individual Panel apps at the same domain you may want the cookie to apply to only an individual app or a subset of apps like `/sub/path/app1` or `/sub/path/`.
+
+You can set the `cookie_path` by supplying the `--cookie-path` as a CLI argument or set the `PANEL_COOKIE_PATH` environment variable.
+
+Examples:
+
+```
+panel serve oauth_example.py --cookie-path=/sub/path
+
+PANEL_COOKIE_PATH=/sub/path panel serve oauth_example.py ...
+```
+
+or in Python:
+
+```python
+pn.serve(app, cookie_path="/sub/path", ...)
+```
+
 ## `oauth_expiry`
 
 The OAuth expiry configuration value determines for how long an OAuth token will be valid once it has been issued. By default it is valid for 1 day, but may be overwritten by providing the duration in the number of days (decimal values are allowed).

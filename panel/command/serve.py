@@ -575,6 +575,14 @@ class Serve(_BkServe):
         elif args.cookie_secret:
             config.cookie_secret = args.cookie_secret
 
+        if args.cookie_path and config.cookie_path:
+            raise ValueError(
+                "Supply cookie path either using environment "
+                "variable or via explicit argument, not both."
+            )
+        elif args.cookie_path:
+            config.cookie_path = args.cookie_path
+
         # Check only one auth is used.
         if args.oauth_provider and config.oauth_provider:
                 raise ValueError(
@@ -714,6 +722,9 @@ class Serve(_BkServe):
                 )
             elif args.oauth_jwt_user:
                 config.oauth_jwt_user = args.oauth_jwt_user
+
+        if config.cookie_path:
+            kwargs['cookie_path'] = config.cookie_path
 
         if config.cookie_secret:
             kwargs['cookie_secret'] = config.cookie_secret
