@@ -6,7 +6,7 @@ The OAuth component will stop any user from accessing the application before fir
 
 The first step in configuring a OAuth is to specify a specific OAuth provider. Panel ships with a number of providers by default:
 
-* `azure`: Azure Active Directory
+* `azure`: Azure Entra ID. Previously known as Azure Active Directory.
 * `bitbucket`: Bitbucket
 * `github`: GitHub
 * `gitlab`: GitLab
