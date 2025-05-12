@@ -109,6 +109,16 @@ from Javascript in the notebook.
 
 Default: 'accumulate' | Type: Literal | Options: 'accumulate', 'replace', 'disable', 'False'
 
+### `cookie_path` (`PANEL_COOKIE_PATH`)
+
+Path setting that controls the scope of cookies. Specifies the URL path
+prefix that must exist in the requested URL for the browser to send the
+Cookie header. The default value '/' allows cookies to be sent to all paths.
+A more restrictive path like '/app1/' would limit cookies to only be sent
+to URLs under that path.
+
+Default: '/' | Type: String
+
 ### `cookie_secret` (`PANEL_COOKIE_SECRET`)
 
 Configure to enable getting/setting secure cookies.

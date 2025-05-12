@@ -77,7 +77,7 @@ usage: panel serve [-h] [--port PORT] [--address ADDRESS] [--unix-socket UNIX-SO
                    [--mem-log-frequency MILLISECONDS] [--use-xheaders] [--ssl-certfile CERTFILE] [--ssl-keyfile KEYFILE] [--session-ids MODE]
                    [--auth-module AUTH_MODULE] [--enable-xsrf-cookies] [--exclude-headers EXCLUDE_HEADERS [EXCLUDE_HEADERS ...]]
                    [--exclude-cookies EXCLUDE_COOKIES [EXCLUDE_COOKIES ...]] [--include-headers INCLUDE_HEADERS [INCLUDE_HEADERS ...]]
-                   [--include-cookies INCLUDE_COOKIES [INCLUDE_COOKIES ...]] [--cookie-secret COOKIE_SECRET] [--index INDEX]
+                   [--include-cookies INCLUDE_COOKIES [INCLUDE_COOKIES ...]] [--cookie-path COOKIE_PATH] [--cookie-secret COOKIE_SECRET] [--index INDEX]
                    [--disable-index] [--disable-index-redirect] [--num-procs N] [--session-token-expiration N]
                    [--websocket-max-message-size BYTES] [--websocket-compression-level LEVEL] [--websocket-compression-mem-level LEVEL]
                    [--glob] [--static-dirs KEY=VALUE [KEY=VALUE ...]] [--basic-auth BASIC_AUTH] [--oauth-provider OAUTH_PROVIDER]
@@ -151,6 +151,8 @@ options:
                         A list of request headers to make available in the session context (by default all headers are included).
   --include-cookies INCLUDE_COOKIES [INCLUDE_COOKIES ...]
                         A list of request cookies to make available in the session context (by default all cookies are included).
+  --cookie-path COOKIE_PATH
+                        Configure to enable controlling the sub path of the domain the cookie applies to.
   --cookie-secret COOKIE_SECRET
                         Configure to enable getting/setting secure cookies
   --index INDEX         Path to a template to use for the site index

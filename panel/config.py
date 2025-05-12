@@ -246,6 +246,13 @@ class _config(_base_config):
     _cookie_secret = param.String(default=None, doc="""
         Configure to enable getting/setting secure cookies.""")
 
+    _cookie_path = param.String(default="/", doc="""
+        Path setting that controls the scope of cookies. Specifies the URL path
+        prefix that must exist in the requested URL for the browser to send the
+        Cookie header. The default value '/' allows cookies to be sent to all paths.
+        A more restrictive path like '/app1/' would limit cookies to only be sent
+        to URLs under that path.""")
+
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
 
@@ -325,7 +332,7 @@ class _config(_base_config):
 
     # Global parameters that are shared across all sessions
     _globals: ClassVar[set[str]] = {
-        'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
+        'admin_plugins', 'autoreload', 'comms', 'cookie_path', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
@@ -564,6 +571,11 @@ class _config(_base_config):
             'PANEL_COOKIE_SECRET',
             os.environ.get('BOKEH_COOKIE_SECRET', self._cookie_secret)
         )
+
+    @property
+    def cookie_path(self):
+        """The sub path of the domain the cookie applies to."""
+        return os.environ.get('PANEL_COOKIE_PATH', self._cookie_path)
 
     @property
     def oauth_secret(self):
