@@ -580,7 +580,7 @@ class Serve(_BkServe):
         elif args.cookie_secret:
             config.cookie_secret = args.cookie_secret
 
-        if args.cookie_path and config.cookie_path:
+        if args.cookie_path and "PANEL_COOKIE_PATH" in os.environ:
             raise ValueError(
                 "Supply cookie path either using environment "
                 "variable or via explicit argument, not both."
