@@ -53,3 +53,11 @@ entry_points={
     ]
 }
 ```
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+azure
+```
