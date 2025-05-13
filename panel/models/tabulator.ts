@@ -728,6 +728,7 @@ export class DataTabulatorView extends HTMLBoxView {
       return
     }
     this._automatic_page_size = true
+    const responsive = this.model.sizing_mode && (this.model.sizing_mode.includes("height") || this.model.sizing_mode.includes("both"))
     const holder = this.shadow_el.querySelector(".tabulator-tableholder")
     const table = this.shadow_el.querySelector(".tabulator-table")
     if (table != null && holder != null) {
@@ -740,14 +741,20 @@ export class DataTabulatorView extends HTMLBoxView {
         heights.push(row_height)
         height += row_height
         if (height > table_height) {
-          page_size = i-1
+          page_size = i
+	  if (responsive) {
+	    page_size -= 1
+	  }
           break
         }
       }
       if (height < table_height) {
         page_size = table.children.length
         const remaining = table_height - height
-        page_size += Math.floor(remaining / Math.min(...heights))-2
+        page_size += Math.floor(remaining / Math.min(...heights))
+        if (responsive) {
+          page_size -= 2
+        }
       }
       this._updating_page_size = true
       try {
