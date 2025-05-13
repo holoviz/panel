@@ -742,9 +742,9 @@ export class DataTabulatorView extends HTMLBoxView {
         height += row_height
         if (height > table_height) {
           page_size = i
-	  if (responsive) {
-	    page_size -= 1
-	  }
+          if (responsive) {
+            page_size -= 1
+          }
           break
         }
       }
