@@ -624,6 +624,16 @@ div .tabulator .tabulator-header .tabulator-col {
   color: var(--mdc-theme-on-background);
 }
 
+.pnx-tabulator.tabulator .tabulator-footer .tabulator-page:not(disabled):hover {
+  background-color: var(--mdc-theme-primary-lightened);
+  color: var(--mdc-theme-on-background);
+}
+
+.pnx-tabulator.tabulator .tabulator-footer .tabulator-page.active {
+  background-color: var(--mdc-theme-primary);
+  color: var(--mdc-theme-on-primary);
+}
+
 /* Quill editor */
 
 .ql-editor,
