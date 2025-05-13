@@ -56,6 +56,31 @@ It will look something like
 
 ![Panel serve multi page app](../../_static/images/panel-serve-multipage-app.png)
 
+Besides that, a couple of useful flags to further configure a multi-page deployment are:
+
+* `--index`: Set as site index the application page of your preference. For example, to leave
+  the *app* application page as index you can pass `--index=app`
+
+  ```bash
+  panel serve app.py app2.ipynb --dev --index=app
+  ```
+
+  The `--index` flag also supports a path to a custom Jinja template to be used as index.
+  For this template, the following variables will be available:
+
+  * `PANEL_CDN`: URL to the Holoviz Panel CDN.
+  * `prefix`: The base URL from where applications are being served.
+  * `items`: List of tuples with the application page slug and title to display.
+
+* `--titles`: Set the titles for the application items shown in the default index page as cards.
+  By default, the titles shown are the application page slug as a title (without slash and first
+  letter upper case). You can use this flag the to, for example, show instead of `App` and `App2`
+  different titles like `Application` and `Application 2`
+
+  ```bash
+  panel serve app.py app2.ipynb --dev --titles Application "Application 2"
+  ```
+
 :::{note}
 You can also use one or more [*globs*](https://en.wikipedia.org/wiki/Glob_(programming)) to serve a long or dynamic list of apps. For example `apps/*`, `pages/*.py`, `examples/*.ipynb` or `docs/*.md`.
 :::
@@ -80,7 +105,7 @@ usage: panel serve [-h] [--port PORT] [--address ADDRESS] [--unix-socket UNIX-SO
                    [--include-cookies INCLUDE_COOKIES [INCLUDE_COOKIES ...]] [--cookie-secret COOKIE_SECRET] [--index INDEX]
                    [--disable-index] [--disable-index-redirect] [--num-procs N] [--session-token-expiration N]
                    [--websocket-max-message-size BYTES] [--websocket-compression-level LEVEL] [--websocket-compression-mem-level LEVEL]
-                   [--glob] [--static-dirs KEY=VALUE [KEY=VALUE ...]] [--basic-auth BASIC_AUTH] [--oauth-provider OAUTH_PROVIDER]
+                   [--glob] [--titles [TITLES ...]] [--static-dirs KEY=VALUE [KEY=VALUE ...]] [--basic-auth BASIC_AUTH] [--oauth-provider OAUTH_PROVIDER]
                    [--oauth-key OAUTH_KEY] [--oauth-secret OAUTH_SECRET] [--oauth-redirect-uri OAUTH_REDIRECT_URI]
                    [--oauth-extra-params OAUTH_EXTRA_PARAMS] [--oauth-jwt-user OAUTH_JWT_USER] [--oauth-encryption-key OAUTH_ENCRYPTION_KEY]
                    [--oauth-error-template OAUTH_ERROR_TEMPLATE] [--oauth-expiry-days OAUTH_EXPIRY_DAYS] [--oauth-refresh-tokens]
@@ -168,6 +193,8 @@ options:
   --websocket-compression-mem-level LEVEL
                         Set the Tornado WebSocket compression mem_level
   --glob                Process all filename arguments as globs
+  --titles [TITLES ...]
+                        List of custom titles to use for Multi Page Apps.
   --static-dirs KEY=VALUE [KEY=VALUE ...]
                         Static directories to serve specified as key=value pairs mapping from URL route to static file directory.
   --basic-auth BASIC_AUTH
