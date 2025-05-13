@@ -714,7 +714,6 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.setPage(this.model.page)
     }
     this._building = false
-    console.log("built")
     schedule_when(() => {
       const initializing = this._initializing
       this._initializing = false
@@ -731,7 +730,6 @@ export class DataTabulatorView extends HTMLBoxView {
     this._automatic_page_size = true
     const holder = this.shadow_el.querySelector(".tabulator-tableholder")
     const table = this.shadow_el.querySelector(".tabulator-table")
-    console.log(table?.clientHeight, holder?.clientHeight)
     if (table != null && holder != null) {
       const table_height = holder.clientHeight
       let height = 0
