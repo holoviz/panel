@@ -26,7 +26,7 @@ from ..config import _base_config, config, panel_extension
 from ..io.document import init_doc
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
-from ..io.notifications import NotificationArea
+from ..io.notifications import NotificationArea, NotificationAreaBase
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, JS_VERSION, ResourceComponent, _env,
     component_resource_path, get_dist_path, loading_css, parse_template,
@@ -621,7 +621,7 @@ class BasicTemplate(BaseTemplate):
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the modal""")
 
-    notifications = param.ClassSelector(class_=NotificationArea, constant=True, doc="""
+    notifications = param.ClassSelector(class_=NotificationAreaBase, constant=True, doc="""
         The NotificationArea instance attached to this template.
         Automatically added if config.notifications is set, but may
         also be provided explicitly.""")
