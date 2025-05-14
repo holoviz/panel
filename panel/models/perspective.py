@@ -91,6 +91,8 @@ class Perspective(HTMLBox):
         f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/wasm/perspective-js.wasm",
         f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/wasm/perspective-viewer.js",
         f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/wasm/perspective-viewer.wasm",
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/wasm/perspective-server.wasm",
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/wasm/perspective-server.js"
     ]
 
     @classproperty
