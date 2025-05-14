@@ -90,5 +90,5 @@ You may experience this issue when using multiple accounts (for example corporat
 If this confirms that browser history or configuration is causing the issue, try one or more of these steps:
 
 1. Clear your browser cache and cookies (select `Delete ALL browsing data` in your browser settings)
-2. Log out from all accounts before accessing your Panel application
+2. Log out from all accounts before accessing your Panel application.
 3. Use a dedicated browser profile for your Panel application
