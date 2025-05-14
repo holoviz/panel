@@ -68,7 +68,7 @@ Error rendering Bokeh items: Error: Could not open websocket
 [bokeh 3.7.2] Websocket connection 0 disconnected, will not attempt to reconnect
 ```
 
-#### Cause: Token too big
+#### Cause: Token Too Big
 
 You may experience this issue when the *token* used by the client to create the WebSocket connection to the Panel server has grown larger than allowed by your proxy settings.
 This is particularly common when using the `--oauth-encryption-key` parameter, which significantly increases the token size.
