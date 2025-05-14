@@ -224,9 +224,6 @@ class _config(_base_config):
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
 
-    titles = param.List(default=[], doc="""
-        Custom titles to use for Multi Page Apps.""")
-
     _admin = param.Boolean(default=False, doc="Whether the admin panel is enabled.")
 
     _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
@@ -278,6 +275,9 @@ class _config(_base_config):
         When set to a non-None value a thread pool will be started.
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
+
+    _index_titles = param.Dict(default={}, doc="""
+        Custom titles to use for Multi Page Apps index page.""")
 
     _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
         Password, dictionary with a mapping from username to password
@@ -333,7 +333,7 @@ class _config(_base_config):
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin'
+        'oauth_optional', 'admin', 'index_titles'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -523,6 +523,10 @@ class _config(_base_config):
     @property
     def embed_load_path(self):
         return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path)
+
+    @property
+    def index_titles(self):
+        return self._index_titles
 
     @property
     def inline(self):

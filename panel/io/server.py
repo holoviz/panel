@@ -590,7 +590,7 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
             else:
                 index = self.index
                 apps = []
-                for idx, slug in enumerate(self.applications.keys()):
+                for slug in self.applications.keys():
                     slug = (
                         slug
                         if self.request.uri.endswith("/") or not self.prefix
@@ -598,10 +598,8 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
                     )
                     # Try to get custom application page card title from config
                     # using as default value the application page slug
-                    title = slug[1:].replace("_", " ").title()
-                    possible_title = config.titles[idx : idx + 1]
-                    if len(possible_title):
-                        title = possible_title[0].title()
+                    default_title = slug[1:].replace("_", " ")
+                    title = config.index_titles.get(slug, default_title).title()
                     apps.append((slug, title))
                 apps = sorted(apps, key=lambda app: app[1])
             self.render(index, prefix=self.prefix, items=apps)
