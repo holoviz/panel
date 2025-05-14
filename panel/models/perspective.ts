@@ -182,7 +182,7 @@ export class PerspectiveView extends HTMLBoxView {
         if ((window as any).perspective_viewer !== undefined) {
           resolve(null)
         } else if (Date.now() - start > timeout) {
-          reject(new Error('Timed out waiting for window.perspective_viewer'))
+          reject(new Error("Timed out waiting for window.perspective_viewer"))
         } else {
           setTimeout(check, interval)
         }
