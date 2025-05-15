@@ -71,6 +71,14 @@ export class ReactComponentView extends ReactiveESMView {
     this.force_update()
   }
 
+  override _update_layout(): void {
+    super._update_layout()
+    const handlers = (this._lifecycle_handlers.get("update_layout") || [])
+    for (const cb of handlers) {
+      cb()
+    }
+  }
+
   override async update_children(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
