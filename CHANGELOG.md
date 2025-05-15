@@ -2,7 +2,7 @@
 
 ## Version 1.7.0
 
-This minor release is not as jam-packed as previous minor releases but adds a number of quality of life improvements, bug fixes and features along with version and compatibility updates for a number of JS dependencies. Many thanks to some of our more frequent contributors @dalthviz, @etiwho, our new contributor @emmanuel-ferdman and our maintainers @Hoxbro, @MarcSkovMadsen and @philippjfr.
+This minor release is not as jam-packed as previous minor releases but adds a number of quality of life improvements, bug fixes and features along with version and compatibility updates for a number of JS dependencies. Many thanks to some of our more frequent contributors @dalthviz, @etihwo, our new contributor @emmanuel-ferdman and our maintainers @Hoxbro, @MarcSkovMadsen and @philippjfr.
 
 ### Features
 
