@@ -31,7 +31,7 @@ from ..pane.markup import (
 )
 from ..pane.media import Audio, Video
 from ..pane.placeholder import Placeholder
-from ..param import ParamFunction
+from ..param import ParamFunction, ParamRef
 from ..viewable import Children, ServableMixin, Viewable
 from ..widgets.base import Widget
 from ..widgets.icon import ToggleIcon
@@ -475,7 +475,7 @@ class ChatMessage(Pane):
         if not isinstance(obj, (FileBase, HTMLBasePane)):
             if obj.sizing_mode is None and not obj.width:
                 params['sizing_mode'] = "stretch_width"
-            if obj.height is None and not isinstance(obj, ParamFunction):
+            if obj.height is None and not isinstance(obj, (ParamFunction, ParamRef)):
                 params['height'] = 500
         obj.param.update(params)
 
