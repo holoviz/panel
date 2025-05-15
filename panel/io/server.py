@@ -584,15 +584,24 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
             redirect_to = f".{app_names[0]}"
             self.redirect(redirect_to)
         else:
-            apps = sorted(self.applications.keys())
             if self.index is None:
+                apps = sorted(self.applications.keys())
                 index = "app_index.html"
             else:
                 index = self.index
-                apps = [
-                    app if self.request.uri.endswith('/') or not self.prefix else f"{self.prefix}{app}"
-                    for app in apps
-                ]
+                apps = []
+                for slug in self.applications.keys():
+                    slug = (
+                        slug
+                        if self.request.uri.endswith("/") or not self.prefix
+                        else f"{self.prefix}{slug}"
+                    )
+                    # Try to get custom application page card title from config
+                    # using as default value the application page slug
+                    default_title = slug[1:].replace("_", " ")
+                    title = config.index_titles.get(slug, default_title).title()
+                    apps.append((slug, title))
+                apps = sorted(apps, key=lambda app: app[1])
             self.render(index, prefix=self.prefix, items=apps)
 
     def render(self, *args, **kwargs):
