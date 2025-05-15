@@ -2,6 +2,50 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.7.0
+
+This minor release is not as jam-packed as previous minor releases but adds a number of quality of life improvements, bug fixes and features along with version and compatibility updates for a number of JS dependencies. Many thanks to some of our more frequent contributors @dalthviz, @etiwho, our new contributor @emmanuel-ferdman and our maintainers @Hoxbro, @MarcSkovMadsen and @philippjfr.
+
+### Features
+
+- Add a secondary (right) sidebar to the `FastListTemplate` ([#7774](https://github.com/holoviz/panel/pull/7774))
+- Add `Date(Time)Picker.allowInput` option ([#7886](https://github.com/holoviz/panel/pull/7886))
+- Add `Markdown.disable_anchors` option ([#7902](https://github.com/holoviz/panel/pull/7902))
+- Add `config.cache_path` variable to configure default location for diskcache ([#7903](https://github.com/holoviz/panel/pull/7903))
+- Support custom cookie path ([#7911](https://github.com/holoviz/panel/pull/7911))
+- Allow customizing index page titles with `--index-titles` CLI option ([#7912](https://github.com/holoviz/panel/pull/7916))
+
+### Enhancements
+
+- Display parameter name in error messages ([#7879](https://github.com/holoviz/panel/pull/7879))
+- Improve Material design styling ([#7891](https://github.com/holoviz/panel/pull/7891), [#7917](https://github.com/holoviz/panel/pull/7917))
+- Improve logic for computing Tabulator page size automatically ([#7915](https://github.com/holoviz/panel/pull/7915))
+
+### Versions and Compatibility
+
+- Bump Ace `CodeEditor` version 1.40.1 and add themes ([#7874](https://github.com/holoviz/panel/pull/7874))
+- Bump pyodide version to 0.27.5 ([#7905](https://github.com/holoviz/panel/pull/7905))
+- Bump `ECharts` version to 5.6.0 ([#7905](https://github.com/holoviz/panel/pull/7905))
+- Bump `JSONEditor` version to 10.2.0 ([#7905](https://github.com/holoviz/panel/pull/7905))
+- Bump `Perspective` version to 3.6.1 ([#7919](https://github.com/holoviz/panel/pull/7919))
+
+### Bug fixes
+
+- Deduplicate components before compiling ([#7887](https://github.com/holoviz/panel/pull/7887))
+- Avoid boomeranging of events after `hold` is applied ([#7892](https://github.com/holoviz/panel/pull/7892))
+- Handle .ico image base64 mime-type correctly ([#7894](https://github.com/holoviz/panel/pull/7894))
+- Ensure `FileDropper` height is not limited ([#7898](https://github.com/holoviz/panel/pull/7898))
+- Ensure correct stylesheet cache is used by theme hooks when component is shared between sessions ([#7896](https://github.com/holoviz/panel/pull/7896))
+- Reset `BaseTemplate._documents` correctly on autoreload ([#7897](https://github.com/holoviz/panel/pull/7897))
+- Ensure widget CSS is loaded correctly when server path is prefixed ([#7900](https://github.com/holoviz/panel/pull/7900))
+- Correct display `Tabulator` with multi index and multi index column ([#7907](https://github.com/holoviz/panel/pull/7907))
+
+### Documentation
+
+- Document caching of dependencies by combining `cache` with `depends` ([#7876](https://github.com/holoviz/panel/pull/7876))
+- Remove deprecated keyword in doc for `DateRangeSlider` and `DateTimeRangSlider` ([#7893](https://github.com/holoviz/panel/pull/7893))
+- Add guidance on troubleshooting OAuth issues ([#7921](https://github.com/holoviz/panel/pull/7921))
+
 ## Version 1.6.3
 
 Date: 2025-04-23
