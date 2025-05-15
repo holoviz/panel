@@ -155,11 +155,11 @@ class ImageBase(FileBase):
         It can be `_self` (default), `_blank`, etc.""")
 
     _rerender_params: ClassVar[list[str]] = [
-        'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
+        'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height', 'target'
     ]
 
     _rename: ClassVar[Mapping[str, str | None ]] = {
-        'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None,
+        'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None, "target": None
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
