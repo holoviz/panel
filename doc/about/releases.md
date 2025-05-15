@@ -14,6 +14,7 @@ This minor release is not as jam-packed as previous minor releases but adds a nu
 - Add `config.cache_path` variable to configure default location for diskcache ([#7903](https://github.com/holoviz/panel/pull/7903))
 - Support custom cookie path ([#7911](https://github.com/holoviz/panel/pull/7911))
 - Allow customizing index page titles with `--index-titles` CLI option ([#7912](https://github.com/holoviz/panel/pull/7916))
+- Add `Image.target` option to configure where to open `link_url` ([#7924](https://github.com/holoviz/panel/pull/7924))
 
 ### Enhancements
 
