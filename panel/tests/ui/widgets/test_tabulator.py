@@ -3602,7 +3602,7 @@ def test_tabulator_remote_pagination_auto_page_size_grow(page, df_mixed):
 
 def test_tabulator_remote_pagination_auto_page_size_shrink(page, df_mixed):
     nrows, ncols = df_mixed.shape
-    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=10, height=150)
+    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=10, height=160)
 
     serve_component(page, widget)
 
