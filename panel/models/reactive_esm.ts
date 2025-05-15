@@ -175,6 +175,7 @@ export class ReactiveESMView extends HTMLBoxView {
   _child_rendered: Map<UIElementView, boolean> = new Map()
   _event_handlers: ((data: unknown) => void)[] = []
   _lifecycle_handlers: Map<string, ((...args: any[]) => void)[]> =  new Map([
+    ["update_layout", []],
     ["after_layout", []],
     ["after_render", []],
     ["resize", []],
