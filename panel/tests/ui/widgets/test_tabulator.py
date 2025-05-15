@@ -1606,6 +1606,37 @@ def test_tabulator_selection_add_filter(page):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
+def test_tabulator_selection_add_filter_edit_value(page, exception_handler_accumulator):
+    # https://github.com/holoviz/panel/issues/7525
+    df = pd.DataFrame(
+        {"col": ["a", "a", "b", "b", "b"]},
+        index=["idx0", "idx1", "idx2", "idx3", "idx4"],
+    )
+    w_col = Select(value="b", options=["a", "b"])
+    widget = Tabulator(df, selectable=1)
+
+    def f(df, pattern):
+        return df[df['col'].str.contains(pattern)]
+
+    widget.add_filter(bind(f, pattern=w_col))
+
+    serve_component(page, widget)
+
+    # Click on the first row of the index column to select the row
+    c0 = page.locator('text="idx4"')
+    c0.wait_for()
+    c0.click()
+
+    b3 = page.locator('text="b"').nth(2)
+    b3.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("bcd")
+    editable_cell.press('Enter')
+    widget.param.trigger('value')
+    wait_until(lambda: widget.selection == [4], page)
+    assert not exception_handler_accumulator
+
+
 @pytest.mark.parametrize('embed_content', [False, True])
 def test_tabulator_row_content(page, df_mixed, embed_content):
     widget = Tabulator(
