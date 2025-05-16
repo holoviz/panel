@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en" >
+  <head>
+    <meta charset="utf-8">
+    <title>Wrapping Material UI components</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/1.7.0/dist/images/apple-touch-icon.png">
+    <link rel="icon" href="https://cdn.holoviz.org/panel/1.7.0/dist/images/favicon.ico" type="">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="name" content="Wrapping Material UI components">
+    <link rel="manifest" href="">
+    <style>
+      html, body {
+	display: flow-root;
+        box-sizing: border-box;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" type="text/css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" type="text/css" />
+
+<style type="text/css">
+
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 400px));
+  -webkit-mask-size: auto calc(min(50%, 400px));
+}
+.py-error { display: none; }</style>
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./serviceWorker.js').then(reg => {
+    reg.onupdatefound = () => {
+      const installingWorker = reg.installing;
+      installingWorker.onstatechange = () => {
+        if (installingWorker.state === 'installed' &&
+            navigator.serviceWorker.controller) {
+          // Reload page if service worker is replaced
+          location.reload();
+        }
+      }
+    }
+  })
+}
+</script>
+
+<script type="esms-options">{"shimMode": true}</script>
+
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.7.0/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.7.3.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.7.3.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.7.3.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.7.3.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.7.0/dist/bundled/material-components-web@7.0.0/dist/material-components-web.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.7.0/dist/panel.min.js"></script>
+
+<script type="text/javascript">
+  Bokeh.set_log_level("info");
+</script>    <!-- Template CSS -->
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.7.0/dist/css/loadingspinner.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.7.0/dist/css/markdown.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.7.0/dist/css/listpanel.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.7.0/dist/css/widgetbox.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.7.0/dist/css/select.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.7.0/dist/css/loading.css?v=1.7.0">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.7.0/dist/bundled/material-components-web@7.0.0/dist/material-components-web.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons&display=block">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.7.0/dist/bundled/theme/default.css?v=1.7.0">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.7.0/dist/bundled/theme/material_variables.css?v=1.7.0">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.7.0/dist/bundled/materialtemplate/material.css?v=1.7.0">
+
+<style>
+:root {
+  --header-background: var(--design-primary-color, var(--panel-primary-color));
+  --header-color: var(--design-primary-text-color, var(--panel-on-primary-color));
+  --sidebar-width: 370px;
+}
+#header {
+  --mdc-theme-background: var(--header-background);
+  --mdc-theme-on-background: var(--header-color);
+  --design-background-text-color: var(--header-color);
+  --design-background-color: var(--header-background);
+  background-color: var(--header-background);
+  color: var(--header-color);
+}
+.mdc-drawer {
+  width: var(--sidebar-width) !important;
+}
+.mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing)+.mdc-drawer-app-content {
+  margin-left: var(--sidebar-width) !important;
+}
+</style>
+
+    <style type="text/css">
+    
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 400px));
+  -webkit-mask-size: auto calc(min(50%, 400px));
+}
+    </style>
+
+    <!-- Template JS -->
+    <script src="https://cdn.holoviz.org/panel/1.7.0/dist/bundled/material-components-web@7.0.0/dist/material-components-web.min.js"></script>
+
+  </head>
+  <body class="pn-loading pn-arc">
+<div class="mdc-typography" id="container">
+  <header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" id="header">
+    <div class="mdc-top-app-bar__row">
+      <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+	<div class="title-bar">
+          <span class="mdc-top-app-bar__title app-header">
+<a class="title" href="" >&nbsp;Wrapping Material UI components</a>          </span>
+          <div id="header-items">
+          </div>
+        </div>
+      </section>
+      <div class="pn-busy-container">
+	<div id="fb46279f-8243-497d-8d66-c52d7bc19a16" data-root-id="p1018" style="display: contents;"></div>
+      </div>
+    </div>
+  </header>
+
+
+  <div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
+    <main class="main-content" id="main">
+      <div id="a3d3db10-8104-4b2f-8e35-e10b9bea31ce" data-root-id="p1020" style="display: contents;"></div>
+      <div id="d52ed876-5af6-44c2-99a4-a11512d7810c" data-root-id="p1021" style="display: contents;"></div>
+    </main>
+
+    <div id="pn-Modal" class="mdc-dialog">
+      <div class="mdc-dialog__container">
+	<div class="mdc-dialog__surface" role="alertdialog" aria-modal="true">
+	  <div class="mdc-dialog__content" id="my-dialog-content">
+	  </div>
+	</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+
+    var modal_el = document.getElementById("pn-Modal");
+    var modal = new mdc.dialog.MDCDialog(modal_el);
+
+    window.onclick = function(event) {
+      if (event.target == modal_el) {
+	modal.close();
+      }
+    }
+  </script>
+
+  <div id="e9d980f3-3af7-4bf9-a38c-26d3235ae8cf" data-root-id="p1013" style="display: contents;"></div>
+<div id="a79121c1-8cfe-4530-9769-1d0aedce9b13" data-root-id="p1015" style="display: contents;"></div>
+<div id="f2dd9b8e-4c63-4f30-8743-d8f43f31565c" data-root-id="p1004" style="display: contents;"></div>
+<div id="b3105cd4-510e-4711-9799-00ca5f6b7254" data-root-id="p1016" style="display: contents;"></div>
+
+</div>
+  
+    <script type="text/javascript">
+      const pyodideWorker = new Worker("./esm_material_ui.js");
+      pyodideWorker.busy = false
+      pyodideWorker.queue = []
+      
+      let patching = 0
+      
+      function send_change(jsdoc, event) {
+        if ((event.setter_id != null && event.setter_id == 'py') || (patching > 0)) {
+          return
+        } else if (pyodideWorker.busy && event.model && event.attr) {
+          let events = []
+          for (const old_event of pyodideWorker.queue) {
+            if (!(old_event.model === event.model && old_event.attr === event.attr)) {
+              events.push(old_event)
+            }
+          }
+          events.push(event)
+          pyodideWorker.queue = events
+          return
+        }
+        const patch = jsdoc.create_json_patch([event])
+        pyodideWorker.busy = true
+        pyodideWorker.postMessage({type: 'patch', patch: patch})
+      }
+      
+      pyodideWorker.onmessage = async (event) => {
+        const msg = event.data
+      
+        const body = document.getElementsByTagName('body')[0]
+        const loading_msgs = document.getElementsByClassName('pn-loading-msg')
+        if (msg.type === 'idle') {
+          if (pyodideWorker.queue.length) {
+            const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
+            pyodideWorker.busy = true
+            pyodideWorker.queue = []
+            pyodideWorker.postMessage({type: 'patch', patch: patch})
+          } else {
+            pyodideWorker.busy = false
+          }
+        } else if (msg.type === 'status') {
+          let loading_msg
+          if (loading_msgs.length) {
+            loading_msg = loading_msgs[0]
+          } else if (body.classList.contains('pn-loading')) {
+            loading_msg = document.createElement('div')
+            loading_msg.classList.add('pn-loading-msg')
+            body.appendChild(loading_msg)
+          }
+          if (loading_msg != null) {
+            loading_msg.innerHTML = msg.msg
+          }
+        } else if (msg.type === 'render') {
+          const docs_json = JSON.parse(msg.docs_json)
+          const render_items = JSON.parse(msg.render_items)
+          const root_ids = JSON.parse(msg.root_ids)
+      
+          // Remap roots in message to element IDs
+          const root_els = document.querySelectorAll('[data-root-id]')
+          const data_roots = []
+          for (const el of root_els) {
+             el.innerHTML = ''
+             data_roots.push([el.getAttribute('data-root-id'), el.id])
+          }
+          data_roots.sort((a, b) => a[0]<b[0] ? -1: 1)
+          const roots = {}
+          for (let i=0; i<data_roots.length; i++) {
+            roots[root_ids[i]] = data_roots[i][1]
+          }
+          render_items[0]['roots'] = roots
+          render_items[0]['root_ids'] = root_ids
+      
+          // Clear pre-rendered contents
+          Bokeh.index.roots.map((v) => v.remove())
+      
+          // Embed content
+          const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
+      
+          // Remove loading spinner and message
+          body.classList.remove("pn-loading", "arc")
+          for (const loading_msg of loading_msgs) {
+            loading_msg.remove()
+          }
+      
+          // Setup bi-directional syncing
+          pyodideWorker.jsdoc = jsdoc = [...views.roots.values()][0].model.document
+          jsdoc.on_change(send_change.bind(null, jsdoc), false)
+          pyodideWorker.postMessage({'type': 'rendered'})
+          pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
+        } else if (msg.type === 'patch') {
+          try {
+            patching += 1
+            pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers)
+          } finally {
+            patching -= 1
+          }
+        }
+      };
+    </script>
+    <script type="application/json" id="p1058">
+      {"28c08e32-9429-40c2-8bf6-c684b0b713b9":{"version":"3.7.3","title":"Wrapping Material UI components","roots":[{"type":"object","name":"panel.models.location.Location","id":"p1004","attributes":{"name":"location","reload":false}},{"type":"object","name":"panel.models.markup.HTML","id":"p1013","attributes":{"name":"js_area","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"type":"object","name":"ImportedStyleSheet","id":"p1010","attributes":{"url":"https://cdn.holoviz.org/panel/1.7.0/dist/css/loading.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1009","attributes":{"url":"https://cdn.holoviz.org/panel/1.7.0/dist/bundled/theme/material.css"}}],"width":0,"height":0,"margin":0,"sizing_mode":"fixed","align":"start","disable_math":true}},{"type":"object","name":"panel.models.reactive_html.ReactiveHTML","id":"p1015","attributes":{"name":"actions","subscribed_events":{"type":"set","entries":["dom_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1009"}],"margin":0,"align":"start","data":{"type":"object","name":"MaterialTemplateActions1","id":"p1014","attributes":{"name":"MaterialTemplateActions00125","tags":["__ref:p1015"]}},"scripts":{"type":"map","entries":[["open_modal",["modal.open();\nsetTimeout(function() {{\n  window.dispatchEvent(new Event(&amp;#x27;resize&amp;#x27;));\n}}, 200);"]],["close_modal",["modal.close()"]]]}}},{"type":"object","name":"panel.models.browser.BrowserInfo","id":"p1016","attributes":{"name":"browser_info"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1018","attributes":{"name":"busy_indicator","css_classes":["loader","light"],"stylesheets":[":host { --loading-spinner-size: 20px; }","\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"type":"object","name":"ImportedStyleSheet","id":"p1017","attributes":{"url":"https://cdn.holoviz.org/panel/1.7.0/dist/css/loadingspinner.css"}},{"id":"p1009"}],"min_width":20,"min_height":20,"margin":[5,10],"align":"start"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1020","attributes":{"name":"main-4528435792","tags":["main"],"css_classes":["markdown"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"type":"object","name":"ImportedStyleSheet","id":"p1019","attributes":{"url":"https://cdn.holoviz.org/panel/1.7.0/dist/css/markdown.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1006","attributes":{"url":"https://cdn.jsdelivr.net/npm/material-components-web@7.0.0/dist/material-components-web.min.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1007","attributes":{"url":"https://cdn.holoviz.org/panel/1.7.0/dist/bundled/theme/default.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1008","attributes":{"url":"https://cdn.holoviz.org/panel/1.7.0/dist/bundled/theme/material_variables.css"}},{"id":"p1009"}],"margin":[5,10],"align":"start","text":"&amp;lt;p&amp;gt;This example demonstrates how to wrap Material UI components using &amp;lt;code&amp;gt;ReactComponent&amp;lt;/code&amp;gt;.&amp;lt;/p&amp;gt;\n"}},{"type":"object","name":"Row","id":"p1021","attributes":{"name":"main-4530266064","tags":["main"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"type":"object","name":"ImportedStyleSheet","id":"p1011","attributes":{"url":"https://cdn.holoviz.org/panel/1.7.0/dist/css/listpanel.css"}},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1022","attributes":{"name":"Column00161","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1011"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1023","attributes":{"name":"Controls","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"type":"object","name":"ImportedStyleSheet","id":"p1029","attributes":{"url":"https://cdn.holoviz.org/panel/1.7.0/dist/css/widgetbox.css"}},{"id":"p1011"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":[5,10],"align":"start","children":[{"type":"object","name":"Div","id":"p1024","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":[5,10],"align":"start","text":"&lt;b&gt;Controls&lt;/b&gt;"}},{"type":"object","name":"Checkbox","id":"p1025","attributes":{"js_property_callbacks":{"type":"map","entries":[["change:active",[{"type":"object","name":"CustomJS","id":"p1048","attributes":{"tags":[[4529834064,[null,"active"],[null,"disabled"]]],"args":{"type":"map","entries":[["bidirectional",true],["properties",{"type":"map","entries":[["value","disabled"]]}],["source",{"id":"p1025"}],["target",{"type":"object","name":"Button1","id":"p1030","attributes":{"name":"Button00139","tags":["__ref:p1021"],"js_property_callbacks":{"type":"map","entries":[["change:disabled",[{"type":"object","name":"CustomJS","id":"p1049","attributes":{"tags":[[4529834064,[null,"active"],[null,"disabled"]]],"args":{"type":"map","entries":[["bidirectional",true],["properties",{"type":"map","entries":[["value","disabled"]]}],["source",{"id":"p1030"}],["target",{"id":"p1025"}]]},"code":"\n    var value = source['disabled'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['active'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set active on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['active'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]],["change:label",[{"type":"object","name":"CustomJS","id":"p1051","attributes":{"tags":[[4529680848,[null,"value"],[null,"label"]]],"args":{"type":"map","entries":[["bidirectional",true],["properties",{"type":"map","entries":[["value","label"]]}],["source",{"id":"p1030"}],["target",{"type":"object","name":"panel.models.widgets.TextInput","id":"p1026","attributes":{"js_property_callbacks":{"type":"map","entries":[["change:value",[{"type":"object","name":"CustomJS","id":"p1050","attributes":{"tags":[[4529680848,[null,"value"],[null,"label"]]],"args":{"type":"map","entries":[["bidirectional",true],["properties",{"type":"map","entries":[["value","label"]]}],["source",{"id":"p1026"}],["target",{"id":"p1030"}]]},"code":"\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['label'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set label on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['label'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]},"subscribed_events":{"type":"set","entries":["enter-pressed"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"width":300,"min_width":300,"margin":[5,10],"align":"start","title":"Label","max_length":5000}}]]},"code":"\n    var value = source['label'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]],["change:variant",[{"type":"object","name":"CustomJS","id":"p1053","attributes":{"tags":[[4530007056,[null,"value"],[null,"variant"]]],"args":{"type":"map","entries":[["bidirectional",true],["properties",{"type":"map","entries":[["value","variant"]]}],["source",{"id":"p1030"}],["target",{"type":"object","name":"panel.models.widgets.CustomSelect","id":"p1028","attributes":{"js_property_callbacks":{"type":"map","entries":[["change:value",[{"type":"object","name":"CustomJS","id":"p1052","attributes":{"tags":[[4530007056,[null,"value"],[null,"variant"]]],"args":{"type":"map","entries":[["bidirectional",true],["properties",{"type":"map","entries":[["value","variant"]]}],["source",{"id":"p1028"}],["target",{"id":"p1030"}]]},"code":"\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['variant'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set variant on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['variant'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"type":"object","name":"ImportedStyleSheet","id":"p1027","attributes":{"url":"https://cdn.holoviz.org/panel/1.7.0/dist/css/select.css"}},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"width":300,"min_width":300,"margin":[5,10],"align":"start","title":"Variant","options":[["contained","contained"],["outlined","outlined"],["text","text"]],"value":"contained"}}]]},"code":"\n    var value = source['variant'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}}}]]},"code":"\n    var value = source['active'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['disabled'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set disabled on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['disabled'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":[5,10],"align":"start","label":"Disabled"}},{"id":"p1026"},{"id":"p1028"}]}},{"type":"object","name":"panel.models.esm.ReactComponent","id":"p1031","attributes":{"name":"Button","subscribed_events":{"type":"set","entries":["dom_event","data_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":0,"align":"start","class_name":"Button","data":{"id":"p1030"},"esm":"\n\nimport Button from '@mui/material/Button';\n\n\n\nexport function render({ model }) {\n\n  const [label] = model.useState(\"label\")\n\n  const [variant] = model.useState(\"variant\")\n\n  const [disabled] = model.useState(\"disabled\")\n\n  return (\n\n    &lt;Button disabled={disabled} variant={variant}&gt;{label || 'Click me!'}&lt;/Button&gt;\n\n  )\n\n}\n\n","importmap":{"type":"map","entries":[["imports",{"type":"map","entries":[["react","https://esm.sh/react@18.3.1"],["react/","https://esm.sh/react@18.3.1/"],["react-dom","https://esm.sh/react-dom@18.3.1?deps=react@18.3.1&amp;external=react"],["react-dom/","https://esm.sh/react-dom@18.3.1&amp;deps=react@18.3.1&amp;external=react/"],["react-is","https://esm.sh/react-is@18.3.1&amp;external=react"],["@emotion/cache","https://esm.sh/@emotion/cache?deps=react@18.3.1,react-dom@18.3.1"],["@emotion/react","https://esm.sh/@emotion/react?deps=react@18.3.1,react-dom@18.3.1&amp;external=react,react-is"],["@emotion/styled","https://esm.sh/@emotion/styled?deps=react@18.3.1,react-dom@18.3.1&amp;external=react,react-is"],["@mui/material/","https://esm.sh/@mui/material@5.16.7?deps=react@18.3.1,react-dom@18.3.1&amp;external=react,react-dom,react-is,@emotion/react&amp;path=/"]]}],["scopes",{"type":"map"}]]}}}]}},{"type":"object","name":"panel.models.layout.Column","id":"p1032","attributes":{"name":"Column00175","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1011"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1033","attributes":{"name":"Controls","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1029"},{"id":"p1011"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":[5,10],"align":"start","children":[{"type":"object","name":"Div","id":"p1034","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":[5,10],"align":"start","text":"&lt;b&gt;Controls&lt;/b&gt;"}},{"type":"object","name":"Slider","id":"p1035","attributes":{"js_property_callbacks":{"type":"map","entries":[["change:value",[{"type":"object","name":"CustomJS","id":"p1054","attributes":{"tags":[[4529674000,[null,"value"],[null,"value"]]],"args":{"type":"map","entries":[["bidirectional",true],["properties",{"type":"map","entries":[["value","value"]]}],["source",{"id":"p1035"}],["target",{"type":"object","name":"Rating1","id":"p1036","attributes":{"name":"Rating00140","tags":["__ref:p1021"],"js_property_callbacks":{"type":"map","entries":[["change:value",[{"type":"object","name":"CustomJS","id":"p1055","attributes":{"tags":[[4529674000,[null,"value"],[null,"value"]]],"args":{"type":"map","entries":[["bidirectional",true],["properties",{"type":"map","entries":[["value","value"]]}],["source",{"id":"p1036"}],["target",{"id":"p1035"}]]},"code":"\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]},"value":3}}]]},"code":"\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":[5,10],"align":"start","title":"Value","start":0,"end":5,"value":3,"step":0.1}}]}},{"type":"object","name":"panel.models.esm.ReactComponent","id":"p1037","attributes":{"name":"Rating","subscribed_events":{"type":"set","entries":["dom_event","data_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":0,"align":"start","class_name":"Rating","data":{"id":"p1036"},"esm":"\n\nimport Rating from '@mui/material/Rating'\n\n\n\nexport function render({model}) {\n\n  const [value, setValue] = model.useState(\"value\")\n\n  return (\n\n    &lt;Rating\n\n      value={value}\n\n      onChange={(event, newValue) =&gt; setValue(newValue) }\n\n    /&gt;\n\n  )\n\n}\n\n","importmap":{"type":"map","entries":[["imports",{"type":"map","entries":[["react","https://esm.sh/react@18.3.1"],["react/","https://esm.sh/react@18.3.1/"],["react-dom","https://esm.sh/react-dom@18.3.1?deps=react@18.3.1&amp;external=react"],["react-dom/","https://esm.sh/react-dom@18.3.1&amp;deps=react@18.3.1&amp;external=react/"],["react-is","https://esm.sh/react-is@18.3.1&amp;external=react"],["@emotion/cache","https://esm.sh/@emotion/cache?deps=react@18.3.1,react-dom@18.3.1"],["@emotion/react","https://esm.sh/@emotion/react?deps=react@18.3.1,react-dom@18.3.1&amp;external=react,react-is"],["@emotion/styled","https://esm.sh/@emotion/styled?deps=react@18.3.1,react-dom@18.3.1&amp;external=react,react-is"],["@mui/material/","https://esm.sh/@mui/material@5.16.7?deps=react@18.3.1,react-dom@18.3.1&amp;external=react,react-dom,react-is,@emotion/react&amp;path=/"]]}],["scopes",{"type":"map"}]]}}}]}},{"type":"object","name":"panel.models.layout.Column","id":"p1038","attributes":{"name":"Column00189","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1011"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1039","attributes":{"name":"Controls","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1029"},{"id":"p1011"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":[5,10],"align":"start","children":[{"type":"object","name":"Div","id":"p1040","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":[5,10],"align":"start","text":"&lt;b&gt;Controls&lt;/b&gt;"}},{"type":"object","name":"Spinner","id":"p1041","attributes":{"js_property_callbacks":{"type":"map","entries":[["change:value",[{"type":"object","name":"CustomJS","id":"p1056","attributes":{"tags":[[4530175504,[null,"value"],[null,"value"]]],"args":{"type":"map","entries":[["bidirectional",true],["properties",{"type":"map","entries":[["value","value"]]}],["source",{"id":"p1041"}],["target",{"type":"object","name":"DiscreteSlider1","id":"p1042","attributes":{"name":"DiscreteSlider00141","tags":["__ref:p1021"],"js_property_callbacks":{"type":"map","entries":[["change:value",[{"type":"object","name":"CustomJS","id":"p1057","attributes":{"tags":[[4530175504,[null,"value"],[null,"value"]]],"args":{"type":"map","entries":[["bidirectional",true],["properties",{"type":"map","entries":[["value","value"]]}],["source",{"id":"p1042"}],["target",{"id":"p1041"}]]},"code":"\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}}}]]},"code":"\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"width":300,"min_width":300,"margin":[5,10],"align":"start","title":"Value","value":20,"step":0.1}}]}},{"type":"object","name":"panel.models.esm.ReactComponent","id":"p1043","attributes":{"name":"DiscreteSlider","subscribed_events":{"type":"set","entries":["dom_event","data_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1010"},{"id":"p1006"},{"id":"p1007"},{"id":"p1008"},{"id":"p1009"}],"margin":0,"align":"start","class_name":"DiscreteSlider","data":{"id":"p1042"},"esm":"\n\nimport Box from '@mui/material/Box';\n\nimport Slider from '@mui/material/Slider';\n\n\n\nexport function render({ model }) {\n\n  const [value, setValue] = model.useState(\"value\")\n\n  const [marks] = model.useState(\"marks\")\n\n  return (\n\n    &lt;Box sx={{ width: 300 }}&gt;\n\n      &lt;Slider\n\n        aria-label=\"Restricted values\"\n\n        defaultValue={value}\n\n        marks={marks}\n\n        onChange={(e) =&gt; setValue(e.target.value)}\n\n        step={null}\n\n        valueLabelDisplay=\"auto\"\n\n      /&gt;\n\n    &lt;/Box&gt;\n\n  );\n\n}\n\n","importmap":{"type":"map","entries":[["imports",{"type":"map","entries":[["react","https://esm.sh/react@18.3.1"],["react/","https://esm.sh/react@18.3.1/"],["react-dom","https://esm.sh/react-dom@18.3.1?deps=react@18.3.1&amp;external=react"],["react-dom/","https://esm.sh/react-dom@18.3.1&amp;deps=react@18.3.1&amp;external=react/"],["react-is","https://esm.sh/react-is@18.3.1&amp;external=react"],["@emotion/cache","https://esm.sh/@emotion/cache?deps=react@18.3.1,react-dom@18.3.1"],["@emotion/react","https://esm.sh/@emotion/react?deps=react@18.3.1,react-dom@18.3.1&amp;external=react,react-is"],["@emotion/styled","https://esm.sh/@emotion/styled?deps=react@18.3.1,react-dom@18.3.1&amp;external=react,react-is"],["@mui/material/","https://esm.sh/@mui/material@5.16.7?deps=react@18.3.1,react-dom@18.3.1&amp;external=react,react-dom,react-is,@emotion/react&amp;path=/"]]}],["scopes",{"type":"map"}]]}}}]}}]}}],"defs":[{"type":"model","name":"ReactiveHTML1"},{"type":"model","name":"FlexBox1","properties":[{"name":"align_content","kind":"Any","default":"flex-start"},{"name":"align_items","kind":"Any","default":"flex-start"},{"name":"flex_direction","kind":"Any","default":"row"},{"name":"flex_wrap","kind":"Any","default":"wrap"},{"name":"gap","kind":"Any","default":""},{"name":"justify_content","kind":"Any","default":"flex-start"}]},{"type":"model","name":"FloatPanel1","properties":[{"name":"config","kind":"Any","default":{"type":"map"}},{"name":"contained","kind":"Any","default":true},{"name":"position","kind":"Any","default":"right-top"},{"name":"offsetx","kind":"Any","default":null},{"name":"offsety","kind":"Any","default":null},{"name":"theme","kind":"Any","default":"primary"},{"name":"status","kind":"Any","default":"normalized"}]},{"type":"model","name":"GridStack1","properties":[{"name":"ncols","kind":"Any","default":null},{"name":"nrows","kind":"Any","default":null},{"name":"allow_resize","kind":"Any","default":true},{"name":"allow_drag","kind":"Any","default":true},{"name":"state","kind":"Any","default":[]}]},{"type":"model","name":"drag1","properties":[{"name":"slider_width","kind":"Any","default":5},{"name":"slider_color","kind":"Any","default":"black"},{"name":"value","kind":"Any","default":50}]},{"type":"model","name":"click1","properties":[{"name":"terminal_output","kind":"Any","default":""},{"name":"debug_name","kind":"Any","default":""},{"name":"clears","kind":"Any","default":0}]},{"type":"model","name":"FastWrapper1","properties":[{"name":"object","kind":"Any","default":null},{"name":"style","kind":"Any","default":null}]},{"type":"model","name":"NotificationArea1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"max_notifications","kind":"Any","default":5},{"name":"notifications","kind":"Any","default":[]},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0},{"name":"types","kind":"Any","default":[{"type":"map","entries":[["type","warning"],["background","#ffc107"],["icon",{"type":"map","entries":[["className","fas fa-exclamation-triangle"],["tagName","i"],["color","white"]]}]]},{"type":"map","entries":[["type","info"],["background","#007bff"],["icon",{"type":"map","entries":[["className","fas fa-info-circle"],["tagName","i"],["color","white"]]}]]}]}]},{"type":"model","name":"Notification","properties":[{"name":"background","kind":"Any","default":null},{"name":"duration","kind":"Any","default":3000},{"name":"icon","kind":"Any","default":null},{"name":"message","kind":"Any","default":""},{"name":"notification_type","kind":"Any","default":null},{"name":"_rendered","kind":"Any","default":false},{"name":"_destroyed","kind":"Any","default":false}]},{"type":"model","name":"TemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"BootstrapTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"TemplateEditor1","properties":[{"name":"layout","kind":"Any","default":[]}]},{"type":"model","name":"MaterialTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"ReactiveESM1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"JSComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"ReactComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"AnyWidgetComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"request_value1","properties":[{"name":"fill","kind":"Any","default":"none"},{"name":"_synced","kind":"Any","default":null},{"name":"_request_sync","kind":"Any","default":0}]},{"type":"model","name":"MaterialComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"Button1","properties":[{"name":"disabled","kind":"Any","default":false},{"name":"label","kind":"Any","default":""},{"name":"variant","kind":"Any","default":"contained"},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"Rating1","properties":[{"name":"value","kind":"Any","default":0},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"DiscreteSlider1","properties":[{"name":"marks","kind":"Any","default":[{"type":"map","entries":[["value",0],["label","0\u00b0C"]]},{"type":"map","entries":[["value",20],["label","20\u00b0C"]]},{"type":"map","entries":[["value",37],["label","37\u00b0C"]]},{"type":"map","entries":[["value",100],["label","100\u00b0C"]]}]},{"name":"value","kind":"Any","default":20},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]}]}}
+    </script>
+    <script type="text/javascript">
+      (function() {
+        const fn = function() {
+          Bokeh.safely(function() {
+            (function(root) {
+              function embed_document(root) {
+              const docs_json = document.getElementById('p1058').textContent;
+              const render_items = [{"docid":"28c08e32-9429-40c2-8bf6-c684b0b713b9","roots":{"p1004":"f2dd9b8e-4c63-4f30-8743-d8f43f31565c","p1013":"e9d980f3-3af7-4bf9-a38c-26d3235ae8cf","p1015":"a79121c1-8cfe-4530-9769-1d0aedce9b13","p1016":"b3105cd4-510e-4711-9799-00ca5f6b7254","p1018":"fb46279f-8243-497d-8d66-c52d7bc19a16","p1020":"a3d3db10-8104-4b2f-8e35-e10b9bea31ce","p1021":"d52ed876-5af6-44c2-99a4-a11512d7810c"},"root_ids":["p1004","p1013","p1015","p1016","p1018","p1020","p1021"]}];
+              root.Bokeh.embed.embed_items(docs_json, render_items);
+              }
+              if (root.Bokeh !== undefined) {
+                embed_document(root);
+              } else {
+                let attempts = 0;
+                const timer = setInterval(function(root) {
+                  if (root.Bokeh !== undefined) {
+                    clearInterval(timer);
+                    embed_document(root);
+                  } else {
+                    attempts++;
+                    if (attempts > 100) {
+                      clearInterval(timer);
+                      console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                    }
+                  }
+                }, 10, root)
+              }
+            })(window);
+          });
+        };
+        if (document.readyState != "loading") fn();
+      else document.addEventListener("DOMContentLoaded", fn, {once: true});
+      })();
+    </script>
+  </body>
+</html>
