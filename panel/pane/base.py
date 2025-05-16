@@ -299,7 +299,7 @@ class Pane(PaneBase, Reactive):
 
     # Mapping from parameter name to bokeh model property name
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'default_layout': None, 'loading': None
+        'default_layout': None, 'loading': None, 'css_id': None
     }
 
     # List of parameters that trigger a rerender of the Bokeh model
@@ -331,7 +331,7 @@ class Pane(PaneBase, Reactive):
     @property
     def _synced_params(self) -> list[str]:
         ignored_params = [
-            'name', 'default_layout', 'loading', 'stylesheets'
+            'name', 'default_layout', 'loading', 'stylesheets', 'css_id'
         ] + self._rerender_params
         return [p for p in self.param if p not in ignored_params and not p.startswith('_')]
 
