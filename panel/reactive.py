@@ -224,16 +224,16 @@ class Syncable(Renderable):
             ]
             stylesheets += properties['stylesheets']
             wrapped = []
+            if state.curdoc:
+                css_cache = state._stylesheets.get(state.curdoc, {})
+            else:
+                css_cache = {}
             for stylesheet in stylesheets:
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
-                    if state.curdoc:
-                        cache = state._stylesheets.get(state.curdoc, {})
+                    if stylesheet in css_cache:
+                        stylesheet = css_cache[stylesheet]
                     else:
-                        cache = {}
-                    if stylesheet in cache:
-                        stylesheet = cache[stylesheet]
-                    else:
-                        cache[stylesheet] = stylesheet = ImportedStyleSheet(url=stylesheet)
+                        css_cache[stylesheet] = stylesheet = ImportedStyleSheet(url=stylesheet)
                 wrapped.append(stylesheet)
             properties['stylesheets'] = wrapped
         return properties
@@ -671,9 +671,9 @@ class Reactive(Syncable, Viewable):
         if 'stylesheets' not in properties:
             return properties
         if doc:
-            state._stylesheets[doc] = cache = state._stylesheets.get(doc, {})
+            state._stylesheets[doc] = css_cache = state._stylesheets.get(doc, {})
         else:
-            cache = {}
+            css_cache = {}
         if doc and 'dist_url' in doc._template_variables:
             dist_url = doc._template_variables['dist_url']
         else:
@@ -682,10 +682,20 @@ class Reactive(Syncable, Viewable):
         for stylesheet in properties['stylesheets']:
             if isinstance(stylesheet, ImportedStyleSheet):
                 url = str(stylesheet.url)
-                if url in cache:
-                    stylesheet = cache[url]
+                if url in css_cache:
+                    cached = css_cache[url]
+                    # Confirm if stylesheet is valid, sometimes
+                    # the URL is seemingly set to None so we
+                    # replace the cached stylesheet if there is
+                    # a unset property error
+                    try:
+                        cached.url  # noqa
+                    except Exception:
+                        css_cache[url] = stylesheet
+                    else:
+                        stylesheet = cached
                 else:
-                    cache[url] = stylesheet
+                    css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
             stylesheets.append(stylesheet)
         properties['stylesheets'] = stylesheets
