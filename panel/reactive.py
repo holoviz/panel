@@ -201,6 +201,12 @@ class Syncable(Renderable):
             if self._property_mapping.get(k, False) is not None and
             k not in self._manual_params
         }
+        if 'sizing_mode' in properties:
+            sm = properties['sizing_mode']
+            if sm and ('width' in sm or 'both' in sm) and self.min_width is None:
+                properties['min_width'] = 0
+            if sm and ('height' in sm or 'both' in sm) and self.min_height is None:
+                properties['min_height'] = 0
         if 'width' in properties and self.sizing_mode is None:
             properties['min_width'] = properties['width']
         if 'height' in properties and self.sizing_mode is None:
