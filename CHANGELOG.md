@@ -38,6 +38,7 @@ This minor release is not as jam-packed as previous minor releases but adds a nu
 - Reset `BaseTemplate._documents` correctly on autoreload ([#7897](https://github.com/holoviz/panel/pull/7897))
 - Ensure widget CSS is loaded correctly when server path is prefixed ([#7900](https://github.com/holoviz/panel/pull/7900))
 - Correct display `Tabulator` with multi index and multi index column ([#7907](https://github.com/holoviz/panel/pull/7907))
+- Ensure stretch and scale sizing_mode does not cause overflow in container ([#7928](https://github.com/holoviz/panel/pull/7928))
 
 ### Documentation
 
