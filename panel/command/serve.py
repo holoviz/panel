@@ -108,7 +108,7 @@ class Serve(_BkServe):
             metavar="KEY=VALUE",
             nargs='+',
             help= ("Custom titles to use for Multi Page Apps specified as "
-                   "key=value pairs mapping from the application page slug"
+                   "key=value pairs mapping from the application page slug "
                    "to the title to show on the Multi Page App index page."
                    ),
         )),
