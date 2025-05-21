@@ -598,8 +598,8 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
                     )
                     # Try to get custom application page card title from config
                     # using as default value the application page slug
-                    default_title = slug[1:].replace("_", " ")
-                    title = config.index_titles.get(slug, default_title).title()
+                    default_title = slug[1:].replace("_", " ").title()
+                    title = config.index_titles.get(slug, default_title)
                     apps.append((slug, title))
                 apps = sorted(apps, key=lambda app: app[1])
             self.render(index, prefix=self.prefix, items=apps)
