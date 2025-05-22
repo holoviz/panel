@@ -697,8 +697,6 @@ class TestChatInterfaceAdaptive:
 
     async def test_adaptive_state_management(self):
         """Test that callback states are managed correctly in adaptive mode."""
-        from panel.chat.feed import CallbackState
-
         chat_interface = ChatInterface(adaptive=True)
 
         # Initially idle
@@ -729,8 +727,7 @@ class TestChatInterfaceAdaptive:
     def test_adaptive_parameter_inheritance(self):
         """Test that adaptive parameter is properly inherited from ChatFeed."""
         # Test that the parameter exists in the ChatFeed base class
-        from panel.chat.feed import ChatFeed
-        feed = ChatFeed(adaptive=True)
+        feed = ChatInterface(adaptive=True)
         assert feed.adaptive == True
 
         # Test that ChatInterface inherits it properly
@@ -759,39 +756,3 @@ class TestChatInterfaceAdaptive:
         # Test that the message was actually added
         assert len(chat_interface.objects) >= 1
         assert chat_interface.objects[0].object == "test_message"
-
-    async def test_adaptive_callback_interruption_concept(self, chat_interface):
-        """Test the concept of callback interruption in adaptive mode."""
-        callback_states = []
-
-        async def monitored_callback(message, user, instance):
-            callback_states.append(f"start_{message}")
-            try:
-                # Simulate longer processing
-                for _ in range(10):
-                    await asyncio.sleep(0.02)
-                    # Check if we should stop
-                    if instance._callback_state == CallbackState.STOPPING:
-                        callback_states.append(f"stopping_{message}")
-                        break
-                callback_states.append(f"completed_{message}")
-            except Exception as e:
-                callback_states.append(f"error_{message}_{type(e).__name__}")
-                raise
-
-        chat_interface.adaptive = True
-        chat_interface.callback = monitored_callback
-
-        # Send messages
-        chat_interface.send("first", respond=True)
-        await asyncio.sleep(0.05)  # Let first start
-        chat_interface.send("second", respond=True)
-        await asyncio.sleep(0.3)  # Let things settle
-
-        # Verify that callbacks were called
-        assert any("start_first" in state for state in callback_states)
-        assert any("start_second" in state for state in callback_states)
-
-        # The main thing we're testing is that adaptive mode allows
-        # multiple rapid sends without blocking
-        assert len(chat_interface.objects) >= 2

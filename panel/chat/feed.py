@@ -240,10 +240,9 @@ class ChatFeed(ListPanel):
 
     def __init__(self, *objects, **params):
         # Task management for proper cancellation
-        self._callback_messages = set()
+        self._callback_ids = set()
         self._callback_future = None
         self._callback_task = None
-        self._task_id_counter = 0
         self._current_task_id = None
 
         if params.get("renderers") and not isinstance(params["renderers"], list):
@@ -329,19 +328,14 @@ class ChatFeed(ListPanel):
         # handle async callbacks using this trick
         self.param.watch(self._prepare_response, '_callback_trigger')
 
-    def _get_next_task_id(self) -> int:
-        """Generate a unique task ID for tracking callback tasks."""
-        self._task_id_counter += 1
-        return self._task_id_counter
-
     def _is_current_task(self, task_id: int) -> bool:
         """Check if the given task ID is the current active task."""
         return task_id == self._current_task_id
 
     def _cleanup_task_messages(self, task_id: int) -> None:
         """Remove messages created by a cancelled task."""
-        if task_id in self._callback_messages:
-            self._callback_messages.remove(task_id)
+        if task_id in self._callback_ids:
+            self._callback_ids.remove(task_id)
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -629,7 +623,7 @@ class ChatFeed(ListPanel):
         else:
             response = await asyncio.to_thread(self.callback, *callback_args, **callback_kwargs)
         await self._serialize_response(response, task_id)
-        self._callback_messages = set()
+        self._callback_ids = set()
         self._callback_state = CallbackState.IDLE
         return response
 
@@ -644,8 +638,8 @@ class ChatFeed(ListPanel):
             return
 
         old_task_id = self._current_task_id
-        task_id = self._get_next_task_id()
-        self._callback_messages.add(task_id)
+        task_id = max(self._callback_ids) if self._callback_ids else 0
+        self._callback_ids.add(task_id)
 
         # Cancel any existing callback task if in adaptive mode
         if self.adaptive and self._callback_task is not None and not self._callback_task.done():
@@ -681,12 +675,12 @@ class ChatFeed(ListPanel):
             )
         except StopCallback:
             self._cleanup_task_messages(task_id)
-            if not self.adaptive or len(self._callback_messages) == 0:
+            if not self.adaptive or len(self._callback_ids) == 0:
                 self._callback_state = CallbackState.STOPPED
         except asyncio.CancelledError:
             # Handle asyncio task cancellation
             self._cleanup_task_messages(task_id)
-            if not self.adaptive or len(self._callback_messages) == 0:
+            if not self.adaptive or len(self._callback_ids) == 0:
                 self._callback_state = CallbackState.STOPPED
             raise  # Re-raise CancelledError
         except Exception as e:
