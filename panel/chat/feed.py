@@ -232,6 +232,9 @@ class ChatFeed(ListPanel):
 
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
 
+    _disabled_stack = param.List(doc="""
+        The previous disabled state of the feed.""")
+
     _card_type: ClassVar[type[Card]] = Card
     _message_type: ClassVar[type[ChatMessage]] = ChatMessage
     _step_type: ClassVar[type[ChatStep]] = ChatStep
@@ -637,6 +640,7 @@ class ChatFeed(ListPanel):
         if self.callback is None:
             return
 
+        self._disabled_stack.append(self.disabled)
         old_callback_id = self._current_callback_id
         callback_id = max(self._callback_ids) if self._callback_ids else 0
         self._callback_ids.add(callback_id)
@@ -714,7 +718,7 @@ class ChatFeed(ListPanel):
             # In adaptive mode, only reset to idle if we're not already starting a new callback
             if not (self.adaptive and self._callback_state in (CallbackState.RUNNING, CallbackState.GENERATING, CallbackState.STOPPING)):
                 self._callback_state = CallbackState.IDLE
-                self.disabled = False
+                self.disabled = self._disabled_stack.pop() if self._disabled_stack else False
 
     # Public API
     def scroll_to(self, index: int):
@@ -1113,7 +1117,7 @@ class ChatFeed(ListPanel):
         if cancelled:
             # In adaptive mode, don't restore disabled state immediately
             if not self.adaptive or self._callback_state != CallbackState.STOPPING:
-                self.disabled = False
+                self.disabled = self._disabled_stack.pop() if self._disabled_stack else False
             self._replace_placeholder(None)
         return cancelled
 
