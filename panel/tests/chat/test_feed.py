@@ -1640,7 +1640,7 @@ class TestChatFeedPostHook:
                 message += char
                 yield message
 
-        def append_callback(message, instance):
+        async def append_callback(message, instance):
             logs.append(message.object)
 
         logs = []
