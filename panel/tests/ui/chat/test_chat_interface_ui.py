@@ -176,7 +176,9 @@ def test_chat_interface_adaptive_double_interruption(page):
     # Verify final state: user messages + only the last callback responses
     expected_messages = [
         "First",
+        "First - step 0",
         "Second",
+        "Second - step 0",
         "Third",
         "Third - step 0",
         "Third - step 1",
