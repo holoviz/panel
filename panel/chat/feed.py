@@ -642,9 +642,9 @@ class ChatFeed(ListPanel):
 
         self._disabled_stack.append(self.disabled)
         old_callback_id = self._current_callback_id
-        callback_id = max(self._callback_ids) if self._callback_ids else 0
+        callback_id = (self._current_callback_id or 0) + 1
         self._callback_ids.add(callback_id)
-
+        self._current_callback_id = callback_id
         # Cancel any existing callback task if in adaptive mode
         if self.adaptive and self._callback_task is not None and not self._callback_task.done():
             self._callback_task.cancel()
@@ -657,8 +657,6 @@ class ChatFeed(ListPanel):
             if old_callback_id is not None:
                 self._cleanup_callback_ids(old_callback_id)
 
-        # Generate new task ID for this callback
-        self._current_callback_id = callback_id
         try:
             with param.parameterized.batch_call_watchers(self):
                 self.disabled = True
@@ -677,16 +675,10 @@ class ChatFeed(ListPanel):
             await asyncio.gather(
                 self._schedule_placeholder(task, num_entries, callback_id), task,
             )
-        except StopCallback:
+        except (StopCallback, asyncio.CancelledError):
             self._cleanup_callback_ids(callback_id)
             if not self.adaptive or len(self._callback_ids) == 0:
                 self._callback_state = CallbackState.STOPPED
-        except asyncio.CancelledError:
-            # Handle asyncio task cancellation
-            self._cleanup_callback_ids(callback_id)
-            if not self.adaptive or len(self._callback_ids) == 0:
-                self._callback_state = CallbackState.STOPPED
-            raise  # Re-raise CancelledError
         except Exception as e:
             send_kwargs: dict[str, Any] = dict(user="Exception", respond=False)
             if callable(self.callback_exception):

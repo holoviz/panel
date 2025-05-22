@@ -640,7 +640,8 @@ class ChatInterface(ChatFeed):
     @param.depends("_callback_state", watch=True)
     async def _update_input_disabled(self):
         busy_states = (CallbackState.RUNNING, CallbackState.GENERATING)
-        if not self.show_stop or self._callback_state not in busy_states or self._callback_future is None:
+        has_callback_future = self._callback_future and self._callback_future.done()
+        if not self.show_stop or (self._callback_state not in busy_states and has_callback_future):
             self._buttons["send"].visible = True
             self._buttons["stop"].visible = False
         else:
