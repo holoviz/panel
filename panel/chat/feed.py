@@ -215,6 +215,16 @@ class ChatFeed(ListPanel):
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
 
+    user_messages_styles = param.Dict(default={}, doc="""
+        A dictionary mapping user names to a dict of CSS style properties.
+        E.g. {"User": {"background": "lightblue"}, "Assistant": {"background": "lightgrey"}}
+    """)
+
+    user_messages_stylesheets = param.Dict(default={}, doc="""
+        A dictionary mapping user names to a list of CSS stylesheets to apply to messages by that user only.
+        E.g. {"User": [".message.user"], "Assistant": [".message {background: lightgrey;}"]}
+    """)
+
     _placeholder = param.ClassSelector(class_=ChatMessage, allow_refs=False, doc="""
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
@@ -436,6 +446,16 @@ class ChatFeed(ListPanel):
         if self.width:
             message_params["width"] = int(self.width - 80)
         message_params.update(input_message_params)
+
+        # Apply per-user styles
+        user_styles = self.user_messages_styles.get(user, {})
+        if user_styles:
+            message_params["styles"] = {**message_params.get("styles", {}), **user_styles}
+
+        # Apply per-user stylesheets
+        user_stylesheets = self.user_messages_stylesheets.get(user, [])
+        if user_stylesheets:
+            message_params["stylesheets"].extend(user_stylesheets)
 
         if "show_edit_icon" not in message_params:
             user = message_params.get("user", "")
