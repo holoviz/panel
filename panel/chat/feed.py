@@ -96,6 +96,12 @@ class ChatFeed(ListPanel):
     >>> chat_feed.send("Hello World!", user="New User", avatar="😊")
     """
 
+    adaptive = param.Boolean(default=False, doc="""
+        Whether to allow interrupting and restarting the callback when
+        new messages are sent while a callback is already running.
+        When True, sending a new message will cancel the current callback
+        and start a new one with the latest message.""")
+
     auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
@@ -620,8 +626,33 @@ class ChatFeed(ListPanel):
                 self._schedule_placeholder(task, num_entries), task,
             )
         except StopCallback:
-            # callback was stopped by user
+            # callback was stopped by user (or adaptive interruption)
             self._callback_state = CallbackState.STOPPED
+            # In adaptive mode, clean up any partial message from the interrupted callback
+            if self.adaptive and self._chat_log:
+                last_message = self._chat_log[-1]
+                if (hasattr(last_message, 'user') and
+                    last_message.user == self.callback_user and
+                    last_message != self._placeholder):
+                    # Remove the partial response from interrupted callback
+                    try:
+                        self.remove(last_message)
+                    except ValueError:
+                        pass  # Message might have already been removed
+        except asyncio.CancelledError:
+            # Handle asyncio task cancellation (separate from StopCallback)
+            self._callback_state = CallbackState.STOPPED
+            # In adaptive mode, clean up partial messages
+            if self.adaptive and self._chat_log:
+                last_message = self._chat_log[-1]
+                if (hasattr(last_message, 'user') and
+                    last_message.user == self.callback_user and
+                    last_message != self._placeholder):
+                    try:
+                        self.remove(last_message)
+                    except ValueError:
+                        pass
+            raise  # Re-raise CancelledError
         except Exception as e:
             send_kwargs: dict[str, Any] = dict(user="Exception", respond=False)
             if callable(self.callback_exception):
@@ -650,7 +681,9 @@ class ChatFeed(ListPanel):
         """
         with param.parameterized.batch_call_watchers(self):
             self._replace_placeholder(None)
-            self._callback_state = CallbackState.IDLE
+            # In adaptive mode, only reset to idle if we're not already starting a new callback
+            if not (self.adaptive and self._callback_state == CallbackState.STOPPING):
+                self._callback_state = CallbackState.IDLE
             self.disabled = self._disabled_stack.pop() if self._disabled_stack else False
 
     # Public API
@@ -698,6 +731,10 @@ class ChatFeed(ListPanel):
         -------
         The message that was created.
         """
+        if (self.adaptive and respond and self.callback is not None and
+            self._callback_state in (CallbackState.RUNNING, CallbackState.GENERATING)):
+            self.stop()
+
         if isinstance(value, ChatMessage):
             if user is not None or avatar is not None:
                 raise ValueError(
@@ -1037,7 +1074,10 @@ class ChatFeed(ListPanel):
             cancelled = self._callback_future.cancel()
 
         if cancelled:
-            self.disabled = self._disabled_stack.pop() if self._disabled_stack else False
+            # In adaptive mode, don't restore disabled state immediately
+            # as we might be starting a new callback right away
+            if not self.adaptive or self._callback_state != CallbackState.STOPPING:
+                self.disabled = self._disabled_stack.pop() if self._disabled_stack else False
             self._replace_placeholder(None)
         return cancelled
 

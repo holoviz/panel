@@ -301,7 +301,7 @@ class ChatInterface(ChatFeed):
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-widget"]
             )
-            if isinstance(widget, self._input_type):
+            if isinstance(widget, self._input_type) and not self.adaptive:
                 self.link(widget, disabled="disabled_enter")
 
             self._buttons = {}
@@ -324,7 +324,7 @@ class ChatInterface(ChatFeed):
                     align="center",
                     visible=visible
                 )
-                if action != "stop":
+                if action != "stop" and not (action == "send" and self.adaptive):
                     self._link_disabled_loading(button)
                 if button_data.callback:
                     callback = partial(button_data.callback, self)
@@ -404,9 +404,9 @@ class ChatInterface(ChatFeed):
         """
         Send the input when the user presses Enter.
         """
-        # wait until the chat feed's callback is done executing
-        # before allowing another input
-        if self.disabled:
+        # In adaptive mode, allow sending even when disabled (to interrupt ongoing callbacks)
+        # In normal mode, wait until the chat feed's callback is done executing
+        if self.disabled and not self.adaptive:
             return
 
         active_widget = self.active_widget
