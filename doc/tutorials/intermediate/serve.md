@@ -197,7 +197,7 @@ options:
   --glob                Process all filename arguments as globs
   --index-titles KEY=VALUE [KEY=VALUE ...]
                         Custom titles to use for Multi Page Apps specified as key=value pairs mapping
-                        from the application page slugto the title to show on the Multi Page App index
+                        from the application page slug to the title to show on the Multi Page App index
                         page.
   --static-dirs KEY=VALUE [KEY=VALUE ...]
                         Static directories to serve specified as key=value pairs mapping from URL route to static file directory.
