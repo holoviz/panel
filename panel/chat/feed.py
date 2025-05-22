@@ -629,8 +629,8 @@ class ChatFeed(ListPanel):
         else:
             response = await asyncio.to_thread(self.callback, *callback_args, **callback_kwargs)
         await self._serialize_response(response, task_id)
-
         self._callback_messages = set()
+        self._callback_state = CallbackState.IDLE
         return response
 
     async def _prepare_response(self, *_) -> None:
@@ -682,12 +682,12 @@ class ChatFeed(ListPanel):
         except StopCallback:
             self._cleanup_task_messages(task_id)
             if not self.adaptive or len(self._callback_messages) == 0:
-                self._callback_state = CallbackState.STOPPING
+                self._callback_state = CallbackState.STOPPED
         except asyncio.CancelledError:
             # Handle asyncio task cancellation
             self._cleanup_task_messages(task_id)
             if not self.adaptive or len(self._callback_messages) == 0:
-                    self._callback_state = CallbackState.STOPPING
+                self._callback_state = CallbackState.STOPPED
             raise  # Re-raise CancelledError
         except Exception as e:
             send_kwargs: dict[str, Any] = dict(user="Exception", respond=False)
@@ -866,15 +866,15 @@ class ChatFeed(ListPanel):
             self._run_post_hook(message)
         return message
 
-    # def _match_step_status(self, event):
-    #     """
-    #     Matches the status of the ChatStep with the ChatFeed.
-    #     """
-    #     if event.new in ("running", "pending"):
-    #         self._callback_state = CallbackState.RUNNING
-    #     elif event.new in ("failed", "success"):
-    #         self._callback_state = CallbackState.IDLE
-    #         self._run_post_hook(event.obj)
+    def _match_step_status(self, event):
+        """
+        Matches the status of the ChatStep with the ChatFeed.
+        """
+        if event.new in ("running", "pending"):
+            self._callback_state = CallbackState.RUNNING
+        elif event.new in ("failed", "success"):
+            self._callback_state = CallbackState.IDLE
+            self._run_post_hook(event.obj)
 
     def _build_steps_layout(self, step, layout_params, default_layout):
         layout_params = layout_params or {}
@@ -969,7 +969,7 @@ class ChatFeed(ListPanel):
             step = self._step_type(**step_params)
 
         step._instance = self
-        # step.param.watch(self._match_step_status, "status")
+        step.param.watch(self._match_step_status, "status")
 
         if append:
             for i in range(1, last_messages + 1):

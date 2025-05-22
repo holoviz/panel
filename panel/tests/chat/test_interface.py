@@ -6,7 +6,7 @@ import pytest
 import requests
 
 from panel.chat.input import ChatAreaInput
-from panel.chat.interface import ChatInterface
+from panel.chat.interface import CallbackState, ChatInterface
 from panel.chat.message import ChatMessage
 from panel.layout import Row, Tabs
 from panel.pane import Image
@@ -426,7 +426,7 @@ class TestChatInterface:
         PERSON_3 = "Passionate User"
 
         async def callback(contents: str, user: str, instance: ChatInterface):
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.2)
             if user == "User":
                 instance.send(
                     f"Hey, {PERSON_2}! Did you hear the user?",
@@ -771,7 +771,7 @@ class TestChatInterfaceAdaptive:
                 for _ in range(10):
                     await asyncio.sleep(0.02)
                     # Check if we should stop
-                    if instance._callback_state == instance.CallbackState.STOPPING:
+                    if instance._callback_state == CallbackState.STOPPING:
                         callback_states.append(f"stopping_{message}")
                         break
                 callback_states.append(f"completed_{message}")
