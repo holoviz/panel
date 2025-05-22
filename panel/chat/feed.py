@@ -452,6 +452,10 @@ class ChatFeed(ListPanel):
         if user_styles:
             message_params["styles"] = {**message_params.get("styles", {}), **user_styles}
 
+        # Ensure stylesheets key exists and is a list
+        if "stylesheets" not in message_params or not isinstance(message_params["stylesheets"], list):
+            message_params["stylesheets"] = []
+
         # Apply per-user stylesheets
         user_stylesheets = self.user_messages_stylesheets.get(user, [])
         if user_stylesheets:
