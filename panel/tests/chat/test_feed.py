@@ -94,7 +94,7 @@ class TestChatFeed:
         assert message.user == user
         assert message.avatar == avatar
 
-    def test_user_messages_styles(self, chat_feed):
+    async def test_user_messages_styles(self, chat_feed):
         chat_feed.user_messages_styles = {
             "Bob": {"background": "red", "color": "white"},
             "Alice": {"background": "blue", "color": "yellow"},
@@ -106,7 +106,7 @@ class TestChatFeed:
         assert chat_feed.objects[1].styles["background"] == "blue"
         assert chat_feed.objects[1].styles["color"] == "yellow"
 
-    def test_user_messages_stylesheets(self, chat_feed):
+    async def test_user_messages_stylesheets(self, chat_feed):
         chat_feed.user_messages_stylesheets = {
             "Bob": ["bob.css"],
             "Alice": ["alice.css", "common.css"],
@@ -116,14 +116,14 @@ class TestChatFeed:
         assert chat_feed.objects[0].stylesheets == ["bob.css"]
         assert chat_feed.objects[1].stylesheets == ["alice.css", "common.css"]
 
-    def test_user_messages_styles_and_stylesheets_absent(self, chat_feed):
+    async def test_user_messages_styles_and_stylesheets_absent(self, chat_feed):
         chat_feed.user_messages_styles = {"Bob": {"background": "red"}}
         chat_feed.user_messages_stylesheets = {"Bob": ["bob.css"]}
         chat_feed.send("Hi", user="Charlie")
         assert "background" not in chat_feed.objects[0].styles
         assert not chat_feed.objects[0].stylesheets
 
-    def test_user_messages_styles_and_stylesheets_together(self, chat_feed):
+    async def test_user_messages_styles_and_stylesheets_together(self, chat_feed):
         chat_feed.user_messages_styles = {"Bob": {"background": "red"}}
         chat_feed.user_messages_stylesheets = {"Bob": ["bob.css"]}
         chat_feed.send("Hi", user="Bob")
