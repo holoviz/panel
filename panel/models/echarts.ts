@@ -91,7 +91,7 @@ export class EChartsView extends HTMLBoxView {
     }
     const series = this.model.data.series[0]
     if (typeof series.axisLabel.formatter === "string") {
-      const format = new Function("return (" + series.axisLabel.formatter + ")")();
+      const format = new Function(`return (${  series.axisLabel.formatter  })`)()
       series.axisLabel.formatter = format
     }
     this._chart.setOption(this.model.data, this.model.options)
