@@ -232,9 +232,6 @@ class ChatFeed(ListPanel):
 
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
 
-    _disabled_stack = param.List(doc="""
-        The previous disabled state of the feed.""")
-
     _card_type: ClassVar[type[Card]] = Card
     _message_type: ClassVar[type[ChatMessage]] = ChatMessage
     _step_type: ClassVar[type[ChatStep]] = ChatStep
@@ -243,11 +240,11 @@ class ChatFeed(ListPanel):
 
     def __init__(self, *objects, **params):
         # Task management for proper cancellation
+        self._callback_messages = set()
         self._callback_future = None
         self._callback_task = None
         self._task_id_counter = 0
         self._current_task_id = None
-        self._callback_messages = {}  # task_id -> list of messages created by that task
 
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
@@ -344,20 +341,7 @@ class ChatFeed(ListPanel):
     def _cleanup_task_messages(self, task_id: int) -> None:
         """Remove messages created by a cancelled task."""
         if task_id in self._callback_messages:
-            messages_to_remove = self._callback_messages[task_id].copy()
-            for message in messages_to_remove:
-                try:
-                    if message in self._chat_log.objects and message != self._placeholder:
-                        self.remove(message)
-                except ValueError:
-                    pass  # Message might have already been removed
-            del self._callback_messages[task_id]
-
-    def _track_message_for_task(self, task_id: int, message: ChatMessage) -> None:
-        """Track a message as being created by a specific task."""
-        if task_id not in self._callback_messages:
-            self._callback_messages[task_id] = []
-        self._callback_messages[task_id].append(message)
+            self._callback_messages.remove(task_id)
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -526,9 +510,6 @@ class ChatFeed(ListPanel):
         elif isinstance(value, ChatMessage):
             # ChatMessage is not created yet, but a ChatMessage is passed; use it
             self._replace_placeholder(value)
-            # Track message for task
-            if task_id is not None:
-                self._track_message_for_task(task_id, value)
             return value
 
         # ChatMessage is not created yet, create a ChatMessage from string/dict
@@ -536,9 +517,6 @@ class ChatFeed(ListPanel):
             value = {"object": value}
         new_message = self._build_message(value, user=user, avatar=avatar)
         self._replace_placeholder(new_message)
-        # Track message for task
-        if task_id is not None:
-            self._track_message_for_task(task_id, new_message)
         return new_message
 
     def _gather_callback_args(self, message: ChatMessage) -> Any:
@@ -584,8 +562,6 @@ class ChatFeed(ListPanel):
         """
         Serializes the response by iterating over it and
         updating the message's value.
-
-        Now includes task tracking.
         """
         response_message = None
         try:
@@ -653,6 +629,8 @@ class ChatFeed(ListPanel):
         else:
             response = await asyncio.to_thread(self.callback, *callback_args, **callback_kwargs)
         await self._serialize_response(response, task_id)
+
+        self._callback_messages = set()
         return response
 
     async def _prepare_response(self, *_) -> None:
@@ -665,9 +643,12 @@ class ChatFeed(ListPanel):
         if self.callback is None:
             return
 
+        old_task_id = self._current_task_id
+        task_id = self._get_next_task_id()
+        self._callback_messages.add(task_id)
+
         # Cancel any existing callback task if in adaptive mode
         if self.adaptive and self._callback_task is not None and not self._callback_task.done():
-            old_task_id = self._current_task_id
             self._callback_task.cancel()
             try:
                 await self._callback_task
@@ -679,10 +660,7 @@ class ChatFeed(ListPanel):
                 self._cleanup_task_messages(old_task_id)
 
         # Generate new task ID for this callback
-        task_id = self._get_next_task_id()
         self._current_task_id = task_id
-
-        self._disabled_stack.append(self.disabled)
         try:
             with param.parameterized.batch_call_watchers(self):
                 self.disabled = True
@@ -702,15 +680,14 @@ class ChatFeed(ListPanel):
                 self._schedule_placeholder(task, num_entries, task_id), task,
             )
         except StopCallback:
-            # Callback was stopped by user or adaptive interruption
-            self._callback_state = CallbackState.STOPPED
-            # Clean up messages from this interrupted task
             self._cleanup_task_messages(task_id)
-
+            if not self.adaptive or len(self._callback_messages) == 0:
+                self._callback_state = CallbackState.STOPPING
         except asyncio.CancelledError:
             # Handle asyncio task cancellation
-            self._callback_state = CallbackState.STOPPED
             self._cleanup_task_messages(task_id)
+            if not self.adaptive or len(self._callback_messages) == 0:
+                    self._callback_state = CallbackState.STOPPING
             raise  # Re-raise CancelledError
         except Exception as e:
             send_kwargs: dict[str, Any] = dict(user="Exception", respond=False)
@@ -741,9 +718,9 @@ class ChatFeed(ListPanel):
         with param.parameterized.batch_call_watchers(self):
             self._replace_placeholder(None)
             # In adaptive mode, only reset to idle if we're not already starting a new callback
-            if not (self.adaptive and self._callback_state == CallbackState.STOPPING):
+            if not (self.adaptive and self._callback_state in (CallbackState.RUNNING, CallbackState.GENERATING, CallbackState.STOPPING)):
                 self._callback_state = CallbackState.IDLE
-            self.disabled = self._disabled_stack.pop() if self._disabled_stack else False
+                self.disabled = False
 
     # Public API
     def scroll_to(self, index: int):
@@ -889,15 +866,15 @@ class ChatFeed(ListPanel):
             self._run_post_hook(message)
         return message
 
-    def _match_step_status(self, event):
-        """
-        Matches the status of the ChatStep with the ChatFeed.
-        """
-        if event.new in ("running", "pending"):
-            self._callback_state = CallbackState.RUNNING
-        elif event.new in ("failed", "success"):
-            self._callback_state = CallbackState.IDLE
-            self._run_post_hook(event.obj)
+    # def _match_step_status(self, event):
+    #     """
+    #     Matches the status of the ChatStep with the ChatFeed.
+    #     """
+    #     if event.new in ("running", "pending"):
+    #         self._callback_state = CallbackState.RUNNING
+    #     elif event.new in ("failed", "success"):
+    #         self._callback_state = CallbackState.IDLE
+    #         self._run_post_hook(event.obj)
 
     def _build_steps_layout(self, step, layout_params, default_layout):
         layout_params = layout_params or {}
@@ -992,7 +969,7 @@ class ChatFeed(ListPanel):
             step = self._step_type(**step_params)
 
         step._instance = self
-        step.param.watch(self._match_step_status, "status")
+        # step.param.watch(self._match_step_status, "status")
 
         if append:
             for i in range(1, last_messages + 1):
@@ -1142,7 +1119,7 @@ class ChatFeed(ListPanel):
         if cancelled:
             # In adaptive mode, don't restore disabled state immediately
             if not self.adaptive or self._callback_state != CallbackState.STOPPING:
-                self.disabled = self._disabled_stack.pop() if self._disabled_stack else False
+                self.disabled = False
             self._replace_placeholder(None)
         return cancelled
 
