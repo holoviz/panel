@@ -243,7 +243,7 @@ class ChatFeed(ListPanel):
         self._callback_ids = set()
         self._callback_future = None
         self._callback_task = None
-        self._current_task_id = None
+        self._current_callback_id = None
 
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
@@ -328,14 +328,14 @@ class ChatFeed(ListPanel):
         # handle async callbacks using this trick
         self.param.watch(self._prepare_response, '_callback_trigger')
 
-    def _is_current_task(self, task_id: int) -> bool:
+    def _is_current_task(self, callback_id: int) -> bool:
         """Check if the given task ID is the current active task."""
-        return task_id == self._current_task_id
+        return callback_id == self._current_callback_id
 
-    def _cleanup_task_messages(self, task_id: int) -> None:
+    def _cleanup_callback_ids(self, callback_id: int) -> None:
         """Remove messages created by a cancelled task."""
-        if task_id in self._callback_ids:
-            self._callback_ids.remove(task_id)
+        if callback_id in self._callback_ids:
+            self._callback_ids.remove(callback_id)
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -465,7 +465,7 @@ class ChatFeed(ListPanel):
         return message
 
     def _upsert_message(
-        self, value: Any, message: ChatMessage | None = None, task_id: int | None = None
+        self, value: Any, message: ChatMessage | None = None, callback_id: int | None = None
     ) -> ChatMessage | None:
         """
         Replace the placeholder message with the response or update
@@ -474,8 +474,8 @@ class ChatFeed(ListPanel):
         Now includes task tracking to prevent orphaned callbacks from adding messages.
         """
         # Check if this task has been cancelled/replaced
-        if task_id is not None and not self._is_current_task(task_id):
-            raise StopCallback(f"Task {task_id} was cancelled.")
+        if callback_id is not None and not self._is_current_task(callback_id):
+            raise StopCallback(f"Task {callback_id} was cancelled.")
 
         is_stopping = self._callback_state == CallbackState.STOPPING
         is_stopped = self._callback_future is not None and self._callback_future.cancelled()
@@ -552,7 +552,7 @@ class ChatFeed(ListPanel):
         elif len(callback_args) == 0:
             raise ValueError("Function should have at least one argument")
 
-    async def _serialize_response(self, response: Any, task_id: int) -> ChatMessage | None:
+    async def _serialize_response(self, response: Any, callback_id: int) -> ChatMessage | None:
         """
         Serializes the response by iterating over it and
         updating the message's value.
@@ -563,24 +563,24 @@ class ChatFeed(ListPanel):
                 self._callback_state = CallbackState.GENERATING
                 async for token in response:
                     # Check if task is still current before processing
-                    if not self._is_current_task(task_id):
-                        raise StopCallback(f"Task {task_id} was cancelled.")
-                    response_message = self._upsert_message(token, response_message, task_id)
+                    if not self._is_current_task(callback_id):
+                        raise StopCallback(f"Task {callback_id} was cancelled.")
+                    response_message = self._upsert_message(token, response_message, callback_id)
                     if response_message is not None:
                         response_message.show_activity_dot = self.show_activity_dot
             elif isgenerator(response):
                 self._callback_state = CallbackState.GENERATING
                 for token in response:
                     # Check if task is still current before processing
-                    if not self._is_current_task(task_id):
-                        raise StopCallback(f"Task {task_id} was cancelled.")
-                    response_message = self._upsert_message(token, response_message, task_id)
+                    if not self._is_current_task(callback_id):
+                        raise StopCallback(f"Task {callback_id} was cancelled.")
+                    response_message = self._upsert_message(token, response_message, callback_id)
                     if response_message is not None:
                         response_message.show_activity_dot = self.show_activity_dot
             elif isawaitable(response):
-                response_message = self._upsert_message(await response, response_message, task_id)
+                response_message = self._upsert_message(await response, response_message, callback_id)
             else:
-                response_message = self._upsert_message(response, response_message, task_id)
+                response_message = self._upsert_message(response, response_message, callback_id)
             if response_message is not None:
                 self._run_post_hook(response_message)
         finally:
@@ -592,7 +592,7 @@ class ChatFeed(ListPanel):
         self,
         task: asyncio.Task,
         num_entries: int,
-        task_id: int
+        callback_id: int
     ) -> None:
         """
         Schedules the placeholder to be added to the chat log
@@ -602,15 +602,15 @@ class ChatFeed(ListPanel):
             return
 
         start = asyncio.get_event_loop().time()
-        while not task.done() and num_entries == len(self._chat_log) and self._is_current_task(task_id):
+        while not task.done() and num_entries == len(self._chat_log) and self._is_current_task(callback_id):
             duration = asyncio.get_event_loop().time() - start
             if duration > self.placeholder_threshold:
-                if self._is_current_task(task_id):  # Double-check before adding placeholder
+                if self._is_current_task(callback_id):  # Double-check before adding placeholder
                     self.append(self._placeholder)
                 return
             await asyncio.sleep(0.1)
 
-    async def _handle_callback(self, message, loop: asyncio.AbstractEventLoop, task_id: int):
+    async def _handle_callback(self, message, loop: asyncio.AbstractEventLoop, callback_id: int):
         """Handle the callback execution with task tracking."""
         callback_args, callback_kwargs = self._gather_callback_args(message)
         if iscoroutinefunction(self.callback):
@@ -622,7 +622,7 @@ class ChatFeed(ListPanel):
             # printing type(response) -> <class 'async_generator'>
         else:
             response = await asyncio.to_thread(self.callback, *callback_args, **callback_kwargs)
-        await self._serialize_response(response, task_id)
+        await self._serialize_response(response, callback_id)
         self._callback_ids = set()
         self._callback_state = CallbackState.IDLE
         return response
@@ -637,9 +637,9 @@ class ChatFeed(ListPanel):
         if self.callback is None:
             return
 
-        old_task_id = self._current_task_id
-        task_id = max(self._callback_ids) if self._callback_ids else 0
-        self._callback_ids.add(task_id)
+        old_callback_id = self._current_callback_id
+        callback_id = max(self._callback_ids) if self._callback_ids else 0
+        self._callback_ids.add(callback_id)
 
         # Cancel any existing callback task if in adaptive mode
         if self.adaptive and self._callback_task is not None and not self._callback_task.done():
@@ -650,11 +650,11 @@ class ChatFeed(ListPanel):
                 pass  # Expected when cancelling
 
             # Clean up messages from the cancelled task
-            if old_task_id is not None:
-                self._cleanup_task_messages(old_task_id)
+            if old_callback_id is not None:
+                self._cleanup_callback_ids(old_callback_id)
 
         # Generate new task ID for this callback
-        self._current_task_id = task_id
+        self._current_callback_id = callback_id
         try:
             with param.parameterized.batch_call_watchers(self):
                 self.disabled = True
@@ -666,20 +666,20 @@ class ChatFeed(ListPanel):
 
             num_entries = len(self._chat_log)
             loop = asyncio.get_event_loop()
-            task = loop.create_task(self._handle_callback(message, loop, task_id))
+            task = loop.create_task(self._handle_callback(message, loop, callback_id))
             self._callback_task = task
             self._callback_future = task
 
             await asyncio.gather(
-                self._schedule_placeholder(task, num_entries, task_id), task,
+                self._schedule_placeholder(task, num_entries, callback_id), task,
             )
         except StopCallback:
-            self._cleanup_task_messages(task_id)
+            self._cleanup_callback_ids(callback_id)
             if not self.adaptive or len(self._callback_ids) == 0:
                 self._callback_state = CallbackState.STOPPED
         except asyncio.CancelledError:
             # Handle asyncio task cancellation
-            self._cleanup_task_messages(task_id)
+            self._cleanup_callback_ids(callback_id)
             if not self.adaptive or len(self._callback_ids) == 0:
                 self._callback_state = CallbackState.STOPPED
             raise  # Re-raise CancelledError
@@ -1103,12 +1103,12 @@ class ChatFeed(ListPanel):
             cancelled = self._callback_task.cancel()
             if cancelled:
                 # Mark current task as cancelled to prevent further message additions
-                old_task_id = self._current_task_id
-                self._current_task_id = None
+                old_callback_id = self._current_callback_id
+                self._current_callback_id = None
 
                 # Clean up any messages from the cancelled task
-                if old_task_id is not None:
-                    self._cleanup_task_messages(old_task_id)
+                if old_callback_id is not None:
+                    self._cleanup_callback_ids(old_callback_id)
 
         if cancelled:
             # In adaptive mode, don't restore disabled state immediately
