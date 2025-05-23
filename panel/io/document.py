@@ -333,13 +333,38 @@ def init_doc(doc: Document | None) -> Document:
     if thread_id:
         state._thread_id_[curdoc] = thread_id
 
+    ready_callbacks = [CustomJS(code="""
+        let timeout = null
+        const doc = cb_context.index.roots[0].model.document
+        const write_ids = () => {
+          for (const v of cb_context.index.all_views()) {
+            for (const t of v.model.tags) {
+              if (typeof t === 'object' && t !== null && 'css_id' in t) {
+                v.el.id = t.css_id
+              }
+            }
+          }
+          timeout = null
+        }
+        doc.on_change((event) => {
+          if (event.kind == 'ModelChanged') {
+            if (timeout !== null) {
+              clearTimeout(timeout)
+            }
+            timeout = setTimeout(write_ids, 100)
+          }
+        })
+        write_ids()
+        """)
+    ]
     if config.global_loading_spinner:
-        curdoc.js_on_event(
-            'document_ready', CustomJS(code=f"""
+        ready_callbacks.append(
+            CustomJS(code=f"""
             const body = document.getElementsByTagName('body')[0]
             body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
             """)
         )
+    curdoc.js_on_event('document_ready', *ready_callbacks)
 
     session_id = curdoc.session_context.id
     sessions = state.session_info['sessions']
