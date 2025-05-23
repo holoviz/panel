@@ -1,4 +1,4 @@
-setuptools==70.0.0
+setuptools==78.1.1
 asgiref==3.2.10
 attrs==19.3.0
 autobahn==20.12.3
