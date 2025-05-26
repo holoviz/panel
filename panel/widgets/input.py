@@ -364,6 +364,14 @@ class FileDropper(Widget):
     multiple = param.Boolean(default=False, doc="""
         Whether to allow uploading multiple files.""")
 
+    plugins = param.ListSelector(default=["image", "pdf", "validate"],
+        objects=["image", "pdf", "validate"], doc="""
+        List of plugins to enable in the FileDropper. The following
+        plugins are available:
+        - image: Adds support for image previews.
+        - pdf: Adds support for PDF previews.
+        - validate: Adds support for validation of file size and type.""")
+
     value = param.Dict(default={}, doc="""
         A dictionary containing the uploaded file(s) as bytes or string
         objects indexed by the filename. Files that have a text/* mimetype
