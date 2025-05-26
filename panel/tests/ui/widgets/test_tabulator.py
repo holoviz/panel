@@ -1076,9 +1076,10 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     serve_component(page, widget)
 
     cell = page.locator('text="target"')
+    cell.first.wait_for(state="attached", timeout=5000)
+
     # Scroll to the right
     cell.scroll_into_view_if_needed()
-    page.wait_for_timeout(200)
     bb = page.locator('text="tomodify"').bounding_box()
     # Patch a cell in the latest column
     widget.patch({'tomodify': [(0, 'target-modified')]}, as_index=False)
@@ -3542,19 +3543,15 @@ def test_tabulator_sorter_default_number(page):
 
     serve_component(page, widget)
     expect(page.locator('.tabulator-cell')).to_have_count(0)
+    page.wait_for_timeout(200)
 
     df2 = pd.DataFrame({'x': [0, 96, 116]})
     widget.value = df2
 
     def x_values():
-        try:
-            table_values = [int(v) for v in tabulator_column_values(page, 'x')]
-        except Exception:
-            return False
-        if table_values:
-            assert table_values == list(df2['x'].sort_values(ascending=False))
-        else:
-            return False
+        table_values = [int(v) for v in tabulator_column_values(page, 'x')]
+        assert table_values == [116, 96, 0]
+
     wait_until(x_values, page)
 
 
