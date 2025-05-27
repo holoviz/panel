@@ -332,7 +332,10 @@ export class ReactiveESMView extends HTMLBoxView {
       this.render_esm()
     }
     for (const element_view of this.element_views) {
-      const target = element_view.rendering_target() ?? this.self_target
+      // this.shadow_el is needed for Bokeh < 3.7.0 as this.self_target is not defined
+      // can be removed when our minimum version is Bokeh 3.7.0
+      // https://github.com/holoviz/panel/pull/7948
+      const target = element_view.rendering_target() ?? this.self_target ?? this.shadow_el
       element_view.render_to(target)
     }
   }
