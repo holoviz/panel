@@ -112,8 +112,10 @@ def test_feed_scroll_to_latest_within_limit(page):
     expect(feed_el).to_have_js_property('scrollTop', 0)
 
     feed.scroll_to_latest(scroll_limit=100)
+    page.wait_for_timeout(200)
 
     feed.append(Spacer(styles=dict(background='yellow'), width=200, height=200))
+    page.wait_for_timeout(200)
 
     # assert scroll location is still at top
     expect(feed_el.locator('div')).to_have_count(5)
@@ -161,16 +163,17 @@ def test_feed_dynamic_objects(page):
     wait_until(lambda: expect(page.locator('pre').first).to_have_text('0'))
     wait_until(lambda: page.locator('pre').count() > 10, page)
 
+
 def test_feed_reset_visible_range(page):
     feed = Feed(*list(range(ITEMS)), load_buffer=20, height=50, view_latest=True)
     serve_component(page, feed)
 
-    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) == 99, page)
+    page.locator('pre').last.wait_for(state='attached', timeout=500)
+    assert page.locator('pre').last.inner_text() == "99"
 
     # set objects to 20
     feed.objects = feed.objects[:20]
 
     # assert view reset
-    wait_until(lambda: (
-        int(page.locator('pre').last.inner_text() or 0) == 19
-    ), page)
+    page.wait_for_timeout(200)
+    assert page.locator('pre').last.inner_text() == "19"
