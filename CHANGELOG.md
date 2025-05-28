@@ -1,5 +1,27 @@
 # Releases
 
+## Version 1.7.1
+
+This patch release adds a new option to disable `FileDropper` previews
+and fixes a regression when updating `Column` children in Bokeh<3.7.
+Additionally it includes a number of documentation improvements.
+Many thanks to our returning contributors @dalthviz, @emmanuel-ferdman, @MarcSkovMadsen, and @hoxbro
+
+### Enhancements
+
+-  Add option to disable FileDropper previews ([#7944](https://github.com/holoviz/panel/pull/7944))
+- `--index-titles` help string typo fix and don't call `title` on user input ([#7935](https://github.com/holoviz/panel/pull/7935))
+
+### Bug fixes
+
+- Migrate to correct logger interface ([#7931](https://github.com/holoviz/panel/pull/7931))
+- Column updates not working for Bokeh<3.7 ([#7948](https://github.com/holoviz/panel/pull/7948))
+
+### Documentation
+
+- Fix image links in Azure documentation ([#7938](https://github.com/holoviz/panel/pull/7938))
+
+
 ## Version 1.7.0
 
 This minor release is not as jam-packed as previous minor releases but adds a number of quality of life improvements, bug fixes and features along with version and compatibility updates for a number of JS dependencies. Many thanks to some of our more frequent contributors @dalthviz, @etihwo, our new contributor @emmanuel-ferdman and our maintainers @Hoxbro, @MarcSkovMadsen and @philippjfr.
