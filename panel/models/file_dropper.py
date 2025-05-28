@@ -44,7 +44,7 @@ class FileDropper(InputWidget):
 
     layout = Nullable(Enum("integrated", "compact", "circle", default="compact"))
 
-    plugins = List(String)
+    previews = List(String)
 
     __javascript_raw__ = [
         f"{config.npm_cdn}/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js",

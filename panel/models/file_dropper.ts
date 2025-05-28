@@ -45,11 +45,11 @@ export class FileDropperView extends InputWidgetView {
 
   override initialize(): void {
     super.initialize()
-    const {plugins} = this.model
-    if (plugins.includes("image")) {
+    const {previews} = this.model
+    if (previews.includes("image")) {
       (window as any).FilePond.registerPlugin((window as any).FilePondPluginImagePreview)
     }
-    if (plugins.includes("pdf")) {
+    if (previews.includes("pdf")) {
       (window as any).FilePond.registerPlugin((window as any).FilePondPluginPdfPreview)
     }
     (window as any).FilePond.registerPlugin((window as any).FilePondPluginFileValidateType);
@@ -170,7 +170,7 @@ export namespace FileDropper {
     max_total_file_size: p.Property<string | null>
     mime_type: p.Property<any>
     multiple: p.Property<boolean>
-    plugins: p.Property<string[]>
+    previews: p.Property<string[]>
   }
 }
 
@@ -196,7 +196,7 @@ export class FileDropper extends InputWidget {
       mime_type:           [ Any,                  {} ],
       multiple:            [ Bool,               true ],
       layout:              [ Nullable(DropperLayout), null ],
-      plugins:             [ List(Str), [ "image", "pdf" ]],
+      previews:            [ List(Str), [ "image", "pdf" ]],
     }))
   }
 }

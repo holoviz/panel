@@ -364,10 +364,10 @@ class FileDropper(Widget):
     multiple = param.Boolean(default=False, doc="""
         Whether to allow uploading multiple files.""")
 
-    plugins = param.ListSelector(default=["image", "pdf"],
+    previews = param.ListSelector(default=["image", "pdf"],
         objects=["image", "pdf"], doc="""
-        List of plugins to enable in the FileDropper. The following
-        plugins are available:
+        List of previews to enable in the FileDropper.
+        The following previews are available:
         - image: Adds support for image previews.
         - pdf: Adds support for PDF previews.""")
 
