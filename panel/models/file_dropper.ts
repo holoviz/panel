@@ -52,10 +52,8 @@ export class FileDropperView extends InputWidgetView {
     if (plugins.includes("pdf")) {
       (window as any).FilePond.registerPlugin((window as any).FilePondPluginPdfPreview)
     }
-    if (plugins.includes("validate")) {
-      (window as any).FilePond.registerPlugin((window as any).FilePondPluginFileValidateType);
-      (window as any).FilePond.registerPlugin((window as any).FilePondPluginFileValidateSize)
-    }
+    (window as any).FilePond.registerPlugin((window as any).FilePondPluginFileValidateType);
+    (window as any).FilePond.registerPlugin((window as any).FilePondPluginFileValidateSize)
   }
 
   override connect_signals(): void {
@@ -198,7 +196,7 @@ export class FileDropper extends InputWidget {
       mime_type:           [ Any,                  {} ],
       multiple:            [ Bool,               true ],
       layout:              [ Nullable(DropperLayout), null ],
-      plugins:             [ List(Str), ["image", "pdf", "validate" ]],
+      plugins:             [ List(Str), [ "image", "pdf" ]],
     }))
   }
 }
