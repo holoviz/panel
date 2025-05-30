@@ -1,5 +1,6 @@
 import asyncio
 import fnmatch
+import importlib
 import logging
 import os
 import pathlib
@@ -235,7 +236,7 @@ def _reload(module_paths, changes):
 
     for module in modules_to_delete:
         if module in sys.modules:
-            del sys.modules[module]
+            importlib.reload(sys.modules[module])
 
     for doc, loc in state._locations.items():
         if not doc.session_context:
