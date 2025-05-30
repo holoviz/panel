@@ -107,7 +107,7 @@ c.ServerApp.max_buffer_size = MAX_SIZE_BYTES
 
 **💡 Alternative approaches for large transfers:**
 
-- Use file input components with chunked messaging like the [`FileDropper`](https://panel.holoviz.org/reference/widgets/FileDropper.html) to enable uploading large files.
+- Use file input components with chunked messaging like the [`FileDropper`](https://panel.holoviz.org/reference/widgets/FileDropper.html) to enable uploading large files
 - Consider cloud storage integration for enterprise applications
 
 ## Conclusion
