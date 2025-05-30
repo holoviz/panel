@@ -8,7 +8,7 @@ from panel import Feed
 from panel.layout.spacer import Spacer
 from panel.tests.util import serve_component, wait_until
 
-pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3)]
+pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3, reruns_delay=2)]
 
 ITEMS = 100  # 1000 items make the CI flaky
 
@@ -169,6 +169,7 @@ def test_feed_reset_visible_range(page):
     serve_component(page, feed)
 
     page.locator('pre').last.wait_for(state='attached', timeout=500)
+    page.wait_for_timeout(200)
     assert page.locator('pre').last.inner_text() == "99"
 
     # set objects to 20
