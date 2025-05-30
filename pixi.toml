@@ -72,7 +72,7 @@ matplotlib-base = "*"
 pillow = "*"
 plotly = ">=4.0"
 # Example dependencies
-aiohttp = "*"
+aiohttp = "!=3.12.4"  # https://github.com/aio-libs/aiohttp/issues/11091
 altair = "*"
 bokeh_sampledata = "*"
 croniter = "*"
