@@ -11,7 +11,7 @@ import uuid
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Literal,
+    IO, TYPE_CHECKING, Any, ClassVar, Literal, cast,
 )
 
 import jinja2
@@ -410,7 +410,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = f'{dist_path}bundled/{tmpl_name}/{css_file}{version_suffix}'
             elif isurl(css):
-                css_files[f'base_{css_file}'] = css
+                css_files[f'base_{css_file}'] = cast("str", css)
             elif resolve_custom_path(self, css):
                 css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
 
@@ -432,7 +432,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / js_name).is_file():
                 js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
             elif isurl(js):
-                js_files[f'base_{js_name}'] = js
+                js_files[f'base_{js_name}'] = cast("str", js)
             elif resolve_custom_path(self, js):
                 js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
 

@@ -422,7 +422,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
         payload.update(self.application_context.application.process_request(self.request))  # type: ignore
         return payload
 
-    def _authorize(self, session: bool = False) -> tuple[bool, str | None]:
+    def _authorize(self, session: bool = False) -> tuple[bool | None, str | None]:
         """
         Determine if user is authorized to access this application.
         """
