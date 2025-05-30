@@ -66,7 +66,7 @@ Discover how to add custom endpoints to your Panel server.
 
 :::{grid-item-card} {octicon}`package;2.5em;sd-mr-1` Configure the Websocket
 :link: endpoints
-:link-type: websocksets
+:link-type: websockets
 
 Discover how configure the web socket settings to enable larger data transfers
 :::

@@ -34,7 +34,7 @@ Understanding the various layers that impose size limitations helps you configur
 
 For production applications using **`panel serve`**, configure larger limits at application startup:
 
-WHAT SHOULD BE DONE HERE?
+...
 
 For production applications using **`panel.serve()`**, configure larger limits at application startup:
 
