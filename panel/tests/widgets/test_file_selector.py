@@ -4,17 +4,10 @@ from pathlib import Path
 
 import pytest
 
-try:
-    import s3fs
-except Exception:
-    s3fs = None
-
 from panel.models.widgets import DoubleClickEvent
 from panel.widgets.file_selector import (
     FileSelector, LocalFileProvider, RemoteFileProvider,
 )
-
-s3fs_available = pytest.mark.skipif(s3fs is None, reason='s3fs not available')
 
 FILE_PATH = Path(__file__)
 
@@ -34,13 +27,6 @@ def test_dir(tmp_path):
 
     yield str(test_dir)
 
-@pytest.fixture
-async def s3_filesystem():
-    fs = s3fs.S3FileSystem(anon=True)
-    yield fs
-    s3 = await fs.get_s3()
-    await s3.close()
-
 def test_local_file_provider_is_dir():
     provider = LocalFileProvider()
     assert not provider.isdir(FILE_PATH)
@@ -51,14 +37,16 @@ def test_local_file_provider_ls():
     dirs, files = provider.ls(FILE_PATH.parent, '*test_file_selector*')
     assert files == [str(FILE_PATH)]
 
-@s3fs_available
-def test_remote_file_provider_is_dir(s3_filesystem):
+def test_remote_file_provider_is_dir():
+    s3fs = pytest.importorskip("s3fs")
+    s3_filesystem = s3fs.S3FileSystem(anon=True)
     provider = RemoteFileProvider(fs=s3_filesystem)
     assert not provider.isdir('s3://datasets.holoviz.org/stocks/v1/stocks.csv')
     assert provider.isdir('s3://datasets.holoviz.org/stocks/v1/')
 
-@s3fs_available
-def test_remote_file_provider_ls(s3_filesystem):
+def test_remote_file_provider_ls():
+    s3fs = pytest.importorskip("s3fs")
+    s3_filesystem = s3fs.S3FileSystem(anon=True)
     provider = RemoteFileProvider(fs=s3_filesystem)
     dirs, _ = provider.ls('s3://datasets.holoviz.org/stocks/')
     assert dirs == ['s3://datasets.holoviz.org/stocks/v1/']
