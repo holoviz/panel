@@ -1076,7 +1076,7 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     serve_component(page, widget)
 
     cell = page.locator('text="target"')
-    cell.first.wait_for(state="attached", timeout=5000)
+    cell.wait_for(state="attached", timeout=5000)
 
     # Scroll to the right
     cell.scroll_into_view_if_needed()
