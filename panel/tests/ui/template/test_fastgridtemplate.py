@@ -17,7 +17,7 @@ def test_fast_grid_template_no_console_errors(page):
 
     tmpl.main[0:3, 0:3] = md
 
-    msgs, _ = serve_component(page, tmpl)
+    msgs, _ = serve_component(page, tmpl, shadow_wait=False)
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
 
@@ -33,7 +33,7 @@ def test_fast_grid_template_updates(page):
 
     tmpl.main[0:3, 0:3] = md
 
-    serve_component(page, tmpl)
+    serve_component(page, tmpl, shadow_wait=False)
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'
