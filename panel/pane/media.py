@@ -4,6 +4,7 @@ Contains Media panes including renderers for Audio and Video content.
 from __future__ import annotations
 
 import os
+import pathlib
 
 from base64 import b64encode
 from collections.abc import Mapping
@@ -86,7 +87,7 @@ class _MediaBase(ModelPane):
                 return True
             if isurl(obj, cls._formats):
                 return True
-        if hasattr(obj, 'read'):  # Check for file like object
+        if hasattr(obj, 'read') or isinstance(obj, bytes):  # Check for file like object (or bytes)
             return True
         return False
 
@@ -120,10 +121,14 @@ class _MediaBase(ModelPane):
         fmt = self._default_mime
         if obj is None:
             data = b''
+        elif isinstance(obj, bytes):
+            data = b64encode(obj)
         elif isinstance(obj, (np.ndarray, TensorLike)):
             fmt = 'wav'
             buffer = self._to_buffer(obj)
             data = b64encode(buffer.getvalue())
+        elif isinstance(obj, BytesIO):
+            data = b64encode(obj.read())
         elif os.path.isfile(obj):
             fmt = obj.split('.')[-1]
             with open(obj, 'rb') as f:
@@ -188,9 +193,10 @@ class Audio(_MediaBase):
     >>> Audio('http://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3', name='Audio')
     """
 
-    object = param.ClassSelector(default='', class_=(str, np.ndarray, TensorLike),
+    object = param.ClassSelector(default='', class_=(str, pathlib.Path, BytesIO, np.ndarray, TensorLike),
                                  allow_None=True, doc="""
-        The audio file either local or remote, a 1-dim NumPy ndarray or a 1-dim Torch Tensor.""")
+        The audio file either local or remote, a 1-dim NumPy ndarray or a 1-dim Torch Tensor
+        or a bytes or BytesIO object.""")
 
     sample_rate = param.Integer(default=44100, doc="""
         The sample_rate of the audio when given a NumPy array or Torch tensor.""")
@@ -232,6 +238,10 @@ class Video(_MediaBase):
     ...     width=640, height=360, loop=True
     ... )
     """
+
+    object = param.ClassSelector(default='', class_=(str, pathlib.Path, BytesIO, bytes), allow_None=True, doc="""
+        The video file either local or remote as a string or URL or as a bytes or BytesIO object.""")
+
     volume = param.Integer(default=100, bounds=(0, 100), doc="""
         The volume of the media player.""")
 
