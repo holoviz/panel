@@ -40,6 +40,7 @@ def test_feed_view_latest(page):
     serve_component(page, feed)
 
     feed_el = page.locator(".bk-panel-models-feed-Feed")
+    expect(feed_el).to_be_attached()
 
     bbox = feed_el.bounding_box()
     assert bbox["height"] == 250
@@ -49,7 +50,10 @@ def test_feed_view_latest(page):
     # Assert scroll is not at 0 (view_latest)
     wait_until(lambda: feed_el.evaluate('(el) => el.scrollTop') > 0, page)
 
-    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) > 0.9 * ITEMS, page)
+    def test():
+        assert int(page.locator('pre').last.inner_text() or 0) > 0.9 * ITEMS
+
+    wait_until(test, page)
 
 
 def test_feed_view_scroll_to_latest(page):
@@ -57,6 +61,7 @@ def test_feed_view_scroll_to_latest(page):
     serve_component(page, feed)
 
     feed_el = page.locator(".bk-panel-models-feed-Feed")
+    expect(feed_el).to_be_attached()
 
     bbox = feed_el.bounding_box()
     assert bbox["height"] == 250
@@ -68,7 +73,10 @@ def test_feed_view_scroll_to_latest(page):
 
     feed.scroll_to_latest()
 
-    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) > 0.9 * ITEMS, page)
+    def test():
+        assert int(page.locator('pre').last.inner_text() or 0) > 0.9 * ITEMS
+
+    wait_until(test, page)
 
 
 def test_feed_scroll_to_latest_disabled_when_limit_zero(page):
