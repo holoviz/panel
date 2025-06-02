@@ -82,10 +82,11 @@ class _MediaBase(ModelPane):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, str):
-            if isfile(obj) and any(obj.endswith('.'+fmt) for fmt in cls._formats):
+        if isinstance(obj, (pathlib.Path, str)):
+            path = str(obj)
+            if isfile(path) and any(path.endswith('.'+fmt) for fmt in cls._formats):
                 return True
-            if isurl(obj, cls._formats):
+            if isurl(path, cls._formats):
                 return True
         if hasattr(obj, 'read') or isinstance(obj, bytes):  # Check for file like object (or bytes)
             return True
@@ -117,20 +118,27 @@ class _MediaBase(ModelPane):
             del msg['js_property_callbacks']
         return msg
 
+    @classmethod
+    def _detect_format(cls, data: bytes):
+        return cls._default_mime
+
     def _transform_object(self, obj: Any) -> dict[str, Any]:
         fmt = self._default_mime
         if obj is None:
             data = b''
         elif isinstance(obj, bytes):
+            fmt = self._detect_format(obj)
             data = b64encode(obj)
         elif isinstance(obj, (np.ndarray, TensorLike)):
             fmt = 'wav'
             buffer = self._to_buffer(obj)
             data = b64encode(buffer.getvalue())
         elif isinstance(obj, BytesIO):
-            data = b64encode(obj.read())
+            bffr = obj.read()
+            fmt = self._detect_format(bffr)
+            data = b64encode(bffr)
         elif os.path.isfile(obj):
-            fmt = obj.split('.')[-1]
+            fmt = str(obj).split('.')[-1]
             with open(obj, 'rb') as f:
                 data = f.read()
             data = b64encode(data)
@@ -166,6 +174,29 @@ def _is_1dim_int_or_float_ndarray(obj: Any)->bool:
         obj.dtype in _VALID_NUMPY_DTYPES_FOR_AUDIO
     )
 
+def _detect_audio_format(data: bytes) -> str | None:
+    """
+    Detect the audio format of a byte stream.
+
+    Parameters
+    ----------
+    data: bytes
+       The audio data as bytes.
+
+    Returns
+    -------
+    "mp3", "wav", "ogg", or None if unknown.
+    """
+    # MP3: ID3 tag or MPEG frame sync (0xFFEx or 0xFFFx)
+    if data.startswith(b"ID3") or (len(data) > 2 and data[0] == 0xFF and (data[1] & 0xE0) == 0xE0):
+        return "mp3"
+    elif data.startswith(b"RIFF") and data[8:12] == b"WAVE":
+        return "wav"
+    elif data.startswith(b"OggS"):
+        return "ogg"
+    else:
+        return None
+
 class Audio(_MediaBase):
     """
     The `Audio` pane displays an audio player given a local or remote audio
@@ -193,7 +224,7 @@ class Audio(_MediaBase):
     >>> Audio('http://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3', name='Audio')
     """
 
-    object = param.ClassSelector(default='', class_=(str, pathlib.Path, BytesIO, np.ndarray, TensorLike),
+    object = param.ClassSelector(default='', class_=(str, bytes, pathlib.Path, BytesIO, np.ndarray, TensorLike),
                                  allow_None=True, doc="""
         The audio file either local or remote, a 1-dim NumPy ndarray or a 1-dim Torch Tensor
         or a bytes or BytesIO object.""")
@@ -215,6 +246,35 @@ class Audio(_MediaBase):
             or _is_1dim_int_or_float_ndarray(obj)
             or _is_1dim_int_or_float_tensor(obj)
         )
+
+    @classmethod
+    def _detect_format(cls, data: bytes):
+        return _detect_audio_format(data) or cls._default_mime
+
+
+def _detect_video_format(data: bytes) -> str | None:
+    """
+    Detects whether the given bytes represent an MP4, WebM, or OGG container.
+
+    Parameters
+    ----------
+    data: bytes
+       The audio data as bytes.
+
+    Returns
+    -------
+    "mp4", "webm", "ogg", or None if unknown.
+    """
+    # OGG: starts with "OggS"
+    if data.startswith(b'OggS'):
+        return 'ogg'
+    # MP4: contains "ftyp" at byte offset 4
+    elif len(data) > 12 and data[4:8] == b'ftyp':
+        return 'mp4'  # Fallback — most 'ftyp' indicate MP4
+    # WebM: EBML signature — starts with 0x1A45DFA3
+    elif data.startswith(b'\x1A\x45\xDF\xA3'):
+        return 'webm'
+    return None
 
 
 class Video(_MediaBase):
@@ -252,3 +312,7 @@ class Video(_MediaBase):
     _formats = ['mp4', 'webm', 'ogg']
 
     _media_type = 'video'
+
+    @classmethod
+    def _detect_format(cls, data: bytes):
+        return _detect_video_format(data) or cls._default_mime
