@@ -364,6 +364,13 @@ class FileDropper(Widget):
     multiple = param.Boolean(default=False, doc="""
         Whether to allow uploading multiple files.""")
 
+    previews = param.ListSelector(default=["image", "pdf"],
+        objects=["image", "pdf"], doc="""
+        List of previews to enable in the FileDropper.
+        The following previews are available:
+        - image: Adds support for image previews.
+        - pdf: Adds support for PDF previews.""")
+
     value = param.Dict(default={}, doc="""
         A dictionary containing the uploaded file(s) as bytes or string
         objects indexed by the filename. Files that have a text/* mimetype
