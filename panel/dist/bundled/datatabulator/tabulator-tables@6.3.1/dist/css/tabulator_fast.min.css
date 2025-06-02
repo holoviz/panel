@@ -868,7 +868,7 @@
   position: absolute;
   display: inline-block;
   box-sizing: border-box;
-  background: var(--fill-color);
+  background: var(--background-color);
   border: 1px solid var(--neutral-divider-rest);
   box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.2);
   font-size: 14px;
