@@ -762,7 +762,7 @@ export function render() {
   return <h1>bar</h1>
 }"""
 
-@pytest.mark.parametrize('component,before,after', [
+@pytest.mark.parametrize(['component', 'before', 'after'], [
     (JSComponent, JS_CODE_BEFORE, JS_CODE_AFTER),
     (ReactChildren, REACT_CODE_BEFORE, REACT_CODE_AFTER),
 ])
