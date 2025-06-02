@@ -53,8 +53,8 @@ def test_remote_file_provider_is_dir(fs):
 def test_remote_file_provider_ls(fs):
     provider = RemoteFileProvider(fs=fs)
     provider.sep = os.sep
-    dirs, files = provider.ls(str(FILE_PATH.parent), '*test_file_selector*')
-    assert files == [str(FILE_PATH)]
+    dirs, files = provider.ls(os.fspath(FILE_PATH.parent), '*test_file_selector*')
+    assert files == [os.fspath(FILE_PATH).replace(os.sep, "/")]
 
 def test_file_selector_init(test_dir):
     selector = FileSelector(test_dir)
