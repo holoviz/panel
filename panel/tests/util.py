@@ -294,7 +294,35 @@ def get_open_ports(n=1):
     return tuple(ports)
 
 
-def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs):
+def _wait_for_shadow_el(page):
+    code_js = """\
+        () => {
+          function allOpenShadowRootsPopulated(root = document) {
+            const walker = document.createTreeWalker(
+              root,
+              NodeFilter.SHOW_ELEMENT,
+              null,
+              false
+            );
+
+            let node;
+            while ((node = walker.nextNode())) {
+              const shadowRoot = node.shadowRoot;
+              if (shadowRoot && shadowRoot.mode === "open") {
+                if (shadowRoot.children.length === 0) return false;
+                if (!allOpenShadowRootsPopulated(shadowRoot)) return false;
+              }
+            }
+
+            return true;
+          }
+
+          return allOpenShadowRootsPopulated();
+        }
+    """
+    page.wait_for_function(code_js, timeout=10_000)
+
+def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, shadow_wait=True, **kwargs):
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     if serve_and_wait.server_implementation == 'fastapi':
         from panel.io.fastapi import serve as serve_app
@@ -313,11 +341,14 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
     else:
         port = server.port
     wait_for_server(port, prefix=prefix)
+    if shadow_wait and page:
+        _wait_for_shadow_el(page)
+
     return port
 
 serve_and_wait.server_implementation = 'tornado'
 
-def serve_component(page, app, suffix='', wait=True, **kwargs):
+def serve_component(page, app, suffix='', wait=True, shadow_wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
     port = serve_and_wait(app, page, **kwargs)
@@ -325,6 +356,9 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
 
     if wait:
         wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
+
+    if page and shadow_wait:
+        _wait_for_shadow_el(page)
 
     return msgs, port
 
