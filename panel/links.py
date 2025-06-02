@@ -590,7 +590,7 @@ class JSCallbackGenerator(CallbackGenerator):
                 src_prop = src_specs[0]
                 if isinstance(source, Reactive):
                     src_prop = source._rename.get(src_prop, src_prop)
-                src_spec = (None, src_prop)
+                src_spec = (None, cast("str", src_prop))
         return [(src_spec, (None, None), link.code[spec])]
 
 
