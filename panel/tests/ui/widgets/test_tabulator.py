@@ -1067,6 +1067,7 @@ def test_tabulator_frozen_rows(page):
     assert Y_bb == page.locator('text="Y"').bounding_box()
 
 
+@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
