@@ -343,8 +343,8 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, shadow_wa
     wait_for_server(port, prefix=prefix)
     if page:
         page.wait_for_function("document.readyState === 'complete'", timeout=5000)
-    if shadow_wait and page:
-        wait_for_shadow_elements(page)
+    # if shadow_wait and page:
+    #     wait_for_shadow_elements(page)
 
     return port
 
@@ -362,8 +362,8 @@ def serve_component(page, app, suffix='', wait=True, shadow_wait=True, **kwargs)
     if page and wait:
         page.wait_for_function("document.readyState === 'complete'", timeout=5000)
 
-    if page and shadow_wait:
-        wait_for_shadow_elements(page)
+    # if page and shadow_wait:
+    #     wait_for_shadow_elements(page)
 
     return msgs, port
 
