@@ -4,17 +4,10 @@ from pathlib import Path
 
 import pytest
 
-try:
-    import s3fs
-except Exception:
-    s3fs = None
-
 from panel.models.widgets import DoubleClickEvent
 from panel.widgets.file_selector import (
     FileSelector, LocalFileProvider, RemoteFileProvider,
 )
-
-s3fs_available = pytest.mark.skipif(s3fs is None, reason='s3fs not available')
 
 FILE_PATH = Path(__file__)
 
@@ -35,11 +28,11 @@ def test_dir(tmp_path):
     yield str(test_dir)
 
 @pytest.fixture
-async def s3_filesystem():
-    fs = s3fs.S3FileSystem(anon=True)
+async def fs():
+    pytest.importorskip("fsspec")
+    from fsspec.implementations.local import LocalFileSystem
+    fs = LocalFileSystem()
     yield fs
-    s3 = await fs.get_s3()
-    await s3.close()
 
 def test_local_file_provider_is_dir():
     provider = LocalFileProvider()
@@ -51,20 +44,17 @@ def test_local_file_provider_ls():
     dirs, files = provider.ls(FILE_PATH.parent, '*test_file_selector*')
     assert files == [str(FILE_PATH)]
 
-@s3fs_available
-def test_remote_file_provider_is_dir(s3_filesystem):
-    provider = RemoteFileProvider(fs=s3_filesystem)
-    assert not provider.isdir('s3://datasets.holoviz.org/stocks/v1/stocks.csv')
-    assert provider.isdir('s3://datasets.holoviz.org/stocks/v1/')
+def test_remote_file_provider_is_dir(fs):
+    provider = RemoteFileProvider(fs=fs)
+    provider.sep = os.sep
+    assert not provider.isdir(FILE_PATH)
+    assert provider.isdir(FILE_PATH.parent)
 
-@s3fs_available
-def test_remote_file_provider_ls(s3_filesystem):
-    provider = RemoteFileProvider(fs=s3_filesystem)
-    dirs, _ = provider.ls('s3://datasets.holoviz.org/stocks/')
-    assert dirs == ['s3://datasets.holoviz.org/stocks/v1/']
-    _, files = provider.ls('s3://datasets.holoviz.org/stocks/v1')
-    assert files == ['s3://datasets.holoviz.org/stocks/v1/stocks.csv']
-
+def test_remote_file_provider_ls(fs):
+    provider = RemoteFileProvider(fs=fs)
+    provider.sep = os.sep
+    dirs, files = provider.ls(os.fspath(FILE_PATH.parent), '*test_file_selector*')
+    assert files == [os.fspath(FILE_PATH).replace(os.sep, "/")]
 
 def test_file_selector_init(test_dir):
     selector = FileSelector(test_dir)

@@ -31,12 +31,12 @@ panel serve app.py ...
 
 The `CLIENT_ID` corresponds to the `Application (client) ID` and the `TENANT_ID` to the `Directory (tenant) ID` below:
 
-![CLIENT_ID and TENANT_ID](../../_static/images/azure_oauth_app_registration.png)
+![CLIENT_ID and TENANT_ID](../../../_static/images/azure_oauth_app_registration.png)
 
 The `CLIENT_SECRET` corresponds to the `Value` below:
 
-![CLIENT_SECRET](../../_static/images/azure_oauth_client_secret.png)
+![CLIENT_SECRET](../../../_static/images/azure_oauth_client_secret.png)
 
 The `REDIRECT_URI` should be included in the list of Web Redirect URIs:
 
-![REDIRECT_URI](../../_static/images/azure_oauth_uris.png)
+![REDIRECT_URI](../../../_static/images/azure_oauth_uris.png)

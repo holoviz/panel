@@ -167,7 +167,10 @@ export class ColumnView extends BkColumnView {
     for (let i = 0; i < this.child_views.length; i++) {
       const view = this.child_views[i]
       const is_new = created_views.has(view)
-      const target = view.rendering_target() ?? this.self_target
+      // this.shadow_el is needed for Bokeh < 3.7.0 as this.self_target is not defined
+      // can be removed when our minimum version is Bokeh 3.7.0
+      // https://github.com/holoviz/panel/pull/7948
+      const target = view.rendering_target() ?? this.self_target ?? this.shadow_el
       if (is_new) {
         view.render_to(target)
       } else if (matching_index === null || i > matching_index) {

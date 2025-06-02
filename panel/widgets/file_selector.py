@@ -144,9 +144,11 @@ class RemoteFileProvider(BaseFileProvider):
         prefix = ''
         if scheme:= urlparse(path).scheme:
             prefix = f'{scheme}://'
-        dirs = [f"{prefix}{d['name']}/" for d in raw_ls if d['type'] == 'directory' ]
+        dirs_fn = lambda x: f"{prefix}{x}{self.sep}" if ":" not in x else f"{x}{self.sep}"
+        dirs = [dirs_fn(d['name']) for d in raw_ls if d['type'] == 'directory' ]
         raw_glob = self.fs.glob(path+file_pattern, detail=True)
-        files = [f"{prefix}{d['name']}" for d in raw_glob.values() if d['type'] == 'file' ]
+        files_fn = lambda x: f"{prefix}{x}" if ":" not in x else x
+        files = [files_fn(d['name']) for d in raw_glob.values() if d['type'] == 'file' ]
         return dirs, files
 
 
