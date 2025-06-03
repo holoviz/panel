@@ -87,6 +87,7 @@ def test_feed_scroll_to_latest_disabled_when_limit_zero(page):
     feed_el = page.locator(".bk-panel-models-feed-Feed")
     expect(feed_el).to_be_attached()
     initial_scroll = feed_el.evaluate('(el) => el.scrollTop')
+    page.wait_for_timeout(200)
 
     # Try to scroll to latest
     feed.scroll_to_latest(scroll_limit=0)
