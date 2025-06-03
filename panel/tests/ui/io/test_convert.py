@@ -160,7 +160,7 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
 
-    page.goto(f"{HTTP_URL}{app_path.name[:-3]}.html")
+    page.goto(f"{HTTP_URL}{app_path.name[:-3]}.html", wait_until="domcontentloaded")
 
     cls = f'pn-loading pn-{config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
