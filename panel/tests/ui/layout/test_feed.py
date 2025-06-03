@@ -90,6 +90,7 @@ def test_feed_scroll_to_latest_disabled_when_limit_zero(page):
 
     # Try to scroll to latest
     feed.scroll_to_latest(scroll_limit=0)
+    page.wait_for_timeout(200)
 
     # Verify scroll position hasn't changed
     final_scroll = feed_el.evaluate('(el) => el.scrollTop')
