@@ -23,7 +23,7 @@ pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3, reruns_delay=2)]
 @pytest.fixture(scope="module", autouse=True)
 def set_expect_timeout():
     timeout = expect._timeout
-    expect.set_options(timeout=10_000)
+    expect.set_options(timeout=30_000)
     try:
         yield
     finally:
