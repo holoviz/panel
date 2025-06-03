@@ -574,10 +574,10 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     cell_edit = page.locator('input[type="date"]')
     new_date = "1980-01-01"
     cell_edit.fill(new_date)
-    page.wait_for_timeout(100)
     # Need to Enter to validate the change
     page.locator('input[type="date"]').press('Enter')
     expect(page.locator(f'text="{new_date}"')).to_have_count(1)
+    page.wait_for_timeout(200)
     new_date = dt.datetime.strptime(new_date, '%Y-%m-%d').date()
     assert new_date in widget.value['date'].tolist()
 
@@ -586,10 +586,10 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     cell_edit = page.locator('input[type="date"]')
     new_date2 = "1990-01-01"
     cell_edit.fill(new_date2)
-    page.wait_for_timeout(100)
     # Escape invalidates the change
     page.locator('input[type="date"]').press('Escape')
     expect(page.locator(f'text="{new_date2}"')).to_have_count(0)
+    page.wait_for_timeout(200)
     new_date2 = dt.datetime.strptime(new_date2, '%Y-%m-%d').date()
     assert new_date2 not in widget.value['date'].tolist()
 
