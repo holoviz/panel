@@ -323,7 +323,7 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
     port = serve_and_wait(app, page, **kwargs)
-    page.goto(f"http://localhost:{port}{suffix}")
+    page.goto(f"http://localhost:{port}{suffix}", wait_until="domcontentloaded")
 
     if wait:
         wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
