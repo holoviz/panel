@@ -177,13 +177,15 @@ def test_feed_reset_visible_range(page):
     feed = Feed(*list(range(ITEMS)), load_buffer=20, height=50, view_latest=True)
     serve_component(page, feed)
 
-    page.locator('pre').last.wait_for(state='attached', timeout=5000)
+    pre = page.locator('pre')
+    expect(pre.last).to_be_attached()
+
     page.wait_for_timeout(500)
-    assert page.locator('pre').last.inner_text() == "99"
+    expect(pre.last).to_have_text("99")
 
     # set objects to 20
     feed.objects = feed.objects[:20]
 
     # assert view reset
     page.wait_for_timeout(500)
-    assert page.locator('pre').last.inner_text() == "19"
+    expect(pre.last).to_have_text("19")
