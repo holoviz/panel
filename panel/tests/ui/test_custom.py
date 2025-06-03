@@ -765,14 +765,18 @@ export function render() {
 @pytest.mark.parametrize(['component', 'before', 'after'], [
     (JSComponent, JS_CODE_BEFORE, JS_CODE_AFTER),
     (ReactChildren, REACT_CODE_BEFORE, REACT_CODE_AFTER),
-])
+], ids=["JSComponent", "ReactChildren"])
 def test_reload(page, js_file, component, before, after):
     js_file.file.write(before)
     js_file.file.flush()
     js_file.file.seek(0)
 
+    js_path = pathlib.Path(js_file.name)
+    while not js_path.exists():
+        page.wait_for_timeout(100)
+
     class CustomReload(component):
-        _esm = pathlib.Path(js_file.name)
+        _esm = js_path
 
     example = CustomReload()
 
