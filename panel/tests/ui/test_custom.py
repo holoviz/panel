@@ -17,17 +17,7 @@ from panel.layout.base import ListLike
 from panel.pane import Markdown
 from panel.tests.util import serve_component, wait_until
 
-pytestmark = pytest.mark.ui
-
-
-@pytest.fixture(scope="module", autouse=True)
-def set_expect_timeout():
-    timeout = expect._timeout
-    expect.set_options(timeout=10_000)
-    try:
-        yield
-    finally:
-        expect.set_options(timeout=timeout)
+pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3, reruns_delay=2)]
 
 
 class JSUpdate(JSComponent):
@@ -625,12 +615,14 @@ def test_child(page, component):
     example = component(child='A Markdown pane!')
 
     serve_component(page, example)
+    button = page.locator('button')
+    expect(button).to_be_attached()
 
-    expect(page.locator('button')).to_have_text('A Markdown pane!')
+    expect(button).to_have_text('A Markdown pane!')
 
     example.child = 'A different Markdown pane!'
 
-    expect(page.locator('button')).to_have_text('A different Markdown pane!')
+    expect(button).to_have_text('A different Markdown pane!')
 
     wait_until(lambda: example.render_count == (2 if component is JSChild else 1), page)
 
@@ -678,12 +670,14 @@ def test_children(page, component):
     example = component(objects=['A Markdown pane!'])
 
     serve_component(page, example)
+    container = page.locator('#container')
+    expect(container).to_be_attached()
 
-    expect(page.locator('#container')).to_have_text('A Markdown pane!')
+    expect(container).to_have_text('A Markdown pane!')
 
     example.objects = ['A different Markdown pane!']
 
-    expect(page.locator('#container')).to_have_text('A different Markdown pane!')
+    expect(container).to_have_text('A different Markdown pane!')
 
     example.objects = ['<div class="foo">1</div>', '<div class="foo">2</div>']
 
@@ -699,13 +693,15 @@ def test_children_add_and_remove_without_error(page, component):
     example = component(objects=['A Markdown pane!'])
 
     msgs, _ = serve_component(page, example)
+    container = page.locator('#container')
+    expect(container).to_be_attached()
 
-    expect(page.locator('#container')).to_have_text('A Markdown pane!')
+    expect(container).to_have_text('A Markdown pane!')
 
     example.append('A different Markdown pane!')
     example.pop(-1)
 
-    expect(page.locator('#container')).to_have_text('A Markdown pane!')
+    expect(container).to_have_text('A Markdown pane!')
 
     expect(page.locator('.markdown')).to_have_count(1)
 
@@ -771,26 +767,24 @@ def test_reload(page, js_file, component, before, after):
     js_file.file.flush()
     js_file.file.seek(0)
 
-    js_path = pathlib.Path(js_file.name)
-    while not js_path.exists():
-        page.wait_for_timeout(100)
-
     class CustomReload(component):
-        _esm = js_path
+        _esm = pathlib.Path(js_file.name)
 
     example = CustomReload()
 
     with config.set(autoreload=True):
         serve_component(page, example)
+        h1 = page.locator("h1")
+        expect(h1).to_be_attached()
 
-        expect(page.locator('h1')).to_have_text('foo')
+        expect(h1).to_have_text('foo')
 
         js_file.file.write(after)
         js_file.file.flush()
         js_file.file.seek(0)
         example._update_esm()
 
-        expect(page.locator('h1')).to_have_text('bar')
+        expect(h1).to_have_text('bar')
 
 
 def test_anywidget_custom_event(page):
