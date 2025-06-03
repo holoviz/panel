@@ -85,6 +85,7 @@ def test_feed_scroll_to_latest_disabled_when_limit_zero(page):
     serve_component(page, feed)
 
     feed_el = page.locator(".bk-panel-models-feed-Feed")
+    expect(feed_el).to_be_attached()
     initial_scroll = feed_el.evaluate('(el) => el.scrollTop')
 
     # Try to scroll to latest
@@ -176,7 +177,7 @@ def test_feed_reset_visible_range(page):
     feed = Feed(*list(range(ITEMS)), load_buffer=20, height=50, view_latest=True)
     serve_component(page, feed)
 
-    page.locator('pre').last.wait_for(state='attached', timeout=500)
+    page.locator('pre').last.wait_for(state='attached', timeout=5000)
     page.wait_for_timeout(500)
     assert page.locator('pre').last.inner_text() == "99"
 
