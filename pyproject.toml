@@ -232,6 +232,11 @@ filterwarnings = [
     "ignore:\\*scattermapbox\\* is deprecated! Use \\*scattermap\\* instead" # https://github.com/plotly/plotly.py/issues/4997
 ]
 
+[tool.coverage.run]
+omit = [
+    "**/*.generated.py",
+]
+
 [tool.mypy]
 namespace_packages = true
 explicit_package_bases = true
