@@ -2439,7 +2439,11 @@ def test_tabulator_patch_scalar_as_index_filtered(page):
     editable_cell.fill("120")
     editable_cell.press('Enter')
 
-    wait_until(lambda: table.value.iloc[7, 0] == 10, page)
+    def test():
+        assert table.value.shape[0] > 7
+        assert table.value.iloc[7, 0] == 10
+
+    wait_until(test, page)
 
 
 def color_false(val):
