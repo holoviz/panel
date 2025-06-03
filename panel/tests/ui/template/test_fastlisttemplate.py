@@ -17,7 +17,7 @@ def test_fast_list_template_no_console_errors(page):
 
     tmpl.main.append(md)
 
-    msgs, _ = serve_component(page, tmpl, shadow_wait=False)
+    msgs, _ = serve_component(page, tmpl)
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
 
@@ -38,7 +38,7 @@ def test_fast_list_template_updates(page):
 
     tmpl.main.append(md)
 
-    serve_component(page, tmpl, shadow_wait=False)
+    serve_component(page, tmpl)
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'
