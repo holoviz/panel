@@ -233,9 +233,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-omit = [
-    "**/*.generated.py",
-]
+disable_warnings = ["module-not-measured"]
 
 [tool.mypy]
 namespace_packages = true

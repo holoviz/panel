@@ -116,7 +116,7 @@ xgboost = "*"
 # =============================================
 [feature.test-core.dependencies]
 psutil = "*"
-pytest = "!=8.4.0"  # https://github.com/pytest-dev/pytest-cov/issues/693
+pytest = "*"
 pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
