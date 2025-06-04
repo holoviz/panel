@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 import param
@@ -775,6 +776,7 @@ export function render() {
 def test_reload(page, js_file, component, before, after):
     js_file.file.write(before)
     js_file.file.flush()
+    os.fsync(js_file.file.fileno())
     js_file.file.seek(0)
 
     class CustomReload(component):
@@ -791,6 +793,7 @@ def test_reload(page, js_file, component, before, after):
 
         js_file.file.write(after)
         js_file.file.flush()
+        os.fsync(js_file.file.fileno())
         js_file.file.seek(0)
         example._update_esm()
 
