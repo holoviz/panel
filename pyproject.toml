@@ -231,7 +231,8 @@ filterwarnings = [
     # 2025-01 `plotly` 6.0 triggers warnings
     "ignore:\\*scattermapbox\\* is deprecated! Use \\*scattermap\\* instead", # https://github.com/plotly/plotly.py/issues/4997
     # 2025-06
-    "ignore:Failed to generate report", # CovReportWarning: Failed to generate report: No data to report.
+    "ignore:Failed to generate report", # OK, CovReportWarning: Failed to generate report: No data to report.
+    "ignore:Couldn't parse", # OK, CoverageWarning: Couldn't parse
 ]
 
 [tool.coverage.run]
@@ -239,7 +240,6 @@ disable_warnings = [
     "module-not-imported",
     "couldnt-parse",
     "no-data-collected",
-    "no-sysmon",
 ]
 
 [tool.mypy]
