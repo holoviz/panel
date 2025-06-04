@@ -370,10 +370,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 if config.autoreload:
                     modified = hashlib.sha256(str(esm_path.stat().st_mtime).encode('utf-8')).hexdigest()
                     esm += f'?{modified}'
-            elif esm_path.exists():
-                esm = esm_path.read_text(encoding='utf-8')
             else:
-                esm = cls._esm
+                esm = esm_path.read_text(encoding='utf-8')
         else:
             esm = cls._esm
         if esm is None:
