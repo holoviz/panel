@@ -46,7 +46,8 @@ from .widgets.base import WidgetBase  # noqa
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.events import Event
-    from bokeh.model import Model, UIElement
+    from bokeh.model import Model
+    from bokeh.models import UIElement
     from pyviz_comms import Comm
 
     ExportSpec = dict[str, list[str | tuple[str, ...]]]
