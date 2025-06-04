@@ -17,7 +17,7 @@ from panel.layout.base import ListLike
 from panel.pane import Markdown
 from panel.tests.util import serve_component, wait_until
 
-pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3, reruns_delay=2)]
+pytestmark = pytest.mark.ui
 
 
 @pytest.fixture(scope="module", autouse=True)
