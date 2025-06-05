@@ -1135,8 +1135,8 @@ class ReactiveExpr(Pane):
     show_widgets = param.Boolean(default=True, doc="""
         Whether to display the widget inputs.""")
 
-    widget_layout = param.Selector(
-        objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
+    widget_layout = param.ClassSelector(
+        class_=ListLike, constant=True, is_instance=False, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")
 
     widget_location = param.Selector(default='left_top', objects=[
