@@ -104,7 +104,7 @@ def test_chat_interface_edit_message(page):
         assert object.object == "Edited"
 
 
-def test_chat_interface_adaptive(page):
+async def test_chat_interface_adaptive(page):
     async def echo_callback(content, index, instance):
         for i in range(3):
             await asyncio.sleep(0.1)
@@ -137,7 +137,7 @@ def test_chat_interface_adaptive(page):
     assert len(chat_interface.objects) == 6
 
 
-def test_chat_interface_adaptive_double_interruption(page):
+async def test_chat_interface_adaptive_double_interruption(page):
     async def slow_callback(content, index, instance):
         for i in range(5):
             await asyncio.sleep(0.2)
