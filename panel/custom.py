@@ -46,7 +46,8 @@ from .widgets.base import WidgetBase  # noqa
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.events import Event
-    from bokeh.model import Model, UIElement
+    from bokeh.model import Model
+    from bokeh.models import UIElement
     from pyviz_comms import Comm
 
     ExportSpec = dict[str, list[str | tuple[str, ...]]]
@@ -403,8 +404,23 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     async def _watch_esm(self):
         import watchfiles
         path = self._esm_path(compiled=False)
-        async for _ in watchfiles.awatch(path, stop_event=self._watching_esm):
-            self._update_esm()
+        async for changes in watchfiles.awatch(path, stop_event=self._watching_esm):
+            update = False
+            for (change, path) in changes:
+                if change != watchfiles.Change.modified:
+                    continue
+                # Ensure that the file exists (in case filesystem write is not atomic)
+                retries = 0
+                while not os.path.exists(path):
+                    await asyncio.sleep(0.1)
+                    retries += 1
+                    if retries == 5:
+                        break
+                # Ignore change if file is not written within 0.5 seconds
+                if retries != 5:
+                    update = True
+            if update:
+                self._update_esm()
 
     def _update_esm(self):
         for ref, (model, _) in self._models.copy().items():
