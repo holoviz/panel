@@ -243,11 +243,6 @@ disable_warnings = [
     "no-data-collected",
 ]
 
-[tool.coverage.run]
-omit = [
-    "panel/io/__/_templates/*.py"
-]
-
 [tool.mypy]
 namespace_packages = true
 explicit_package_bases = true
