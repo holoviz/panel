@@ -411,7 +411,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                     continue
                 # Ensure that the file exists (in case filesystem write is not atomic)
                 retries = 0
-                while not pathlib.Path(path).exists():
+                while not os.path.exists(path):
                     await asyncio.sleep(0.1)
                     retries += 1
                     if retries == 5:
