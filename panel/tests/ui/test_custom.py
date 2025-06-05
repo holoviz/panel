@@ -1,5 +1,6 @@
 import os
 import pathlib
+import time
 
 import param
 import pytest
@@ -795,6 +796,8 @@ def test_reload(page, js_file, component, before, after):
         js_file.file.flush()
         os.fsync(js_file.file.fileno())
         js_file.file.seek(0)
+        while not pathlib.Path(js_file.file).exists():
+            time.sleep(0.1)
         example._update_esm()
 
         expect(h1).to_have_text('bar')
