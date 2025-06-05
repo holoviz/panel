@@ -202,6 +202,7 @@ def test_column_scroll_position_init(page):
 
     # assert scroll position can be used to initialize scroll location
     column = page.locator('.bk-panel-models-layout-Column')
+    expect(column).to_be_attached()
     expect(column).to_have_js_property('scrollTop', 100)
 
 
@@ -239,7 +240,6 @@ def test_column_scroll_position_param_updated(page):
     expect(column).to_have_js_property('scrollTop', 175)
 
 
-@pytest.mark.flaky(reruns=3)
 def test_column_scroll_to(page):
     col = Column(
         *list(range(100)),
@@ -258,14 +258,17 @@ def test_column_scroll_to(page):
 
     # scroll to 50
     col.scroll_to(50)
+    page.wait_for_timeout(200)
     expect(column_el).to_have_js_property('scrollTop', 1362)
 
     # scroll away using mouse wheel
     column_el.evaluate('(el) => el.scrollTo({top: 1000})')
+    page.wait_for_timeout(200)
     expect(column_el).to_have_js_property('scrollTop', 1000)
 
     # scroll to 50 again
     col.scroll_to(50)
+    page.wait_for_timeout(200)
     expect(column_el).to_have_js_property('scrollTop', 1362)
 
 

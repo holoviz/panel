@@ -29,13 +29,13 @@ def test_time_picker(page):
 
     # test str value change
     time_picker.value = "04:08"
-    wait_until(lambda: time_picker.value == "04:08")
     locator = page.locator("#input")
+    page.wait_for_timeout(200)
     assert locator.get_attribute("value") == "04:08:00"
 
     # test datetime.time value change
     time_picker.value = datetime.time(18, 8)
-    wait_until(lambda: time_picker.value == datetime.time(18, 8))
+    page.wait_for_timeout(200)
     locator = page.locator("#input")
     assert locator.get_attribute("value") == "18:08:00"
 
