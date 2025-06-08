@@ -135,6 +135,9 @@ class _config(_base_config):
     browser_info = param.Boolean(default=True, doc="""
         Whether to request browser info from the frontend.""")
 
+    cache_path = param.Path(default="./cache", check_exists=False, doc="""
+        Path the cache decorator will write to if diskcache is enabled.""")
+
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
@@ -243,6 +246,13 @@ class _config(_base_config):
     _cookie_secret = param.String(default=None, doc="""
         Configure to enable getting/setting secure cookies.""")
 
+    _cookie_path = param.String(default="/", doc="""
+        Path setting that controls the scope of cookies. Specifies the URL path
+        prefix that must exist in the requested URL for the browser to send the
+        Cookie header. The default value '/' allows cookies to be sent to all paths.
+        A more restrictive path like '/app1/' would limit cookies to only be sent
+        to URLs under that path.""")
+
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
 
@@ -272,6 +282,9 @@ class _config(_base_config):
         When set to a non-None value a thread pool will be started.
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
+
+    _index_titles = param.Dict(default={}, doc="""
+        Custom titles to use for Multi Page Apps index page.""")
 
     _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
         Password, dictionary with a mapping from username to password
@@ -322,12 +335,12 @@ class _config(_base_config):
 
     # Global parameters that are shared across all sessions
     _globals: ClassVar[set[str]] = {
-        'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
+        'admin_plugins', 'autoreload', 'comms', 'cookie_path', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin'
+        'oauth_optional', 'admin', 'index_titles'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -357,12 +370,14 @@ class _config(_base_config):
 
     @param.depends('notifications', watch=True)
     def _setup_notifications(self):
-        from .io.notifications import NotificationArea
-        from .reactive import ReactiveHTMLMetaclass
-        if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
-            ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
+        if state._notification_type is None:
+            from .io.notifications import NotificationArea
+            from .reactive import ReactiveHTMLMetaclass
+            state._notification_type = NotificationArea
+            if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
+                ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
         if not state.curdoc:
-            state._notification = NotificationArea()
+            state._notification = state._notification_type()
 
     @param.depends('disconnect_notification', 'ready_notification', watch=True)
     def _enable_notifications(self):
@@ -517,6 +532,10 @@ class _config(_base_config):
         return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path)
 
     @property
+    def index_titles(self):
+        return self._index_titles
+
+    @property
     def inline(self):
         return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
 
@@ -559,6 +578,11 @@ class _config(_base_config):
             'PANEL_COOKIE_SECRET',
             os.environ.get('BOKEH_COOKIE_SECRET', self._cookie_secret)
         )
+
+    @property
+    def cookie_path(self):
+        """The sub path of the domain the cookie applies to."""
+        return os.environ.get('PANEL_COOKIE_PATH', self._cookie_path)
 
     @property
     def oauth_secret(self):

@@ -68,7 +68,7 @@ def extract_dependencies(function):
             for subp in subps:
                 owner = getattr(owner, subp, None)
                 if owner is None:
-                    raise ValueError('Cannot depend on undefined sub-parameter {p!r}.')
+                    raise ValueError(f'Cannot depend on undefined sub-parameter {p!r}.')
             if p in owner.param:
                 pobj = owner.param[p]
                 if pobj not in params:

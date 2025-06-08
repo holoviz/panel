@@ -11,7 +11,7 @@ import uuid
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Literal,
+    IO, TYPE_CHECKING, Any, ClassVar, Literal, cast,
 )
 
 import jinja2
@@ -26,7 +26,7 @@ from ..config import _base_config, config, panel_extension
 from ..io.document import init_doc
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
-from ..io.notifications import NotificationArea
+from ..io.notifications import NotificationArea, NotificationAreaBase
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, JS_VERSION, ResourceComponent, _env,
     component_resource_path, get_dist_path, loading_css, parse_template,
@@ -375,7 +375,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 resource_types[rname].update(res)  # type: ignore
             else:
                 resource_types[rname] += [  # type: ignore
-                    r for r in res if res not in resource_types[rname]  # type: ignore
+                    r for r in res if r not in resource_types[rname]  # type: ignore
                 ]
 
         for rname, js in self.config.js_files.items():
@@ -410,7 +410,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = f'{dist_path}bundled/{tmpl_name}/{css_file}{version_suffix}'
             elif isurl(css):
-                css_files[f'base_{css_file}'] = css
+                css_files[f'base_{css_file}'] = cast("str", css)
             elif resolve_custom_path(self, css):
                 css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
 
@@ -432,7 +432,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / js_name).is_file():
                 js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
             elif isurl(js):
-                js_files[f'base_{js_name}'] = js
+                js_files[f'base_{js_name}'] = cast("str", js)
             elif resolve_custom_path(self, js):
                 js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
 
@@ -621,7 +621,7 @@ class BasicTemplate(BaseTemplate):
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the modal""")
 
-    notifications = param.ClassSelector(class_=NotificationArea, constant=True, doc="""
+    notifications = param.ClassSelector(class_=NotificationAreaBase, constant=True, doc="""
         The NotificationArea instance attached to this template.
         Automatically added if config.notifications is set, but may
         also be provided explicitly.""")

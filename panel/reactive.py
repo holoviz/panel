@@ -201,6 +201,12 @@ class Syncable(Renderable):
             if self._property_mapping.get(k, False) is not None and
             k not in self._manual_params
         }
+        if 'sizing_mode' in properties:
+            sm = properties['sizing_mode']
+            if sm and ('width' in sm or 'both' in sm) and self.min_width is None:
+                properties['min_width'] = 0
+            if sm and ('height' in sm or 'both' in sm) and self.min_height is None:
+                properties['min_height'] = 0
         if 'width' in properties and self.sizing_mode is None:
             properties['min_width'] = properties['width']
         if 'height' in properties and self.sizing_mode is None:
@@ -218,16 +224,17 @@ class Syncable(Renderable):
             ]
             stylesheets += properties['stylesheets']
             wrapped = []
+            if state.curdoc:
+                css_cache = state._stylesheets.get(state.curdoc, {})
+            else:
+                css_cache = {}
             for stylesheet in stylesheets:
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
-                    if state.curdoc:
-                        cache = state._stylesheets.get(state.curdoc, {})
+                    if stylesheet in css_cache:
+                        conv_stylesheet = css_cache[stylesheet]
                     else:
-                        cache = {}
-                    if stylesheet in cache:
-                        stylesheet = cache[stylesheet]
-                    else:
-                        cache[stylesheet] = stylesheet = ImportedStyleSheet(url=stylesheet)
+                        css_cache[stylesheet] = conv_stylesheet = ImportedStyleSheet(url=stylesheet)
+                    stylesheet = conv_stylesheet
                 wrapped.append(stylesheet)
             properties['stylesheets'] = wrapped
         return properties
@@ -454,10 +461,10 @@ class Syncable(Renderable):
         if any(e for e in events if e not in self._busy__ignore):
             with edit_readonly(state):
                 state._busy_counter += 1
-        if events and state.curdoc:
-            self._in_process__events[state.curdoc] = events
-        params = self._process_property_change(events)
         try:
+            if events and state.curdoc:
+                self._in_process__events[state.curdoc] = events
+            params = self._process_property_change(events)
             with edit_readonly(self):
                 self_params = {k: v for k, v in params.items() if '.' not in k}
                 with _syncing(self, list(self_params)):
@@ -472,7 +479,7 @@ class Syncable(Renderable):
                 with edit_readonly(obj):
                     with _syncing(obj, [p]):
                         obj.param.update(**{p: v})
-        except Exception:
+        except Exception as e:
             if len(params) > 1:
                 msg_end = f"changing properties {pformat(params)} \n"
             elif len(params) == 1:
@@ -480,7 +487,7 @@ class Syncable(Renderable):
             else:
                 msg_end = "\n"
             log.exception(f'Callback failed for object named {self.name!r} {msg_end}')
-            raise
+            raise e
         finally:
             if state.curdoc and state.curdoc in self._in_process__events:
                 del self._in_process__events[state.curdoc]
@@ -665,9 +672,9 @@ class Reactive(Syncable, Viewable):
         if 'stylesheets' not in properties:
             return properties
         if doc:
-            state._stylesheets[doc] = cache = state._stylesheets.get(doc, {})
+            state._stylesheets[doc] = css_cache = state._stylesheets.get(doc, {})
         else:
-            cache = {}
+            css_cache = {}
         if doc and 'dist_url' in doc._template_variables:
             dist_url = doc._template_variables['dist_url']
         else:
@@ -676,10 +683,20 @@ class Reactive(Syncable, Viewable):
         for stylesheet in properties['stylesheets']:
             if isinstance(stylesheet, ImportedStyleSheet):
                 url = str(stylesheet.url)
-                if url in cache:
-                    stylesheet = cache[url]
+                if url in css_cache:
+                    cached = css_cache[url]
+                    # Confirm if stylesheet is valid, sometimes
+                    # the URL is seemingly set to None so we
+                    # replace the cached stylesheet if there is
+                    # a unset property error
+                    try:
+                        cached.url  # noqa
+                    except Exception:
+                        css_cache[url] = stylesheet
+                    else:
+                        stylesheet = cached
                 else:
-                    cache[url] = stylesheet
+                    css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
             stylesheets.append(stylesheet)
         properties['stylesheets'] = stylesheets
@@ -1602,9 +1619,9 @@ class ReactiveCustomBase(Reactive):
             if ref_str not in m.tags:
                 m.tags.append(ref_str)
 
-    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
+    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> list[str]:
         if not msg:
-            return
+            return []
         prev_changing = self._changing.get(root.ref['id'], [])
         changing = []
         transformed = {}
@@ -1635,7 +1652,7 @@ class ReactiveCustomBase(Reactive):
                 del self._changing[root.ref['id']]
         if isinstance(model, DataModel):
             self._patch_datamodel_ref(model, root.ref['id'])
-
+        return changing
 
 
 class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):

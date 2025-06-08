@@ -425,15 +425,7 @@ class CallbackGenerator:
         if src_model is None:
             return
         ref = root_model.ref['id']
-
         link_id = (id(link), src_spec, tgt_spec)
-        callbacks = (
-            list(src_model.js_property_callbacks.values()) + # type: ignore
-            list(src_model.js_event_callbacks.values()) # type: ignore
-        )
-        # Skip registering callback if already registered
-        if any(link_id in cb.tags for cbs in callbacks for cb in cbs):
-            return
 
         references['source'] = src_model
 
@@ -484,6 +476,14 @@ class CallbackGenerator:
         if isinstance(tgt_model, (ReactiveESM, ReactiveHTML)):
             if tgt_spec[1] in tgt_model.data.properties(): # type: ignore
                 references['target'] = tgt_model = tgt_model.data # type: ignore
+
+        callbacks = (
+            list(src_model.js_property_callbacks.values()) + # type: ignore
+            list(src_model.js_event_callbacks.values()) # type: ignore
+        )
+        # Skip registering callback if already registered
+        if any(link_id in cb.tags for cbs in callbacks for cb in cbs):
+            return
 
         self._initialize_models(link, source, src_model, src_spec[1], target, tgt_model, tgt_spec[1])
         self._process_references(references)
@@ -590,7 +590,7 @@ class JSCallbackGenerator(CallbackGenerator):
                 src_prop = src_specs[0]
                 if isinstance(source, Reactive):
                     src_prop = source._rename.get(src_prop, src_prop)
-                src_spec = (None, src_prop)
+                src_spec = (None, cast("str", src_prop))
         return [(src_spec, (None, None), link.code[spec])]
 
 

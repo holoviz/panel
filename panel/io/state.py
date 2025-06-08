@@ -34,7 +34,7 @@ from bokeh.io import curdoc as _curdoc
 from param.parameterized import Event, Parameterized
 from pyviz_comms import CommManager as _CommManager
 
-from ..util import decode_token, parse_timedelta
+from ..util import decode_token, edit_readonly, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -307,7 +307,8 @@ class _state(param.Parameterized):
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
-        self.busy = self._busy_counter >= 1
+        with edit_readonly(self):
+            self.busy = self._busy_counter >= 1
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
@@ -732,7 +733,7 @@ class _state(param.Parameterized):
         """
         if self.curdoc is None or self._is_pyodide or self.loaded:
             if self._thread_pool:
-                self.execute(callback, schedule='threaded')
+                self.execute(callback, schedule='thread')
             else:
                 self.execute(callback, schedule=False)
         elif self.curdoc in self._onload:

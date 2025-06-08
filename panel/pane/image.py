@@ -150,12 +150,16 @@ class ImageBase(FileBase):
         A link URL to make the image clickable and link to some other
         website.""")
 
+    target = param.String(default="_blank", doc="""
+        The target attribute specifies where to open the linked document.
+        It can be `_self` (default), `_blank`, etc.""")
+
     _rerender_params: ClassVar[list[str]] = [
-        'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
+        'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height', 'target'
     ]
 
     _rename: ClassVar[Mapping[str, str | None ]] = {
-        'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None,
+        'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None, "target": None
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -178,7 +182,7 @@ class ImageBase(FileBase):
         object_fit = "contain" if self.fixed_aspect else "fill"
         html = f'<img src="{src}" {alt} style="max-width: 100%; max-height: 100%; object-fit: {object_fit};{width}{height}"></img>'
         if self.link_url:
-            html = f'<a href="{self.link_url}" target="_blank">{html}</a>'
+            html = f'<a href="{self.link_url}" target="{self.target}">{html}</a>'
         if self.caption:
             html = f'<figure>{html}<figcaption>{self.caption}</figcaption></figure>'
         return escape(html)
@@ -344,6 +348,12 @@ class ICO(ImageBase):
     """
 
     filetype: ClassVar[str] = 'ico'
+
+    def _b64(self, data: str | bytes) -> str:
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        b64 = base64.b64encode(data).decode("utf-8")
+        return f"data:image/x-icon;base64,{b64}"
 
     @classmethod
     def _imgshape(cls, data):

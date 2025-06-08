@@ -44,6 +44,8 @@ class FileDropper(InputWidget):
 
     layout = Nullable(Enum("integrated", "compact", "circle", default="compact"))
 
+    previews = List(String)
+
     __javascript_raw__ = [
         f"{config.npm_cdn}/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js",
         f"{config.npm_cdn}/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.js",

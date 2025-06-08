@@ -79,9 +79,9 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from bokeh.application.application import SessionContext
-    from bokeh.bundle import Bundle
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson
+    from bokeh.embed.bundle import Bundle
     from bokeh.server.session import ServerSession
     from jinja2 import Template
 
@@ -422,7 +422,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
         payload.update(self.application_context.application.process_request(self.request))  # type: ignore
         return payload
 
-    def _authorize(self, session: bool = False) -> tuple[bool, str | None]:
+    def _authorize(self, session: bool = False) -> tuple[bool | None, str | None]:
         """
         Determine if user is authorized to access this application.
         """
@@ -584,15 +584,24 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
             redirect_to = f".{app_names[0]}"
             self.redirect(redirect_to)
         else:
-            apps = sorted(self.applications.keys())
             if self.index is None:
+                apps = sorted(self.applications.keys())
                 index = "app_index.html"
             else:
                 index = self.index
-                apps = [
-                    app if self.request.uri.endswith('/') or not self.prefix else f"{self.prefix}{app}"
-                    for app in apps
-                ]
+                apps = []
+                for slug in self.applications.keys():
+                    slug = (
+                        slug
+                        if self.request.uri.endswith("/") or not self.prefix
+                        else f"{self.prefix}{slug}"
+                    )
+                    # Try to get custom application page card title from config
+                    # using as default value the application page slug
+                    default_title = slug[1:].replace("_", " ").title()
+                    title = config.index_titles.get(slug, default_title)
+                    apps.append((slug, title))
+                apps = sorted(apps, key=lambda app: app[1])
             self.render(index, prefix=self.prefix, items=apps)
 
     def render(self, *args, **kwargs):
@@ -873,6 +882,7 @@ def get_server(
     oauth_redirect_uri: str | None = None,
     oauth_extra_params: Mapping[str, str] = {},
     oauth_error_template: str | None = None,
+    cookie_path: str  = "/",
     cookie_secret: str | None = None,
     oauth_encryption_key: str | None = None,
     oauth_jwt_user: str | None = None,
@@ -942,6 +952,8 @@ def get_server(
       Additional information for the OAuth provider
     oauth_error_template: str (optional, default=None)
       Jinja2 template used when displaying authentication errors.
+    cookie_path: str (optional, default='/')
+      The sub path of the domain the cookie is valid for.
     cookie_secret: str (optional, default=None)
       A random secret string to sign cookies (required for OAuth)
     oauth_encryption_key: str (optional, default=None)
@@ -1086,6 +1098,8 @@ def get_server(
         config.oauth_secret = oauth_secret # type: ignore
     if oauth_extra_params:
         config.oauth_extra_params = oauth_extra_params # type: ignore
+    if cookie_path:
+        config.cookie_path = cookie_path # type: ignore
     if cookie_secret:
         config.cookie_secret = cookie_secret # type: ignore
     if oauth_redirect_uri:
@@ -1101,6 +1115,7 @@ def get_server(
     if root_path:
         with edit_readonly(state):
             state.base_url = root_path  # type: ignore
+    opts['cookie_path'] = config.cookie_path
     opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)

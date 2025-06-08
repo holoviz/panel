@@ -132,7 +132,7 @@ def _cleanup_doc(doc, destroy=True):
     # Clean up templates
     if doc in state._templates:
         tmpl = state._templates[doc]
-        tmpl._documents = {}
+        tmpl._documents = []
         del state._templates[doc]
 
     # Destroy document
@@ -569,7 +569,10 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
             if comm is not None:
                 from .notebook import push
                 push(doc, comm)
-            doc.unhold()
+            if state._loaded.get(doc):
+                doc.unhold()
+            else:
+                doc.callbacks._hold = None
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):

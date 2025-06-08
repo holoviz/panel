@@ -285,7 +285,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       } else {
         el.appendChild(view.el)
         view.render()
-        view.after_render()
+        view.r_after_render()
       }
     }
   }

@@ -2,7 +2,7 @@
 Defines custom AcePlot bokeh model to render Ace editor.
 """
 from bokeh.core.properties import (
-    Any, Bool, Dict, Enum, List, Nullable, Override, String,
+    Any, Bool, Dict, Enum, Int, List, Nullable, Override, String,
 )
 
 from ..config import config
@@ -19,15 +19,15 @@ class AcePlot(HTMLBox):
     """
 
     __javascript_raw__ = [
-        f"{config.npm_cdn}/ace-builds@1.4.11/src-min-noconflict/ace.js",
-        f"{config.npm_cdn}/ace-builds@1.4.11/src-min-noconflict/ext-language_tools.js",
-        f"{config.npm_cdn}/ace-builds@1.4.11/src-min-noconflict/ext-modelist.js"
+        f"{config.npm_cdn}/ace-builds@1.40.1/src-min-noconflict/ace.js",
+        f"{config.npm_cdn}/ace-builds@1.40.1/src-min-noconflict/ext-language_tools.js",
+        f"{config.npm_cdn}/ace-builds@1.40.1/src-min-noconflict/ext-modelist.js"
     ]
 
     __tarball__ = {
-        'tar': 'https://registry.npmjs.org/ace-builds/-/ace-builds-1.4.11.tgz',
+        'tar': 'https://registry.npmjs.org/ace-builds/-/ace-builds-1.40.1.tgz',
         'src': 'package/src-min/',
-        'dest': 'ajax/libs/1.4.11',
+        'dest': 'ajax/libs/1.40.1',
         'exclude': ['*snippets/*']
     }
 
@@ -41,7 +41,7 @@ class AcePlot(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            ('ace', ('ace/ace', 'ace/ext-language_tools', 'ace/ext-modelist')): "//cdn.jsdelivr.net/npm/ace-builds@1.4.11/src-min-noconflict"},
+            ('ace', ('ace/ace', 'ace/ext-language_tools', 'ace/ext-modelist')): "//cdn.jsdelivr.net/npm/ace-builds@1.40.1/src-min-noconflict"},
         'exports': {'ace': 'ace/ace'},
         'shim': {
             'ace/ext-language_tools': { 'deps': ["ace/ace"] },
@@ -49,23 +49,27 @@ class AcePlot(HTMLBox):
         }
     }
 
+    annotations = List(Dict(String, Any), default=[])
+
     code = String(default='')
 
     code_input = String(default='')
 
-    on_keyup = Bool(default=True)
-
-    theme = Enum(ace_themes, default='chrome')
-
     filename = Nullable(String())
+
+    indent = Int(default=4)
 
     language = String(default='')
 
-    annotations = List(Dict(String, Any), default=[])
+    on_keyup = Bool(default=True)
+
+    print_margin = Bool(default=False)
 
     readonly = Bool(default=False)
 
-    print_margin = Bool(default=False)
+    soft_tabs = Bool(default=False)
+
+    theme = Enum(ace_themes, default='github_light_default')
 
     height = Override(default=300)  # type: ignore
 

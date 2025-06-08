@@ -80,6 +80,7 @@ dask-expr = "*"
 datashader = "*"
 fastparquet = "*"
 folium = "*"
+fsspec = "*"
 graphviz = "*"
 hvplot = "*"
 ipyleaflet = "*"
@@ -98,7 +99,7 @@ pyinstrument = ">=4.0"
 python-graphviz = "*"
 pyvista = "*"
 reacton = "*"
-s3fs = ">=2023"  # Python 3.9 pull in 0.6.0
+s3fs = "*"
 scikit-image = "*"
 scikit-learn = "*"
 seaborn = "*"
@@ -182,7 +183,7 @@ packaging = "*"
 _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
-cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup -v'
+cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup'
 depends-on = ["_install-ui"]
 
 # =============================================

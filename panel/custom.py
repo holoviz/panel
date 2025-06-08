@@ -46,7 +46,8 @@ from .widgets.base import WidgetBase  # noqa
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.events import Event
-    from bokeh.model import Model, UIElement
+    from bokeh.model import Model
+    from bokeh.models import UIElement
     from pyviz_comms import Comm
 
     ExportSpec = dict[str, list[str | tuple[str, ...]]]
@@ -159,6 +160,8 @@ class PyComponent(Viewable, Layoutable):
     def select(
         self, selector: type | Callable[[Viewable], bool] | None = None
     ) -> list[Viewable]:
+        if self._view__ is None:
+            self._view__ = self._create__view()
         return super().select(selector) + self._view__.select(selector)
 
 
@@ -325,7 +328,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return []
 
     @classmethod
-    def _esm_path(cls, compiled: bool = True) -> os.PathLike | None:
+    def _esm_path(cls, compiled: bool | Literal['compiling'] = True) -> os.PathLike | None:
         if compiled or not cls._esm:
             bundle_path = cls._bundle_path
             if bundle_path:
@@ -401,8 +404,23 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     async def _watch_esm(self):
         import watchfiles
         path = self._esm_path(compiled=False)
-        async for _ in watchfiles.awatch(path, stop_event=self._watching_esm):
-            self._update_esm()
+        async for changes in watchfiles.awatch(path, stop_event=self._watching_esm):
+            update = False
+            for (change, path) in changes:
+                if change != watchfiles.Change.modified:
+                    continue
+                # Ensure that the file exists (in case filesystem write is not atomic)
+                retries = 0
+                while not os.path.exists(path):
+                    await asyncio.sleep(0.1)
+                    retries += 1
+                    if retries == 5:
+                        break
+                # Ignore change if file is not written within 0.5 seconds
+                if retries != 5:
+                    update = True
+            if update:
+                self._update_esm()
 
     def _update_esm(self):
         for ref, (model, _) in self._models.copy().items():
@@ -578,18 +596,26 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             data_msg.update(children)
             model_msg['children'] = list(children)
 
-        with hold(doc):
+
+        ref = root.ref['id']
+        prev_changing = self._changing.get(ref, [])
+        try:
             update = Panel._batch_update
             Panel._batch_update = True
-            try:
+            with hold(doc):
+                changing = []
                 with freeze_doc(doc, model, msg, force=update_children):
-                    self._set_on_model(model_msg, root, model)
-                    self._set_on_model(data_msg, root, model.data)
-                    ref = root.ref['id']
+                    changing += self._set_on_model(model_msg, root, model)
+                    changing += self._set_on_model(data_msg, root, model.data)
                     if update and update_children and ref in state._views:
                         state._views[ref][0]._preprocess(root, self, old_children)
-            finally:
-                Panel._batch_update = update
+                self._changing[ref] = changing
+        finally:
+            Panel._batch_update = update
+            if prev_changing:
+                self._changing[ref] = prev_changing
+            elif ref in self._changing:
+                del self._changing[ref]
 
     def _handle_msg(self, data: Any) -> None:
         """
@@ -870,6 +896,8 @@ class AnyWidgetComponent(ReactComponent):
     __abstract = True
 
     _bokeh_model = _BkAnyWidgetComponent
+
+    _react_version = "19"
 
     def send(self, msg: dict):
         """

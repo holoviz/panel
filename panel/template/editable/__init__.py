@@ -140,6 +140,7 @@ class EditableTemplate(VanillaTemplate):
           }
           window.muuriGrid.refreshItems();
           window.muuriGrid.layout();
+          window.dispatchEvent(new Event('resize'));
         """, args={'roots': [root for root in doc.roots if 'main' in root.tags]}))
         return doc
 
