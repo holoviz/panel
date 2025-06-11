@@ -347,7 +347,7 @@ def patch_model_css(root, dist_url):
         patch_stylesheet(stylesheet, dist_url)
     if doc:
         doc.callbacks._held_events = events
-        if held:
+        if held or not state._loaded.get(doc):
             doc.callbacks._hold = held
         else:
             doc.unhold()
