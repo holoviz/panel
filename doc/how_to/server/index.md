@@ -64,6 +64,13 @@ Discover how to serve static files alongside your Panel application(s).
 Discover how to add custom endpoints to your Panel server.
 :::
 
+:::{grid-item-card} {octicon}`package;2.5em;sd-mr-1` Configure the Websocket
+:link: endpoints
+:link-type: websockets
+
+Discover how configure the web socket settings to enable larger data transfers
+:::
+
 ::::
 
 ```{toctree}
@@ -78,4 +85,5 @@ ssh
 proxy
 static_files
 endpoints
+websockets
 ```
