@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from io import BytesIO
 
@@ -559,22 +560,20 @@ class TestChatInterfaceEditCallback:
 class TestChatInterfaceAdaptive:
     """Tests for the adaptive chat interface functionality."""
 
-    @pytest.fixture
-    def chat_interface(self):
-        return ChatInterface()
-
-    def test_adaptive_parameter_default(self, chat_interface):
+    async def test_adaptive_parameter_default(self):
         """Test that adaptive parameter exists with correct default value."""
+        chat_interface = ChatInterface()
         assert hasattr(chat_interface, 'adaptive')
         assert chat_interface.adaptive == False
 
-    def test_adaptive_parameter_set_true(self):
+    async def test_adaptive_parameter_set_true(self):
         """Test that adaptive parameter can be set to True."""
         chat_interface = ChatInterface(adaptive=True)
         assert chat_interface.adaptive == True
 
-    def test_adaptive_disabled_state_normal_mode(self, chat_interface):
+    async def test_adaptive_disabled_state_normal_mode(self):
         """Test that disabled state blocks input in normal mode."""
+        chat_interface = ChatInterface()
         chat_interface.adaptive = False
         chat_interface.disabled = True
         chat_interface.active_widget.value = "Test message"
@@ -584,8 +583,9 @@ class TestChatInterfaceAdaptive:
         assert result is None
         assert len(chat_interface.objects) == 0
 
-    def test_adaptive_disabled_state_adaptive_mode(self, chat_interface):
+    async def test_adaptive_disabled_state_adaptive_mode(self):
         """Test that disabled state allows input in adaptive mode."""
+        chat_interface = ChatInterface()
         chat_interface.adaptive = True
         chat_interface.disabled = True
         chat_interface.active_widget.value = "Test message"
@@ -595,8 +595,9 @@ class TestChatInterfaceAdaptive:
         assert len(chat_interface.objects) == 1
         assert chat_interface.objects[0].object == "Test message"
 
-    def test_adaptive_button_linking_normal_mode(self, chat_interface):
+    async def test_adaptive_button_linking_normal_mode(self):
         """Test that send button gets disabled in normal mode."""
+        chat_interface = ChatInterface()
         chat_interface.adaptive = False
         send_button = chat_interface._buttons["send"]
 
@@ -604,7 +605,7 @@ class TestChatInterfaceAdaptive:
         chat_interface.disabled = True
         wait_until(lambda: send_button.disabled)
 
-    def test_adaptive_button_linking_adaptive_mode(self):
+    async def test_adaptive_button_linking_adaptive_mode(self):
         """Test that send button stays enabled in adaptive mode."""
         chat_interface = ChatInterface(adaptive=True)
         send_button = chat_interface._buttons["send"]
@@ -616,7 +617,7 @@ class TestChatInterfaceAdaptive:
         time.sleep(0.1)
         assert not send_button.disabled
 
-    def test_adaptive_other_buttons_still_linked(self):
+    async def test_adaptive_other_buttons_still_linked(self):
         """Test that other buttons (not send) are still linked in adaptive mode."""
         chat_interface = ChatInterface(adaptive=True)
         undo_button = chat_interface._buttons["undo"]
@@ -629,8 +630,9 @@ class TestChatInterfaceAdaptive:
         wait_until(lambda: clear_button.disabled)
         wait_until(lambda: rerun_button.disabled)
 
-    async def test_adaptive_basic_functionality(self, chat_interface):
+    async def test_adaptive_basic_functionality(self):
         """Test basic adaptive functionality with more robust approach."""
+        chat_interface = ChatInterface()
         responses = []
 
         async def test_callback(message, user, instance):
@@ -661,7 +663,6 @@ class TestChatInterfaceAdaptive:
 
     async def test_adaptive_vs_normal_basic_difference(self):
         """Test the basic difference between adaptive and normal mode."""
-        import time
         normal_send_times = []
         adaptive_send_times = []
 
@@ -724,7 +725,7 @@ class TestChatInterfaceAdaptive:
         # Should return to idle
         assert chat_interface._callback_state == CallbackState.IDLE
 
-    def test_adaptive_parameter_inheritance(self):
+    async def test_adaptive_parameter_inheritance(self):
         """Test that adaptive parameter is properly inherited from ChatFeed."""
         # Test that the parameter exists in the ChatFeed base class
         feed = ChatInterface(adaptive=True)
@@ -735,8 +736,9 @@ class TestChatInterfaceAdaptive:
         assert interface.adaptive == True
         assert hasattr(interface, 'adaptive')
 
-    def test_adaptive_send_method_behavior(self, chat_interface):
+    async def test_adaptive_send_method_behavior(self):
         """Test that the send method behaves correctly in adaptive mode."""
+        chat_interface = ChatInterface()
         responses = []
 
         def simple_callback(message, user, instance):
