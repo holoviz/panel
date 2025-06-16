@@ -40,6 +40,7 @@ export class CommManager extends Model {
   _event_buffer: DocumentChangedEvent[]
   _timeout: number
   _blocked: boolean
+  _reconnect: boolean
 
   constructor(attrs?: Partial<CommManager.Attrs>) {
     super(attrs)
@@ -50,6 +51,7 @@ export class CommManager extends Model {
     this._receiver = new Receiver()
     this._event_buffer = []
     this._blocked = false
+    this._reconnect = false
     this._timeout = Date.now()
     if (((window as any).PyViz == undefined) || (!(window as any).PyViz.comm_manager)) {
       console.warn("Could not find comm manager on window.PyViz, ensure the extension is loaded.")
