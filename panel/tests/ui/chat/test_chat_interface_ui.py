@@ -104,8 +104,8 @@ def test_chat_interface_edit_message(page):
         assert object.object == "Edited"
 
 
-async def test_chat_interface_adaptive(page):
-    async def echo_callback(content, index, instance):
+def test_chat_interface_adaptive(page):
+    async def echo_callback(content, user, instance):
         for i in range(3):
             await asyncio.sleep(0.1)
             instance.send(content + str(i), respond=False)
@@ -119,26 +119,35 @@ async def test_chat_interface_adaptive(page):
     chat_input.press("Enter")
     expect(page.locator(".message").first).to_have_text("Hello")
 
-    # wait 1 second and send another
-    page.wait_for_timeout(100)
-    # wait until the first message is responded
+    # wait for the first callback response
+    page.wait_for_timeout(200)
     expect(page.locator(".message").nth(1)).to_have_text("Hello0")
 
+    # Send another message while callback is still running
     chat_input.fill("World")
     chat_input.press("Enter")
 
     expect(page.locator(".message").nth(2)).to_have_text("World")
-    expect(page.locator(".message").nth(3)).to_have_text("World0")
 
-    page.wait_for_timeout(2000)
+    # Wait for responses to complete
+    page.wait_for_timeout(1000)
+
+    # In adaptive mode, the second message interrupts the first callback
+    # So we should have: Hello, Hello0, World, World0, World1, World2
+    messages = page.locator(".message")
+    expect(messages).to_have_count(6)  # 2 user messages + 4 callback responses (1 from first, 3 from second)
+
+    # Verify the content of the messages
+    expect(page.locator(".message").nth(0)).to_have_text("Hello")
+    expect(page.locator(".message").nth(1)).to_have_text("Hello0")
+    expect(page.locator(".message").nth(2)).to_have_text("World")
+    expect(page.locator(".message").nth(3)).to_have_text("World0")
     expect(page.locator(".message").nth(4)).to_have_text("World1")
     expect(page.locator(".message").nth(5)).to_have_text("World2")
 
-    assert len(chat_interface.objects) == 6
 
-
-async def test_chat_interface_adaptive_double_interruption(page):
-    async def slow_callback(content, index, instance):
+def test_chat_interface_adaptive_double_interruption(page):
+    async def slow_callback(content, user, instance):
         for i in range(5):
             await asyncio.sleep(0.2)
             instance.send(f"{content} - step {i}", respond=False)
