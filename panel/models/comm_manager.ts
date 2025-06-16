@@ -40,6 +40,7 @@ export class CommManager extends Model {
   _event_buffer: DocumentChangedEvent[]
   _timeout: number
   _blocked: boolean
+  _reconnect: boolean
 
   constructor(attrs?: Partial<CommManager.Attrs>) {
     super(attrs)
@@ -50,6 +51,7 @@ export class CommManager extends Model {
     this._receiver = new Receiver()
     this._event_buffer = []
     this._blocked = false
+    this._reconnect = false
     this._timeout = Date.now()
     if (((window as any).PyViz == undefined) || (!(window as any).PyViz.comm_manager)) {
       console.warn("Could not find comm manager on window.PyViz, ensure the extension is loaded.")
@@ -68,6 +70,7 @@ export class CommManager extends Model {
         }
       })
       this._client_comm = this.ns.comm_manager.get_client_comm(this.plot_id, this.client_comm_id, (msg: any) => this.on_ack(msg))
+      this._reconnect = !this._client_comm.active
       if (this.ns.shared_views == null) {
         this.ns.shared_views = new Map()
       }
@@ -95,7 +98,9 @@ export class CommManager extends Model {
     }
 
     this._event_buffer.push(event)
-    if (!comm_settings.debounce) {
+    if (this._reconnect && this._client_comm.connected) {
+      this.on_ack({metadata: {msg_type: "Ready"}})
+    } else if (!comm_settings.debounce) {
       this.process_events()
     } else if ((!this._blocked || (Date.now() > this._timeout))) {
       setTimeout(() => this.process_events(), this.debounce)
