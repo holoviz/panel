@@ -613,7 +613,6 @@ class TestChatInterfaceAdaptive:
         # In adaptive mode, send button should NOT be linked to disabled state
         chat_interface.disabled = True
         # Give a moment for any potential linking to occur
-        import time
         time.sleep(0.1)
         assert not send_button.disabled
 
