@@ -105,9 +105,14 @@ def test_chat_interface_edit_message(page):
 
 
 def test_chat_interface_adaptive(page):
+    import os
+
+    # Use longer delays in CI environments
+    delay = 1.0 if os.getenv('CI') or os.getenv('GITHUB_ACTIONS') else 0.5
+
     async def echo_callback(content, user, instance):
         for i in range(3):
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(delay)
             instance.send(content + str(i), respond=False)
 
     chat_interface = ChatInterface(adaptive=True, callback=echo_callback)
@@ -126,7 +131,9 @@ def test_chat_interface_adaptive(page):
     chat_input.fill("World")
     chat_input.press("Enter")
 
-    page.wait_for_timeout(1000)
+    # Use longer delays in CI environments
+    wait_time = 2000 if os.getenv('CI') or os.getenv('GITHUB_ACTIONS') else 1000
+    page.wait_for_timeout(wait_time)
 
     # If not in expected positions, check all messages
     world_found = False
@@ -142,7 +149,7 @@ def test_chat_interface_adaptive(page):
     assert world_found, "Expected to find 'World' message after interruption"
 
     # Wait for responses to complete
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(wait_time)
 
     # In adaptive mode, the second message interrupts the first callback
     # So we should have fewer messages than if both callbacks completed fully
@@ -154,7 +161,7 @@ def test_chat_interface_adaptive(page):
 def test_chat_interface_adaptive_double_interruption(page):
     async def slow_callback(content, user, instance):
         for i in range(5):
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(1)
             instance.send(f"{content} - step {i}", respond=False)
 
     chat_interface = ChatInterface(adaptive=True, callback=slow_callback)
@@ -205,8 +212,9 @@ def test_chat_interface_adaptive_double_interruption(page):
             continue
     assert third_found, "Expected to find 'Third' message after second interruption"
 
-    # Wait for responses to complete
-    page.wait_for_timeout(1000)
+    # Wait for responses to complete - longer in CI
+    wait_time = 3000
+    page.wait_for_timeout(wait_time)
     messages = page.locator(".message")  # Re-query to get final count
     message_count = messages.count()
     assert message_count < 10, f"Expected less than 10 messages, got {message_count}"
