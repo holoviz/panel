@@ -2071,8 +2071,6 @@ class Tabulator(BaseTable):
 
             if field in self.header_tooltips:
                 col_dict["headerTooltip"] = self.header_tooltips[field]
-            else:
-                col_dict["headerTooltip"] = field
 
             if isinstance(index, tuple):
                 children = columns
