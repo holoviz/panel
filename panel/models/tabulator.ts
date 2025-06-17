@@ -1039,7 +1039,6 @@ export class DataTabulatorView extends HTMLBoxView {
       if (tab_column.title == null) {
         tab_column.title = column.title
       }
-      tab_column.headerTooltip = true
       if (tab_column.width == null && column.width != null && column.width != 0) {
         tab_column.width = column.width
       }
