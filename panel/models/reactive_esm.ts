@@ -678,7 +678,7 @@ export class ReactiveESM extends HTMLBox {
       )
       // @ts-ignore
       this.render_module = importShim(render_url)
-      MODULE_CACHE.set(this.data.type, this.render_module)
+      MODULE_CACHE.set(this._render_cache_key, this.render_module)
     }
   }
 
