@@ -115,6 +115,9 @@ export class ReactComponentView extends ReactiveESMView {
       }
     }
     this._update_children()
+  }
+
+  override _on_mounted(): void {
     this.invalidate_layout()
   }
 
@@ -237,7 +240,7 @@ async function render(id) {
       const view = this.view
       if (view == null) { return }
       this.updateElement()
-      this.props.parent.rerender_(view)
+      view.render()
       this.render_callback = (new_views) => {
         const view = this.view
         if (!view) {
