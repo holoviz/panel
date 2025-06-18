@@ -18,17 +18,17 @@ export class HostedStyleSheet extends InlineStyleSheet {
   }
 
   override replace(css: string, styles?: CSSStyles): void {
-    if (css === ":host") { css = `#${this.host_id}` }
+    css = css.replace(/:host\b/g, '`#${this.host_id}`');
     super.replace(css, styles)
   }
 
   override prepend(css: string, styles?: CSSStyles): void {
-    if (css === ":host") { css = `#${this.host_id}` }
+    css = css.replace(/:host\b/g, '`#${this.host_id}`');
     super.prepend(css, styles)
   }
 
   override append(css: string, styles?: CSSStyles): void {
-    if (css === ":host") { css = `#${this.host_id}` }
+    css = css.replace(/:host\b/g, '`#${this.host_id}`');
     super.append(css, styles)
   }
 
@@ -46,8 +46,9 @@ export class ReactComponentView extends ReactiveESMView {
   override initialize(): void {
     super.initialize()
     if (!this.use_shadow_root) {
+      (this as any).display = new HostedStyleSheet("", "display", false, this.model.id);
       (this as any).style = new HostedStyleSheet("", "style", false, this.model.id);
-      (this as any).parent_style = new HostedStyleSheet("", "parent", true, this.model.id)
+      (this as any).parent_style = new HostedStyleSheet("", "parent", true, this.model.id);
     }
   }
 
@@ -140,7 +141,9 @@ export class ReactComponentView extends ReactiveESMView {
     // React component to ensure anything depending on the DOM
     // structure (e.g. emotion caches) is updated
     super.r_after_render()
-    this.force_update()
+    if (!this.use_shadow_root) {
+      this.force_update()
+    }
   }
 
   override _update_layout(): void {
@@ -477,6 +480,7 @@ async function render(id) {
     }
 
     componentDidMount() {
+      if (!this.props.view.use_shadow_root) { return }
       this.props.view.on_force_update(() => {
         ${init_code}
         this.forceUpdate()
