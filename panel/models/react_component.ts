@@ -1,5 +1,5 @@
 import type {StyleSheetLike} from "@bokehjs/core/dom"
-import {InlineStyleSheet} from "@bokehjs/core/dom"
+import {ClassList, InlineStyleSheet} from "@bokehjs/core/dom"
 import type {CSSStyles, CSSStyleSheetDecl} from "@bokehjs/core/css"
 import type * as p from "@bokehjs/core/properties"
 import {isString} from "@bokehjs/core/util/types"
@@ -8,7 +8,6 @@ import type {Transform} from "sucrase"
 import {
   ReactiveESM, ReactiveESMView, model_getter, model_setter,
 } from "./reactive_esm"
-import {set_size} from "./layout"
 
 export class HostedStyleSheet extends InlineStyleSheet {
   host_id: string
@@ -41,7 +40,6 @@ export class ReactComponentView extends ReactiveESMView {
   model_getter = model_getter
   model_setter = model_setter
   react_root: any = null
-  set_size = set_size
 
   _force_update_callbacks: (() => void)[] = []
 
@@ -178,6 +176,13 @@ export class ReactComponentView extends ReactiveESMView {
     this.invalidate_layout()
   }
 
+  patch_container(container: HTMLDivElement): void {
+    this.el = this.container = container
+    this._update_stylesheets()
+    this.class_list = new ClassList(this.container.classList)
+    this._apply_html_attributes()
+  }
+
   override after_rendered(): void {
     const handlers = (this._lifecycle_handlers.get("after_render") || [])
     for (const cb of handlers) {
@@ -304,9 +309,7 @@ async function render(id) {
       const view = this.view
       if (view == null) { return }
       else if (!this.use_shadow_root) {
-        view.container = this.containerRef.current
-        view._update_stylesheets()
-        view.update_layout()
+        view.patch_container(this.containerRef.current)
         view.model.render_module.then(async (mod) => {
           this.setState({rendered: await mod.default.render(view.model.id)})
         })
