@@ -1,4 +1,7 @@
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {InlineStyleSheet} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
+import {isString} from "@bokehjs/core/util/types"
 import type {Transform} from "sucrase"
 
 import {
@@ -56,15 +59,18 @@ export class ReactComponentView extends ReactiveESMView {
     }
   }
 
-  get root_view(): void {
-    let root = this
-    while (root.parent?.react_root !== undefined) {
+  get root_view(): ReactComponentView {
+    let root: ReactComponentView = this
+    if (this.model.use_shadow_root) {
+      return root
+    }
+    while (root.parent instanceof ReactComponentView) {
       root = root.parent
     }
     return root
   }
 
-  protected _apply_stylesheets(stylesheets: StyleSheetLike[]): void {
+  protected override _apply_stylesheets(stylesheets: StyleSheetLike[]): void {
     const resolved_stylesheets = stylesheets.map((style) => isString(style) ? new InlineStyleSheet(style) : style)
     this._applied_stylesheets.push(...resolved_stylesheets)
     resolved_stylesheets.forEach((stylesheet) => stylesheet.install(this.root_view.shadow_el))
