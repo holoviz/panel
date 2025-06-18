@@ -301,17 +301,18 @@ async function render(id) {
     }
 
     componentDidMount() {
-      if (!this.use_shadow_root) {
-        this.view.container = this.containerRef.current
-        this.view._update_stylesheets()
-        this.view.update_layout()
-        this.view.model.render_module.then(async (mod) => {
-          this.setState({rendered: await mod.default.render(this.view.model.id)})
-        })
-        return
-      }
       const view = this.view
       if (view == null) { return }
+      else if (!this.use_shadow_root) {
+        view.container = this.containerRef.current
+        view._update_stylesheets()
+        view.update_layout()
+        view.model.render_module.then(async (mod) => {
+          this.setState({rendered: await mod.default.render(view.model.id)})
+        })
+        this.props.parent.notify_mount(this.props.name, view.model.id)
+        return
+      }
       this.updateElement()
       view.render()
       this.render_callback = (new_views) => {
