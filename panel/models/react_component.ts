@@ -262,7 +262,7 @@ async function render(id) {
     }
 
     get use_shadow_root() {
-      return !this.view.model.use_shadow_root || (this.view.react_root === undefined)
+      return this.view.model.use_shadow_root || (this.view.react_root === undefined)
     }
 
     componentDidMount() {

@@ -791,7 +791,7 @@ class ReactComponent(ReactiveESM):
         CounterButton().servable()
     '''
 
-    use_shadow_root = param.Boolean(default=True, doc="""
+    use_shadow_root = param.Boolean(default=False, doc="""
         Whether to render component into a shadow root.
         This may optionally be disabled but will only take
         effect if the parent is also a React component.
@@ -859,6 +859,11 @@ class ReactComponent(ReactiveESM):
             'imports': imports_with_deps,
             'scopes': cls._importmap.get('scopes', {})
         }
+
+    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+        props = super()._get_properties(doc)
+        props['use_shadow_root'] = self.use_shadow_root
+        return props
 
 
 class AnyWidgetComponent(ReactComponent):
