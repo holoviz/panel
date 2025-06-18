@@ -90,7 +90,7 @@ export class ReactComponentView extends ReactiveESMView {
   override remove(): void {
     super.remove()
     this._force_update_callbacks = []
-    if (this.react_root) {
+    if (this.react_root && this.use_shadow_root) {
       this.react_root.then((root: any) => root.unmount())
     }
   }
@@ -172,10 +172,12 @@ export class ReactComponentView extends ReactiveESMView {
       }
     }
 
-    for (const view of this._child_rendered.keys()) {
-      if (!all_views.includes(view)) {
-        this._child_rendered.delete(view)
-        view.el.remove()
+    if (this.use_shadow_root) {
+      for (const view of this._child_rendered.keys()) {
+	if (!all_views.includes(view)) {
+          this._child_rendered.delete(view)
+          view.el.remove()
+	}
       }
     }
 
