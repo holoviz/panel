@@ -8,6 +8,7 @@ import {ImportedStyleSheet} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs} from "@bokehjs/core/types"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
+import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import {isArray} from "@bokehjs/core/util/types"
 import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
 
@@ -242,6 +243,8 @@ export class ReactiveESMView extends HTMLBoxView {
     this.model.disconnect_watchers(this)
   }
 
+  _on_mounted(): void {}
+
   notify_mount(child: string, id: string, remove: boolean): void {
     if (!this._mounted.has(child)) {
       this._mounted.set(child, new Set())
@@ -256,6 +259,7 @@ export class ReactiveESMView extends HTMLBoxView {
       children = [children]
     }
     if (children.every((model: UIElement) => this._mounted.get(child)?.has(model.id))) {
+      this._on_mounted()
       for (const cb of this._lifecycle_handlers.get("mounted") || []) {
         cb(child)
       }
@@ -340,6 +344,42 @@ export class ReactiveESMView extends HTMLBoxView {
     }
   }
 
+  override get is_managed(): boolean {
+    return this.parent instanceof LayoutDOMView && !(this.parent instanceof ReactiveESMView)
+  }
+
+  override compute_layout(): void {
+    if (this.is_managed) {
+      super.compute_layout()
+      return
+    }
+    this.measure_layout()
+    this.update_bbox()
+    this._compute_layout()
+    this.after_layout();
+    // Override private property
+    (this as any)._layout_computed = true
+  }
+
+  protected override _update_bbox(): boolean {
+    const displayed = (() => {
+      // Consider using Element.checkVisibility() in the future.
+      // https://w3c.github.io/csswg-drafts/cssom-view-1/#dom-element-checkvisibility
+      if (!this.el.isConnected) {
+        return false
+      } else if (this.el.offsetParent != null) {
+        return true
+      } else {
+        const {position, display} = getComputedStyle(this.el)
+        return position == "fixed" && display != "none"
+      }
+    })();
+
+    // Override private property
+    (this as any)._is_displayed = displayed
+    return true
+  }
+
   after_rendered(): void {
     const handlers = (this._lifecycle_handlers.get("after_render") || [])
     for (const cb of handlers) {
@@ -384,6 +424,15 @@ export class ReactiveESMView extends HTMLBoxView {
       }
     }
     this.after_render()
+  }
+
+  override invalidate_layout(): void {
+    if (this.is_managed) {
+      super.invalidate_layout()
+      return
+    }
+    this.update_layout()
+    this.compute_layout()
   }
 
   override remove(): void {
