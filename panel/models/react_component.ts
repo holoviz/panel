@@ -1,5 +1,6 @@
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {InlineStyleSheet} from "@bokehjs/core/dom"
+import type {CSSStyles, CSSStyleSheetDecl} from "@bokehjs/core/css"
 import type * as p from "@bokehjs/core/properties"
 import {isString} from "@bokehjs/core/util/types"
 import type {Transform} from "sucrase"
@@ -8,6 +9,31 @@ import {
   ReactiveESM, ReactiveESMView, model_getter, model_setter,
 } from "./reactive_esm"
 import {set_size} from "./layout"
+
+export class HostedStyleSheet extends InlineStyleSheet {
+  host_id: string
+
+  constructor(css?: string | CSSStyleSheetDecl, id?: string, override readonly persistent: boolean = false, host_id: string = "") {
+    super(css, id, persistent)
+    this.host_id = host_id
+  }
+
+  override replace(css: string, styles?: CSSStyles): void {
+    if (css === ":host") { css = `#${this.host_id}` }
+    super.replace(css, styles)
+  }
+
+  override prepend(css: string, styles?: CSSStyles): void {
+    if (css === ":host") { css = `#${this.host_id}` }
+    super.prepend(css, styles)
+  }
+
+  override append(css: string, styles?: CSSStyles): void {
+    if (css === ":host") { css = `#${this.host_id}` }
+    super.append(css, styles)
+  }
+
+}
 
 export class ReactComponentView extends ReactiveESMView {
   declare model: ReactComponent
@@ -18,6 +44,15 @@ export class ReactComponentView extends ReactiveESMView {
   set_size = set_size
 
   _force_update_callbacks: (() => void)[] = []
+
+  override initialize(): void {
+    super.initialize()
+    if (!this.model.use_shadow_root && this.parent instanceof ReactComponentView) {
+      (this as any).style = new HostedStyleSheet("", "style", false, this.model.id);
+      (this as any).parent_style = new HostedStyleSheet("", "parent", true, this.model.id)
+    }
+  }
+
 
   override render_esm(): void {
     if (this.model.compiled === null || this.model.render_module === null) {
@@ -268,7 +303,8 @@ async function render(id) {
     componentDidMount() {
       if (!this.use_shadow_root) {
         this.view.container = this.containerRef.current
-        this.view.set_size(this.view.container, this.view.model)
+        this.view._update_stylesheets()
+        this.view.update_layout()
         this.view.model.render_module.then(async (mod) => {
           this.setState({rendered: await mod.default.render(this.view.model.id)})
         })
@@ -299,7 +335,7 @@ async function render(id) {
     }
 
     componentDidUpdate() {
-      if (!this.use_shadow_root) {
+      if (this.use_shadow_root) {
         this.updateElement()
       }
     }
@@ -309,7 +345,7 @@ async function render(id) {
       const class_name = (this.use_shadow_root ?
         "child-wrapper" : this.view.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
       )
-      return React.createElement('div', {className: class_name, ref: this.containerRef}, child)
+      return React.createElement('div', {id: this.view.model.id, className: class_name, ref: this.containerRef}, child)
     }
   }
 
@@ -436,7 +472,7 @@ async function render(id) {
 
   const props = {view, model: react_proxy, data: view.model.data, el: view.container}
   const rendered = React.createElement(Component, props)
-  if (!view.model.use_shadow_root && view.parent?.react_root !== undefined) {
+  if (!view.model.use_shadow_root && (view.parent?.react_root !== undefined)) {
     return rendered
   }
   if (rendered) {
