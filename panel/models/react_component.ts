@@ -1,5 +1,5 @@
 import type {StyleSheetLike} from "@bokehjs/core/dom"
-import {ClassList, InlineStyleSheet} from "@bokehjs/core/dom"
+import {ClassList, InlineStyleSheet, ImportedStyleSheet} from "@bokehjs/core/dom"
 import type {CSSStyles, CSSStyleSheetDecl} from "@bokehjs/core/css"
 import type * as p from "@bokehjs/core/properties"
 import {isString} from "@bokehjs/core/util/types"
@@ -45,10 +45,14 @@ export class ReactComponentView extends ReactiveESMView {
 
   override initialize(): void {
     super.initialize()
-    if (!this.model.use_shadow_root && this.parent instanceof ReactComponentView) {
+    if (!this.use_shadow_root) {
       (this as any).style = new HostedStyleSheet("", "style", false, this.model.id);
       (this as any).parent_style = new HostedStyleSheet("", "parent", true, this.model.id)
     }
+  }
+
+  get use_shadow_root(): boolean {
+    return this.model.use_shadow_root || !(this.parent instanceof ReactComponentView)
   }
 
   override render_esm(): void {
@@ -93,7 +97,7 @@ export class ReactComponentView extends ReactiveESMView {
 
   get root_view(): ReactComponentView {
     let root: ReactComponentView = this
-    if (this.model.use_shadow_root) {
+    if (this.use_shadow_root) {
       return root
     }
     while (root.parent instanceof ReactComponentView) {
@@ -104,8 +108,22 @@ export class ReactComponentView extends ReactiveESMView {
 
   protected override _apply_stylesheets(stylesheets: StyleSheetLike[]): void {
     const resolved_stylesheets = stylesheets.map((style) => isString(style) ? new InlineStyleSheet(style) : style)
-    this._applied_stylesheets.push(...resolved_stylesheets)
-    resolved_stylesheets.forEach((stylesheet) => stylesheet.install(this.root_view.shadow_el))
+    const styles = this.root_view.shadow_el.querySelectorAll("style")
+    const links = this.root_view.shadow_el.querySelectorAll("link")
+    resolved_stylesheets.forEach((stylesheet) => {
+      if (!this.use_shadow_root) {
+        if (stylesheet instanceof InlineStyleSheet &&
+            Array.from(styles).some(style => style.innerHTML === stylesheet.css)) {
+          return
+        }
+        if (stylesheet instanceof ImportedStyleSheet &&
+            Array.from(links).some(link => link.href === (stylesheet as any).el.href)) {
+          return
+        }
+      }
+      this._applied_stylesheets.push(stylesheet)
+      stylesheet.install(this.root_view.shadow_el)
+    })
   }
 
   override render(): void {
