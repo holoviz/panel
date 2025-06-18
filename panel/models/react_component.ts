@@ -18,17 +18,17 @@ export class HostedStyleSheet extends InlineStyleSheet {
   }
 
   override replace(css: string, styles?: CSSStyles): void {
-    css = css.replace(/:host\b/g, '`#${this.host_id}`');
+    css = css.replace(/:host\b/g, `#${this.host_id}`);
     super.replace(css, styles)
   }
 
   override prepend(css: string, styles?: CSSStyles): void {
-    css = css.replace(/:host\b/g, '`#${this.host_id}`');
+    css = css.replace(/:host\b/g, `#${this.host_id}`);
     super.prepend(css, styles)
   }
 
   override append(css: string, styles?: CSSStyles): void {
-    css = css.replace(/:host\b/g, '`#${this.host_id}`');
+    css = css.replace(/:host\b/g, `#${this.host_id}`);
     super.append(css, styles)
   }
 
