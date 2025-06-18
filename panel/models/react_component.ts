@@ -301,7 +301,7 @@ async function render(id) {
     }
 
     get use_shadow_root() {
-      return this.view.model.use_shadow_root || (this.view.react_root === undefined)
+      return this.view?.model.use_shadow_root || (this.view?.react_root === undefined)
     }
 
     componentDidMount() {
@@ -310,9 +310,11 @@ async function render(id) {
       else if (!this.use_shadow_root) {
         view.patch_container(this.containerRef.current)
         view.model.render_module.then(async (mod) => {
-          this.setState({rendered: await mod.default.render(view.model.id)})
+          this.setState(
+            {rendered: await mod.default.render(view.model.id)},
+            () => this.props.parent.notify_mount(this.props.name, view.model.id)
+          )
         })
-        this.props.parent.notify_mount(this.props.name, view.model.id)
         return
       }
       this.updateElement()
@@ -348,7 +350,7 @@ async function render(id) {
       const class_name = (this.use_shadow_root ?
         "child-wrapper" : this.view.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
       )
-      return React.createElement('div', {id: this.view.model.id, className: class_name, ref: this.containerRef}, child)
+      return React.createElement('div', {id: this.view?.model.id, className: class_name, ref: this.containerRef}, child)
     }
   }
 
