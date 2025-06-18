@@ -343,7 +343,15 @@ export class ReactiveESMView extends HTMLBoxView {
     }
   }
 
+  get is_managed(): boolean {
+    return this.parent instanceof LayoutDOMView && !(this.parent instanceof ReactiveESMView)
+  }
+
   override compute_layout(): void {
+    if (this.is_managed) {
+      super.compute_layout()
+      return
+    }
     this.measure_layout()
     this.update_bbox()
     this._compute_layout()
@@ -418,6 +426,10 @@ export class ReactiveESMView extends HTMLBoxView {
   }
 
   override invalidate_layout(): void {
+    if (this.is_managed) {
+      super.invalidate_layout()
+      return
+    }
     this.update_layout()
     this.compute_layout()
   }
