@@ -51,7 +51,6 @@ export class ReactComponentView extends ReactiveESMView {
     }
   }
 
-
   override render_esm(): void {
     if (this.model.compiled === null || this.model.render_module === null) {
       return
