@@ -4,13 +4,15 @@ import type {Transform} from "sucrase"
 import {
   ReactiveESM, ReactiveESMView, model_getter, model_setter,
 } from "./reactive_esm"
+import {set_size} from "./layout"
 
 export class ReactComponentView extends ReactiveESMView {
   declare model: ReactComponent
   declare style_cache: HTMLHeadElement
   model_getter = model_getter
   model_setter = model_setter
-  react_root: any
+  react_root: any = null
+  set_size = set_size
 
   _force_update_callbacks: (() => void)[] = []
 
@@ -52,6 +54,20 @@ export class ReactComponentView extends ReactiveESMView {
     if (this.react_root) {
       this.react_root.then((root: any) => root.unmount())
     }
+  }
+
+  get root_view(): void {
+    let root = this
+    while (root.parent?.react_root !== undefined) {
+      root = root.parent
+    }
+    return root
+  }
+
+  protected _apply_stylesheets(stylesheets: StyleSheetLike[]): void {
+    const resolved_stylesheets = stylesheets.map((style) => isString(style) ? new InlineStyleSheet(style) : style)
+    this._applied_stylesheets.push(...resolved_stylesheets)
+    resolved_stylesheets.forEach((stylesheet) => stylesheet.install(this.root_view.shadow_el))
   }
 
   override render(): void {
@@ -140,6 +156,7 @@ export namespace ReactComponent {
 
   export type Props = ReactiveESM.Props & {
     root_node: p.Property<string | null>
+    use_shadow_root: p.Property<boolean>
   }
 }
 
@@ -193,7 +210,7 @@ import { CacheProvider } from "@emotion/react"`
     container: view.style_cache,
   })`
       render_code = `
-  if (rendered) {
+  if (rendered && ((view.parent?.react_root === undefined) || view.model.use_shadow_root)) {
     rendered = React.createElement(CacheProvider, {value: this.mui_cache}, rendered)
   }`
     }
@@ -209,6 +226,8 @@ async function render(id) {
   ${bundle_code}
 
   class Child extends React.PureComponent {
+
+    state = {rendered: null}
 
     constructor(props) {
       super(props)
@@ -236,7 +255,19 @@ async function render(id) {
       return view == null ? null : view.el
     }
 
+    get use_shadow_root() {
+      return !this.view.model.use_shadow_root || (this.view.react_root === undefined)
+    }
+
     componentDidMount() {
+      if (!this.use_shadow_root) {
+        this.view.container = this.containerRef.current
+        this.view.set_size(this.view.container, this.view.model)
+        this.view.model.render_module.then(async (mod) => {
+          this.setState({rendered: await mod.default.render(this.view.model.id)})
+        })
+        return
+      }
       const view = this.view
       if (view == null) { return }
       this.updateElement()
@@ -262,11 +293,17 @@ async function render(id) {
     }
 
     componentDidUpdate() {
-      this.updateElement()
+      if (!this.use_shadow_root) {
+        this.updateElement()
+      }
     }
 
     render() {
-      return React.createElement('div', {className: "child-wrapper", ref: this.containerRef})
+      const child = this.state.rendered
+      const class_name = (this.use_shadow_root ?
+        "child-wrapper" : this.view.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
+      )
+      return React.createElement('div', {className: class_name, ref: this.containerRef}, child)
     }
   }
 
@@ -393,6 +430,9 @@ async function render(id) {
 
   const props = {view, model: react_proxy, data: view.model.data, el: view.container}
   const rendered = React.createElement(Component, props)
+  if (!view.model.use_shadow_root && view.parent?.react_root !== undefined) {
+    return rendered
+  }
   if (rendered) {
     view._changing = true
     let container
@@ -441,8 +481,9 @@ ${compiled}`
 
   static {
     this.prototype.default_view = ReactComponentView
-    this.define<ReactComponent.Props>(({Nullable, Str}) => ({
-      root_node:  [ Nullable(Str),     null ],
+    this.define<ReactComponent.Props>(({Bool, Nullable, Str}) => ({
+      root_node:  [ Nullable(Str), null ],
+      use_shadow_root:  [ Bool,    true ],
     }))
   }
 }

@@ -447,7 +447,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         ignored = [
             p for p in Reactive.param
             if not issubclass(cls.param[p].owner, ReactiveESM) or
-            (p in Viewable.param and p != 'name' and type(Reactive.param[p]) is type(cls.param[p]))
+            (p in Viewable.param and p not in ('name', 'use_shadow_root')
+             and type(Reactive.param[p]) is type(cls.param[p]))
         ]
         for k, v in self.param.values().items():
             p = self.param[k]
@@ -789,6 +790,13 @@ class ReactComponent(ReactiveESM):
 
         CounterButton().servable()
     '''
+
+    use_shadow_root = param.Boolean(default=True, doc="""
+        Whether to render component into a shadow root.
+        This may optionally be disabled but will only take
+        effect if the parent is also a React component.
+        If disabled the component will be rendered into
+        the parent's React DOM tree.""")
 
     __abstract = True
 
