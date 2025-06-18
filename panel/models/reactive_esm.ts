@@ -7,7 +7,7 @@ import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {ImportedStyleSheet} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs} from "@bokehjs/core/types"
-import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
+import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import {isArray} from "@bokehjs/core/util/types"
 import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
 
@@ -343,7 +343,7 @@ export class ReactiveESMView extends HTMLBoxView {
     }
   }
 
-  get is_managed(): boolean {
+  override get is_managed(): boolean {
     return this.parent instanceof LayoutDOMView && !(this.parent instanceof ReactiveESMView)
   }
 
