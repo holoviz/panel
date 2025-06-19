@@ -89,10 +89,12 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   override remove(): void {
-    super.remove()
     this._force_update_callbacks = []
     if (this.react_root && this.use_shadow_root) {
+      super.remove()
       this.react_root.then((root: any) => root.unmount())
+    } else {
+      this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
     }
   }
 
@@ -271,12 +273,14 @@ import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
       }
       init_code = `
-  const css_key = id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
-  this.mui_cache = createCache({
-    key: 'css-'+css_key,
-    prepend: true,
-    container: view.style_cache,
-  })`
+  if (view.use_shadow_root) {
+    const css_key = id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
+    this.mui_cache = createCache({
+      key: 'css-'+css_key,
+      prepend: true,
+      container: view.style_cache,
+    })
+  }`
       render_code = `
   if (rendered && ((view.parent?.react_root === undefined) || view.model.use_shadow_root)) {
     rendered = React.createElement(CacheProvider, {value: this.mui_cache}, rendered)
@@ -359,6 +363,9 @@ async function render(id) {
     componentWillUnmount() {
       if (this.render_callback) {
         this.props.parent.remove_on_child_render(this.props.name, this.render_callback)
+      }
+      if (!this.use_shadow_root && this.view._mounted.has(this.props.name)) {
+        this.view._mounted.get(this.props.name).delete(this.props.id)
       }
     }
 
