@@ -18,17 +18,17 @@ export class HostedStyleSheet extends InlineStyleSheet {
   }
 
   override replace(css: string, styles?: CSSStyles): void {
-    css = css.replace(/:host\b/g, `#${this.host_id}`);
+    css = css.replace(/:host\b/g, `#${this.host_id}`)
     super.replace(css, styles)
   }
 
   override prepend(css: string, styles?: CSSStyles): void {
-    css = css.replace(/:host\b/g, `#${this.host_id}`);
+    css = css.replace(/:host\b/g, `#${this.host_id}`)
     super.prepend(css, styles)
   }
 
   override append(css: string, styles?: CSSStyles): void {
-    css = css.replace(/:host\b/g, `#${this.host_id}`);
+    css = css.replace(/:host\b/g, `#${this.host_id}`)
     super.append(css, styles)
   }
 
@@ -48,7 +48,7 @@ export class ReactComponentView extends ReactiveESMView {
     if (!this.use_shadow_dom) {
       (this as any).display = new HostedStyleSheet("", "display", false, this.model.id);
       (this as any).style = new HostedStyleSheet("", "style", false, this.model.id);
-      (this as any).parent_style = new HostedStyleSheet("", "parent", true, this.model.id);
+      (this as any).parent_style = new HostedStyleSheet("", "parent", true, this.model.id)
     }
   }
 
@@ -96,7 +96,7 @@ export class ReactComponentView extends ReactiveESMView {
     } else {
       this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
       for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
-	cb()
+        cb()
       }
       this._child_callbacks.clear()
       this._child_rendered.clear()
@@ -185,10 +185,10 @@ export class ReactComponentView extends ReactiveESMView {
 
     if (this.use_shadow_dom) {
       for (const view of this._child_rendered.keys()) {
-	if (!all_views.includes(view)) {
+        if (!all_views.includes(view)) {
           this._child_rendered.delete(view)
           view.el.remove()
-	}
+        }
       }
     }
 
