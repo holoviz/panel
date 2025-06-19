@@ -64,6 +64,8 @@ class ReactComponent(ReactiveESM):
 
     root_node = bp.Nullable(bp.String)
 
+    use_shadow_dom = bp.Bool(True)
+
 
 class AnyWidgetComponent(ReactComponent):
     """
