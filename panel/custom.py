@@ -447,7 +447,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         ignored = [
             p for p in Reactive.param
             if not issubclass(cls.param[p].owner, ReactiveESM) or
-            (p in Viewable.param and p not in ('name', 'use_shadow_root')
+            (p in Viewable.param and p not in ('name', 'use_shadow_dom')
              and type(Reactive.param[p]) is type(cls.param[p]))
         ]
         for k, v in self.param.values().items():
@@ -791,7 +791,7 @@ class ReactComponent(ReactiveESM):
         CounterButton().servable()
     '''
 
-    use_shadow_root = param.Boolean(default=False, doc="""
+    use_shadow_dom = param.Boolean(default=False, constant=True, doc="""
         Whether to render component into a shadow root.
         This may optionally be disabled but will only take
         effect if the parent is also a React component.
@@ -862,7 +862,7 @@ class ReactComponent(ReactiveESM):
 
     def _get_properties(self, doc: Document | None) -> dict[str, Any]:
         props = super()._get_properties(doc)
-        props['use_shadow_root'] = self.use_shadow_root
+        props['use_shadow_dom'] = self.use_shadow_dom
         return props
 
 
@@ -921,3 +921,8 @@ class AnyWidgetComponent(ReactComponent):
         msg: dict
         """
         self._send_msg(msg)
+
+    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+        props = super()._get_properties(doc)
+        del props['use_shadow_dom']
+        return props
