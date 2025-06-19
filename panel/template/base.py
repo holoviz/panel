@@ -804,7 +804,7 @@ class BasicTemplate(BaseTemplate):
         elif self.favicon:
             favicon = self.favicon
         else:
-            favicon = (state.rel_path or "/") + "favicon.ico"
+            favicon = (f"{state.rel_path}/" if state.rel_path else "./") + "favicon.ico"
         self._render_variables['app_logo'] = logo
         if favicon:
             self._render_variables['app_favicon'] = favicon

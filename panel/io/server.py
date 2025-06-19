@@ -244,7 +244,7 @@ def html_page_for_render_items(
         macros = MACROS,
     ))
     if "app_favicon" not in context:
-        context["app_favicon"] = (state.rel_path or "/") + "favicon.ico"
+        context["app_favicon"] = (f"{state.rel_path}/" if state.rel_path else "./") + "favicon.ico"
 
     if len(render_items) == 1:
         context["doc"] = context["docs"][0]
