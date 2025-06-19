@@ -791,7 +791,7 @@ class ReactComponent(ReactiveESM):
         CounterButton().servable()
     '''
 
-    use_shadow_dom = param.Boolean(default=False, constant=True, doc="""
+    use_shadow_dom = param.Boolean(default=True, constant=True, doc="""
         Whether to render component into a shadow root.
         This may optionally be disabled but will only take
         effect if the parent is also a React component.
