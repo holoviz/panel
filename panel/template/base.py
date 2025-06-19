@@ -28,7 +28,7 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea, NotificationAreaBase
 from ..io.resources import (
-    BUNDLE_DIR, CDN_DIST, DIST_DIR, JS_VERSION, ResourceComponent, _env,
+    BUNDLE_DIR, CDN_DIST, JS_VERSION, ResourceComponent, _env,
     component_resource_path, get_dist_path, loading_css, parse_template,
     resolve_custom_path, use_cdn,
 )
@@ -702,12 +702,6 @@ class BasicTemplate(BaseTemplate):
         except (jinja2.exceptions.TemplateNotFound, ValueError):
             template = parse_template(tmpl_string)
 
-        if 'favicon' not in params and type(self).favicon is None:
-            if _settings.ico_path().startswith(str(DIST_DIR)):
-                params['favicon'] = "/favicon.ico"
-            else:
-                params['favicon'] = _settings.ico_path()
-
         if 'header' not in params:
             params['header'] = ListLike()
         else:
@@ -796,7 +790,7 @@ class BasicTemplate(BaseTemplate):
                 raise ValueError(f"Could not embed logo {self.logo}.")
         else:
             logo = self.logo
-        if os.path.isfile(self.favicon):
+        if self.favicon and os.path.isfile(self.favicon):
             img = _panel(self.favicon)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
@@ -805,14 +799,16 @@ class BasicTemplate(BaseTemplate):
                 favicon = img._b64(imgdata)
             else:
                 raise ValueError(f"Could not embed favicon {self.favicon}.")
+        elif _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
+            favicon = CDN_DIST + "images/favicon.ico"
+        elif self.favicon:
+            favicon = self.favicon
         else:
-            if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
-                favicon = CDN_DIST + "images/favicon.ico"
-            else:
-                favicon = self.favicon
+            favicon = (state.rel_path or "/") + "favicon.ico"
         self._render_variables['app_logo'] = logo
-        self._render_variables['app_favicon'] = favicon
-        self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
+        if favicon:
+            self._render_variables['app_favicon'] = favicon
+            self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width

@@ -99,6 +99,30 @@ def test_server_root_handler():
 
     assert 'href="./app"' in r.content.decode('utf-8')
 
+def test_server_ico_handling(port):
+    md = Markdown('# Favicon test')
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {'app': md}, ico_path=ico_path, port=port
+    )
+
+    assert '<link rel="icon" href="/favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
+
+def test_server_template_ico_handling(port):
+    def app():
+        return BootstrapTemplate()
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {'app': app}, ico_path=ico_path, port=port
+    )
+
+    assert '<link rel="icon" href="/favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
 
 def test_server_template_static_resources(server_implementation):
     template = BootstrapTemplate()

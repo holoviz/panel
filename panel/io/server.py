@@ -44,7 +44,6 @@ from bokeh.server.views.autoload_js_handler import (
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.root_handler import RootHandler as BkRootHandler
 from bokeh.server.views.static_handler import StaticHandler
-from bokeh.settings import settings
 from bokeh.util.serialization import make_id
 from bokeh.util.token import (
     generate_jwt_token, generate_session_id, get_token_payload,
@@ -244,8 +243,8 @@ def html_page_for_render_items(
         base = BASE_TEMPLATE,
         macros = MACROS,
     ))
-    if "app_favicon" not in context and not settings.ico_path().startswith(str(DIST_DIR)):
-        context["app_favicon"] = "/favicon.ico"
+    if "app_favicon" not in context:
+        context["app_favicon"] = (state.rel_path or "/") + "favicon.ico"
 
     if len(render_items) == 1:
         context["doc"] = context["docs"][0]
