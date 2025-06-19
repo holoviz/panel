@@ -29,6 +29,7 @@ from bokeh.command.util import build_single_handler_applications
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.server.contexts import ApplicationContext
+from bokeh.settings import settings
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
@@ -357,6 +358,8 @@ class Serve(_BkServe):
         # Handle tranquilized functions in the supplied functions
         kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
 
+        if args.ico_path:
+            settings.ico_path.set_value(args.ico_path)
         static_dirs = parse_vars(args.static_dirs) if args.static_dirs else {}
         patterns += get_static_routes(static_dirs)
 

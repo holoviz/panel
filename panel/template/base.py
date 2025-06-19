@@ -630,7 +630,7 @@ class BasicTemplate(BaseTemplate):
         URI of logo to add to the header (if local file, logo is
         base64 encoded as URI). Default is '', i.e. not shown.""")
 
-    favicon = param.String(default=FAVICON_URL, doc="""
+    favicon = param.String(default=None, doc="""
         URI of favicon to add to the document head (if local file, favicon is
         base64 encoded as URI).""")
 
@@ -701,6 +701,12 @@ class BasicTemplate(BaseTemplate):
             template = _env.get_template(str(self._template.relative_to(Path(__file__).parent)))
         except (jinja2.exceptions.TemplateNotFound, ValueError):
             template = parse_template(tmpl_string)
+
+        if 'favicon' not in params and type(self).favicon is None:
+            if _settings.ico_path().endswith("bokeh.ico"):
+                params['favicon'] = FAVICON_URL
+            else:
+                params['favicon'] = _settings.ico_path()
 
         if 'header' not in params:
             params['header'] = ListLike()
