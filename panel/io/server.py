@@ -69,8 +69,9 @@ from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import LOG_SESSION_CREATED
 from .reload import record_modules
 from .resources import (
-    BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
-    Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
+    BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, DIST_DIR, ERROR_TEMPLATE,
+    LOCAL_DIST, Resources, _env, bundle_resources, patch_model_css,
+    resolve_custom_path,
 )
 from .session import generate_session
 from .state import set_curdoc, state
@@ -243,7 +244,7 @@ def html_page_for_render_items(
         base = BASE_TEMPLATE,
         macros = MACROS,
     ))
-    if "app_favicon" not in context and not settings.ico_path().endswith("bokeh.ico"):
+    if "app_favicon" not in context and not settings.ico_path().startswith(str(DIST_DIR)):
         context["app_favicon"] = "/favicon.ico"
 
     if len(render_items) == 1:
@@ -1066,6 +1067,9 @@ def get_server(
 
     if 'index' not in opts:
         opts['index'] = INDEX_HTML
+
+    if 'ico_path' not in opts:
+        opts['ico_path'] = DIST_DIR / "images" / "favicon.ico"
 
     if address is not None:
         opts['address'] = address

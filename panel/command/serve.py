@@ -38,6 +38,7 @@ from ..config import config
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
 from ..io.reload import record_modules, watch
+from ..io.resources import DIST_DIR
 from ..io.rest import REST_PROVIDERS
 from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
@@ -360,6 +361,8 @@ class Serve(_BkServe):
 
         if args.ico_path:
             settings.ico_path.set_value(args.ico_path)
+        else:
+            kwargs["ico_path"] = DIST_DIR / "images" / "favicon.ico"
         static_dirs = parse_vars(args.static_dirs) if args.static_dirs else {}
         patterns += get_static_routes(static_dirs)
 
