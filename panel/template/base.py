@@ -28,7 +28,7 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea, NotificationAreaBase
 from ..io.resources import (
-    BUNDLE_DIR, CDN_DIST, JS_VERSION, ResourceComponent, _env,
+    BUNDLE_DIR, CDN_DIST, DIST_DIR, JS_VERSION, ResourceComponent, _env,
     component_resource_path, get_dist_path, loading_css, parse_template,
     resolve_custom_path, use_cdn,
 )
@@ -703,8 +703,8 @@ class BasicTemplate(BaseTemplate):
             template = parse_template(tmpl_string)
 
         if 'favicon' not in params and type(self).favicon is None:
-            if _settings.ico_path().endswith("bokeh.ico"):
-                params['favicon'] = FAVICON_URL
+            if _settings.ico_path().startswith(str(DIST_DIR)):
+                params['favicon'] = "/favicon.ico"
             else:
                 params['favicon'] = _settings.ico_path()
 
