@@ -355,7 +355,7 @@ async function render(id) {
         return
       }
       this.updateElement()
-      view.render()
+      this.props.parent.rerender_(view)
       this.render_callback = (new_views) => {
         const view = this.view
         if (!view) {
