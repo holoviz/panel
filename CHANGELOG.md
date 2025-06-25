@@ -24,6 +24,7 @@ This patch release includes a number of important bug fixes, optimizations, and 
 - Prevent stylesheet patch from dispatching during initial load ([#7978](https://github.com/holoviz/panel/pull/7978))
 - Fix caching issue for ESM render modules ([#7990](https://github.com/holoviz/panel/pull/7990))
 - Correct initialization behavior of `ReactComponent` ([#7996](https://github.com/holoviz/panel/pull/7996))
+- Fix threading race condition when applying consecutive updates to `Param` widgets ([#8003](https://github.com/holoviz/panel/issues/8003))
 
 ## Version 1.7.1
 
