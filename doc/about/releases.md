@@ -2,6 +2,51 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.7.2
+
+This patch release includes a number of important bug fixes, optimizations, and compatibility updates, particularly for React and ESM-based components. It also includes enhancements to the Tabulator table and more robust support for Audio/Video panes. Many thanks to @etihwo for his continued contributions and the maintainer team @hoxbro and @philippjfr.
+
+### Enhancements
+
+- Support for passing `bytes` and `BytesIO` objects to `Audio` and `Video` panes ([#7963](https://github.com/holoviz/panel/pull/7963))
+- Add header tooltips to `Tabulator` ([#7988](https://github.com/holoviz/panel/pull/7988))
+- Optimize layout calculations for ESM components ([#7989](https://github.com/holoviz/panel/pull/7989))
+- Allow nested `ReactComponent`s to bypass Shadow DOM ([#7991](https://github.com/holoviz/panel/pull/7991))
+- Support `--ico-path` CLI option to support explicit .ico path specification ([#7992](https://github.com/holoviz/panel/pull/7992))
+- Loosen parameter type for `ReactiveExpr.widget_layout` ([#7964](https://github.com/holoviz/panel/pull/7964))
+- Automatically unblock Comm on WebSocket re-connect ([#7986](https://github.com/holoviz/panel/pull/7986))
+
+### Bug Fixes
+
+- Fix `Tabulator` fast design and fix styling issues ([#7956](https://github.com/holoviz/panel/pull/7956))
+- Keep reference state consistent after Pyodide syncing ([#7966](https://github.com/holoviz/panel/pull/7966))
+- Ensure correct model is used when determining if a link is set up ([#7968](https://github.com/holoviz/panel/pull/7968))
+- Do not dispatch events on hold/unhold when the document is uninitialized ([#7972](https://github.com/holoviz/panel/pull/7972))
+- Ensure theming does not error on `PyComponent` ([#7975](https://github.com/holoviz/panel/pull/7975))
+- Prevent stylesheet patch from dispatching during initial load ([#7978](https://github.com/holoviz/panel/pull/7978))
+- Fix caching issue for ESM render modules ([#7990](https://github.com/holoviz/panel/pull/7990))
+- Correct initialization behavior of `ReactComponent` ([#7996](https://github.com/holoviz/panel/pull/7996))
+
+
+## Version 1.7.1
+
+This patch release adds a new option to disable `FileDropper` previews and fixes a regression when updating `Column` children in Bokeh<3.7. Additionally it includes a number of documentation improvements. Many thanks to our returning contributors @dalthviz, @emmanuel-ferdman, @MarcSkovMadsen, and @hoxbro
+
+### Enhancements
+
+-  Add option to disable FileDropper previews ([#7944](https://github.com/holoviz/panel/pull/7944))
+- `--index-titles` help string typo fix and don't call `title` on user input ([#7935](https://github.com/holoviz/panel/pull/7935))
+
+### Bug fixes
+
+- Migrate to correct logger interface ([#7931](https://github.com/holoviz/panel/pull/7931))
+- Column updates not working for Bokeh<3.7 ([#7948](https://github.com/holoviz/panel/pull/7948))
+
+### Documentation
+
+- Fix image links in Azure documentation ([#7938](https://github.com/holoviz/panel/pull/7938))
+
+
 ## Version 1.7.0
 
 This minor release is not as jam-packed as previous minor releases but adds a number of quality of life improvements, bug fixes and features along with version and compatibility updates for a number of JS dependencies. Many thanks to some of our more frequent contributors @dalthviz, @etiwho, our new contributor @emmanuel-ferdman and our maintainers @Hoxbro, @MarcSkovMadsen and @philippjfr.
