@@ -446,8 +446,8 @@ export class ReactiveESMView extends HTMLBoxView {
   }
 
   override after_resize(): void {
-    super.after_resize()
     if (this._rendered && !this._changing) {
+      super.after_resize()
       for (const cb of (this._lifecycle_handlers.get("resize") || [])) {
         cb()
       }
