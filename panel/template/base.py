@@ -630,7 +630,7 @@ class BasicTemplate(BaseTemplate):
         URI of logo to add to the header (if local file, logo is
         base64 encoded as URI). Default is '', i.e. not shown.""")
 
-    favicon = param.String(default=FAVICON_URL, doc="""
+    favicon = param.String(default=None, doc="""
         URI of favicon to add to the document head (if local file, favicon is
         base64 encoded as URI).""")
 
@@ -790,7 +790,7 @@ class BasicTemplate(BaseTemplate):
                 raise ValueError(f"Could not embed logo {self.logo}.")
         else:
             logo = self.logo
-        if os.path.isfile(self.favicon):
+        if self.favicon and os.path.isfile(self.favicon):
             img = _panel(self.favicon)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
@@ -799,14 +799,16 @@ class BasicTemplate(BaseTemplate):
                 favicon = img._b64(imgdata)
             else:
                 raise ValueError(f"Could not embed favicon {self.favicon}.")
+        elif _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
+            favicon = CDN_DIST + "images/favicon.ico"
+        elif self.favicon:
+            favicon = self.favicon
         else:
-            if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
-                favicon = CDN_DIST + "images/favicon.ico"
-            else:
-                favicon = self.favicon
+            favicon = (f"{state.rel_path}/" if state.rel_path else "./") + "favicon.ico"
         self._render_variables['app_logo'] = logo
-        self._render_variables['app_favicon'] = favicon
-        self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
+        if favicon:
+            self._render_variables['app_favicon'] = favicon
+            self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width

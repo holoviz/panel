@@ -99,6 +99,46 @@ def test_server_root_handler():
 
     assert 'href="./app"' in r.content.decode('utf-8')
 
+@pytest.mark.parametrize('path', ["/app", "/nested/app"])
+def test_server_ico_handling(path, port):
+    md = Markdown('# Favicon test')
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {path: md}, ico_path=ico_path, port=port, suffix=path
+    )
+
+    dots = path.count('/')*'.'
+    assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
+
+def test_server_ico_handling_with_prefix(port):
+    md = Markdown('# Favicon test')
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {'app': md}, ico_path=ico_path, port=port, prefix='/prefix', suffix='/prefix/app'
+    )
+
+    assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
+
+@pytest.mark.parametrize('path', ["/app", "/nested/app"])
+def test_server_template_ico_handling(path, port):
+    def app():
+        return BootstrapTemplate()
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {path: app}, ico_path=ico_path, port=port, suffix=path
+    )
+
+    dots = path.count('/')*'.'
+    assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
 
 def test_server_template_static_resources(server_implementation):
     template = BootstrapTemplate()
@@ -917,6 +957,21 @@ def test_server_template_custom_resources_on_proxy(reverse_proxy):
 
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+
+@reverse_proxy_available
+def test_server_ico_path_on_proxy(reverse_proxy):
+    md = Markdown('# Favicon test')
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    port, proxy = reverse_proxy
+    r = serve_and_request(
+        {'app': md}, port=port, proxy=proxy, ico_path=ico_path,
+        suffix="/proxy/app"
+    )
+
+    assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{proxy}/proxy/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
 
 def test_server_template_custom_resources_with_prefix(port):
     template = CustomBootstrapTemplate()

@@ -274,6 +274,7 @@ lint-install = 'pre-commit install -t=pre-commit'
 # =================== LITE ====================
 # =============================================
 [feature.lite.dependencies]
+pyviz_comms = ">=3.0.6"
 jupyterlab-myst = "*"
 jupyterlite-core = "*"
 jupyterlite-pyodide-kernel = "*"

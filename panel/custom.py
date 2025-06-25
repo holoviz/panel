@@ -447,7 +447,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         ignored = [
             p for p in Reactive.param
             if not issubclass(cls.param[p].owner, ReactiveESM) or
-            (p in Viewable.param and p != 'name' and type(Reactive.param[p]) is type(cls.param[p]))
+            (p in Viewable.param and p not in ('name', 'use_shadow_dom')
+             and type(Reactive.param[p]) is type(cls.param[p]))
         ]
         for k, v in self.param.values().items():
             p = self.param[k]
@@ -790,6 +791,13 @@ class ReactComponent(ReactiveESM):
         CounterButton().servable()
     '''
 
+    use_shadow_dom = param.Boolean(default=True, constant=True, doc="""
+        Whether to render component into a shadow root.
+        This may optionally be disabled but will only take
+        effect if the parent is also a React component.
+        If disabled the component will be rendered into
+        the parent's React DOM tree.""")
+
     __abstract = True
 
     _bokeh_model = _BkReactComponent
@@ -852,6 +860,11 @@ class ReactComponent(ReactiveESM):
             'scopes': cls._importmap.get('scopes', {})
         }
 
+    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+        props = super()._get_properties(doc)
+        props['use_shadow_dom'] = self.use_shadow_dom
+        return props
+
 
 class AnyWidgetComponent(ReactComponent):
     '''
@@ -908,3 +921,8 @@ class AnyWidgetComponent(ReactComponent):
         msg: dict
         """
         self._send_msg(msg)
+
+    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+        props = super()._get_properties(doc)
+        del props['use_shadow_dom']
+        return props

@@ -462,6 +462,7 @@ class Syncable(Renderable):
             with edit_readonly(state):
                 state._busy_counter += 1
         try:
+            params = {}
             if events and state.curdoc:
                 self._in_process__events[state.curdoc] = events
             params = self._process_property_change(events)

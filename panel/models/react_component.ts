@@ -1,18 +1,60 @@
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {ClassList, InlineStyleSheet, ImportedStyleSheet} from "@bokehjs/core/dom"
+import type {CSSStyles, CSSStyleSheetDecl} from "@bokehjs/core/css"
 import type * as p from "@bokehjs/core/properties"
+import {isString} from "@bokehjs/core/util/types"
 import type {Transform} from "sucrase"
 
 import {
   ReactiveESM, ReactiveESMView, model_getter, model_setter,
 } from "./reactive_esm"
 
+export class HostedStyleSheet extends InlineStyleSheet {
+  host_id: string
+
+  constructor(css?: string | CSSStyleSheetDecl, id?: string, override readonly persistent: boolean = false, host_id: string = "") {
+    super(css, id, persistent)
+    this.host_id = host_id
+  }
+
+  override replace(css: string, styles?: CSSStyles): void {
+    css = css.replace(/:host\b/g, `#${this.host_id}`)
+    super.replace(css, styles)
+  }
+
+  override prepend(css: string, styles?: CSSStyles): void {
+    css = css.replace(/:host\b/g, `#${this.host_id}`)
+    super.prepend(css, styles)
+  }
+
+  override append(css: string, styles?: CSSStyles): void {
+    css = css.replace(/:host\b/g, `#${this.host_id}`)
+    super.append(css, styles)
+  }
+
+}
+
 export class ReactComponentView extends ReactiveESMView {
   declare model: ReactComponent
   declare style_cache: HTMLHeadElement
   model_getter = model_getter
   model_setter = model_setter
-  react_root: any
+  react_root: any = null
 
   _force_update_callbacks: (() => void)[] = []
+
+  override initialize(): void {
+    super.initialize()
+    if (!this.use_shadow_dom) {
+      (this as any).display = new HostedStyleSheet("", "display", false, this.model.id);
+      (this as any).style = new HostedStyleSheet("", "style", false, this.model.id);
+      (this as any).parent_style = new HostedStyleSheet("", "parent", true, this.model.id)
+    }
+  }
+
+  get use_shadow_dom(): boolean {
+    return this.model.use_shadow_dom || !(this.parent instanceof ReactComponentView)
+  }
 
   override render_esm(): void {
     if (this.model.compiled === null || this.model.render_module === null) {
@@ -47,11 +89,50 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   override remove(): void {
-    super.remove()
     this._force_update_callbacks = []
-    if (this.react_root) {
+    if (this.react_root && this.use_shadow_dom) {
+      super.remove()
       this.react_root.then((root: any) => root.unmount())
+    } else {
+      this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
+      for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
+        cb()
+      }
+      this._child_callbacks.clear()
+      this._child_rendered.clear()
+      this._mounted.clear()
     }
+  }
+
+  get root_view(): ReactComponentView {
+    let root: ReactComponentView = this
+    if (this.use_shadow_dom) {
+      return root
+    }
+    while (root.parent instanceof ReactComponentView) {
+      root = root.parent
+    }
+    return root
+  }
+
+  protected override _apply_stylesheets(stylesheets: StyleSheetLike[]): void {
+    const resolved_stylesheets = stylesheets.map((style) => isString(style) ? new InlineStyleSheet(style) : style)
+    const styles = this.root_view.shadow_el.querySelectorAll("style")
+    const links = this.root_view.shadow_el.querySelectorAll("link")
+    resolved_stylesheets.forEach((stylesheet) => {
+      if (!this.use_shadow_dom) {
+        if (stylesheet instanceof InlineStyleSheet &&
+            Array.from(styles).some(style => style.innerHTML === stylesheet.css)) {
+          return
+        }
+        if (stylesheet instanceof ImportedStyleSheet &&
+            Array.from(links).some(link => link.href === (stylesheet as any).el.href)) {
+          return
+        }
+      }
+      this._applied_stylesheets.push(stylesheet)
+      stylesheet.install(this.root_view.shadow_el)
+    })
   }
 
   override render(): void {
@@ -68,7 +149,9 @@ export class ReactComponentView extends ReactiveESMView {
     // React component to ensure anything depending on the DOM
     // structure (e.g. emotion caches) is updated
     super.r_after_render()
-    this.force_update()
+    if (!this.use_shadow_dom) {
+      this.force_update()
+    }
   }
 
   override _update_layout(): void {
@@ -100,10 +183,12 @@ export class ReactComponentView extends ReactiveESMView {
       }
     }
 
-    for (const view of this._child_rendered.keys()) {
-      if (!all_views.includes(view)) {
-        this._child_rendered.delete(view)
-        view.el.remove()
+    if (this.use_shadow_dom) {
+      for (const view of this._child_rendered.keys()) {
+        if (!all_views.includes(view)) {
+          this._child_rendered.delete(view)
+          view.el.remove()
+        }
       }
     }
 
@@ -115,7 +200,17 @@ export class ReactComponentView extends ReactiveESMView {
       }
     }
     this._update_children()
+  }
+
+  override _on_mounted(): void {
     this.invalidate_layout()
+  }
+
+  patch_container(container: HTMLDivElement): void {
+    this.el = this.container = container
+    this._update_stylesheets()
+    this.class_list = new ClassList(this.container.classList)
+    this._apply_html_attributes()
   }
 
   override after_rendered(): void {
@@ -137,6 +232,7 @@ export namespace ReactComponent {
 
   export type Props = ReactiveESM.Props & {
     root_node: p.Property<string | null>
+    use_shadow_dom: p.Property<boolean>
   }
 }
 
@@ -183,14 +279,16 @@ import createCache from "@emotion/cache"
 import { CacheProvider } from "@emotion/react"`
       }
       init_code = `
-  const css_key = id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
-  this.mui_cache = createCache({
-    key: 'css-'+css_key,
-    prepend: true,
-    container: view.style_cache,
-  })`
+  if (view.use_shadow_dom) {
+    const css_key = id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
+    this.mui_cache = createCache({
+      key: 'css-'+css_key,
+      prepend: true,
+      container: view.style_cache,
+    })
+  }`
       render_code = `
-  if (rendered) {
+  if (rendered && ((view.parent?.react_root === undefined) || view.model.use_shadow_dom)) {
     rendered = React.createElement(CacheProvider, {value: this.mui_cache}, rendered)
   }`
     }
@@ -206,6 +304,8 @@ async function render(id) {
   ${bundle_code}
 
   class Child extends React.PureComponent {
+
+    state = {rendered: null}
 
     constructor(props) {
       super(props)
@@ -233,9 +333,27 @@ async function render(id) {
       return view == null ? null : view.el
     }
 
+    get use_shadow_dom() {
+      return this.view?.model.use_shadow_dom || (this.view?.react_root === undefined)
+    }
+
     componentDidMount() {
       const view = this.view
       if (view == null) { return }
+      else if (!this.use_shadow_dom) {
+        view.patch_container(this.containerRef.current)
+        view.model.render_module.then(async (mod) => {
+          this.setState(
+            {rendered: await mod.default.render(view.model.id)},
+            () => {
+              this.props.parent.notify_mount(this.props.name, view.model.id)
+              this.view.r_after_render()
+              this.view.after_rendered()
+            }
+          )
+        })
+        return
+      }
       this.updateElement()
       this.props.parent.rerender_(view)
       this.render_callback = (new_views) => {
@@ -256,14 +374,23 @@ async function render(id) {
       if (this.render_callback) {
         this.props.parent.remove_on_child_render(this.props.name, this.render_callback)
       }
+      if (!this.use_shadow_dom && this.view._mounted.has(this.props.name)) {
+        this.view._mounted.get(this.props.name).delete(this.props.id)
+      }
     }
 
     componentDidUpdate() {
-      this.updateElement()
+      if (this.use_shadow_dom) {
+        this.updateElement()
+      }
     }
 
     render() {
-      return React.createElement('div', {className: "child-wrapper", ref: this.containerRef})
+      const child = this.state.rendered
+      const class_name = (this.use_shadow_dom ?
+        "child-wrapper" : this.view.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
+      )
+      return React.createElement('div', {id: this.view?.model.id, className: class_name, ref: this.containerRef}, child)
     }
   }
 
@@ -370,6 +497,7 @@ async function render(id) {
     }
 
     componentDidMount() {
+      if (!this.props.view.use_shadow_dom) { return }
       this.props.view.on_force_update(() => {
         ${init_code}
         this.forceUpdate()
@@ -390,6 +518,9 @@ async function render(id) {
 
   const props = {view, model: react_proxy, data: view.model.data, el: view.container}
   const rendered = React.createElement(Component, props)
+  if (!view.model.use_shadow_dom && (view.parent?.react_root !== undefined)) {
+    return rendered
+  }
   if (rendered) {
     view._changing = true
     let container
@@ -438,8 +569,9 @@ ${compiled}`
 
   static {
     this.prototype.default_view = ReactComponentView
-    this.define<ReactComponent.Props>(({Nullable, Str}) => ({
-      root_node:  [ Nullable(Str),     null ],
+    this.define<ReactComponent.Props>(({Bool, Nullable, Str}) => ({
+      root_node:  [ Nullable(Str), null ],
+      use_shadow_dom:   [ Bool,    true ],
     }))
   }
 }

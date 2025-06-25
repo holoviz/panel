@@ -638,6 +638,28 @@ def test_child(page, component):
 
     wait_until(lambda: example.render_count == (2 if component is JSChild else 1), page)
 
+def test_react_child_no_shadow_dom(page):
+    example = ReactChild(
+        child=ReactChild(
+            child='A Markdown pane!', css_classes=['child'], use_shadow_dom=False
+        ),
+        css_classes=['parent']
+    )
+
+    serve_component(page, example)
+    parent = page.locator('button').nth(0)
+    expect(parent).to_be_attached()
+    child = page.locator('.child > button')
+    expect(child).to_be_attached()
+
+    expect(child).to_have_text('A Markdown pane!')
+
+    example.child.child = 'A different Markdown pane!'
+
+    expect(child).to_have_text('A different Markdown pane!')
+
+    wait_until(lambda: example.render_count == 1, page)
+
 
 class JSChildren(ListLike, JSComponent):
 
@@ -855,6 +877,17 @@ def test_after_render_lifecycle_hooks(page, component):
 
     expect(page.locator('h1')).to_have_text("rendered")
 
+def test_react_child_no_shadow_dom_after_render_lifecycle_hook(page):
+    example = ReactChild(
+        child=ReactLifecycleAfterRender(use_shadow_dom=False),
+    )
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("rendered")
+
 
 class JSLifecycleAfterLayout(JSComponent):
 
@@ -879,6 +912,17 @@ class ReactLifecycleAfterLayout(ReactComponent):
 @pytest.mark.parametrize('component', [JSLifecycleAfterLayout, ReactLifecycleAfterLayout])
 def test_after_layout_lifecycle_hooks(page, component):
     example = component()
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("layouted")
+
+def test_react_child_no_shadow_dom_after_layout_lifecycle_hook(page):
+    example = ReactChild(
+        child=ReactLifecycleAfterLayout(use_shadow_dom=False),
+    )
 
     serve_component(page, example)
 
@@ -958,6 +1002,22 @@ def test_remove_lifecycle_hooks(page, component):
 
     with page.expect_console_message() as msg_info:
         example.clear()
+
+    wait_until(lambda: msg_info.value.args[0].json_value() == "Removed", page)
+
+def test_react_child_no_shadow_dom_remove_lifecycle_hook(page):
+    example = ReactChild(
+        child=ReactLifecycleRemove(use_shadow_dom=False),
+    )
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("Hello")
+
+    with page.expect_console_message() as msg_info:
+        example.child = "New"
 
     wait_until(lambda: msg_info.value.args[0].json_value() == "Removed", page)
 
