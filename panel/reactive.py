@@ -256,7 +256,7 @@ class Syncable(Renderable):
         Parameters which are synced with properties using transforms
         applied in the _process_param_change method.
         """
-        ignored = ['default_layout', 'loading', 'background']
+        ignored = ['default_layout', 'loading', 'background', 'css_id']
         return [p for p in self.param if p not in self._manual_params+ignored]
 
     def _init_params(self) -> dict[str, Any]:
@@ -625,7 +625,7 @@ class Reactive(Syncable, Viewable):
     _ignored_refs: ClassVar[tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'design': None, 'loading': None
+        'design': None, 'loading': None, 'css_id': None
     }
 
     __abstract = True
@@ -669,6 +669,9 @@ class Reactive(Syncable, Viewable):
                 params[k] = v = params[k] + v
             elif k not in params or self.param[k].default is not v:
                 params[k] = v
+        if self.css_id:
+            tags = params.get('tags', [])
+            params['tags'] = tags + [{"css_id": self.css_id}]
         properties = self._process_param_change(params)
         if 'stylesheets' not in properties:
             return properties
