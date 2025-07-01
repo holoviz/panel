@@ -202,7 +202,11 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
                 f'Compilation failed because supplied module errored on import:\n\n{runner.error}'
             )
     else:
-        module = importlib.import_module(str(module_or_file))
+        try:
+            sys.path.insert(0, os.getcwd())
+            module = importlib.import_module(str(module_or_file))
+        finally:
+            sys.path.pop(0)
     classes = classes or []
     components = []
     for v in module.__dict__.values():
