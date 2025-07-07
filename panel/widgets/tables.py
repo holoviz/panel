@@ -2075,21 +2075,22 @@ class Tabulator(BaseTable):
             if isinstance(index, tuple):
                 children = columns
                 last = cast(GroupSpec, children[-1] if len(children) > 0 else {})
-                for group in index[:-1]:
-                    if 'title' in last and last['title'] == group:
+                for j, group in enumerate(index[:-1]):
+                    group_title = self.titles.get(index[: j + 1], group)
+                    if 'title' in last and last['title'] == group_title:
                         new = False
                         children = last['columns']
                     else:
                         new = True
                         children.append({
                             'columns': [],
-                            'title': group,
+                            'title': group_title,
                         })
                     last = cast(GroupSpec, children[-1])
                     if new:
                         children = last['columns']
                 children.append(col_dict)
-                column.title = index[-1]
+                column.title = self.titles.get(index, index[-1])
             elif matching_groups:
                 group = matching_groups[0]
                 if group in groups:
