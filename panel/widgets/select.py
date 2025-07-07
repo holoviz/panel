@@ -921,6 +921,8 @@ class MultiChoice(_MultiSelectBase):
 
     _widget_type: ClassVar[type[Model]] = _BkMultiChoice
 
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/multichoice.css']
+
 
 class AutocompleteInput(SingleSelectBase):
     """
