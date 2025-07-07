@@ -68,20 +68,15 @@ def setup_build_dir(build_dir: str | os.PathLike | None = None):
             shutil.rmtree(temp_dir)
 
 
-def check_cli_tool(tool_name: str) -> bool:
-    try:
-        cmd = shutil.which(tool_name)
-    except Exception:
-        cmd = None
-    if cmd:
-        return True
+def check_cli_tool(tool_name: str) -> str | None:
     if sys.platform == 'win32':
-        return shutil.which(f'{tool_name}.cmd')
-    return False
+        return shutil.which(tool_name) or shutil.which(f'{tool_name}.cmd')
+    else:
+        return shutil.which(tool_name)
 
 
 def npm_install(verbose, out):
-    npm_cmd = 'npm.cmd' if sys.platform == 'win32' else 'npm'
+    npm_cmd = check_cli_tool('npm')
     extra_args = []
     if verbose:
         extra_args.append('--log-level=debug')
@@ -96,6 +91,7 @@ def npm_install(verbose, out):
 
 
 def esbuild(components, file_loaders, minify, verbose, out):
+    esbuild_cmd = check_cli_tool("esbuild")
     extra_args = []
     if verbose:
         extra_args.append('--log-level=debug')
@@ -107,7 +103,7 @@ def esbuild(components, file_loaders, minify, verbose, out):
         extra_args.append('--minify')
     if out:
         extra_args.append(f'--outfile={out}')
-    build_cmd = ['esbuild', 'index.js', '--bundle', '--format=esm'] + extra_args
+    build_cmd = [esbuild_cmd, 'index.js', '--bundle', '--format=esm'] + extra_args
     if verbose:
         print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
     result = subprocess.run(build_cmd+['--color=true'], check=True, capture_output=True, text=True)
@@ -206,7 +202,11 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
                 f'Compilation failed because supplied module errored on import:\n\n{runner.error}'
             )
     else:
-        module = importlib.import_module(str(module_or_file))
+        try:
+            sys.path.insert(0, os.getcwd())
+            module = importlib.import_module(str(module_or_file))
+        finally:
+            sys.path.pop(0)
     classes = classes or []
     components = []
     for v in module.__dict__.values():
@@ -495,8 +495,7 @@ def compile_components(
             'npm install can only be skipped if build_dir with existing '
             'node_modules is provided.'
         )
-    npm_cmd = 'npm.cmd' if sys.platform == 'win32' else 'npm'
-    if not check_cli_tool(npm_cmd):
+    if not check_cli_tool('npm'):
         raise RuntimeError(
             'Could not find `npm` or it generated an error. Ensure it is '
             'installed and can be run with `npm --version`. You can get it '
