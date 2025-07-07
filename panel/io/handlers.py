@@ -226,6 +226,9 @@ def autoreload_handle_exception(handler, module, e):
         handle_exception(handler, e)
         return
 
+    # Print to console
+    traceback.print_exception(e)
+
     from ..pane import Alert
 
     # Clean up module
