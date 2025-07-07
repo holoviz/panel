@@ -110,6 +110,7 @@ class Plotly(ModelPane):
         self._figure = None
         self._event = None
         self._update_figure()
+        self._relayout_data = None
 
     def _to_figure(self, obj):
         import plotly.graph_objs as go
@@ -172,6 +173,8 @@ class Plotly(ModelPane):
         self._figure = fig
 
     def _send_relayout_msg(self, relayout_data, source_view_id=None):
+        if relayout_data == self._relayout_data:
+            return
         self._send_update_msg({}, relayout_data, None, source_view_id)
 
     def _send_restyle_msg(self, restyle_data, trace_indexes=None, source_view_id=None):
@@ -188,11 +191,15 @@ class Plotly(ModelPane):
         if self._figure is None or self.relayout_data is None:
             return
         relayout_data = self._clean_relayout_data(self.relayout_data)
+        self._relayout_data = relayout_data
         # The _compound_array_props are sometimes not correctly reset
         # which means that they are desynchronized with _props causing
         # incorrect lookups and potential errors when updating a property
-        self._figure.layout._compound_array_props.clear()
-        self._figure.plotly_relayout(relayout_data)
+        try:
+            self._figure.layout._compound_array_props.clear()
+            self._figure.plotly_relayout(relayout_data)
+        except Exception:
+            self._relayout_data = None
 
     @staticmethod
     def _clean_relayout_data(relayout_data):
