@@ -771,9 +771,14 @@ export default {render}`
         },
       ).code
     } catch (e) {
-      if (e instanceof SyntaxError && this.dev) {
-        this.compile_error = e
-        return null
+      if (e instanceof SyntaxError) {
+        if (this.dev) {
+          this.compile_error = e
+          return null
+        } else {
+          e.message = `${e.message}. See more information with '--dev' flag.`
+          throw e
+        }
       } else {
         throw e
       }
