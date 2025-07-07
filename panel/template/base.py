@@ -235,6 +235,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 for sub in obj.select(Viewable):
                     submodel = sub._models.get(mref)
                     for stylesheet in getattr(sub, '_stylesheets', []):
+                        if isinstance(stylesheet, PurePath):
+                            stylesheet = str(stylesheet)
                         if not stylesheet.endswith('.css'):
                             continue
                         sts_name = f'extra_{os.path.basename(stylesheet)}'
