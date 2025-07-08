@@ -46,6 +46,14 @@ See also the [How-To Configure VS Code Guide](../editor/vscode_configure).
 
 In other notebook environments that support rendering ipywidgets interactively, such as nteract, you can use the same underlying ipywidgets support as for vscode: Install ``jupyter_bokeh`` and then use ``pn.extension(comms='ipywidgets')``.
 
+## Marimo
+
+Panel support has been added to Marimo at the end of 2024 through a collaboration between the Panel and Marimo teams, as describe in this PR: [marimo-team/marimo#2719](https://github.com/marimo-team/marimo/pull/2719)
+
+At a high-level it includes serializing Panel components to JSON, setting up bi-directional communications and registering formatters for HoloViz libraries including Panel components, param.rx and HoloViews plots.
+
+For further details on the integration, please consult the PR.
+
 ## Other environments
 
 If your development environment offers embedded Python processes but does not support ipywidgets or Jupyter "comms" (communication channels), you will notice that some or all interactive functionality is missing. Some widgets that operate only in JavaScript will work fine, but others require communication channels between JavaScript and Python. In such cases you can either request ipywidgets or Panel support from the editor or environment, or else use the Editor + Server approach above.
