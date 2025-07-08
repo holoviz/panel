@@ -70,7 +70,7 @@ export class CommManager extends Model {
         }
       })
       this._client_comm = this.ns.comm_manager.get_client_comm(this.plot_id, this.client_comm_id, (msg: any) => this.on_ack(msg))
-      this._reconnect = !this._client_comm.active
+      this._reconnect = !this._client_comm?.active || false
       if (this.ns.shared_views == null) {
         this.ns.shared_views = new Map()
       }
