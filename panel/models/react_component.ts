@@ -423,7 +423,7 @@ async function render(id) {
           const [value, setValue] = React.useState(targetModel.attributes[resolvedProp])
 
           React.useEffect(() => {
-            const cb = () => { console.log(prop); setValue(targetModel.attributes[resolvedProp])}
+            const cb = () => setValue(targetModel.attributes[resolvedProp])
             react_proxy.on(prop, cb)
             return () => react_proxy.off(prop, cb)
           }, [])
