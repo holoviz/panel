@@ -98,7 +98,7 @@ export class CommManager extends Model {
     }
 
     this._event_buffer.push(event)
-    if (this._reconnect && this._client_comm.connected) {
+    if (this._reconnect && this._client_comm?.connected) {
       this.on_ack({metadata: {msg_type: "Ready"}})
     } else if (!comm_settings.debounce) {
       this.process_events()
