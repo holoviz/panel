@@ -1,5 +1,26 @@
 # Releases
 
+## Version 1.7.3
+
+This patch release includes several critical stability improvements, JavaScript race condition fixes, and developer experience enhancements. It also introduces small but helpful UI features such as exception copying and better error feedback in CLI and ESM workflows. Many thanks to contributors @etihwo, @bsdz, @Coderambling, @hoxbro, @philippjfr, and @MarcSkovMadsen.
+
+### Enhancements
+
+- Add “Copy to Clipboard” button for exceptions in the UI ([#8034](https://github.com/holoviz/panel/pull/8034))
+- Enable MathJax rendering if the extension is available ([#8004](https://github.com/holoviz/panel/pull/8004))
+- Allow setting a custom title for `Tabulator` multi-index columns ([#8008](https://github.com/holoviz/panel/pull/8008))
+- Improve feedback in `panel compile` and reactive ESM workflows ([#8012](https://github.com/holoviz/panel/pull/8012), [#8010](https://github.com/holoviz/panel/pull/8010))
+- Ensure exceptions are printed to the command line in development mode ([#8022](https://github.com/holoviz/panel/pull/8022))
+
+### Bug Fixes
+
+- Guard against race conditions in `DeckGL` during resize ([#8031](https://github.com/holoviz/panel/pull/8031))
+- Prevent errors when `client_comm` is undefined in some JS execution contexts ([#8030](https://github.com/holoviz/panel/pull/8030), [#8033](https://github.com/holoviz/panel/pull/8033))
+- Fix dark theme background issue in `MultiChoice` widget ([#8014](https://github.com/holoviz/panel/pull/8014))
+- Avoid rendering Plotly components if container is not yet defined and prevent layout boomeranging ([#8021](https://github.com/holoviz/panel/pull/8021))
+- Ensure React `useState` callbacks are registered only once ([#8023](https://github.com/holoviz/panel/pull/8023))
+- Support `Path` objects in stylesheet definition ([#8026](https://github.com/holoviz/panel/pull/8026))
+
 ## Version 1.7.2
 
 This patch release includes a number of important bug fixes, optimizations, and compatibility updates, particularly for React and ESM-based components. It also includes enhancements to the Tabulator table and more robust support for Audio/Video panes. Many thanks to @etihwo for his continued contributions and the maintainer team @hoxbro and @philippjfr.
