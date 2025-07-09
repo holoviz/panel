@@ -282,7 +282,7 @@ def _create_copy_button(full_error_text):
             'top': '7px',
             'right': '3px',
             'z-index': '1000',
-            'background-color': 'var(--panel-surface-color:)',
+            'background-color': 'var(--panel-surface-color)',
             'color': 'var(--panel-on-surface-color)',
             'border-radius': '3px',
             'padding': '2px',
