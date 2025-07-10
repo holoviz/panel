@@ -149,7 +149,7 @@ export class ReactComponentView extends ReactiveESMView {
     // React component to ensure anything depending on the DOM
     // structure (e.g. emotion caches) is updated
     super.r_after_render()
-    if (!this.use_shadow_dom) {
+    if (this.use_shadow_dom) {
       this.force_update()
     }
   }
