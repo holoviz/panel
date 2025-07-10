@@ -63,6 +63,7 @@
       .error-message {
         max-width: 80%;
         padding-bottom: 10%;
+        text-align: center;
       }
       {% block extra_style %}{% endblock %}
     </style>
@@ -83,6 +84,9 @@
       <section class="error-message">
       {% block content %}
       <h3>{{ error_msg }}</h3>
+      {% if oauth_logout_link %}
+      <a href="{{ oauth_logout_link }}">Logout</a>
+      {% endif %}
       {% endblock %}
       </section>
     </div>
