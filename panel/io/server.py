@@ -614,6 +614,41 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
 toplevel_patterns[0] = (r'/?', RootHandler)
 bokeh.server.tornado.RootHandler = RootHandler  # type: ignore
 
+
+class AuthenticatedStaticFileHandler(StaticFileHandler):
+
+    def get_login_url(self):
+        ''' Delegates to``get_login_url`` method of the auth provider, or the
+        ``login_url`` attribute.
+
+        '''
+        if self.application.auth_provider.get_login_url is not None:
+            return self.application.auth_provider.get_login_url(self)
+        if self.application.auth_provider.login_url is not None:
+            return self.application.auth_provider.login_url
+        raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
+
+    def get_current_user(self):
+        ''' Delegate to the synchronous ``get_user`` method of the auth
+        provider
+
+        '''
+        if self.application.auth_provider.get_user is not None:
+            return self.application.auth_provider.get_user(self)
+        return "default_user"
+
+    async def prepare(self):
+        ''' Async counterpart to ``get_current_user``
+
+        '''
+        if self.application.auth_provider.get_user_async is not None:
+            self.current_user = await self.application.auth_provider.get_user_async(self)
+
+    @authenticated
+    async def get(self, *args, **kwargs):
+        return await super().get(*args, **kwargs)
+
+
 # Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
 def create_static_handler(prefix, key, app):
     # patch
@@ -858,7 +893,7 @@ def get_static_routes(static_dirs):
         if not os.path.isdir(path):
             raise ValueError(f"Cannot serve non-existent path {path}")
         patterns.append(
-            (rf"{slug}/(.*)", StaticFileHandler, {"path": path})
+            (rf"{slug}/(.*)", AuthenticatedStaticFileHandler, {"path": path})
         )
     patterns.append((
         f'/{COMPONENT_PATH}(.*)', ComponentResourceHandler, {}
