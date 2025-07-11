@@ -2,6 +2,27 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.7.4
+
+This patch release introduces small but impactful security, compatibility, and usability improvements. It enhances OAuth behavior, adds byte support for the PDF pane, and fixes several rendering and import issues across backends and components. Thanks to @ahuang11, @dalthviz, @MarcSkovMadsen, and @philippjfr for their contributions.
+
+### Enhancements
+
+- Add support for `bytes` input to the `PDF` pane ([#8044](https://github.com/holoviz/panel/pull/8044))
+- Add `logout_url` for Auth0 to OAuth error page template ([#8036](https://github.com/holoviz/panel/pull/8036))
+
+### Security
+
+- Add authentication to files served from `--static-dirs` ([#8042](https://github.com/holoviz/panel/pull/8042))
+- Escape error messages shown on the OAuth error page fixing XSS vulnerability ([#8043](https://github.com/holoviz/panel/pull/8043))
+
+### Bug Fixes
+
+- Ensure `ReactComponent` forces a re-render after render step ([#8037](https://github.com/holoviz/panel/pull/8037))
+- Fix `this.mouse` bug in `ECharts` implementation ([#8041](https://github.com/holoviz/panel/pull/8041))
+- Fix incorrect import path in Django integration docs (`bokehjsdir` → `bokehjs_path`) ([#8040](https://github.com/holoviz/panel/pull/8040))
+- Update Bokeh/FastAPI extra dependency pin to ensure compatibility ([#8039](https://github.com/holoviz/panel/pull/8039))
+
 ## Version 1.7.3
 
 This patch release includes several critical stability improvements, JavaScript race condition fixes, and developer experience enhancements. It also introduces small but helpful UI features such as exception copying and better error feedback in CLI and ESM workflows. Many thanks to contributors @etihwo, @bsdz, @Coderambling, @hoxbro, @philippjfr, and @MarcSkovMadsen.
