@@ -272,6 +272,7 @@ const eventTransformCategories: any = new EventTransformCategories()
 
 Object.keys(eventTypeCategories).forEach((category) => {
   eventTypeCategories[category].forEach((type: any) => {
-    eventTransforms[type] = eventTransformCategories[category]
+    // Bind the method to the eventTransformCategories instance to ensure correct 'this'
+    eventTransforms[type] = eventTransformCategories[category].bind(eventTransformCategories)
   })
 })
