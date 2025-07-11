@@ -15,8 +15,8 @@
     <link rel="manifest" href="{{ base_url|default("", true) }}static/extensions/panel/images/site.webmanifest">
     <style>
       body {
-	display: flex;
-	flex-direction: column;
+        display: flex;
+        flex-direction: column;
         font-family: "Kumbh Sans", "Segoe UI", Arial, Helvetica, sans-serif;
         font-size: 16px;
         font-weight: 600;
@@ -24,7 +24,7 @@
         height: 100vh;
         margin: 0px;
         overflow: hidden;
-	padding: 0;
+        padding: 0;
       }
       .header {
         box-shadow: 0 .125rem .25rem 0 gray;
@@ -36,7 +36,7 @@
         padding: 1.5rem;
       }
       #panel-logo {
-	padding-right: 2em;
+        padding-right: 2em;
         width: 300px;
       }
       .error-area {
@@ -51,7 +51,7 @@
       }
       #error {
         font-size: 1.2em;
-	text-align: right;
+        text-align: left;
       }
       .content {
         align-items: center;
@@ -73,11 +73,11 @@
       <div class="header-content">
         <div>
           <img id="panel-logo" src="{{ base_url | default("", true) }}static/extensions/panel/images/logo_horizontal.png"/>
-	</div>
-	<div class="error-area">
+        </div>
+        <div class="error-area">
           <span id="error-type">{{ error_type|default("Error", true) }}</span>
-	  <span id="error">{{ error }}</span>
-	</div>
+          <span id="error">{{ error|escape }}</span>
+        </div>
       </div>
     </section>
     <div class="content">
