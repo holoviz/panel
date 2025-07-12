@@ -58,12 +58,14 @@ class NotificationAreaBase(param.Parameterized):
     max_notifications = param.Integer(default=5, doc="""
         The maximum number of notifications to display at once.""")
 
-    notifications = param.List(item_type=Notification)
+    notifications = param.List(item_type=Notification, doc="""
+        A list of notifications to display in the notification area.""")
 
     position = param.Selector(default='bottom-right', objects=[
         'bottom-right', 'bottom-left', 'bottom-center', 'top-left',
         'top-right', 'top-center', 'center-center', 'center-left',
-        'center-right'])
+        'center-right'], doc="""
+        Position of the notification area on the screen (e.g., 'top-right', 'bottom-left').""")
 
     __abstract = True
 
@@ -126,7 +128,14 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
              'color': 'white'
          }
         },
-    ])
+    ], doc="""
+        A list of notification types, each defined by a dictionary with keys:
+        - 'type': The type of notification (e.g., 'info', 'warning').
+        - 'background': The background color of the notification.
+        - 'icon': An icon configuration dictionary with keys:
+            - 'className': The CSS class for the icon.
+            - 'tagName': The HTML tag for the icon.
+            - 'color': The color of the icon.""")
 
     __javascript_raw__ = [f"{config.npm_cdn}/notyf@3/notyf.min.js"]
 

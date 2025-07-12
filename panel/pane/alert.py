@@ -31,7 +31,8 @@ class Alert(Markdown):
     >>> Alert('Some important message', alert_type='warning')
     """
 
-    alert_type = param.Selector(default="primary", objects=ALERT_TYPES)
+    alert_type = param.Selector(default="primary", objects=ALERT_TYPES, doc="""
+        The type of alert to display, which determines the styling and icon.""")
 
     priority: ClassVar[float | bool | None] = 0
 

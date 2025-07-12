@@ -504,9 +504,11 @@ class DatePicker(Widget):
     end = param.CalendarDate(default=None, doc="""
         Inclusive upper bound of the allowed date selection""")
 
-    disabled_dates = param.List(default=None, item_type=(date, str))
+    disabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make unavailable for selection.""")
 
-    enabled_dates = param.List(default=None, item_type=(date, str))
+    enabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make available for selection.""")
 
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -573,9 +575,11 @@ class DateRangePicker(Widget):
     end = param.CalendarDate(default=None, doc="""
         Inclusive upper bound of the allowed date selection""")
 
-    disabled_dates = param.List(default=None, item_type=(date, str))
+    disabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make unavailable for selection.""")
 
-    enabled_dates = param.List(default=None, item_type=(date, str))
+    enabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make available for selection.""")
 
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -764,7 +768,8 @@ class DatetimePicker(_DatetimePickerBase):
 
     value = param.Date(default=None)
 
-    mode = param.String('single', constant=True)
+    mode = param.String('single', constant=True, doc="""
+        The mode of the datetime picker, which is always 'single' for this widget.""")
 
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
@@ -799,7 +804,8 @@ class DatetimeRangePicker(_DatetimePickerBase):
     value = param.DateRange(default=None, doc="""
         The current value""")
 
-    mode = param.String('range', constant=True)
+    mode = param.String('range', constant=True, doc="""
+        The mode of the datetime picker, which is always 'range' for this widget.""")
 
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
@@ -1158,7 +1164,7 @@ class LiteralInput(Widget):
     """)
 
     type = param.ClassSelector(default=None, class_=(type, tuple),
-                               is_instance=True)
+                               is_instance=True, doc="The type of input for the literal input widget.")
 
     value = param.Parameter(default=None)
 

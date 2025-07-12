@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 
 class SelectBase(Widget):
 
-    options = param.ClassSelector(default=[], class_=(dict, list))
+    options = param.ClassSelector(default=[], class_=(dict, list), doc="List or dict of selectable options.")
 
     __abstract = True
 
@@ -177,7 +177,7 @@ class Select(SingleSelectBase):
     """
 
     description = param.String(default=None, doc="""
-        An HTML string describing the function of this component.""")
+        A description of the widget, which will be displayed as a tooltip.""")
 
     disabled_options = param.List(default=[], nested_refs=True, doc="""
         Optional list of ``options`` that are disabled, i.e. unusable and

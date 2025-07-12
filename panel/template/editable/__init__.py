@@ -28,7 +28,11 @@ class TemplateEditor(ReactiveHTML):
     the current layout state with Python.
     """
 
-    layout = param.List()
+    layout = param.List(doc="""
+        The current layout of the template, which is updated by the editor.
+        It is a list of dictionaries with the keys 'id', 'width', 'height', and 'visible'.
+        The 'id' corresponds to the component's model id, while 'width' and 'height'
+        are in percentage of the grid cell size.""")
 
     _scripts = {
         'render': """
