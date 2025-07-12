@@ -107,11 +107,14 @@ class CheckFilter(logging.Filter):
 
 class DebuggerButtons(ReactiveHTML):
 
-    terminal_output = param.String()
+    terminal_output = param.String(doc="""
+        The output of the terminal, which is updated by the debugger widget.""")
 
-    debug_name = param.String()
+    debug_name = param.String(doc="""
+        The name of the debugger, used to save the terminal output to a file.""")
 
-    clears = param.Integer(default=0)
+    clears = param.Integer(default=0, doc="""
+        The number of times the terminal has been cleared.""")
 
     _template: ClassVar[str] = """
     <div style="display: flex;">

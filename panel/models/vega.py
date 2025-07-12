@@ -17,10 +17,8 @@ from ..io.resources import bundled_files
 from ..util import classproperty
 
 VegaThemeType = Literal[
-    'excel', 'ggplot2', 'quartz', 'vox',
-    'fivethirtyeight', 'dark', 'latimes',
-    'urbaninstitute', 'googlecharts'
-]
+        'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
+        'latimes', 'urbaninstitute', 'googlecharts', 'powerbi', 'carbonwhite', 'carbong10', 'carbong90', 'carbong100']
 VegaTheme = enumeration(VegaThemeType)
 
 class VegaEvent(ModelEvent):
