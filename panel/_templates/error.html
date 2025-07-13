@@ -83,7 +83,7 @@
     <div class="content">
       <section class="error-message">
       {% block content %}
-      <h3>{{ error_msg }}</h3>
+      <h3>{{ error_msg|escape }}</h3>
       {% if oauth_logout_link %}
       <a href="{{ oauth_logout_link }}">Logout</a>
       {% endif %}
