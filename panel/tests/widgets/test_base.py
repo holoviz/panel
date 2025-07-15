@@ -206,4 +206,4 @@ def test_infer_params_attribute_error():
     with pytest.raises(ValueError) as excinfo:
         TextInput.from_param(MyComponent.name, name='Name Input')
 
-    assert str(excinfo.value) == "The parameter provided is not of type <class 'Parameter'>. Its of type <class 'str'>."
+    assert str(excinfo.value) == "TextInput.from_param only accepts Parameter types, provided value is of type <class 'str'>."
