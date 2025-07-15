@@ -64,13 +64,9 @@ class WidgetBase(param.Parameterized):
         Widget instance linked to the supplied parameter
         """
         from ..param import Param
-        try:
-            return Param.widget(parameter.name, parameter.owner, dict(type=cls, **params))
-        except AttributeError as e:
-            if not isinstance(parameter, param.Parameter):
-                raise ValueError(f"The parameter provided is not of type <class 'Parameter'>. Its of type {type(parameter)}.") from e
-            raise
-
+        if not isinstance(parameter, param.Parameter):
+            raise ValueError(f"{cls.__name__}.from_param only accepts Parameter types, provided value is of type {type(parameter)}.")
+        return Param.widget(parameter.name, parameter.owner, dict(type=cls, **params))
 
     @classmethod
     def _infer_params(cls, values, **params):
