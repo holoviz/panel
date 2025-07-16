@@ -197,3 +197,13 @@ def test_widget_from_param_instance_with_kwargs():
 
     widget.value = 4.3
     assert test.a == 4.3
+
+
+def test_infer_params_attribute_error():
+    class MyComponent(param.Parameterized):
+        name = param.String(default='World', doc="Name to greet")
+
+    with pytest.raises(ValueError) as excinfo:
+        TextInput.from_param(MyComponent.name, name='Name Input')
+
+    assert str(excinfo.value) == "TextInput.from_param only accepts Parameter types, provided value is of type <class 'str'>."
