@@ -102,7 +102,10 @@ def _cleanup_doc(doc, destroy=True):
         except Exception:
             pass
     if hasattr(doc.callbacks, '_change_callbacks'):
-        doc.callbacks._change_callbacks.clear()
+        if None in doc.callbacks._change_callbacks:
+            doc.callbacks._change_callbacks[None] = lambda event: event
+        else:
+            doc.callbacks._change_callbacks.clear()
 
     # Remove views
     from ..viewable import Viewable
