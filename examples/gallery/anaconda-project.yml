@@ -21,40 +21,37 @@ variables:
   PYVISTA_OFF_SCREEN: "true"
 
 packages: &pkgs
-  - python >=3.10.13
-  - panel >=1.5.0rc2
-  - bokeh_sampledata
-  - holoviews >=1.18.2
-  - nbconvert
-  - pandas >=2.2.0
-  - dask >=2024.3.1
-  - dask-expr >=1.0.5
-  - pillow >=10
-  - spatialpandas >=0.4.10
-  - scikit-learn >=1.4.0
-  - scikit-image >=0.22.0
-  - fastparquet >=2023.10.1
-  - hvplot >=0.9.2
-  - datashader >=0.16.0
-  - graphviz >=8.1.0
-  - networkx >=3.2.1
-  - ipywidgets >=8.1.1
-  - pygraphviz >=1.11
-  - plotly >=5.18.0
-  - altair >=5.2.0
+  - python >=3.12
+  - panel >=1.7.4
+  - bokeh_sampledata >=2024.2
+  - holoviews >=1.21.0
+  - nbconvert >=7.16.6
+  - pandas >=2.3.1
+  - dask >=2025.7.0
+  - pillow >=11.3.0
+  - spatialpandas >=0.5.0
+  - scikit-learn >=1.7.0
+  - scikit-image >=0.25.2
+  - fastparquet >=2024.11.0
+  - hvplot >=0.11.3
+  - datashader >=0.18.1
+  - graphviz >=12.2.1
+  - networkx >=3.5
+  - ipywidgets >=8.1.7
+  - pygraphviz >=1.14
+  - plotly >=6.2.0
+  - altair >=5.5.0
   - pydeck >=0.8.0
-  - pyvista >=0.43.2
+  - pyvista >=0.45.3
   - seaborn >=0.13.2
-  - xgboost >=2.0.3
-  - vtk =9.2.6
-  - pyvista >=0.43.2
-  - mesalib >=24.0.0
-  - numpy >=1.23.5,<1.24
-  - numba::llvmlite >=0.42.0
-  - pip:
-    - ipyvolume
-    - folium
-    - vega_datasets
+  - xgboost >=3.0.2
+  - vtk >=9.4.2
+  - pyvista >=0.45.3
+  - mesalib >=25.0.5
+  - numpy >=1.26.4
+  - ipyvolume >=0.6.3
+  - folium >=0.20.0
+  - vega_datasets >=0.9.0
 
 env_specs:
   prod:
