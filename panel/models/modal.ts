@@ -118,7 +118,7 @@ export class ModalView extends BkColumnView {
       this.model.open = true
       dialog.style.display = ""
       if (!first_open) {
-        requestAnimationFrame(() => { this.invalidate_layout() })
+        requestAnimationFrame(() => { this.invalidate_layout(); dialog.focus() })
         first_open = true
       }
     })
