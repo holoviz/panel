@@ -84,7 +84,7 @@ class SingleSelectBase(SelectBase):
     _allows_none: ClassVar[bool] = False
 
     _supports_embed: bool = True
-    _restrict: bool = False
+    _restrict: bool = True
 
     __abstract = True
 
