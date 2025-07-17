@@ -195,6 +195,7 @@ a.navbar-brand {
   display: none;
   top: 0;
   left: 0;
+  z-index: 9999;
 }
 
 .pn-modal-content {
