@@ -11,7 +11,7 @@ import uuid
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Literal,
+    IO, TYPE_CHECKING, Any, ClassVar, Literal, cast,
 )
 
 import jinja2
@@ -26,7 +26,7 @@ from ..config import _base_config, config, panel_extension
 from ..io.document import init_doc
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
-from ..io.notifications import NotificationArea
+from ..io.notifications import NotificationArea, NotificationAreaBase
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, JS_VERSION, ResourceComponent, _env,
     component_resource_path, get_dist_path, loading_css, parse_template,
@@ -235,6 +235,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 for sub in obj.select(Viewable):
                     submodel = sub._models.get(mref)
                     for stylesheet in getattr(sub, '_stylesheets', []):
+                        if isinstance(stylesheet, PurePath):
+                            stylesheet = str(stylesheet)
                         if not stylesheet.endswith('.css'):
                             continue
                         sts_name = f'extra_{os.path.basename(stylesheet)}'
@@ -339,8 +341,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         """
         Resolves the resources required for this template component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cdn: bool | Literal['auto']
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
@@ -375,7 +377,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 resource_types[rname].update(res)  # type: ignore
             else:
                 resource_types[rname] += [  # type: ignore
-                    r for r in res if res not in resource_types[rname]  # type: ignore
+                    r for r in res if r not in resource_types[rname]  # type: ignore
                 ]
 
         for rname, js in self.config.js_files.items():
@@ -410,7 +412,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = f'{dist_path}bundled/{tmpl_name}/{css_file}{version_suffix}'
             elif isurl(css):
-                css_files[f'base_{css_file}'] = css
+                css_files[f'base_{css_file}'] = cast("str", css)
             elif resolve_custom_path(self, css):
                 css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
 
@@ -432,7 +434,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / js_name).is_file():
                 js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
             elif isurl(js):
-                js_files[f'base_{js_name}'] = js
+                js_files[f'base_{js_name}'] = cast("str", js)
             elif resolve_custom_path(self, js):
                 js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
 
@@ -447,8 +449,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         """
         Saves Panel objects to file.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename: string or file-like object
            Filename to save the plot to
         title: string
@@ -486,8 +488,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         """
         Returns a servable Document with the template attached.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc : bokeh.Document (optional)
           The Bokeh Document to attach the panel to as a root,
           defaults to bokeh.io.curdoc()
@@ -512,8 +514,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         Serves the template and returns self to allow it to display
         itself in a notebook context.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         title : str
           A string title to give the Document (if served as an app)
         location : boolean or panel.io.location.Location
@@ -547,8 +549,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         Iterates over the Template and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
@@ -621,7 +623,7 @@ class BasicTemplate(BaseTemplate):
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the modal""")
 
-    notifications = param.ClassSelector(class_=NotificationArea, constant=True, doc="""
+    notifications = param.ClassSelector(class_=NotificationAreaBase, constant=True, doc="""
         The NotificationArea instance attached to this template.
         Automatically added if config.notifications is set, but may
         also be provided explicitly.""")
@@ -630,7 +632,7 @@ class BasicTemplate(BaseTemplate):
         URI of logo to add to the header (if local file, logo is
         base64 encoded as URI). Default is '', i.e. not shown.""")
 
-    favicon = param.String(default=FAVICON_URL, doc="""
+    favicon = param.String(default=None, doc="""
         URI of favicon to add to the document head (if local file, favicon is
         base64 encoded as URI).""")
 
@@ -790,7 +792,7 @@ class BasicTemplate(BaseTemplate):
                 raise ValueError(f"Could not embed logo {self.logo}.")
         else:
             logo = self.logo
-        if os.path.isfile(self.favicon):
+        if self.favicon and os.path.isfile(self.favicon):
             img = _panel(self.favicon)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
@@ -799,14 +801,16 @@ class BasicTemplate(BaseTemplate):
                 favicon = img._b64(imgdata)
             else:
                 raise ValueError(f"Could not embed favicon {self.favicon}.")
+        elif _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
+            favicon = CDN_DIST + "images/favicon.ico"
+        elif self.favicon:
+            favicon = self.favicon
         else:
-            if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
-                favicon = CDN_DIST + "images/favicon.ico"
-            else:
-                favicon = self.favicon
+            favicon = (f"{state.rel_path}/" if state.rel_path else "./") + "favicon.ico"
         self._render_variables['app_logo'] = logo
-        self._render_variables['app_favicon'] = favicon
-        self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
+        if favicon:
+            self._render_variables['app_favicon'] = favicon
+            self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width
@@ -967,8 +971,8 @@ class Template(BaseTemplate):
         Add panels to the Template, which may then be referenced by
         the given name using the jinja2 embed macro.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name : str
           The name to refer to the panel by in the template
         panel : panel.Viewable
@@ -990,8 +994,8 @@ class Template(BaseTemplate):
         Add parameters to the template, which may then be referenced
         by the given name in the Jinja2 template.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name : str
           The name to refer to the panel by in the template
         value : object

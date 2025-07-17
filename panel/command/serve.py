@@ -29,6 +29,7 @@ from bokeh.command.util import build_single_handler_applications
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.server.contexts import ApplicationContext
+from bokeh.settings import settings
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
@@ -37,10 +38,11 @@ from ..config import config
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
 from ..io.reload import record_modules, watch
+from ..io.resources import DIST_DIR
 from ..io.rest import REST_PROVIDERS
 from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
-from ..util import fullpath
+from ..util import edit_readonly, fullpath
 
 log = logging.getLogger(__name__)
 
@@ -104,6 +106,14 @@ class Serve(_BkServe):
 
     args = (
         tuple((arg, arg_obj) for arg, arg_obj in _BkServe.args if arg != '--dev') + (
+        ('--index-titles', Argument(
+            metavar="KEY=VALUE",
+            nargs='+',
+            help= ("Custom titles to use for Multi Page Apps specified as "
+                   "key=value pairs mapping from the application page slug "
+                   "to the title to show on the Multi Page App index page."
+                   ),
+        )),
         ('--static-dirs', Argument(
             metavar="KEY=VALUE",
             nargs='+',
@@ -114,6 +124,11 @@ class Serve(_BkServe):
             action = 'store',
             type   = str,
             help   = "Password or filepath to use with Basic Authentication."
+        )),
+        ('--cookie-path', Argument(
+            action = 'store',
+            type   = str,
+            help   = "The path the cookies should apply to ."
         )),
         ('--oauth-provider', Argument(
             action = 'store',
@@ -176,6 +191,11 @@ class Serve(_BkServe):
                 "Whether the user will be forced to go through login flow "
                 "or if they can access all applications as a guest."
             )
+        )),
+        ('--root-path', Argument(
+            action  = 'store',
+            type    = str,
+            help    = "The root path can be used to handle cases where Panel is served behind a proxy."
         )),
         ('--login-endpoint', Argument(
             action  = 'store',
@@ -339,6 +359,10 @@ class Serve(_BkServe):
         # Handle tranquilized functions in the supplied functions
         kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
 
+        if args.ico_path:
+            settings.ico_path.set_value(args.ico_path)
+        else:
+            kwargs["ico_path"] = DIST_DIR / "images" / "favicon.ico"
         static_dirs = parse_vars(args.static_dirs) if args.static_dirs else {}
         patterns += get_static_routes(static_dirs)
 
@@ -370,6 +394,12 @@ class Serve(_BkServe):
                     "found."
                 )
 
+        # Handle custom titles for Multi Page Apps index
+        if args.index_titles:
+            for item in args.index_titles:
+                slug, title = item.split('=', 1)
+                config.index_titles[slug] = title
+
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
             pattern = REST_PROVIDERS[args.rest_provider](files, args.rest_endpoint)
@@ -379,6 +409,17 @@ class Serve(_BkServe):
 
         config.global_loading_spinner = args.global_loading_spinner
         config.reuse_sessions = args.reuse_sessions
+
+        if args.root_path:
+            root_path = args.root_path
+            if not root_path.endswith('/'):
+                root_path += '/'
+            if not root_path.startswith('/'):
+                raise ValueError(
+                    '--root-path must start with a leading slash (`/`).'
+                )
+            with edit_readonly(state):
+                state.base_url = args.root_path
 
         if config.autoreload:
             for f in files:
@@ -559,6 +600,14 @@ class Serve(_BkServe):
         elif args.cookie_secret:
             config.cookie_secret = args.cookie_secret
 
+        if args.cookie_path and "PANEL_COOKIE_PATH" in os.environ:
+            raise ValueError(
+                "Supply cookie path either using environment "
+                "variable or via explicit argument, not both."
+            )
+        elif args.cookie_path:
+            config.cookie_path = args.cookie_path
+
         # Check only one auth is used.
         if args.oauth_provider and config.oauth_provider:
                 raise ValueError(
@@ -588,6 +637,7 @@ class Serve(_BkServe):
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
         if config.oauth_provider:
+            is_pam = config.oauth_provider
             config.oauth_refresh_tokens = args.oauth_refresh_tokens
             config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
@@ -597,7 +647,7 @@ class Serve(_BkServe):
                 )
             elif args.oauth_key:
                 config.oauth_key = args.oauth_key
-            elif not config.oauth_key:
+            elif not (config.oauth_key or is_pam):
                 raise ValueError(
                     "When enabling an OAuth provider you must supply "
                     "a valid oauth_key either using the --oauth-key "
@@ -620,7 +670,7 @@ class Serve(_BkServe):
                 )
             elif args.oauth_secret:
                 config.oauth_secret = args.oauth_secret
-            elif not config.oauth_secret:
+            elif not (config.oauth_secret or is_pam):
                 raise ValueError(
                     "When enabling an OAuth provider you must supply "
                     "a valid OAuth secret either using the --oauth-secret "
@@ -651,7 +701,7 @@ class Serve(_BkServe):
                         "base64-encoded bytes."
                     )
                 config.oauth_encryption_key = encryption_key
-            elif not config.oauth_encryption_key:
+            elif not (config.oauth_encryption_key or is_pam):
                 print("WARNING: OAuth has not been configured with an " # noqa: T201
                       "encryption key and will potentially leak "
                       "credentials in cookies and a JWT token embedded "
@@ -697,6 +747,9 @@ class Serve(_BkServe):
                 )
             elif args.oauth_jwt_user:
                 config.oauth_jwt_user = args.oauth_jwt_user
+
+        if config.cookie_path:
+            kwargs['cookie_path'] = config.cookie_path
 
         if config.cookie_secret:
             kwargs['cookie_secret'] = config.cookie_secret

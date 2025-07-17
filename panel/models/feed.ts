@@ -124,6 +124,7 @@ export class FeedView extends ColumnView {
       } else {
         if (is_new) {
           child_view.render()
+          child_view.r_after_render()
           if (is_appended) {
             target.append(child_view.el)
           } else if (is_prepended) {
@@ -169,6 +170,11 @@ export class FeedView extends ColumnView {
     }
 
     return created
+  }
+
+  override _update_layout(): void {
+    super._update_layout()
+    this.style.append(":host > div", {max_height: "unset"})
   }
 
   override render(): void {

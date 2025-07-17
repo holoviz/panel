@@ -33,7 +33,7 @@ from panel.io.reload import (
 )
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
-from panel.tests.util import get_open_ports
+from panel.tests.util import get_open_ports, reverse_proxy as reverse_proxy_ctx
 from panel.theme import Design
 
 CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
@@ -52,7 +52,7 @@ if os.name != 'nt':
 
 
 for e in os.environ:
-    if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", ):
+    if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", "PANEL_TEST_AUTH"):
         os.environ.pop(e, None)
 
 @cache
@@ -589,3 +589,9 @@ def df_strings():
     code = [f'{i:02d}' for i in range(len(descr))]
 
     return pd.DataFrame(dict(code=code, descr=descr))
+
+
+@pytest.fixture
+def reverse_proxy():
+    with reverse_proxy_ctx() as (port, proxy):
+        yield port, proxy

@@ -123,13 +123,8 @@ export class HTMLView extends PanelMarkupView {
     return [...super.stylesheets(), html_css]
   }
 
-  protected rerender() {
-    this.render()
-    this.invalidate_layout()
-  }
-
   set_html(html: string | null): void {
-    if (html === null) {
+    if (html === null || this.container == null) {
       return
     }
     this.container.innerHTML = html

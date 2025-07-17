@@ -34,7 +34,7 @@ from bokeh.io import curdoc as _curdoc
 from param.parameterized import Event, Parameterized
 from pyviz_comms import CommManager as _CommManager
 
-from ..util import decode_token, parse_timedelta
+from ..util import decode_token, edit_readonly, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from .cache import _Stack
     from .callbacks import PeriodicCallback
     from .location import Location
-    from .notifications import NotificationArea
+    from .notifications import NotificationAreaBase
     from .server import StoppableThread
 
     T = TypeVar("T")
@@ -158,8 +158,8 @@ class _state(param.Parameterized):
     _locations: ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
 
     # Notifications
-    _notification: ClassVar[NotificationArea | None] = None # Global location, e.g. for notebook context
-    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationArea]] = WeakKeyDictionary() # Server notifications indexed by document
+    _notification: ClassVar[NotificationAreaBase | None] = None # Global location, e.g. for notebook context
+    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationAreaBase]] = WeakKeyDictionary() # Server notifications indexed by document
 
     # Templates
     _template: ClassVar[BaseTemplate | None] = None
@@ -235,6 +235,9 @@ class _state(param.Parameterized):
     # Watchers
     _watch_events: ClassVar[list[asyncio.Event]] = []
 
+    # Types
+    _notification_type: ClassVar[type[NotificationAreaBase] | None] = None
+
     def __repr__(self) -> str:
         server_info = []
         for server, panel, _docs in self._servers.values():
@@ -304,7 +307,8 @@ class _state(param.Parameterized):
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
-        self.busy = self._busy_counter >= 1
+        with edit_readonly(self):
+            self.busy = self._busy_counter >= 1
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
@@ -511,8 +515,8 @@ class _state(param.Parameterized):
         >>>     return dataset
         >>> penguins = pn.state.as_cached('dataset-penguins', load_dataset, name='penguins')
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         key: (str)
           The key to cache the return value under.
         fn: (callable)
@@ -559,8 +563,8 @@ class _state(param.Parameterized):
         the period. Returns a PeriodicCallback object with the option
         to stop and start the callback.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: callable
           Callable function to be executed at periodic interval.
         period: int
@@ -592,8 +596,8 @@ class _state(param.Parameterized):
         """
         Cancel a task scheduled using the `state.schedule_task` method by name.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name: str
             The name of the scheduled task.
         wait: boolean
@@ -640,8 +644,8 @@ class _state(param.Parameterized):
         on the event loop ensuring the Bokeh Document lock is acquired
         and models can be modified directly.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: Callable[[], None]
           Callback to execute
         schedule: boolean | Literal['auto', 'thread']
@@ -671,8 +675,8 @@ class _state(param.Parameterized):
         """
         Returns the requested profiling output.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         profile: str
           The name of the profiling output to return.
 
@@ -703,8 +707,8 @@ class _state(param.Parameterized):
         """
         Logs user messages to the Panel logger.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         msg: str
           Log message
         level: str
@@ -720,8 +724,8 @@ class _state(param.Parameterized):
         """
         Callback that is triggered when a session has been served.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: Callable[[], None] | Coroutine[Any, Any, None]
            Callback that is executed when the application is loaded
         threaded: bool
@@ -729,7 +733,7 @@ class _state(param.Parameterized):
         """
         if self.curdoc is None or self._is_pyodide or self.loaded:
             if self._thread_pool:
-                self.execute(callback, schedule='threaded')
+                self.execute(callback, schedule='thread')
             else:
                 self.execute(callback, schedule=False)
         elif self.curdoc in self._onload:
@@ -769,8 +773,8 @@ class _state(param.Parameterized):
         """
         Publish parameters on a Parameterized object as a REST API.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         endpoint: str
           The endpoint at which to serve the REST API.
         parameterized: param.Parameterized
@@ -851,8 +855,8 @@ class _state(param.Parameterized):
         a task from within your application code, the task is only
         scheduled once.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name: str
           Name of the scheduled task
         callback: callable
@@ -944,8 +948,8 @@ class _state(param.Parameterized):
         Syncs the busy state with an indicator with a boolean value
         parameter.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         indicator: An BooleanIndicator to sync with the busy property
         """
         if not isinstance(indicator.param.value, param.Boolean):
@@ -1119,7 +1123,7 @@ class _state(param.Parameterized):
         return log_terminal
 
     @property
-    def notifications(self) -> NotificationArea | None:
+    def notifications(self) -> NotificationAreaBase | None:
         if self.curdoc is None:
             return self._notification
 
@@ -1131,13 +1135,17 @@ class _state(param.Parameterized):
         if not (config.notifications and is_session):
             return None if is_session else self._notification
 
-        from panel.io.notifications import NotificationArea
         js_events = {}
         if config.ready_notification:
             js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
         if config.disconnect_notification:
             js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
-        self._notifications[self.curdoc] = notifications = NotificationArea(js_events=js_events)
+
+        if _state._notification_type is None:
+            from panel.io.notifications import NotificationArea
+            _state._notification_type = NotificationArea
+        notifications = _state._notification_type(js_events=js_events)
+        self._notifications[self.curdoc] = notifications
         return notifications
 
     @property

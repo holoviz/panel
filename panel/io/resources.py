@@ -32,7 +32,7 @@ from bokeh.embed.bundle import (
 from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet
 from bokeh.resources import Resources as BkResources, _get_server_urls
-from bokeh.settings import settings as _settings
+from bokeh.settings import _Unset, settings as _settings
 from jinja2.environment import Environment
 from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
@@ -180,7 +180,10 @@ def set_resource_mode(mode):
         yield
     finally:
         RESOURCE_MODE = old_mode
-        _settings.resources.set_value(old_resources)
+        if old_resources is _Unset:
+            _settings.resources.unset_value()
+        else:
+            _settings.resources.set_value(old_resources)
 
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
@@ -219,8 +222,8 @@ def resolve_custom_path(
     """
     Attempts to resolve a path relative to some component.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: type | object
        The component to resolve the path relative to.
     path: str | os.PathLike
@@ -309,8 +312,8 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     - A path relative to the component
     - A raw css string
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     cls: type | object
         Object or class defining the stylesheet
     stylesheet: str
@@ -344,7 +347,7 @@ def patch_model_css(root, dist_url):
         patch_stylesheet(stylesheet, dist_url)
     if doc:
         doc.callbacks._held_events = events
-        if held:
+        if held or not state._loaded.get(doc):
             doc.callbacks._hold = held
         else:
             doc.unhold()
@@ -538,8 +541,8 @@ class ResourceComponent:
         """
         Resolves the resources required for this component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cdn: bool | Literal['auto']
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
@@ -663,9 +666,16 @@ class Resources(BkResources):
         """
         from ..reactive import ReactiveCustomBase
         for model in param.concrete_descendents(ReactiveCustomBase).values():
-            if not (getattr(model, resource_type, None) and model._loaded()):
+            cls_files = getattr(model, resource_type, None)
+            if not (cls_files and model._loaded()):
                 continue
+            for cls in model.__mro__[1:]:
+                supcls_files = getattr(cls, resource_type, [])
+                if supcls_files == cls_files:
+                    model = cls
             for resource in getattr(model, resource_type, []):
+                if isinstance(resource, pathlib.PurePath):
+                    continue
                 if state.rel_path:
                     resource = resource.lstrip(state.rel_path+'/')
                 if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
@@ -740,6 +750,7 @@ class Resources(BkResources):
 
         files = super().css_files
         self.extra_resources(files, '__css__')
+        self.extra_resources(files, '_bundle_css')
         css_files = self.adjust_paths([
             css for css in files if self.mode != 'inline' or not is_cdn_url(css)
         ])
@@ -802,17 +813,6 @@ class Resources(BkResources):
         js_files = self.adjust_paths([
             js for js in files if self.mode != 'inline' or not is_cdn_url(js)
         ])
-
-        # Load requirejs last to avoid interfering with other libraries
-        dist_dir = self.dist_dir
-        require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
-        if require_index:
-            requirejs = js_files.pop(require_index[0])
-            if any('ace' in jsf for jsf in js_files):
-                js_files.append(dist_dir + 'pre_require.js')
-            js_files.append(requirejs)
-            if any('ace' in jsf for jsf in js_files):
-                js_files.append(dist_dir + 'post_require.js')
         return js_files
 
     @property

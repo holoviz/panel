@@ -26,6 +26,7 @@ import param
 
 from param.parameterized import iscoroutinefunction
 
+from ..config import config
 from .state import state
 
 #---------------------------------------------------------------------
@@ -345,8 +346,8 @@ def compute_hash(func, hash_funcs, args, kwargs):
     """
     Computes a hash given a function and its arguments.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     func: callable
         The function to cache.
     hash_funcs: dict
@@ -378,7 +379,7 @@ def cache(
     policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
     ttl: float | None = ...,
     to_disk: bool = ...,
-    cache_path: str | os.PathLike = ...,
+    cache_path: str | os.PathLike | None = ...,
     per_session: bool = ...,
 ) -> Callable[[Callable[_P, _R]], _CachedFunc[Callable[_P, _R]]]:
     ...
@@ -391,7 +392,7 @@ def cache(
     policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
     ttl: float | None = ...,
     to_disk: bool = ...,
-    cache_path: str | os.PathLike = ...,
+    cache_path: str | os.PathLike | None = ...,
     per_session: bool = ...,
 ) -> _CachedFunc[Callable[_P, _R]]:
     ...
@@ -403,7 +404,7 @@ def cache(
     policy: Literal['FIFO', 'LRU', 'LFU'] = 'LRU',
     ttl: float | None = None,
     to_disk: bool = False,
-    cache_path: str | os.PathLike = './cache',
+    cache_path: str | os.PathLike | None = None,
     per_session: bool = False
 ) -> _CachedFunc[Callable[_P, _R]] | Callable[[Callable[_P, _R]], _CachedFunc[Callable[_P, _R]]]:
     """
@@ -411,8 +412,8 @@ def cache(
 
     For global caching across user sessions use `pn.state.as_cached`.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     func: callable
         The function to cache.
     hash_funcs: dict or None
@@ -433,7 +434,8 @@ def cache(
     to_disk: bool
         Whether to cache to disk using diskcache.
     cache_path: str
-        Directory to cache to on disk.
+        Directory to cache to on disk (if not provided default will be
+        inherited from config.cache_path).
     per_session: bool
         Whether to cache data only for the current session.
     """
@@ -441,6 +443,9 @@ def cache(
         raise ValueError(
             f"Cache policy must be one of 'FIFO', 'LRU' or 'LFU', not {policy}."
         )
+
+    if cache_path is None:
+        cache_path = config.cache_path
 
     hash_funcs = hash_funcs or {}
     if func is None:
@@ -541,14 +546,9 @@ def cache(
         # clear called before anything is cached.
         if func_hashes[0] is None:
             return
-        func_hash = func_hashes[0]
-        if to_disk:
-            from diskcache import Index
-            cache = Index(os.path.join(cache_path, func_hash))
+        cache = state._memoize_cache.get(func_hashes[0])
+        if cache:
             cache.clear()
-        else:
-            cache = state._memoize_cache.get(func_hash, {})
-        cache.clear()
 
     wrapped_func.clear = clear  # type: ignore[attr-defined]
 

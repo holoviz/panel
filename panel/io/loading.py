@@ -35,8 +35,8 @@ def start_loading_spinner(*objects):
     * disabling the panel
     * and changing the mouse cursor to a spinner when hovering over the panel
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     objects: tuple
         The panels to add the loading indicator to.
     """
@@ -49,8 +49,8 @@ def stop_loading_spinner(*objects):
     """
     Removes the loading indicating from the specified panel objects.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     objects: tuple
         The panels to remove the loading indicator from.
     """

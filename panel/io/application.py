@@ -207,7 +207,7 @@ def build_single_handler_application(path: str | os.PathLike, argv=None) -> Appl
         elif path.endswith(".py"):
             handler = ScriptHandler(filename=path, argv=argv)
         else:
-            raise ValueError(f"Expected a '.py' script or '.ipynb' notebook, got: {path!r}" % path)
+            raise ValueError(f"Expected a '.py' script or '.ipynb' notebook, got: {path!r}")
     else:
         raise ValueError(f"Path for Bokeh server application does not exist: {path}")
 
@@ -232,8 +232,8 @@ def build_applications(
     """
     Converts a variety of objects into a dictionary of Applications.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable, function or {str: Viewable}
         A Panel object, a function returning a Panel object or a
         dictionary mapping from the URL slug to either.

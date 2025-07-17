@@ -10,6 +10,10 @@ class DatetimePicker(InputWidget):
 
     '''
 
+    allow_input = Bool(default=False, help="""
+    Enable manual date input in the widget.
+    """)
+
     value = Nullable(String, help="""
     The initial or picked date.
     """)

@@ -32,6 +32,8 @@ class ESMEvent(DataEvent):
 
 class ReactiveESM(HTMLBox):
 
+    css_bundle = bp.Nullable(bp.String)
+
     bundle = bp.Nullable(bp.String)
 
     class_name = bp.String()
@@ -59,6 +61,10 @@ class ReactComponent(ReactiveESM):
     """
     Renders jsx/tsx based ESM bundles using React.
     """
+
+    root_node = bp.Nullable(bp.String)
+
+    use_shadow_dom = bp.Bool(True)
 
 
 class AnyWidgetComponent(ReactComponent):

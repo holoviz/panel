@@ -285,6 +285,28 @@ textarea.bk-input:not([type='file']) {
   border-bottom: 5px solid var(--mdc-theme-on-background);
 }
 
+/* FileDropper */
+
+.bk-input.filepond--root {
+  box-shadow:
+    0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  height: auto;
+}
+
+.bk-input.filepond--root:not([disabled]):hover {
+  border: none;
+  box-shadow:
+    0px 3px 5px -1px rgba(0, 0, 0, 0.2),
+    0px 6px 10px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 18px 0px rgba(0, 0, 0, 0.12);
+}
+
+.filepond--panel-root {
+  background-color: var(--mdc-theme-surface);
+}
+
 /* Select widgets */
 
 select:not([multiple]).bk-input,
@@ -534,10 +556,26 @@ div .tabulator .tabulator-header .tabulator-col {
 .pnx-tabulator.tabulator
   .tabulator-tableholder
   .tabulator-table
+  .tabulator-row {
+  min-height: 35px;
+}
+
+.pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row
+  .tabulator-cell {
+  min-height: 35px;
+  padding: 6px 10px;
+}
+
+.pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
   .tabulator-row.tabulator-selectable:hover {
   background-color: color-mix(
     in srgb,
-    var(--mdc-theme-primary) 25%,
+    var(--mdc-theme-primary) 75%,
     transparent
   );
   color: var(--mdc-theme-on-primary);
@@ -566,12 +604,34 @@ div .tabulator .tabulator-header .tabulator-col {
   color: var(--mdc-theme-on-primary);
 }
 
+.pnx-tabulator.tabulator .tabulator-header {
+  background-color: var(--mdc-theme-surface);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pnx-tabulator.tabulator
+    .tabulator-header
+    .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
+    background-color: var(--mdc-theme-surface);
+  }
+}
+
 .tabulator-row .tabulator-cell.tabulator-editing {
   border: 1px solid var(--mdc-theme-on-background);
 }
 
 .tabulator-row .tabulator-cell.tabulator-editing input {
   color: var(--mdc-theme-on-background);
+}
+
+.pnx-tabulator.tabulator .tabulator-footer .tabulator-page:not(disabled):hover {
+  background-color: var(--mdc-theme-primary-lightened);
+  color: var(--mdc-theme-on-background);
+}
+
+.pnx-tabulator.tabulator .tabulator-footer .tabulator-page.active {
+  background-color: var(--mdc-theme-primary);
+  color: var(--mdc-theme-on-primary);
 }
 
 /* Quill editor */

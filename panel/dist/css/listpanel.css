@@ -1,9 +1,12 @@
-:host(.scrollable) {
+:host(.scrollable),
+:host(.scrollable-vertical) {
   overflow: auto;
 }
 
-:host(.scrollable-vertical) {
-  overflow-y: auto;
+:host(.scrollable) > div,
+:host(.scroll) > div,
+:host(.scroll-vertical) > div {
+  max-height: unset;
 }
 
 :host(.scrollable-horizontal) {

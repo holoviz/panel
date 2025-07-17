@@ -131,8 +131,8 @@ def exec_with_return(
     Executes a code snippet and returns the resulting output of the
     last line.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     code: str
         The code to execute
     global_context: Dict[str, Any]

@@ -86,8 +86,8 @@ class widget(param.ParameterizedFunction):
     """
     Attempts to find a widget appropriate for a given value.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     name: str
         The name of the resulting widget.
     value: Any

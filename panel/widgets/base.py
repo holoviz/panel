@@ -5,8 +5,6 @@ parameters.
 """
 from __future__ import annotations
 
-import math
-
 from collections.abc import Callable, Mapping
 from typing import (
     TYPE_CHECKING, Any, ClassVar, TypeVar,
@@ -20,6 +18,7 @@ from bokeh.models.dom import HTML
 from param.parameterized import register_reference_transform
 
 from .._param import Margin
+from ..io.state import state
 from ..layout.base import Row
 from ..reactive import Reactive
 from ..util import unique_iterator
@@ -65,11 +64,9 @@ class WidgetBase(param.Parameterized):
         Widget instance linked to the supplied parameter
         """
         from ..param import Param
-        layout = Param(
-            parameter, widgets={parameter.name: dict(type=cls, **params)},
-            display_threshold=-math.inf
-        )
-        return layout[0]
+        if not isinstance(parameter, param.Parameter):
+            raise ValueError(f"{cls.__name__}.from_param only accepts Parameter types, provided value is of type {type(parameter)}.")
+        return Param.widget(parameter.name, parameter.owner, dict(type=cls, **params))
 
     @classmethod
     def _infer_params(cls, values, **params):
@@ -101,8 +98,8 @@ class WidgetBase(param.Parameterized):
         Creates an instance of this Widget where the parameters are
         inferred from the data.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         values: Iterable
             The values to infer the parameters from.
         params: dict
@@ -168,7 +165,7 @@ class Widget(Reactive, WidgetBase):
         if self._widget_type is not None and 'stylesheets' in params:
             css = getattr(self._widget_type, '__css__', [])
             params['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
+                ImportedStyleSheet(url=(f'{state.rel_path}/' if state.rel_path else '') + ss) for ss in css
             ] + params['stylesheets']
         if "description" in params:
             description = params["description"]
@@ -207,8 +204,8 @@ class Widget(Reactive, WidgetBase):
         Returns the bokeh model and a discrete set of value states
         for the widget.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         root: bokeh.model.Model
           The root model of the widget
         values: list (optional)
@@ -275,8 +272,8 @@ class CompositeWidget(Widget):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.

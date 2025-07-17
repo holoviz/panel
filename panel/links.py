@@ -8,7 +8,9 @@ import sys
 import weakref
 
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import (
+    TYPE_CHECKING, Any, TypeAlias, cast,
+)
 
 import param
 
@@ -23,12 +25,9 @@ from .viewable import Viewable
 
 if TYPE_CHECKING:
     from bokeh.model import Model
+    from holoviews.core.dimension import Dimensioned
 
-    try:
-        from holoviews.core.dimension import Dimensioned
-        JSLinkTarget: TypeAlias = Reactive | BkModel | Dimensioned
-    except Exception:
-        JSLinkTarget: TypeAlias = Reactive | BkModel # type: ignore
+    JSLinkTarget: TypeAlias = Reactive | BkModel | Dimensioned
     SourceModelSpec = tuple[str | None, str]
     TargetModelSpec = tuple[str | None, str | None]
 
@@ -70,6 +69,10 @@ def assert_source_syncable(source: Reactive, properties: Iterable[str]) -> None:
 def assert_target_syncable(
     source: Reactive, target: JSLinkTarget, properties: dict[str, str]
 ) -> None:
+    if not hasattr(target, "_rename") and not hasattr(target, "param"):
+        return
+
+    target = cast(Reactive, target)
     for k, p in properties.items():
         if k.startswith('event:'):
             continue
@@ -130,8 +133,8 @@ class Callback(param.Parameterized):
         arbitrary Javascript code and will make all objects referenced
         in the args available in the JS namespace.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         source (Reactive):
            The source object the callback is attached to.
         target (Reactive | Model, optional):
@@ -368,8 +371,8 @@ class CallbackGenerator:
         """
         Resolves a model given the supplied object and a model_spec.
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         root_model: bokeh.model.Model
           The root bokeh model often used to index models
         obj: holoviews.plotting.ElementPlot or bokeh.model.Model or panel.Viewable
@@ -388,16 +391,16 @@ class CallbackGenerator:
 
         model = None
         if 'holoviews' in sys.modules and is_bokeh_element_plot(obj):
-            if model_spec is None:
+            if model_spec is None and hasattr(obj, "state"):
                 return obj.state
             else:
-                model_specs = model_spec.split('.')
+                model_specs = str(model_spec).split('.')
                 handle_spec = model_specs[0]
                 if len(model_specs) > 1:
                     model_spec = '.'.join(model_specs[1:])
                 else:
                     model_spec = None
-                model = obj.handles[handle_spec]
+                model = obj.handles[handle_spec]  # type: ignore
         elif isinstance(obj, Viewable):
             model, _ = obj._models.get(root_model.ref['id'], (None, None))
         elif isinstance(obj, BkModel):
@@ -422,15 +425,7 @@ class CallbackGenerator:
         if src_model is None:
             return
         ref = root_model.ref['id']
-
         link_id = (id(link), src_spec, tgt_spec)
-        callbacks = (
-            list(src_model.js_property_callbacks.values()) + # type: ignore
-            list(src_model.js_event_callbacks.values()) # type: ignore
-        )
-        # Skip registering callback if already registered
-        if any(link_id in cb.tags for cbs in callbacks for cb in cbs):
-            return
 
         references['source'] = src_model
 
@@ -481,6 +476,14 @@ class CallbackGenerator:
         if isinstance(tgt_model, (ReactiveESM, ReactiveHTML)):
             if tgt_spec[1] in tgt_model.data.properties(): # type: ignore
                 references['target'] = tgt_model = tgt_model.data # type: ignore
+
+        callbacks = (
+            list(src_model.js_property_callbacks.values()) + # type: ignore
+            list(src_model.js_event_callbacks.values()) # type: ignore
+        )
+        # Skip registering callback if already registered
+        if any(link_id in cb.tags for cbs in callbacks for cb in cbs):
+            return
 
         self._initialize_models(link, source, src_model, src_spec[1], target, tgt_model, tgt_spec[1])
         self._process_references(references)
@@ -587,7 +590,7 @@ class JSCallbackGenerator(CallbackGenerator):
                 src_prop = src_specs[0]
                 if isinstance(source, Reactive):
                     src_prop = source._rename.get(src_prop, src_prop)
-                src_spec = (None, src_prop)
+                src_spec = (None, cast("str", src_prop))
         return [(src_spec, (None, None), link.code[spec])]
 
 

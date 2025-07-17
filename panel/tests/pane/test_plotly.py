@@ -191,11 +191,11 @@ def test_plotly_autosize(document, comm):
 @plotly_available
 def test_clean_relayout_data():
     relayout_data = {
-        "mapbox.center": {"lon": -73.59183434290809, "lat": 45.52341668343991},
-        "mapbox.zoom": 10,
-        "mapbox.bearing": 0,
-        "mapbox.pitch": 0,
-        "mapbox._derived": {
+        "map.center": {"lon": -73.59183434290809, "lat": 45.52341668343991},
+        "map.zoom": 10,
+        "map.bearing": 0,
+        "map.pitch": 0,
+        "map._derived": {
             "coordinates": [
                 [-73.92279747767401, 45.597934047192865],
                 [-73.26087120814279, 45.597934047192865],
@@ -206,10 +206,10 @@ def test_clean_relayout_data():
     }
     result = Plotly._clean_relayout_data(relayout_data)
     assert result == {
-        "mapbox.center": {"lon": -73.59183434290809, "lat": 45.52341668343991},
-        "mapbox.zoom": 10,
-        "mapbox.bearing": 0,
-        "mapbox.pitch": 0,
+        "map.center": {"lon": -73.59183434290809, "lat": 45.52341668343991},
+        "map.zoom": 10,
+        "map.bearing": 0,
+        "map.pitch": 0,
     }
 
 
@@ -276,7 +276,7 @@ def test_plotly_datetime_converted_2d_array(document, comm):
         'longitude': np.cumsum(np.random.randn(n_points) * 0.01) + 4.8952,  # Centered around Amsterdam
     })
 
-    fig = px.scatter_mapbox(data, lon='longitude', lat='latitude', custom_data='timestamp')
+    fig = px.scatter_map(data, lon='longitude', lat='latitude', custom_data='timestamp')
 
     p = Plotly(fig)
 

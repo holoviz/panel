@@ -12,7 +12,7 @@ from ..util import classproperty
 from .grid import GridSpec
 
 
-class GridStack(ReactiveHTML, GridSpec):  # type: ignore[misc]
+class GridStack(ReactiveHTML, GridSpec):  # type: ignore[override]
     """
     The `GridStack` layout allows arranging multiple Panel objects in a grid
     using a simple API to assign objects to individual grid cells or to a grid

@@ -14,11 +14,12 @@ from bokeh.models import ImportedStyleSheet
 from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
 
 from ..config import config
+from ..custom import PyComponent
 from ..io.resources import (
     JS_VERSION, ResourceComponent, component_resource_path, get_dist_path,
     resolve_custom_path,
 )
-from ..io.state import state
+from ..io.state import set_curdoc, state
 from ..util import relative_to
 
 if TYPE_CHECKING:
@@ -135,7 +136,13 @@ class Design(param.Parameterized, ResourceComponent):
                 if (old_models and model in old_models) or model in seen:
                     continue
                 seen.add(model)
-            self._apply_modifiers(o, ref, self.theme, isolated, cache, document)
+            if document:
+                # Theme hook may be applied during callback triggered from a different document
+                # we must set_curdoc to ensure style caches are not shared across documents
+                with set_curdoc(document):
+                    self._apply_modifiers(o, ref, self.theme, isolated, cache, document)
+            else:
+                self._apply_modifiers(o, ref, self.theme, isolated, cache, document)
 
     def _apply_hooks(self, viewable: Viewable, root: Model, changed: Viewable, old_models=None) -> None:
         from ..io.state import state
@@ -163,7 +170,8 @@ class Design(param.Parameterized, ResourceComponent):
                 stylesheets.extend(inherited)
                 continue
             resolved = resolve_stylesheet(defining_cls, stylesheet, 'modifiers')
-            stylesheets.append(resolved)
+            if resolved not in stylesheets:
+                stylesheets.append(resolved)
         return stylesheets
 
     @classmethod
@@ -270,7 +278,11 @@ class Design(param.Parameterized, ResourceComponent):
         }
         if 'stylesheets' in modifiers:
             params['stylesheets'] = modifiers['stylesheets'] + viewable.stylesheets
-        props = viewable._process_param_change(params)
+
+        if isinstance(viewable, PyComponent):
+            props = viewable._view__._process_param_change(params)
+        else:
+            props = viewable._process_param_change(params)
         doc = model.document or document
         if doc and 'dist_url' in doc._template_variables:
             dist_url = doc._template_variables['dist_url']
@@ -315,8 +327,8 @@ class Design(param.Parameterized, ResourceComponent):
         """
         Applies the Design to a Viewable and all it children.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         viewable: Viewable
             The Viewable to apply the Design to.
         root: Model
@@ -347,8 +359,8 @@ class Design(param.Parameterized, ResourceComponent):
         Applies the Bokeh theme associated with this Design system
         to a model.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         model: bokeh.model.Model
             The Model to apply the theme on.
         theme_override: str | None
@@ -371,8 +383,8 @@ class Design(param.Parameterized, ResourceComponent):
         """
         Resolves the resources required for this design component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cdn: bool | Literal['auto']
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
@@ -413,8 +425,8 @@ class Design(param.Parameterized, ResourceComponent):
         """
         Provides parameter values to apply the provided Viewable.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         viewable: Viewable
             The Viewable to return modifiers for.
         doc: Document | None

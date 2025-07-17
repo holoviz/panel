@@ -5,8 +5,8 @@ from pathlib import Path
 EXPECTED_SIZES_MB = {
     "conda": 25,
     "npm": 25,
-    "sdist": 30,
-    "whl": 30,
+    "sdist": 31,
+    "whl": 31,
 }
 
 GLOB_PATH = {

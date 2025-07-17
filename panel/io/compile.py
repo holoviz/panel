@@ -46,6 +46,11 @@ _ESM_IMPORT_ALIAS_RE = re.compile(r'(import\s+(?:\*\s+as\s+\w+|\{[^}]*\}|[\w*\s,
 _EXPORT_DEFAULT_RE = re.compile(r'\bexport\s+default\b')
 
 
+class BuildError(RuntimeError):
+    """
+    Error raised during esbuild.
+    """
+
 @contextmanager
 def setup_build_dir(build_dir: str | os.PathLike | None = None):
     original_directory = os.getcwd()
@@ -63,27 +68,61 @@ def setup_build_dir(build_dir: str | os.PathLike | None = None):
             shutil.rmtree(temp_dir)
 
 
-def check_cli_tool(tool_name: str) -> bool:
-    try:
-        cmd = shutil.which(tool_name)
-    except Exception:
-        cmd = None
-    if cmd:
-        return True
+def check_cli_tool(tool_name: str) -> str | None:
     if sys.platform == 'win32':
-        tool_name = f'{tool_name}.cmd'
-        return check_cli_tool(tool_name)
-    return False
+        return shutil.which(tool_name) or shutil.which(f'{tool_name}.cmd')
+    else:
+        return shutil.which(tool_name)
 
 
-def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[ReactiveESM]]:
+def npm_install(verbose, out):
+    npm_cmd = check_cli_tool('npm')
+    extra_args = []
+    if verbose:
+        extra_args.append('--log-level=debug')
+    install_cmd = [npm_cmd, 'install'] + extra_args
+    if out:
+        print(f"Running command: {' '.join(install_cmd)}\n")  # noqa
+    result = subprocess.run(install_cmd, check=True, capture_output=True, text=True)
+    if result.stdout and out:
+        print(f"npm output:\n{GREEN}{result.stdout}{RESET}")  # noqa
+    if result.stderr:
+        print(f"npm errors:\n{RED}{result.stderr}{RESET}")  # noqa
+
+
+def esbuild(components, file_loaders, minify, verbose, out):
+    esbuild_cmd = check_cli_tool("esbuild")
+    extra_args = []
+    if verbose:
+        extra_args.append('--log-level=debug')
+    if any(issubclass(c, ReactComponent) for c in components):
+        extra_args.append('--loader:.js=jsx')
+    if file_loaders:
+        extra_args+= [f'--loader:.{loader}=file' for loader in file_loaders]
+    if minify:
+        extra_args.append('--minify')
+    if out:
+        extra_args.append(f'--outfile={out}')
+    build_cmd = [esbuild_cmd, 'index.js', '--bundle', '--format=esm'] + extra_args
+    if verbose:
+        print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
+    result = subprocess.run(build_cmd+['--color=true'], check=True, capture_output=True, text=True)
+    if result.stderr:
+        if 'Done in' in result.stderr:
+            print(result.stderr)  # noqa
+            return result.stderr
+        raise BuildError(f"esbuild errored with:\n{result.stderr}")  # noqa
+    return result.stdout
+
+
+def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[type[ReactiveESM]]]:
     """
     Takes module specifications and extracts a set of components to bundle.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     module_spec: str
-         Module specification either as a dotted module or a path to a module.
+        Module specification either as a dotted module or a path to a module.
 
     Returns
     -------
@@ -114,7 +153,7 @@ def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[ReactiveESM
         module_file = module
     assert module_file is not None
 
-    bundles = defaultdict(list)
+    bundles: defaultdict[pathlib.Path, list[type[ReactiveESM]]] = defaultdict(list)
     module_path = pathlib.Path(module_file).parent
     for component in components:
         if component._bundle:
@@ -123,12 +162,13 @@ def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[ReactiveESM
                 path = (module_path / bundle_path).absolute()
             else:
                 path = bundle_path.absolute()
-            bundles[path].append(component)
         elif len(components) > 1 and not classes:
             component_module = module_name or component.__module__
-            bundles[module_path / f'{component_module}.bundle.js'].append(component)
+            path = module_path / f'{component_module}.bundle.js'
         else:
-            bundles[component._module_path / f'{component.__name__}.bundle.js'].append(component)
+            path = component._module_path / f'{component.__name__}.bundle.js'
+        if component not in bundles[path]:
+            bundles[path].append(component)
 
     return dict(bundles)
 
@@ -138,8 +178,8 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
     Creates a temporary module given a path-like object and finds all
     the ReactiveESM components defined therein.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     module_or_file : str | os.PathLike
         The path to the Python module.
     classes: list[str] | None
@@ -162,7 +202,11 @@ def find_components(module_or_file: str | os.PathLike, classes: list[str] | None
                 f'Compilation failed because supplied module errored on import:\n\n{runner.error}'
             )
     else:
-        module = importlib.import_module(str(module_or_file))
+        try:
+            sys.path.insert(0, os.getcwd())
+            module = importlib.import_module(str(module_or_file))
+        finally:
+            sys.path.pop(0)
     classes = classes or []
     components = []
     for v in module.__dict__.values():
@@ -186,8 +230,8 @@ def packages_from_code(esm_code: str) -> tuple[str, dict[str, str]]:
     """
     Extracts package version definitions from ESM code.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     esm_code : str
         The ESM code to search for package imports.
 
@@ -215,8 +259,8 @@ def replace_imports(esm_code: str, replacements: dict[str, str]) -> str:
     Replaces imports in the code which may be aliases with the actual
     package names.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     esm_code: str
         The ESM code to replace import names in.
     replacements: dict[str, str]
@@ -248,8 +292,8 @@ def packages_from_importmap(esm_code: str, imports: dict[str, str]) -> tuple[str
     """
     Extracts package version definitions from an import map.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     esm_code: str
         The ESM code to replace import names in.
     imports : dict[str, str]
@@ -281,8 +325,8 @@ def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, A
     importmap and the associated code and replaces URL import
     specifiers with package imports.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     component: type[ReactiveESM]
         The ReactiveESM component to extract a dependency definition from.
 
@@ -360,27 +404,42 @@ def generate_project(
     component_names = []
     dependencies = {}
     export_spec: ExportSpec = {}
+    shared_modules = {}
     index = ''
     for component in components:
+        try:
+            esm_path = component._esm_path(compiled='compiling')
+        except Exception:
+            esm_path = None
         name = component.__name__
-        esm_path = component._esm_path(compiled=False)
         if esm_path:
+            imprt = esm_path.stem
             ext = esm_path.suffix.lstrip('.')
         else:
+            imprt = name
             ext = 'jsx' if issubclass(component, ReactComponent) else 'js'
         code, component_deps = extract_dependencies(component)
         # Detect default export in component code and handle import accordingly
         if _EXPORT_DEFAULT_RE.search(code):
-            index += f'import {name} from "./{name}"\n'
+            index += f'import {name} from "./{imprt}"\n'
         else:
-            index += f'import * as {name} from "./{name}"\n'
+            index += f'import * as {name} from "./{imprt}"\n'
 
-        with open(path / f'{name}.{ext}', 'w') as component_file:
+        with open(path / f'{imprt}.{ext}', 'w') as component_file:
             component_file.write(code)
         # TODO: Improve merging of dependencies
         dependencies.update(component_deps)
         merge_exports(export_spec, component._exports__)
         component_names.append(name)
+        shared_modules.update(component._esm_shared)
+
+    for name, shared_module in shared_modules.items():
+        if isinstance(shared_module, os.PathLike):
+            code = shared_module.read_text(encoding='utf-8')
+        else:
+            code = shared_module
+        with open(path / f'{name}.js', 'w') as shared_file:
+            shared_file.write(code)
 
     # Create package.json and write to temp directory
     package_json = {"dependencies": dependencies}
@@ -399,15 +458,17 @@ def compile_components(
     components: list[type[ReactiveESM]],
     build_dir: str | os.PathLike | None = None,
     outfile: str | os.PathLike | None = None,
+    skip_npm: bool = False,
     minify: bool = True,
+    file_loaders: list[str] | None = None,
     verbose: bool = True
 ) -> int | str | None:
     """
     Compiles a list of ReactiveESM components into a single JavaScript bundle
     including their Javascript dependencies.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     components : list[type[ReactiveESM]]
         A list of `ReactiveESM` component classes to compile.
     build_dir : str | os.PathLike, optional
@@ -416,8 +477,12 @@ def compile_components(
     outfile : str | os.PathLike, optional
         The path to the output file where the compiled bundle will be saved.
         If None the compiled output will be returned.
+    skip_npm: bool
+        Whether to skip npm install (assumes build_dir is set)
     minify : bool, optional
         If True, minifies the compiled JavaScript bundle.
+    file_loaders: list[str]
+        List of file types (e.g. woff2 or svg) loaders to carry along
     verbose : bool, optional
         If True, prints detailed logs during the compilation process.
 
@@ -425,8 +490,12 @@ def compile_components(
     -------
     Returns the compiled bundle or None if outfile is provided.
     """
-    npm_cmd = 'npm.cmd' if sys.platform == 'win32' else 'npm'
-    if not check_cli_tool(npm_cmd):
+    if skip_npm and not (build_dir and (pathlib.Path(build_dir) / 'node_modules').is_dir()):
+        raise RuntimeError(
+            'npm install can only be skipped if build_dir with existing '
+            'node_modules is provided.'
+        )
+    if not check_cli_tool('npm'):
         raise RuntimeError(
             'Could not find `npm` or it generated an error. Ensure it is '
             'installed and can be run with `npm --version`. You can get it '
@@ -442,38 +511,18 @@ def compile_components(
     out = str(pathlib.Path(outfile).absolute()) if outfile else None
     with setup_build_dir(build_dir) as out_dir:
         generate_project(components, out_dir)
-        extra_args = []
-        if verbose:
-            extra_args.append('--log-level=debug')
-        install_cmd = [npm_cmd, 'install'] + extra_args
-        try:
-            if out:
-                print(f"Running command: {' '.join(install_cmd)}\n")  # noqa
-            result = subprocess.run(install_cmd, check=True, capture_output=True, text=True)
-            if result.stdout and out:
-                print(f"npm output:\n{GREEN}{result.stdout}{RESET}")  # noqa
-            if result.stderr:
-                print(f"npm errors:\n{RED}{result.stderr}{RESET}")  # noqa
-
-        except subprocess.CalledProcessError as e:
-            print(f"An error occurred while running npm install:\n{RED}{e.stderr}{RESET}")  # noqa
-            return None
-
-        if any(issubclass(c, ReactComponent) for c in components):
-            extra_args.append('--loader:.js=jsx')
-        if minify:
-            extra_args.append('--minify')
-        if out:
-            extra_args.append(f'--outfile={out}')
-        build_cmd = ['esbuild', 'index.js', '--bundle', '--format=esm'] + extra_args
-        try:
-            if verbose:
-                print(f"Running command: {' '.join(build_cmd)}\n")  # noqa
-            result = subprocess.run(build_cmd+['--color=true'], check=True, capture_output=True, text=True)
-            if result.stderr:
-                print(f"esbuild output:\n{result.stderr}")  # noqa
+        if not skip_npm:
+            try:
+                npm_install(verbose, out)
+            except subprocess.CalledProcessError as e:
+                print(f"An error occurred while running npm install:\n{RED}{e.stderr}{RESET}")  # noqa
                 return None
+
+        try:
+            ret = esbuild(components, file_loaders, minify, verbose, out)
+        except BuildError as e:
+            print(str(e))  # noqa
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while running esbuild: {e.stderr}")  # noqa
             return None
-        return 0 if outfile else result.stdout
+    return 0 if outfile else ret

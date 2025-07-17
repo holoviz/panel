@@ -41,8 +41,8 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.27.0'
-PYSCRIPT_VERSION = '2024.10.2'
+PYODIDE_VERSION = 'v0.27.5'
+PYSCRIPT_VERSION = '2025.2.1'
 WHL_PATH = DIST_DIR / 'wheels'
 PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
@@ -165,8 +165,8 @@ def script_to_html(
     Converts a Panel or Bokeh script to a standalone WASM Python
     application.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: str | Path | IO
         The filename of the Panel/Bokeh application to convert.
     requirements: 'auto' | List[str] | os.PathLike
@@ -481,8 +481,8 @@ def convert_apps(
     verbose: bool = True,
 ):
     """
-    Arguments
-    ---------
+    Parameters
+    ----------
     apps: str | List[str]
         The filename(s) of the Panel/Bokeh application(s) to convert.
     dest_path: str | pathlib.Path

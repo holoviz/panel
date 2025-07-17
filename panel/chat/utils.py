@@ -5,6 +5,7 @@ import re
 from collections.abc import Iterable
 from io import BytesIO
 from textwrap import indent
+from types import FunctionType
 from typing import Any, Union
 
 import param
@@ -48,6 +49,8 @@ def avatar_lookup(
 
     # now lookup the avatar
     avatar = updated_avatars.get(alpha_numeric_key, avatar)
+    if isinstance(avatar, FunctionType):
+        avatar = avatar()
     if isinstance(avatar, str):
         avatar = avatar.format(dist_path=CDN_DIST)
     return avatar
@@ -87,8 +90,8 @@ def stream_to(obj, token: str, replace: bool = False, object_panel: Viewable | N
     in a layout of `Column(Markdown(...), Image(...))` the Markdown
     pane is updated.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     token: str
         The token to stream to the text pane.
     replace: bool (default=False)

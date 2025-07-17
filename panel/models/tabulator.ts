@@ -375,6 +375,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _updating_page: boolean = false
   _updating_expanded: boolean = false
   _updating_sort: boolean = false
+  _updating_page_size: boolean = false
   _selection_updating: boolean = false
   _last_selected_row: any = null
   _initializing: boolean
@@ -387,6 +388,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
   _is_scrolling: boolean = false
+  _automatic_page_size: boolean = false
 
   override connect_signals(): void {
     super.connect_signals()
@@ -520,7 +522,7 @@ export class DataTabulatorView extends HTMLBoxView {
   override invalidate_render(): void {
     this.tabulator.destroy()
     this.tabulator = null
-    this.render()
+    this.rerender_()
   }
 
   redraw(columns: boolean = true, rows: boolean = true): void {
@@ -569,6 +571,7 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     this.redraw(true, true)
     this.restore_scroll()
+    this.recompute_page_size()
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -707,30 +710,6 @@ export class DataTabulatorView extends HTMLBoxView {
     }
 
     if (this.model.pagination) {
-      if (this.model.page_size == null) {
-        const table = this.shadow_el.querySelector(".tabulator-table")
-        if (table != null && holder != null) {
-          const table_height = holder.clientHeight
-          let height = 0
-          let page_size = null
-          const heights = []
-          for (let i = 0; i<table.children.length; i++) {
-            const row_height = table.children[i].clientHeight
-            heights.push(row_height)
-            height += row_height
-            if (height > table_height) {
-              page_size = i
-              break
-            }
-          }
-          if (height < table_height) {
-            page_size = table.children.length
-            const remaining = table_height - height
-            page_size += Math.floor(remaining / Math.min(...heights))
-          }
-          this.model.page_size = Math.max(page_size || 1, 1)
-        }
-      }
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
     }
@@ -741,7 +720,49 @@ export class DataTabulatorView extends HTMLBoxView {
       if (initializing) {
         this._resize_redraw()
       }
-    }, () => this.root.has_finished())
+    }, () => this.root.has_finished() && [...this._initialized_stylesheets.values()].every(v => v))
+  }
+
+  recompute_page_size(): void {
+    if (!this.model.pagination || this.model.page_size !== null || this._automatic_page_size) {
+      return
+    }
+    this._automatic_page_size = true
+    const responsive = this.model.sizing_mode && (this.model.sizing_mode.includes("height") || this.model.sizing_mode.includes("both"))
+    const holder = this.shadow_el.querySelector(".tabulator-tableholder")
+    const table = this.shadow_el.querySelector(".tabulator-table")
+    if (table != null && holder != null) {
+      const table_height = holder.clientHeight
+      let height = 0
+      let page_size = null
+      const heights = []
+      for (let i = 0; i<table.children.length; i++) {
+        const row_height = table.children[i].clientHeight
+        heights.push(row_height)
+        height += row_height
+        if (height > table_height) {
+          page_size = i
+          if (responsive) {
+            page_size -= 1
+          }
+          break
+        }
+      }
+      if (height < table_height) {
+        page_size = table.children.length
+        const remaining = table_height - height
+        page_size += Math.floor(remaining / Math.min(...heights))
+        if (responsive) {
+          page_size -= 2
+        }
+      }
+      this._updating_page_size = true
+      try {
+        this.model.page_size = Math.max(page_size || 1, 1)
+      } finally {
+        this._updating_page_size = false
+      }
+    }
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
@@ -898,8 +919,7 @@ export class DataTabulatorView extends HTMLBoxView {
       display(view.el)
       viewEl.appendChild(view.el)
       if (view.shadow_el.children.length === 0) {
-        view.render()
-        view.after_render()
+        this.rerender_(view)
       }
       if (resize) {
         this._update_children()
@@ -1018,6 +1038,9 @@ export class DataTabulatorView extends HTMLBoxView {
       this.columns.set(column.field, tab_column)
       if (tab_column.title == null) {
         tab_column.title = column.title
+      }
+      if (tab_column.headerTooltip === undefined) {
+        tab_column.headerTooltip = true
       }
       if (tab_column.width == null && column.width != null && column.width != 0) {
         tab_column.width = column.width
@@ -1316,6 +1339,9 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setPageSize(): void {
+    if (!this._updating_page_size) {
+      this._automatic_page_size = false
+    }
     this.tabulator.setPageSize(this.model.page_size)
     if (this.model.pagination === "local") {
       this.setStyles()

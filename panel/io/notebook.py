@@ -26,9 +26,10 @@ from bokeh.embed import server_document
 from bokeh.embed.elements import div_for_render_item, script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.models import Model
+from bokeh.models import (
+    ImportedStyleSheet, InlineStyleSheet, Model, UIElement,
+)
 from bokeh.resources import CDN, INLINE
-from bokeh.settings import _Unset, settings
 from bokeh.util.serialization import make_id
 from param.display import (
     register_display_accessor, unregister_display_accessor,
@@ -42,7 +43,8 @@ from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    PANEL_DIR, Resources, _env, bundle_resources, patch_model_css,
+    CDN_DIST, DIST_DIR, PANEL_DIR, Resources, _env, bundle_resources,
+    patch_model_css, set_resource_mode,
 )
 from .state import state
 
@@ -364,6 +366,23 @@ class Mimebundle:
     def _repr_mimebundle_(self, include=None, exclude=None):
         return self._mimebundle
 
+def replace_inline_css(stylesheet: ImportedStyleSheet):
+    if not stylesheet.url.startswith(CDN_DIST):
+        return stylesheet
+    path = DIST_DIR / stylesheet.url.replace(CDN_DIST, '')  # type: ignore
+    if not path.exists():
+        return stylesheet
+    return InlineStyleSheet(css=path.read_text(encoding='utf-8'))
+
+def patch_inline_stylesheets(model: UIElement):
+    stylesheets = []
+    for sts in model.stylesheets:
+        if isinstance(sts, ImportedStyleSheet):
+            sts = replace_inline_css(sts)
+        stylesheets.append(sts)
+    if stylesheets != model.stylesheets:
+        model.stylesheets = stylesheets
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -374,8 +393,8 @@ def push_notebook(*objs: Viewable) -> None:
     object.  This is required when modifying any Bokeh object directly
     in a notebook session.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     objs: panel.viewable.Viewable
     """
     for obj in objs:
@@ -402,11 +421,9 @@ def load_notebook(
     from IPython.display import publish_display_data
 
     resources = INLINE if inline and not state._is_pyodide else CDN
-    prev_resources = settings.resources(default="server")
-    user_resources = settings.resources._user_value is not _Unset
     nb_endpoint = not state._is_pyodide
-    resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
-    try:
+    with set_resource_mode(resources.mode):
+        resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
         bundle = bundle_resources(
             None, resources, notebook=nb_endpoint, reloading=reloading,
             enable_mathjax=enable_mathjax
@@ -423,11 +440,6 @@ def load_notebook(
             reloading=reloading,
             load_timeout=load_timeout
         )
-    finally:
-        if user_resources:
-            settings.resources = prev_resources
-        else:
-            settings.resources.unset_value()
 
     CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text(encoding='utf-8')
     shim = '<script type="esms-options">{"shimMode": true}</script>'
@@ -447,8 +459,8 @@ def show_server(panel: Any, notebook_url: str, port: int = 0) -> Server:
     """
     Displays a bokeh server inline in the notebook.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable
       Panel Viewable object to launch a server for
     notebook_url: str
@@ -502,8 +514,8 @@ def render_embed(
     this will only work well for simple apps with a relatively
     small state space.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     max_states: int
       The maximum number of states to embed
     max_opts: int
@@ -542,8 +554,8 @@ def ipywidget(obj: Any, doc=None, **kwargs: Any):
 
     Requires `jupyter_bokeh` to be installed.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: object
       Any Panel object or object which can be rendered with Panel
     doc: bokeh.Document

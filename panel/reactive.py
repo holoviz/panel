@@ -201,6 +201,12 @@ class Syncable(Renderable):
             if self._property_mapping.get(k, False) is not None and
             k not in self._manual_params
         }
+        if 'sizing_mode' in properties:
+            sm = properties['sizing_mode']
+            if sm and ('width' in sm or 'both' in sm) and self.min_width is None:
+                properties['min_width'] = 0
+            if sm and ('height' in sm or 'both' in sm) and self.min_height is None:
+                properties['min_height'] = 0
         if 'width' in properties and self.sizing_mode is None:
             properties['min_width'] = properties['width']
         if 'height' in properties and self.sizing_mode is None:
@@ -218,16 +224,17 @@ class Syncable(Renderable):
             ]
             stylesheets += properties['stylesheets']
             wrapped = []
+            if state.curdoc:
+                css_cache = state._stylesheets.get(state.curdoc, {})
+            else:
+                css_cache = {}
             for stylesheet in stylesheets:
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
-                    if state.curdoc:
-                        cache = state._stylesheets.get(state.curdoc, {})
+                    if stylesheet in css_cache:
+                        conv_stylesheet = css_cache[stylesheet]
                     else:
-                        cache = {}
-                    if stylesheet in cache:
-                        stylesheet = cache[stylesheet]
-                    else:
-                        cache[stylesheet] = stylesheet = ImportedStyleSheet(url=stylesheet)
+                        css_cache[stylesheet] = conv_stylesheet = ImportedStyleSheet(url=stylesheet)
+                    stylesheet = conv_stylesheet
                 wrapped.append(stylesheet)
             properties['stylesheets'] = wrapped
         return properties
@@ -443,27 +450,22 @@ class Syncable(Renderable):
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         named_events = {event.name: event for event in events}
-        applied = False
         for ref, (model, _) in self._models.copy().items():
             properties = self._update_properties(*events, doc=model.document)
             if not properties:
                 return
-            applied &= self._apply_update(named_events, properties, model, ref)
-            if ref not in state._views:
-                continue
-            doc = state._views[ref][2]
-            if applied and doc in self._in_process__events:
-                del self._in_process__events[doc]
+            self._apply_update(named_events, properties, model, ref)
 
     def _process_events(self, events: dict[str, Any]) -> None:
         self._log('received events %s', events)
         if any(e for e in events if e not in self._busy__ignore):
             with edit_readonly(state):
                 state._busy_counter += 1
-        if events:
-            self._in_process__events[state.curdoc] = events
-        params = self._process_property_change(events)
         try:
+            params = {}
+            if events and state.curdoc:
+                self._in_process__events[state.curdoc] = events
+            params = self._process_property_change(events)
             with edit_readonly(self):
                 self_params = {k: v for k, v in params.items() if '.' not in k}
                 with _syncing(self, list(self_params)):
@@ -478,7 +480,7 @@ class Syncable(Renderable):
                 with edit_readonly(obj):
                     with _syncing(obj, [p]):
                         obj.param.update(**{p: v})
-        except Exception:
+        except Exception as e:
             if len(params) > 1:
                 msg_end = f"changing properties {pformat(params)} \n"
             elif len(params) == 1:
@@ -486,8 +488,10 @@ class Syncable(Renderable):
             else:
                 msg_end = "\n"
             log.exception(f'Callback failed for object named {self.name!r} {msg_end}')
-            raise
+            raise e
         finally:
+            if state.curdoc and state.curdoc in self._in_process__events:
+                del self._in_process__events[state.curdoc]
             self._log('finished processing events %s', events)
             if any(e for e in events if e not in self._busy__ignore):
                 with edit_readonly(state):
@@ -669,9 +673,9 @@ class Reactive(Syncable, Viewable):
         if 'stylesheets' not in properties:
             return properties
         if doc:
-            state._stylesheets[doc] = cache = state._stylesheets.get(doc, {})
+            state._stylesheets[doc] = css_cache = state._stylesheets.get(doc, {})
         else:
-            cache = {}
+            css_cache = {}
         if doc and 'dist_url' in doc._template_variables:
             dist_url = doc._template_variables['dist_url']
         else:
@@ -680,10 +684,20 @@ class Reactive(Syncable, Viewable):
         for stylesheet in properties['stylesheets']:
             if isinstance(stylesheet, ImportedStyleSheet):
                 url = str(stylesheet.url)
-                if url in cache:
-                    stylesheet = cache[url]
+                if url in css_cache:
+                    cached = css_cache[url]
+                    # Confirm if stylesheet is valid, sometimes
+                    # the URL is seemingly set to None so we
+                    # replace the cached stylesheet if there is
+                    # a unset property error
+                    try:
+                        cached.url  # noqa
+                    except Exception:
+                        css_cache[url] = stylesheet
+                    else:
+                        stylesheet = cached
                 else:
-                    cache[url] = stylesheet
+                    css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
             stylesheets.append(stylesheet)
         properties['stylesheets'] = stylesheets
@@ -728,8 +742,8 @@ class Reactive(Syncable, Viewable):
         parameter to a callback which is triggered when the parameter
         changes.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         target: param.Parameterized
           The target object of the link.
         callbacks: dict | None
@@ -797,8 +811,8 @@ class Reactive(Syncable, Viewable):
         linking are exposed, but an explicit list of parameters can
         be provided.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         parameters: list(str)
            An explicit list of parameters to return controls for.
         jslink: bool
@@ -856,7 +870,7 @@ class Reactive(Syncable, Viewable):
         properties that trigger a callback and the JS code that gets
         executed.
 
-        Arguments
+        Parameters
         ----------
         args: dict
           A mapping of objects to make available to the JS callback
@@ -890,7 +904,7 @@ class Reactive(Syncable, Viewable):
         maps from the source parameter to a JS code snippet which is
         executed when the property changes.
 
-        Arguments
+        Parameters
         ----------
         target: panel.viewable.Viewable | bokeh.model.Model | holoviews.core.dimension.Dimensioned
           The target to link the value to.
@@ -933,7 +947,7 @@ class Reactive(Syncable, Viewable):
         """
         Send an event to the frontend
 
-        Arguments
+        Parameters
         ----------
         Event: Bokeh.Event
             The event to send to the frontend
@@ -941,7 +955,6 @@ class Reactive(Syncable, Viewable):
             Additional keyword arguments to pass to the event
             This will create the following event:
             Event(model=model, **event_kwargs)
-
         """
         for ref, (model, _) in self._models.copy().items():
             if ref not in state._views or ref in state._fake_roots:
@@ -1120,8 +1133,8 @@ class SyncableData(Reactive):
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         stream_value: (pd.DataFrame | pd.Series | Dict)
           The new value(s) to append to the existing value.
         rollover: (int | None, default=None)
@@ -1226,8 +1239,8 @@ class SyncableData(Reactive):
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         patch_value: (pd.DataFrame | pd.Series | Dict)
           The value(s) to patch the existing value with.
 
@@ -1596,9 +1609,20 @@ class ReactiveCustomBase(Reactive):
             ] + props['stylesheets']
         return props
 
-    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
+    @classmethod
+    def _patch_datamodel_ref(cls, props, ref):
+        """
+        Ensure all DataModels have reference to the root model to ensure
+        that they can be cleaned up correctly.
+        """
+        ref_str = f"__ref:{ref}"
+        for m in props.select({'type': DataModel}):
+            if ref_str not in m.tags:
+                m.tags.append(ref_str)
+
+    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> list[str]:
         if not msg:
-            return
+            return []
         prev_changing = self._changing.get(root.ref['id'], [])
         changing = []
         transformed = {}
@@ -1623,11 +1647,13 @@ class ReactiveCustomBase(Reactive):
         try:
             model.update(**transformed)
         finally:
-            if old:
+            if prev_changing:
                 self._changing[root.ref['id']] = prev_changing
             else:
                 del self._changing[root.ref['id']]
-
+        if isinstance(model, DataModel):
+            self._patch_datamodel_ref(model, root.ref['id'])
+        return changing
 
 
 class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
@@ -2068,21 +2094,6 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                 linked_properties.append(children_param)
         return tuple(linked_properties)
 
-    @classmethod
-    def _patch_datamodel_ref(cls, props, ref):
-        """
-        Ensure all DataModels have reference to the root model to ensure
-        that they can be cleaned up correctly.
-        """
-        if isinstance(props, dict):
-            for v in props.values():
-                cls._patch_datamodel_ref(v, ref)
-        elif isinstance(props, list):
-            for v in props:
-                cls._patch_datamodel_ref(v, ref)
-        elif isinstance(props, DataModel):
-            props.tags.append(f"__ref:{ref}")
-
     def _get_model(
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
@@ -2110,10 +2121,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
 
         ref = root.ref['id']
         data_model: DataModel = model.data # type: ignore
-        for v in data_model.properties_with_values():
-            if isinstance(v, DataModel):
-                v.tags.append(f"__ref:{ref}")
-        self._patch_datamodel_ref(data_model.properties_with_values(), ref)
+        self._patch_datamodel_ref(data_model, ref)
         model.update(children=self._get_children(doc, root, model, comm))
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
         self._link_props(data_model, self._linked_properties, doc, root, comm)
@@ -2142,11 +2150,6 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         )
         for cb in event_cbs:
             cb(event)
-
-    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
-        super()._set_on_model(msg, root, model)
-        if isinstance(model, DataModel):
-            self._patch_datamodel_ref(model.properties_with_values(), root.ref['id'])
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
@@ -2220,8 +2223,8 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         give it an id of the form `id="name"`, where `name` will
         be the node identifier.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         node: str
           Named node in the HTML identifiable via id of the form `id="name"`.
         event: str

@@ -48,9 +48,9 @@ class TestChatFeed:
 
     def test_update_header(self):
         chat_feed = ChatFeed(header="1")
-        assert chat_feed._card.header == "1"
+        assert chat_feed._card.header.object == "1"
         chat_feed.header = "2"
-        assert chat_feed._card.header == "2"
+        assert chat_feed._card.header.object == "2"
         chat_feed.header = HTML("<b>3</b>")
         assert chat_feed._card.header.object == "<b>3</b>"
 
@@ -73,7 +73,7 @@ class TestChatFeed:
             "hide_header": False
         }
         assert chat_feed._card.header_background == "red"
-        assert chat_feed._card.header == "Test"
+        assert chat_feed._card.header.object == "Test"
         assert not chat_feed._card.hide_header
 
     async def test_send(self, chat_feed):
@@ -1615,9 +1615,10 @@ class TestChatFeedPostHook:
 
     async def test_stream(self, chat_feed):
         def callback(contents, user, instance):
-            message = instance.stream("Echo: ")
+            message = instance.stream("Echo: ", trigger_post_hook=True)
             for char in contents:
                 message = instance.stream(char, message=message)
+            instance.trigger_post_hook()
 
         def append_callback(message, instance):
             logs.append(message.object)
@@ -1628,6 +1629,18 @@ class TestChatFeedPostHook:
         chat_feed.send("AB")
         await async_wait_until(lambda: chat_feed.objects[-1].object == "Echo: AB")
         await async_wait_until(lambda: logs == ["AB", "Echo: ", "Echo: AB"])
+
+    async def test_add_chat_step(self, chat_feed):
+        def append_callback(message, instance):
+            step = message.object[-1]
+            logs.append(f"# {step.title}\n{step.objects[0].object}")
+
+        logs = []
+        chat_feed.post_hook = append_callback
+        with chat_feed.add_step(title="Steps") as step:
+            for c in range(2):
+                step.stream(str(c))
+        await async_wait_until(lambda: logs == ["# Steps\n01"])
 
 
 @pytest.mark.xdist_group("chat")

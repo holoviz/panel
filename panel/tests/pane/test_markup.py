@@ -88,6 +88,17 @@ def test_markdown_pane_dedent(document, comm):
     pane.dedent = False
     assert model.text.startswith('&lt;pre&gt;&lt;code&gt;ABC')
 
+def test_markdown_pane_disable_anchors(document, comm):
+    pane = Markdown("# ABC")
+
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    assert model.text == '&lt;h1 id=&quot;abc&quot;&gt;ABC &lt;a class=&quot;header-anchor&quot; href=&quot;#abc&quot;&gt;¶&lt;/a&gt;&lt;/h1&gt;\n'
+
+    pane.disable_anchors = True
+    assert model.text == '&lt;h1&gt;ABC&lt;/h1&gt;\n'
+
 @pytest.mark.parametrize('renderer', ('markdown-it', 'markdown'))
 def test_markdown_pane_hard_line_break_default(document, comm, renderer):
     assert Markdown.hard_line_break is False

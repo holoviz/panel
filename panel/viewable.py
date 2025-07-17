@@ -30,6 +30,7 @@ import param  # type: ignore
 
 from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
+from bokeh.models import UIElement
 from bokeh.resources import Resources
 from jinja2 import Template
 from param import Undefined
@@ -44,9 +45,10 @@ from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    JupyterCommManagerBinary as JupyterCommManager, ipywidget, render_embed,
-    render_mimebundle, render_model,
+    JupyterCommManagerBinary as JupyterCommManager, ipywidget,
+    patch_inline_stylesheets, render_embed, render_mimebundle, render_model,
 )
+from .io.resources import set_resource_mode
 from .io.save import save
 from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
@@ -104,10 +106,10 @@ class Layoutable(param.Parameterized):
         Minimal height of the component (in pixels) if height is adjustable.""")
 
     max_width = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""")
+        Maximum width of the component (in pixels) if width is adjustable.""")
 
     max_height = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""")
+        Maximum height of the component (in pixels) if height is adjustable.""")
 
     margin = Margin(default=0, doc="""
         Allows to create additional space around the component. May
@@ -367,8 +369,8 @@ class ServableMixin:
         DOM if in a pyodide context and returns the Panel object to
         allow it to display itself in a notebook context.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         title : str
           A string title to give the Document (if served as an app)
         location : boolean or panel.io.location.Location
@@ -436,8 +438,8 @@ class ServableMixin:
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         title : str | None
           A string title to give the Document (if served as an app)
         port: int (optional, default=0)
@@ -536,7 +538,10 @@ class MimeRenderMixin:
         )
         self._comms[ref] = (comm, client_comm)
         manager.client_comm_id = client_comm.id
-        return render_mimebundle(model, doc, comm, manager, location)
+        return render_mimebundle(
+            model, doc, comm, manager, location,
+            resources='inline' if config.inline else 'cdn'
+        )
 
 
 class Renderable(param.Parameterized, MimeRenderMixin):
@@ -570,7 +575,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         Converts the objects being wrapped by the viewable into a
         bokeh model that can be composed in a bokeh layout.
 
-        Arguments
+        Parameters
         ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
@@ -591,8 +596,8 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         Clean up method which is called when a Viewable is destroyed.
 
-        Arguments
-        ---------
+        Pgarameters
+        -----------
         root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
@@ -612,6 +617,13 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         Panel object that was changed and any old, unchanged models
         so they can be skipped (see https://github.com/holoviz/panel/pull/4989)
         """
+        ref = root.ref['id']
+        if changed is not None and ref in changed._models and ref in state._views:
+            _, _, _, comm = state._views[ref]
+            if comm is not None and config.inline:
+                for model in changed._models[ref][0].select({'type': UIElement}):
+                    patch_inline_stylesheets(model)
+
         changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
         for hook in hooks:
@@ -666,8 +678,8 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         Returns the root model and applies pre-processing hooks
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
@@ -835,9 +847,18 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         doc = Document()
         comm = state._comm_manager.get_server_comm()
-        model = self._render_model(doc, comm)
+
+        resources = 'inline' if config.inline and not state._is_pyodide else 'cdn'
+        with set_resource_mode(resources):
+            model = self._render_model(doc, comm)
         if config.embed:
             return render_model(model)
+
+        if resources == 'inline':
+            for submodel in model.select({'type': UIElement}):
+                if not isinstance(submodel, UIElement):
+                    continue
+                patch_inline_stylesheets(submodel)
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 
@@ -861,8 +882,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         Makes a copy of the object sharing the same parameters.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         params: Keyword arguments override the parameters on the clone.
 
         Returns
@@ -879,8 +900,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
@@ -907,8 +928,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         this will only work well for simple apps with a relatively
         small state space.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         max_states: int
           The maximum number of states to embed
         max_opts: int
@@ -943,8 +964,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         Saves Panel objects to file.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename: str or file-like object
            Filename to save the plot to
         title: string
@@ -991,8 +1012,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         Returns a serveable bokeh Document with the panel attached
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc : bokeh.Document (optional)
           The bokeh Document to attach the panel to as a root,
           defaults to bokeh.io.curdoc()
@@ -1232,8 +1253,8 @@ def is_viewable_param(parameter: param.Parameter) -> bool:
     """
     Determines if a parameter uniquely identifies a Viewable type.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     parameter : param.Parameter
         The parameter to evaluate.
 
@@ -1244,7 +1265,7 @@ def is_viewable_param(parameter: param.Parameter) -> bool:
     """
     if isinstance(parameter, (Child, Children)):
         return True
-    if isinstance(parameter, param.ClassSelector) and _is_viewable_class_selector(parameter):
+    if isinstance(parameter, param.ClassSelector) and _is_viewable_class_selector(parameter) and parameter.is_instance:
         return True
     if isinstance(parameter, param.List) and _is_viewable_list(parameter):
         return True

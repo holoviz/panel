@@ -14,7 +14,7 @@ PERSPECTIVE_THEMES = [
     'pro', 'pro-dark', 'gruvbox', 'gruvbox-dark',
 ]
 
-PERSPECTIVE_VERSION = '2.9.0'
+PERSPECTIVE_VERSION = '3.6.1'
 
 THEME_PATH = f"@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
@@ -80,21 +80,24 @@ class Perspective(HTMLBox):
 
     title = Either(String(), Null())
 
-    __javascript_module_exports__ = ['perspective']
+    __javascript_module_exports__ = ['perspective', 'perspective_viewer']
 
     __javascript_modules_raw__ = [
         f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.js",
-        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.worker.js",
-        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.cpp.wasm",
         f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer.js",
-        f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective_bg.wasm",
         f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-datagrid.js",
         f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-d3fc.js",
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/wasm/perspective-js.js",
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/wasm/perspective-js.wasm",
+        f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/wasm/perspective-viewer.js",
+        f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/wasm/perspective-viewer.wasm",
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/wasm/perspective-server.wasm",
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/wasm/perspective-server.js"
     ]
 
     @classproperty
     def __javascript_modules__(cls):
-        return [js for js in bundled_files(cls, 'javascript_modules') if 'wasm' not in js and 'worker' not in js]
+        return [js for js in bundled_files(cls, 'javascript_modules') if 'wasm' not in js]
 
     @classproperty
     def __js_skip__(cls):

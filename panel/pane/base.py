@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, TypeVar,
+    TYPE_CHECKING, Any, ClassVar, TypeVar, cast,
 )
 
 import numpy as np
@@ -62,8 +62,8 @@ def panel(obj: Any, **kwargs) -> Viewable | ServableMixin:
 
     >>> pn.panel(some_python_object, width=500)
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: object
        Any object to be turned into a Panel
     **kwargs: dict
@@ -238,8 +238,8 @@ class PaneBase(Layoutable):
         the precedence of all types whose applies method declares that
         the object is supported.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         obj (object): The object type to return a Pane type for
 
         Returns
@@ -386,6 +386,7 @@ class Pane(PaneBase, Reactive):
                         parent.children[node] = new_models  # type: ignore
                         break
             elif isinstance(parent, _BkTabs):
+                parent.tabs = cast(list[_BkTabPanel], parent.tabs)
                 index = [tab.child for tab in parent.tabs].index(old_model)
                 old_tab = parent.tabs[index]  # type: ignore
                 props = dict(old_tab.properties_with_values(), child=new_model)
@@ -467,8 +468,8 @@ class Pane(PaneBase, Reactive):
         """
         Makes a copy of the Pane sharing the same parameters.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         object: Optional new object to render
         params: Keyword arguments override the parameters on the clone.
 
@@ -490,8 +491,8 @@ class Pane(PaneBase, Reactive):
         """
         Returns the root model and applies pre-processing hooks
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc: bokeh.document.Document
           Optional Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
@@ -648,8 +649,8 @@ class ReplacementPane(Pane):
         contents updating only changed parameters ensuring we don't
         have to trigger a full re-render of the entire component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         old: Reactive
           The Reactive component being updated or replaced.
         new: Reactive
@@ -772,8 +773,8 @@ class ReplacementPane(Pane):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: (type | callable | None)
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.

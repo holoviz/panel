@@ -39,8 +39,8 @@ def _scan_path(path: str, file_pattern: str = '*') -> tuple[list[str], list[str]
     filters the files with the file keyword, returning a list of sorted
     paths of all directories and files.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     path: str
         The path to search
     file_pattern: str
@@ -86,8 +86,8 @@ class BaseFileProvider:
         """
         Concrete classes must implement this method to list the content of a remote filesystem.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         path: str
             The path to search
 
@@ -144,9 +144,11 @@ class RemoteFileProvider(BaseFileProvider):
         prefix = ''
         if scheme:= urlparse(path).scheme:
             prefix = f'{scheme}://'
-        dirs = [f"{prefix}{d['name']}/" for d in raw_ls if d['type'] == 'directory' ]
+        dirs_fn = lambda x: f"{prefix}{x}{self.sep}" if ":" not in x else f"{x}{self.sep}"
+        dirs = [dirs_fn(d['name']) for d in raw_ls if d['type'] == 'directory' ]
         raw_glob = self.fs.glob(path+file_pattern, detail=True)
-        files = [f"{prefix}{d['name']}" for d in raw_glob.values() if d['type'] == 'file' ]
+        files_fn = lambda x: f"{prefix}{x}" if ":" not in x else x
+        files = [files_fn(d['name']) for d in raw_glob.values() if d['type'] == 'file' ]
         return dirs, files
 
 

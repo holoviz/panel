@@ -383,6 +383,17 @@ def test_property_change_does_not_boomerang(document, comm):
     assert model.value == 'B'
     assert text_input.value == 'C'
 
+def test_in_process_change_event_cleaned_up(document, comm):
+    checkbox = Checkbox(value=True)
+
+    model = checkbox.get_root(document, comm)
+    assert model.ref['id'] in checkbox._models
+
+    with set_curdoc(document):
+        checkbox._process_events({'active': True})
+
+    assert document not in checkbox._in_process__events
+
 def test_reactive_html_basic():
 
     class Test(ReactiveHTML):

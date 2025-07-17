@@ -91,7 +91,9 @@ def color_param_to_ppt(p, kwargs):
 
 def list_param_to_ppt(p, kwargs):
     item_type = bp.Any
-    if not isinstance(p.item_type, type):
+    if isinstance(p.item_type, tuple) and all(issubclass(t, pm.Parameterized) or t is dict for t in p.item_type):
+        return bp.List(bp.Either(bp.Dict(bp.String, bp.Any), bp.Instance(DataModel))), [(ParameterizedList, lambda ps: [create_linked_datamodel(p) for p in ps])]
+    elif not isinstance(p.item_type, type):
         pass
     elif issubclass(p.item_type, Viewable):
         item_type = bp.Instance(Model)
@@ -153,9 +155,9 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
     Dynamically creates a Bokeh DataModel class from a Parameterized
     object.
 
-    Arguments
-    ---------
-    parameterized: param.Parameterized
+    Parameters
+    ----------
+    parameterized: param.Parameterized | type[param.Parameterized]
         The Parameterized class or instance from which to create the
         DataModel
     name: str or None
@@ -172,7 +174,6 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
     -------
     DataModel
     """
-
     properties = {}
     for pname in parameterized.param:
         if pname in ignore:
@@ -182,8 +183,8 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
             continue
         ptype = types.get(pname, type(p))
         prop = PARAM_MAPPING.get(ptype)
-        if isinstance(parameterized, Syncable):
-            pname = parameterized._rename.get(pname, pname)
+        if isinstance(parameterized, Syncable) or (isinstance(parameterized, type) and issubclass(parameterized, Syncable)):
+            pname = parameterized._property_mapping.get(pname, pname)
         if pname == 'name' or pname is None:
             continue
         nullable = getattr(p, 'allow_None', False)
@@ -217,8 +218,8 @@ def create_linked_datamodel(obj, root=None):
     Creates a Bokeh DataModel from a Parameterized class or instance
     which automatically links the parameters bi-directionally.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     obj: param.Parameterized
        The Parameterized class to create a linked DataModel for.
 

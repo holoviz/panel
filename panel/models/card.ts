@@ -1,7 +1,8 @@
-import {Column, ColumnView} from "./column"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import * as DOM from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
+
+import {Column, ColumnView} from "./column"
 
 import card_css from "styles/models/card.css"
 
@@ -42,7 +43,7 @@ export class CardView extends ColumnView {
     return [...super.stylesheets(), card_css]
   }
 
-  protected override *_stylesheets(): Iterable<DOM.StyleSheet> {
+  protected override *_stylesheets(): Iterable<DOM.StyleSheetLike> {
     yield* super._stylesheets()
     yield this.collapsed_style
   }
@@ -99,7 +100,7 @@ export class CardView extends ColumnView {
       header_el.style.color = header_color != null ? header_color : ""
       this.shadow_el.appendChild(header_el)
       header.render()
-      header.after_render()
+      header.r_after_render()
     }
 
     if (this.model.collapsed) {
@@ -109,7 +110,7 @@ export class CardView extends ColumnView {
     for (const child_view of this.child_views.slice(1)) {
       this.shadow_el.appendChild(child_view.el)
       child_view.render()
-      child_view.after_render()
+      child_view.r_after_render()
     }
   }
 

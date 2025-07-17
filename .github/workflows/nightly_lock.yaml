@@ -9,13 +9,13 @@ env:
 
 jobs:
   pixi_lock:
+    if: ${{ !github.event.repository.fork }}
     name: Pixi lock
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
       - name: Upload lock-file to S3
-        if: '!github.event.pull_request.head.repo.fork'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

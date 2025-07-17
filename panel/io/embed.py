@@ -188,8 +188,8 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     be replayed when exported. The state is recorded on a State model
     which is attached as an additional root on the Document.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: panel.reactive.Reactive
       The Reactive component being exported
     model: bokeh.model.Model

@@ -180,7 +180,7 @@ def capture_code_cell(cell):
 
     if not parses:
         # Skip cell if it cannot be parsed
-        log.warn(
+        log.warning(
             "The following cell did not contain valid Python syntax "
             f"and was skipped:\n\n{cell['source']}"
         )
@@ -226,6 +226,10 @@ def autoreload_handle_exception(handler, module, e):
         handle_exception(handler, e)
         return
 
+    # Print to console
+    traceback.print_exception(e)
+
+    from ..layout import Column
     from ..pane import Alert
 
     # Clean up module
@@ -235,13 +239,88 @@ def autoreload_handle_exception(handler, module, e):
     except ValueError:
         pass
 
-    # Serve error
+    # Format error message and traceback
     e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
     tb = html.escape(traceback.format_exc()).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-    Alert(
-        f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
-        alert_type='danger', margin=5, sizing_mode='stretch_width'
-    ).servable()
+
+    # Create full error text for copying
+    full_error_text = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+
+    # Create copy button using ButtonIcon with absolute positioning
+    copy_button = _create_copy_button(full_error_text)
+
+    # Create the main error alert with relative positioning
+    error_alert = Alert(
+        f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto; margin-top: 20px;">{tb}</pre>',
+        alert_type='danger',
+        margin=5,
+        sizing_mode='stretch_width',
+        styles={'position': 'relative'}
+    )
+
+    # Create container with the alert and positioned button
+    error_container = Column(
+        error_alert,
+        copy_button,
+        margin=0,
+        sizing_mode='stretch_width',
+        styles={'position': 'relative'}
+    )
+
+    error_container.servable()
+
+def _create_copy_button(full_error_text):
+    from ..widgets import ButtonIcon
+    copy_button = ButtonIcon(
+        icon="clipboard",
+        active_icon="check",
+        # description="Copy error to clipboard", # disabled because it displays outside window
+        size="1.5em",
+        toggle_duration=2000,
+        styles={
+            'position': 'absolute',
+            'top': '7px',
+            'right': '3px',
+            'z-index': '1000',
+            'background-color': 'var(--panel-surface-color)',
+            'color': 'var(--panel-on-surface-color)',
+            'border-radius': '3px',
+            'padding': '2px',
+        }, height=25, width=23,
+    )
+
+    # Add JavaScript callback to handle clipboard copy
+    copy_button.js_on_click(args={'error_text': full_error_text}, code="""
+    const errorText = error_text;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(errorText).catch(err => {
+            console.error('Failed to copy to clipboard:', err);
+            // Fallback method
+            fallbackCopyTextToClipboard(errorText);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(errorText);
+    }
+    function fallbackCopyTextToClipboard(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+        }
+        document.body.removeChild(textArea);
+    }
+    """)
+
+    return copy_button
 
 def run_app(handler, module, doc, post_run=None, allow_empty=False):
     try:
@@ -308,8 +387,8 @@ def parse_notebook(
     """
     Parses a notebook on disk and returns a script.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: str | os.PathLike
       The notebook file to parse.
     preamble: list[str]
@@ -448,7 +527,7 @@ class PanelCodeHandler(CodeHandler):
 
         if runner:
             self._runner = runner
-        elif source:
+        elif source is not None:
             self._runner = PanelCodeRunner(source, filename, argv, package=package)
         else:
             raise ValueError("Must provide source code to PanelCodeHandler")
@@ -598,8 +677,8 @@ class NotebookHandler(PanelCodeHandler):
         found in the notebook and lays them out according to the
         cell metadata (if present).
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         doc (Document)
             A ``Document`` to render the template into
         path (str):
@@ -676,8 +755,8 @@ class NotebookHandler(PanelCodeHandler):
     def modify_document(self, doc: Document) -> None:
         """Run Bokeh application code to update a ``Document``
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         doc (Document) : a ``Document`` to update
         """
         path = self._runner._path

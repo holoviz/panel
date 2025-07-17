@@ -162,7 +162,6 @@ export class PerspectiveView extends HTMLBoxView {
 
   override render(): void {
     super.render()
-    this.worker = (window as any).perspective.worker()
     const container = div({
       class: "pnx-perspective-viewer",
       style: {
@@ -170,53 +169,73 @@ export class PerspectiveView extends HTMLBoxView {
       },
     })
     this._current_plugin = this.model.plugin
-    container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>"
-    this.perspective_element = container.children[0]
-
-    const themesArray = Object.values(THEMES)
-    const filteredThemes = themesArray.filter(t => t !== this.model.theme)
-    const orderedThemes = [this.model.theme, ...filteredThemes]
-    this.perspective_element.resetThemes(orderedThemes).catch(() => {})
 
     set_size(container, this.model)
     this.shadow_el.appendChild(container)
 
-    this.worker.table(this.model.schema).then((table: any) => {
-      this.table = table
-      this.table.update(this.data)
-      this.perspective_element.load(this.table)
+    new Promise((resolve, reject) => {
+      const start = Date.now()
+      const timeout = 5000
+      const interval = 100
 
-      const plugin_config = {
-        ...this.model.plugin_config,
-        editable: this.model.editable,
-        selectable: this.model.selectable,
+      const check = () => {
+        if ((window as any).perspective_viewer !== undefined) {
+          resolve(null)
+        } else if (Date.now() - start > timeout) {
+          reject(new Error("Timed out waiting for window.perspective_viewer"))
+        } else {
+          setTimeout(check, interval)
+        }
       }
+      check()
+    }).then(() => {
+      (window as any).perspective.worker().then((worker: any) => {
+        this.worker = worker
+        worker.table(this.model.schema).then((table: any) => {
+          this.table = table
+          this.table.update(this.data)
+          container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>"
+          this.perspective_element = container.children[0]
 
-      this.perspective_element.restore({
-        aggregates: this.model.aggregates,
-        columns: this.model.columns,
-        columns_config: this.model.columns_config,
-        expressions: this.model.expressions,
-        filter: this.model.filters,
-        split_by: this.model.split_by,
-        group_by: this.model.group_by,
-        plugin: PLUGINS[this.model.plugin],
-        plugin_config,
-        settings: this.model.settings,
-        sort: this.model.sort,
-        theme: THEMES[this.model.theme ],
-        title: this.model.title,
-      }).catch(() => {})
+          const themesArray = Object.values(THEMES)
+          const filteredThemes = themesArray.filter(t => t !== this.model.theme)
+          const orderedThemes = [this.model.theme, ...filteredThemes]
+          this.perspective_element.resetThemes(orderedThemes).catch(() => {})
 
-      this.perspective_element.save().then((config: any) => {
-        this._current_config = config
+          this.perspective_element.load(this.table)
+          const plugin_config = {
+            ...this.model.plugin_config,
+            editable: this.model.editable,
+            selectable: this.model.selectable,
+          }
+
+          this.perspective_element.restore({
+            aggregates: this.model.aggregates,
+            columns: this.model.columns,
+            columns_config: this.model.columns_config,
+            expressions: this.model.expressions,
+            filter: this.model.filters,
+            split_by: this.model.split_by,
+            group_by: this.model.group_by,
+            plugin: PLUGINS[this.model.plugin],
+            plugin_config,
+            settings: this.model.settings,
+            sort: this.model.sort,
+            theme: THEMES[this.model.theme ],
+            title: this.model.title,
+          }).catch(() => {})
+
+          this.perspective_element.save().then((config: any) => {
+            this._current_config = config
+          })
+          this._config_listener = () => this.sync_config()
+          this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
+          this.perspective_element.addEventListener("perspective-click", (event: any) => {
+            this.model.trigger_event(new PerspectiveClickEvent(event.detail.config, event.detail.column_names, event.detail.row))
+          })
+          this._loaded = true
+        })
       })
-      this._config_listener = () => this.sync_config()
-      this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
-      this.perspective_element.addEventListener("perspective-click", (event: any) => {
-        this.model.trigger_event(new PerspectiveClickEvent(event.detail.config, event.detail.column_names, event.detail.row))
-      })
-      this._loaded = true
     })
   }
 

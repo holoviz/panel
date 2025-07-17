@@ -91,7 +91,7 @@ def main(args: list[str] | None = None):
             try:
                 ret = parsed_args.invoke(parsed_args)
             except Exception as e:
-                if config.autoreload:
+                if config.autoreload or config.log_level in ("DEBUG", "INFO"):
                     raise e
                 die("ERROR: " + str(e))
         else:

@@ -228,13 +228,17 @@ class BaseTable(ReactiveData, Widget):
             elif col in self.indexes:
                 if len(self.indexes) == 1:
                     data = df.index
+                elif df.index.nlevels == 1:
+                    # Look in the column with the tuple format
+                    index_col = tuple([col[: -(df.columns.nlevels - 1)]] + [""] * (df.columns.nlevels - 1))
+                    data = df[index_col]
                 else:
                     data = df.index.get_level_values(self.indexes.index(col))
 
             if isinstance(data, pd.DataFrame):
                 raise ValueError("DataFrame contains duplicate column names.")
 
-            col_kwargs = {}
+            col_kwargs: dict[str, Any] = {}
             kind = data.dtype.kind
             editor: CellEditor
             formatter: CellFormatter | None = self.formatters.get(col)
@@ -271,7 +275,7 @@ class BaseTable(ReactiveData, Widget):
                         date_format = '%Y-%m-%d %H:%M:%S'
                     formatter = DateFormatter(format=date_format, text_align='right')
                 else:
-                    params = {}
+                    params: dict[str, Any] = {}
                     if BOKEH_GE_3_6:
                         params['null_format'] = ''
                     formatter = StringFormatter(**params)
@@ -314,9 +318,11 @@ class BaseTable(ReactiveData, Widget):
             elif col in self.indexes and col.startswith('level_'):
                 title = ''
 
+            if formatter:
+                col_kwargs["formatter"] = formatter
+
             column = TableColumn(field=str(col_name), title=title,
-                                 editor=editor, formatter=formatter,
-                                 **col_kwargs)
+                                 editor=editor, **col_kwargs)
             columns.append(column)
         return columns
 
@@ -385,7 +391,7 @@ class BaseTable(ReactiveData, Widget):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         properties = self._get_properties(doc)
-        model = self._widget_type(**properties)  # type: ignore
+        model = cast(Model, self._widget_type(**properties))  # type: ignore[misc]
         root = root or model
         self._link_props(model.source, ['data'], doc, root, comm)
         self._link_props(model.source.selected, ['indices'], doc, root, comm)
@@ -609,8 +615,8 @@ class BaseTable(ReactiveData, Widget):
                   scalars and the filter will check if the values
                   in the column match any of the items in the list.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filter: Widget, param.Parameter or FunctionType
             The value by which to filter the DataFrame along the
             declared column, or a function accepting the DataFrame to
@@ -673,6 +679,7 @@ class BaseTable(ReactiveData, Widget):
         df = self._filter_dataframe(df, header_filters=False)
         if df is None:
             return [], {}
+        indexes: list[Any]
         if isinstance(self.value.index, pd.MultiIndex):
             indexes = [
                 f'level_{i}' if n is None else n
@@ -681,6 +688,8 @@ class BaseTable(ReactiveData, Widget):
         else:
             default_index = ('level_0' if 'index' in df.columns else 'index')
             indexes = [df.index.name or default_index]
+        if df.columns.nlevels > 1 and len(indexes) > 1:
+            indexes = [i + "_" * (df.columns.nlevels - 1) for i in indexes]
         data = ColumnDataSource.from_df(df.reset_index() if len(indexes) > 1 else df)
         if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
@@ -704,10 +713,13 @@ class BaseTable(ReactiveData, Widget):
         if self.value is None or not self.show_index:
             return []
         elif isinstance(self.value.index, pd.MultiIndex):
-            return [
+            indexes = [
                 f'level_{i}' if n is None else n
                 for i, n in enumerate(self.value.index.names)
             ]
+            if self.value.columns.nlevels > 1:
+                indexes = [i + "_" * (self.value.columns.nlevels - 1) for i in indexes]
+            return indexes
         default_index = ('level_0' if 'index' in self.value.columns else 'index')
         return [self.value.index.name or default_index]
 
@@ -716,8 +728,8 @@ class BaseTable(ReactiveData, Widget):
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         stream_value: (pd.DataFrame | pd.Series | Dict)
           The new value(s) to append to the existing value.
         rollover: int
@@ -825,8 +837,8 @@ class BaseTable(ReactiveData, Widget):
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         patch_value: (pd.DataFrame | pd.Series | Dict)
           The value(s) to patch the existing value with.
         as_index: boolean
@@ -879,7 +891,7 @@ class BaseTable(ReactiveData, Widget):
         if not isinstance(self.value, pd.DataFrame):
             raise ValueError(
                 f"Patching an object of type {type(self.value).__name__} "
-                "is not supported. Please provide a dict."
+                "is not supported. Please provide a DataFrame."
             )
 
         if isinstance(patch_value, pd.DataFrame):
@@ -935,6 +947,8 @@ class BaseTable(ReactiveData, Widget):
         Returns the current view of the table after filtering and
         sorting are applied.
         """
+        if self.value is None:
+            return
         df = self._processed
         return self._sort_df(df)
 
@@ -943,7 +957,9 @@ class BaseTable(ReactiveData, Widget):
         """
         Returns a DataFrame of the currently selected rows.
         """
-        if not self.selection:
+        if self.value is None:
+            return
+        elif not self.selection:
             return self.current_view.iloc[:0]
         df = self.value.iloc[self.selection]
         return self._filter_dataframe(df)
@@ -1517,7 +1533,10 @@ class Tabulator(BaseTable):
         frozen_cols = self.frozen_columns
         column_mapper = {}
         if isinstance(frozen_cols, list):
-            nfrozen = len(frozen_cols)
+            if len(self.indexes) > 1:
+                nfrozen = len(frozen_cols)
+            else:
+                nfrozen = len([col for col in frozen_cols if col not in self.indexes])
             non_frozen = [col for col in df.columns if col not in frozen_cols]
             for i, col in enumerate(df.columns):
                 if col in frozen_cols:
@@ -1711,7 +1730,7 @@ class Tabulator(BaseTable):
         super()._update_cds(*events)
         if self.pagination:
             self._update_max_page()
-            self._update_selected()
+        self._update_selected()
         self._update_style(recompute)
         self._update_selectable()
 
@@ -1735,7 +1754,7 @@ class Tabulator(BaseTable):
 
     def _update_selected(self, *events: param.parameterized.Event, indices=None):
         kwargs = {}
-        if self.pagination == 'remote' and self.value is not None:
+        if self.value is not None:
             # Compute integer indexes of the selected rows
             # on the displayed page
             index = self.value.iloc[self.selection].index
@@ -1743,16 +1762,20 @@ class Tabulator(BaseTable):
             for ind in index.values:
                 try:
                     iloc = self._processed.index.get_loc(ind)
-                    self._validate_iloc(ind ,iloc)
+                    self._validate_iloc(ind, iloc)
                     indices.append((ind, iloc))
                 except KeyError:
                     continue
-            nrows = self.page_size or self.initial_page_size
-            start = (self.page - 1) * nrows
-            end = start+nrows
-            p_range = self._processed.index[start:end]
-            kwargs['indices'] = [iloc - start for ind, iloc in indices
-                                 if ind in p_range]
+            if self.pagination == 'remote':
+                nrows = self.page_size or self.initial_page_size
+                start = (self.page - 1) * nrows
+                end = start+nrows
+                p_range = self._processed.index[start:end]
+                indices = [iloc - start for ind, iloc in indices
+                           if ind in p_range]
+            else:
+                indices = [iloc for _, iloc in indices]
+            kwargs['indices'] = indices
         super()._update_selected(*events, **kwargs)
 
     def _update_column(self, column: str, array: TDataColumn) -> None:
@@ -2050,24 +2073,24 @@ class Tabulator(BaseTable):
                 col_dict["headerTooltip"] = self.header_tooltips[field]
 
             if isinstance(index, tuple):
-                if columns:
-                    children = columns
+                children = columns
+                last = cast(GroupSpec, children[-1] if len(children) > 0 else {})
+                for j, group in enumerate(index[:-1]):
+                    group_title = self.titles.get(index[: j + 1], group)
+                    if 'title' in last and last['title'] == group_title:
+                        new = False
+                        children = last['columns']
+                    else:
+                        new = True
+                        children.append({
+                            'columns': [],
+                            'title': group_title,
+                        })
                     last = cast(GroupSpec, children[-1])
-                    for group in index[:-1]:
-                        if 'title' in last and last['title'] == group:
-                            new = False
-                            children = last['columns']
-                        else:
-                            new = True
-                            children.append({
-                                'columns': [],
-                                'title': group,
-                            })
-                        last = cast(GroupSpec, children[-1])
-                        if new:
-                            children = last['columns']
-                    children.append(col_dict)
-                    column.title = index[-1]
+                    if new:
+                        children = last['columns']
+                children.append(col_dict)
+                column.title = self.titles.get(index, index[-1])
             elif matching_groups:
                 group = matching_groups[0]
                 if group in groups:
@@ -2109,8 +2132,8 @@ class Tabulator(BaseTable):
         """
         Triggers downloading of the table as a CSV or JSON.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename: str
             The filename to save the table as.
         """
@@ -2123,8 +2146,8 @@ class Tabulator(BaseTable):
         Returns a menu containing a TextInput and Button widget to set
         the filename and trigger a client-side download of the data.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         text_kwargs: dict
             Keyword arguments passed to the TextInput constructor
         button_kwargs: dict
@@ -2161,8 +2184,8 @@ class Tabulator(BaseTable):
         a TableEditEvent as the first argument containing the column,
         row and value of the edited cell.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (callable)
             The callback to run on edit events.
         """
@@ -2174,8 +2197,8 @@ class Tabulator(BaseTable):
         The callback is given a CellClickEvent declaring the column
         and row of the cell that was clicked.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (callable)
             The callback to run on edit events.
         column: (str)

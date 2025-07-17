@@ -275,7 +275,7 @@ class Select(SingleSelectBase):
             )
 
     def _process_param_change(self, msg: dict[str, Any]) -> dict[str, Any]:
-        groups_provided = 'groups' in msg
+        groups_provided = msg.get('groups') is not None
         msg = super()._process_param_change(msg)
         if groups_provided or 'options' in msg and self.groups:
             groups: dict[str, list[str | tuple[str, str]]] = self.groups
@@ -864,8 +864,8 @@ class MultiSelect(_MultiSelectBase):
         ...    print(f"Option {event.option} was double clicked.")
         >>> select.on_double_click(handle_click)
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback:
             The function to run on click events. Must accept a positional `Event` argument. Can
             be a sync or async function
@@ -920,6 +920,8 @@ class MultiChoice(_MultiSelectBase):
       or scale mode this will merely be used as a suggestion.""")
 
     _widget_type: ClassVar[type[Model]] = _BkMultiChoice
+
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/multichoice.css']
 
 
 class AutocompleteInput(SingleSelectBase):

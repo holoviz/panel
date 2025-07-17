@@ -13,7 +13,7 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..util import lazy_load
+from ..util import lazy_load, try_datetime64_to_datetime
 from ..util.checks import datetime_types, isdatetime
 from ..viewable import Layoutable
 from .base import ModelPane
@@ -110,6 +110,7 @@ class Plotly(ModelPane):
         self._figure = None
         self._event = None
         self._update_figure()
+        self._relayout_data = None
 
     def _to_figure(self, obj):
         import plotly.graph_objs as go
@@ -156,13 +157,11 @@ class Plotly(ModelPane):
     def _update_figure(self):
         import plotly.graph_objs as go
 
-        if (self.object is None or type(self.object) is not go.Figure or
+        if (self.object is None or not isinstance(self.object, (go.Figure, go.FigureWidget)) or
             self.object is self._figure or not self.link_figure):
             return
 
         # Monkey patch the message stubs used by FigureWidget.
-        # We only patch `Figure` objects (not subclasses like FigureWidget) so
-        # we don't interfere with subclasses that override these methods.
         fig = self.object
         fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure('add')
         fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure('delete')
@@ -174,6 +173,8 @@ class Plotly(ModelPane):
         self._figure = fig
 
     def _send_relayout_msg(self, relayout_data, source_view_id=None):
+        if relayout_data == self._relayout_data:
+            return
         self._send_update_msg({}, relayout_data, None, source_view_id)
 
     def _send_restyle_msg(self, restyle_data, trace_indexes=None, source_view_id=None):
@@ -190,11 +191,15 @@ class Plotly(ModelPane):
         if self._figure is None or self.relayout_data is None:
             return
         relayout_data = self._clean_relayout_data(self.relayout_data)
+        self._relayout_data = relayout_data
         # The _compound_array_props are sometimes not correctly reset
         # which means that they are desynchronized with _props causing
         # incorrect lookups and potential errors when updating a property
-        self._figure.layout._compound_array_props.clear()
-        self._figure.plotly_relayout(relayout_data)
+        try:
+            self._figure.layout._compound_array_props.clear()
+            self._figure.plotly_relayout(relayout_data)
+        except Exception:
+            self._relayout_data = None
 
     @staticmethod
     def _clean_relayout_data(relayout_data):
@@ -252,28 +257,37 @@ class Plotly(ModelPane):
         return update_sources
 
     @staticmethod
-    def _plotly_json_wrapper(fig):
+    def _convert_trace(trace):
+        trace = dict(trace)
+        for key in trace:
+            if not isdatetime(trace[key]):
+                continue
+            arr = trace[key]
+            if isinstance(arr, np.ndarray):
+                if arr.dtype.kind == 'M' and arr.ndim == 2 and arr.shape[1] == 1:
+                    arr = np.array([[str(try_datetime64_to_datetime(v[0]))] for v in arr])
+                else:
+                    arr = arr.astype(str)
+            elif isinstance(arr, datetime_types):
+                arr = str(arr)
+            else:
+                arr = [str(v) for v in arr]
+            trace[key] = arr
+        return trace
+
+    @classmethod
+    def _plotly_json_wrapper(cls, fig):
         """Wraps around to_plotly_json and applies necessary fixes.
 
         For #382: Map datetime elements to strings.
         """
-        json = fig.to_plotly_json()
-        layout = json['layout']
-        data = json['data']
-        shapes = layout.get('shapes', [])
-        for trace in data+shapes:
-            for key in trace:
-                if not isdatetime(trace[key]):
-                    continue
-                arr = trace[key]
-                if isinstance(arr, np.ndarray):
-                    arr = arr.astype(str)
-                elif isinstance(arr, datetime_types):
-                    arr = str(arr)
-                else:
-                    arr = [str(v) for v in arr]
-                trace[key] = arr
-        return json
+        layout = dict(fig._layout)
+        data = [cls._convert_trace(trace) for trace in fig._data]
+        if 'shapes' in layout:
+            layout['shapes'] = [
+                cls._convert_trace(shape) for shape in layout['shapes']
+            ]
+        return {'data': data, 'layout': layout}
 
     def _init_params(self):
         viewport_params = [p for p in self.param if 'viewport' in p]
@@ -335,6 +349,7 @@ class Plotly(ModelPane):
             self.param.trigger(pname)
         else:
             self.param.update(**{pname: data})
+
         if data is None or not hasattr(self.object, '_handler_js2py_pointsCallback'):
             return
 
@@ -392,7 +407,7 @@ class Plotly(ModelPane):
                 if has_z and 'z' in point_obj:
                     points_object['zs'].append(point_obj['z'])
 
-        self.object._handler_js2py_pointsCallback(
+        self._figure._handler_js2py_pointsCallback(
             {
                 "new": dict(
                     event_type=f'plotly_{etype}',

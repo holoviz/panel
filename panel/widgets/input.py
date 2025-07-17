@@ -278,8 +278,8 @@ class FileInput(Widget):
         Saves the uploaded FileInput data object(s) to file(s) or
         BytesIO object(s).
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename (str or list[str]): File path or file-like object
         """
         value = self.value
@@ -363,6 +363,13 @@ class FileDropper(Widget):
 
     multiple = param.Boolean(default=False, doc="""
         Whether to allow uploading multiple files.""")
+
+    previews = param.ListSelector(default=["image", "pdf"],
+        objects=["image", "pdf"], doc="""
+        List of previews to enable in the FileDropper.
+        The following previews are available:
+        - image: Adds support for image previews.
+        - pdf: Adds support for PDF previews.""")
 
     value = param.Dict(default={}, doc="""
         A dictionary containing the uploaded file(s) as bytes or string
@@ -629,6 +636,9 @@ class DateRangePicker(Widget):
 
 
 class _DatetimePickerBase(Widget):
+
+    allow_input = param.Boolean(default=False, doc="""
+      Enable manual date input in the widget.""")
 
     disabled_dates = param.List(default=None, item_type=(date, str), doc="""
       Dates to make unavailable for selection.""")

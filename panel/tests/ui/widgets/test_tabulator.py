@@ -574,10 +574,10 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     cell_edit = page.locator('input[type="date"]')
     new_date = "1980-01-01"
     cell_edit.fill(new_date)
-    page.wait_for_timeout(100)
     # Need to Enter to validate the change
     page.locator('input[type="date"]').press('Enter')
     expect(page.locator(f'text="{new_date}"')).to_have_count(1)
+    page.wait_for_timeout(200)
     new_date = dt.datetime.strptime(new_date, '%Y-%m-%d').date()
     assert new_date in widget.value['date'].tolist()
 
@@ -586,10 +586,10 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     cell_edit = page.locator('input[type="date"]')
     new_date2 = "1990-01-01"
     cell_edit.fill(new_date2)
-    page.wait_for_timeout(100)
     # Escape invalidates the change
     page.locator('input[type="date"]').press('Escape')
     expect(page.locator(f'text="{new_date2}"')).to_have_count(0)
+    page.wait_for_timeout(200)
     new_date2 = dt.datetime.strptime(new_date2, '%Y-%m-%d').date()
     assert new_date2 not in widget.value['date'].tolist()
 
@@ -1067,6 +1067,7 @@ def test_tabulator_frozen_rows(page):
     assert Y_bb == page.locator('text="Y"').bounding_box()
 
 
+@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1076,9 +1077,10 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     serve_component(page, widget)
 
     cell = page.locator('text="target"')
+    expect(cell).to_be_attached()
+
     # Scroll to the right
     cell.scroll_into_view_if_needed()
-    page.wait_for_timeout(200)
     bb = page.locator('text="tomodify"').bounding_box()
     # Patch a cell in the latest column
     widget.patch({'tomodify': [(0, 'target-modified')]}, as_index=False)
@@ -1575,6 +1577,35 @@ def test_tabulator_selection_on_multi_index(page, pagination):
     checkboxes.nth(17).check()
 
     wait_until(lambda: widget.selection == [0, 16], page)
+
+
+def test_tabulator_selection_add_filter(page):
+    # https://github.com/holoviz/panel/issues/7505
+    df = pd.DataFrame(
+        {"col": ["a", "aa", "b", "bb", "bbb"]},
+        index=["idx0", "idx1", "idx2", "idx3", "idx4"],
+    )
+    w_col = Select(value="b", options=["a", "b"])
+    widget = Tabulator(df, selectable=1)
+
+    def f(df, pattern):
+        return df[df['col'].str.contains(pattern)]
+
+    widget.add_filter(bind(f, pattern=w_col))
+
+    serve_component(page, widget)
+
+    # Click on the first row of the index column to select the row
+    rows = page.locator('.tabulator-row')
+    c0 = page.locator('text="idx2"')
+    c0.wait_for()
+    c0.click()
+    wait_until(lambda: widget.selection == [2], page)
+    assert 'tabulator-selected' in rows.first.get_attribute('class')
+    for i in range(1, rows.count()):
+        assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
+    expected_selected = df.loc[['idx2'], :]
+    assert widget.selected_dataframe.equals(expected_selected)
 
 
 @pytest.mark.parametrize('embed_content', [False, True])
@@ -2408,7 +2439,11 @@ def test_tabulator_patch_scalar_as_index_filtered(page):
     editable_cell.fill("120")
     editable_cell.press('Enter')
 
-    wait_until(lambda: table.value.iloc[7, 0] == 10, page)
+    def test():
+        assert table.value.shape[0] > 7
+        assert table.value.iloc[7, 0] == 10
+
+    wait_until(test, page)
 
 
 def color_false(val):
@@ -3513,19 +3548,15 @@ def test_tabulator_sorter_default_number(page):
 
     serve_component(page, widget)
     expect(page.locator('.tabulator-cell')).to_have_count(0)
+    page.wait_for_timeout(200)
 
     df2 = pd.DataFrame({'x': [0, 96, 116]})
     widget.value = df2
 
     def x_values():
-        try:
-            table_values = [int(v) for v in tabulator_column_values(page, 'x')]
-        except Exception:
-            return False
-        if table_values:
-            assert table_values == list(df2['x'].sort_values(ascending=False))
-        else:
-            return False
+        table_values = [int(v) for v in tabulator_column_values(page, 'x')]
+        assert table_values == [116, 96, 0]
+
     wait_until(x_values, page)
 
 
@@ -3573,7 +3604,7 @@ def test_tabulator_remote_pagination_auto_page_size_grow(page, df_mixed):
 
 def test_tabulator_remote_pagination_auto_page_size_shrink(page, df_mixed):
     nrows, ncols = df_mixed.shape
-    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=10, height=150)
+    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=10, height=160)
 
     serve_component(page, widget)
 

@@ -36,7 +36,9 @@ class Slideshow(JSComponent):
 Slideshow(width=500, height=200).servable()
 ```
 
-This approach lets you quickly build custom components with complex interactivity. However if you do not need any complex computations in Python you can also construct a pure JS equivalent:
+This approach lets you quickly build custom components with complex interactivity.
+
+However, if you do not need any complex computations in Python you can also construct a pure JS equivalent:
 
 ## Slideshow with Javascript Callback
 
@@ -69,4 +71,4 @@ class JSSlideshow(JSComponent):
 JSSlideshow(width=800, height=300).servable()
 ```
 
-By using Javascript callbacks instead of Python callbacks you can achieve higher performance, components that can be *js linked* and components that will also work when your app is saved to static html.
+By using Javascript callbacks instead of Python callbacks you can achieve higher performance components, that can be *js linked* and components that will also work when your app is saved to static html.

@@ -30,6 +30,26 @@ def test_notifications_no_template(page):
     expect(page.locator('.notyf__message')).to_have_text('MyError')
 
 
+def test_notifications_multiple(page):
+    def callback(event):
+        state.notifications.error('MyError')
+        state.notifications.error('MyError2')
+
+    def app():
+        config.notifications = True
+        button = Button(name='Display error')
+        button.on_click(callback)
+        return button
+
+    serve_component(page, app)
+
+    page.click('.bk-btn')
+
+    expect(page.locator('.notyf__message')).to_have_count(2)
+    expect(page.locator('.notyf__message').nth(0)).to_have_text('MyError')
+    expect(page.locator('.notyf__message').nth(1)).to_have_text('MyError2')
+
+
 def test_notifications_with_template(page):
     def callback(event):
         state.notifications.error('MyError')
