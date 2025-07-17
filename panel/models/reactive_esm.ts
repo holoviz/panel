@@ -555,6 +555,7 @@ export namespace ReactiveESM {
     data: p.Property<any>
     dev: p.Property<boolean>
     esm: p.Property<string>
+    events: p.Property<string[]>
     importmap: p.Property<any>
   }
 }
@@ -571,6 +572,7 @@ export class ReactiveESM extends HTMLBox {
   sucrase_transforms: Transform[] = ["typescript"]
   _destroyer: any | null = null
   _esm_watchers: any = {}
+  _event_callbacks: Map<(data: unknown) => void, (data: unknown) => void> = new Map()
 
   constructor(attrs?: Partial<ReactiveESM.Attrs>) {
     super(attrs)
@@ -613,6 +615,18 @@ export class ReactiveESM extends HTMLBox {
 
     if (target && target.properties && propPath[propPath.length - 1] in target.properties) {
       resolvedProp = propPath[propPath.length - 1]
+    }
+
+    // Handle reset of param.Event properties
+    if (target === this.data && resolvedProp && this.events.includes(resolvedProp)) {
+      const orig_cb = cb
+      cb = () => {
+        if (resolvedProp && this.data[resolvedProp]) {
+          orig_cb()
+          this.data.setv({[resolvedProp]: false})
+        }
+      }
+      this._event_callbacks.set(orig_cb, cb)
     }
 
     // Attach watcher if property is found
@@ -660,6 +674,11 @@ export class ReactiveESM extends HTMLBox {
 
     if (target && target.properties && propPath[propPath.length - 1] in target.properties) {
       resolvedProp = propPath[propPath.length - 1]
+    }
+
+    if (this._event_callbacks.has(cb)) {
+      cb = this._event_callbacks.get(cb)
+      this._event_callbacks.delete(cb)
     }
 
     // Detach watcher if property is found
@@ -858,6 +877,7 @@ export default {render}`
       data:        [ Any                     ],
       dev:         [ Bool,             false ],
       esm:         [ Str,                 "" ],
+      events:      [ Array(Str),          [] ],
       importmap:   [ Any,                 {} ],
     }))
   }
