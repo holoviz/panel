@@ -111,6 +111,69 @@ def test_update(page, component):
     expect(page.locator('h1')).to_have_text('Foo!')
 
 
+class JSEventUpdate(JSComponent):
+
+    event = param.Event()
+
+    _esm = """
+    export function render({ model }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = "0"
+      model.on('event', () => {
+        h1.textContent = (parseInt(h1.textContent) + 1).toString();
+      })
+      return h1
+    }
+    """
+
+class ReactEventUpdate(ReactComponent):
+
+    event = param.Event()
+
+    _esm = """
+    export function render({ model }) {
+      const [event] = model.useState("event")
+      const [count, setCount ] = React.useState(-1)
+      React.useEffect(() => {
+        setCount(count + 1)
+      }, [event])
+      return <h1>{count}</h1>
+    }
+    """
+
+class AnyWidgetEventUpdate(AnyWidgetComponent):
+
+    event = param.Event()
+
+    _esm = """
+    export function render({ model, el }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = "0"
+      model.on("change:event", () => {
+        h1.textContent = (parseInt(h1.textContent) + 1).toString();
+      })
+      el.append(h1)
+    }
+    """
+
+
+@pytest.mark.parametrize('component', [JSEventUpdate, ReactEventUpdate, AnyWidgetEventUpdate])
+def test_event_update(page, component):
+    example = component()
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('0')
+
+    example.param.trigger('event')
+
+    expect(page.locator('h1')).to_have_text('1')
+
+    example.param.trigger('event')
+
+    expect(page.locator('h1')).to_have_text('2')
+
+
 class AnyWidgetInitialize(AnyWidgetComponent):
 
     count = param.Integer(default=0)

@@ -46,6 +46,8 @@ class ReactiveESM(HTMLBox):
 
     esm = bp.String()
 
+    events = bp.List(bp.String)
+
     importmap = bp.Dict(bp.String, bp.Dict(bp.String, bp.String))
 
     __javascript_raw__ = [

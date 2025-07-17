@@ -173,6 +173,21 @@ def bokeh_repr(obj: Model, depth: int = 0, ignored: Iterable[str] | None = None)
         r += f'{cls}({props_repr})'
     return r
 
+def apply_changes_without_dispatch(doc, model, changes):
+    hold_value = doc.callbacks.hold_value
+    doc.callbacks._hold = 'collect'
+    try:
+        model.update(**changes)
+    finally:
+        doc.callbacks._held_events = [
+            e for e in doc.callbacks._held_events
+            if not isinstance(e, ModelChangedEvent) or
+            e.model is not model or
+            e.attr not in changes or
+            e.new is not changes[e.attr]
+        ]
+        doc.callbacks._hold = hold_value
+
 @contextmanager
 def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
     """
