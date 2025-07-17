@@ -103,14 +103,14 @@ export function model_getter(target: ReactiveESMView, name: string) {
       }
     }
   } else if (name === "on") {
-    return (prop: string | string[], callback: any) => {
+    return (prop: string | string[], callback: any, force: boolean = false) => {
       const props = isArray(prop) ? prop : [prop]
       for (let p of props) {
         if (p.startsWith("change:")) {
           p = p.slice("change:".length)
         }
         if (p in model.attributes || p.split(".")[0] in model.data.attributes) {
-          model.watch(target, p, callback)
+          model.watch(target, p, callback, force)
           continue
         } else if (p === "msg:custom") {
           target.on_event(callback)
@@ -593,7 +593,7 @@ export class ReactiveESM extends HTMLBox {
     this.connect(this.properties.importmap.change, () => this.recompile())
   }
 
-  watch(view: ReactiveESMView | null, prop: string, cb: any): void {
+  watch(view: ReactiveESMView | null, prop: string, cb: any, force: boolean = false): void {
     if (prop in this._esm_watchers) {
       this._esm_watchers[prop].push([view, cb])
     } else {
@@ -618,7 +618,7 @@ export class ReactiveESM extends HTMLBox {
     }
 
     // Handle reset of param.Event properties
-    if (target === this.data && resolvedProp && this.events.includes(resolvedProp)) {
+    if (!force && target === this.data && resolvedProp && this.events.includes(resolvedProp)) {
       const orig_cb = cb
       cb = () => {
         if (resolvedProp && this.data[resolvedProp]) {
