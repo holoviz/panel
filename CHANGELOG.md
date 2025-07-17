@@ -1,5 +1,27 @@
 # Releases
 
+## Version 1.7.5
+
+This patch release brings a number of important bug fixes and refinements, including improved modal behavior, Param integration fixes for ESM, and security hardening of authentication templates. Thanks to @harmvanderheijden, @marcskovmadsen, @maximlt, and @philippjfr for their contributions.
+
+### Bug Fixes
+
+- Ensure `Modal` dialogs are correctly focused and layered above other elements ([#8059](https://github.com/holoviz/panel/pull/8059), [#8060](https://github.com/holoviz/panel/pull/8060))
+- Automatically run `Player` widget on initialization ([#8058](https://github.com/holoviz/panel/pull/8058))
+- Improve error message when using `.from_param` incorrectly ([#8047](https://github.com/holoviz/panel/pull/8047))
+- Fix `value_throttled` issue when used with Param panes ([#8057](https://github.com/holoviz/panel/pull/8057))
+- Prevent `AutocompleteInput` from resetting when `restrict=False` ([#8056](https://github.com/holoviz/panel/pull/8056))
+- Reset `param.Event` state correctly in ESM-based components ([#8054](https://github.com/holoviz/panel/pull/8054))
+- Fix callback cleanup when using `--reuse_sessions` ([#8052](https://github.com/holoviz/panel/pull/8052))
+
+### Security
+
+- Fix XSS vulnerabilities in login and OAuth error templates by escaping user-controlled input ([#8049](https://github.com/holoviz/panel/pull/8049))
+
+### Maintenance
+
+- Fix gallery deployment automation ([#8055](https://github.com/holoviz/panel/pull/8055))
+
 ## Version 1.7.4
 
 This patch release introduces small but impactful security, compatibility, and usability improvements. It enhances OAuth behavior, adds byte support for the PDF pane, and fixes several rendering and import issues across backends and components. Thanks to @ahuang11, @dalthviz, @MarcSkovMadsen, and @philippjfr for their contributions.
