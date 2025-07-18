@@ -393,7 +393,7 @@ export class DataTabulatorView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
 
-    this._debounced_redraw = debounce(() => this._resize_redraw(), 20, false)
+    this._debounced_redraw = debounce(() => this._resize_redraw(), 50, false)
     const {
       configuration, layout, columns, groupby, visible, download,
       children, expanded, cell_styles, hidden_columns, page_size,
@@ -815,6 +815,7 @@ export class DataTabulatorView extends HTMLBoxView {
       ...this.model.configuration,
       index: "_index",
       nestedFieldSeparator: false,
+      autoResize: false,
       movableColumns: false,
       selectableRows,
       columns: this.getColumns(),
