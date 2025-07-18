@@ -128,6 +128,24 @@ def test_autocomplete_unrestricted(document, comm):
     select.value = 'bar'
     assert widget.value == 'bar'
 
+def test_autocomplete_restricted_reset_on_new_options(document, comm):
+    opts = {'A': 'a', '1': 1}
+    select = AutocompleteInput(options=opts, value=1, name='Autocomplete', restrict=True)
+
+    widget = select.get_root(document, comm=comm)
+
+    select.options = {'A': 'a', '2': 2}
+    assert widget.value == ''
+
+def test_autocomplete_unrestricted_no_reset_on_new_options(document, comm):
+    opts = {'A': 'a', '1': 1}
+    select = AutocompleteInput(options=opts, value=1, name='Autocomplete', restrict=False)
+
+    widget = select.get_root(document, comm=comm)
+
+    select.options = {'A': 'a', '2': 2}
+    assert widget.value == '1'
+
 @pytest.mark.parametrize('widget', [AutocompleteInput, Select])
 def test_select_parameterized_option_labels(widget):
     c1 = panel("Value1", name="V1")

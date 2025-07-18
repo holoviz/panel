@@ -31,8 +31,9 @@ except Exception:
         Exception that allows skipping an update for function-level updates.
         """
 from param.parameterized import (
-    Undefined, bothmethod, classlist, discard_events, eval_function_with_deps,
-    get_method_owner, iscoroutinefunction, resolve_ref, resolve_value,
+    Undefined, bothmethod, classlist, discard_events, edit_constant,
+    eval_function_with_deps, get_method_owner, iscoroutinefunction,
+    resolve_ref, resolve_value,
 )
 from param.reactive import rx
 
@@ -639,6 +640,9 @@ class Param(Pane):
                     with discard_events(widget):
                         widget.param.update(**updates)
                     widget.param.trigger(*updates)
+                elif 'value_throttled' in updates:
+                    with edit_constant(widget):
+                        widget.param.update(**updates)
                 else:
                     widget.param.update(**updates)
             finally:
