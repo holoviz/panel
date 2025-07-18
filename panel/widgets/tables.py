@@ -1856,9 +1856,10 @@ class Tabulator(BaseTable):
     def _process_param_change(self, params):
         if 'theme' in params or 'stylesheets' in params:
             theme_url = self._get_theme(params.pop('theme', self.theme))
-            params['stylesheets'] = params.get('stylesheets', self.stylesheets) + [
-                ImportedStyleSheet(url=theme_url)
-            ]
+            if theme_url:
+                params['stylesheets'] = params.get('stylesheets', self.stylesheets) + [
+                    ImportedStyleSheet(url=theme_url)
+                ]
         params = Reactive._process_param_change(self, params)
         if 'disabled' in params:
             params['editable'] = not params.pop('disabled') and len(self.indexes) <= 1

@@ -570,7 +570,7 @@ class ModelPane(Pane):
         if self._bokeh_model is not None and 'stylesheets' in params:
             css = getattr(self._bokeh_model, '__css__', [])
             params['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
+                ImportedStyleSheet(url=ss) for ss in css if ss
             ] + params['stylesheets']
         return super()._process_param_change(params)
 
