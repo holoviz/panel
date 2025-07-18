@@ -121,5 +121,5 @@ def test_player_scale_buttons(page):
 
     expect(page.locator(".play")).to_have_attribute(
         "style",
-        "text-align: center; flex-grow: 2; margin: 2px; transform: scale(2); max-width: 50px;",
+        "text-align: center; flex-grow: 2; margin: 2px; transform: scale(2); max-width: 50px; border-style: outset;",
     )
