@@ -229,6 +229,8 @@ class Syncable(Renderable):
             else:
                 css_cache = {}
             for stylesheet in stylesheets:
+                if not stylesheet:
+                    continue
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
                     if stylesheet in css_cache:
                         conv_stylesheet = css_cache[stylesheet]
@@ -1605,7 +1607,7 @@ class ReactiveCustomBase(Reactive):
                     for ss in css
                 ]
             props['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
+                ImportedStyleSheet(url=ss) for ss in css if ss
             ] + props['stylesheets']
         return props
 
@@ -1884,7 +1886,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                     for ss in css
                 ]
             props['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
+                ImportedStyleSheet(url=ss) for ss in css if ss
             ] + props['stylesheets']
         return props
 
