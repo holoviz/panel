@@ -506,15 +506,15 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
                 secret_key=self.application.secret_key,
                 signed=self.application.sign_sessions
             )
-            payload = get_token_payload(session.token)
-            payload.update(payload)
+            extra_payload = get_token_payload(session.token)
+            extra_payload.update(payload)
             del payload['session_expiry']
             token = generate_jwt_token(
                 session_id,
                 secret_key=app.secret_key,
                 signed=app.sign_sessions,
                 expiration=app.session_token_expiration,
-                extra_payload=payload
+                extra_payload=extra_payload
             )
         else:
             token = session.token
