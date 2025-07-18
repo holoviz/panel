@@ -658,12 +658,16 @@ class BaseTable(ReactiveData, Widget):
                          if filt is not filter]
         self._update_cds()
 
-    def _process_column(self, values: TDataColumn):
+    def _process_column(self, values: TDataColumn, col: str, df: pd.DataFrame | None = None):
         if not isinstance(values, (list, np.ndarray)):
             return [str(v) for v in values]
-        if isinstance(values, np.ndarray) and values.dtype.kind == "b":
-            # Workaround for https://github.com/bokeh/bokeh/issues/12776
-            return values.tolist()
+        if isinstance(values, np.ndarray):
+            if values.dtype.kind == "b":
+                # Workaround for https://github.com/bokeh/bokeh/issues/12776
+                return values.tolist()
+            import pandas as pd
+            if df is not None and col in df.columns and isinstance(df[col].dtype, pd.StringDtype):
+                values[df[col].isna()] = None
         return values
 
     def _get_data(self) -> tuple[pd.DataFrame, DataDict]:
@@ -693,7 +697,7 @@ class BaseTable(ReactiveData, Widget):
         data = ColumnDataSource.from_df(df.reset_index() if len(indexes) > 1 else df)
         if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
-        return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
+        return df, {k if isinstance(k, str) else str(k): self._process_column(v, k, df) for k, v in data.items()}
 
     def _update_column(self, column: str, array: TDataColumn):
         import pandas as pd
@@ -1494,7 +1498,7 @@ class Tabulator(BaseTable):
         if len(indexes) > 1:
             page_df = page_df.reset_index()
         data = ColumnDataSource.from_df(page_df).items()
-        return df, {k if isinstance(k, str) else str(k): v for k, v in data}
+        return df, {k if isinstance(k, str) else str(k): self._process_column(v, k, page_df) for k, v in data}
 
     def _get_style_data(self, recompute=True):
         if self.value is None or self.style is None or self.value.empty:
