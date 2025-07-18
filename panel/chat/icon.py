@@ -54,7 +54,8 @@ class ChatReactionIcons(CompositeWidget):
     value = param.List(default=[], doc="The active reactions.")
 
     default_layout = param.ClassSelector(
-        default=Column, class_=Panel, is_instance=False)
+        default=Column, class_=Panel, is_instance=False, doc="""
+        The layout to use for the icons. Defaults to Column, which stacks the icons vertically.""")
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_reaction_icons.css"]
 
