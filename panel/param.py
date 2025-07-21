@@ -612,9 +612,7 @@ class Param(Pane):
                 updates['step'] = p_obj.step
             elif change.what == 'label':
                 updates['name'] = p_obj.label
-            elif p_key in updating:
-                return
-            elif hasattr(param, 'Event') and isinstance(p_obj, param.Event):
+            elif p_key in updating or isinstance(p_obj, param.Event):
                 return
             elif isinstance(p_obj, param.Action):
                 prev_watcher = watchers[0]
@@ -622,8 +620,6 @@ class Param(Pane):
                 def action(event):
                     change.new(parameterized)
                 watchers[0] = widget.param.watch(action, 'clicks')
-                idx = self_or_cls._internal_callbacks.index(prev_watcher)
-                self_or_cls._internal_callbacks[idx] = watchers[0]
                 return
             elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
