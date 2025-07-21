@@ -1,6 +1,5 @@
 :host(.loader) {
   overflow: hidden;
-  display: flex;
 }
 
 :host(.loader) div {
