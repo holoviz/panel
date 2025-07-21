@@ -305,7 +305,8 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         The Javascript Bokeh Document instance to sync.
     """
 
-    event_buffer, blocked = [], []
+    event_buffer: list[Any] = []
+    blocked: list[float] = []
     def jssync(event, debounce=DEBOUNCE, timeout=TIMEOUT, append=True):
         setter_id = getattr(event, 'setter_id', None)
         if (setter_id is not None and setter_id == 'python') or _patching:
