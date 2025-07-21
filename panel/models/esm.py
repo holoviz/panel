@@ -46,6 +46,8 @@ class ReactiveESM(HTMLBox):
 
     esm = bp.String()
 
+    events = bp.List(bp.String)
+
     importmap = bp.Dict(bp.String, bp.Dict(bp.String, bp.String))
 
     __javascript_raw__ = [
@@ -63,6 +65,8 @@ class ReactComponent(ReactiveESM):
     """
 
     root_node = bp.Nullable(bp.String)
+
+    use_shadow_dom = bp.Bool(True)
 
 
 class AnyWidgetComponent(ReactComponent):

@@ -11,6 +11,7 @@ import json
 import os
 import sys
 import textwrap
+import threading
 import types
 
 from collections import defaultdict, namedtuple
@@ -30,8 +31,9 @@ except Exception:
         Exception that allows skipping an update for function-level updates.
         """
 from param.parameterized import (
-    Undefined, bothmethod, classlist, discard_events, eval_function_with_deps,
-    get_method_owner, iscoroutinefunction, resolve_ref, resolve_value,
+    Undefined, bothmethod, classlist, discard_events, edit_constant,
+    eval_function_with_deps, get_method_owner, iscoroutinefunction,
+    resolve_ref, resolve_value,
 )
 from param.reactive import rx
 
@@ -538,13 +540,14 @@ class Param(Pane):
             widgets = {p_name: widget}
 
         def link_widget(change):
-            if p_name in updating:
+            p_key = p_name if config.nthreads is None else (threading.get_ident(), p_name)
+            if p_key in updating:
                 return
             try:
-                updating.append(p_name)
+                updating.append(p_key)
                 parameterized.param.update(**{p_name: change.new})
             finally:
-                updating.remove(p_name)
+                updating.remove(p_key)
 
         if hasattr(param, 'Event') and isinstance(p_obj, param.Event):
             def event(change):
@@ -570,6 +573,7 @@ class Param(Pane):
                 widget = self_or_cls._widgets[p_name]
             else:
                 widget = widgets[p_name]
+            p_key = p_name if config.nthreads is None else (threading.get_ident(), p_name)
             if change.what == 'constant':
                 updates['disabled'] = change.new
                 if self_or_cls.hide_constant:
@@ -608,7 +612,7 @@ class Param(Pane):
                 updates['step'] = p_obj.step
             elif change.what == 'label':
                 updates['name'] = p_obj.label
-            elif p_name in updating:
+            elif p_key in updating:
                 return
             elif hasattr(param, 'Event') and isinstance(p_obj, param.Event):
                 return
@@ -631,15 +635,18 @@ class Param(Pane):
                 updates['value'] = change.new
 
             try:
-                updating.append(p_name)
+                updating.append(p_key)
                 if change.type == 'triggered':
                     with discard_events(widget):
                         widget.param.update(**updates)
                     widget.param.trigger(*updates)
+                elif 'value_throttled' in updates:
+                    with edit_constant(widget):
+                        widget.param.update(**updates)
                 else:
                     widget.param.update(**updates)
             finally:
-                updating.remove(p_name)
+                updating.remove(p_key)
 
         # Set up links to parameterized object
         watchers.append(parameterized.param.watch(link, p_name, 'constant'))
@@ -1135,8 +1142,8 @@ class ReactiveExpr(Pane):
     show_widgets = param.Boolean(default=True, doc="""
         Whether to display the widget inputs.""")
 
-    widget_layout = param.Selector(
-        objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
+    widget_layout = param.ClassSelector(
+        class_=ListLike, constant=True, is_instance=False, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")
 
     widget_location = param.Selector(default='left_top', objects=[

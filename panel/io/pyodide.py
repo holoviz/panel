@@ -244,7 +244,7 @@ def _serialize_buffers(obj, buffers={}):
 def _process_document_events(doc: Document, events: list[Any]):
     serializer = Serializer(references=doc.models.synced_references)
     patch_json = PatchJson(events=serializer.encode(events))
-    doc.models.flush_synced()
+    doc.models.flush_synced(lambda model: not serializer.has_ref(model))
 
     buffer_map = {}
     for buffer in serializer.buffers:

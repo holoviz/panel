@@ -23,6 +23,7 @@ from param.parameterized import ParameterizedMetaclass
 from .config import config
 from .io.datamodel import construct_data_model
 from .io.document import freeze_doc, hold
+from .io.model import apply_changes_without_dispatch
 from .io.resources import component_resource_path
 from .io.state import state
 from .layout.base import Panel
@@ -46,7 +47,8 @@ from .widgets.base import WidgetBase  # noqa
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.events import Event
-    from bokeh.model import Model, UIElement
+    from bokeh.model import Model
+    from bokeh.models import UIElement
     from pyviz_comms import Comm
 
     ExportSpec = dict[str, list[str | tuple[str, ...]]]
@@ -403,8 +405,23 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     async def _watch_esm(self):
         import watchfiles
         path = self._esm_path(compiled=False)
-        async for _ in watchfiles.awatch(path, stop_event=self._watching_esm):
-            self._update_esm()
+        async for changes in watchfiles.awatch(path, stop_event=self._watching_esm):
+            update = False
+            for (change, path) in changes:
+                if change != watchfiles.Change.modified:
+                    continue
+                # Ensure that the file exists (in case filesystem write is not atomic)
+                retries = 0
+                while not os.path.exists(path):
+                    await asyncio.sleep(0.1)
+                    retries += 1
+                    if retries == 5:
+                        break
+                # Ignore change if file is not written within 0.5 seconds
+                if retries != 5:
+                    update = True
+            if update:
+                self._update_esm()
 
     def _update_esm(self):
         for ref, (model, _) in self._models.copy().items():
@@ -431,8 +448,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         ignored = [
             p for p in Reactive.param
             if not issubclass(cls.param[p].owner, ReactiveESM) or
-            (p in Viewable.param and p != 'name' and type(Reactive.param[p]) is type(cls.param[p]))
+            (p in Viewable.param and p not in ('name', 'use_shadow_dom')
+             and type(Reactive.param[p]) is type(cls.param[p]))
         ]
+        events = []
         for k, v in self.param.values().items():
             p = self.param[k]
             if is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
@@ -442,6 +461,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 continue
             if k in props:
                 props.pop(k)
+            if isinstance(p, param.Event):
+                events.append(k)
             data_params[k] = v
         bundle_path = self._bundle_path
         importmap = self._process_importmap()
@@ -467,6 +488,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload or getattr(self, '_debug', False),
             'esm': self._render_esm(not config.autoreload, server=is_session),
+            'events': events,
             'importmap': importmap,
             'name': cls.__name__
         })
@@ -556,7 +578,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
-        model_msg, data_msg  = {}, {}
+        model_msg, data_msg, data_resets  = {}, {}, {}
         for prop, v in list(msg.items()):
             if prop in list(Reactive.param)+['esm', 'importmap']:
                 model_msg[prop] = v
@@ -564,6 +586,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 continue
             else:
                 data_msg[prop] = v
+                if prop in self.param and isinstance(self.param[prop], param.Event) and v:
+                    data_resets[prop] = False
         for name, event in events.items():
             if name not in model.children:
                 continue
@@ -580,7 +604,6 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             data_msg.update(children)
             model_msg['children'] = list(children)
 
-
         ref = root.ref['id']
         prev_changing = self._changing.get(ref, [])
         try:
@@ -589,8 +612,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             with hold(doc):
                 changing = []
                 with freeze_doc(doc, model, msg, force=update_children):
-                    changing += self._set_on_model(model_msg, root, model)
-                    changing += self._set_on_model(data_msg, root, model.data)
+                    if model_msg:
+                        changing += self._set_on_model(model_msg, root, model)
+                    if data_msg:
+                        changing += self._set_on_model(data_msg, root, model.data)
                     if update and update_children and ref in state._views:
                         state._views[ref][0]._preprocess(root, self, old_children)
                 self._changing[ref] = changing
@@ -600,6 +625,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 self._changing[ref] = prev_changing
             elif ref in self._changing:
                 del self._changing[ref]
+        if data_resets:
+            apply_changes_without_dispatch(doc, model.data, data_resets)
 
     def _handle_msg(self, data: Any) -> None:
         """
@@ -774,6 +801,13 @@ class ReactComponent(ReactiveESM):
         CounterButton().servable()
     '''
 
+    use_shadow_dom = param.Boolean(default=True, constant=True, doc="""
+        Whether to render component into a shadow root.
+        This may optionally be disabled but will only take
+        effect if the parent is also a React component.
+        If disabled the component will be rendered into
+        the parent's React DOM tree.""")
+
     __abstract = True
 
     _bokeh_model = _BkReactComponent
@@ -836,6 +870,11 @@ class ReactComponent(ReactiveESM):
             'scopes': cls._importmap.get('scopes', {})
         }
 
+    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+        props = super()._get_properties(doc)
+        props['use_shadow_dom'] = self.use_shadow_dom
+        return props
+
 
 class AnyWidgetComponent(ReactComponent):
     '''
@@ -892,3 +931,8 @@ class AnyWidgetComponent(ReactComponent):
         msg: dict
         """
         self._send_msg(msg)
+
+    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+        props = super()._get_properties(doc)
+        del props['use_shadow_dom']
+        return props

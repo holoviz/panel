@@ -15,8 +15,8 @@
     <link rel="manifest" href="{{ base_url|default("", true) }}static/extensions/panel/images/site.webmanifest">
     <style>
       body {
-	display: flex;
-	flex-direction: column;
+        display: flex;
+        flex-direction: column;
         font-family: "Kumbh Sans", "Segoe UI", Arial, Helvetica, sans-serif;
         font-size: 16px;
         font-weight: 600;
@@ -24,7 +24,7 @@
         height: 100vh;
         margin: 0px;
         overflow: hidden;
-	padding: 0;
+        padding: 0;
       }
       .header {
         box-shadow: 0 .125rem .25rem 0 gray;
@@ -36,7 +36,7 @@
         padding: 1.5rem;
       }
       #panel-logo {
-	padding-right: 2em;
+        padding-right: 2em;
         width: 300px;
       }
       .error-area {
@@ -51,7 +51,7 @@
       }
       #error {
         font-size: 1.2em;
-	text-align: right;
+        text-align: left;
       }
       .content {
         align-items: center;
@@ -63,6 +63,7 @@
       .error-message {
         max-width: 80%;
         padding-bottom: 10%;
+        text-align: center;
       }
       {% block extra_style %}{% endblock %}
     </style>
@@ -72,17 +73,20 @@
       <div class="header-content">
         <div>
           <img id="panel-logo" src="{{ base_url | default("", true) }}static/extensions/panel/images/logo_horizontal.png"/>
-	</div>
-	<div class="error-area">
+        </div>
+        <div class="error-area">
           <span id="error-type">{{ error_type|default("Error", true) }}</span>
-	  <span id="error">{{ error }}</span>
-	</div>
+          <span id="error">{{ error|escape }}</span>
+        </div>
       </div>
     </section>
     <div class="content">
       <section class="error-message">
       {% block content %}
-      <h3>{{ error_msg }}</h3>
+      <h3>{{ error_msg|escape }}</h3>
+      {% if oauth_logout_link %}
+      <a href="{{ oauth_logout_link }}">Logout</a>
+      {% endif %}
       {% endblock %}
       </section>
     </div>

@@ -68,8 +68,9 @@ from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import LOG_SESSION_CREATED
 from .reload import record_modules
 from .resources import (
-    BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
-    Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
+    BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, DIST_DIR, ERROR_TEMPLATE,
+    LOCAL_DIST, Resources, _env, bundle_resources, patch_model_css,
+    resolve_custom_path,
 )
 from .session import generate_session
 from .state import set_curdoc, state
@@ -242,6 +243,8 @@ def html_page_for_render_items(
         base = BASE_TEMPLATE,
         macros = MACROS,
     ))
+    if "app_favicon" not in context:
+        context["app_favicon"] = (f"{state.rel_path}/" if state.rel_path else "./") + "favicon.ico"
 
     if len(render_items) == 1:
         context["doc"] = context["docs"][0]
@@ -422,7 +425,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
         payload.update(self.application_context.application.process_request(self.request))  # type: ignore
         return payload
 
-    def _authorize(self, session: bool = False) -> tuple[bool, str | None]:
+    def _authorize(self, session: bool = False) -> tuple[bool | None, str | None]:
         """
         Determine if user is authorized to access this application.
         """
@@ -503,15 +506,15 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
                 secret_key=self.application.secret_key,
                 signed=self.application.sign_sessions
             )
-            payload = get_token_payload(session.token)
-            payload.update(payload)
-            del payload['session_expiry']
+            extra_payload = get_token_payload(session.token)
+            extra_payload.update(payload)
+            del extra_payload['session_expiry']
             token = generate_jwt_token(
                 session_id,
                 secret_key=app.secret_key,
                 signed=app.sign_sessions,
                 expiration=app.session_token_expiration,
-                extra_payload=payload
+                extra_payload=extra_payload
             )
         else:
             token = session.token
@@ -610,6 +613,41 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
 
 toplevel_patterns[0] = (r'/?', RootHandler)
 bokeh.server.tornado.RootHandler = RootHandler  # type: ignore
+
+
+class AuthenticatedStaticFileHandler(StaticFileHandler):
+
+    def get_login_url(self):
+        ''' Delegates to``get_login_url`` method of the auth provider, or the
+        ``login_url`` attribute.
+
+        '''
+        if self.application.auth_provider.get_login_url is not None:
+            return self.application.auth_provider.get_login_url(self)
+        if self.application.auth_provider.login_url is not None:
+            return self.application.auth_provider.login_url
+        raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
+
+    def get_current_user(self):
+        ''' Delegate to the synchronous ``get_user`` method of the auth
+        provider
+
+        '''
+        if self.application.auth_provider.get_user is not None:
+            return self.application.auth_provider.get_user(self)
+        return "default_user"
+
+    async def prepare(self):
+        ''' Async counterpart to ``get_current_user``
+
+        '''
+        if self.application.auth_provider.get_user_async is not None:
+            self.current_user = await self.application.auth_provider.get_user_async(self)
+
+    @authenticated
+    async def get(self, *args, **kwargs):
+        return await super().get(*args, **kwargs)
+
 
 # Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
 def create_static_handler(prefix, key, app):
@@ -855,7 +893,7 @@ def get_static_routes(static_dirs):
         if not os.path.isdir(path):
             raise ValueError(f"Cannot serve non-existent path {path}")
         patterns.append(
-            (rf"{slug}/(.*)", StaticFileHandler, {"path": path})
+            (rf"{slug}/(.*)", AuthenticatedStaticFileHandler, {"path": path})
         )
     patterns.append((
         f'/{COMPONENT_PATH}(.*)', ComponentResourceHandler, {}
@@ -1063,6 +1101,9 @@ def get_server(
 
     if 'index' not in opts:
         opts['index'] = INDEX_HTML
+
+    if 'ico_path' not in opts:
+        opts['ico_path'] = DIST_DIR / "images" / "favicon.ico"
 
     if address is not None:
         opts['address'] = address

@@ -492,7 +492,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             title='Panel: Authentication Error',
             error_type='Authentication Error',
             error=error,
-            error_msg=error_msg
+            error_msg=error_msg,
+            oauth_logout_link=self._OAUTH_LOGOUT_URL,
         ))
 
 
@@ -515,6 +516,10 @@ class GenericLoginHandler(OAuthLoginHandler):
     @property
     def _OAUTH_USER_URL(self):
         return config.oauth_extra_params.get('USER_URL', os.environ.get('PANEL_OAUTH_USER_URL'))
+
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        return config.oauth_extra_params.get('LOGOUT_URL', os.environ.get('PANEL_OAUTH_LOGOUT_URL'))
 
     @property
     def _USER_KEY(self):
@@ -609,6 +614,7 @@ class GithubLoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
     _OAUTH_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
     _OAUTH_USER_URL = 'https://api.github.com/user'
+    _OAUTH_LOGOUT_URL = ''
 
     _access_token_header = 'token {}'
 
@@ -624,6 +630,7 @@ class BitbucketLoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL = "https://bitbucket.org/site/oauth2/access_token"
     _OAUTH_AUTHORIZE_URL = "https://bitbucket.org/site/oauth2/authorize"
     _OAUTH_USER_URL = "https://api.bitbucket.org/2.0/user?access_token="
+    _OAUTH_LOGOUT_URL = ""
 
     _USER_KEY = 'username'
 
@@ -635,6 +642,7 @@ class Auth0Handler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://{0}.auth0.com/oauth/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://{0}.auth0.com/authorize'
     _OAUTH_USER_URL_ = 'https://{0}.auth0.com/userinfo'
+    _OAUTH_LOGOUT_URL_ = 'https://{0}.auth0.com/v2/logout?client_id={1}&returnTo={2}'
 
     _USER_KEY = 'email'
 
@@ -653,6 +661,12 @@ class Auth0Handler(OAuthLoginHandler):
         url = config.oauth_extra_params.get('subdomain', 'example')
         return self._OAUTH_USER_URL_.format(url)
 
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        subdomain = config.oauth_extra_params.get('subdomain', 'example')
+        client_id = config.oauth_key
+        return_to = f'{self.request.protocol}://{self.request.host}/logout'
+        return self._OAUTH_LOGOUT_URL_.format(subdomain, client_id, return_to)
 
 
 class GitLabLoginHandler(OAuthLoginHandler):
@@ -668,6 +682,7 @@ class GitLabLoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://{0}/oauth/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://{0}/oauth/authorize'
     _OAUTH_USER_URL_ = 'https://{0}/api/v4/user'
+    _OAUTH_LOGOUT_URL_ = ''
 
     _access_token_header = 'Bearer {}'
 
@@ -688,6 +703,10 @@ class GitLabLoginHandler(OAuthLoginHandler):
         url = config.oauth_extra_params.get('url', 'gitlab.com')
         return self._OAUTH_USER_URL_.format(url)
 
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        return self._OAUTH_LOGOUT_URL_.format(**config.oauth_extra_params)
+
 
 class AzureAdLoginHandler(OAuthLoginHandler):
 
@@ -699,6 +718,7 @@ class AzureAdLoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/authorize'
     _OAUTH_USER_URL_ = ''
+    _OAUTH_LOGOUT_URL_ = ''
 
     _USER_KEY = 'unique_name'
 
@@ -716,6 +736,10 @@ class AzureAdLoginHandler(OAuthLoginHandler):
     def _OAUTH_USER_URL(self):
         return self._OAUTH_USER_URL_.format(**config.oauth_extra_params)
 
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        return self._OAUTH_LOGOUT_URL_.format(**config.oauth_extra_params)
+
 
 class AzureAdV2LoginHandler(OAuthLoginHandler):
 
@@ -727,6 +751,7 @@ class AzureAdV2LoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize'
     _OAUTH_USER_URL_ = ''
+    _OAUTH_LOGOUT_URL_ = ''
 
     _USER_KEY = 'email'
 
@@ -743,6 +768,10 @@ class AzureAdV2LoginHandler(OAuthLoginHandler):
     @property
     def _OAUTH_USER_URL(self):
         return self._OAUTH_USER_URL_.format(**config.oauth_extra_params)
+
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        return self._OAUTH_LOGOUT_URL_.format(**config.oauth_extra_params)
 
 
 class OktaLoginHandler(OAuthLoginHandler):
@@ -763,6 +792,8 @@ class OktaLoginHandler(OAuthLoginHandler):
     _OAUTH_AUTHORIZE_URL__ = 'https://{0}/oauth2/v1/authorize'
     _OAUTH_USER_URL_ = 'https://{0}/oauth2/{1}/v1/userinfo?access_token='
     _OAUTH_USER_URL__ = 'https://{0}/oauth2/v1/userinfo?access_token='
+    _OAUTH_LOGOUT_URL_ = ''
+    _OAUTH_LOGOUT_URL__ = ''
 
     _USER_KEY = 'email'
 
@@ -793,6 +824,15 @@ class OktaLoginHandler(OAuthLoginHandler):
         else:
             return self._OAUTH_USER_URL__.format(url, server)
 
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        url = config.oauth_extra_params.get('url', 'okta.com')
+        server = config.oauth_extra_params.get('server', 'default')
+        if server:
+            return self._OAUTH_LOGOUT_URL_.format(url, server)
+        else:
+            return self._OAUTH_LOGOUT_URL__.format(url, server)
+
 
 class GoogleLoginHandler(OAuthLoginHandler):
 
@@ -803,6 +843,7 @@ class GoogleLoginHandler(OAuthLoginHandler):
     _OAUTH_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     _OAUTH_ACCESS_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
     _USER_KEY = 'email'
+    _OAUTH_LOGOUT_URL = ''
 
 
 class BasicLoginHandler(RequestHandler):

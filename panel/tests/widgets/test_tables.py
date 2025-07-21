@@ -441,19 +441,27 @@ def test_tabulator_multi_index_multi_index_columns(document, comm):
     # Create a DataFrame with MultiIndex as columns and MultiIndex as index
     df = pd.DataFrame(np.random.randn(6, 6), index=multi_index, columns=multi_columns)
 
-    table = Tabulator(df, show_index=True)
+    table = Tabulator(
+        df,
+        show_index=True,
+        titles={
+            ("A",): "Title a",
+            ("A", "two"): "Title two",
+            ("A", "two", "X"): "New title",
+        },
+    )
 
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
         {'field': 'number__', 'sorter': 'number'},
         {'field': 'color__'},
-        {'title': 'A', 'columns': [
+        {'title': 'Title a', 'columns': [
             {'title': 'one', 'columns': [
                 {'field': 'A_one_X', 'sorter': 'number'},
                 {'field': 'A_one_Y', 'sorter': 'number'},
             ]},
-            {'title': 'two', 'columns': [
+            {'title': 'Title two', 'columns': [
                 {'field': 'A_two_X', 'sorter': 'number'}
             ]},
         ]},
@@ -470,6 +478,8 @@ def test_tabulator_multi_index_multi_index_columns(document, comm):
     for field in ("number__", "color__", "A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
         assert field in model.source.data
 
+    assert(model.columns[4].field == "A_two_X")
+    assert(model.columns[4].title == "New title")
 
 def test_tabulator_multi_index_multi_index_columns_hide_index(document, comm):
     level_1 = ['A', 'A', 'A', 'B', 'B', 'B']

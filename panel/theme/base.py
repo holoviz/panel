@@ -14,6 +14,7 @@ from bokeh.models import ImportedStyleSheet
 from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
 
 from ..config import config
+from ..custom import PyComponent
 from ..io.resources import (
     JS_VERSION, ResourceComponent, component_resource_path, get_dist_path,
     resolve_custom_path,
@@ -277,7 +278,11 @@ class Design(param.Parameterized, ResourceComponent):
         }
         if 'stylesheets' in modifiers:
             params['stylesheets'] = modifiers['stylesheets'] + viewable.stylesheets
-        props = viewable._process_param_change(params)
+
+        if isinstance(viewable, PyComponent):
+            props = viewable._view__._process_param_change(params)
+        else:
+            props = viewable._process_param_change(params)
         doc = model.document or document
         if doc and 'dist_url' in doc._template_variables:
             dist_url = doc._template_variables['dist_url']

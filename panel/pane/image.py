@@ -498,6 +498,11 @@ class PDF(FileBase):
 
     _rerender_params: ClassVar[list[str]] = FileBase._rerender_params + ['start_page']
 
+    @classmethod
+    def _imgshape(cls, data):
+        assert data.startswith(b'%PDF-')
+        return 0, 0
+
     def _transform_object(self, obj: Any) -> dict[str, Any]:
         if obj is None:
             return dict(object='<embed></embed>')

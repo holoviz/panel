@@ -282,7 +282,10 @@ def component_resource_path(component, attr, path):
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
-    url = stylesheet.url
+    try:
+        url = stylesheet.url
+    except Exception:
+        return
     if url.startswith(CDN_DIST+dist_url) and dist_url != CDN_DIST:
         patched_url = url.replace(CDN_DIST+dist_url, dist_url)
     elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
@@ -347,7 +350,7 @@ def patch_model_css(root, dist_url):
         patch_stylesheet(stylesheet, dist_url)
     if doc:
         doc.callbacks._held_events = events
-        if held:
+        if held or not state._loaded.get(doc):
             doc.callbacks._hold = held
         else:
             doc.unhold()
