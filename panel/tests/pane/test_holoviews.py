@@ -162,6 +162,25 @@ def test_holoviews_pane_reflect_responsive(document, comm):
 
 @pytest.mark.usefixtures("hv_bokeh")
 @hv_available
+def test_holoviews_pane_applies_visible(document, comm):
+    curve = hv.Curve([1, 2, 3])
+    pane = HoloViews(curve)
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    pane.visible = False
+
+    assert not row.visible
+    assert not row.children[0].visible
+
+    pane.visible = True
+
+    assert row.visible
+    assert row.children[0].visible
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
 def test_holoviews_pane_reflect_responsive_override(document, comm):
     curve = hv.Curve([1, 2, 3]).opts(responsive=True)
     pane = HoloViews(curve, sizing_mode='fixed')
