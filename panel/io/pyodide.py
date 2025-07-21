@@ -314,7 +314,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
                 blocked.clear()
             now = time.monotonic()
             if blocked and now < blocked[0]:
-                js.setTimeout(lambda: jssync(event, jsdoc, debounce, timeout, append=False), debounce)
+                js.setTimeout(lambda: jssync(event, debounce, timeout, append=False), debounce)
                 return
             events = event_buffer
             blocked.append(now+TIMEOUT/1000)
