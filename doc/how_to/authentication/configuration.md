@@ -2,6 +2,11 @@
 
 The OAuth component will stop any user from accessing the application before first logging into the selected provider. The configuration to set up OAuth is all handled via the global `pn.config` object, which has a number of OAuth related parameters. When launching the application via the `panel serve` CLI command these config options can be set as CLI arguments or environment variables, when using the `pn.serve` function on the other hand these variables can be passed in as arguments.
 
+:::warning
+
+If your app is deployed behind a reverse proxy, you may need to increase its proxy buffer size, e.g. to 16k, in order to accommodate large OAuth requests.
+:::
+
 ## `oauth_provider`
 
 The first step in configuring a OAuth is to specify a specific OAuth provider. Panel ships with a number of providers by default:
