@@ -4,19 +4,34 @@
 
 This patch release brings a number of important bug fixes and refinements, including improved modal behavior, Param integration fixes for ESM, and security hardening of authentication templates. Thanks to @harmvanderheijden, @marcskovmadsen, @maximlt, and @philippjfr for their contributions.
 
-### Bug Fixes
+### Enhancements
 
-- Ensure `Modal` dialogs are correctly focused and layered above other elements ([#8059](https://github.com/holoviz/panel/pull/8059), [#8060](https://github.com/holoviz/panel/pull/8060))
-- Automatically run `Player` widget on initialization ([#8058](https://github.com/holoviz/panel/pull/8058))
-- Improve error message when using `.from_param` incorrectly ([#8047](https://github.com/holoviz/panel/pull/8047))
-- Fix `value_throttled` issue when used with Param panes ([#8057](https://github.com/holoviz/panel/pull/8057))
-- Prevent `AutocompleteInput` from resetting when `restrict=False` ([#8056](https://github.com/holoviz/panel/pull/8056))
-- Reset `param.Event` state correctly in ESM-based components ([#8054](https://github.com/holoviz/panel/pull/8054))
-- Fix callback cleanup when using `--reuse_sessions` ([#8052](https://github.com/holoviz/panel/pull/8052))
+- Improve `.from_param()` error messages ([#8047](https://github.com/holoviz/panel/pull/8047))
 
 ### Security
 
 - Fix XSS vulnerabilities in login and OAuth error templates by escaping user-controlled input ([#8049](https://github.com/holoviz/panel/pull/8049))
+
+### Bug Fixes
+
+- Fix `value_throttled` handling in Param panes ([#8057](https://github.com/holoviz/panel/pull/8057))
+- Prevent `AutocompleteInput` from resetting when `restrict=False` ([#8056](https://github.com/holoviz/panel/pull/8056))
+- Fix callback cleanup for `--reuse_sessions` mode ([#8052](https://github.com/holoviz/panel/pull/8052))
+- Reset `param.Event` state on ESM components ([#8054](https://github.com/holoviz/panel/pull/8054))
+- Allow `Player` components to start upon initialization ([#8058](https://github.com/holoviz/panel/pull/8058))
+- Fix modal dialog stacking and focus behavior in VanillaTemplate ([#8059](https://github.com/holoviz/panel/pull/8059), [#8060](https://github.com/holoviz/panel/pull/8060))
+- Avoid errors in `Tabulator` when editing DataFrames with `pd.NA` values ([#8068](https://github.com/holoviz/panel/pull/8068))
+- Add guard for undefined `url` in `ImportedStyleSheet` ([#8071](https://github.com/holoviz/panel/pull/8071))
+- Ensure session token payload is correctly updated when reusing sessions ([#8072](https://github.com/holoviz/panel/pull/8072))
+- Ensure `--reuse-sessions` caches the `--index` app correctly ([#8073](https://github.com/holoviz/panel/pull/8073))
+- Add debounce logic to `ModelChanged` events in Pyodide to improve performance and prevent redundant updates ([#8077](https://github.com/holoviz/panel/pull/8077))
+- Ensure `Layoutable` params propagate to HoloViews plots ([#8078](https://github.com/holoviz/panel/pull/8078))
+- Fix regression in handling `param.Action` in `.from_param()` utility ([#8079](https://github.com/holoviz/panel/pull/8079))
+- Ensure `LoadingSpinner.visible` correctly hides the component ([#8081](https://github.com/holoviz/panel/pull/8081))
+
+### Documentation
+
+- Add **websocket communication how-to guide** to documentation ([#7952](https://github.com/holoviz/panel/pull/7952))
 
 ### Maintenance
 
