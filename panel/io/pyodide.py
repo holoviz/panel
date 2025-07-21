@@ -289,7 +289,8 @@ def _convert_json_patch(json_patch):
         _current_buffers.clear()
     return serialized
 
-proxies = []
+# Holds proxied functions so they are not GCed
+_proxies = []
 
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
@@ -316,8 +317,12 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
                 blocked.clear()
             now = time.monotonic()
             if blocked and now < blocked[0]:
+                sync_proxy = pyodide.ffi.create_proxy(
+                    lambda: jssync_proxy(event, debounce, timeout, append=False)
+                )
+                _proxies.append(sync_proxy)
                 js.setTimeout(
-                    lambda: jssync_proxy(event, debounce, timeout, append=False),
+                    sync_proxy,
                     debounce
                 )
                 return
@@ -331,7 +336,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         pydoc.apply_json_patch(patch, setter='js')
 
     jssync_proxy = pyodide.ffi.create_proxy(jssync)
-    proxies.append(jssync_proxy)
+    _proxies.append(jssync_proxy)
     jsdoc.on_change(jssync_proxy, pyodide.ffi.to_js(False))
 
     def pysync(event):
