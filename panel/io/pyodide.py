@@ -289,6 +289,8 @@ def _convert_json_patch(json_patch):
         _current_buffers.clear()
     return serialized
 
+proxies = []
+
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring that messages
@@ -314,7 +316,10 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
                 blocked.clear()
             now = time.monotonic()
             if blocked and now < blocked[0]:
-                js.setTimeout(lambda: jssync(event, debounce, timeout, append=False), debounce)
+                js.setTimeout(
+                    lambda: jssync_proxy(event, debounce, timeout, append=False),
+                    debounce
+                )
                 return
             events = event_buffer
             blocked.append(now+TIMEOUT/1000)
@@ -325,7 +330,9 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         patch = _convert_json_patch(json_patch)
         pydoc.apply_json_patch(patch, setter='js')
 
-    jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
+    jssync_proxy = pyodide.ffi.create_proxy(jssync)
+    proxies.append(jssync_proxy)
+    jsdoc.on_change(jssync_proxy, pyodide.ffi.to_js(False))
 
     def pysync(event):
         global _patching
