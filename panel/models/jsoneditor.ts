@@ -67,11 +67,11 @@ export class JSONEditorView extends HTMLBoxView {
       menu: this.model.menu,
       mode,
       onChangeJSON: (json: any) => {
-        this.model.data = json
+        this.model.trigger_event(new JSONEditEvent(json))
       },
       onChangeText: (text: any) => {
         try {
-          this.model.data = JSON.parse(text)
+          this.model.trigger_event(new JSONEditEvent(JSON.parse(text)))
         } catch (e) {
           console.warn(e)
         }
