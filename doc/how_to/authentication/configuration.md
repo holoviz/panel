@@ -4,7 +4,7 @@ The OAuth component will stop any user from accessing the application before fir
 
 :::warning
 
-If your app is deployed behind a reverse proxy, you may need to increase its proxy buffer size, e.g. to 16k, in order to accommodate large OAuth requests.
+If your app is deployed behind a reverse proxy, you may need to increase its proxy buffer size, e.g. to 16k, in order to accommodate large OAuth requests. See the [reverse proxy configuration guide](../server/proxy) for more details.
 :::
 
 ## `oauth_provider`
