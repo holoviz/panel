@@ -1,0 +1,59 @@
+.cell_output {
+  padding-left: 0;
+}
+
+html[data-theme="dark"] .bd-content div.cell_output .text_html,
+html[data-theme="light"] .bd-content div.cell_output .text_html {
+  padding: 0;
+}
+
+html[data-theme="dark"] .bd-content div.cell_output .text_html {
+  background-color: var(--pst-color-background);
+  color: var(--pst-color-text-base);
+}
+
+div.input_prompt {
+  visibility: hidden;
+  height: 0;
+}
+
+div.output_prompt {
+  visibility: hidden;
+  height: 0;
+}
+
+.output_subarea pre {
+  background-color: transparent;
+  border-style: none;
+  margin-left: 1em;
+}
+
+.rendered_html code {
+  font-size: 0.9em !important;
+}
+
+/* Hide cell toggle */
+
+details.toggle-details {
+  display: none;
+}
+
+button.toggle-button {
+  display: none;
+}
+
+.toggle-hidden:not(.admonition) {
+  height: 0;
+}
+
+.tag_hide-input {
+  margin-bottom: 0 !important;
+}
+
+details.hide.above-input {
+  display: none;
+}
+
+.toggle-hidden + .cell_output {
+  margin-top: 0 !important;
+}

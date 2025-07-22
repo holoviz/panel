@@ -1,0 +1,9 @@
+.choices__list--dropdown,
+.choices__list[aria-expanded] {
+  background-color: var(--background-color);
+  border: 1px solid var(--background-text-color);
+}
+.choices__list--dropdown .choices__item--selectable.is-highlighted,
+.choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
+  background-color: var(--surface-color);
+}

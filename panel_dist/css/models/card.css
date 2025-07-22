@@ -1,0 +1,63 @@
+:host(.card) {
+  border-radius: 0.25rem;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+  flex: auto;
+  outline: 1px solid rgba(0, 0, 0, 0.125);
+}
+:host(.accordion) {
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+  outline: 1px solid rgba(0, 0, 0, 0.125);
+  width: 100%;
+}
+.card-header {
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.03);
+  border: unset;
+  border-radius: 0.25rem;
+  display: inline-flex;
+  justify-content: start;
+  outline: unset;
+  position: sticky;
+  width: 100%;
+  margin-right: 0.5em;
+  padding-inline: 0.5em;
+  cursor: pointer;
+}
+.card-header:hover {
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+}
+.card-header:not(:hover) {
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0);
+}
+.accordion-header {
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.03);
+  border: unset;
+  outline: 1px solid;
+  border-radius: 0;
+  display: flex;
+  justify-content: start;
+  position: sticky;
+  width: 100%;
+  cursor: pointer;
+}
+.card-button {
+  background-color: transparent;
+  margin-left: 0em;
+  margin-right: 0.25em;
+  height: 12px;
+  width: 12px;
+}
+.card-header-row {
+  position: relative !important;
+}
+.card-title {
+  align-items: center;
+  font-size: 1.4em;
+  font-weight: bold;
+  overflow-wrap: break-word;
+}
+.card-header-row > .bk {
+  overflow-wrap: break-word;
+  text-align: center;
+}
