@@ -303,8 +303,11 @@ class Serve(_BkServe):
             type    = str
         )),
         ('--reuse-sessions', Argument(
-            action  = 'store_true',
+            action  = 'store',
             help    = "Whether to reuse sessions when serving the initial request.",
+            default = False,
+            const   = True,
+            nargs   = "?"
         )),
         ('--global-loading-spinner', Argument(
             action  = 'store_true',
