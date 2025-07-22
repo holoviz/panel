@@ -16,6 +16,8 @@ panel serve app.py --reuse-sessions --global-loading-spinner
 
 :::{tip}
 If you want to warm up the server with the cached sessions you can also provide the `--warm` option.
+
+Optionally you can also configure `--reuse-sessions warm`, which will warm the session even before the Websocket request requesting it arrives.
 :::
 
 ## More complex cases

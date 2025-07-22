@@ -516,6 +516,15 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
                 expiration=app.session_token_expiration,
                 extra_payload=extra_payload
             )
+            if config.reuse_sessions == 'warm':
+                state.execute(
+                    partial(
+                        self.application_context.create_session_if_needed,
+                        session_id,
+                        self.request,
+                        token
+                    )
+                )
         else:
             token = session.token
         logger.info(LOG_SESSION_CREATED, id(session.document))
