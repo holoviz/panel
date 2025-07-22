@@ -9,6 +9,7 @@ This patch release brings a number of important bug fixes and refinements, inclu
 ### Enhancements
 
 - Improve `.from_param()` error messages ([#8047](https://github.com/holoviz/panel/pull/8047))
+- Add `--reuse-sessions warm` option to preload and cache apps before first use ([#8087](https://github.com/holoviz/panel/pull/8087))
 
 ### Security
 
@@ -30,10 +31,13 @@ This patch release brings a number of important bug fixes and refinements, inclu
 - Ensure `Layoutable` params propagate to HoloViews plots ([#8078](https://github.com/holoviz/panel/pull/8078))
 - Fix regression in handling `param.Action` in `.from_param()` utility ([#8079](https://github.com/holoviz/panel/pull/8079))
 - Ensure `LoadingSpinner.visible` correctly hides the component ([#8081](https://github.com/holoviz/panel/pull/8081))
+- Ensure `JSONEditor` triggers on re-ordering of nodes ([#8086](https://github.com/holoviz/panel/pull/8086))
+- Fix `JSONEditor` menu option to improve usability ([#8085](https://github.com/holoviz/panel/pull/8085))
 
 ### Documentation
 
 - Add **websocket communication how-to guide** to documentation ([#7952](https://github.com/holoviz/panel/pull/7952))
+- Add note about increasing proxy buffer size for OAuth behind reverse proxies ([#8084](https://github.com/holoviz/panel/pull/8084))
 
 ### Maintenance
 
