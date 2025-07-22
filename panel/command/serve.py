@@ -305,7 +305,7 @@ class Serve(_BkServe):
         ('--reuse-sessions', Argument(
             action  = 'store',
             help    = "Whether to reuse sessions when serving the initial request.",
-            default = True,
+            default = False,
             const   = True,
             nargs   = "?"
         )),
