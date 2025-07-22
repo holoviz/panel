@@ -1,5 +1,67 @@
 # Releases
 
+## Version 1.7.5
+
+This patch release brings a number of important bug fixes and refinements, including improved modal behavior, Param integration fixes for ESM, and security hardening of authentication templates. Thanks to @harmvanderheijden, @marcskovmadsen, @maximlt, and @philippjfr for their contributions.
+
+### Enhancements
+
+- Improve `.from_param()` error messages ([#8047](https://github.com/holoviz/panel/pull/8047))
+- Add `--reuse-sessions warm` option to preload and cache apps before first use ([#8087](https://github.com/holoviz/panel/pull/8087))
+
+### Security
+
+- Fix XSS vulnerabilities in login and OAuth error templates by escaping user-controlled input ([#8049](https://github.com/holoviz/panel/pull/8049))
+
+### Bug Fixes
+
+- Fix `value_throttled` handling in Param panes ([#8057](https://github.com/holoviz/panel/pull/8057))
+- Prevent `AutocompleteInput` from resetting when `restrict=False` ([#8056](https://github.com/holoviz/panel/pull/8056))
+- Fix callback cleanup for `--reuse_sessions` mode ([#8052](https://github.com/holoviz/panel/pull/8052))
+- Reset `param.Event` state on ESM components ([#8054](https://github.com/holoviz/panel/pull/8054))
+- Allow `Player` components to start upon initialization ([#8058](https://github.com/holoviz/panel/pull/8058))
+- Fix modal dialog stacking and focus behavior in VanillaTemplate ([#8059](https://github.com/holoviz/panel/pull/8059), [#8060](https://github.com/holoviz/panel/pull/8060))
+- Avoid errors in `Tabulator` when editing DataFrames with `pd.NA` values ([#8068](https://github.com/holoviz/panel/pull/8068))
+- Add guard for undefined `url` in `ImportedStyleSheet` ([#8071](https://github.com/holoviz/panel/pull/8071))
+- Ensure session token payload is correctly updated when reusing sessions ([#8072](https://github.com/holoviz/panel/pull/8072))
+- Ensure `--reuse-sessions` caches the `--index` app correctly ([#8073](https://github.com/holoviz/panel/pull/8073))
+- Add debounce logic to `ModelChanged` events in Pyodide to improve performance and prevent redundant updates ([#8077](https://github.com/holoviz/panel/pull/8077))
+- Ensure `Layoutable` params propagate to HoloViews plots ([#8078](https://github.com/holoviz/panel/pull/8078))
+- Fix regression in handling `param.Action` in `.from_param()` utility ([#8079](https://github.com/holoviz/panel/pull/8079))
+- Ensure `LoadingSpinner.visible` correctly hides the component ([#8081](https://github.com/holoviz/panel/pull/8081))
+- Ensure `JSONEditor` triggers on re-ordering of nodes ([#8086](https://github.com/holoviz/panel/pull/8086))
+- Fix `JSONEditor` menu option to improve usability ([#8085](https://github.com/holoviz/panel/pull/8085))
+
+### Documentation
+
+- Add **websocket communication how-to guide** to documentation ([#7952](https://github.com/holoviz/panel/pull/7952))
+- Add note about increasing proxy buffer size for OAuth behind reverse proxies ([#8084](https://github.com/holoviz/panel/pull/8084))
+
+### Maintenance
+
+- Fix gallery deployment automation ([#8055](https://github.com/holoviz/panel/pull/8055))
+
+## Version 1.7.4
+
+This patch release introduces small but impactful security, compatibility, and usability improvements. It enhances OAuth behavior, adds byte support for the PDF pane, and fixes several rendering and import issues across backends and components. Thanks to @ahuang11, @dalthviz, @MarcSkovMadsen, and @philippjfr for their contributions.
+
+### Enhancements
+
+- Add support for `bytes` input to the `PDF` pane ([#8044](https://github.com/holoviz/panel/pull/8044))
+- Add `logout_url` for Auth0 to OAuth error page template ([#8036](https://github.com/holoviz/panel/pull/8036))
+
+### Security
+
+- Add authentication to files served from `--static-dirs` ([#8042](https://github.com/holoviz/panel/pull/8042))
+- Escape error messages shown on the OAuth error page fixing XSS vulnerability ([#8043](https://github.com/holoviz/panel/pull/8043))
+
+### Bug Fixes
+
+- Ensure `ReactComponent` forces a re-render after render step ([#8037](https://github.com/holoviz/panel/pull/8037))
+- Fix `this.mouse` bug in `ECharts` implementation ([#8041](https://github.com/holoviz/panel/pull/8041))
+- Fix incorrect import path in Django integration docs (`bokehjsdir` → `bokehjs_path`) ([#8040](https://github.com/holoviz/panel/pull/8040))
+- Update Bokeh/FastAPI extra dependency pin to ensure compatibility ([#8039](https://github.com/holoviz/panel/pull/8039))
+
 ## Version 1.7.3
 
 This patch release includes several critical stability improvements, JavaScript race condition fixes, and developer experience enhancements. It also introduces small but helpful UI features such as exception copying and better error feedback in CLI and ESM workflows. Many thanks to contributors @etihwo, @bsdz, @Coderambling, @hoxbro, @philippjfr, and @MarcSkovMadsen.
