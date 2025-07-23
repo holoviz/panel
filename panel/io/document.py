@@ -531,6 +531,20 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
             except RuntimeError:
                 curdoc.add_next_tick_callback(partial(retrigger_events, curdoc, retriggered_events))
 
+def dispatch_events(doc, events):
+    """
+    Dispatch events immediately.
+
+    Parameters
+    ----------
+    doc: Document
+        The document to send events to.
+    events: list[DocumentPatchedEvent]
+        The events to send to the document.
+    """
+    with immediate_dispatch(doc):
+        doc.callbacks._held_events = events
+
 @contextmanager
 def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
     """
@@ -551,7 +565,8 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
         The Comm to dispatch events on when the context manager exits.
     """
     doc = doc or state.curdoc
-    if doc is None or not state._loaded.get(doc):
+    loaded = state._loaded.get(doc)
+    if doc is None or not loaded:
         yield
         return
     held = doc.callbacks.hold_value
@@ -571,10 +586,14 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
             if comm is not None:
                 from .notebook import push
                 push(doc, comm)
-            if state._loaded.get(doc):
+            if loaded and state._unblocked(doc):
                 doc.unhold()
             else:
                 doc.callbacks._hold = None
+                if loaded:
+                    events = doc.callbacks._held_events
+                    doc.callbacks._held_events = []
+                    state.execute(partial(dispatch_events, doc, events))
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
