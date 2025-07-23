@@ -565,8 +565,8 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
         The Comm to dispatch events on when the context manager exits.
     """
     doc = doc or state.curdoc
-    loaded = state._loaded.get(doc)
-    if doc is None or not loaded:
+    loaded = bool(doc) and state._loaded.get(doc)
+    if not loaded:
         yield
         return
     held = doc.callbacks.hold_value

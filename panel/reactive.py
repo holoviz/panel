@@ -963,7 +963,7 @@ class Reactive(Syncable, Viewable):
                 continue
             event = Event(model=model, **event_kwargs)
             _viewable, root, doc, comm = state._views[ref]
-            if comm or state._unblocked(doc) or not doc.session_context:
+            if comm or ((state._unblocked(doc) or not doc.session_context) and not doc.callbacks.hold_value):
                 with unlocked():
                     doc.callbacks.send_event(event)
                 if comm and 'embedded' not in root.tags:
