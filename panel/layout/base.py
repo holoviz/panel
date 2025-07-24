@@ -250,7 +250,7 @@ class Panel(Reactive, SizingModeMixin):
         else:
             old_children = None
 
-        with hold(doc):
+        with hold(doc, comm=comm):
             update = Panel._batch_update
             Panel._batch_update = True
             try:

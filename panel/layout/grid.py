@@ -214,7 +214,7 @@ class GridBox(ListPanel):
         else:
             old_models = None
 
-        with hold(doc):
+        with hold(doc, comm=comm):
             msg = {k: v for k, v in msg.items() if k not in ('nrows', 'ncols')}
             update = Panel._batch_update
             Panel._batch_update = True

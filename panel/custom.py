@@ -609,7 +609,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         try:
             update = Panel._batch_update
             Panel._batch_update = True
-            with hold(doc):
+            with hold(doc, comm=comm):
                 changing = []
                 with freeze_doc(doc, model, msg, force=update_children):
                     if model_msg:
