@@ -581,17 +581,18 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
     finally:
         if held:
             doc.callbacks._hold = held
+        elif comm is not None:
+            from .notebook import push
+            push(doc, comm)
         else:
-            if comm is not None:
-                from .notebook import push
-                push(doc, comm)
+            doc.callbacks._hold = None
+            events = doc.callbacks._held_events
+            doc.callbacks._held_events = []
+            callback = partial(dispatch_events, doc, events)
             if state._unblocked(doc, ignore_hold=True):
-                doc.unhold()
+                callback()
             else:
-                doc.callbacks._hold = None
-                events = doc.callbacks._held_events
-                doc.callbacks._held_events = []
-                state.execute(partial(dispatch_events, doc, events), schedule=True)
+                state.execute(callback, schedule=True)
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
