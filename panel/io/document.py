@@ -585,7 +585,7 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
             if comm is not None:
                 from .notebook import push
                 push(doc, comm)
-            if loaded and state._unblocked(doc):
+            if loaded and state._unblocked(doc, ignore_hold=True):
                 doc.unhold()
             else:
                 doc.callbacks._hold = None

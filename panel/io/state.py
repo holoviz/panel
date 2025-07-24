@@ -287,7 +287,7 @@ class _state(param.Parameterized):
         if self.curdoc:
             self._thread_id_[self.curdoc] = thread_id
 
-    def _unblocked(self, doc: Document) -> bool:
+    def _unblocked(self, doc: Document, ignore_hold: bool = False) -> bool:
         """
         Indicates whether Document events can be dispatched or have
         to scheduled on the event loop. Events can only be safely
@@ -303,7 +303,7 @@ class _state(param.Parameterized):
             self._thread_id in (self._current_thread, None) and
             (not (doc and doc.session_context and getattr(doc.session_context, 'session', None))
              or self._loaded.get(doc))
-        ) or bool(doc.callbacks.hold_value)
+        ) and (not bool(doc.callbacks.hold_value) or ignore_hold)
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
