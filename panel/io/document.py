@@ -565,7 +565,7 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
         The Comm to dispatch events on when the context manager exits.
     """
     doc = doc or state.curdoc
-    if doc is None or not (loaded := state._loaded.get(doc)):
+    if doc is None or not state._loaded.get(doc):
         yield
         return
     held = doc.callbacks.hold_value
@@ -585,14 +585,13 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
             if comm is not None:
                 from .notebook import push
                 push(doc, comm)
-            if loaded and state._unblocked(doc, ignore_hold=True):
+            if state._unblocked(doc, ignore_hold=True):
                 doc.unhold()
             else:
                 doc.callbacks._hold = None
-                if loaded:
-                    events = doc.callbacks._held_events
-                    doc.callbacks._held_events = []
-                    state.execute(partial(dispatch_events, doc, events))
+                events = doc.callbacks._held_events
+                doc.callbacks._held_events = []
+                state.execute(partial(dispatch_events, doc, events), schedule=True)
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
