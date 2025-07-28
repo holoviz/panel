@@ -240,7 +240,7 @@ def _reload(module_paths, changes):
     for doc, loc in state._locations.items():
         if not doc.session_context:
             continue
-        elif state._connected.get(doc):
+        elif state._loaded.get(doc):
             loc.reload = True
         else:
             def reload_session(event, loc=loc):
