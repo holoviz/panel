@@ -1194,7 +1194,7 @@ class LiteralInput(Widget):
             if event:
                 self.value = event.old
             types = repr(self.type) if isinstance(self.type, tuple) else self.type.__name__
-            raise ValueError(f'LiteralInput expected {types} type but value {new} '
+            raise ValueError(f'{self.__class__.__name__} expected {types} type, but value \'{new}\' '
                              f'is of type {type(new).__name__}.')
 
     def _process_property_change(self, msg):

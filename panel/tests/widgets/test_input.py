@@ -244,6 +244,21 @@ def test_literal_input(document, comm):
     with pytest.raises(ValueError):
         literal.value = []
 
+def test_literal_input_inheritance():
+    """LiteralInput should be able to be subclassed as done in panel-material-ui."""
+    class DictInput(LiteralInput):
+        """
+        The `DictInput` allows entering a dictionary value using a text input box.
+        """
+
+    DictInput.param.type.default = dict
+
+
+    with pytest.raises(ValueError) as ex:
+        DictInput(value="not a dict")
+
+    assert str(ex.value) == "DictInput expected dict type, but value 'not a dict' is of type str."
+
 def test_static_text(document, comm):
 
     text = StaticText(value='ABC', name='Text:')
