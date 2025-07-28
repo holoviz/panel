@@ -188,6 +188,7 @@ class _state(param.Parameterized):
     _on_session_created_internal: ClassVar[list[Callable[[SessionContext], None]]] = []
     _on_session_destroyed: ClassVar[list[Callable[[SessionContext], None]]] = []
     _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
+    _connected: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
     # Module that was run during setup
     _setup_module = None
@@ -302,7 +303,7 @@ class _state(param.Parameterized):
             doc is self.curdoc and
             self._thread_id in (self._current_thread, None) and
             (not (doc and doc.session_context and getattr(doc.session_context, 'session', None))
-             or self._loaded.get(doc))
+             or self._connected.get(doc))
         )
 
     @param.depends('_busy_counter', watch=True)
@@ -417,7 +418,8 @@ class _state(param.Parameterized):
         doc = doc or self.curdoc
         if not doc:
             return
-        elif doc not in self._onload:
+        self._connected[doc] = True
+        if doc not in self._onload:
             self._loaded[doc] = True
             return
 
@@ -810,6 +812,7 @@ class _state(param.Parameterized):
         self._locations.clear()
         self._templates.clear()
         self._views.clear()
+        self._connected.clear()
         self._loaded.clear()
         self.cache.clear()
         self._scheduled.clear()
