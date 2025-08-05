@@ -531,6 +531,13 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
             except RuntimeError:
                 curdoc.add_next_tick_callback(partial(retrigger_events, curdoc, retriggered_events))
 
+def dispatch_events(events, doc: Document | None = None):
+    doc = doc or state.curdoc
+    if doc is None:
+        return
+    with immediate_dispatch(doc):
+        doc.callbacks._held_events = events
+
 @contextmanager
 def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
     """
@@ -554,10 +561,14 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
     if doc is None:
         yield
         return
+    threaded = state._current_thread != state._thread_id
     held = doc.callbacks.hold_value
     try:
         if policy is None:
             doc.unhold()
+            yield
+        elif threaded:
+            doc.hold(policy)
             yield
         else:
             with unlocked(policy=policy):
@@ -567,14 +578,17 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
     finally:
         if held:
             doc.callbacks._hold = held
+        elif comm is not None:
+            from .notebook import push
+            push(doc, comm)
+        elif not state._connected.get(doc):
+            doc.callbacks._hold = None
+        elif threaded:
+            doc.callbacks._hold = None
+            doc.add_next_tick_callback(doc.unhold)
+            doc.callbacks._hold = policy
         else:
-            if comm is not None:
-                from .notebook import push
-                push(doc, comm)
-            if state._connected.get(doc):
-                doc.unhold()
-            else:
-                doc.callbacks._hold = None
+            doc.unhold()
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
