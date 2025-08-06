@@ -48,7 +48,7 @@ def test_py_component_cleanup(document, comm):
 
 class ESMDataFrame(ReactiveESM):
 
-    df = param.DataFrame()
+    df = param.DataFrame(doc="""A DataFrame to be displayed in the ESM.""")
 
 
 def test_reactive_esm_sync_dataframe(document, comm):
@@ -67,9 +67,9 @@ def test_reactive_esm_sync_dataframe(document, comm):
 
 class ESMWithChildren(ReactiveESM):
 
-    child = param.ClassSelector(class_=Viewable)
+    child = param.ClassSelector(class_=Viewable, doc="""A child Viewable to be displayed in the ESM.""")
 
-    children = param.List(item_type=Viewable)
+    children = param.List(item_type=Viewable, doc="""Child Viewables to be displayed in the ESM.""")
 
 
 def test_reactive_esm_model_cleanup(document, comm):
