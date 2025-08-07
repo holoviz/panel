@@ -1,6 +1,6 @@
 [project]
 name = "panel"
-channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
+channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [activation.env]
@@ -32,7 +32,7 @@ nomkl = "*"
 pip = "*"
 # Required
 bleach = "*"
-bokeh = ">=3.5.0,<3.8.0a0"
+bokeh = ">=3.5.0,<3.9.0a0"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
