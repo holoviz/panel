@@ -144,7 +144,7 @@ class _config(_base_config):
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
 
-    disconnect_notification = param.String(doc="""
+    disconnect_notification = param.String(default="Server connection lost.", doc="""
         The notification to display to the user when the connection
         to the server is dropped.""")
 

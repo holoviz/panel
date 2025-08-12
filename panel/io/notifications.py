@@ -161,11 +161,66 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
 
     _scripts = {
       "render": """
-        var [y, x] = data.position.split('-')
+        const [y, x] = data.position.split('-')
         state.toaster = new Notyf({
           dismissible: true,
           position: {x: x, y: y},
           types: data.types
+        })
+        const clear_timeout = () => {
+          if (state.reconnect_timeout != null) {
+             clearTimeout(state.reconnect_timeout)
+             state.reconnect_timeout = null
+          }
+        }
+        data.document.on_event("client_reconnected", (_, _event) => {
+          clear_timeout()
+          state.toaster.dismiss(state.reconnect_toast)
+          state.reconnect_toast = null
+          const config = {
+            className: "notyf__toast notyf__reconnect",
+            message: "Connection with server was re-established.",
+            duration: 5000,
+            type: "success",
+          }
+          state.toaster.open(config)
+        })
+        data.document.on_event('connection_lost', (_, event) => {
+          clear_timeout()
+          const {timeout} = event
+          const msg = data.js_events.connection_lost.message
+          if (timeout == null) {
+            state.reconnect_msg.innerHTML = `<div>${msg} <span class="reconnect">Click here</span> to attempt manual re-connect.<div>`
+            const reconnectSpan = state.reconnect_msg.querySelector('.reconnect');
+            if (reconnectSpan) {
+              reconnectSpan.addEventListener('click', () => { clear_timeout(); event.reconnect() })
+            }
+          } else {
+            let current_timeout = timeout
+            const config = {
+              className: "notyf__toast notyf__disconnect",
+              message: msg,
+              duration: 0,
+              type: data.js_events.connection_lost.type,
+            }
+            if (state.reconnect_toast == null) {
+              state.reconnect_toast = state.toaster.open(config)
+              state.reconnect_msg = document.querySelector('.notyf__disconnect > .notyf__wrapper > .notyf__message')
+            }
+            const set_timeout = () => {
+              const timeout = Math.max(0, Math.round(current_timeout / 1000))
+              let message = msg
+              if (timeout == 0) {
+                message = `${msg} Reconnecting now.`
+                clear_timeout()
+              } else {
+                message = `${msg} Attempting to reconnect in ${timeout} seconds…`
+              }
+              state.reconnect_msg.textContent = message
+            }
+            set_timeout()
+            state.reconnect_timeout = setInterval(() => { current_timeout -= 1000; set_timeout() }, 1000)
+          }
         })
       """,
       "notifications": """
@@ -193,8 +248,9 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
           if (notification.duration) {
             setTimeout(destroy, notification.duration)
           }
-          if (notification.properties === undefined)
+          if (notification.properties === undefined) {
             return
+          }
           view.connect(notification.properties._destroyed.change, function () {
             state.toaster.dismiss(toast)
           })
@@ -227,9 +283,11 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
         doc = create_doc_if_none_exists(doc)
         root = super().get_root(doc, comm, preprocess)
         for event, notification in self.js_events.items():
+            if event == 'connection_lost':
+                continue
             doc.js_on_event(event, CustomJS(code=f"""
-            var config = {{
-              message: {notification['message']!r},
+            const config = {{
+              message: {notification['message']!r}+suffix,
               duration: {notification.get('duration', 0)},
               notification_type: {notification['type']!r},
               _destroyed: false
