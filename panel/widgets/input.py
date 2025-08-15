@@ -1541,7 +1541,7 @@ class Switch(_BooleanWidget):
     """
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'value': 'active'
+        'value': 'active'
     }
 
     _widget_type: ClassVar[type[Model]] = _BkSwitch
