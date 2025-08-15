@@ -273,6 +273,7 @@ def update_versions(app, docname, source):
         "{{PYSCRIPT_VERSION}}" : PYSCRIPT_VERSION,
         "{{PYODIDE_VERSION}}" : _get_pyodide_version(),
         "{{TABULATOR_VERSION}}" : TABULATOR_VERSION,
+        "{{TABULATOR_VERSION_WWW}}" : ".".join(TABULATOR_VERSION.split(".")[:2]),
         "{{VIZZU_VERSION}}" : VIZZU_VERSION,
     }
 
