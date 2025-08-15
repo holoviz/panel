@@ -216,8 +216,8 @@ button.mdc-button.mdc-card-button {
 
 .bk-input {
   background-color: unset;
-  border: 1px solid var(--design-secondary-color, var(--panel-secondary-color));
-  color: var(--design-secondary-text-color, var(--panel-on-secondary-color));
+  border: 1px solid var(--mdc-theme-secondary);
+  color: var(--mdc-theme-on-secondary);
 }
 
 .bk-input:not([type='file']) {
@@ -234,8 +234,8 @@ textarea.bk-input:not([type='file']) {
 .bk-input[disabled] {
   background-color: unset;
   border: unset;
-  border: 1px dotted var(--design-secondary-color, var(--panel-secondary-color));
-  color: var(--design-secondary-color, var(--panel-secondary-color));
+  border: 1px dotted var(--mdc-theme-secondary);
+  color: var(--mdc-theme-secondary);
 }
 
 .bk-input:not([disabled]):hover {
@@ -616,8 +616,13 @@ div .tabulator .tabulator-header .tabulator-col {
   }
 }
 
-.tabulator-row .tabulator-cell.tabulator-editing {
+.pnx-tabulator.tabulator .tabulator-row .tabulator-cell.tabulator-editing {
   border: 1px solid var(--mdc-theme-on-background);
+}
+
+.tabulator-edit-list .tabulator-edit-list-item.active {
+  background-color: var(--mdc-theme-primary);
+  color: var(--mdc-theme-on-primary);
 }
 
 .tabulator-row .tabulator-cell.tabulator-editing input {
