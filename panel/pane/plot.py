@@ -400,7 +400,8 @@ class RGGPlot(PNG):
 
     width = param.Integer(default=400)
 
-    dpi = param.Integer(default=144, bounds=(1, None))
+    dpi = param.Integer(default=144, bounds=(1, None), doc="""
+        Scales the dpi of the ggplot figure.""")
 
     _rerender_params = PNG._rerender_params + ['object', 'dpi', 'width', 'height']
 
