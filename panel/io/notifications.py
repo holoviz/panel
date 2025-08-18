@@ -8,7 +8,7 @@ from bokeh.models import CustomJS
 
 from ..config import config
 from ..reactive import ReactiveHTML
-from ..util import classproperty
+from ..util import BOKEH_GE_3_8, classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
 from .document import create_doc_if_none_exists
 from .resources import CDN_DIST, CSS_URLS, bundled_files
@@ -166,7 +166,7 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
           dismissible: true,
           position: {x: x, y: y},
           types: data.types
-        })
+        })""" + ("""
         const clear_timeout = () => {
           if (state.reconnect_timeout != null) {
              clearTimeout(state.reconnect_timeout)
@@ -221,8 +221,7 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
             set_timeout()
             state.reconnect_timeout = setInterval(() => { current_timeout -= 1000; set_timeout() }, 1000)
           }
-        })
-      """,
+        })""" if BOKEH_GE_3_8 else ""),
       "notifications": """
       for (notification of [...data.notifications]) {
           if (notification._destroyed || notification._rendered) {
@@ -283,7 +282,7 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
         doc = create_doc_if_none_exists(doc)
         root = super().get_root(doc, comm, preprocess)
         for event, notification in self.js_events.items():
-            if event == 'connection_lost':
+            if event == 'connection_lost' and BOKEH_GE_3_8:
                 continue
             doc.js_on_event(event, CustomJS(code=f"""
             const config = {{
