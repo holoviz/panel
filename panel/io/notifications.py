@@ -286,7 +286,7 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
                 continue
             doc.js_on_event(event, CustomJS(code=f"""
             const config = {{
-              message: {notification['message']!r}+suffix,
+              message: {notification['message']!r},
               duration: {notification.get('duration', 0)},
               notification_type: {notification['type']!r},
               _destroyed: false
