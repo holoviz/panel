@@ -2078,7 +2078,7 @@ class Tabulator(BaseTable):
                     del col_dict['editorParams']['values']
                     col_dict['editorParams']['valuesLookup'] = True
             if index in self.frozen_columns or field in self.frozen_columns or i in self.frozen_columns:
-                if field in self.frozen_columns:
+                if index != field and field in self.frozen_columns:
                     msg = f"The {index} format should be preferred over the {field}."
                     warn(msg, DeprecationWarning)
                 col_dict['frozen'] = True
