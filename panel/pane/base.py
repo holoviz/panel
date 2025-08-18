@@ -22,7 +22,7 @@ from .._param import Margin
 from ..io.cache import _generate_hash
 from ..io.document import create_doc_if_none_exists, unlocked
 from ..io.notebook import push
-from ..io.state import state
+from ..io.state import set_curdoc, state
 from ..layout.base import (
     Column, ListPanel, NamedListPanel, Panel, Row,
 )
@@ -345,7 +345,8 @@ class Pane(PaneBase, Reactive):
     ) -> None:
         old_model = self._models[ref][0]
         if self._updates:
-            self._update(ref, old_model)
+            with set_curdoc(doc):
+                self._update(ref, old_model)
             return
 
         new_model = self._get_model(doc, root, parent, comm)
@@ -426,17 +427,14 @@ class Pane(PaneBase, Reactive):
             if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
-            if comm or state._unblocked(doc):
+            if comm or state._unblocked(doc) or not doc.session_context:
                 with unlocked():
                     self._update_object(ref, doc, root, parent, comm)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
                 cb = partial(self._update_object, ref, doc, root, parent, comm)
-                if doc.session_context:
-                    doc.add_next_tick_callback(cb)
-                else:
-                    cb()
+                doc.add_next_tick_callback(cb)
 
     def _update(self, ref: str, model: Model) -> None:
         """

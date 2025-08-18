@@ -23,14 +23,14 @@ from bokeh.application.handlers.code_runner import CodeRunner
 from bokeh.application.handlers.handler import Handler, handle_exception
 from bokeh.core.types import PathLike
 from bokeh.document import Document
-from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
+from bokeh.io.doc import curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
 from ..config import config
 from .mime_render import MIME_RENDERERS
 from .profile import profile_ctx
 from .reload import record_modules
-from .state import state
+from .state import set_curdoc, state
 
 if TYPE_CHECKING:
     from nbformat import NotebookNode
@@ -332,7 +332,7 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
     sessions = []
 
     def post_check():
-        newdoc = curdoc()
+        newdoc = state.curdoc
         # Do not let curdoc track modules when autoreload is enabled
         # otherwise it will erroneously complain that there is
         # a memory leak
@@ -346,7 +346,7 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
     try:
         state._launching.add(doc)
         with _monkeypatch_io(handler._loggers):
-            with patch_curdoc(doc):
+            with set_curdoc(doc):
                 with profile_ctx(config.profiler) as sessions:
                     with record_modules(handler=handler):
                         runner = handler._runner
