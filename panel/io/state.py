@@ -465,7 +465,7 @@ class _state(param.Parameterized):
         except Exception as e:
             self._handle_exception(e)
 
-    def _handle_exception_wrapper(self, callback, doc: Document | None):
+    def _handle_exception_wrapper(self, callback, doc: Document | None = None):
         @wraps(callback)
         def wrapper(*args, **kw):
             try:
