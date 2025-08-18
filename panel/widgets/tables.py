@@ -87,7 +87,7 @@ def _get_value_from_keys(d:dict, key1, key2, default=None):
     if key1 in d:
         return d[key1]
     if key2 in d:
-        msg = f"The {key1} format should be prefered over the {key2}."
+        msg = f"The {key1} format should be preferred over the {key2}."
         warn(msg, DeprecationWarning)
         return d[key2]
     return default
@@ -2079,7 +2079,7 @@ class Tabulator(BaseTable):
                     col_dict['editorParams']['valuesLookup'] = True
             if index in self.frozen_columns or field in self.frozen_columns or i in self.frozen_columns:
                 if field in self.frozen_columns:
-                    msg = f"The {index} format should be prefered over the {field}."
+                    msg = f"The {index} format should be preferred over the {field}."
                     warn(msg, DeprecationWarning)
                 col_dict['frozen'] = True
             if isinstance(self.widths, dict) and isinstance(_get_value_from_keys(self.widths, index, field), str):
