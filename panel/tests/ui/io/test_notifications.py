@@ -90,6 +90,24 @@ def test_disconnect_notification(page):
 
     page.click('.bk-btn')
 
+    expect(page.locator('.notyf__message')).to_have_text('Disconnected!')
+
+
+def test_reconnect_notification(page):
+    def app():
+        config.disconnect_notification = 'Disconnected!'
+        button = Button(name='Stop server')
+        button.js_on_click(code="""
+        Bokeh.documents[0].event_manager.send_event({'event_name': 'connection_lost', 'publish': false, 'timeout': 1000})
+        """)
+        return button
+
+    serve_component(page, app)
+
+    page.click('.bk-btn')
+
+    expect(page.locator('.notyf__message')).to_have_text('Disconnected! Attempting to reconnect in 1 seconds…')
+
 
 def test_onload_notification(page):
     def onload_callback():

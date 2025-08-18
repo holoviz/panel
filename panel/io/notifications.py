@@ -189,7 +189,7 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
           clear_timeout()
           const {timeout} = event
           const msg = data.js_events.connection_lost.message
-          if (timeout == null) {
+          if (timeout == null && state.reconnect_msg != null) {
             state.reconnect_msg.innerHTML = `<div>${msg} <span class="reconnect">Click here</span> to attempt manual re-connect.<div>`
             const reconnectSpan = state.reconnect_msg.querySelector('.reconnect');
             if (reconnectSpan) {
@@ -218,8 +218,10 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
               }
               state.reconnect_msg.textContent = message
             }
-            set_timeout()
-            state.reconnect_timeout = setInterval(() => { current_timeout -= 1000; set_timeout() }, 1000)
+            if (timeout != null) {
+              set_timeout()
+              state.reconnect_timeout = setInterval(() => { current_timeout -= 1000; set_timeout() }, 1000)
+            }
           }
         })""" if BOKEH_GE_3_8 else ""),
       "notifications": """
