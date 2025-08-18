@@ -39,6 +39,7 @@ test:
     - pytest-asyncio
     - pytest-rerunfailures
     - pytest-xdist
+    - esbuild
   commands:
     - pip check
     - panel --help
