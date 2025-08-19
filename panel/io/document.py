@@ -27,7 +27,7 @@ from bokeh.models import CustomJS
 from ..config import config
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .model import monkeypatch_events  # noqa: F401 API import
-from .state import curdoc_locked, state
+from .state import state
 
 if TYPE_CHECKING:
     from asyncio.futures import Future
@@ -319,7 +319,7 @@ def schedule_write_events(
     _dispatch_write_task(doc, _dispatch_msgs, doc)
 
 def create_doc_if_none_exists(doc: Document | None) -> Document:
-    curdoc = doc or curdoc_locked()
+    curdoc = doc or state.curdoc
     if curdoc is None:
         curdoc = Document()
     elif not isinstance(curdoc, Document):

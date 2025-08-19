@@ -334,16 +334,13 @@ class HoloViews(Pane):
                 key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
         if plot.backend == 'bokeh':
-            if plot.comm or state._unblocked(plot.document):
+            if plot.comm or state._unblocked(plot.document) or not plot.document.session_context:
                 with unlocked():
                     plot.update(key)
                 if plot.comm and 'embedded' not in plot.root.tags:
                     plot.push()
             else:
-                if plot.document.session_context:
-                    plot.document.add_next_tick_callback(partial(plot.update, key))
-                else:
-                    plot.update(key)
+                plot.document.add_next_tick_callback(partial(plot.update, key))
         else:
             plot.update(key)
             if hasattr(plot.renderer, 'get_plot_state'):
