@@ -72,7 +72,7 @@ def _eval_panel(
     with set_curdoc(doc):
         if isinstance(panel, (FunctionType, MethodType)):
             panel = panel()
-        if panel is None and hasattr(state, "template"):
+        if panel is None and config.template:
             panel = state.template
         if isinstance(panel, BaseTemplate):
             doc = panel._modify_doc(server_id, title, doc, location)
