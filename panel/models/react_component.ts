@@ -281,7 +281,7 @@ import { CacheProvider } from "@emotion/react"`
       init_code = `
   if (view.use_shadow_dom) {
     const css_key = id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
-    this.mui_cache = createCache({
+    view.mui_cache = createCache({
       key: 'css-'+css_key,
       prepend: true,
       container: view.style_cache,
@@ -289,7 +289,7 @@ import { CacheProvider } from "@emotion/react"`
   }`
       render_code = `
   if (rendered && ((view.parent?.react_root === undefined) || view.model.use_shadow_dom)) {
-    rendered = React.createElement(CacheProvider, {value: this.mui_cache}, rendered)
+    rendered = React.createElement(CacheProvider, {value: view.mui_cache}, rendered)
   }`
     }
     return `
