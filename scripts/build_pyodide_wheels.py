@@ -108,13 +108,11 @@ for item in zin.infolist():
     ):
         continue
     elif filename.startswith("bokeh-") and filename.endswith("METADATA"):
-        # Replace tornado dependency with bokeh-sampledata
+        # Remove tornado dependency
         buffer = "\n".join(
             [
-                line if not (
-                    "Requires-Dist:" in line and "tornado" in line
-                ) else "Requires-Dist: bokeh-sampledata"
-                for line in buffer.decode("utf-8").split("\n")
+                line for line in buffer.decode("utf-8").split("\n")
+                if "Requires-Dist: tornado" not in line
             ]
         ).encode("utf-8")
     zout.writestr(item, buffer)
