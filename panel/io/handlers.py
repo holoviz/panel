@@ -23,7 +23,7 @@ from bokeh.application.handlers.code_runner import CodeRunner
 from bokeh.application.handlers.handler import Handler, handle_exception
 from bokeh.core.types import PathLike
 from bokeh.document import Document
-from bokeh.io.doc import curdoc, set_curdoc as bk_set_curdoc
+from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
 from ..config import config
@@ -345,29 +345,26 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
 
     try:
         state._launching.add(doc)
-        with _monkeypatch_io(handler._loggers):
-            with set_curdoc(doc):
-                with profile_ctx(config.profiler) as sessions:
-                    with record_modules(handler=handler):
-                        runner = handler._runner
-                        if runner.error:
-                            from ..pane import Alert
-                            Alert(
-                                f'<b>{runner.error}</b>\n<pre style="overflow-y: auto">{runner.error_detail}</pre>',
-                                alert_type='danger', margin=5, sizing_mode='stretch_width'
-                            ).servable()
-                        else:
-                            handler._runner.run(module, post_check)
-                            if post_run:
-                                post_run()
-                if not doc.roots and not allow_empty and config.autoreload and doc not in state._templates:
-                    from ..pane import Alert
-                    Alert(
-                        ('<b>Application did not publish any contents</b>\n\n<span>'
-                        'Ensure you have marked items as servable or added models to '
-                        'the bokeh document manually.'),
-                        alert_type='danger', margin=5, sizing_mode='stretch_width'
-                    ).servable()
+        with _monkeypatch_io(handler._loggers), patch_curdoc(doc), set_curdoc(doc), profile_ctx(config.profiler) as sessions, record_modules(handler=handler):
+            runner = handler._runner
+            if runner.error:
+                from ..pane import Alert
+                Alert(
+                    f'<b>{runner.error}</b>\n<pre style="overflow-y: auto">{runner.error_detail}</pre>',
+                    alert_type='danger', margin=5, sizing_mode='stretch_width'
+                ).servable()
+            else:
+                handler._runner.run(module, post_check)
+                if post_run:
+                    post_run()
+            if not doc.roots and not allow_empty and config.autoreload and doc not in state._templates:
+                from ..pane import Alert
+                Alert(
+                    ('<b>Application did not publish any contents</b>\n\n<span>'
+                     'Ensure you have marked items as servable or added models to '
+                     'the bokeh document manually.'),
+                    alert_type='danger', margin=5, sizing_mode='stretch_width'
+                ).servable()
     finally:
         if config.profiler:
             try:
