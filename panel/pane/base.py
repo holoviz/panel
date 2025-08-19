@@ -345,8 +345,7 @@ class Pane(PaneBase, Reactive):
     ) -> None:
         old_model = self._models[ref][0]
         if self._updates:
-            with set_curdoc(doc):
-                self._update(ref, old_model)
+            self._update(ref, old_model)
             return
 
         new_model = self._get_model(doc, root, parent, comm)
@@ -434,7 +433,8 @@ class Pane(PaneBase, Reactive):
                     push(doc, comm)
             else:
                 cb = partial(self._update_object, ref, doc, root, parent, comm)
-                doc.add_next_tick_callback(cb)
+                with set_curdoc(doc):
+                    state.execute(cb, schedule=True)
 
     def _update(self, ref: str, model: Model) -> None:
         """

@@ -320,7 +320,8 @@ class Syncable(Renderable):
             else:
                 cb = partial(self._manual_update, events, model, doc, root, parent, comm)
                 if doc.session_context:
-                    doc.add_next_tick_callback(cb)
+                    with set_curdoc(doc):
+                        state.execute(cb, schedule=True)
                 else:
                     cb()
 
@@ -352,7 +353,8 @@ class Syncable(Renderable):
         else:
             curdoc_events = self._in_process__events.pop(doc, {})
             cb = partial(self._scheduled_update_model, events, msg, root, model, doc, comm, curdoc_events)
-            doc.add_next_tick_callback(cb)
+            with set_curdoc(doc):
+                state.execute(cb, schedule=True)
             return False
 
     def _update_model(
@@ -579,9 +581,9 @@ class Syncable(Renderable):
 
     def _server_event(self, doc: Document, event: Event) -> None:
         if doc.session_context and not state._unblocked(doc):
-            doc.add_next_tick_callback(
-                partial(self._event_coroutine, doc, event) # type: ignore
-            )
+            cb = partial(self._event_coroutine, doc, event)
+            with set_curdoc(doc):
+                state.execute(cb, schedule=True)
         else:
             self._comm_event(doc, event)
 
@@ -1092,7 +1094,8 @@ class SyncableData(Reactive):
                     push(doc, comm)
             else:
                 cb = partial(self._apply_stream, ref, m, stream, rollover)
-                doc.add_next_tick_callback(cb)
+                with set_curdoc(doc):
+                    state.execute(cb, schedule=True)
 
     def _apply_patch(self, ref: str, model: Model, patch: Patches) -> None:
         self._changing[ref] = ['data']
@@ -1114,7 +1117,8 @@ class SyncableData(Reactive):
                     push(doc, comm)
             else:
                 cb = partial(self._apply_patch, ref, m, patch)
-                doc.add_next_tick_callback(cb)
+                with set_curdoc(doc):
+                    state.execute(cb, schedule=True)
 
     def _update_manual(self, *events: param.parameterized.Event) -> None:
         """
