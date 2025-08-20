@@ -1,5 +1,6 @@
 /* Variables */
-:host {
+:host,
+:root {
   --handle-width: 16px;
   --handle-height: 16px;
   --switch-size: 16px;
@@ -7,6 +8,8 @@
   --padding-vertical: 10px;
   --mdc-on-surface: inherit;
   --current-background-color: var(--mdc-theme-background);
+  --bokeh-base-font: Roboto, sans-serif, Verdana;
+  color: var(--mdc-theme-on-background);
 }
 
 :host-context(.mdc-top-app-bar) .bk-menu {
