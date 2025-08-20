@@ -257,7 +257,7 @@ def resolve_custom_path(
             return None
     except OSError:
         return None
-    abs_path = abs_path.absolute()
+    abs_path = pathlib.Path(os.path.normpath(abs_path.absolute()))
     if not relative:
         return abs_path
     return pathlib.Path(os.path.relpath(abs_path, module_path))
