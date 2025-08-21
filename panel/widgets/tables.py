@@ -2082,8 +2082,8 @@ class Tabulator(BaseTable):
                     msg = f"The {index} format should be preferred over the {field}."
                     warn(msg, DeprecationWarning)
                 col_dict['frozen'] = True
-            if isinstance(self.widths, dict) and isinstance(_get_value_from_keys(self.widths, index, field), str):
-                col_dict['width'] = self.widths.get(index, self.widths.get(field))
+            if isinstance(self.widths, dict) and (col_width := _get_value_from_keys(self.widths, index, field)) and isinstance(col_width, str):
+                col_dict['width'] = col_width
             col_dict.update(self._get_filter_spec(column))
 
             if index in self.header_tooltips or field in self.header_tooltips:
