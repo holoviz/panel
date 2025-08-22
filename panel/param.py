@@ -552,11 +552,11 @@ class Param(Pane):
         if hasattr(param, 'Event') and isinstance(p_obj, param.Event):
             def event(change):
                 parameterized.param.trigger(p_name)
-            watcher = widget.param.watch(event, 'clicks')
+            watcher = widget.param.watch(event, 'value')
         elif isinstance(p_obj, param.Action):
             def action(change):
                 value(parameterized)
-            watcher = widget.param.watch(action, 'clicks')
+            watcher = widget.param.watch(action, 'value')
         elif onkeyup and hasattr(widget, 'value_input'):
             watcher = widget.param.watch(link_widget, 'value_input')
         elif throttled and hasattr(widget, 'value_throttled'):
