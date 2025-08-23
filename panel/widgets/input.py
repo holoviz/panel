@@ -238,7 +238,7 @@ class FileInput(Widget):
         multiple is False or a list of bytes otherwise.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'filename': None, 'name': None
+        'filename': None
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -1541,7 +1541,7 @@ class Switch(_BooleanWidget):
     """
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'value': 'active'
+        'value': 'active'
     }
 
     _widget_type: ClassVar[type[Model]] = _BkSwitch

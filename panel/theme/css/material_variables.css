@@ -1,6 +1,5 @@
 :host,
 :root {
-  --bokeh-base-font: Roboto, sans-serif, Verdana;
   --mdc-theme-surface: var(
     --design-surface-color,
     var(
@@ -76,5 +75,4 @@
   --mdc-shape-small: 4px;
   --mdc-shape-medium: 4px;
   --mdc-shape-large: 0px;
-  color: var(--mdc-theme-on-background);
 }

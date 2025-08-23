@@ -17,8 +17,7 @@ test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-
 test-313 = ["py313", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-ui = ["py312", "test-core", "test", "test-ui"]
 test-core = ["py313", "test-core", "test-unit-task"]
-test-bokeh35 = ["py310", "test-core", "test-unit-task", "bokeh35"]
-test-bokeh36 = ["py310", "test-core", "test-unit-task", "bokeh36"]
+test-bokeh37 = ["py310", "test-core", "test-unit-task", "bokeh37"]
 test-type = ["py311", "type", "example", "test"]
 docs = ["py311", "example", "doc"]
 build = ["py311", "build"]
@@ -32,7 +31,7 @@ nomkl = "*"
 pip = "*"
 # Required
 bleach = "*"
-bokeh = ">=3.5.0,<3.8.0a0"
+bokeh = ">=3.7.0,<3.9.0a0"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
@@ -123,11 +122,8 @@ pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
-[feature.bokeh35.dependencies]
-bokeh = "3.5.*"
-
-[feature.bokeh36.dependencies]
-bokeh = "3.6.*"
+[feature.bokeh37.dependencies]
+bokeh = "3.7.*"
 
 [feature.test.dependencies]
 # Optional dependencies - recommended

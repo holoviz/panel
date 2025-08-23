@@ -83,6 +83,15 @@ def _convert_datetime_array_ignore_list(v):
         return convert_datetime_array(v)
     return v
 
+def _get_value_from_keys(d:dict, key1, key2, default=None):
+    if key1 in d:
+        return d[key1]
+    if key2 in d:
+        msg = f"The {key1} format should be preferred over the {key2}."
+        warn(msg, DeprecationWarning)
+        return d[key2]
+    return default
+
 class BaseTable(ReactiveData, Widget):
 
     aggregators = param.Dict(default={}, nested_refs=True, doc="""
@@ -2012,25 +2021,25 @@ class Tabulator(BaseTable):
             ]
             col_dict: ColumnSpec = dict(field=field)
             if isinstance(self.sortable, dict):
-                col_dict['headerSort'] = self.sortable.get(field, True)
+                col_dict['headerSort'] = _get_value_from_keys(self.sortable, index, field, True)
             elif not self.sortable:
                 col_dict['headerSort'] = self.sortable
             if isinstance(self.text_align, str):
                 col_dict['hozAlign'] = self.text_align  # type: ignore
-            elif field in self.text_align:
-                col_dict['hozAlign'] = self.text_align[field]
+            elif index in self.text_align or field in self.text_align:
+                col_dict['hozAlign'] = _get_value_from_keys(self.text_align, index, field)
             if isinstance(self.header_align, str):
                 col_dict['headerHozAlign'] = self.header_align  # type: ignore
-            elif field in self.header_align:
-                col_dict['headerHozAlign'] = self.header_align[field]  # type: ignore
-            formatter = self.formatters.get(field)
+            elif index in self.header_align or field in self.header_align:
+                col_dict['headerHozAlign'] = _get_value_from_keys(self.header_align, index, field)  # type: ignore
+            formatter = _get_value_from_keys(self.formatters, index, field)
             if isinstance(formatter, str):
                 col_dict['formatter'] = formatter
             elif isinstance(formatter, dict):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
-            title_formatter = self.title_formatters.get(field)
+            title_formatter = _get_value_from_keys(self.title_formatters, index, field)
             if isinstance(title_formatter, str):
                 col_dict['titleFormatter'] = title_formatter
             elif isinstance(title_formatter, dict):
@@ -2050,8 +2059,8 @@ class Tabulator(BaseTable):
                 col_dict['sorter'] = 'number'
             elif dtype.kind == 'b':
                 col_dict['sorter'] = 'boolean'
-            editor = self.editors.get(field)
-            if field in self.editors and editor is None:
+            editor = _get_value_from_keys(self.editors, index, field)
+            if (index in self.editors or field in self.editors) and editor is None:
                 col_dict['editable'] = False
             if isinstance(editor, str):
                 col_dict['editor'] = editor
@@ -2062,20 +2071,23 @@ class Tabulator(BaseTable):
             if col_dict.get('editor') in ['select', 'autocomplete']:
                 self.param.warning(
                     f'The {col_dict["editor"]!r} editor has been deprecated, use '
-                    f'instead the "list" editor type to configure column {field!r}'
+                    f'instead the "list" editor type to configure column {index!r}'
                 )
                 col_dict['editor'] = 'list'
                 if col_dict.get('editorParams', {}).get('values', False) is True:
                     del col_dict['editorParams']['values']
                     col_dict['editorParams']['valuesLookup'] = True
-            if field in self.frozen_columns or i in self.frozen_columns:
+            if index in self.frozen_columns or field in self.frozen_columns or i in self.frozen_columns:
+                if index != field and field in self.frozen_columns:
+                    msg = f"The {index} format should be preferred over the {field}."
+                    warn(msg, DeprecationWarning)
                 col_dict['frozen'] = True
-            if isinstance(self.widths, dict) and isinstance(self.widths.get(field), str):
-                col_dict['width'] = self.widths[field]
+            if isinstance(self.widths, dict) and (col_width := _get_value_from_keys(self.widths, index, field)) and isinstance(col_width, str):
+                col_dict['width'] = col_width
             col_dict.update(self._get_filter_spec(column))
 
-            if field in self.header_tooltips:
-                col_dict["headerTooltip"] = self.header_tooltips[field]
+            if index in self.header_tooltips or field in self.header_tooltips:
+                col_dict["headerTooltip"] = _get_value_from_keys(self.header_tooltips, index, field)
 
             if isinstance(index, tuple):
                 children = columns
