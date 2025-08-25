@@ -572,9 +572,13 @@ class TemplateActions(ReactiveHTML):
     as opening and closing a modal.
     """
 
-    open_modal = param.Integer(default=0)
+    open_modal = param.Integer(default=0, doc="""
+        The number of times the open modal action has been triggered.
+        This is used to trigger the open modal script.""")
 
-    close_modal = param.Integer(default=0)
+    close_modal = param.Integer(default=0, doc="""
+        The number of times the close modal action has been triggered.
+        This is used to trigger the close modal script.""")
 
     _template: ClassVar[str] = ""
 
