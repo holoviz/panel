@@ -36,6 +36,13 @@ Discover how to launch and configure a Panel application programmatically.
 Discover how-to launch and configure multiple applications on the same server.
 :::
 
+:::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1 sd-animate-grow50` Configure session re-connect
+:link: reconnect
+:link-type: doc
+
+Discover how-to configure server sessions to re-connect.
+:::
+
 :::{grid-item-card} {octicon}`server;2.5em;sd-mr-1 sd-animate-grow50` Setting up a (reverse) proxy
 :link: proxy
 :link-type: doc
