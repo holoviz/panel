@@ -89,6 +89,7 @@ commandline
 programmatic
 multiple
 ssh
+reconnect
 proxy
 static_files
 endpoints
