@@ -465,11 +465,15 @@ class _state(param.Parameterized):
         except Exception as e:
             self._handle_exception(e)
 
-    def _handle_exception_wrapper(self, callback):
+    def _handle_exception_wrapper(self, callback, doc: Document | None = None):
         @wraps(callback)
         def wrapper(*args, **kw):
             try:
-                return callback(*args, **kw)
+                if doc:
+                    with set_curdoc(doc):
+                        return callback(*args, **kw)
+                else:
+                    return callback(*args, **kw)
             except Exception as e:
                 self._handle_exception(e)
         return wrapper
@@ -666,7 +670,7 @@ class _state(param.Parameterized):
         elif param.parameterized.iscoroutinefunction(callback):
             param.parameterized.async_executor(callback)
         elif doc and doc.session_context and (schedule == True or (schedule == 'auto' and not self._unblocked(doc))):
-            doc.add_next_tick_callback(self._handle_exception_wrapper(callback))
+            doc.add_next_tick_callback(self._handle_exception_wrapper(callback, doc))
         else:
             try:
                 callback()
