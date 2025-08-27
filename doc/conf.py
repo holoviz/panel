@@ -13,7 +13,7 @@ from nbsite.shared_conf import *
 
 project = 'Panel'
 authors = 'Panel contributors'
-copyright_years['start_year'] = '2019'  # noqa: F405
+copyright_years['start_year'] = '2019'
 copyright = copyright_fmt.format(**copyright_years)
 description = 'High-level dashboarding for python visualization libraries'
 
