@@ -95,6 +95,7 @@ def test_reconnect_notification(page):
     def app():
         nonlocal doc
         doc = state.curdoc
+        config.reconnect = True
         config.disconnect_notification = 'Disconnected!'
         col = Column()
         button = Button(name='Stop server', on_click=lambda _: col.append('Foo'))
