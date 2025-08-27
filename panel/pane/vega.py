@@ -161,7 +161,11 @@ class Vega(ModelPane):
 
     theme = param.Selector(default=None, allow_None=True, objects=[
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
-        'latimes', 'urbaninstitute', 'googlecharts'])
+        'latimes', 'urbaninstitute', 'googlecharts'], doc="""
+        A theme to apply to the plot. Must be one of 'excel', 'ggplot2',
+        'quartz', 'vox', 'fivethirtyeight', 'dark', 'latimes',
+        'urbaninstitute', or 'googlecharts'.
+        """)
 
     priority: ClassVar[float | bool | None] = 0.8
 

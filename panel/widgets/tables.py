@@ -1211,13 +1211,18 @@ class Tabulator(BaseTable):
 
     layout = param.Selector(default='fit_data_table', objects=[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
-        'fit_columns'])
+        'fit_columns'], doc="""
+        Describes the column layout mode with one of the following options
+        'fit_columns', 'fit_data', 'fit_data_stretch', 'fit_data_fill',
+        'fit_data_table'.""")
 
     initial_page_size = param.Integer(default=20, bounds=(1, None), doc="""
         Initial page size if page_size is None and therefore automatically set.""")
 
     pagination = param.Selector(default=None, allow_None=True,
-                                      objects=['local', 'remote'])
+                                      objects=['local', 'remote'], doc="""
+        Set to 'local or 'remote' to enable pagination; by default pagination
+        is disabled with the value set to None.""")
 
     page = param.Integer(default=1, doc="""
         Currently selected page (indexed starting at 1), if pagination is enabled.""")

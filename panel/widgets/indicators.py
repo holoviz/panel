@@ -202,11 +202,14 @@ class LoadingSpinner(BooleanIndicator):
     >>> LoadingSpinner(value=True, color='primary', bgcolor='light', width=100, height=100)
     """
 
-    bgcolor = param.Selector(default='light', objects=['dark', 'light'])
+    bgcolor = param.Selector(default='light', objects=['dark', 'light'], doc="""
+        The color of spinner background segment, either 'light' or 'dark'.""")
 
     color = param.Selector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
-        'light', 'dark'])
+        'light', 'dark'], doc="""
+        The color of the spinning segment, one of 'primary', 'secondary',
+        'success', 'info', 'warn', 'danger', 'light', 'dark'.""")
 
     size = param.Integer(default=125, doc="""
         Size of the spinner in pixels.""")
@@ -285,7 +288,9 @@ class Progress(ValueIndicator):
 
     bar_color = param.Selector(default='success', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
-        'light', 'dark'])
+        'light', 'dark'], doc="""
+        The color of the bar, one of 'primary', 'secondary', 'success',
+        'info', 'warning', 'danger', 'light', 'dark'.""")
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
@@ -1119,7 +1124,8 @@ class Trend(SyncableData, Indicator):
     data = param.Parameter(doc="""
       The plot data declared as a dictionary of arrays or a DataFrame.""")
 
-    layout = param.Selector(default="column", objects=["column", "row"])
+    layout = param.Selector(default="column", objects=["column", "row"], doc="""
+        The layout of the indicator, either 'column' or 'row'.""")
 
     plot_x = param.String(default="x", doc="""
       The name of the key in the plot_data to use on the x-axis.""")
