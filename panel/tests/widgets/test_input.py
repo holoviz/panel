@@ -2,6 +2,7 @@ from datetime import date, datetime, time as dt_time
 from pathlib import Path
 
 import numpy as np
+import param
 import pytest
 
 from bokeh.models.widgets import FileInput as BkFileInput
@@ -251,8 +252,7 @@ def test_literal_input_inheritance():
         The `DictInput` allows entering a dictionary value using a text input box.
         """
 
-    DictInput.param.type.default = dict
-
+        type = param.ClassSelector(default=dict, class_=(type, tuple))
 
     with pytest.raises(ValueError) as ex:
         DictInput(value="not a dict")
