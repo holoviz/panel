@@ -598,14 +598,23 @@ class _state(param.Parameterized):
             self._periodic[self.curdoc].append(cb)
         return cb
 
+    @contextmanager
     def block_expiration(self):
         """
-        Block the expiration of the current session.
+        Blocks expiration of the current session, if used as a context manager
+        it will be unblocked afterwards.
         """
         if self.curdoc is None or self.curdoc.session_context is None:
+            yield
             return
+
         for session in self.curdoc.session_context.server_context.sessions:
             session.block_expiration()
+        try:
+            yield
+        finally:
+            for session in self.curdoc.session_context.server_context.sessions:
+                session.unblock_expiration()
 
     def unblock_expiration(self):
         """

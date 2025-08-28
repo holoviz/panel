@@ -11,12 +11,10 @@ The session stays alive as long as the user remains connected.
 
 However, in some scenarios—such as **poor internet connectivity** or **proxies interrupting WebSocket connections**—the connection between the server and the frontend may close.
 
-By default, this **permanently disconnects** the application.
-Recent versions of Panel introduce the ability to **automatically re-connect** to the server instead of dropping the session.
+By default, this **permanently disconnects** the application, i.e. any interaction with the server is lost and can only be restored by reloading the page. Recent versions of Panel introduce the ability to **automatically re-connect** to the server instead of dropping the session.
 
 :::{note}
-This feature requires Panel **≥1.8**.
-If you are using an older version, you will need to upgrade.
+This feature requires Panel **≥1.8** and Bokeh **≥3.8**. If you are using an older version, you will need to upgrade.
 :::
 
 ## Enabling re-connect
@@ -27,9 +25,10 @@ To enable automatic server re-connection, set the corresponding configuration op
 import panel as pn
 
 pn.config.reconnect = True
+pn.config.notifications = True
 
 # or equivalently
-pn.extension(reconnect=True)
+pn.extension(notifications=True, reconnect=True)
 ```
 
 When enabled, the following behavior is triggered if the WebSocket connection is lost:
@@ -37,7 +36,7 @@ When enabled, the following behavior is triggered if the WebSocket connection is
 1. An **exponential backoff loop** attempts to re-establish the connection (after 1, 2, 4, 8, 16, and 32 seconds).
    Users will see notifications during these attempts.
 
-2. If all automatic attempts fail, a **final notification** is shown, offering the user a button to manually retry.
+2. If all automatic attempts fail, a **final notification** is shown, offering the user a button to start another re-connection attempt.
 
 :::{tip}
 You can customize the messages shown to the user—see [Configuring Notifications](#configuring-notifications).
@@ -74,20 +73,14 @@ You can control session cleanup behavior via CLI flags or programmatically:
 
 ### Blocking session expiration
 
-Sometimes you may want to prevent a session from expiring—for example, if a **long-running computation** is in progress and you want the user to see the results even after re-connecting.
+Sometimes you may want to prevent a session from expiring—for example, if a **long-running computation** is in progress and you want the user to see the results even after re-connecting. To do so you can `block_expiration` as a context manager:
 
 ```python
-pn.state.block_expiration()
-# ... perform long-running task ...
-pn.state.unblock_expiration()
+with pn.state.block_expiration():
+    # ... perform long-running task ...
 ```
 
-:::{warning}
-Blocking expiration indefinitely can cause **memory leaks**.
-Always ensure you eventually call `pn.state.unblock_expiration()`, or schedule a timeout to release resources.
-:::
-
----
+If not used as a context manager you must manually call `pn.state.unblock_expiration()` otherwise you will cause a memory leak because the session will persist until the process is killed.
 
 ## Configuring notifications
 
