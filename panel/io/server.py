@@ -278,10 +278,13 @@ def server_html_page_for_session(
 
     doc = session.document
     if BOKEH_GE_3_8:
+        from bokeh.document.config import DocumentConfig
         with set_curdoc(doc):
-            doc.config.reconnect_session = config.reconnect
-            doc.config.notifications = None
-            doc.config.notify_connection_status = False
+            doc._config = DocumentConfig(
+                reconnect_session = config.reconnect,
+                notifications = None,
+                notify_connection_status = False
+            )
     doc._template_variables['theme_name'] = config.theme
     doc._template_variables['dist_url'] = dist_url
     for root in doc.roots:
