@@ -57,7 +57,7 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from ..config import config
-from ..util import BOKEH_GE_3_8, edit_readonly, fullpath
+from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .application import build_applications
 from .document import (  # noqa
@@ -277,14 +277,6 @@ def server_html_page_for_session(
         dist_url = CDN_DIST
 
     doc = session.document
-    if BOKEH_GE_3_8:
-        from bokeh.document.config import DocumentConfig
-        with set_curdoc(doc):
-            doc._config = DocumentConfig(
-                reconnect_session = config.reconnect,
-                notifications = None,
-                notify_connection_status = False
-            )
     doc._template_variables['theme_name'] = config.theme
     doc._template_variables['dist_url'] = dist_url
     for root in doc.roots:
