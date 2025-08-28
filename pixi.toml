@@ -281,3 +281,6 @@ lite-build = "bash scripts/jupyterlite/build.sh"
 # Service worker only work on 127.0.0.1
 # https://jupyterlite.readthedocs.io/en/latest/howto/configure/advanced/service-worker.html#limitations
 lite-server = "python -m http.server --directory ./lite/dist --bind 127.0.0.1"
+
+
+# relock count: 0
