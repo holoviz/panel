@@ -504,9 +504,11 @@ class DatePicker(Widget):
     end = param.CalendarDate(default=None, doc="""
         Inclusive upper bound of the allowed date selection""")
 
-    disabled_dates = param.List(default=None, item_type=(date, str))
+    disabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make unavailable for selection; others will be available.""")
 
-    enabled_dates = param.List(default=None, item_type=(date, str))
+    enabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make available for selection; others will be unavailable.""")
 
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -573,9 +575,11 @@ class DateRangePicker(Widget):
     end = param.CalendarDate(default=None, doc="""
         Inclusive upper bound of the allowed date selection""")
 
-    disabled_dates = param.List(default=None, item_type=(date, str))
+    disabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make unavailable for selection; others will be available.""")
 
-    enabled_dates = param.List(default=None, item_type=(date, str))
+    enabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make available for selection; others will be unavailable.""")
 
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -1158,7 +1162,8 @@ class LiteralInput(Widget):
     """)
 
     type = param.ClassSelector(default=None, class_=(type, tuple),
-                               is_instance=True)
+                               is_instance=True, doc="""
+        A Python literal type (e.g. list, dict, set, int, float, bool, str).""")
 
     value = param.Parameter(default=None)
 
