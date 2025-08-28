@@ -19,7 +19,7 @@ This feature requires Panel **≥1.8** and Bokeh **≥3.8**. If you are using an
 
 ## Enabling re-connect
 
-To enable automatic server re-connection, set the corresponding configuration option:
+To enable automatic server re-connection, set the corresponding configuration options:
 
 ```python
 import panel as pn
