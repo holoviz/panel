@@ -33,7 +33,7 @@ from ..io.resources import (
     resolve_custom_path, use_cdn,
 )
 from ..io.save import save
-from ..io.state import state
+from ..io.state import set_curdoc, state
 from ..layout import Column, GridSpec, ListLike
 from ..models.comm_manager import CommManager
 from ..pane import (
@@ -765,6 +765,8 @@ class BasicTemplate(BaseTemplate):
             state._notifications[document] = self.notifications
         if self._design.theme.bokeh_theme:
             document.theme = self._design.theme.bokeh_theme
+        with set_curdoc(document):
+            config.design = type(self._design)
         return document
 
     def _update_vars(self, *args) -> None:
