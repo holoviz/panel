@@ -49,7 +49,8 @@ if TYPE_CHECKING:
 
 class SelectBase(Widget):
 
-    options = param.ClassSelector(default=[], class_=(dict, list))
+    options = param.ClassSelector(default=[], class_=(dict, list), doc="""
+        A list or dictionary of options to select from.""")
 
     __abstract = True
 
