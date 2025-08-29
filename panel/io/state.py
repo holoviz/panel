@@ -598,6 +598,38 @@ class _state(param.Parameterized):
             self._periodic[self.curdoc].append(cb)
         return cb
 
+    def block_expiration(self):
+        """
+        Blocks expiration of the current session, if used as a context manager
+        it will be unblocked afterwards.
+        """
+        if self.curdoc is None or self.curdoc.session_context is None:
+            @contextmanager
+            def noop():
+                yield
+            return noop()
+
+        for session in self.curdoc.session_context.server_context.sessions:
+            session.block_expiration()
+
+        @contextmanager
+        def unblock():
+            try:
+                yield
+            finally:
+                for session in self.curdoc.session_context.server_context.sessions:
+                    session.unblock_expiration()
+        return unblock()
+
+    def unblock_expiration(self):
+        """
+        Unblock the expiration of the current session.
+        """
+        if self.curdoc is None or self.curdoc.session_context is None:
+            return
+        for session in self.curdoc.session_context.server_context.sessions:
+            session.unblock_expiration()
+
     def cancel_task(self, name: str, wait: bool=False):
         """
         Cancel a task scheduled using the `state.schedule_task` method by name.

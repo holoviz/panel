@@ -6,3 +6,7 @@
 .notyf__ripple {
   height: calc(100% * 2.75);
 }
+
+.reconnect {
+  font-weight: 600;
+}
