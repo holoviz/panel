@@ -754,6 +754,8 @@ class Resources(BkResources):
         files = super().css_files
         self.extra_resources(files, '__css__')
         self.extra_resources(files, '_bundle_css')
+        if config.notifications and state.notifications:
+            files += state.notifications._stylesheets
         css_files = self.adjust_paths([
             css for css in files if self.mode != 'inline' or not is_cdn_url(css)
         ])
