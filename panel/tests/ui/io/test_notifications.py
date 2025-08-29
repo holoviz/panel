@@ -115,7 +115,7 @@ def test_reconnect_notification(page):
 
     # Ensure reconnect notifications are shown
     expect(page.locator('.notyf__message').nth(0)).to_have_text('Disconnected! Reconnecting now.')
-    expect(page.locator('.notyf__message').nth(1)).to_have_text('Connection with server was re-established.')
+    expect(page.locator('.notyf__message', has_text='Connection with server was re-established.')).to_have_count(1)
 
     # Ensure that session state persists
     expect(page.locator(".markdown").locator("div")).to_have_text('Foo\n')
