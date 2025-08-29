@@ -2198,7 +2198,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                 if old.name == f"{root.ref['id']}-{id(v)}":
                     v = old
                 else:
-                    v = create_linked_datamodel(vs, root)
+                    v = create_linked_datamodel(v, root)
                 data_msg[prop] = v
             elif isinstance(v, str):
                 data_msg[prop] = HTML_SANITIZER.clean(v)
