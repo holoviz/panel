@@ -6,8 +6,7 @@ This guide walks you through configuring **automatic re-connection to Panel serv
 
 ## Why re-connection matters
 
-Whenever a user visits an endpoint, a new server session is created.
-The session stays alive as long as the user remains connected.
+Whenever a user visits an endpoint, a new server session is created. The session stays alive as long as the user remains connected.
 
 However, in some scenarios—such as **poor internet connectivity** or **proxies interrupting WebSocket connections**—the connection between the server and the frontend may close.
 
@@ -36,12 +35,23 @@ When enabled, the following behavior is triggered if the WebSocket connection is
 1. An **exponential backoff loop** attempts to re-establish the connection (after 1, 2, 4, 8, 16, and 32 seconds).
    Users will see notifications during these attempts.
 
-2. If all automatic attempts fail, a **final notification** is shown, offering the user a button to start another re-connection attempt.
+2. If all automatic attempts fail, a **final notification** is shown, offering the user a notification with the option to start another re-connection attempt.
 
 :::{tip}
-You can customize the messages shown to the user—see [Configuring Notifications](#configuring-notifications).
+You can customize the messages shown to the user, see [Configuring Notifications](#configuring-notifications).
 :::
 
+If you don't want to automatically trigger re-connect attempts you can also set:
+
+```python
+pn.config.reconnect = "prompt"
+pn.config.notifications = True
+
+# or equivalently
+pn.extension(notifications=True, reconnect="prompt")
+```
+
+This will only trigger 2., allowing the user to trigger a re-connection attempt by clicking on the notification.
 
 ## Session management
 

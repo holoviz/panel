@@ -189,9 +189,10 @@ class _config(_base_config):
         The notification to display when the application is ready and
         fully loaded.""")
 
-    reconnect = param.Boolean(default=False, doc="""
+    reconnect = param.Selector(default=False, objects=[True, False, 'prompt'], doc="""
         Whether to enable automatic re-connect should the server connection
-        be disrupted.""")
+        be disrupted. Setting "prompt" will not enable automatic re-connect but
+        will pop up a notification asking the user to confirm.""")
 
     reuse_sessions = param.Selector(default=False, objects=[True, False, 'warm'], doc="""
         Whether to reuse a session for the initial request to speed up

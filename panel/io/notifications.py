@@ -189,13 +189,7 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
           clear_timeout()
           const {timeout} = event
           const msg = data.js_events.connection_lost.message
-          if (timeout == null && state.reconnect_msg != null) {
-            state.reconnect_msg.innerHTML = `<div>${msg} <span class="reconnect">Click here</span> to attempt manual re-connect.<div>`
-            const reconnectSpan = state.reconnect_msg.querySelector('.reconnect');
-            if (reconnectSpan) {
-              reconnectSpan.addEventListener('click', () => { clear_timeout(); event.reconnect() })
-            }
-          } else {
+          if (timeout != null || state.reconnect_msg == null) {
             let current_timeout = timeout
             const config = {
               className: "notyf__toast notyf__disconnect",
@@ -221,6 +215,13 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
             if (timeout != null) {
               set_timeout()
               state.reconnect_timeout = setInterval(() => { current_timeout -= 1000; set_timeout() }, 1000)
+            }
+          }
+          if (timeout == null && model.tags[0] === "prompt") {
+            state.reconnect_msg.innerHTML = `<div>${msg} <span class="reconnect">Click here</span> to attempt manual re-connect.<div>`
+            const reconnectSpan = state.reconnect_msg.querySelector('.reconnect');
+            if (reconnectSpan) {
+              reconnectSpan.addEventListener('click', () => { clear_timeout(); event.reconnect() })
             }
           }
         })""" if BOKEH_GE_3_8 else ""),
@@ -283,6 +284,7 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
     ) -> Model:
         doc = create_doc_if_none_exists(doc)
         root = super().get_root(doc, comm, preprocess)
+        root.tags = ['prompt'] if config.reconnect else []
         for event, notification in self.js_events.items():
             if event == 'connection_lost' and BOKEH_GE_3_8:
                 continue

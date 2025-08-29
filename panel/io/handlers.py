@@ -368,7 +368,7 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
                 ).servable()
             if BOKEH_GE_3_8:
                 doc.config.update(
-                    reconnect_session=config.reconnect,
+                    reconnect_session=config.reconnect == True,
                     notifications=None,
                     notify_connection_status=False
                 )
