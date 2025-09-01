@@ -250,7 +250,7 @@ def test_pyodide_test_convert_csv_app(http_serve, page, runtime, http_patch):
     expected_titles = ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
 
     titles = page.locator('.tabulator-col-title')
-    expect(titles).to_have_count(1 + len(expected_titles), timeout=60 * 1000)
+    expect(titles).to_have_count(2 + len(expected_titles), timeout=60 * 1000)
     titles = titles.all_text_contents()
     assert titles[1:] == expected_titles
 

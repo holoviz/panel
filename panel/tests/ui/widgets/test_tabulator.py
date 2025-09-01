@@ -704,7 +704,7 @@ def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumul
     val = ['red', 'blue']
     for v in val:
         item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click()
+        item.click(force=True)
     # Validating the filters doesn't have a very nice behavior, you need to lose
     # focus on the multiselect by clicking somewhere else.
     # Delay required before clicking for the focus to be lost and the filters accounted for.
@@ -715,7 +715,7 @@ def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumul
     val = ['red', 'blue']
     for v in val:
         item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click()
+        item.click(force=True)
     page.wait_for_timeout(200)
     page.locator('text="foo1"').click()
 
@@ -747,13 +747,13 @@ def test_tabulator_editors_nested(page, opt0, opt1):
     cells.nth(0).click()
     item = page.locator('.tabulator-edit-list-item', has_text=opt0)
     expect(item).to_have_count(1)
-    item.click()
+    item.click(click=True)
 
     # Change the 1th column
     cells.nth(1).click()
     item = page.locator('.tabulator-edit-list-item', has_text=opt1)
     expect(item).to_have_count(1)
-    item.click()
+    item.click(click=True)
 
     # Check the last column matches
     cells.nth(2).click()
