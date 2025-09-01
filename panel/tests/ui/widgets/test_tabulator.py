@@ -114,7 +114,7 @@ def test_tabulator_default(page, df_mixed, df_mixed_as_string):
 
     serve_component(page, widget)
 
-    expected_ncols = ncols + 2  # _index + index + data columns
+    expected_ncols = ncols + 3  # _index + index + data columns + empty
 
     # Check that the whole table content is on the page
     table = page.locator('.pnx-tabulator.tabulator')
@@ -234,7 +234,7 @@ def test_tabulator_buttons_display(page, df_mixed):
 
     serve_component(page, widget)
 
-    expected_ncols = ncols + 3  # _index + index + data columns + button col
+    expected_ncols = ncols + 4  # _index + index + data columns + button col + empty
 
     # Check that an additional column has been added to the table
     # with no header title
@@ -704,20 +704,20 @@ def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumul
     val = ['red', 'blue']
     for v in val:
         item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click(force=True)
+        item.evaluate("el => el.click()")
     # Validating the filters doesn't have a very nice behavior, you need to lose
     # focus on the multiselect by clicking somewhere else.
     # Delay required before clicking for the focus to be lost and the filters accounted for.
     page.wait_for_timeout(200)
-    page.locator('text="foo1"').click()
+    page.locator('text="foo1"').click(force=True)
 
     cell.click()
     val = ['red', 'blue']
     for v in val:
         item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click(force=True)
+        item.evaluate("el => el.click()")
     page.wait_for_timeout(200)
-    page.locator('text="foo1"').click()
+    page.locator('text="foo1"').click(force=True)
 
     assert not exception_handler_accumulator
 
