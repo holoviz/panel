@@ -81,7 +81,7 @@ class ChatStep(Card):
         Title to display when status is running.""")
 
     status = param.Selector(default="pending", objects=[
-        "pending", "running", "success", "failed"])
+        "pending", "running", "success", "failed"], doc="""The status of the chat step.""")
 
     success_title = param.String(default=None, doc="""
         Title to display when status is success.""")

@@ -139,9 +139,11 @@ class FastWrapper(ReactiveHTML):
     using the Fast design system have access to the Fast CSS variables.
     """
 
-    object = Child()
+    object = Child(doc="""
+        The Panel component to wrap with the Fast design provider.""")
 
-    style = param.ClassSelector(class_=FastStyle)
+    style = param.ClassSelector(class_=FastStyle, doc="""
+        The style to apply to the Fast design provider""")
 
     _template = '<div id="fast-wrapper" class="fast-wrapper">${object}</div>'
 

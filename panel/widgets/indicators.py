@@ -1125,7 +1125,8 @@ class Trend(SyncableData, Indicator):
       The plot data declared as a dictionary of arrays or a DataFrame.""")
 
     layout = param.Selector(default="column", objects=["column", "row"], doc="""
-        The layout of the indicator, either 'column' or 'row'.""")
+        The layout of the indicator, either a column (text and plot on top of each other)
+        or a row (text and plot after each other).""")
 
     plot_x = param.String(default="x", doc="""
       The name of the key in the plot_data to use on the x-axis.""")

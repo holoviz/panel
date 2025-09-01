@@ -768,7 +768,8 @@ class DatetimePicker(_DatetimePickerBase):
 
     value = param.Date(default=None)
 
-    mode = param.String('single', constant=True)
+    mode = param.String('single', constant=True, doc="""
+        The mode of the datetime picker, which is always 'single' for this widget.""")
 
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
@@ -803,7 +804,8 @@ class DatetimeRangePicker(_DatetimePickerBase):
     value = param.DateRange(default=None, doc="""
         The current value""")
 
-    mode = param.String('range', constant=True)
+    mode = param.String('range', constant=True, doc="""
+        The mode of the datetime picker, which is always 'range' for this widget.""")
 
     def _serialize_value(self, value):
         if isinstance(value, str) and value:

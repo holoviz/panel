@@ -1226,8 +1226,16 @@ class Tabulator(BaseTable):
 
     pagination = param.Selector(default=None, allow_None=True,
                                       objects=['local', 'remote'], doc="""
-        Set to 'local or 'remote' to enable pagination; by default pagination
-        is disabled with the value set to None.""")
+        Defines the pagination mode of the Tabulator.
+
+          - None
+              No pagination is applied, all rows are rendered.
+          - 'local' (client-side)
+              Pagination is applied locally, i.e. the entire DataFrame
+              is loaded and then paginated.
+          - 'remote' (server-side)
+              Pagination is applied remotely, i.e. only the current page
+              is loaded from the server.""")
 
     page = param.Integer(default=1, doc="""
         Currently selected page (indexed starting at 1), if pagination is enabled.""")

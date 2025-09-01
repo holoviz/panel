@@ -598,7 +598,8 @@ class VTKVolume(AbstractVTK):
         Opacity applied to nan values in slices""")
 
     origin = param.Tuple(default=None, length=3, allow_None=True, doc="""
-        Origin of the volume in the scene.""")
+        Origin of the volume in the scene coordinates.
+        If None, the origin is set to (0, 0, 0)""")
 
     render_background = param.Color(default='#52576e', doc="""
         Allows to specify the background color of the 3D rendering.
