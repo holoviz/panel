@@ -1153,6 +1153,8 @@ export class DataTabulatorView extends HTMLBoxView {
       }
       columns.push(button_column)
     }
+    // We insert an empty last column to ensure select editor is rendered in correct position
+    // see: https://github.com/holoviz/panel/issues/7295
     columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", sorter: null})
     return columns
   }
