@@ -252,7 +252,7 @@ def test_pyodide_test_convert_csv_app(http_serve, page, runtime, http_patch):
     titles = page.locator('.tabulator-col-title')
     expect(titles).to_have_count(2 + len(expected_titles), timeout=60 * 1000)
     titles = titles.all_text_contents()
-    assert titles[1:] == expected_titles
+    assert titles[1:-1] == expected_titles
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
