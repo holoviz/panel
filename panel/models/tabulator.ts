@@ -824,7 +824,7 @@ export class DataTabulatorView extends HTMLBoxView {
       paginationMode: this.model.pagination,
       paginationSize: this.model.page_size || 20,
       paginationInitialPage: 1,
-      popupContainer: true,
+      popupContainer: this.container,
       groupBy: this.groupBy,
       frozenRows: (row: any) => {
         return (this.model.frozen_rows.length > 0) ? this.model.frozen_rows.includes(row._row.data._index) : false
