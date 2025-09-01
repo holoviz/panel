@@ -240,7 +240,7 @@ def test_tabulator_buttons_display(page, df_mixed):
     # with no header title
     cols = page.locator(".tabulator-col")
     expect(cols).to_have_count(expected_ncols)
-    button_col_idx = expected_ncols - 1
+    button_col_idx = expected_ncols - 2
     assert not cols.nth(button_col_idx).get_attribute('tabulator-field')
     assert cols.nth(button_col_idx).inner_text() == '\xa0'
     assert cols.nth(button_col_idx).is_visible()
