@@ -173,7 +173,7 @@ class BaseTable(ReactiveData, Widget):
         }
 
     def _reset_selection(self, event):
-        if not self.selectable:
+        if 'selectable' in self.param and not self.selectable:
             return
         if event.type == 'triggered' and self._updating:
             return
