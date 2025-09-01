@@ -1153,6 +1153,7 @@ export class DataTabulatorView extends HTMLBoxView {
       }
       columns.push(button_column)
     }
+    columns.push({width: 1, maxWidth: 1, maxInitialWidth: '0.1px', resizable: false, minWidth: 1, cssClass: "empty", sorter: null})
     return columns
   }
 
