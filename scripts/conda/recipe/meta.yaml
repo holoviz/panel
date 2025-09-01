@@ -37,7 +37,7 @@ test:
   requires:
     - pip
     - pytest-asyncio
-    - pytest-rerunfailures
+    - pytest-rerunfailures <16
     - pytest-xdist
     - esbuild
   commands:

@@ -3,8 +3,7 @@ requires = [
     "hatchling",
     "hatch-vcs",
     "param >=2.1.0",
-    # "bokeh >=3.7.0,<3.9.0",
-    "bokeh ==3.8.0rc2",
+    "bokeh >=3.7.0,<3.9.0",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
@@ -88,7 +87,7 @@ tests = [
     'psutil' ,
     'pytest',
     'pytest-asyncio',
-    'pytest-rerunfailures',
+    'pytest-rerunfailures <16.0',
     'pytest-xdist',
 ]
 mypy = [

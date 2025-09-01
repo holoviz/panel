@@ -33,7 +33,7 @@ from ..io.resources import (
     resolve_custom_path, use_cdn,
 )
 from ..io.save import save
-from ..io.state import state
+from ..io.state import set_curdoc, state
 from ..layout import Column, GridSpec, ListLike
 from ..models.comm_manager import CommManager
 from ..pane import (
@@ -572,9 +572,13 @@ class TemplateActions(ReactiveHTML):
     as opening and closing a modal.
     """
 
-    open_modal = param.Integer(default=0)
+    open_modal = param.Integer(default=0, doc="""
+        The number of times the open modal action has been triggered.
+        This is used to trigger the open modal script.""")
 
-    close_modal = param.Integer(default=0)
+    close_modal = param.Integer(default=0, doc="""
+        The number of times the close modal action has been triggered.
+        This is used to trigger the close modal script.""")
 
     _template: ClassVar[str] = ""
 
@@ -765,6 +769,8 @@ class BasicTemplate(BaseTemplate):
             state._notifications[document] = self.notifications
         if self._design.theme.bokeh_theme:
             document.theme = self._design.theme.bokeh_theme
+        with set_curdoc(document):
+            config.design = type(self._design)
         return document
 
     def _update_vars(self, *args) -> None:

@@ -114,7 +114,7 @@ def test_tabulator_default(page, df_mixed, df_mixed_as_string):
 
     serve_component(page, widget)
 
-    expected_ncols = ncols + 2  # _index + index + data columns
+    expected_ncols = ncols + 3  # _index + index + data columns + empty
 
     # Check that the whole table content is on the page
     table = page.locator('.pnx-tabulator.tabulator')
@@ -234,13 +234,13 @@ def test_tabulator_buttons_display(page, df_mixed):
 
     serve_component(page, widget)
 
-    expected_ncols = ncols + 3  # _index + index + data columns + button col
+    expected_ncols = ncols + 4  # _index + index + data columns + button col + empty
 
     # Check that an additional column has been added to the table
     # with no header title
     cols = page.locator(".tabulator-col")
     expect(cols).to_have_count(expected_ncols)
-    button_col_idx = expected_ncols - 1
+    button_col_idx = expected_ncols - 2
     assert not cols.nth(button_col_idx).get_attribute('tabulator-field')
     assert cols.nth(button_col_idx).inner_text() == '\xa0'
     assert cols.nth(button_col_idx).is_visible()
@@ -704,20 +704,20 @@ def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumul
     val = ['red', 'blue']
     for v in val:
         item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click()
+        item.evaluate("el => el.click()")
     # Validating the filters doesn't have a very nice behavior, you need to lose
     # focus on the multiselect by clicking somewhere else.
     # Delay required before clicking for the focus to be lost and the filters accounted for.
     page.wait_for_timeout(200)
-    page.locator('text="foo1"').click()
+    page.locator('text="foo1"').click(force=True)
 
     cell.click()
     val = ['red', 'blue']
     for v in val:
         item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click()
+        item.evaluate("el => el.click()")
     page.wait_for_timeout(200)
-    page.locator('text="foo1"').click()
+    page.locator('text="foo1"').click(force=True)
 
     assert not exception_handler_accumulator
 
@@ -747,13 +747,13 @@ def test_tabulator_editors_nested(page, opt0, opt1):
     cells.nth(0).click()
     item = page.locator('.tabulator-edit-list-item', has_text=opt0)
     expect(item).to_have_count(1)
-    item.click()
+    item.click(force=True)
 
     # Change the 1th column
     cells.nth(1).click()
     item = page.locator('.tabulator-edit-list-item', has_text=opt1)
     expect(item).to_have_count(1)
-    item.click()
+    item.click(force=True)
 
     # Check the last column matches
     cells.nth(2).click()

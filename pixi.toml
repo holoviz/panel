@@ -119,7 +119,7 @@ pytest = "*"
 pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
-pytest-rerunfailures = "*"
+pytest-rerunfailures = "<16.0"  # See https://github.com/pytest-dev/pytest-rerunfailures/issues/303
 pytest-xdist = "*"
 
 [feature.bokeh37.dependencies]
