@@ -13,6 +13,7 @@ from typing import (
 import numpy as np
 import param
 
+from bokeh.core.serialization import Serializer
 from bokeh.model import Model
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from bokeh.models.widgets.tables import (
@@ -29,7 +30,7 @@ from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
-    BOKEH_GE_3_6, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
+    clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
 from ..util.warnings import warn
@@ -284,10 +285,7 @@ class BaseTable(ReactiveData, Widget):
                         date_format = '%Y-%m-%d %H:%M:%S'
                     formatter = DateFormatter(format=date_format, text_align='right')
                 else:
-                    params: dict[str, Any] = {}
-                    if BOKEH_GE_3_6:
-                        params['null_format'] = ''
-                    formatter = StringFormatter(**params)
+                    formatter = StringFormatter(null_format='')
 
                 default_text_align = True
             else:
@@ -689,6 +687,13 @@ class BaseTable(ReactiveData, Widget):
         # we send the unfiltered data
 
         import pandas as pd
+
+        # Ensure NaT serialization is enabled
+        try:
+            Serializer.register(pd.NaT, lambda _, __: None)  # type: ignore
+        except AssertionError:
+            pass
+
         df = self._filter_dataframe(df, header_filters=False)
         if df is None:
             return [], {}
