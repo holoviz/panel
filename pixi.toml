@@ -15,7 +15,7 @@ test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-
 test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-313 = ["py313", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-ui = ["py312", "test-core", "test", "test-ui"]
+test-ui = ["py313", "test-core", "test", "test-ui"]
 test-core = ["py313", "test-core", "test-unit-task"]
 test-bokeh37 = ["py310", "test-core", "test-unit-task", "bokeh37"]
 test-type = ["py311", "type", "example", "test"]
@@ -168,7 +168,7 @@ nbval = "*"
 channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
-playwright = { version = "!=1.51.0", channel = "microsoft" }  # https://github.com/microsoft/playwright-python/issues/2791
+playwright = { version = "*", channel = "microsoft" }
 pytest-playwright = { version = "*", channel = "microsoft" }
 pytest-asyncio = "*"
 jupyter_server = "*"
