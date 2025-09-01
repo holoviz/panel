@@ -708,8 +708,6 @@ class BaseTable(ReactiveData, Widget):
             indexes = [df.index.name or default_index]
         if df.columns.nlevels > 1 and len(indexes) > 1:
             indexes = [i + "_" * (df.columns.nlevels - 1) for i in indexes]
-        for obj_col in df.select_dtypes(object).columns:
-            df[obj_col] = df[obj_col].replace(pd.NaT, value=None)
         data = ColumnDataSource.from_df(df.reset_index() if len(indexes) > 1 else df)
         if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
