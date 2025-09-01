@@ -257,7 +257,7 @@ def resolve_custom_path(
             return None
     except OSError:
         return None
-    abs_path = abs_path.resolve()
+    abs_path = pathlib.Path(os.path.normpath(abs_path.absolute()))
     if not relative:
         return abs_path
     return pathlib.Path(os.path.relpath(abs_path, module_path))
@@ -282,7 +282,10 @@ def component_resource_path(component, attr, path):
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
-    url = stylesheet.url
+    try:
+        url = stylesheet.url
+    except Exception:
+        return
     if url.startswith(CDN_DIST+dist_url) and dist_url != CDN_DIST:
         patched_url = url.replace(CDN_DIST+dist_url, dist_url)
     elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
@@ -751,6 +754,8 @@ class Resources(BkResources):
         files = super().css_files
         self.extra_resources(files, '__css__')
         self.extra_resources(files, '_bundle_css')
+        if config.notifications and state.notifications:
+            files += state.notifications._stylesheets
         css_files = self.adjust_paths([
             css for css in files if self.mode != 'inline' or not is_cdn_url(css)
         ])

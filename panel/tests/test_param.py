@@ -396,7 +396,7 @@ def test_action_param(document, comm):
 
     # Check that the action is actually executed
     pn_button = test_pane.layout[1]
-    pn_button.clicks = 1
+    pn_button.param.trigger('value')
 
     assert test.b == 2
 
@@ -632,7 +632,7 @@ def test_param_event_parameter(document, comm):
     test = Test()
     test_pane = Param(test)
 
-    test_pane._widgets['e']._process_events({'clicks': 1})
+    test_pane._widgets['e']._process_event({'clicks': 1})
 
     # Check that a watcher was set on the button that depends on e
     assert l == [1]

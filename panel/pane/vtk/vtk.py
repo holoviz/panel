@@ -71,8 +71,8 @@ class AbstractVTK(Pane):
       Activate/Deactivate the orientation widget display.""")
 
     interactive_orientation_widget = param.Boolean(default=True, constant=True, doc="""
-        If True, the orientation widget will be interactive and allow
-        to change the camera orientation by dragging it.""")
+        If True the orientation widget is clickable and allows to rotate
+        the scene in one of the orthographic projections.""")
 
     __abstract = True
 

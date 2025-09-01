@@ -33,7 +33,7 @@ from ..io.resources import (
     resolve_custom_path, use_cdn,
 )
 from ..io.save import save
-from ..io.state import curdoc_locked, state
+from ..io.state import set_curdoc, state
 from ..layout import Column, GridSpec, ListLike
 from ..models.comm_manager import CommManager
 from ..pane import (
@@ -192,7 +192,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         location: bool | Location = True
     ):
         # Initialize document
-        document = init_doc(doc or curdoc_locked())
+        document = init_doc(doc or state.curdoc)
 
         self._documents.append(document)
         if document not in state._templates:
@@ -534,7 +534,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         -------
         The template object
         """
-        doc = curdoc_locked()
+        doc = state.curdoc
         if doc and doc.session_context and config.template:
             raise RuntimeError(
                 'Cannot mark template as servable if a global template '
@@ -769,6 +769,8 @@ class BasicTemplate(BaseTemplate):
             state._notifications[document] = self.notifications
         if self._design.theme.bokeh_theme:
             document.theme = self._design.theme.bokeh_theme
+        with set_curdoc(document):
+            config.design = type(self._design)
         return document
 
     def _update_vars(self, *args) -> None:

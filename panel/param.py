@@ -31,8 +31,9 @@ except Exception:
         Exception that allows skipping an update for function-level updates.
         """
 from param.parameterized import (
-    Undefined, bothmethod, classlist, discard_events, eval_function_with_deps,
-    get_method_owner, iscoroutinefunction, resolve_ref, resolve_value,
+    Undefined, bothmethod, classlist, discard_events, edit_constant,
+    eval_function_with_deps, get_method_owner, iscoroutinefunction,
+    resolve_ref, resolve_value,
 )
 from param.reactive import rx
 
@@ -551,11 +552,11 @@ class Param(Pane):
         if hasattr(param, 'Event') and isinstance(p_obj, param.Event):
             def event(change):
                 parameterized.param.trigger(p_name)
-            watcher = widget.param.watch(event, 'clicks')
+            watcher = widget.param.watch(event, 'value')
         elif isinstance(p_obj, param.Action):
             def action(change):
                 value(parameterized)
-            watcher = widget.param.watch(action, 'clicks')
+            watcher = widget.param.watch(action, 'value')
         elif onkeyup and hasattr(widget, 'value_input'):
             watcher = widget.param.watch(link_widget, 'value_input')
         elif throttled and hasattr(widget, 'value_throttled'):
@@ -611,9 +612,7 @@ class Param(Pane):
                 updates['step'] = p_obj.step
             elif change.what == 'label':
                 updates['name'] = p_obj.label
-            elif p_key in updating:
-                return
-            elif hasattr(param, 'Event') and isinstance(p_obj, param.Event):
+            elif p_key in updating or isinstance(p_obj, param.Event):
                 return
             elif isinstance(p_obj, param.Action):
                 prev_watcher = watchers[0]
@@ -621,8 +620,6 @@ class Param(Pane):
                 def action(event):
                     change.new(parameterized)
                 watchers[0] = widget.param.watch(action, 'clicks')
-                idx = self_or_cls._internal_callbacks.index(prev_watcher)
-                self_or_cls._internal_callbacks[idx] = watchers[0]
                 return
             elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
@@ -639,6 +636,9 @@ class Param(Pane):
                     with discard_events(widget):
                         widget.param.update(**updates)
                     widget.param.trigger(*updates)
+                elif 'value_throttled' in updates:
+                    with edit_constant(widget):
+                        widget.param.update(**updates)
                 else:
                     widget.param.update(**updates)
             finally:

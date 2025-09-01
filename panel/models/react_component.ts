@@ -281,7 +281,7 @@ import { CacheProvider } from "@emotion/react"`
       init_code = `
   if (view.use_shadow_dom) {
     const css_key = id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
-    this.mui_cache = createCache({
+    view.mui_cache = createCache({
       key: 'css-'+css_key,
       prepend: true,
       container: view.style_cache,
@@ -289,7 +289,7 @@ import { CacheProvider } from "@emotion/react"`
   }`
       render_code = `
   if (rendered && ((view.parent?.react_root === undefined) || view.model.use_shadow_dom)) {
-    rendered = React.createElement(CacheProvider, {value: this.mui_cache}, rendered)
+    rendered = React.createElement(CacheProvider, {value: view.mui_cache}, rendered)
   }`
     }
     return `
@@ -423,13 +423,21 @@ async function render(id) {
           const [value, setValue] = React.useState(targetModel.attributes[resolvedProp])
 
           React.useEffect(() => {
-            const cb = () => setValue(targetModel.attributes[resolvedProp])
-            react_proxy.on(prop, cb)
+            const cb = () => {
+              if (target.model.events.includes(resolvedProp)) {
+                targetModel.attributes[resolvedProp] && (setValue((v) => v+1) || targetModel.setv({[resolvedProp]: false}))
+              } else {
+                setValue(targetModel.attributes[resolvedProp])
+              }
+            }
+            react_proxy.on(prop, cb, true)
             return () => react_proxy.off(prop, cb)
           }, [])
 
           React.useEffect(() => {
-            targetModel.setv({ [resolvedProp]: value })
+            if (!target.model.events.includes(resolvedProp)) {
+              targetModel.setv({ [resolvedProp]: value })
+            }
           }, [value])
 
           return [value, setValue]

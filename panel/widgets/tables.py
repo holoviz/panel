@@ -13,6 +13,7 @@ from typing import (
 import numpy as np
 import param
 
+from bokeh.core.serialization import Serializer
 from bokeh.model import Model
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from bokeh.models.widgets.tables import (
@@ -29,7 +30,7 @@ from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
-    BOKEH_GE_3_6, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
+    clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
 from ..util.warnings import warn
@@ -82,6 +83,15 @@ def _convert_datetime_array_ignore_list(v):
     if isinstance(v, np.ndarray):
         return convert_datetime_array(v)
     return v
+
+def _get_value_from_keys(d:dict, key1, key2, default=None):
+    if key1 in d:
+        return d[key1]
+    if key2 in d:
+        msg = f"The {key1} format should be preferred over the {key2}."
+        warn(msg, DeprecationWarning)
+        return d[key2]
+    return default
 
 class BaseTable(ReactiveData, Widget):
 
@@ -275,10 +285,7 @@ class BaseTable(ReactiveData, Widget):
                         date_format = '%Y-%m-%d %H:%M:%S'
                     formatter = DateFormatter(format=date_format, text_align='right')
                 else:
-                    params: dict[str, Any] = {}
-                    if BOKEH_GE_3_6:
-                        params['null_format'] = ''
-                    formatter = StringFormatter(**params)
+                    formatter = StringFormatter(null_format='')
 
                 default_text_align = True
             else:
@@ -658,12 +665,16 @@ class BaseTable(ReactiveData, Widget):
                          if filt is not filter]
         self._update_cds()
 
-    def _process_column(self, values: TDataColumn):
+    def _process_column(self, values: TDataColumn, col: str, df: pd.DataFrame | None = None):
         if not isinstance(values, (list, np.ndarray)):
             return [str(v) for v in values]
-        if isinstance(values, np.ndarray) and values.dtype.kind == "b":
-            # Workaround for https://github.com/bokeh/bokeh/issues/12776
-            return values.tolist()
+        if isinstance(values, np.ndarray):
+            if values.dtype.kind == "b":
+                # Workaround for https://github.com/bokeh/bokeh/issues/12776
+                return values.tolist()
+            import pandas as pd
+            if df is not None and col in df.columns and isinstance(df[col].dtype, pd.StringDtype):
+                values[df[col].isna()] = None
         return values
 
     def _get_data(self) -> tuple[pd.DataFrame, DataDict]:
@@ -676,6 +687,13 @@ class BaseTable(ReactiveData, Widget):
         # we send the unfiltered data
 
         import pandas as pd
+
+        # Ensure NaT serialization is enabled
+        try:
+            Serializer.register(pd.NaT, lambda _, __: None)  # type: ignore
+        except AssertionError:
+            pass
+
         df = self._filter_dataframe(df, header_filters=False)
         if df is None:
             return [], {}
@@ -693,7 +711,7 @@ class BaseTable(ReactiveData, Widget):
         data = ColumnDataSource.from_df(df.reset_index() if len(indexes) > 1 else df)
         if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
-        return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
+        return df, {k if isinstance(k, str) else str(k): self._process_column(v, k, df) for k, v in data.items()}
 
     def _update_column(self, column: str, array: TDataColumn):
         import pandas as pd
@@ -1198,7 +1216,10 @@ class Tabulator(BaseTable):
 
     layout = param.Selector(default='fit_data_table', objects=[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
-        'fit_columns'], doc="Describes the column layout mode")
+        'fit_columns'], doc="""
+        Describes the column layout mode with one of the following options
+        'fit_columns', 'fit_data', 'fit_data_stretch', 'fit_data_fill',
+        'fit_data_table'.""")
 
     initial_page_size = param.Integer(default=20, bounds=(1, None), doc="""
         Initial page size if page_size is None and therefore automatically set.""")
@@ -1504,7 +1525,7 @@ class Tabulator(BaseTable):
         if len(indexes) > 1:
             page_df = page_df.reset_index()
         data = ColumnDataSource.from_df(page_df).items()
-        return df, {k if isinstance(k, str) else str(k): v for k, v in data}
+        return df, {k if isinstance(k, str) else str(k): self._process_column(v, k, page_df) for k, v in data}
 
     def _get_style_data(self, recompute=True):
         if self.value is None or self.style is None or self.value.empty:
@@ -1862,9 +1883,10 @@ class Tabulator(BaseTable):
     def _process_param_change(self, params):
         if 'theme' in params or 'stylesheets' in params:
             theme_url = self._get_theme(params.pop('theme', self.theme))
-            params['stylesheets'] = params.get('stylesheets', self.stylesheets) + [
-                ImportedStyleSheet(url=theme_url)
-            ]
+            if theme_url:
+                params['stylesheets'] = params.get('stylesheets', self.stylesheets) + [
+                    ImportedStyleSheet(url=theme_url)
+                ]
         params = Reactive._process_param_change(self, params)
         if 'disabled' in params:
             params['editable'] = not params.pop('disabled') and len(self.indexes) <= 1
@@ -2017,25 +2039,25 @@ class Tabulator(BaseTable):
             ]
             col_dict: ColumnSpec = dict(field=field)
             if isinstance(self.sortable, dict):
-                col_dict['headerSort'] = self.sortable.get(field, True)
+                col_dict['headerSort'] = _get_value_from_keys(self.sortable, index, field, True)
             elif not self.sortable:
                 col_dict['headerSort'] = self.sortable
             if isinstance(self.text_align, str):
                 col_dict['hozAlign'] = self.text_align  # type: ignore
-            elif field in self.text_align:
-                col_dict['hozAlign'] = self.text_align[field]
+            elif index in self.text_align or field in self.text_align:
+                col_dict['hozAlign'] = _get_value_from_keys(self.text_align, index, field)
             if isinstance(self.header_align, str):
                 col_dict['headerHozAlign'] = self.header_align  # type: ignore
-            elif field in self.header_align:
-                col_dict['headerHozAlign'] = self.header_align[field]  # type: ignore
-            formatter = self.formatters.get(field)
+            elif index in self.header_align or field in self.header_align:
+                col_dict['headerHozAlign'] = _get_value_from_keys(self.header_align, index, field)  # type: ignore
+            formatter = _get_value_from_keys(self.formatters, index, field)
             if isinstance(formatter, str):
                 col_dict['formatter'] = formatter
             elif isinstance(formatter, dict):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
-            title_formatter = self.title_formatters.get(field)
+            title_formatter = _get_value_from_keys(self.title_formatters, index, field)
             if isinstance(title_formatter, str):
                 col_dict['titleFormatter'] = title_formatter
             elif isinstance(title_formatter, dict):
@@ -2055,8 +2077,8 @@ class Tabulator(BaseTable):
                 col_dict['sorter'] = 'number'
             elif dtype.kind == 'b':
                 col_dict['sorter'] = 'boolean'
-            editor = self.editors.get(field)
-            if field in self.editors and editor is None:
+            editor = _get_value_from_keys(self.editors, index, field)
+            if (index in self.editors or field in self.editors) and editor is None:
                 col_dict['editable'] = False
             if isinstance(editor, str):
                 col_dict['editor'] = editor
@@ -2067,20 +2089,23 @@ class Tabulator(BaseTable):
             if col_dict.get('editor') in ['select', 'autocomplete']:
                 self.param.warning(
                     f'The {col_dict["editor"]!r} editor has been deprecated, use '
-                    f'instead the "list" editor type to configure column {field!r}'
+                    f'instead the "list" editor type to configure column {index!r}'
                 )
                 col_dict['editor'] = 'list'
                 if col_dict.get('editorParams', {}).get('values', False) is True:
                     del col_dict['editorParams']['values']
                     col_dict['editorParams']['valuesLookup'] = True
-            if field in self.frozen_columns or i in self.frozen_columns:
+            if index in self.frozen_columns or field in self.frozen_columns or i in self.frozen_columns:
+                if index != field and field in self.frozen_columns:
+                    msg = f"The {index} format should be preferred over the {field}."
+                    warn(msg, DeprecationWarning)
                 col_dict['frozen'] = True
-            if isinstance(self.widths, dict) and isinstance(self.widths.get(field), str):
-                col_dict['width'] = self.widths[field]
+            if isinstance(self.widths, dict) and (col_width := _get_value_from_keys(self.widths, index, field)) and isinstance(col_width, str):
+                col_dict['width'] = col_width
             col_dict.update(self._get_filter_spec(column))
 
-            if field in self.header_tooltips:
-                col_dict["headerTooltip"] = self.header_tooltips[field]
+            if index in self.header_tooltips or field in self.header_tooltips:
+                col_dict["headerTooltip"] = _get_value_from_keys(self.header_tooltips, index, field)
 
             if isinstance(index, tuple):
                 children = columns

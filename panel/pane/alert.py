@@ -32,7 +32,8 @@ class Alert(Markdown):
     """
 
     alert_type = param.Selector(default="primary", objects=ALERT_TYPES, doc="""
-        The type of alert to display, which determines the styling and icon.""")
+        The type of Alert and one of 'primary', 'secondary', 'success', 'danger',
+        'warning', 'info', 'light', 'dark'.""")
 
     priority: ClassVar[float | bool | None] = 0
 

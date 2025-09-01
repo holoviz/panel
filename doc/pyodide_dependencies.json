@@ -3,7 +3,7 @@
   "gallery/gapminders.ipynb": ["altair", "plotly", "hvplot", "matplotlib"],
   "gallery/glaciers.ipynb": ["holoviews", "colorcet", "hvplot"],
   "gallery/hvplot_explorer.ipynb": ["hvplot", "scipy"],
-  "gallery/iris_kmeans.ipynb": ["hvplot", "scikit-learn"],
+  "gallery/iris_kmeans.ipynb": ["hvplot", "scikit-learn", "bokeh_sampledata"],
   "gallery/nyc_deckgl.ipynb": ["fastparquet", "pyodide-http"],
   "gallery/penguin_crossfilter.ipynb": ["hvplot"],
   "gallery/penguin_kmeans.ipynb": ["altair"],
@@ -81,7 +81,7 @@
   "reference/layouts/GridStack.ipynb": ["holoviews"],
   "reference/layouts/Swipe.ipynb": ["hvplot", "scipy"],
   "reference/panes/Audio.ipynb": ["scipy"],
-  "reference/panes/DataFrame.ipynb": ["streamz"],
+  "reference/panes/DataFrame.ipynb": ["streamz", "bokeh_sampledata"],
   "reference/panes/DeckGL.ipynb": ["pydeck"],
   "reference/panes/ECharts.ipynb": ["pyecharts"],
   "reference/panes/Folium.ipynb": ["folium"],
@@ -103,5 +103,8 @@
   "reference/templates/GoldenLayout.ipynb": ["holoviews"],
   "reference/templates/Material.ipynb": ["holoviews"],
   "reference/templates/React.ipynb": ["holoviews"],
-  "reference/templates/Vanilla.ipynb": ["holoviews"]
+  "reference/templates/Vanilla.ipynb": ["holoviews"],
+  "reference/widgets/DataFrame.ipynb": ["bokeh_sampledata"],
+  "reference/widgets/Tabulator.ipynb": ["bokeh_sampledata"],
+  "reference/widgets/FileDownload.ipynb": ["bokeh_sampledata"]
 }

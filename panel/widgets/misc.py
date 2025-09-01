@@ -219,6 +219,8 @@ class FileDownload(IconMixin):
             if filename is None:
                 filename = fileobj.name
         elif hasattr(fileobj, 'read'):
+            if hasattr(fileobj, 'seek'):
+                fileobj.seek(0)
             bdata = fileobj.read()
             if not isinstance(bdata, bytes):
                 bdata = bdata.encode("utf-8")
@@ -339,4 +341,9 @@ class JSONEditor(Widget):
             "panel.models.jsoneditor", "JSONEditor", isinstance(comm, JupyterComm)
         )
         model = super()._get_model(doc, root, parent, comm)
+        self._register_events('json_edit', model=model, doc=doc, comm=comm)
         return model
+
+    def _process_event(self, event) -> None:
+        if event.event_name == 'json_edit':
+            self.value  = event.data

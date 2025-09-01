@@ -238,7 +238,7 @@ class FileInput(Widget):
         multiple is False or a list of bytes otherwise.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'filename': None, 'name': None
+        'filename': None
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -505,10 +505,10 @@ class DatePicker(Widget):
         Inclusive upper bound of the allowed date selection""")
 
     disabled_dates = param.List(default=None, item_type=(date, str), doc="""
-        Dates to make unavailable for selection.""")
+        Dates to make unavailable for selection; others will be available.""")
 
     enabled_dates = param.List(default=None, item_type=(date, str), doc="""
-        Dates to make available for selection.""")
+        Dates to make available for selection; others will be unavailable.""")
 
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -576,10 +576,10 @@ class DateRangePicker(Widget):
         Inclusive upper bound of the allowed date selection""")
 
     disabled_dates = param.List(default=None, item_type=(date, str), doc="""
-        Dates to make unavailable for selection.""")
+        Dates to make unavailable for selection; others will be available.""")
 
     enabled_dates = param.List(default=None, item_type=(date, str), doc="""
-        Dates to make available for selection.""")
+        Dates to make available for selection; others will be unavailable.""")
 
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -1164,7 +1164,8 @@ class LiteralInput(Widget):
     """)
 
     type = param.ClassSelector(default=None, class_=(type, tuple),
-                               is_instance=True, doc="The type of input for the literal input widget.")
+                               is_instance=True, doc="""
+        A Python literal type (e.g. list, dict, set, int, float, bool, str).""")
 
     value = param.Parameter(default=None)
 
@@ -1200,7 +1201,7 @@ class LiteralInput(Widget):
             if event:
                 self.value = event.old
             types = repr(self.type) if isinstance(self.type, tuple) else self.type.__name__
-            raise ValueError(f'LiteralInput expected {types} type but value {new} '
+            raise ValueError(f'{self.__class__.__name__} expected {types} type, but value \'{new}\' '
                              f'is of type {type(new).__name__}.')
 
     def _process_property_change(self, msg):
@@ -1547,7 +1548,7 @@ class Switch(_BooleanWidget):
     """
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'value': 'active'
+        'value': 'active'
     }
 
     _widget_type: ClassVar[type[Model]] = _BkSwitch

@@ -422,7 +422,7 @@ def wait_for_regex(stdout, regex, count=1, return_output=False):
         nbsr = NBSR(stdout)
     m = None
     output, found = [], []
-    for _ in range(20):
+    for _ in range(30):
         o = nbsr.readline(0.5)
         if not o:
             continue

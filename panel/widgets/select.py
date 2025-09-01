@@ -49,7 +49,8 @@ if TYPE_CHECKING:
 
 class SelectBase(Widget):
 
-    options = param.ClassSelector(default=[], class_=(dict, list), doc="List or dict of selectable options.")
+    options = param.ClassSelector(default=[], class_=(dict, list), doc="""
+        A list or dictionary of options to select from.""")
 
     __abstract = True
 
@@ -84,6 +85,7 @@ class SingleSelectBase(SelectBase):
     _allows_none: ClassVar[bool] = False
 
     _supports_embed: bool = True
+    _restrict: bool = True
 
     __abstract = True
 
@@ -107,7 +109,8 @@ class SingleSelectBase(SelectBase):
                 if not self._allows_none:
                     del msg['value']
             else:
-                self.value = self.param['value'].default
+                if self._restrict:
+                    self.value = self.param['value'].default
                 if self._allows_none:
                     msg['value'] = self.value
 
@@ -124,7 +127,7 @@ class SingleSelectBase(SelectBase):
                 msg[option_prop] = self.unicode_values
             val = self.value
             if values:
-                if not isIn(val, values):
+                if not isIn(val, values) and self._restrict:
                     self.value = self.param['value'].default if self._allows_none else values[0]
             else:
                 self.value = self.param['value'].default
@@ -987,6 +990,10 @@ class AutocompleteInput(SingleSelectBase):
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
     _widget_type: ClassVar[type[Model]] = _BkAutocompleteInput
+
+    @property
+    def _restrict(self):
+        return self.restrict
 
     def _process_property_change(self, msg):
         if not self.restrict and 'value' in msg:

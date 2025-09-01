@@ -203,12 +203,13 @@ class LoadingSpinner(BooleanIndicator):
     """
 
     bgcolor = param.Selector(default='light', objects=['dark', 'light'], doc="""
-        The background color of the spinner, one of 'dark', 'light'.""")
+        The color of spinner background segment, either 'light' or 'dark'.""")
 
     color = param.Selector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'], doc="""
-        The color of the spinner.""")
+        The color of the spinning segment, one of 'primary', 'secondary',
+        'success', 'info', 'warn', 'danger', 'light', 'dark'.""")
 
     size = param.Integer(default=125, doc="""
         Size of the spinner in pixels.""")
@@ -288,7 +289,8 @@ class Progress(ValueIndicator):
     bar_color = param.Selector(default='success', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'], doc="""
-        The color of the progress bar.""")
+        The color of the bar, one of 'primary', 'secondary', 'success',
+        'info', 'warning', 'danger', 'light', 'dark'.""")
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 

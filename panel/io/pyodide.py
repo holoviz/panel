@@ -6,6 +6,7 @@ import io
 import json
 import os
 import sys
+import time
 import uuid
 
 from collections.abc import Callable
@@ -86,6 +87,9 @@ try:
     import fsspec.implementations.http_sync  # noqa
 except Exception:
     pass
+
+DEBOUNCE = 50
+TIMEOUT = 500
 
 #---------------------------------------------------------------------
 # Private API
@@ -285,6 +289,9 @@ def _convert_json_patch(json_patch):
         _current_buffers.clear()
     return serialized
 
+# Holds proxied functions so they are not GCed
+_proxies = []
+
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring that messages
@@ -298,15 +305,40 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         The Javascript Bokeh Document instance to sync.
     """
 
-    def jssync(event):
+    event_buffer: list[Any] = []
+    blocked: list[float] = []
+    def jssync(event, debounce=DEBOUNCE, timeout=TIMEOUT, append=True):
         setter_id = getattr(event, 'setter_id', None)
         if (setter_id is not None and setter_id == 'python') or _patching:
             return
-        json_patch = jsdoc.create_json_patch(pyodide.ffi.to_js([event]))
+        if event.kind == "ModelChanged":
+            if append:
+                event_buffer.append(event)
+            else:
+                blocked.clear()
+            now = time.monotonic()
+            if blocked and now < blocked[0]:
+                sync_proxy = pyodide.ffi.create_proxy(
+                    lambda: jssync_proxy(event, debounce, timeout, append=False)
+                )
+                _proxies.append(sync_proxy)
+                js.setTimeout(
+                    sync_proxy,
+                    debounce
+                )
+                return
+            events = event_buffer
+            blocked.append(now+TIMEOUT/1000)
+        else:
+            events = [event]
+        json_patch = jsdoc.create_json_patch(pyodide.ffi.to_js(events))
+        events.clear()
         patch = _convert_json_patch(json_patch)
         pydoc.apply_json_patch(patch, setter='js')
 
-    jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
+    jssync_proxy = pyodide.ffi.create_proxy(jssync)
+    _proxies.append(jssync_proxy)
+    jsdoc.on_change(jssync_proxy, pyodide.ffi.to_js(False))
 
     def pysync(event):
         global _patching

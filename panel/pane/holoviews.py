@@ -149,11 +149,19 @@ class HoloViews(Pane):
             p for p, v in params.items()
             if p in Layoutable.param and v != self.param[p].default
         ]
-        watcher = self.param.watch(self._update_widgets, self._rerender_params)
-        self._internal_callbacks.append(watcher)
+        sync_params = [p for p in Layoutable.param if p != 'name' and p not in self._skip_layoutable]
+        self._internal_callbacks.extend([
+            self.param.watch(self._update_widgets, self._rerender_params),
+            self.param.watch(self._sync_viewable_param, sync_params)
+        ])
         self._update_responsive()
         self._update_widgets()
         self._initialized = True
+
+    def _sync_viewable_param(self, *events):
+        params = {e.name: e.new for e in events}
+        for _, pane in self._plots.values():
+            pane.param.update(params)
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         if self._object_changing:
@@ -326,16 +334,13 @@ class HoloViews(Pane):
                 key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
         if plot.backend == 'bokeh':
-            if plot.comm or state._unblocked(plot.document):
+            if plot.comm or state._unblocked(plot.document) or not plot.document.session_context:
                 with unlocked():
                     plot.update(key)
                 if plot.comm and 'embedded' not in plot.root.tags:
                     plot.push()
             else:
-                if plot.document.session_context:
-                    plot.document.add_next_tick_callback(partial(plot.update, key))
-                else:
-                    plot.update(key)
+                plot.document.add_next_tick_callback(partial(plot.update, key))
         else:
             plot.update(key)
             if hasattr(plot.renderer, 'get_plot_state'):

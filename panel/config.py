@@ -144,7 +144,7 @@ class _config(_base_config):
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
 
-    disconnect_notification = param.String(doc="""
+    disconnect_notification = param.String(default="Server connection lost.", doc="""
         The notification to display to the user when the connection
         to the server is dropped.""")
 
@@ -189,13 +189,20 @@ class _config(_base_config):
         The notification to display when the application is ready and
         fully loaded.""")
 
-    reuse_sessions = param.Boolean(default=False, doc="""
+    reconnect = param.Selector(default=False, objects=[True, False, 'prompt'], doc="""
+        Whether to enable automatic re-connect should the server connection
+        be disrupted. Setting "prompt" will not enable automatic re-connect but
+        will pop up a notification asking the user to confirm.""")
+
+    reuse_sessions = param.Selector(default=False, objects=[True, False, 'warm'], doc="""
         Whether to reuse a session for the initial request to speed up
         the initial page render. Note that if the initial page differs
         between sessions, e.g. because it uses query parameters to modify
         the rendered content, then this option will result in the wrong
         content being rendered. Define a session_key_func to ensure that
-        reused sessions are only reused when appropriate.""")
+        reused sessions are only reused when appropriate. If set to 'warm'
+        session reuse is enabled and the session is warmed up as soon as
+        the initial request arrives.""")
 
     session_key_func = param.Callable(default=None, doc="""
         Used in conjunction with the reuse_sessions option, the

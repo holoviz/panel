@@ -149,4 +149,5 @@ __all__ = (
     "VideoStream",
     "Voice",
     "Widget",
+    "WidgetBase",
 )
