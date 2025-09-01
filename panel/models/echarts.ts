@@ -19,49 +19,49 @@ const events = [
   "rushselected", "globalcursortaken", "rendered", "finished",
 ]
 
-const MARK = "--x_x--0_0--";
+const MARK = "--x_x--0_0--"
 const PLACEHOLDER_RE = new RegExp(
-  `^${MARK}([\\s\\S]*?)${MARK}$`
-);
+  `^${MARK}([\\s\\S]*?)${MARK}$`,
+)
 
 interface CompileOptions {
   mode?: "expression" | "statement";
-  args?: string[]; // e.g. ["ctx", "helpers"]
+  args?: string[],
 }
 
 const defaultOptions: Required<CompileOptions> = {
   mode: "expression",
-  args: []
-};
+  args: [],
+}
 
 function compileToFunction(
   code: string,
-  options: CompileOptions = defaultOptions
+  options: CompileOptions = defaultOptions,
 ): (...args: any[]) => any {
-  const { mode, args } = { ...defaultOptions, ...options };
+  const { mode, args } = { ...defaultOptions, ...options }
   const body =
     mode === "expression"
       ? `\"use strict\";\nreturn (${code});`
-      : `\"use strict\";\n${code}`;
-  return (new Function(...args, body) as (...args: any[]) => any)();
+      : `\"use strict\";\n${code}`
+  return (new Function(...args, body) as (...args: any[]) => any)()
 }
 
 export function transformJsPlaceholders<T>(
   input: T,
-  options?: CompileOptions
+  options?: CompileOptions,
 ): T {
   function visit(value: any): any {
     if (typeof value === "string") {
-      const m = value.match(PLACEHOLDER_RE);
+      const m = value.match(PLACEHOLDER_RE)
       if (m) {
-        const code = m[1];
-        return compileToFunction(code, options);
+        const code = m[1]
+        return compileToFunction(code, options)
       }
-      return value;
+      return value
     }
 
     if (Array.isArray(value)) {
-      return value.map(visit);
+      return value.map(visit)
     }
 
     // Keep special objects intact
@@ -70,17 +70,17 @@ export function transformJsPlaceholders<T>(
       typeof value === "object" &&
       Object.getPrototypeOf(value) === Object.prototype
     ) {
-      const out: Record<string, any> = {};
+      const out: Record<string, any> = {}
       for (const [k, v] of Object.entries(value)) {
-        out[k] = visit(v);
+        out[k] = visit(v)
       }
-      return out;
+      return out
     }
 
-    return value;
+    return value
   }
 
-  return visit(input);
+  return visit(input)
 }
 
 const all_events = mouse_events.concat(events)
