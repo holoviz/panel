@@ -10,6 +10,7 @@ import bokeh
 import bokeh.core.properties as bp
 import param as pm
 
+from bokeh.core.serialization import Serializer
 from bokeh.model import DataModel, Model
 from bokeh.models import ColumnDataSource
 
@@ -18,6 +19,17 @@ from ..viewable import Child, Children, Viewable
 from .document import unlocked
 from .notebook import push
 from .state import set_curdoc, state
+
+
+class JSCode:
+
+    def __init__(self, js_code):
+        self.js_code = js_code
+
+try:
+    Serializer.register(JSCode, lambda obj, __: f"--x_x--0_0--{obj.js_code}--x_x--0_0--")  # type: ignore
+except AssertionError:
+    pass
 
 
 class Parameterized(bokeh.core.property.bases.Property):

@@ -5,6 +5,7 @@ import type {Attrs} from "@bokehjs/core/types"
 
 import {serializeEvent} from "./event-to-object"
 import {HTMLBox, HTMLBoxView} from "./layout"
+import {transformJsPlaceholders} from "./util"
 
 const mouse_events = [
   "click", "dblclick", "mousedown", "mousemove", "mouseup", "mouseover", "mouseout",
@@ -18,70 +19,6 @@ const events = [
   "geoselectchanged", "geoselected", "geounselected", "axisareaselected", "brush", "brushEnd",
   "rushselected", "globalcursortaken", "rendered", "finished",
 ]
-
-const MARK = "--x_x--0_0--"
-const PLACEHOLDER_RE = new RegExp(
-  `^${MARK}([\\s\\S]*?)${MARK}$`,
-)
-
-interface CompileOptions {
-  mode?: "expression" | "statement"
-  args?: string[]
-}
-
-const defaultOptions: Required<CompileOptions> = {
-  mode: "expression",
-  args: [],
-}
-
-function compileToFunction(
-  code: string,
-  options: CompileOptions = defaultOptions,
-): (...args: any[]) => any {
-  const {mode, args} = {...defaultOptions, ...options}
-  const body =
-    mode === "expression"
-      ? `\"use strict\";\nreturn (${code});`
-      : `\"use strict\";\n${code}`
-  return (new Function(...args, body) as (...args: any[]) => any)()
-}
-
-export function transformJsPlaceholders<T>(
-  input: T,
-  options?: CompileOptions,
-): T {
-  function visit(value: any): any {
-    if (typeof value === "string") {
-      const m = value.match(PLACEHOLDER_RE)
-      if (m) {
-        const code = m[1]
-        return compileToFunction(code, options)
-      }
-      return value
-    }
-
-    if (Array.isArray(value)) {
-      return value.map(visit)
-    }
-
-    // Keep special objects intact
-    if (
-      value &&
-      typeof value === "object" &&
-      Object.getPrototypeOf(value) === Object.prototype
-    ) {
-      const out: Record<string, any> = {}
-      for (const [k, v] of Object.entries(value)) {
-        out[k] = visit(v)
-      }
-      return out
-    }
-
-    return value
-  }
-
-  return visit(input)
-}
 
 const all_events = mouse_events.concat(events)
 
