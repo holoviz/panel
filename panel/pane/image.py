@@ -579,8 +579,8 @@ class AVIF(ImageBase):
     :Example:
 
     >>> AVIF(
-    ...     'https://raw.githubusercontent.com/Kagami/avif.js/refs/heads/master/demo/Mexico.avif',
-    ...     alt_text='Mexico',
+    ...     'https://assets.holoviz.org/panel/samples/avif_sample.avif',
+    ...     alt_text='A nice tree',
     ...     link_url='https://en.wikipedia.org/wiki/AVIF',
     ...     width=500
     ... )
