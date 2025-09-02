@@ -11,7 +11,9 @@ from .document import (  # noqa
 )
 from .embed import embed_state  # noqa
 from .logging import panel_logger  # noqa
-from .model import add_to_doc, diff, remove_root  # noqa
+from .model import (  # noqa
+    JSCode, add_to_doc, diff, remove_root,
+)
 from .notebook import (  # noqa
     _jupyter_server_extension_paths, block_comm, ipywidget, load_notebook,
     push, push_notebook,
@@ -31,6 +33,7 @@ else:
             pass
 
 __all__ = (
+    "JSCode",
     "PeriodicCallback",
     "Resources",
     "hold",

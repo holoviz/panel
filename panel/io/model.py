@@ -65,6 +65,16 @@ def monkeypatch_events(events: Sequence[DocumentChangedEvent]) -> None:
 # Public API
 #---------------------------------------------------------------------
 
+class JSCode:
+
+    def __init__(self, js_code):
+        self.js_code = js_code
+
+try:
+    Serializer.register(JSCode, lambda obj, __: f"--x_x--0_0--{obj.js_code}--x_x--0_0--")  # type: ignore
+except AssertionError:
+    pass
+
 def diff(
     doc: Document, binary: bool = True, events: list[DocumentChangedEvent] | None = None
 ) -> Message[Any] | None:

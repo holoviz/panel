@@ -20,6 +20,7 @@ from bokeh.models.widgets.tables import (
 from playwright.sync_api import expect
 
 from panel.depends import bind
+from panel.io.model import JSCode
 from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
@@ -276,6 +277,21 @@ def test_tabulator_buttons_event(page, df_mixed):
     wait_until(lambda: state == expected_state, page)
 
 
+def test_tabulator_formatters_jscode(page, df_mixed):
+    s = [True] * len(df_mixed)
+    s[-1] = False
+    df_mixed['bool'] = s
+    widget = Tabulator(df_mixed, formatters={'bool': JSCode("function(cell) { return cell.getValue() ? 'foo' : 'bar' }")})
+
+    serve_component(page, widget)
+
+    cells = page.locator('.tabulator-cell[tabulator-field="bool"]')
+    expect(cells).to_have_count(len(df_mixed))
+
+    for i in range(len(df_mixed) - 1):
+        expect(cells.nth(i)).to_have_text('foo' if df_mixed.iloc[i, 5] else 'bar')
+
+
 def test_tabulator_formatters_bokeh_bool(page, df_mixed):
     s = [True] * len(df_mixed)
     s[-1] = False
@@ -472,6 +488,48 @@ def test_tabulator_editors_bokeh_string(page, df_mixed):
     cell.click()
     # A StringEditor is turned into an input text tabulator editor
     expect(page.locator('input[type="text"]')).to_have_count(1)
+
+
+def test_tabulator_editor_jscode(page, df_mixed):
+
+    editor = """
+    function simpleInputEditor(cell, onRendered, success, cancel, editorParams){
+      const value = cell.getValue();
+      const input = document.createElement("input");
+      input.className = "custom-jscode"
+      input.type = "text";
+      input.value = value ?? "";
+      input.style.width = "100%";
+      input.style.boxSizing = "border-box";
+
+      // Prevent clicks inside the editor from bubbling to Tabulator
+      input.addEventListener("click", e => e.stopPropagation());
+
+      // Commit on Enter, cancel on Esc
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") success(input.value);
+        else if (e.key === "Escape") cancel();
+      });
+
+      // Commit on blur (optional; remove if you want explicit Enter only)
+      input.addEventListener("blur", () => success(input.value));
+
+      // Focus/select after Tabulator finishes rendering
+      onRendered(() => {
+        input.focus();
+        input.select();
+      });
+
+      return input;
+    }"""
+
+    widget = Tabulator(df_mixed, editors={'str': JSCode(editor)})
+
+    serve_component(page, widget)
+
+    cell = page.locator('text="A"')
+    cell.click()
+    expect(page.locator('.custom-jscode')).to_have_count(1)
 
 
 def test_tabulator_editors_bokeh_string_completions(page, df_mixed):

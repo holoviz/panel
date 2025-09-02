@@ -26,6 +26,7 @@ from bokeh.util.serialization import convert_datetime_array
 from param.parameterized import transform_reference
 from pyviz_comms import JupyterComm
 
+from ..io.model import JSCode
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
@@ -58,7 +59,7 @@ if TYPE_CHECKING:
 
 class ColumnSpec(TypedDict, total=False):
     editable: bool
-    editor: str | CellEditor
+    editor: str | CellEditor | JSCode
     editorParams: dict[str, Any]
     field: str
     frozen: bool
@@ -66,11 +67,11 @@ class ColumnSpec(TypedDict, total=False):
     headerSort: bool
     headerTooltip: str
     hozAlign: Literal["center", "left", "right"]
-    formatter: str | CellFormatter
+    formatter: str | CellFormatter | JSCode
     formatterParams: dict[str, Any]
     sorter: str
     title: str
-    titleFormatter: str | CellFormatter
+    titleFormatter: str | CellFormatter | JSCode
     titleFormatterParams: dict[str, Any]
     width: str | int
 
@@ -265,7 +266,7 @@ class BaseTable(ReactiveData, Widget):
             else:
                 editor = StringEditor()
 
-            if col in self.editors and not isinstance(self.editors[col], (dict, str)):
+            if col in self.editors and not isinstance(self.editors[col], (dict, str, JSCode)):
                 editor = self.editors[col]
                 if isinstance(editor, CellEditor):
                     editor = clone_model(editor)
@@ -273,7 +274,7 @@ class BaseTable(ReactiveData, Widget):
             if col in indexes or editor is None:
                 editor = CellEditor()
 
-            if formatter is None or isinstance(formatter, (dict, str)):
+            if formatter is None or isinstance(formatter, (dict, str, JSCode)):
                 if kind == 'i':
                     formatter = NumberFormatter(text_align='right')
                 elif kind == 'b':
@@ -2053,14 +2054,14 @@ class Tabulator(BaseTable):
             elif index in self.header_align or field in self.header_align:
                 col_dict['headerHozAlign'] = _get_value_from_keys(self.header_align, index, field)  # type: ignore
             formatter = _get_value_from_keys(self.formatters, index, field)
-            if isinstance(formatter, str):
+            if isinstance(formatter, (str, JSCode)):
                 col_dict['formatter'] = formatter
             elif isinstance(formatter, dict):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
             title_formatter = _get_value_from_keys(self.title_formatters, index, field)
-            if isinstance(title_formatter, str):
+            if isinstance(title_formatter, (str, JSCode)):
                 col_dict['titleFormatter'] = title_formatter
             elif isinstance(title_formatter, dict):
                 title_formatter = dict(title_formatter)
@@ -2082,7 +2083,7 @@ class Tabulator(BaseTable):
             editor = _get_value_from_keys(self.editors, index, field)
             if (index in self.editors or field in self.editors) and editor is None:
                 col_dict['editable'] = False
-            if isinstance(editor, str):
+            if isinstance(editor, (str, JSCode)):
                 col_dict['editor'] = editor
             elif isinstance(editor, dict):
                 editor = dict(editor)
