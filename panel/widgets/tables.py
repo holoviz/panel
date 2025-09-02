@@ -26,7 +26,7 @@ from bokeh.util.serialization import convert_datetime_array
 from param.parameterized import transform_reference
 from pyviz_comms import JupyterComm
 
-from ..io.datamodel import JSCode
+from ..io.model import JSCode
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
