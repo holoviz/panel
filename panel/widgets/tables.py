@@ -26,6 +26,7 @@ from bokeh.util.serialization import convert_datetime_array
 from param.parameterized import transform_reference
 from pyviz_comms import JupyterComm
 
+from ..io.datamodel import JSCode
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
@@ -263,7 +264,7 @@ class BaseTable(ReactiveData, Widget):
             else:
                 editor = StringEditor()
 
-            if col in self.editors and not isinstance(self.editors[col], (dict, str)):
+            if col in self.editors and not isinstance(self.editors[col], (dict, str, JSCode)):
                 editor = self.editors[col]
                 if isinstance(editor, CellEditor):
                     editor = clone_model(editor)
@@ -271,7 +272,7 @@ class BaseTable(ReactiveData, Widget):
             if col in indexes or editor is None:
                 editor = CellEditor()
 
-            if formatter is None or isinstance(formatter, (dict, str)):
+            if formatter is None or isinstance(formatter, (dict, str, JSCode)):
                 if kind == 'i':
                     formatter = NumberFormatter(text_align='right')
                 elif kind == 'b':
@@ -2057,6 +2058,8 @@ class Tabulator(BaseTable):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
+            elif isinstance(formatter, JSCode):
+                col_dict['formatter'] = formatter
             title_formatter = _get_value_from_keys(self.title_formatters, index, field)
             if isinstance(title_formatter, str):
                 col_dict['titleFormatter'] = title_formatter
@@ -2081,6 +2084,8 @@ class Tabulator(BaseTable):
             if (index in self.editors or field in self.editors) and editor is None:
                 col_dict['editable'] = False
             if isinstance(editor, str):
+                col_dict['editor'] = editor
+            elif isinstance(editor, JSCode):
                 col_dict['editor'] = editor
             elif isinstance(editor, dict):
                 editor = dict(editor)

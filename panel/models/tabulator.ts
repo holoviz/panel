@@ -1049,7 +1049,7 @@ export class DataTabulatorView extends HTMLBoxView {
       if (tab_column.formatter == null && column.formatter != null) {
         const formatter: any = column.formatter
         const ftype = formatter.type
-	if (ftype === "BooleanFormatter") {
+        if (ftype === "BooleanFormatter") {
           tab_column.formatter = "tickCross"
         } else {
           tab_column.formatter = (cell: any) => {
@@ -1087,7 +1087,6 @@ export class DataTabulatorView extends HTMLBoxView {
           }
           tab_column.editor = "list"
         }
-	console.log(tab_column)
       } else if (ctype === "StringEditor") {
         if (editor.completions.length > 0) {
           tab_column.editor = "list"
