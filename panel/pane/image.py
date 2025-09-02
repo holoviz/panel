@@ -567,3 +567,36 @@ class WebP(ImageBase):
                 w = int.from_bytes(b.read(2), 'little') + 1
                 h = int.from_bytes(b.read(2), 'little') + 1
         return int(w), int(h)
+
+class AVIF(ImageBase):
+    """
+    The `AVIF` pane embeds a .avif image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
+
+    Reference: https://panel.holoviz.org/reference/panes/AVIF.html
+
+    :Example:
+
+    >>> AVIF(
+    ...     'https://raw.githubusercontent.com/Kagami/avif.js/refs/heads/master/demo/Mexico.avif',
+    ...     alt_text='Mexico',
+    ...     link_url='https://en.wikipedia.org/wiki/AVIF',
+    ...     width=500
+    ... )
+    """
+
+    filetype: ClassVar[str] = "avif"
+
+    _extensions: ClassVar[tuple[str, ...]] = ("avif",)
+
+    @classmethod
+    def _imgshape(cls, data: bytes) -> tuple[int, int]:
+        # The width and height position are stored withyin the ispe box, its format is :
+        # ispe + 4 bytes + 4 bytes for width + 4 bytes for height
+
+        ispe = data.find(b"ispe")
+        w = int.from_bytes(data[ispe + 8 : ispe + 12], byteorder="big", signed=False)
+        h = int.from_bytes(data[ispe + 12 : ispe + 16], byteorder="big", signed=False)
+
+        return w, h

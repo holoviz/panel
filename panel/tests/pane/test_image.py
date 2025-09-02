@@ -9,10 +9,11 @@ import pytest
 from requests.exceptions import MissingSchema
 
 from panel.pane import (
-    GIF, ICO, JPG, PDF, PNG, SVG, WebP,
+    AVIF, GIF, ICO, JPG, PDF, PNG, SVG, WebP,
 )
 from panel.pane.markup import escape
 
+AVIF_FILE = 'https://assets.holoviz.org/panel/samples/avif_sample.avif'
 JPG_FILE = 'https://assets.holoviz.org/panel/samples/jpg_sample.jpg'
 JPEG_FILE = 'https://assets.holoviz.org/panel/samples/jpeg_sample.jpeg'
 PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
@@ -61,6 +62,13 @@ def test_svg_pane(document, comm):
 
 
 twopixel = dict(\
+    avif= b'AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZgAAAOptZXRhAAAAAAAAACFoZGx' + \
+          b'yAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAABAAAAImlsb2' + \
+          b'MAAAAAREAAAQABAAAAAAEOAAEAAAAAAAAAIgAAACNpaW5mAAAAAAABAAAAFWluZ' + \
+          b'mUCAAAAAAEAAGF2MDEAAAAAamlwcnAAAABLaXBjbwAAAAxhdjFDgSACAAAAABNj' + \
+          b'b2xybmNseAABAA0AAIAAAAAUaXNwZQAAAAAAAAACAAAAAQAAABBwaXhpAAAAAAM' + \
+          b'ICAgAAAAXaXBtYQAAAAAAAAABAAEEgQIDBAAAACptZGF0EgAKBzgAJpAQ0AIyFR' + \
+          b'gACiiihQABAABsnSRm9hs9BNOQ9A==',
     gif = b'R0lGODlhAgABAPAAAEQ6Q2NYYCH5BAAAAAAAIf8LSW1hZ2VNYWdpY2sNZ2FtbWE' + \
           b'9MC40NTQ1NQAsAAAAAAIAAQAAAgIMCgA7',
     png = b'iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAAFElEQVQIHQEJAPb' + \
@@ -79,7 +87,7 @@ twopixel = dict(\
           )
 
 
-@pytest.mark.parametrize('t', [PNG, JPG, GIF, ICO, WebP], ids=lambda t: t.name.lower())
+@pytest.mark.parametrize('t', [AVIF, PNG, JPG, GIF, ICO, WebP], ids=lambda t: t.name.lower())
 def test_imgshape(t):
     w, h = t._imgshape(b64decode(twopixel[t.name.lower()]))
     assert w == 2
