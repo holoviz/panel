@@ -20,7 +20,7 @@ from bokeh.models.widgets.tables import (
 from playwright.sync_api import expect
 
 from panel.depends import bind
-from panel.io.datamodel import JSCode
+from panel.io.model import JSCode
 from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
