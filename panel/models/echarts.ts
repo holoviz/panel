@@ -25,8 +25,8 @@ const PLACEHOLDER_RE = new RegExp(
 )
 
 interface CompileOptions {
-  mode?: "expression" | "statement";
-  args?: string[],
+  mode?: "expression" | "statement"
+  args?: string[]
 }
 
 const defaultOptions: Required<CompileOptions> = {
@@ -38,7 +38,7 @@ function compileToFunction(
   code: string,
   options: CompileOptions = defaultOptions,
 ): (...args: any[]) => any {
-  const { mode, args } = { ...defaultOptions, ...options }
+  const {mode, args} = {...defaultOptions, ...options}
   const body =
     mode === "expression"
       ? `\"use strict\";\nreturn (${code});`
