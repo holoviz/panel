@@ -136,7 +136,7 @@ export class CardView extends ColumnView {
     let c0 = 0
 
     for (let i = 0; i < this.child_views.length; i++) {
-      const view = this.child_views[i];
+      const view = this.child_views[i]
       if (!(view instanceof LayoutDOMView)) {
         continue
       }
