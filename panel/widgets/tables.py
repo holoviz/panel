@@ -1980,7 +1980,7 @@ class Tabulator(BaseTable):
             if not filter_params:
                 filter_params = {'valuesLookup': True}
             if filter_func is None:
-                filter_func = 'in'
+                filter_func = 'in' if filter_params.get('multiselect') else 'like'
         fspec['headerFilter'] = filter_type
         if filter_params:
             fspec['headerFilterParams'] = filter_params
