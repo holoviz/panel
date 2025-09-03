@@ -489,11 +489,16 @@ class Param(Pane):
         if hasattr(p_obj, 'get_soft_bounds'):
             bounds = p_obj.get_soft_bounds()
             is_int = isinstance(p_obj, param.Integer)
+            start, end = bounds
             istart, iend = getattr(p_obj, 'inclusive_bounds', (True, True))
-            if bounds[0] is not None:
-                kw['start'] = bounds[0] + (1 if is_int and not istart else 0)
-            if bounds[1] is not None:
-                kw['end'] = bounds[1] - (1 if is_int and not iend else 0)
+            if is_int and not istart:
+                start += 1
+            if start is not None:
+                kw['start'] = start
+            if is_int and not iend:
+                end -= 1
+            if end is not None:
+                kw['end'] = end
             if (('start' not in kw or 'end' not in kw) and
                 not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
