@@ -57,7 +57,9 @@ export class EChartsView extends HTMLBoxView {
 
   override render(): void {
     if (this._chart != null) {
-      (window as any).echarts.dispose(this._chart)
+      try {
+	(window as any).echarts.dispose(this._chart)
+      } catch(e) {}
     }
     super.render()
     this.container = div({style: {height: "100%", width: "100%"}})
