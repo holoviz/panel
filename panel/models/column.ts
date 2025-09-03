@@ -132,7 +132,7 @@ export class ColumnView extends BkColumnView {
     super._update_layout()
 
     const is_scrollable = this.model.css_classes.some(cls =>
-      ["scroll", "scrollable", "scrollable-vertical"].includes(cls)
+      ["scroll", "scrollable", "scrollable-vertical"].includes(cls),
     )
     for (const view of this.child_views) {
       if (!(view instanceof LayoutDOMView)) {
