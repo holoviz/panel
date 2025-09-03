@@ -30,6 +30,12 @@ class Swipe(ListLike, ReactiveHTML):
     slider_color = param.Color(default="black", doc="""
         The color of the slider""")
 
+    start = param.Integer(default=0, bounds=(0, 100), doc="""
+        Limits the minimum percentage the swipe handler can be moved to.""")
+
+    end = param.Integer(default=100, bounds=(0, 100), doc="""
+        Limits the maximum percentage the swipe handler can be moved to.""")
+
     value = param.Integer(default=50, bounds=(0, 100), doc="""
         The percentage of the *after* panel to show.""")
 
@@ -71,6 +77,12 @@ class Swipe(ListLike, ReactiveHTML):
              current = e.clientX
              start = view.el.getBoundingClientRect().left
              value = parseInt(((current-start)/ container.clientWidth)*100)
+             if (data.start != null) {
+               value = Math.max(data.start, value)
+             }
+             if (data.end != null) {
+               value = Math.min(data.end, value)
+             }
              data.value = Math.max(0, Math.min(value, 100))
            }
            let e = event || window.event;
@@ -110,6 +122,10 @@ class Swipe(ListLike, ReactiveHTML):
     def _update_layout(self):
         self._before = self.before
         self._after = self.after
+
+    @param.depends('start', 'end', watch=True, on_init=True)
+    def _sync_bounds(self):
+        self.param.value.bounds = (self.start, self.end)
 
     @property
     def before(self):
