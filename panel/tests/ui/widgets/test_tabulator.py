@@ -803,18 +803,21 @@ def test_tabulator_editors_nested(page, opt0, opt1):
 
     # Change the 0th column
     cells.nth(0).click()
+    page.wait_for_timeout(200)
     item = page.locator('.tabulator-edit-list-item', has_text=opt0)
     expect(item).to_have_count(1)
     item.click(force=True)
 
     # Change the 1th column
     cells.nth(1).click()
+    page.wait_for_timeout(200)
     item = page.locator('.tabulator-edit-list-item', has_text=opt1)
     expect(item).to_have_count(1)
     item.click(force=True)
 
     # Check the last column matches
     cells.nth(2).click()
+    page.wait_for_timeout(200)
     items = page.locator('.tabulator-edit-list-item')
     expect(items).to_have_count(5)
 
