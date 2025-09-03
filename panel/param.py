@@ -488,17 +488,19 @@ class Param(Pane):
             kw['options'] = options
         if hasattr(p_obj, 'get_soft_bounds'):
             bounds = p_obj.get_soft_bounds()
+            is_int = isinstance(p_obj, param.Integer)
+            istart, iend = getattr(p_obj, 'inclusive_bounds', (True, True))
             if bounds[0] is not None:
-                kw['start'] = bounds[0]
+                kw['start'] = bounds[0] + (1 if is_int and not istart else 0)
             if bounds[1] is not None:
-                kw['end'] = bounds[1]
+                kw['end'] = bounds[1] - (1 if is_int and not iend else 0)
             if (('start' not in kw or 'end' not in kw) and
                 not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
                     if isinstance(p_obj, param.Number):
                         widget_class = self_or_cls.input_widgets[float]
-                        if isinstance(p_obj, param.Integer):
+                        if is_int:
                             widget_class = self_or_cls.input_widgets[int]
                     elif not issubclass(widget_class, LiteralInput):
                         widget_class = self_or_cls.input_widgets['literal']
@@ -543,11 +545,27 @@ class Param(Pane):
             p_key = p_name if config.nthreads is None else (threading.get_ident(), p_name)
             if p_key in updating:
                 return
+            new = change.new
+            reset = False
+            if isinstance(p_obj, param.Number) and not isinstance(p_obj, param.Integer):
+                istart, iend = getattr(p_obj, 'inclusive_bounds', (True, True))
+                bounds = p_obj.get_soft_bounds()
+                if (not istart and new == bounds[0]) or (not iend and new == bounds[1]):
+                    new = change.old
+                    reset = True
+            elif isinstance(p_obj, param.Range):
+                istart, iend = getattr(p_obj, 'inclusive_bounds', (True, True))
+                bounds = p_obj.get_soft_bounds()
+                if (not istart and new[0] == bounds[0]) or (not iend and new[1] == bounds[1]):
+                    new = change.old
+                    reset = True
             try:
                 updating.append(p_key)
-                parameterized.param.update(**{p_name: change.new})
+                parameterized.param.update(**{p_name: new})
             finally:
                 updating.remove(p_key)
+                if reset:
+                    widget.value = new
 
         if hasattr(param, 'Event') and isinstance(p_obj, param.Event):
             def event(change):

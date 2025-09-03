@@ -431,6 +431,69 @@ def test_object_selector_param_overrides(document, comm):
     assert select.disabled == False
 
 
+def test_integer_param_exclusive_bounds(document, comm):
+    class Test(param.Parameterized):
+        a = param.Integer(default=1, bounds=(0, 10), inclusive_bounds=(False, False))
+
+    test = Test()
+    test_pane = Param(test)
+    model = test_pane.get_root(document, comm=comm)
+
+    widget = model.children[1]
+    assert isinstance(widget, Slider)
+    assert widget.start == 1
+    assert widget.end == 9
+    assert widget.value == 1
+    assert widget.disabled == False
+
+def test_number_param_exclusive_bounds(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1, bounds=(0, 10), inclusive_bounds=(False, False))
+
+    test = Test()
+    test_pane = Param(test)
+    model = test_pane.get_root(document, comm=comm)
+
+    widget = model.children[1]
+    assert isinstance(widget, Slider)
+    assert widget.start == 0
+    assert widget.end == 10
+    assert widget.value == 1
+    assert widget.disabled == False
+
+    widget.value = 0.1
+    assert test.a == 0.1
+
+    widget.value = 0
+    assert widget.value == 0.1
+
+    widget.value = 10
+    assert widget.value == 0.1
+
+def test_range_param_exclusive_bounds(document, comm):
+    class Test(param.Parameterized):
+        a = param.Range(default=(1, 9), bounds=(0, 10), inclusive_bounds=(False, False))
+
+    test = Test()
+    test_pane = Param(test)
+    model = test_pane.get_root(document, comm=comm)
+
+    widget = model.children[1]
+    assert isinstance(widget, BkRangeSlider)
+    assert widget.start == 0
+    assert widget.end == 10
+    assert widget.value == (1, 9)
+    assert widget.disabled == False
+
+    widget.value = (0.1, 9.9)
+    assert test.a == (0.1, 9.9)
+
+    widget.value = (0, 9.9)
+    assert widget.value == (0.1, 9.9)
+
+    widget.value = (0.1, 10)
+    assert widget.value == (0.1, 9.9)
+
 def test_number_input_none_support():
     class Test(param.Parameterized) :
         number = param.Number(default=0, allow_None=True)
