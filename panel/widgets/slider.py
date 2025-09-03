@@ -109,10 +109,6 @@ class _SliderBase(Widget):
             events.pop("value", None)
         super()._process_events(events)
 
-    @param.depends('start', 'end', watch=True, on_init=True)
-    def _sync_bounds(self):
-        self.param.value.bounds = (self.start, self.end)
-
 
 class ContinuousSlider(_SliderBase):
 
@@ -127,6 +123,10 @@ class ContinuousSlider(_SliderBase):
         if 'value' not in params:
             params['value'] = params.get('start', self.start)
         super().__init__(**params)
+
+    @param.depends('start', 'end', watch=True, on_init=True)
+    def _sync_bounds(self):
+        self.param.value.bounds = (self.start, self.end)
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         ref = root.ref['id']
@@ -304,6 +304,10 @@ class DateSlider(_SliderBase):
         if 'value' not in params:
             params['value'] = params.get('start', self.start)
         super().__init__(**params)
+
+    @param.depends('start', 'end', watch=True, on_init=True)
+    def _sync_bounds(self):
+        self.param.value.bounds = (self.start, self.end)
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -589,6 +593,10 @@ class _RangeSliderBase(_SliderBase):
             params['value_start'], params['value_end'] = resolve_value(v1), resolve_value(v2)
         with edit_readonly(self):
             super().__init__(**params)
+
+    @param.depends('start', 'end', watch=True, on_init=True)
+    def _sync_bounds(self):
+        self.param.value.bounds = (self.start, self.end)
 
     @param.depends('value', watch=True)
     def _sync_values(self):
@@ -894,10 +902,6 @@ class _EditableContinuousSlider(CompositeWidget):
         self._update_slider()
         self._update_value()
         self._update_bounds()
-
-    @param.depends('start', 'end', watch=True, on_init=True)
-    def _sync_bounds(self):
-        self.param.value.bounds = (self.fixed_start, self.fixed_end)
 
     def _validate_init_bounds(self, params):
         """
