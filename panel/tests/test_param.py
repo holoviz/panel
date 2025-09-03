@@ -8,8 +8,8 @@ import pytest
 from bokeh.models import (
     AutocompleteInput as BkAutocompleteInput, Button as BkButton,
     Checkbox as BkCheckbox, Column as BkColumn, Div, MultiSelect,
-    RangeSlider as BkRangeSlider, Row as BkRow, Select, Slider, Tabs as BkTabs,
-    TextInput, TextInput as BkTextInput, Toggle,
+    RangeSlider as BkRangeSlider, Row as BkRow, Select, Slider, Spinner,
+    Tabs as BkTabs, TextInput, TextInput as BkTextInput, Toggle,
 )
 from packaging.version import Version
 
@@ -201,6 +201,16 @@ def test_number_param(document, comm):
     assert slider.end == 5.5
     assert slider.disabled == True
 
+def test_number_param_with_none(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=None, bounds=(0, 5))
+
+    test = Test()
+    test_pane = Param(test)
+    model = test_pane.get_root(document, comm=comm)
+
+    slider = model.children[1]
+    assert isinstance(slider, Spinner)
 
 def test_boolean_param(document, comm):
     class Test(param.Parameterized):
