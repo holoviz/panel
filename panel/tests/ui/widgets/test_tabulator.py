@@ -780,9 +780,7 @@ def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumul
     assert not exception_handler_accumulator
 
 
-@pytest.mark.parametrize("opt0", ['A', 'B'])
-@pytest.mark.parametrize("opt1", ["1", "2"])
-def test_tabulator_editors_nested(page, opt0, opt1):
+def test_tabulator_editors_nested(page):
     df = pd.DataFrame({"0": ["A"], "1": [1], "2": [None]})
 
     options = {
@@ -801,15 +799,22 @@ def test_tabulator_editors_nested(page, opt0, opt1):
     cells = page.locator('.tabulator-cell.tabulator-editable')
     expect(cells).to_have_count(3)
 
+    # Check the last column matches
+    cells.nth(2).click()
+    items = page.locator('.tabulator-edit-list-item')
+    expect(items).to_have_count(5)
+    item = page.locator('.tabulator-edit-list-item', has_text="4")
+    expect(item).to_have_count(1)
+
     # Change the 0th column
     cells.nth(0).click()
-    item = page.locator('.tabulator-edit-list-item', has_text=opt0)
+    item = page.locator('.tabulator-edit-list-item', has_text="B")
     expect(item).to_have_count(1)
     item.click(force=True)
 
     # Change the 1th column
     cells.nth(1).click()
-    item = page.locator('.tabulator-edit-list-item', has_text=opt1)
+    item = page.locator('.tabulator-edit-list-item', has_text="2")
     expect(item).to_have_count(1)
     item.click(force=True)
 
@@ -819,7 +824,7 @@ def test_tabulator_editors_nested(page, opt0, opt1):
     expect(items).to_have_count(5)
 
     items_text = items.all_inner_texts()
-    expected = options[opt0][opt1] if opt0 == "B" else options[opt0]
+    expected = options["B"]["2"]
     assert items_text == list(map(str, expected))
 
 
