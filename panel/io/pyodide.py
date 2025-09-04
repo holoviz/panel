@@ -358,6 +358,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
 
     try:
         pydoc.unhold()
+        pydoc.on_event('document_ready', functools.partial(state._schedule_on_load, pydoc))
         pydoc.callbacks.trigger_event(DocumentReady())
     except Exception as e:
         print(f'Error raised while processing Document events: {e}')  # noqa: T201
@@ -389,6 +390,7 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
 
     doc.on_change(pysync)
     doc.unhold()
+    doc.on_event('document_ready', functools.partial(state._schedule_on_load, doc))
     doc.callbacks.trigger_event(DocumentReady())
 
 async def _link_model(ref: str, doc: Document) -> None:
