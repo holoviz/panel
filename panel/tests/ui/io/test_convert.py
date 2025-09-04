@@ -283,6 +283,6 @@ def test_pyodide_test_convert_png_app(http_serve, page, runtime):
 def test_pyodide_test_convert_onload_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, onload_app, page, runtime)
 
-    expect(page.locator('.markdown')).to_have_text('bar')
+    expect(page.locator('.markdown')).to_have_text('Bar')
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
