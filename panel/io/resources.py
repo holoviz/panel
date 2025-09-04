@@ -275,8 +275,25 @@ def component_resource_path(component, attr, path):
     if not isinstance(component, type):
         component = type(component)
     component_path = COMPONENT_PATH
+
+    # Attempt to see if custom resource path is actually
+    # a subpath of an existing bokeh extension
+    is_ext = False
+    for ext, dist_dir in extension_dirs.items():
+        if _is_subpath(path, dist_dir):
+            is_ext = True
+            component_path = f'static/extensions/{ext}'
+            break
+
     if state.rel_path:
         component_path = f"{state.rel_path}/{component_path}"
+
+    # If the component path was matched against a registered extension
+    # we can resolve it relative to that path instead of using the custom
+    # resource handler
+    if is_ext:
+        dist_path = str(path).replace(os.path.sep, '/').replace(str(dist_dir.absolute()), '')
+        return f'{component_path}{dist_path}'
     custom_path = resolve_custom_path(component, path, relative=True)
     if custom_path:
         rel_path = os.fspath(custom_path).replace(os.path.sep, '/')
