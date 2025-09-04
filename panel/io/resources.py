@@ -118,6 +118,9 @@ COMPONENT_PATH = "components/"
 
 BK_PREFIX_RE = re.compile(r'\.bk\.')
 
+# Maps between extension dist directories and CDN
+EXTENSION_CDN = {}
+
 RESOURCE_URLS = {
     'font-awesome': {
         'zip': 'https://use.fontawesome.com/releases/v5.15.4/fontawesome-free-5.15.4-web.zip',
@@ -304,6 +307,19 @@ def patch_stylesheet(stylesheet, dist_url):
 
 def _is_file_path(stylesheet: str)->bool:
     return stylesheet.lower().endswith(".css")
+
+def _is_subpath(path: str | Path, parent: str | Path) -> bool:
+    """
+    Return True if `path` is located inside `parent` (or equal to it).
+    Both paths are resolved (absolute, symlinks resolved).
+    """
+    path = Path(os.path.normpath(Path(path).absolute()))
+    parent = Path(os.path.normpath(Path(parent).absolute()))
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
 
 def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     """
@@ -679,6 +695,11 @@ class Resources(BkResources):
             for resource in getattr(model, resource_type, []):
                 if isinstance(resource, pathlib.PurePath):
                     continue
+                if self.mode == 'cdn':
+                    for p, cdn in EXTENSION_CDN.items():
+                        if _is_subpath(resource, p):
+                            resource = resource.replace(os.path.sep, '/').replace(str(p.absolute()), cdn)
+                            break
                 if state.rel_path:
                     resource = resource.lstrip(state.rel_path+'/')
                 if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
@@ -699,6 +720,11 @@ class Resources(BkResources):
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
+            if self.mode == 'cdn':
+                for p, cdn in EXTENSION_CDN.items():
+                    if _is_subpath(resource, p):
+                        resource = resource.replace(os.path.sep, '/').replace(str(p.absolute()), cdn)
+                        break
             if self.mode == 'server':
                 resource = resource.replace(CDN_DIST, LOCAL_DIST)
             if resource.startswith((state.base_url, "static/")):
