@@ -119,7 +119,7 @@ COMPONENT_PATH = "components/"
 BK_PREFIX_RE = re.compile(r'\.bk\.')
 
 # Maps between extension dist directories and CDN
-EXTENSION_CDN = {}
+EXTENSION_CDN: dict[str | Path, str] = {}
 
 RESOURCE_URLS = {
     'font-awesome': {
@@ -756,7 +756,7 @@ class Resources(BkResources):
                     resource = f'{state.rel_path}/{resource}'
                 elif self.absolute and self.mode == 'server':
                     resource = f'{self.root_url}{resource}'
-            if resource.endswith('.css'):
+            if resource.endswith('.css') and not resource.startswith(('http:', 'https:')):
                 resource += version_suffix
             new_resources.append(resource)
         return new_resources
