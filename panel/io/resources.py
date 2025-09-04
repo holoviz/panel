@@ -292,7 +292,7 @@ def component_resource_path(component, attr, path):
     # we can resolve it relative to that path instead of using the custom
     # resource handler
     if is_ext:
-        dist_path = str(path).replace(os.path.sep, '/').replace(str(dist_dir.absolute()), '')
+        dist_path = str(path).replace(str(dist_dir.absolute()), '').replace(os.path.sep, '/')
         return f'{component_path}{dist_path}'
     custom_path = resolve_custom_path(component, path, relative=True)
     if custom_path:
@@ -345,7 +345,7 @@ def resolve_resource_cdn(resource):
     """
     for p, cdn in EXTENSION_CDN.items():
         if _is_subpath(resource, p):
-            resource = str(resource).replace(os.path.sep, '/').replace(str(p.absolute()), cdn)
+            resource = str(resource).replace(str(p.absolute()), cdn).replace(os.path.sep, '/')
             break
     return resource
 
