@@ -112,6 +112,19 @@ pn.config.raw_css = ['body { background-color: blue; }']
 pn.Row('Output').servable();
 """
 
+onload_app = """
+import panel as pn
+
+row = pn.Row('Foo')
+
+def onload():
+    row[:] = ['Bar']
+
+pn.state.onload(onload)
+
+row.servable()
+"""
+
 
 @pytest.fixture(scope="module")
 def http_serve():
@@ -262,5 +275,14 @@ def test_pyodide_test_convert_png_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, png_app, page, runtime)
 
     expect(page.locator('img')).to_have_count(1)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_onload_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, onload_app, page, runtime)
+
+    expect(page.locator('.markdown')).to_have_text('bar')
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
