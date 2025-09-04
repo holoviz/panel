@@ -321,6 +321,17 @@ def _is_subpath(path: str | Path, parent: str | Path) -> bool:
     except ValueError:
         return False
 
+def resolve_resource_cdn(resource):
+    """
+    Resolves a CDN URL given a file path that is relative to
+    an extension dist directory.
+    """
+    for p, cdn in EXTENSION_CDN.items():
+        if _is_subpath(resource, p):
+            resource = str(resource).replace(os.path.sep, '/').replace(str(p.absolute()), cdn)
+            break
+    return resource
+
 def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     """
     Resolves a stylesheet definition, e.g. originating on a component
@@ -696,10 +707,7 @@ class Resources(BkResources):
                 if isinstance(resource, pathlib.PurePath):
                     continue
                 if self.mode == 'cdn':
-                    for p, cdn in EXTENSION_CDN.items():
-                        if _is_subpath(resource, p):
-                            resource = resource.replace(os.path.sep, '/').replace(str(p.absolute()), cdn)
-                            break
+                    resource = resolve_resource_cdn(resource)
                 if state.rel_path:
                     resource = resource.lstrip(state.rel_path+'/')
                 if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
@@ -721,10 +729,7 @@ class Resources(BkResources):
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
             if self.mode == 'cdn':
-                for p, cdn in EXTENSION_CDN.items():
-                    if _is_subpath(resource, p):
-                        resource = resource.replace(os.path.sep, '/').replace(str(p.absolute()), cdn)
-                        break
+                resource = resolve_resource_cdn(resource)
             if self.mode == 'server':
                 resource = resource.replace(CDN_DIST, LOCAL_DIST)
             if resource.startswith((state.base_url, "static/")):
