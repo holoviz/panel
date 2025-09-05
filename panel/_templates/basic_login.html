@@ -77,14 +77,14 @@
 </head>
 <body>
   <div class="wrap">
-    <form class="login-form" action="./login" method="post">
+    <form class="login-form" action=".{{ login_endpoint }}" method="post">
       <div class="form-header">
         <h3><img id="logo" src="{{ PANEL_CDN }}images/logo_stacked.png" width="150" height="120"></h3>
         <br>
         <p> Login to access your application</p>
       </div>
       <div id="error-message" class="form-group">
-        <p style="color:rgb(255, 0, 0);font-weight:bold" class="errormessage">{{errormessage}}</p>
+        <p style="color:rgb(255, 0, 0);font-weight:bold" class="errormessage">{{errormessage|escape}}</p>
       </div>
       <p></p>
       <!--Email Input-->

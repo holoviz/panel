@@ -19,7 +19,7 @@ Enjoying Panel? Show your support with a [Github star](https://github.com/holovi
 <tbody>
 <tr>
 <td>Downloads</td>
-<td><a href="https://pypistats.org/packages/panel" alt="PyPi Downloads"><img src="https://img.shields.io/pypi/dm/panel?label=pypi" /></a> <a href="https://anaconda.org/pyviz/panel" alt="Conda Downloads"><img src="https://pyviz.org/_static/cache/panel_conda_downloads_badge.svg" /></a></td>
+<td><a href="https://pypistats.org/packages/panel"><img src="https://img.shields.io/pypi/dm/panel?label=pypi" alt="PyPi Downloads" /></a> <a href="https://anaconda.org/pyviz/panel"><img src="https://pyviz.org/_static/cache/panel_conda_downloads_badge.svg" alt="Conda Downloads" /></a></td>
 </tr>
 <tr>
 <td>Build Status</td>
@@ -173,6 +173,8 @@ panel serve name_of_notebook.ipynb --show
 [![Panel Chat Examples](https://assets.holoviz.org/panel/readme/panel-chat-examples.jpg)](https://holoviz-topics.github.io/panel-chat-examples/)
 
 [![Awesome Panel Gallery](https://assets.holoviz.org/panel/readme/awesome_panel.jpg)](https://www.awesome-panel.org)
+
+[![HoloViz Examples Gallery](https://assets.holoviz.org/panel/readme/holoviz_examples.jpg)](https://examples.holoviz.org)
 
 ## Get started
 

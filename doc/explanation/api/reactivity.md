@@ -46,7 +46,7 @@ def submit_form(event):
 
 user.param.watch(update_preview, 'value')
 age.param.watch(update_preview, 'value')
-submit.onclick(submit_form)
+submit.on_click(submit_form)
 
 pn.Row(widgets, md)
 ```
@@ -278,7 +278,7 @@ def update(_=None):
 
 button.on_click(update)
 
-pn.Column(a_slider, b_slider, button, str_pane)
+pn.Column(a, b, button, str_pane)
 ```
 
 Defining a click handler using the `on_click` method to trigger the computation feels natural, but we again struggle with the fact that we have to access the state from multiple widgets. The reactive approaches therefore do provide alternatives here, e.g. when using function level binding we can determine if the button has been clicked and raise `Skip` error if it hasn't, causing the update event to be skipped:

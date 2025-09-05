@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import inspect
 import logging
 import os
 import sys
@@ -20,14 +21,16 @@ import traceback
 import typing
 import uuid
 
+from collections.abc import Callable, Mapping
 from typing import (
-    IO, TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar,
 )
 
 import param  # type: ignore
 
 from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
+from bokeh.models import UIElement
 from bokeh.resources import Resources
 from jinja2 import Template
 from param import Undefined
@@ -42,11 +45,12 @@ from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    JupyterCommManagerBinary as JupyterCommManager, ipywidget, render_embed,
-    render_mimebundle, render_model,
+    JupyterCommManagerBinary as JupyterCommManager, ipywidget,
+    patch_inline_stylesheets, render_embed, render_mimebundle, render_model,
 )
+from .io.resources import set_resource_mode
 from .io.save import save
-from .io.state import curdoc_locked, set_curdoc, state
+from .io.state import set_curdoc, state
 from .util import escape, param_reprs
 from .util.parameters import get_params_to_inherit
 
@@ -54,13 +58,15 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
+    from typing_extensions import Self
 
     from .io.location import Location
+    from .io.notebook import Mimebundle
     from .io.server import StoppableThread
     from .theme import Design
 
 
-_tasks = set()
+_tasks: set[asyncio.Task] = set()
 
 
 class Layoutable(param.Parameterized):
@@ -69,7 +75,7 @@ class Layoutable(param.Parameterized):
     for all Panel components with a visual representation.
     """
 
-    align = Align(default='start', doc="""
+    align = Align(default="start", doc="""
         Whether the object should be aligned with the start, end or
         center of its container. If set as a tuple it will declare
         (vertical, horizontal) alignment.""")
@@ -86,7 +92,7 @@ class Layoutable(param.Parameterized):
     css_classes = param.List(default=[], nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
 
-    design = param.ObjectSelector(default=None, objects=[], doc="""
+    design = param.Selector(default=None, objects=[], doc="""
         The design system to use to style components.""")
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
@@ -100,10 +106,10 @@ class Layoutable(param.Parameterized):
         Minimal height of the component (in pixels) if height is adjustable.""")
 
     max_width = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""")
+        Maximum width of the component (in pixels) if width is adjustable.""")
 
     max_height = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""")
+        Maximum height of the component (in pixels) if height is adjustable.""")
 
     margin = Margin(default=0, doc="""
         Allows to create additional space around the component. May
@@ -127,7 +133,7 @@ class Layoutable(param.Parameterized):
         The width of the component (in pixels). This can be either
         fixed or preferred width, depending on width sizing policy.""")
 
-    width_policy = param.ObjectSelector(
+    width_policy = param.Selector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its width.
 
@@ -159,7 +165,7 @@ class Layoutable(param.Parameterized):
             management and other factors.
     """)
 
-    height_policy = param.ObjectSelector(
+    height_policy = param.Selector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its height.
 
@@ -191,7 +197,7 @@ class Layoutable(param.Parameterized):
             management and other factors.
     """)
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         How the component should size itself.
@@ -302,27 +308,33 @@ class Layoutable(param.Parameterized):
         super().__init__(**params)
 
 
-
 class ServableMixin:
     """
     Mixin to define methods shared by objects which can served.
     """
 
     def _modify_doc(
-        self, server_id: str, title: str, doc: Document, location: Optional['Location']
+        self,
+        server_id: str | None,
+        title: str,
+        doc: Document,
+        location: Location | bool | None
     ) -> Document:
         """
         Callback to handle FunctionHandler document creation.
         """
-        if server_id:
+        if server_id and server_id in state._servers:
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location) # type: ignore
 
     def _add_location(
-        self, doc: Document, location: Optional['Location' | bool],
-        root: Optional['Model'] = None
-    ) -> 'Location':
+        self,
+        doc: Document,
+        location: Location | bool,
+        root: Model | None = None
+    ) -> Location | None:
         from .io.location import Location
+        loc: Location | None
         if isinstance(location, Location):
             loc = location
             state._locations[doc] = loc
@@ -331,6 +343,9 @@ class ServableMixin:
         else:
             with set_curdoc(doc):
                 loc = state.location
+        if loc is None:
+            return None
+
         if root is None:
             loc_model = loc.get_root(doc)
         else:
@@ -345,17 +360,17 @@ class ServableMixin:
     #----------------------------------------------------------------
 
     def servable(
-        self, title: Optional[str] = None, location: bool | 'Location' = True,
-        area: str = 'main', target: Optional[str] = None
-    ) -> 'ServableMixin':
+        self, title: str | None = None, location: bool | Location = True,
+        area: str = 'main', target: str | None = None
+    ) -> Self:
         """
         Serves the object or adds it to the configured
         pn.state.template if in a `panel serve` context, writes to the
         DOM if in a pyodide context and returns the Panel object to
         allow it to display itself in a notebook context.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         title : str
           A string title to give the Document (if served as an app)
         location : boolean or panel.io.location.Location
@@ -374,7 +389,8 @@ class ServableMixin:
         -------
         The Panel object itself
         """
-        if curdoc_locked().session_context:
+        doc = state.curdoc
+        if doc and doc.session_context:
             logger = logging.getLogger('bokeh')
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
@@ -385,6 +401,9 @@ class ServableMixin:
                 assert template is not None
                 if template.title == template.param.title.default and title:
                     template.title = title
+                for obj in self.select():
+                    if not obj.design:
+                        obj.design = template.design
                 if area == 'main':
                     template.main.append(self)
                 elif area == 'sidebar':
@@ -394,7 +413,7 @@ class ServableMixin:
                 elif area == 'header':
                     template.header.append(self)
             else:
-                self.server_doc(title=title, location=location) # type: ignore
+                self.server_doc(doc, title=title, location=location) # type: ignore
         elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
             from .io.pyodide import (
                 _IN_PYSCRIPT_WORKER, _IN_WORKER, _get_pyscript_target, write,
@@ -412,15 +431,15 @@ class ServableMixin:
         return self
 
     def show(
-        self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
-        websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
-        open: bool = True, location: bool | 'Location' = True, **kwargs
-    ) -> 'StoppableThread' | 'Server':
+        self, title: str | None = None, port: int = 0, address: str | None = None,
+        websocket_origin: str | None = None, threaded: bool = False, verbose: bool = True,
+        open: bool = True, location: bool | Location = True, **kwargs
+    ) -> StoppableThread | Server:
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         title : str | None
           A string title to give the Document (if served as an app)
         port: int (optional, default=0)
@@ -519,7 +538,10 @@ class MimeRenderMixin:
         )
         self._comms[ref] = (comm, client_comm)
         manager.client_comm_id = client_comm.id
-        return render_mimebundle(model, doc, comm, manager, location)
+        return render_mimebundle(
+            model, doc, comm, manager, location,
+            resources='inline' if config.inline else 'cdn'
+        )
 
 
 class Renderable(param.Parameterized, MimeRenderMixin):
@@ -546,14 +568,14 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         getattr(self._logger, level)(f'Session %s {msg}', id(state.curdoc), *args)
 
     def _get_model(
-        self, doc: Document, root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional[Comm] = None
-    ) -> 'Model':
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         """
         Converts the objects being wrapped by the viewable into a
         bokeh model that can be composed in a bokeh layout.
 
-        Arguments
+        Parameters
         ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
@@ -574,8 +596,8 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         Clean up method which is called when a Viewable is destroyed.
 
-        Arguments
-        ---------
+        Pgarameters
+        -----------
         root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
@@ -585,7 +607,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         if ref in state._handles:
             del state._handles[ref]
 
-    def _preprocess(self, root: 'Model', changed=None, old_models=None) -> None:
+    def _preprocess(self, root: Model, changed=None, old_models=None) -> None:
         """
         Applies preprocessing hooks to the root model.
 
@@ -595,15 +617,22 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         Panel object that was changed and any old, unchanged models
         so they can be skipped (see https://github.com/holoviz/panel/pull/4989)
         """
+        ref = root.ref['id']
+        if changed is not None and ref in changed._models and ref in state._views:
+            _, _, _, comm = state._views[ref]
+            if comm is not None and config.inline:
+                for model in changed._models[ref][0].select({'type': UIElement}):
+                    patch_inline_stylesheets(model)
+
         changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
         for hook in hooks:
-            try:
+            if len(inspect.signature(hook).parameters) >= 4:
                 hook(self, root, changed, old_models)
-            except TypeError:
+            else:
                 hook(self, root)
 
-    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
+    def _render_model(self, doc: Document | None = None, comm: Comm | None = None) -> Model:
         if doc is None:
             doc = Document()
         if comm is None:
@@ -624,7 +653,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
     def _init_params(self) -> Mapping[str, Any]:
         return {k: v for k, v in self.param.values().items() if v is not None}
 
-    def _server_destroy(self, session_context: 'BokehSessionContext') -> None:
+    def _server_destroy(self, session_context: BokehSessionContext) -> None:
         """
         Server lifecycle hook triggered when session is destroyed.
         """
@@ -643,14 +672,14 @@ class Renderable(param.Parameterized, MimeRenderMixin):
                                         params=', '.join(param_reprs(self)))
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         """
         Returns the root model and applies pre-processing hooks
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
@@ -681,6 +710,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         state._views[ref] = (root_view, root, doc, comm)
         return root
 
+
 class Viewable(Renderable, Layoutable, ServableMixin):
     """
     Viewable is the baseclass all visual components in the panel
@@ -695,7 +725,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Whether or not the Viewable is loading. If True a loading spinner
         is shown on top of the Viewable.""")
 
-    _preprocessing_hooks: ClassVar[list[Callable[['Viewable', 'Model'], None]]] = []
+    _preprocessing_hooks: ClassVar[list[Callable[[Viewable, Model], None]]] = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
@@ -730,7 +760,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             stop_loading_spinner(self)
 
-    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
+    def _render_model(self, doc: Document | None = None, comm: Comm | None = None) -> Model:
         if doc is None:
             doc = Document()
         if comm is None:
@@ -817,9 +847,18 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         doc = Document()
         comm = state._comm_manager.get_server_comm()
-        model = self._render_model(doc, comm)
+
+        resources = 'inline' if config.inline and not state._is_pyodide else 'cdn'
+        with set_resource_mode(resources):
+            model = self._render_model(doc, comm)
         if config.embed:
             return render_model(model)
+
+        if resources == 'inline':
+            for submodel in model.select({'type': UIElement}):
+                if not isinstance(submodel, UIElement):
+                    continue
+                patch_inline_stylesheets(submodel)
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 
@@ -839,12 +878,12 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     # Public API
     #----------------------------------------------------------------
 
-    def clone(self, **params) -> 'Viewable':
+    def clone(self, **params) -> Viewable:
         """
         Makes a copy of the object sharing the same parameters.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         params: Keyword arguments override the parameters on the clone.
 
         Returns
@@ -855,14 +894,14 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         return type(self)(**dict(inherited, **params))
 
     def select(
-        self, selector: Optional[type | Callable[['Viewable'], bool]] = None
-    ) -> list['Viewable']:
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> list[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
@@ -880,17 +919,17 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def embed(
         self, max_states: int = 1000, max_opts: int = 3, json: bool = False,
-        json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
+        json_prefix: str = '', save_path: str = './', load_path: str | None = None,
         progress: bool = False, states={}
-    ) -> None:
+    ) -> Mimebundle:
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
         this will only work well for simple apps with a relatively
         small state space.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         max_states: int
           The maximum number of states to embed
         max_opts: int
@@ -914,19 +953,19 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         )
 
     def save(
-        self, filename: str | os.PathLike | IO, title: Optional[str] = None,
+        self, filename: str | os.PathLike | IO, title: str | None = None,
         resources: Resources | None = None, template: str | Template | None = None,
         template_variables: dict[str, Any] = {}, embed: bool = False,
         max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
-        json_prefix: str='', save_path: str='./', load_path: Optional[str] = None,
+        json_prefix: str='', save_path: str='./', load_path: str | None = None,
         progress: bool = True, embed_states: dict[Any, Any] = {},
         as_png: bool | None = None, **kwargs
     ) -> None:
         """
         Saves Panel objects to file.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename: str or file-like object
            Filename to save the plot to
         title: string
@@ -967,14 +1006,14 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         )
 
     def server_doc(
-        self, doc: Optional[Document] = None, title: Optional[str] = None,
-        location: bool | 'Location' = True
+        self, doc: Document | None = None, title: str | None = None,
+        location: bool | Location = True
     ) -> Document:
         """
         Returns a serveable bokeh Document with the panel attached
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc : bokeh.Document (optional)
           The bokeh Document to attach the panel to as a root,
           defaults to bokeh.io.curdoc()
@@ -1014,13 +1053,17 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if location:
             self._add_location(doc, location, model)
         if config.notifications and doc is state.curdoc:
-            notification_model = state.notifications.get_root(doc)
-            notification_model.name = 'notifications'
-            doc.add_root(notification_model)
+            notification = state.notifications
+            if notification:
+                notification_model = notification.get_root(doc)
+                notification_model.name = 'notifications'
+                doc.add_root(notification_model)
         if config.browser_info and doc is state.curdoc:
-            browser_model = state.browser_info._get_model(doc, model)
-            browser_model.name = 'browser_info'
-            doc.add_root(browser_model)
+            browser = state.browser_info
+            if browser:
+                browser_model = browser._get_model(doc, model)
+                browser_model.name = 'browser_info'
+                doc.add_root(browser_model)
         return doc
 
 
@@ -1050,18 +1093,18 @@ class Viewer(param.Parameterized):
         return view
 
     def servable(
-        self, title: Optional[str]=None, location: bool | 'Location' = True,
-        area: str = 'main', target: Optional[str] = None
+        self, title: str | None=None, location: bool | Location = True,
+        area: str = 'main', target: str | None = None
     ) -> Viewable:
         return self._create_view().servable(title, location, area, target)
 
     servable.__doc__ = ServableMixin.servable.__doc__
 
     def show(
-        self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
-        websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
-        open: bool = True, location: bool | 'Location' = True, **kwargs
-    ) -> threading.Thread | 'Server':
+        self, title: str | None = None, port: int = 0, address: str | None = None,
+        websocket_origin: str | None = None, threaded: bool = False, verbose: bool = True,
+        open: bool = True, location: bool | Location = True, **kwargs
+    ) -> threading.Thread | Server:
         return self._create_view().show(
             title, port, address, websocket_origin, threaded,
             verbose, open, location, **kwargs
@@ -1081,7 +1124,7 @@ class Child(param.ClassSelector):
     by calling the `pn.panel` utility.
     """
 
-    @typing.overload
+    @typing.overload  # type: ignore
     def __init__(
         self,
         default=None, *, is_instance=True, allow_None=False, doc=None,
@@ -1091,7 +1134,7 @@ class Child(param.ClassSelector):
     ):
         ...
 
-    def __init__(self, /, default=Undefined, class_=Viewable, **params):
+    def __init__(self, /, default=Undefined, class_=Viewable, allow_refs=False, **params):
         if isinstance(class_, type) and not issubclass(class_, Viewable):
             raise TypeError(
                 f"Child.class_ must be an instance of Viewable, not {type(class_)}."
@@ -1101,7 +1144,10 @@ class Child(param.ClassSelector):
             raise TypeError(
                 f"Child.class_ must be an instance of Viewable, not {invalid}."
             )
-        super().__init__(default=self._transform_value(default), class_=class_, **params)
+        super().__init__(
+            default=self._transform_value(default), class_=class_,
+            allow_refs=allow_refs, **params
+        )
 
     def _transform_value(self, val):
         if not isinstance(val, Viewable) and val not in (None, Undefined):
@@ -1120,16 +1166,6 @@ class Children(param.List):
     a non-Viewable object it will automatically promote it to a ``Viewable``
     by calling the ``panel`` utility.
     """
-
-    @typing.overload
-    def __init__(
-        self,
-        default=[], *, instantiate=True, bounds=(0, None),
-        allow_None=False, doc=None, label=None, precedence=None,
-        constant=False, readonly=False, pickle_default_value=True, per_instance=True,
-        allow_refs=False, nested_refs=False
-    ):
-        ...
 
     def __init__(
         self, /, default=Undefined, instantiate=Undefined, bounds=Undefined,
@@ -1154,10 +1190,42 @@ class Children(param.List):
     def _transform_value(self, val):
         if isinstance(val, list) and val:
             from .pane import panel
-            val[:] = [
-                v if isinstance(v, Viewable) else panel(v)
-                for v in val
-            ]
+            new = []
+            mutated = False
+            for v in val:
+                n = panel(v)
+                mutated |= v is not n
+                new.append(n)
+            if mutated:
+                val = new
+        return val
+
+    @instance_descriptor
+    def __set__(self, obj, val):
+        super().__set__(obj, self._transform_value(val))
+
+
+class ChildDict(param.Dict):
+
+    def __init__(
+        self, /, default=Undefined, instantiate=Undefined, **params
+    ):
+        default = self._transform_value(default)
+        super().__init__(
+            default=default, instantiate=instantiate, **params
+        )
+
+    def _transform_value(self, val):
+        if isinstance(val, dict) and val:
+            from .pane import panel
+            new = {}
+            mutated = False
+            for k, v in val.items():
+                n = panel(v)
+                mutated |= v is not n
+                new[k] = n
+            if mutated:
+                val = new
         return val
 
     @instance_descriptor
@@ -1166,34 +1234,42 @@ class Children(param.List):
 
 
 
+def _is_viewable_class_selector(class_selector: param.ClassSelector) -> bool:
+    if not class_selector.class_:
+        return False
+    if isinstance(class_selector.class_, tuple):
+        return all(issubclass(cls, Viewable) for cls in class_selector.class_)
+    return issubclass(class_selector.class_, Viewable)
+
+def _is_viewable_list(param_list: param.List) -> bool:
+    if not param_list.item_type:
+        return False
+    if isinstance(param_list.item_type, tuple):
+        return all(issubclass(cls, Viewable) for cls in param_list.item_type)
+    return issubclass(param_list.item_type, Viewable)
+
+
 def is_viewable_param(parameter: param.Parameter) -> bool:
     """
-    Detects whether the Parameter uniquely identifies a Viewable
-    type.
+    Determines if a parameter uniquely identifies a Viewable type.
 
-    Arguments
-    ---------
-    parameter: param.Parameter
+    Parameters
+    ----------
+    parameter : param.Parameter
+        The parameter to evaluate.
 
     Returns
     -------
-    Whether the Parameter specieis a Parameter type
+    bool
+        True if the parameter specifies a Viewable type, False otherwise.
     """
-    p = parameter
-    if (
-        isinstance(p, (Child, Children)) or
-        (isinstance(p, param.ClassSelector) and p.class_ and (
-            (isinstance(p.class_, tuple) and
-             all(issubclass(cls, Viewable) for cls in p.class_)) or
-            issubclass(p.class_, Viewable)
-        )) or
-        (isinstance(p, param.List) and p.item_type and (
-            (isinstance(p.item_type, tuple) and
-             all(issubclass(cls, Viewable) for cls in p.item_type)) or
-            issubclass(p.item_type, Viewable)
-        ))
-    ):
+    if isinstance(parameter, (Child, Children)):
         return True
+    if isinstance(parameter, param.ClassSelector) and _is_viewable_class_selector(parameter) and parameter.is_instance:
+        return True
+    if isinstance(parameter, param.List) and _is_viewable_list(parameter):
+        return True
+
     return False
 
 

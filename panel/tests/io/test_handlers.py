@@ -2,12 +2,15 @@ from io import StringIO
 
 import pytest
 
-from panel.io.handlers import capture_code_cell, extract_code, parse_notebook
+from panel.io.handlers import (
+    _create_copy_button, capture_code_cell, extract_code, parse_notebook,
+)
+from panel.widgets import ButtonIcon
 
 try:
     import nbformat
 except Exception:
-    nbformat = None
+    nbformat = None  # type: ignore
 nbformat_available = pytest.mark.skipif(nbformat is None, reason="requires nbformat")
 
 
@@ -187,3 +190,23 @@ def test_parse_notebook_markdown_escaped():
     nb, code, layout = parse_notebook(sio)
 
     assert code == f"_pn__state._cell_outputs['{cell.id}'].append(\"\"\"This is a test of markdown terminated by a quote\\\"\"\"\")"
+
+def test_create_copy_button():
+    """Test that _create_copy_button creates a ButtonIcon with correct properties."""
+
+
+    # Full error text from the user's example
+    full_error_text = """Exception: bla bla bla."""
+
+    # Create the copy button
+    copy_button = _create_copy_button(full_error_text)
+
+    # Test that it's a ButtonIcon widget
+    assert isinstance(copy_button, ButtonIcon)
+
+    # Test the button properties
+    assert copy_button.icon == "clipboard"
+
+    # Test the styling
+    styles = copy_button.styles
+    assert styles['position'] == 'absolute'

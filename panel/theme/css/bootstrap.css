@@ -77,9 +77,10 @@
       )
     )
   );
-  --bokeh-base-font: system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', 'Noto Sans', 'Liberation Sans', Arial, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --bokeh-base-font:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans',
+    'Liberation Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 :host {
@@ -147,6 +148,38 @@ button.accordion-header {
 
 button.accordion-header {
   border-radius: 0;
+}
+
+.card-button {
+  line-height: 0.9em;
+}
+
+.card-title {
+  margin-bottom: 5px;
+}
+
+:host(.card-title) h1 {
+  font-size: 2em;
+}
+
+:host(.card-title) h2 {
+  font-size: 1.5em;
+}
+
+:host(.card-title) h3 {
+  font-size: 1.17em;
+}
+
+:host(.card-title) h4 {
+  font-size: 1em;
+}
+
+:host(.card-title) h5 {
+  font-size: 0.83em;
+}
+
+:host(.card-title) h6 {
+  font-size: 0.67em;
 }
 
 :host(.card-title) h1,
@@ -378,8 +411,8 @@ textarea.bk-input {
   --bs-btn-hover-border-color: transparent;
   --bs-btn-hover-color: var(--bs-body-color);
   --bs-btn-hover-bg: var(--bs-body-bg);
-  --bs-btn-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 1px 1px rgba(0, 0, 0, 0.075);
+  --bs-btn-box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 1px 1px rgba(0, 0, 0, 0.075);
   --bs-btn-disabled-opacity: 0.65;
   --bs-btn-focus-box-shadow: 0 0 0 0.25rem
     rgba(var(--bs-btn-focus-shadow-rgb), 0.5);
@@ -619,8 +652,8 @@ select.bk-input {
   line-height: 1.5;
   color: var(--bs-body-color);
   background-color: var(--bs-form-control-bg);
-  background-image: var(--bs-form-select-bg-img),
-    var(--bs-form-select-bg-icon, none);
+  background-image:
+    var(--bs-form-select-bg-img), var(--bs-form-select-bg-icon, none);
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   background-size: 16px 12px;
@@ -837,15 +870,19 @@ div .tabulator .tabulator-header .tabulator-col {
 }
 
 /* Quill editor */
-
 .ql-editor,
 .ql-editor.ql-blank::before {
   color: var(--bs-body-color);
 }
 
 /* Float panel */
-
 .jsPanel .jsPanel-content {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+/* Copy Button */
+.copybtn {
   background-color: var(--bs-body-bg);
   color: var(--bs-body-color);
 }

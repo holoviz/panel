@@ -69,6 +69,9 @@ pyodideWorker.onmessage = async (event) => {
     render_items[0]['roots'] = roots
     render_items[0]['root_ids'] = root_ids
 
+    // Clear pre-rendered contents
+    Bokeh.index.roots.map((v) => v.remove())
+
     // Embed content
     const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
 

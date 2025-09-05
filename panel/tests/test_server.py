@@ -1,10 +1,13 @@
 import asyncio
 import datetime as dt
+import importlib
 import logging
 import os
 import pathlib
 import time
 import weakref
+
+from functools import partial
 
 import param
 import pytest
@@ -23,10 +26,27 @@ from panel.pane import Markdown
 from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
-from panel.tests.util import serve_and_request, serve_and_wait, wait_until
+from panel.tests.util import (
+    get_open_ports, reverse_proxy_available, serve_and_request, serve_and_wait,
+    wait_until,
+)
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
 )
+
+
+@pytest.fixture(params=["tornado", "fastapi"])
+def server_implementation(request):
+    try:
+        importlib.import_module(request.param)
+    except Exception:
+        pytest.skip(f'{request.param!r} is not installed')
+    old = serve_and_wait.server_implementation
+    serve_and_wait.server_implementation = request.param
+    try:
+        yield request.param
+    finally:
+        serve_and_wait.server_implementation = old
 
 
 @pytest.mark.xdist_group(name="server")
@@ -79,8 +99,48 @@ def test_server_root_handler():
 
     assert 'href="./app"' in r.content.decode('utf-8')
 
+@pytest.mark.parametrize('path', ["/app", "/nested/app"])
+def test_server_ico_handling(path, port):
+    md = Markdown('# Favicon test')
 
-def test_server_template_static_resources():
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {path: md}, ico_path=ico_path, port=port, suffix=path
+    )
+
+    dots = path.count('/')*'.'
+    assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
+
+def test_server_ico_handling_with_prefix(port):
+    md = Markdown('# Favicon test')
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {'app': md}, ico_path=ico_path, port=port, prefix='/prefix', suffix='/prefix/app'
+    )
+
+    assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
+
+@pytest.mark.parametrize('path', ["/app", "/nested/app"])
+def test_server_template_ico_handling(path, port):
+    def app():
+        return BootstrapTemplate()
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {path: app}, ico_path=ico_path, port=port, suffix=path
+    )
+
+    dots = path.count('/')*'.'
+    assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
+
+def test_server_template_static_resources(server_implementation):
     template = BootstrapTemplate()
 
     r = serve_and_request({'template': template}, suffix="/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
@@ -89,6 +149,7 @@ def test_server_template_static_resources():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
+#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
 def test_server_template_static_resources_with_prefix():
     template = BootstrapTemplate()
 
@@ -98,6 +159,7 @@ def test_server_template_static_resources_with_prefix():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
+#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
 def test_server_template_static_resources_with_prefix_relative_url():
     template = BootstrapTemplate()
 
@@ -114,7 +176,7 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
     assert f'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
 
-def test_server_extensions_on_root():
+def test_server_extensions_on_root(server_implementation):
     md = Markdown('# Title')
     assert serve_and_request(md).ok
 
@@ -129,7 +191,7 @@ def test_autoload_js(port):
     assert f"http://localhost:{port}/static/extensions/panel/panel.min.js" in r.content.decode('utf-8')
 
 
-def test_server_async_callbacks():
+def test_server_async_callbacks(server_implementation):
     button = Button(name='Click')
 
     counts = []
@@ -153,7 +215,7 @@ def test_server_async_callbacks():
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_async_local_state(bokeh_curdoc):
+def test_server_async_local_state(server_implementation, bokeh_curdoc):
     docs = {}
 
     async def task():
@@ -174,7 +236,7 @@ def test_server_async_local_state(bokeh_curdoc):
     wait_until(lambda: all([len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()]))
 
 
-def test_server_async_local_state_nested_tasks(bokeh_curdoc):
+def test_server_async_local_state_nested_tasks(server_implementation, bokeh_curdoc):
     docs = {}
     _tasks = set()
 
@@ -200,7 +262,7 @@ def test_server_async_local_state_nested_tasks(bokeh_curdoc):
     wait_until(lambda: all(len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()))
 
 
-def test_serve_config_per_session_state():
+def test_serve_config_per_session_state(server_implementation):
     CSS1 = 'body { background-color: red }'
     CSS2 = 'body { background-color: green }'
     def app1():
@@ -208,7 +270,7 @@ def test_serve_config_per_session_state():
     def app2():
         config.raw_css = [CSS2]
 
-    port1, port2 = 7001, 7002
+    port1, port2 = get_open_ports(n=2)
     serve_and_wait(app1, port=port1)
     serve_and_wait(app2, port=port2)
 
@@ -223,7 +285,7 @@ def test_serve_config_per_session_state():
     assert CSS2 in r2
 
 
-def test_server_on_session_created():
+def test_server_on_session_created(server_implementation):
     session_contexts = []
     def append_session(session_context):
         session_contexts.append(session_context)
@@ -236,6 +298,7 @@ def test_server_on_session_created():
     assert len(session_contexts) == 3
 
 
+#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
 def test_server_on_session_destroyed():
     session_contexts = []
     def append_session(session_context):
@@ -281,7 +344,7 @@ def test_server_session_info():
     assert state.session_info['live'] == 0
 
 
-def test_server_periodic_async_callback(threads):
+def test_server_periodic_async_callback(server_implementation, threads):
     counts = []
 
     async def cb(count=[0]):
@@ -301,7 +364,69 @@ def test_server_periodic_async_callback(threads):
     wait_until(lambda: len(counts) >= 5 and counts == list(range(len(counts))))
 
 
-def test_server_schedule_repeat():
+def test_server_cancel_task(server_implementation):
+    state.cache['count'] = 0
+    def periodic_cb():
+        state.cache['count'] += 1
+
+    def app():
+        state.schedule_task('periodic', periodic_cb, period='0.1s')
+        return '# state.schedule test'
+
+    serve_and_request(app)
+
+    wait_until(lambda: state.cache['count'] > 0)
+    state.cancel_task('periodic')
+    count = state.cache['count']
+    time.sleep(0.5)
+    assert state.cache['count'] == count
+
+
+async def _async_erroring_cb():
+    raise ValueError("An erroring callback")
+
+def _sync_erroring_cb():
+    raise ValueError("An erroring callback")
+
+@pytest.mark.parametrize(
+    'threadpool, cb', [
+        (2, _async_erroring_cb),
+        (None, _async_erroring_cb),
+        (2, _sync_erroring_cb),
+        (None, _sync_erroring_cb)
+])
+def test_server_periodic_callback_error_logged(caplog, server_implementation, threadpool, cb):
+    """Ensure errors in periodic callbacks appear in the logs"""
+    loggers_to_check = [logging.getLogger(x) for x in ('panel','bokeh')]
+    orig_level_propagate = [(l.level,l.propagate) for l in loggers_to_check]
+    orig_threads = config.nthreads
+    repeats = 3
+
+    try:
+        config.nthreads = threadpool
+        for l in loggers_to_check:
+            l.propagate = True
+            l.setLevel(logging.WARNING)
+
+        def app():
+            state.add_periodic_callback(cb, 100, repeats)
+            def loaded():
+                state._schedule_on_load(state.curdoc, None)
+            state.execute(loaded, schedule=True)
+            return Row()
+
+        serve_and_request(app)
+        time.sleep(1)
+        num_errors_logged = caplog.text.count('ValueError: An erroring callback')
+        assert num_errors_logged == repeats
+    finally:
+        for l,level_prop in zip(loggers_to_check,orig_level_propagate):
+            l.setLevel(level_prop[0])
+            l.propagate = level_prop[1]
+        config.nthreads = orig_threads
+
+
+def test_server_schedule_repeat(server_implementation):
     state.cache['count'] = 0
     def periodic_cb():
         state.cache['count'] += 1
@@ -314,7 +439,8 @@ def test_server_schedule_repeat():
 
     wait_until(lambda: state.cache['count'] > 0)
 
-def test_server_schedule_threaded(threads):
+
+def test_server_schedule_threaded(server_implementation, threads):
     counts = []
     def periodic_cb(count=[0]):
         count[0] += 1
@@ -333,37 +459,40 @@ def test_server_schedule_threaded(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_schedule_at():
+def test_server_schedule_at(server_implementation):
     def periodic_cb():
         state.cache['at'] = dt.datetime.now()
 
-    scheduled = dt.datetime.now() + dt.timedelta(seconds=1.57)
+    scheduled = []
 
     def app():
-        state.schedule_task('periodic', periodic_cb, at=scheduled)
+        scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.57))
+        state.schedule_task('periodic', periodic_cb, at=scheduled[0])
         return '# state.schedule test'
 
     serve_and_request(app)
 
     # Check callback was executed within small margin of error
     wait_until(lambda: 'at' in state.cache)
-    assert abs(state.cache['at'] - scheduled) < dt.timedelta(seconds=0.2)
+    assert abs(state.cache['at'] - scheduled[0]) < dt.timedelta(seconds=0.2)
     assert len(state._scheduled) == 0
 
 
-def test_server_schedule_at_iterator():
+def test_server_schedule_at_iterator(server_implementation):
     state.cache['at'] = []
     def periodic_cb():
         state.cache['at'].append(dt.datetime.now())
 
-    scheduled1 = dt.datetime.now() + dt.timedelta(seconds=1.57)
-    scheduled2 = dt.datetime.now() + dt.timedelta(seconds=1.86)
+    scheduled = []
 
     def schedule():
-        yield scheduled1
-        yield scheduled2
+        yield from scheduled
 
     def app():
+        scheduled.extend([
+            dt.datetime.now() + dt.timedelta(seconds=0.57),
+            dt.datetime.now() + dt.timedelta(seconds=0.86)
+        ])
         state.schedule_task('periodic', periodic_cb, at=schedule())
         return '# state.schedule test'
 
@@ -371,27 +500,27 @@ def test_server_schedule_at_iterator():
 
     # Check callbacks were executed within small margin of error
     wait_until(lambda: len(state.cache['at']) == 2)
-    assert abs(state.cache['at'][0] - scheduled1) < dt.timedelta(seconds=0.2)
-    assert abs(state.cache['at'][1] - scheduled2) < dt.timedelta(seconds=0.2)
+    assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.2)
+    assert abs(state.cache['at'][1] - scheduled[1]) < dt.timedelta(seconds=0.2)
     assert len(state._scheduled) == 0
 
 
-def test_server_schedule_at_callable():
+def test_server_schedule_at_callable(server_implementation):
     state.cache['at'] = []
     def periodic_cb():
         state.cache['at'].append(dt.datetime.now())
 
-    scheduled = [
-        dt.datetime.utcnow() + dt.timedelta(seconds=1.57),
-        dt.datetime.utcnow() + dt.timedelta(seconds=1.86)
-    ]
-    siter = iter(scheduled)
+    scheduled = []
 
-    def schedule(utcnow):
+    def schedule(siter, utcnow):
         return next(siter)
 
     def app():
-        state.schedule_task('periodic', periodic_cb, at=schedule)
+        scheduled[:] = [
+            dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=s)
+            for s in (0.57, 0.86)
+        ]
+        state.schedule_task('periodic', periodic_cb, at=partial(schedule, iter(scheduled)))
         return '# state.schedule test'
 
     serve_and_request(app)
@@ -400,12 +529,9 @@ def test_server_schedule_at_callable():
     wait_until(lambda: len(state.cache['at']) == 2)
 
     # Convert scheduled times to local time
-    scheduled = [
-        s.replace(tzinfo=dt.timezone.utc).astimezone().replace(tzinfo=None)
-        for s in scheduled
-    ]
-    assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.2)
-    assert abs(state.cache['at'][1] - scheduled[1]) < dt.timedelta(seconds=0.2)
+    converted = [s.replace(tzinfo=dt.timezone.utc).astimezone().replace(tzinfo=None) for s in scheduled]
+    assert abs(state.cache['at'][0] - converted[0]) < dt.timedelta(seconds=0.2)
+    assert abs(state.cache['at'][1] - converted[1]) < dt.timedelta(seconds=0.2)
     assert len(state._scheduled) == 0
 
 
@@ -487,20 +613,20 @@ def test_multiple_titles(multiple_apps_server_sessions):
             slugs=('app1', 'app2'), titles={'badkey': 'APP1', 'app2': 'APP2'})
 
 
-def test_serve_can_serve_panel_app_from_file():
+def test_serve_can_serve_panel_app_from_file(server_implementation):
     path = pathlib.Path(__file__).parent / "io"/"panel_app.py"
     server = get_server({"panel-app": path})
     assert "/panel-app" in server._tornado.applications
 
 
-def test_serve_can_serve_bokeh_app_from_file():
+def test_serve_can_serve_bokeh_app_from_file(server_implementation):
     path = pathlib.Path(__file__).parent / "io"/"bk_app.py"
     server = get_server({"bk-app": path})
     assert "/bk-app" in server._tornado.applications
 
 
 
-def test_server_on_load_after_init_with_threads(threads):
+def test_server_on_load_after_init_with_threads(server_implementation, threads):
     loaded = []
 
     def cb():
@@ -526,7 +652,7 @@ def test_server_on_load_after_init_with_threads(threads):
     assert loaded == [(doc, False), (doc, True)]
 
 
-def test_server_on_load_after_init():
+def test_server_on_load_after_init(server_implementation):
     loaded = []
 
     def cb():
@@ -552,7 +678,7 @@ def test_server_on_load_after_init():
     assert loaded == [(doc, False), (doc, True)]
 
 
-def test_server_on_load_during_load(threads):
+def test_server_on_load_during_load(server_implementation, threads):
     loaded = []
 
     def cb():
@@ -576,7 +702,7 @@ def test_server_on_load_during_load(threads):
     wait_until(lambda: loaded == [False, False])
 
 
-def test_server_thread_pool_on_load(threads):
+def test_server_thread_pool_on_load(server_implementation, threads):
     counts = []
 
     def cb(count=[0]):
@@ -602,7 +728,7 @@ def test_server_thread_pool_on_load(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_execute(threads):
+def test_server_thread_pool_execute(server_implementation, threads):
     counts = []
 
     def cb(count=[0]):
@@ -622,7 +748,7 @@ def test_server_thread_pool_execute(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_defer_load(threads):
+def test_server_thread_pool_defer_load(server_implementation, threads):
     counts = []
 
     def cb(count=[0]):
@@ -650,7 +776,7 @@ def test_server_thread_pool_defer_load(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_change_event(threads):
+def test_server_thread_pool_change_event(server_implementation, threads):
     button = Button(name='Click')
     button2 = Button(name='Click')
 
@@ -678,7 +804,7 @@ def test_server_thread_pool_change_event(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_bokeh_event(threads):
+def test_server_thread_pool_bokeh_event(server_implementation, threads):
     import pandas as pd
 
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['A', 'B'])
@@ -706,7 +832,7 @@ def test_server_thread_pool_bokeh_event(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_periodic(threads):
+def test_server_thread_pool_periodic(server_implementation, threads):
     counts = []
 
     def cb(count=[0]):
@@ -755,14 +881,17 @@ def test_server_thread_pool_onload(threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_busy(threads):
+def test_server_thread_pool_busy(server_implementation, threads):
     button = Button(name='Click')
+    clicks = []
 
     def cb(event):
         time.sleep(0.5)
 
     def simulate_click():
-        button._comm_event(state.curdoc, ButtonClick(model=None))
+        click = ButtonClick(model=None)
+        clicks.append(click)
+        button._comm_event(state.curdoc, click)
 
     button.on_click(cb)
 
@@ -774,7 +903,7 @@ def test_server_thread_pool_busy(threads):
 
     serve_and_request(app, suffix="/")
 
-    wait_until(lambda: state._busy_counter == 0 and not state.busy)
+    wait_until(lambda: len(clicks) == 3 and state._busy_counter == 0 and not state.busy)
 
 
 def test_server_async_onload(threads):
@@ -805,7 +934,7 @@ def test_server_async_onload(threads):
 
 class CustomBootstrapTemplate(BootstrapTemplate):
 
-    _css = './assets/custom.css'
+    _css = ['./assets/custom.css']
 
 
 def test_server_template_custom_resources(port):
@@ -816,6 +945,33 @@ def test_server_template_custom_resources(port):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+@reverse_proxy_available
+def test_server_template_custom_resources_on_proxy(reverse_proxy):
+    template = CustomBootstrapTemplate()
+
+    port, proxy = reverse_proxy
+    r = serve_and_request(
+        {'template': template}, port=port, proxy=proxy,
+        suffix="/proxy/components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"
+    )
+
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+
+@reverse_proxy_available
+def test_server_ico_path_on_proxy(reverse_proxy):
+    md = Markdown('# Favicon test')
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    port, proxy = reverse_proxy
+    r = serve_and_request(
+        {'app': md}, port=port, proxy=proxy, ico_path=ico_path,
+        suffix="/proxy/app"
+    )
+
+    assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{proxy}/proxy/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
 
 def test_server_template_custom_resources_with_prefix(port):
     template = CustomBootstrapTemplate()
@@ -825,19 +981,46 @@ def test_server_template_custom_resources_with_prefix(port):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+@reverse_proxy_available
+def test_server_template_custom_resources_with_prefix_and_proxy(reverse_proxy):
+    (port, proxy) = reverse_proxy
+    template = CustomBootstrapTemplate()
+
+    path = "/proxy/prefix/components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"
+    r = serve_and_request({'template': template}, port=port, proxy=proxy, prefix='/prefix', suffix=path)
+
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 def test_server_template_custom_resources_with_prefix_relative_url(port):
     template = CustomBootstrapTemplate()
 
-    r = serve_and_request({'template': template}, prefix='/prefix', suffix='/prefix/template')
+    r = serve_and_request({'template': template}, prefix='/prefix', port=port, suffix='/prefix/template')
 
     assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
+@reverse_proxy_available
+def test_server_template_custom_resources_with_prefix_and_proxy_relative_url(reverse_proxy):
+    template = CustomBootstrapTemplate()
+
+    (port, proxy) = reverse_proxy
+    r = serve_and_request({'template': template}, prefix='/prefix', port=port, proxy=proxy, suffix='/proxy/prefix/template')
+
+    assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
 def test_server_template_custom_resources_with_subpath_and_prefix_relative_url(port):
     template = CustomBootstrapTemplate()
 
-    r = serve_and_request({'/subpath/template': template}, prefix='/prefix', suffix='/prefix/subpath/template')
+    r = serve_and_request({'/subpath/template': template}, port=port, prefix='/prefix', suffix='/prefix/subpath/template')
+
+    assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
+
+@reverse_proxy_available
+def test_server_template_custom_resources_with_subpath_and_prefix_and_proxy_relative_url(reverse_proxy):
+    template = CustomBootstrapTemplate()
+
+    port, proxy = reverse_proxy
+    r = serve_and_request({'/subpath/template': template}, port=port, proxy=proxy, prefix='/prefix', suffix='/proxy/prefix/subpath/template')
 
     assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
@@ -853,7 +1036,7 @@ def test_server_component_custom_resources(port):
     component = CustomComponent()
 
     path = "/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"
-    r = serve_and_request({'component': component}, suffix=path)
+    r = serve_and_request({'component': component}, suffix=path, port=port)
 
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
@@ -863,7 +1046,8 @@ def test_server_component_custom_resources_with_prefix(port):
     component = CustomComponent()
 
     r = serve_and_request(
-        {'component': component}, prefix='/prefix', suffix="/prefix/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"
+        {'component': component}, prefix='/prefix', port=port,
+        suffix="/prefix/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"
     )
 
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
@@ -873,7 +1057,7 @@ def test_server_component_custom_resources_with_prefix(port):
 def test_server_component_custom_resources_with_prefix_relative_url(port):
     component = CustomComponent()
 
-    r = serve_and_request({'component': component}, prefix='/prefix', suffix='/prefix/component')
+    r = serve_and_request({'component': component}, port=port, prefix='/prefix', suffix='/prefix/component')
 
     assert f'href="components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
@@ -881,7 +1065,7 @@ def test_server_component_custom_resources_with_prefix_relative_url(port):
 def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(port):
     component = CustomComponent()
 
-    r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component')
+    r = serve_and_request({'/subpath/component': component}, port=port, prefix='/prefix', suffix='/prefix/subpath/component')
 
     assert f'href="../components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
@@ -889,7 +1073,7 @@ def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(
 def test_server_component_css_with_prefix_relative_url(port):
     component = Terminal()
 
-    r = serve_and_request({'component': component}, suffix='/component')
+    r = serve_and_request({'component': component}, suffix='/component', port=port)
 
     assert 'href="static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in r.content.decode('utf-8')
 
@@ -897,7 +1081,7 @@ def test_server_component_css_with_prefix_relative_url(port):
 def test_server_component_css_with_subpath_and_prefix_relative_url(port):
     component = Terminal()
 
-    r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component')
+    r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component', port=port)
 
     assert 'href="../static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in r.content.decode('utf-8')
 

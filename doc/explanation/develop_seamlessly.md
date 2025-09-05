@@ -26,7 +26,7 @@ import panel as pn
 pn.extension()
 ```
 
-The extension ensures that the [`pyviz_comms`](https://github.com/holoviz/pyviz_comms) and all required Javascript and CSS resources are added to your notebook environment. If you are going to be using any custom extensions, such as [Vega](../reference/panes/Vega.md) or [Tabulator](../reference/widgets/Tabulator.md) you must ensure that you initialize these as well.
+The extension ensures that the [`pyviz_comms`](https://github.com/holoviz/pyviz_comms) and all required Javascript and CSS resources are added to your notebook environment. If you are going to be using any custom extensions, such as [Vega](../reference/panes/Vega) or [Tabulator](../reference/widgets/Tabulator) you must ensure that you initialize these as well.
 
 ```{pyodide}
 pn.extension('vega', 'tabulator')
@@ -146,10 +146,10 @@ template.servable()
 From the terminal run the following command.
 
 ```bash
-panel serve app.py --show --autoreload
+panel serve app.py --show --dev
 ```
 
-The `--show` flag will open a browser tab with the live app and the `--autoreload` flag ensures that the app reloads whenever you make a change to the Python source. `--autoreload` is key to your developer experience, you will see the app being updated live when you save your app file! In the image below the windows have been re-arranged the way web developers like, on one side the code and on the other side a live view of the app, just like the *Preview* functionality in Jupyterlab.
+The `--show` flag will open a browser tab with the live app and the `--dev` flag ensures that the app reloads whenever you make a change to the Python source. `--dev` is key to your developer experience, you will see the app being updated live when you save your app file! In the image below the windows have been re-arranged the way web developers like, on one side the code and on the other side a live view of the app, just like the *Preview* functionality in Jupyterlab.
 
 ![VSCode Preview](../_static/images/vscode_preview.png)
 
@@ -157,12 +157,12 @@ The `--show` flag will open a browser tab with the live app and the `--autoreloa
 
 ### Tutorials
 
-- [Develop in an Editor (Basic)](../tutorials/basic/develop_editor.md)
-- [Develop in an Editor (Intermediate)](../tutorials/intermediate/develop_editor.md)¨
-- [Develop in a Notebook (Basic)](../tutorials/basic/develop_notebook.md)
+- [Develop in an Editor (Basic)](../tutorials/basic/develop_editor)
+- [Develop in an Editor (Intermediate)](../tutorials/intermediate/develop_editor)
+- [Develop in a Notebook (Basic)](../tutorials/basic/develop_notebook)
 
 ### How-to
 
-- [Configure PyCharm](../how_to/editor/pycharm_configure.md)
-- [Configure VS Code](../how_to/editor/vscode_configure.md)
-- [Write apps in Markdown](../how_to/editor/markdown.md)
+- [Configure PyCharm](../how_to/editor/pycharm_configure)
+- [Configure VS Code](../how_to/editor/vscode_configure)
+- [Write apps in Markdown](../how_to/editor/markdown)

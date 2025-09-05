@@ -95,6 +95,6 @@ class DeckGLPlot(HTMLBox):
 
     throttle = Dict(String, Int)
 
-    height = Override(default=400)
+    height = Override(default=400)  # type: ignore
 
-    width = Override(default=600)
+    width = Override(default=600)  # type: ignore

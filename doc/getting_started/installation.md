@@ -62,7 +62,7 @@ conda install panel watchfiles
 :::::
 
 :::{tip}
-We recommend also installing [`watchfiles`](https://watchfiles.helpmanual.io) while developing. This will provide a significantly better experience when using Panel's `--autoreload` feature. It's not needed for production.
+We recommend also installing [`watchfiles`](https://watchfiles.helpmanual.io) while developing. This will provide a significantly better experience when using Panel's autoreload features when activating `--dev` mode. It's not needed for production.
 :::
 
 :::{tip}

@@ -1,6 +1,6 @@
 # Control the Size
 
-Welcome to our tutorial on controlling the size of components in Panel! In this guide, we'll explore how sizing works, including inherent sizing, fixed sizing, and responsive sizing. We'll also delve into fully responsive layouts using the powerful [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout.
+Welcome to our tutorial on controlling the size of components in Panel! In this guide, we'll explore how sizing works, including inherent sizing, fixed sizing, and responsive sizing. We'll also delve into fully responsive layouts using the powerful [`FlexBox`](../../reference/layouts/FlexBox.md) layout.
 
 ## Explore Sizing Modes
 
@@ -12,7 +12,7 @@ Panel provides various options to control the size of components:
 - `max_width`/`max_height`: Allows setting a maximum width or height if responsive sizing is set along the corresponding dimension.
 
 :::{note}
-Throughout this tutorial, you can execute the provided code directly in the Panel documentation using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --autoreload`.
+Throughout this tutorial, you can execute the provided code directly in the Panel documentation using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --dev`.
 :::
 
 ## Inherent and Absolute Sizing
@@ -326,12 +326,12 @@ pn.FlexBox(*spacers).servable()
 Adjust the width of your browser window to observe the layout's responsiveness.
 
 :::{note}
-We'll explore `FlexBox` in more detail in the [Control the Size (intermediate)](../intermediate/size.md) tutorial.
+We'll explore `FlexBox` in more detail in the [Advanced Layouts](../intermediate/advanced_layouts.md) tutorial.
 :::
 
 ## Recap
 
-In this tutorial, we've explored various aspects of controlling component size in Panel. We've covered inherent sizing, fixed sizing, and responsive sizing, along with the powerful [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout:
+In this tutorial, we've explored various aspects of controlling component size in Panel. We've covered inherent sizing, fixed sizing, and responsive sizing, along with the powerful [`FlexBox`](../../reference/layouts/FlexBox.md) layout:
 
 - `sizing_mode`: Allows toggling between fixed sizing and responsive sizing along vertical and/or horizontal dimensions.
 - `width`/`height`: Allows setting a fixed width or height.
@@ -342,7 +342,7 @@ In this tutorial, we've explored various aspects of controlling component size i
 
 ### Tutorials
 
-- [Control the Size (intermediate)](../intermediate/size.md)
+- [Advanced Layouts](../intermediate/advanced_layouts.md)
 
 ### How-to
 

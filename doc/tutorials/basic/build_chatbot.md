@@ -1,9 +1,9 @@
 # Build a Chat Bot
 
-In this tutorial, we will build a streaming *chat bot*. We will first use the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a basic chat bot. Then we will add streaming.
+In this tutorial, we will build a streaming *chat bot*. We will first use the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.md) to build a basic chat bot. Then we will add streaming.
 
 :::{note}
-When we ask to *run the code* in the sections below, we may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask to *run the code* in the sections below, we may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --dev`.
 :::
 
 ## Build a Basic Chat Bot
@@ -73,7 +73,7 @@ To make the Streaming Chat Bot scale to many users you should be using `async`. 
 
 ## Learn More
 
-We can learn more about the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.ipynb). We find the *reference guide* in the [Chat Section](https://panel.holoviz.org/reference/index.html#chat) of the [Component Gallery](../../reference/index.md).
+We can learn more about the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.md). We find the *reference guide* in the [Chat Section](../../reference/index.rst#chat) of the [Component Gallery](../../reference/index.rst).
 
 ## Find Inspiration
 
@@ -86,9 +86,9 @@ We can find more inspiration and starter templates at [Panel-Chat-Examples](http
 
 ## Recap
 
-In this section, we have used the *easy to use*, *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a streaming chat bot.
+In this section, we have used the *easy to use*, *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.md) to build a streaming chat bot.
 
 ## Resources
 
-- [Chat Component Gallery](https://panel.holoviz.org/reference/index.html#chat)
+- [Chat Component Gallery](../../reference/index.rst#chat)
 - [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/)

@@ -5,6 +5,7 @@ import re
 from collections.abc import Iterable
 from io import BytesIO
 from textwrap import indent
+from types import FunctionType
 from typing import Any, Union
 
 import param
@@ -48,6 +49,8 @@ def avatar_lookup(
 
     # now lookup the avatar
     avatar = updated_avatars.get(alpha_numeric_key, avatar)
+    if isinstance(avatar, FunctionType):
+        avatar = avatar()
     if isinstance(avatar, str):
         avatar = avatar.format(dist_path=CDN_DIST)
     return avatar
@@ -79,7 +82,7 @@ def build_avatar_pane(
     return avatar_pane
 
 
-def stream_to(obj, token, replace=False, object_panel=None):
+def stream_to(obj, token: str, replace: bool = False, object_panel: Viewable | None = None):
     """
     Updates the message with the new token traversing the object to
     allow updating nested objects. When traversing a nested Panel
@@ -87,8 +90,8 @@ def stream_to(obj, token, replace=False, object_panel=None):
     in a layout of `Column(Markdown(...), Image(...))` the Markdown
     pane is updated.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     token: str
         The token to stream to the text pane.
     replace: bool (default=False)
@@ -127,7 +130,7 @@ def get_obj_label(obj):
     Get the label for the object; defaults to specified object name;
     if unspecified, defaults to the type name.
     """
-    label = obj.name
+    label = obj.name if hasattr(obj, "name") else ""
     type_name = type(obj).__name__
     # If the name is just type + ID, simply use type
     # e.g. Column10241 -> Column
@@ -185,4 +188,8 @@ def serialize_recursively(
     if prefix_with_viewable_label and isinstance(obj, Viewable):
         label = get_obj_label(obj)
         string = f"{label}={string!r}"
+
+    if not isinstance(string, str):
+        string = str(string)
+
     return string

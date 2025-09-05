@@ -1,13 +1,17 @@
 import os
 
 from importlib.util import find_spec
+from pathlib import Path
 
 import pytest
 
 from panel.models.widgets import DoubleClickEvent
-from panel.widgets import FileSelector, FileTree
+from panel.widgets.file_selector import (
+    FileSelector, FileTree, LocalFileProvider, RemoteFileProvider,
+)
 
 S3FS_UNAVAILABLE = find_spec('s3fs') is None
+FILE_PATH = Path(__file__)
 
 
 @pytest.fixture
@@ -25,6 +29,34 @@ def test_dir(tmp_path):
 
     yield str(test_dir)
 
+@pytest.fixture
+async def fs():
+    pytest.importorskip("fsspec")
+    from fsspec.implementations.local import LocalFileSystem
+    fs = LocalFileSystem()
+    yield fs
+
+def test_local_file_provider_is_dir():
+    provider = LocalFileProvider()
+    assert not provider.isdir(FILE_PATH)
+    assert provider.isdir(FILE_PATH.parent)
+
+def test_local_file_provider_ls():
+    provider = LocalFileProvider()
+    dirs, files = provider.ls(FILE_PATH.parent, '*test_file_selector*')
+    assert files == [str(FILE_PATH)]
+
+def test_remote_file_provider_is_dir(fs):
+    provider = RemoteFileProvider(fs=fs)
+    provider.sep = os.sep
+    assert not provider.isdir(FILE_PATH)
+    assert provider.isdir(FILE_PATH.parent)
+
+def test_remote_file_provider_ls(fs):
+    provider = RemoteFileProvider(fs=fs)
+    provider.sep = os.sep
+    dirs, files = provider.ls(os.fspath(FILE_PATH.parent), '*test_file_selector*')
+    assert files == [os.fspath(FILE_PATH).replace(os.sep, "/")]
 
 def test_file_selector_init(test_dir):
     selector = FileSelector(test_dir)

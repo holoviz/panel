@@ -5,28 +5,28 @@ from __future__ import annotations
 
 import textwrap
 
+from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING, Any, Iterable, Optional,
-)
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from bokeh.core.serialization import Serializer
 from bokeh.document import Document
 from bokeh.document.events import (
-    ColumnDataChangedEvent, DocumentPatchedEvent, ModelChangedEvent,
+    ColumnDataChangedEvent, DocumentChangedEvent, DocumentPatchedEvent,
+    ModelChangedEvent,
 )
 from bokeh.document.json import PatchJson
 from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource, FlexBox, Model
 from bokeh.protocol.messages.patch_doc import patch_doc
 
+from ..util.warnings import deprecated
 from .state import state
 
 if TYPE_CHECKING:
     from bokeh.core.enums import HoldPolicyType
-    from bokeh.document.events import DocumentChangedEvent
     from bokeh.protocol.message import Message
     from pyviz_comms import Comm
 
@@ -45,7 +45,7 @@ class comparable_array(np.ndarray):
     def __ne__(self, other: Any) -> bool:
         return not np.array_equal(self, other, equal_nan=True)
 
-def monkeypatch_events(events: list[DocumentChangedEvent]) -> None:
+def monkeypatch_events(events: Sequence[DocumentChangedEvent]) -> None:
     """
     Patch events applies patches to events that are to be dispatched
     avoiding various issues in Bokeh.
@@ -65,8 +65,18 @@ def monkeypatch_events(events: list[DocumentChangedEvent]) -> None:
 # Public API
 #---------------------------------------------------------------------
 
+class JSCode:
+
+    def __init__(self, js_code):
+        self.js_code = js_code
+
+try:
+    Serializer.register(JSCode, lambda obj, __: f"--x_x--0_0--{obj.js_code}--x_x--0_0--")  # type: ignore
+except AssertionError:
+    pass
+
 def diff(
-    doc: Document, binary: bool = True, events: Optional[list[DocumentChangedEvent]] = None
+    doc: Document, binary: bool = True, events: list[DocumentChangedEvent] | None = None
 ) -> Message[Any] | None:
     """
     Returns a json diff required to update an existing plot with
@@ -79,7 +89,7 @@ def diff(
 
     patch_events = [event for event in events if isinstance(event, DocumentPatchedEvent)]
     if not patch_events:
-        return
+        return None
     monkeypatch_events(patch_events)
     serializer = Serializer(references=doc.models.synced_references, deferred=binary)
     patch_json = PatchJson(events=serializer.encode(patch_events))
@@ -92,7 +102,7 @@ def diff(
             msg.add_buffer(buffer)
     return msg
 
-def remove_root(obj: Model, replace: Document | None = None, skip: set[Model] | None = None) -> None:
+def remove_root(obj: Model, replace: Document | None = None, skip: set[Model] | None = None) -> set[Model]:
     """
     Removes the document from any previously displayed bokeh object
     """
@@ -137,7 +147,7 @@ def patch_cds_msg(model, msg):
 
 _DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])
 
-def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = None) -> str:
+def bokeh_repr(obj: Model, depth: int = 0, ignored: Iterable[str] | None = None) -> str:
     """
     Returns a string repr for a bokeh model, useful for recreating
     panel objects using pure bokeh.
@@ -173,16 +183,31 @@ def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = No
         r += f'{cls}({props_repr})'
     return r
 
+def apply_changes_without_dispatch(doc, model, changes):
+    hold_value = doc.callbacks.hold_value
+    doc.callbacks._hold = 'collect'
+    try:
+        model.update(**changes)
+    finally:
+        doc.callbacks._held_events = [
+            e for e in doc.callbacks._held_events
+            if not isinstance(e, ModelChangedEvent) or
+            e.model is not model or
+            e.attr not in changes or
+            e.new is not changes[e.attr]
+        ]
+        doc.callbacks._hold = hold_value
+
 @contextmanager
-def hold(doc: Document, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
+def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
     """
     Context manager that holds events on a particular Document
     allowing them all to be collected and dispatched when the context
     manager exits. This allows multiple events on the same object to
     be combined if the policy is set to 'combine'.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     doc: Document
         The Bokeh Document to hold events on.
     policy: HoldPolicyType
@@ -192,22 +217,9 @@ def hold(doc: Document, policy: HoldPolicyType = 'combine', comm: Comm | None = 
     comm: Comm
         The Comm to dispatch events on when the context manager exits.
     """
-    doc = doc or state.curdoc
-    if doc is None:
-        yield
-        return
-    held = doc.callbacks.hold_value
-    try:
-        if policy is None:
-            doc.unhold()
-        else:
-            doc.hold(policy)
-        yield
-    finally:
-        if held:
-            doc.callbacks._hold = held
-        else:
-            if comm is not None:
-                from .notebook import push
-                push(doc, comm)
-            doc.unhold()
+    deprecated(
+        '1.7.0', 'panel.io.model.hold', 'panel.io.document.hold',
+        warn_version='1.6.0'
+    )
+    from .document import hold
+    yield hold(doc, policy, comm)

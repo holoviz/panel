@@ -4,7 +4,8 @@ Layout component to lay out objects in a set of tabs.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -43,7 +44,7 @@ class Tabs(NamedListPanel):
     dynamic = param.Boolean(default=False, doc="""
         Dynamically populate only the active tab.""")
 
-    tabs_location = param.ObjectSelector(
+    tabs_location = param.Selector(
         default='above', objects=['above', 'below', 'left', 'right'], doc="""
         The location of the tabs relative to the tab contents.""")
 
@@ -160,10 +161,11 @@ class Tabs(NamedListPanel):
         from ..pane.base import RerenderError, panel
         new_models, old_models = [], []
         if len(self._names) != len(self):
-            raise ValueError('Tab names do not match objects, ensure '
-                             'that the Tabs.objects are not modified '
-                             'directly. Found %d names, expected %d.' %
-                             (len(self._names), len(self)))
+            raise ValueError(
+                'Tab names do not match objects, ensure that the '
+                'Tabs.objects are not modified directly. '
+                f'Found {len(self._names)} names, expected {len(self)}.'
+            )
         for i, (name, pane) in enumerate(zip(self._names, self)):
             pane = panel(pane, name=name)
             self.objects[i] = pane

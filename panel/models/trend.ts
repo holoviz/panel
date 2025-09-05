@@ -54,7 +54,7 @@ export class TrendIndicatorView extends HTMLBoxView {
     } = this.model.properties
 
     this.on_change([pos_color, neg_color], () => this.updateValueChange())
-    this.on_change([plot_color, plot_type, width, height, sizing_mode], () => this.render())
+    this.on_change([plot_color, plot_type, width, height, sizing_mode], () => this.rerender_())
     this.on_change(title, () => this.updateTitle(true))
     this.on_change(value, () => this.updateValue(true))
     this.on_change(value_change, () => this.updateValue2(true))

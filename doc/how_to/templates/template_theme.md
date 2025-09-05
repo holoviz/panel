@@ -3,7 +3,7 @@
 This guide addresses how to customize the theme of a template.
 
 ```{admonition} Prerequisites
-1. The [How to > Set a Template](./template_set.md) guide demonstrates how to set a template for a deployable app.
+1. The [How to > Set a Template](./template_set) guide demonstrates how to set a template for a deployable app.
 ```
 
 ---
@@ -62,18 +62,18 @@ template.main.append(
 )
 template.servable();
 ```
-::::
+:::
 
 Now, we can activate this app on the command line:
 
 ``` bash
-panel serve app.py --show --autoreload
+panel serve app.py --show --dev
 ```
 
 <img src="../../_static/images/template_mat_dark.png" alt="dark themed panel app">
 
 ## Related Resources
 
-- See [How-to > Apply Templates > Build a Custom Template](./template_custom.md) to create a completely custom template.
-- See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
-- Read [Background > Templates](../../explanation/templates/templates_overview.md) for explanation.
+- See [How-to > Apply Templates > Build a Custom Template](./template_custom) to create a completely custom template.
+- See [How-to > Apply Templates > Set a Template](./template_set) for alternate approaches to set a template.
+- Read [Background > Templates](../../explanation/styling/templates_overview) for explanation.

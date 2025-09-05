@@ -13,9 +13,9 @@ from ..util import classproperty
 from .layout import HTMLBox
 
 
-class ESMEvent(ModelEvent):
+class DataEvent(ModelEvent):
 
-    event_name = 'esm_event'
+    event_name = 'data_event'
 
     def __init__(self, model, data=None):
         self.data = data
@@ -25,7 +25,18 @@ class ESMEvent(ModelEvent):
         return dict(super().event_values(), data=self.data)
 
 
+class ESMEvent(DataEvent):
+
+    event_name = 'esm_event'
+
+
 class ReactiveESM(HTMLBox):
+
+    css_bundle = bp.Nullable(bp.String)
+
+    bundle = bp.Nullable(bp.String)
+
+    class_name = bp.String()
 
     children = bp.List(bp.String)
 
@@ -35,15 +46,17 @@ class ReactiveESM(HTMLBox):
 
     esm = bp.String()
 
+    events = bp.List(bp.String)
+
     importmap = bp.Dict(bp.String, bp.Dict(bp.String, bp.String))
 
-    __javascript_modules_raw__ = [
+    __javascript_raw__ = [
         f"{config.npm_cdn}/es-module-shims@^1.10.0/dist/es-module-shims.min.js"
     ]
 
     @classproperty
-    def __javascript_modules__(cls):
-        return bundled_files(cls, 'javascript_modules')
+    def __javascript__(cls):
+        return bundled_files(cls)
 
 
 class ReactComponent(ReactiveESM):
@@ -51,7 +64,9 @@ class ReactComponent(ReactiveESM):
     Renders jsx/tsx based ESM bundles using React.
     """
 
-    react_version = bp.String('18.3.1')
+    root_node = bp.Nullable(bp.String)
+
+    use_shadow_dom = bp.Bool(True)
 
 
 class AnyWidgetComponent(ReactComponent):

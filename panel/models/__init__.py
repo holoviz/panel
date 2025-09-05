@@ -6,6 +6,7 @@ files.
 """
 from .browser import BrowserInfo  # noqa
 from .datetime_picker import DatetimePicker  # noqa
+from .datetime_slider import DatetimeSlider  # noqa
 from .esm import AnyWidgetComponent, ReactComponent, ReactiveESM  # noqa
 from .feed import Feed  # noqa
 from .icon import ButtonIcon, ToggleIcon, _ClickableIcon  # noqa
@@ -15,6 +16,7 @@ from .location import Location  # noqa
 from .markup import HTML, JSON, PDF  # noqa
 from .reactive_html import ReactiveHTML  # noqa
 from .state import State  # noqa
+from .time_picker import TimePicker  # noqa
 from .trend import TrendIndicator  # noqa
 from .widgets import (  # noqa
     Audio, Button, CheckboxButtonGroup, CustomMultiSelect, CustomSelect,

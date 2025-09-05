@@ -4,7 +4,6 @@ import asyncio
 import unittest.mock
 
 from functools import partial
-from typing import ClassVar, Mapping
 
 import bokeh.core.properties as bp
 import param
@@ -15,6 +14,7 @@ from bokeh.io.doc import patch_curdoc
 from bokeh.models import Div
 
 from panel.depends import bind, depends
+from panel.io.state import set_curdoc
 from panel.layout import Tabs, WidgetBox
 from panel.pane import Markdown
 from panel.reactive import Reactive, ReactiveHTML
@@ -66,7 +66,7 @@ def test_param_rename():
 
         a = param.Parameter()
 
-        _rename: ClassVar[Mapping[str, str | None]] = {'a': 'b'}
+        _rename = {'a': 'b'}
 
     obj = ReactiveRename()
 
@@ -370,6 +370,30 @@ def test_text_input_controls_explicit():
     text_input.placeholder = "Test placeholder..."
     assert placeholder.value == "Test placeholder..."
 
+def test_property_change_does_not_boomerang(document, comm):
+    text_input = TextInput(value='A')
+
+    model = text_input.get_root(document, comm)
+
+    assert model.value == 'A'
+    model.value = 'B'
+    with set_curdoc(document):
+        text_input._process_events({'value': 'C'})
+
+    assert model.value == 'B'
+    assert text_input.value == 'C'
+
+def test_in_process_change_event_cleaned_up(document, comm):
+    checkbox = Checkbox(value=True)
+
+    model = checkbox.get_root(document, comm)
+    assert model.ref['id'] in checkbox._models
+
+    with set_curdoc(document):
+        checkbox._process_events({'active': True})
+
+    assert document not in checkbox._in_process__events
+
 def test_reactive_html_basic():
 
     class Test(ReactiveHTML):
@@ -392,7 +416,7 @@ def test_reactive_html_basic():
     assert int_prop.class_default(data_model) == 3
 
     float_prop = data_model.lookup('float')
-    assert isinstance(float_prop.property, bp.Float)
+    assert isinstance(float_prop.property, bp.Either)
     assert float_prop.class_default(data_model) == 3.14
 
     assert Test._node_callbacks == {}
@@ -448,7 +472,7 @@ def test_reactive_html_dom_events():
     assert int_prop.class_default(data_model) == 3
 
     float_prop = data_model.lookup('float')
-    assert isinstance(float_prop.property, bp.Float)
+    assert isinstance(float_prop.property, bp.Either)
     assert float_prop.class_default(data_model) == 3.14
 
     assert TestDOMEvents._node_callbacks == {}
@@ -795,3 +819,15 @@ def test_reactive_design_stylesheets_update(document, comm):
 
     assert len(model.stylesheets) == 5
     assert model.stylesheets[-1] == widget.stylesheets[0]
+
+
+def test_reactive_attribute_no_name(document, comm):
+    # Regression: https://github.com/holoviz/panel/pull/7655
+    class CustomComponent2(ReactiveHTML):
+        groups = param.ListSelector(default=["A"], objects=["A", "B"])
+        _scripts = {"groups": "console.log(data.groups)"}
+
+    component = CustomComponent2()
+    component.get_root(document, comm)
+    # Should not error out
+    component.groups = []

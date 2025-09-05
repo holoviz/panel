@@ -5,7 +5,7 @@ pytest.importorskip("playwright")
 try:
     import altair as alt
 except Exception:
-    alt = None
+    alt = None  # type: ignore
 
 altair_available = pytest.mark.skipif(alt is None, reason='Requires altair')
 

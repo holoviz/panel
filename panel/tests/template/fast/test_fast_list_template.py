@@ -2,6 +2,7 @@ from bokeh.document import Document
 
 from panel.template.fast.list import FastListTemplate
 from panel.theme.fast import FastDarkTheme
+from panel.widgets import Button
 
 
 def test_template_theme_parameter():
@@ -29,3 +30,12 @@ def test_accent():
     template = FastListTemplate(accent=accent)
     assert template.accent_base_color==accent
     assert template.header_background==accent
+
+
+def test_template_right_sidebar():
+    tmpl = FastListTemplate()
+    button = Button(name="Click me", button_type="primary")
+    tmpl.right_sidebar.append(button)
+
+    assert len(tmpl._render_items) == 5
+    assert f"right_nav-{id(button)}" in tmpl._render_items

@@ -239,7 +239,7 @@ class Pipeline(Viewer):
             else:
                 cls_name = stage.__name__
             params = ', '.join(param_reprs(stage))
-            repr_str += '\n    [%d] %s: %s(%s)' % (i, name, cls_name, params)
+            repr_str += f'\n    [{i}] {name}: {cls_name}({params})'
         return repr_str
 
     def __str__(self):
@@ -523,9 +523,10 @@ class Pipeline(Viewer):
             yoffset=-.30, default_tools=[], axiswise=True, backend='bokeh'
         )
         plot = (graph * labels * nodes) if self._linear else (graph * nodes)
+        xlim = (-0.25, depth + 0.25)
         plot.opts(
             xaxis=None, yaxis=None, min_width=400, responsive=True,
-            show_frame=False, height=height, xlim=(-0.25, depth+0.25),
+            show_frame=False, height=height, xlim=xlim, shared_axes=False,
             ylim=(0, 1), default_tools=['hover'], toolbar=None, backend='bokeh'
         )
         return plot
@@ -538,8 +539,8 @@ class Pipeline(Viewer):
         """
         Adds a new, named stage to the Pipeline.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name: str
           A string name for the Pipeline stage
         stage: param.Parameterized
@@ -573,8 +574,8 @@ class Pipeline(Viewer):
         the default linear flow. The graph should be defined as an
         adjacency mapping.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         graph: dict
           Dictionary declaring the relationship between different
           pipeline stages. Should map from a single stage name to

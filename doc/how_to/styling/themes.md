@@ -18,7 +18,7 @@ All `config` options can also be set via the extension, e.g. to set the theme us
 
 Note that if you do not explicitly override the theme it will default to a light theme. The theme can also be overridden with by setting `theme` as a URL query parameter for your application, i.e. if your app is hosted at `https://mydomain.com/myapp` adding `?theme=dark` will switch the theme automatically.
 
-The theme will apply to all components and combines with the [design](design.md) to provide a consistent visual language.
+The theme will apply to all components and combines with the [design](design) to provide a consistent visual language.
 
 :::{note}
 In JupyterLab and when using the pydata-sphinx-theme Panel components will automatically adapt to the global CSS variables, regardless of what theme you set.

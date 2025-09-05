@@ -35,15 +35,18 @@ if TYPE_CHECKING:
 
     from ..models.jstree import NodeEvent
 
+if TYPE_CHECKING:
+    from fsspec import AbstractFileSystem
 
-def _scan_path(path: str, file_pattern='*') -> tuple[list[str], list[str]]:
+
+def _scan_path(path: str, file_pattern: str = '*') -> tuple[list[str], list[str]]:
     """
     Scans the supplied path for files and directories and optionally
     filters the files with the file keyword, returning a list of sorted
     paths of all directories and files.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     path: str
         The path to search
     file_pattern: str
@@ -89,8 +92,8 @@ class BaseFileProvider:
         """
         Concrete classes must implement this method to list the content of a remote filesystem.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         path: str
             The path to search
 
@@ -147,9 +150,11 @@ class RemoteFileProvider(BaseFileProvider):
         prefix = ''
         if scheme:= urlparse(path).scheme:
             prefix = f'{scheme}://'
-        dirs = [f"{prefix}{d['name']}/" for d in raw_ls if d['type'] == 'directory' ]
+        dirs_fn = lambda x: f"{prefix}{x}{self.sep}" if ":" not in x else f"{x}{self.sep}"
+        dirs = [dirs_fn(d['name']) for d in raw_ls if d['type'] == 'directory' ]
         raw_glob = self.fs.glob(path+file_pattern, detail=True)
-        files = [f"{prefix}{d['name']}" for d in raw_glob.values() if d['type'] == 'file' ]
+        files_fn = lambda x: f"{prefix}{x}" if ":" not in x else x
+        files = [files_fn(d['name']) for d in raw_glob.values() if d['type'] == 'file' ]
         return dirs, files
 
 
@@ -225,7 +230,7 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         super().__init__(directory=directory, **params)
 
         layout = {p: getattr(self, p) for p in Layoutable.param
-                  if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
+                  if p not in ('name', 'height', 'margin', 'loading') and getattr(self, p) is not None}
 
         self._back = Button(
             name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
@@ -252,15 +257,15 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         )
         self._nav_bar = Row(
             self._back, self._forward, self._up, self._directory, self._go, self._reload,
-            **dict(layout, width=None, margin=0, width_policy='max')
+            **dict(layout, width=None, margin=0, width_policy='max'), visible=self.param.visible
         )
         self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
         self._directory.param.watch(self._dir_change, 'value')
         self._directory.param.watch(self._update_files, 'enter_pressed')
 
         # Set up state
-        self._stack = []
-        self._cwd = None
+        self._stack: list[str] = []
+        self._cwd = ""
         self._position = -1
         self._update_files(True)
 
@@ -292,10 +297,10 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         self._update_files(True)
 
     def _update_files(
-        self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
+        self, event: param.parameterized.Event | None = None, refresh: bool = False
     ):
         path = self._provider.normalize(self._directory.value)
-        refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
+        refresh = refresh or bool(event and getattr(event, 'obj', None) is self._reload)
         if refresh:
             path = self._cwd
         elif not self._provider.isdir(path):
@@ -352,14 +357,15 @@ class FileSelector(BaseFileNavigator):
                   if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
         sel_layout = dict(layout, sizing_mode='stretch_width', height=300, margin=0)
         self._selector = CrossSelector(
-            filter_fn=lambda p, f: fnmatch(f, p), size=self.param.size, **sel_layout
+            filter_fn=lambda p, f: fnmatch(f, p), size=self.param.size,
+            **dict(sel_layout, visible=self.param.visible)
         )
 
         super().__init__(directory=directory, fs=fs, **params)
 
         style = 'h4 { margin-block-start: 0; margin-block-end: 0;}'
-        self._selector._selected.insert(0, Markdown('#### Selected files', margin=0, stylesheets=[style]))
-        self._selector._unselected.insert(0, Markdown('#### File Browser', margin=0, stylesheets=[style]))
+        self._selector._selected.insert(0, Markdown('#### Selected files', margin=0, sizing_mode=None, stylesheets=[style]))
+        self._selector._unselected.insert(0, Markdown('#### File Browser', margin=0, sizing_mode=None, stylesheets=[style]))
 
         # Set up callback
         self._selector._lists[False].on_double_click(self._select_and_go)
@@ -428,10 +434,10 @@ class FileSelector(BaseFileNavigator):
         self._selector.options.update(prefix+[
             (k, v) for k, v in options.items() if k in paths or v in self.value
         ])
-        options = [o for o in denylist.options if o in paths]
+        option_list = [o for o in denylist.options if o in paths]
         if not self._up.disabled:
-            options.insert(0, '⬆ ..')
-        denylist.options = options
+            option_list.insert(0, '⬆ ..')
+        denylist.options = option_list
 
     def _select(self, event: param.parameterized.Event):
         if len(event.new) != 1:

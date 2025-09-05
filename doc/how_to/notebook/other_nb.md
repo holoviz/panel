@@ -27,24 +27,32 @@ Please note that in Colab rendering for each notebook cell is isolated, which me
 :::
 
 :::{warning}
-The [IpyWidgets](../../reference/panes/IpyWidget.ipynb) pane does not work in Google Colab. Thus you cannot use IpyWidgets with Panel in Colab.
+The [IpyWidgets](../../reference/panes/IPyWidget) pane does not work in Google Colab. Thus you cannot use IpyWidgets with Panel in Colab.
 :::
 
 ## PyCharm Notebook
 
 PyCharm Professional offers support for [notebooks](https://www.jetbrains.com/help/pycharm/ipython-notebook-support.html) and [ipywidgets](https://www.jetbrains.com/help/pycharm/interactive-js-widgets.html). Thanks to the [`jupyter_bokeh`](https://github.com/bokeh/jupyter_bokeh) integration, Panel objects can be utilized as ipywidgets, allowing for interactive use of Panel components within PyCharm Professional. To ensure full functionality, install `jupyter_bokeh` using `pip install jupyter jupyter_bokeh` or `conda install jupyter jupyter_bokeh`, followed by activating the extension with `pn.extension()`.
 
-For additional guidance, refer to the [How-To Configure PyCharm Guide](../editor/pycharm_configure.md).
+For additional guidance, refer to the [How-To Configure PyCharm Guide](../editor/pycharm_configure).
 
 ## VSCode notebook
 
 Visual Studio Code (VS Code) supports notebooks and ipywidgets, and Panel objects can be used as ipywidgets thanks to [`jupyter_bokeh`](https://github.com/bokeh/jupyter_bokeh), which means that you can use Panel components interactively in VS Code. Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with `pn.extension()`.
 
-See also the [How-To Configure VS Code Guide](../editor/vscode_configure.md).
+See also the [How-To Configure VS Code Guide](../editor/vscode_configure).
 
 ## nteract and other ipywidgets notebooks
 
 In other notebook environments that support rendering ipywidgets interactively, such as nteract, you can use the same underlying ipywidgets support as for vscode: Install ``jupyter_bokeh`` and then use ``pn.extension(comms='ipywidgets')``.
+
+## Marimo
+
+Panel support has been added to Marimo at the end of 2024 through a collaboration between the Panel and Marimo teams, as describe in this PR: [marimo-team/marimo#2719](https://github.com/marimo-team/marimo/pull/2719)
+
+At a high-level it includes serializing Panel components to JSON, setting up bi-directional communications and registering formatters for HoloViz libraries including Panel components, param.rx and HoloViews plots.
+
+For further details on the integration, please consult the PR.
 
 ## Other environments
 

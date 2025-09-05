@@ -66,8 +66,10 @@ class PanelDriver(Driver):
         self.flush()
 
     def _process_input(self, event):
+        # Textual 0.86 changed from `process_event` to `process_message`
+        fn = self.process_event if hasattr(self, 'process_event') else self.process_message
         for parsed_event in self._parser.feed(event.new):
-            self.process_event(parsed_event)
+            fn(parsed_event)
 
     def disable_input(self):
         if self._input_watcher is None:
@@ -77,7 +79,12 @@ class PanelDriver(Driver):
 
     def start_application_mode(self):
         self._size_watcher = self._terminal.param.watch(self._resize, ['nrows', 'ncols'])
-        self._parser = XTermParser(lambda: False, self._debug)
+        try:
+            # Textual < 0.76
+            self._parser = XTermParser(lambda: False, debug=self._debug)
+        except TypeError:
+            # Textual >= 0.76
+            self._parser = XTermParser(debug=self._debug)
         self._input_watcher = self._terminal.param.watch(self._process_input, 'value')
 
     def stop_application_mode(self):

@@ -3,8 +3,8 @@
 This guide addresses how to build a custom template. A custom template gives you full control of the look and feel of your Panel app.
 
 ```{admonition} Prerequisites
-1. The [How to > Set a Template](./template_set.md) guide demonstrates how to set a template for a deployable app.
-2. The [How to > Customize Template Theme](./template_theme.md) guide addresses how to customize the theme of a template, which may be sufficient in many cases.
+1. The [How to > Set a Template](./template_set) guide demonstrates how to set a template for a deployable app.
+2. The [How to > Customize Template Theme](./template_theme) guide addresses how to customize the theme of a template, which may be sufficient in many cases.
 ```
 
 ## Building a Template in a Single File
@@ -229,6 +229,6 @@ tmpl.servable()
 
 ## Related Resources
 
-- See [How-to > Apply Templates > Customize Template Theme](./template_theme.md) to just use a custom theme.
-- See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
-- Read [Explanation > Templates](../../explanation/styling/templates_overview.md) for explanation.
+- See [How-to > Apply Templates > Customize Template Theme](./template_theme) to just use a custom theme.
+- See [How-to > Apply Templates > Set a Template](./template_set) for alternate approaches to set a template.
+- Read [Explanation > Templates](../../explanation/styling/templates_overview) for explanation.

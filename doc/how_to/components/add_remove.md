@@ -167,7 +167,7 @@ gridspec
 
 Here is the complete code for this subsection in case you want to easily copy it:
 
-``` {pyodide}
+```{pyodide}
 import panel as pn
 pn.extension() # for notebook
 
@@ -195,4 +195,4 @@ gridspec
 ## Related Resources
 
 - Learn more about Panes in [Explanation > Components](../../explanation/components/components_overview.md#panes).
-- For more detail about `GridSpec` Panels, see the [Component Gallery > GridSpec](../reference/layouts/GridSpec.md).
+- For more detail about `GridSpec` Panels, see the [Component Gallery > GridSpec](../reference/layouts/GridSpec).

@@ -55,7 +55,7 @@ export class ButtonView extends BkButtonView {
         visible,
       })
     }
-    let timer: number
+    let timer: ReturnType<typeof setTimeout> | undefined
     this.el.addEventListener("mouseenter", () => {
       timer = setTimeout(() => toggle(true), this.model.tooltip_delay)
     })

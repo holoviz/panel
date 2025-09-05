@@ -1,7 +1,7 @@
 import sys
 
 
-def main():
+def main() -> None:
     from panel.command import main as _main
 
    # Main entry point (see setup.py)

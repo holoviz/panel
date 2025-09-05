@@ -1,7 +1,11 @@
-import {Column, ColumnView} from "./column"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import * as DOM from "@bokehjs/core/dom"
+import {Container} from "@bokehjs/core/layout/grid"
 import type * as p from "@bokehjs/core/properties"
+import {GridAlignmentLayout} from "@bokehjs/models/layouts/alignments"
+import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
+
+import {Column, ColumnView} from "./column"
 
 import card_css from "styles/models/card.css"
 
@@ -42,7 +46,7 @@ export class CardView extends ColumnView {
     return [...super.stylesheets(), card_css]
   }
 
-  protected override *_stylesheets(): Iterable<DOM.StyleSheet> {
+  protected override *_stylesheets(): Iterable<DOM.StyleSheetLike> {
     yield* super._stylesheets()
     yield this.collapsed_style
   }
@@ -86,8 +90,7 @@ export class CardView extends ColumnView {
       this.button_el.style.backgroundColor = header_background != null ? header_background : ""
       header.el.style.backgroundColor = header_background != null ? header_background : ""
       this.button_el.appendChild(header.el)
-
-      this.button_el.onclick = () => this._toggle_button()
+      this.button_el.addEventListener("click", (e: MouseEvent) => this._toggle_button(e))
       header_el = this.button_el
     } else {
       header_el = DOM.create_element((header_tag as any), {class: header_css_classes})
@@ -100,7 +103,7 @@ export class CardView extends ColumnView {
       header_el.style.color = header_color != null ? header_color : ""
       this.shadow_el.appendChild(header_el)
       header.render()
-      header.after_render()
+      header.r_after_render()
     }
 
     if (this.model.collapsed) {
@@ -110,7 +113,7 @@ export class CardView extends ColumnView {
     for (const child_view of this.child_views.slice(1)) {
       this.shadow_el.appendChild(child_view.el)
       child_view.render()
-      child_view.after_render()
+      child_view.r_after_render()
     }
   }
 
@@ -120,7 +123,88 @@ export class CardView extends ColumnView {
     this.invalidate_layout()
   }
 
-  _toggle_button(): void {
+  override _update_layout(): void {
+    super._update_layout()
+
+    this.style.append(":host", {
+      flex_direction: this._direction,
+      gap: DOM.px(this.model.spacing),
+    })
+
+    const layoutable = new Container<LayoutDOMView>()
+    let r0 = 0
+    let c0 = 0
+
+    for (let i = 0; i < this.child_views.length; i++) {
+      const view = this.child_views[i]
+      if (!(view instanceof LayoutDOMView)) {
+        continue
+      }
+
+      const is_row = i == 0
+      const sizing = view.box_sizing()
+      const flex = (() => {
+        const policy = is_row ? sizing.width_policy : sizing.height_policy
+        const size = is_row ? sizing.width : sizing.height
+        const basis = size != null ? DOM.px(size) : "auto"
+        switch (policy) {
+          case "auto":
+          case "fixed": return `0 0 ${basis}`
+          case "fit": return "1 1 auto"
+          case "min": return "0 1 auto"
+          case "max": return "1 0 0px"
+        }
+      })()
+
+      const align_self = (() => {
+        const policy = is_row ? sizing.height_policy : sizing.width_policy
+        switch (policy) {
+          case "auto":
+          case "fixed":
+          case "fit":
+          case "min": return is_row ? sizing.valign : sizing.halign
+          case "max": return "stretch"
+        }
+      })()
+
+      view.parent_style.append(":host", {flex, align_self})
+
+      // undo `width/height: 100%` and let `align-self: stretch` do the work
+      if (is_row) {
+        if (sizing.height_policy == "max") {
+          view.parent_style.append(":host", {height: "auto"})
+        }
+      } else {
+        if (sizing.width_policy == "max") {
+          view.parent_style.append(":host", {width: "auto"})
+        }
+      }
+
+      if (view.layout != null) {
+        layoutable.add({r0, c0, r1: r0 + 1, c1: c0 + 1}, view)
+
+        if (is_row) {
+          c0 += 1
+        } else {
+          r0 += 1
+        }
+      }
+    }
+
+    if (layoutable.size != 0) {
+      this.layout = new GridAlignmentLayout(layoutable)
+      this.layout.set_sizing()
+    } else {
+      delete this.layout
+    }
+  }
+
+  _toggle_button(e: MouseEvent): void {
+    for (const path of e.composedPath()) {
+      if (path instanceof HTMLInputElement) {
+        return
+      }
+    }
     this.model.collapsed = !this.model.collapsed
   }
 

@@ -10,7 +10,7 @@ In this tutorial, we will collaboratively build an *Image Classifier* that can d
 We will be using a *random* classifier, but you can later replace it with your own custom classifier if you want.
 
 :::{note}
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --dev`.
 :::
 
 ## Install the Dependencies

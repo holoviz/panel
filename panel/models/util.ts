@@ -11,13 +11,27 @@ export const get = (obj: any, path: string, defaultValue: any = undefined) => {
   return result === undefined || result === obj ? defaultValue : result
 }
 
-export function throttle(func: any, timeFrame: number) {
-  let lastTime: number = 0
-  return function() {
-    const now: number = Number(new Date())
-    if (now - lastTime >= timeFrame) {
-      func()
-      lastTime = now
+export function throttle(func: Function, limit: number): any {
+  let lastRan: number = 0
+  let trailingCall: ReturnType<typeof setTimeout> | null = null
+
+  return function(...args: any) {
+    // @ts-ignore
+    const context = this
+    const now = Date.now()
+    if (trailingCall) {
+      clearTimeout(trailingCall)
+    }
+
+    if ((now - lastRan) >= limit) {
+      func.apply(context, args)
+      lastRan = Date.now()
+    } else {
+      trailingCall = setTimeout(function() {
+        func.apply(context, args)
+        lastRan = Date.now()
+        trailingCall = null
+      }, limit - (now - lastRan))
     }
   }
 }
@@ -153,4 +167,79 @@ export function find_attributes(text: string, obj: string, ignored: string[]) {
   }
 
   return uniq(matches)
+}
+
+export function schedule_when(func: () => void, predicate: () => boolean, timeout: number = 10): void {
+  const scheduled = () => {
+    if (predicate()) {
+      func()
+    } else {
+      setTimeout(scheduled, timeout)
+    }
+  }
+  scheduled()
+}
+
+export const MARK = "--x_x--0_0--"
+const PLACEHOLDER_RE = new RegExp(
+  `^${MARK}([\\s\\S]*?)${MARK}$`,
+)
+
+interface CompileOptions {
+  mode?: "expression" | "statement"
+  args?: string[]
+}
+
+const defaultOptions: Required<CompileOptions> = {
+  mode: "expression",
+  args: [],
+}
+
+export function compileToFunction(
+  code: string,
+  options: CompileOptions = defaultOptions,
+): (...args: any[]) => any {
+  const {mode, args} = {...defaultOptions, ...options}
+  const body =
+    mode === "expression"
+      ? `\"use strict\";\nreturn (${code});`
+      : `\"use strict\";\n${code}`
+  return (new Function(...args, body) as (...args: any[]) => any)()
+}
+
+export function transformJsPlaceholders<T>(
+  input: T,
+  options?: CompileOptions,
+): T {
+  function visit(value: any): any {
+    if (typeof value === "string") {
+      const m = value.match(PLACEHOLDER_RE)
+      if (m) {
+        const code = m[1]
+        return compileToFunction(code, options)
+      }
+      return value
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(visit)
+    }
+
+    // Keep special objects intact
+    if (
+      value &&
+      typeof value === "object" &&
+      Object.getPrototypeOf(value) === Object.prototype
+    ) {
+      const out: Record<string, any> = {}
+      for (const [k, v] of Object.entries(value)) {
+        out[k] = visit(v)
+      }
+      return out
+    }
+
+    return value
+  }
+
+  return visit(input)
 }
