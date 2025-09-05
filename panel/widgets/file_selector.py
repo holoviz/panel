@@ -257,7 +257,7 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         )
         self._nav_bar = Row(
             self._back, self._forward, self._up, self._directory, self._go, self._reload,
-            **dict(layout, width=None, margin=0, width_policy='max'), visible=self.param.visible
+            **dict(layout, width=None, margin=0, width_policy='max', visible=self.param.visible)
         )
         self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
         self._directory.param.watch(self._dir_change, 'value')
