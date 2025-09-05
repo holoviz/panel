@@ -26,7 +26,7 @@ from ..config import config
 from .embed import embed_state
 from .model import add_to_doc
 from .resources import (
-    BASE_TEMPLATE, CDN_DIST, DEFAULT_TITLE, MODES, Resources, bundle_resources,
+    BASE_TEMPLATE, CDN_DIST, DEFAULT_TITLE, Resources, bundle_resources,
     set_resource_mode,
 )
 from .state import state
@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from jinja2 import Template
 
     from ..viewable import Viewable
+    from .resources import MODES
 
 #---------------------------------------------------------------------
 # Private API
