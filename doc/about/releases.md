@@ -4,7 +4,7 @@ See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual su
 
 ## Version 1.8.0
 
-This release brings a wide range of new features, enhancements, and compatibility improvements. Highlights include support for `JSCode` in ECharts and Tabulator, reworked WebSocket reconnection, expanded format and resource handling, and numerous bug fixes to improve stability across components and templates. It also includes compatibility updates for **Bokeh 3.8** and several improvements for use in **Pyodide**, **JupyterLite**, and **authentication-based deployments**.
+This release brings a wide range of new features, enhancements, and compatibility improvements. Highlights include support for `JSCode` in ECharts and Tabulator, reworked WebSocket reconnection, expanded format and resource handling, and numerous bug fixes to improve stability across components and templates. It also includes compatibility updates for **Bokeh 3.8** and several improvements for use in **Pyodide**, **JupyterLite**, and **authentication-based deployments**. Many thanks to our returning contributors @dalthviz and @etihwo, a very warm welcome to our new contributor @c-meier and as usual many thanks to our core team including @maximlt, @hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr.
 
 ### 🚀 Features
 
