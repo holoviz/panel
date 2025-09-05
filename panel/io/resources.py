@@ -475,7 +475,7 @@ def bundle_resources(
         if not use_mathjax and "bokeh-mathjax" in js_resources.components:
             js_resources.components.remove("bokeh-mathjax")
         if reloading:
-            js_resources.components.clear()
+            js_resources.components = [c for c in js_resources.components if c == "bokeh-mathjax"]
 
         js_files.extend(js_resources.js_files)
         js_raw.extend(js_resources.js_raw)
