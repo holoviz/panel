@@ -41,8 +41,8 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.27.5'
-PYSCRIPT_VERSION = '2025.2.1'
+PYODIDE_VERSION = 'v0.28.2'
+PYSCRIPT_VERSION = '2025.8.1'
 WHL_PATH = DIST_DIR / 'wheels'
 PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
@@ -51,10 +51,10 @@ BOKEH_CDN_WHL = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
 PYODIDE_PYC_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/pyc/pyodide.js'
 PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.css" />'
-PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylsheet" href="{CDN_DIST}css/pyscript.css" />'
-PYSCRIPT_JS = f'<script type="module" src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.js"></script>'
-PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
-PYODIDE_PYC_JS = f'<script src="{PYODIDE_PYC_URL}"></script>'
+PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylesheet" href="{CDN_DIST}css/pyscript.css" />'
+PYSCRIPT_JS = f'<script type="module" src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.js" defer></script>'
+PYODIDE_JS = f'<script src="{PYODIDE_URL}" defer></script>'
+PYODIDE_PYC_JS = f'<script src="{PYODIDE_PYC_URL}" defer></script>'
 LOCAL_PREFIX = './'
 
 MINIMUM_VERSIONS: dict[str, str] = {}
@@ -98,7 +98,14 @@ async function main() {
   code = `{{ code }}`
   await pyodide.runPythonAsync(code);
 }
-main();
+const run_main_on_load = () => {
+  if (typeof loadPyodide !== 'undefined') {
+    main();
+  } else {
+    setTimeout(loadPyodideCheck, 100);
+  }
+};
+run_main_on_load();
 </script>
 """
 
@@ -146,6 +153,30 @@ def build_pwa_manifest(files, title=None, **kwargs) -> str:
         path=path,
         **kwargs
     )
+
+def loading_resources(template, inline) -> list[str]:
+    css_resources = []
+    if template in (BASE_TEMPLATE, FILE):
+        # Add loading.css if not served from Panel template
+        if inline:
+            svg_name = f'{config.loading_spinner}_spinner.svg'
+            svg_b64 = base64.b64encode((DIST_DIR / 'assets' / svg_name).read_bytes()).decode('utf-8')
+            loading_base = (
+                DIST_DIR / "css" / "loading.css"
+            ).read_text(encoding='utf-8').replace(
+                f'../assets/{svg_name}', f'data:image/svg+xml;base64,{svg_b64}'
+            )
+            loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
+        else:
+            loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
+        css_resources.append(loading_style)
+    spinner_css = loading_css(
+        config.loading_spinner, config.loading_color, config.loading_max_height
+    )
+    css_resources.append(
+        f'<style type="text/css">\n{spinner_css}\n</style>'
+    )
+    return css_resources
 
 def script_to_html(
     filename: str | os.PathLike | IO,
@@ -267,6 +298,7 @@ def script_to_html(
             css_resources = [PYSCRIPT_CSS, PYSCRIPT_CSS_OVERRIDES]
         elif not css_resources:
             css_resources = []
+        css_resources.append('<style type="text/css">.py-error { display: none; }</style>')
         pyconfig = json.dumps({'packages': reqs})
         if 'worker' in runtime:
             plot_script = f'<script type="py" async worker config=\'{pyconfig}\' src="{app_name}.py"></script>'
@@ -324,26 +356,7 @@ def script_to_html(
 
     # Collect resources
     resources = Resources(mode='inline' if inline else 'cdn')
-    if template in (BASE_TEMPLATE, FILE):
-        # Add loading.css if not served from Panel template
-        if inline:
-            svg_name = f'{config.loading_spinner}_spinner.svg'
-            svg_b64 = base64.b64encode((DIST_DIR / 'assets' / svg_name).read_bytes()).decode('utf-8')
-            loading_base = (
-                DIST_DIR / "css" / "loading.css"
-            ).read_text(encoding='utf-8').replace(
-                f'../assets/{svg_name}', f'data:image/svg+xml;base64,{svg_b64}'
-            )
-            loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
-        else:
-            loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
-        css_resources.append(loading_style)
-    spinner_css = loading_css(
-        config.loading_spinner, config.loading_color, config.loading_max_height
-    )
-    css_resources.append(
-        f'<style type="text/css">\n{spinner_css}\n.py-error {{ display: none; }}</style>'
-    )
+    css_resources += loading_resources(template, inline)
     with set_curdoc(document):
         bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
     extra_js = [INIT_SERVICE_WORKER, bokeh_js] if manifest else [bokeh_js]
