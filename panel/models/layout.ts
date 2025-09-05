@@ -36,9 +36,9 @@ export class PanelMarkupView extends WidgetView {
       })
     } else if (default_provider.status == "failed") {
       await new Promise<void>((resolve) => {
-        let attempts = 0;
+        let attempts = 0
         function tryFetch() {
-          custom_provider = new BundleProvider();
+          custom_provider = new BundleProvider()
           custom_provider.fetch().then(() => {
             if (custom_provider && custom_provider.status != "failed") {
               resolve()
@@ -48,7 +48,7 @@ export class PanelMarkupView extends WidgetView {
             } else {
               resolve()
             }
-          });
+          })
         }
         tryFetch()
       })
