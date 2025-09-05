@@ -583,7 +583,7 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
             push(doc, comm)
         elif not state._connected.get(doc):
             doc.callbacks._hold = None
-        elif threaded:
+        elif threaded and not state._is_pyodide:
             doc.callbacks._hold = None
             doc.add_next_tick_callback(doc.unhold)
             doc.callbacks._hold = policy
