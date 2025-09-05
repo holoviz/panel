@@ -39,7 +39,7 @@ from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
-resources.RESOURCE_MODE = 'CDN'
+resources.RESOURCE_MODE = 'cdn'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
 
 if TYPE_CHECKING:

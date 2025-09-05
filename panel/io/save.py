@@ -26,7 +26,7 @@ from ..config import config
 from .embed import embed_state
 from .model import add_to_doc
 from .resources import (
-    BASE_TEMPLATE, CDN_DIST, DEFAULT_TITLE, Resources, bundle_resources,
+    BASE_TEMPLATE, CDN_DIST, DEFAULT_TITLE, MODES, Resources, bundle_resources,
     set_resource_mode,
 )
 from .state import state
@@ -144,9 +144,12 @@ def _title_from_models(models: Iterable[Model], title: str) -> str:
     return DEFAULT_TITLE
 
 def file_html(
-    models: Model | Document | list[Model], resources: BkResources | None,
-    title: str | None = None, template: Template | str = BASE_TEMPLATE,
-    template_variables: dict[str, Any] = {}, theme: ThemeLike = None,
+    models: Model | Document | list[Model],
+    resources: BkResources,
+    title: str | None = None,
+    template: Template | str = BASE_TEMPLATE,
+    template_variables: dict[str, Any] = {},
+    theme: ThemeLike = None,
     _always_new: bool = False
 ):
     models_seq = []
@@ -175,12 +178,22 @@ def file_html(
 #---------------------------------------------------------------------
 
 def save(
-    panel: Viewable | Document, filename: str | os.PathLike | IO, title: str | None = None,
-    resources: BkResources | None = None, template: Template | str | None = None,
-    template_variables: dict[str, Any] | None = None, embed: bool = False,
-    max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
-    json_prefix: str = '', save_path: str = './', load_path: str | None = None,
-    progress: bool = True, embed_states={}, as_png=None,
+    panel: Viewable | Document,
+    filename: str | os.PathLike | IO,
+    title: str | None = None,
+    resources: BkResources | None = None,
+    template: Template | str | None = None,
+    template_variables: dict[str, Any] | None = None,
+    embed: bool = False,
+    max_states: int = 1000,
+    max_opts: int = 3,
+    embed_json: bool = False,
+    json_prefix: str = '',
+    save_path: str = './',
+    load_path: str | None = None,
+    progress: bool = True,
+    embed_states={},
+    as_png: bool | None = None,
     **kwargs
 ) -> None:
     """
@@ -236,6 +249,7 @@ def save(
     else:
         doc = Document()
 
+    mode: MODES
     if resources is None:
         resources = CDN
         mode = 'cdn'
@@ -292,11 +306,11 @@ def save(
     if template_variables:
         kwargs['template_variables'] = template_variables
 
-    resources = Resources.from_bokeh(resources, absolute=True)
+    save_resources = Resources.from_bokeh(resources, absolute=True)
 
     # Set resource mode
-    with set_resource_mode(resources):
-        html = file_html(doc, resources, title, **kwargs)
+    with set_resource_mode(save_resources.mode):
+        html = file_html(doc, save_resources, title, **kwargs)
     if hasattr(filename, 'write'):
         if isinstance(filename, io.BytesIO):
             html = html.encode('utf-8')

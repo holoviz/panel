@@ -59,6 +59,8 @@ if TYPE_CHECKING:
         tarball: dict[str, TarballType]
         bundle: bool
 
+    MODES = Literal['inline', 'cdn', 'server', 'relative', 'absolute', 'server-dev', 'relative-dev', 'absolute-dev']
+
 logger = logging.getLogger(__name__)
 
 ResourceAttr = Literal["__css__", "__javascript__"]
@@ -70,8 +72,8 @@ with open(Path(__file__).parent.parent / 'package.json') as f:
 def get_env():
     ''' Get the correct Jinja2 Environment, also for frozen scripts.
     '''
-    internal_path = pathlib.Path(__file__).parent / '..' / '_templates'
-    template_path = pathlib.Path(__file__).parent / '..' / 'template'
+    internal_path = Path(__file__).parent / '..' / '_templates'
+    template_path = Path(__file__).parent / '..' / 'template'
     return Environment(loader=FileSystemLoader([
         str(internal_path.resolve()), str(template_path.resolve())
     ]))
@@ -97,7 +99,7 @@ def parse_template(*args, **kwargs):
     return _env.from_string(*args, **kwargs)
 
 # Handle serving of the panel extension before session is loaded
-RESOURCE_MODE = 'server'
+RESOURCE_MODE: MODES = 'server'
 PANEL_DIR = Path(__file__).parent.parent
 DIST_DIR = PANEL_DIR / 'dist'
 BUNDLE_DIR = DIST_DIR / 'bundled'
@@ -174,8 +176,10 @@ else document.addEventListener("DOMContentLoaded", fn, {once: true});
 mimetypes.add_type("application/javascript", ".js")
 
 @contextmanager
-def set_resource_mode(mode):
+def set_resource_mode(mode: MODES | None):
     global RESOURCE_MODE
+    if mode is None:
+        mode = RESOURCE_MODE
     old_resources = _settings.resources._user_value
     old_mode = RESOURCE_MODE
     _settings.resources = RESOURCE_MODE = mode
@@ -186,7 +190,7 @@ def set_resource_mode(mode):
         if old_resources is _Unset:
             _settings.resources.unset_value()
         else:
-            _settings.resources.set_value(old_resources)
+            _settings.resources.set_value(old_resources)  # type: ignore
 
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
@@ -201,17 +205,17 @@ def get_dist_path(cdn: bool | Literal['auto'] = 'auto') -> str:
         dist_path = f'{LOCAL_DIST}'
     return dist_path
 
-def is_cdn_url(url) -> bool:
+def is_cdn_url(url: str) -> bool:
     return isurl(url) and url.startswith(CDN_DIST)
 
-def process_raw_css(raw_css):
+def process_raw_css(raw_css: list[str]) -> list[str]:
     """
     Converts old-style Bokeh<3 compatible CSS to Bokeh 3 compatible CSS.
     """
     return [BK_PREFIX_RE.sub('.', css) for css in raw_css]
 
 @lru_cache(maxsize=None)
-def loading_css(loading_spinner, color, max_height):
+def loading_css(loading_spinner: str, color: str, max_height: int):
     return textwrap.dedent(f"""
     :host(.pn-loading):before, .pn-loading:before {{
       background-color: {color};
@@ -221,7 +225,7 @@ def loading_css(loading_spinner, color, max_height):
 
 def resolve_custom_path(
     obj, path: str | os.PathLike, relative: bool = False
-) -> pathlib.Path | None:
+) -> Path | None:
     """
     Attempts to resolve a path relative to some component.
 
@@ -250,7 +254,7 @@ def resolve_custom_path(
         assert module_path.exists()
     except Exception:
         return None
-    path = pathlib.Path(path)
+    path = Path(path)
     if path.is_absolute():
         abs_path = path
     else:
@@ -260,12 +264,12 @@ def resolve_custom_path(
             return None
     except OSError:
         return None
-    abs_path = pathlib.Path(os.path.normpath(abs_path.absolute()))
+    abs_path = Path(os.path.normpath(abs_path.absolute()))
     if not relative:
         return abs_path
-    return pathlib.Path(os.path.relpath(abs_path, module_path))
+    return Path(os.path.relpath(abs_path, module_path))
 
-def component_resource_path(component, attr, path):
+def component_resource_path(component, attr: str, path: str | os.PathLike) -> str:
     """
     Generates a canonical URL for a component resource.
 
@@ -295,10 +299,7 @@ def component_resource_path(component, attr, path):
         dist_path = str(path).replace(str(dist_dir.absolute()), '').replace(os.path.sep, '/')
         return f'{component_path}{dist_path}'
     custom_path = resolve_custom_path(component, path, relative=True)
-    if custom_path:
-        rel_path = os.fspath(custom_path).replace(os.path.sep, '/')
-    else:
-        rel_path = path
+    rel_path = os.fspath(custom_path).replace(os.path.sep, '/') if custom_path else path
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
@@ -325,27 +326,27 @@ def patch_stylesheet(stylesheet, dist_url):
 def _is_file_path(stylesheet: str)->bool:
     return stylesheet.lower().endswith(".css")
 
-def _is_subpath(path: str | Path, parent: str | Path) -> bool:
+def _is_subpath(path: str | os.PathLike, parent: str | os.PathLike) -> bool:
     """
     Return True if `path` is located inside `parent` (or equal to it).
     Both paths are resolved (absolute, symlinks resolved).
     """
-    path = Path(os.path.normpath(Path(path).absolute()))
-    parent = Path(os.path.normpath(Path(parent).absolute()))
+    path = Path(os.path.normpath(os.path.abspath(path)))
+    parent = Path(os.path.normpath(os.path.abspath(parent)))
     try:
         path.relative_to(parent)
         return True
     except ValueError:
         return False
 
-def resolve_resource_cdn(resource):
+def resolve_resource_cdn(resource: str | os.PathLike) -> str | os.PathLike:
     """
     Resolves a CDN URL given a file path that is relative to
     an extension dist directory.
     """
     for p, cdn in EXTENSION_CDN.items():
         if _is_subpath(resource, p):
-            resource = str(resource).replace(str(p.absolute()), cdn).replace(os.path.sep, '/')
+            resource = str(resource).replace(os.path.abspath(p), cdn).replace(os.path.sep, '/')
             break
     return resource
 
@@ -377,7 +378,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
         stylesheet = custom_path.read_text(encoding='utf-8')
     return stylesheet
 
-def patch_model_css(root, dist_url):
+def patch_model_css(root: Model, dist_url: str):
     """
     Temporary patch for Model.css property used by Panel to provide
     stylesheets for components.
@@ -399,13 +400,13 @@ def patch_model_css(root, dist_url):
         else:
             doc.unhold()
 
-def global_css(name):
+def global_css(name: str) -> str:
     if RESOURCE_MODE == 'server':
         return f'static/extensions/panel/css/{name}.css'
     else:
         return f'{CDN_DIST}css/{name}.css'
 
-def bundled_files(model, file_type='javascript'):
+def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
     name = model.__name__.lower()
     raw_files = getattr(model, f"__{file_type}_raw__", [])
     for cls in model.__mro__[1:]:
@@ -443,7 +444,13 @@ def bundled_files(model, file_type='javascript'):
             files.append(url)
     return files
 
-def bundle_resources(roots, resources, notebook=False, reloading=False, enable_mathjax='auto'):
+def bundle_resources(
+    roots,
+    resources: BkResources,
+    notebook: bool = False,
+    reloading: bool = False,
+    enable_mathjax: bool | Literal['auto'] = 'auto'
+):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
     if not isinstance(resources, Resources):
@@ -487,9 +494,7 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
     elif mode == "server":
         for bundle in extensions:
-            server_url = bundle.server_url
-            if not isinstance(server_url, str):
-                server_url = str(server_url)
+            server_url = str(bundle.server_url)
             if resources.root_url and not resources.absolute:
                 server_url = server_url.replace(resources.root_url, '', 1)
                 if state.rel_path:
@@ -498,27 +503,24 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
     elif mode == "cdn":
         for bundle in extensions:
             if bundle.cdn_url is not None:
-                extra_js.append(bundle.cdn_url)
+                extra_js.append(str(bundle.cdn_url))
             else:
                 js_raw.append(Resources._inline(bundle.artifact_path))
     else:
-        extra_js.extend([ bundle.artifact_path for bundle in extensions ])
+        extra_js.extend([str(bundle.artifact_path) for bundle in extensions])
     js_files += resources.adjust_paths(extra_js)
 
-    ext = bundle_models(None)
-    if ext is not None:
-        js_raw.append(ext)
+    extension = bundle_models(None)
+    if extension is not None:
+        js_raw.append(extension)
 
     hashes = js_resources.hashes if js_resources else {}
 
-    js_files = list(map(URL, js_files))
-    css_files = list(map(URL, css_files))
-
     return Bundle(
-        css_files=css_files,
+        css_files=[URL(css_file) for css_file in css_files],
         css_raw=css_raw,
         hashes=hashes,
-        js_files=js_files,
+        js_files=[URL(js_file) for js_file in js_files],
         js_raw=js_raw,
         js_module_exports=resources.js_module_exports,
         js_modules=resources.js_modules,
