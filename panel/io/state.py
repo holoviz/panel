@@ -281,6 +281,8 @@ class _state(param.Parameterized):
 
     @property
     def _thread_id(self) -> int | None:
+        if self._is_pyodide:
+            return self._current_thread
         return self._thread_id_.get(self.curdoc) if self.curdoc else None
 
     @_thread_id.setter
