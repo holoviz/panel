@@ -38,6 +38,7 @@ This release brings a wide range of new features, enhancements, and compatibilit
 - Fix `Tabulator` filter behavior with list-based filters ([#8169](https://github.com/holoviz/panel/pull/8169))
 - Allow `Card` to overflow container ([#8170](https://github.com/holoviz/panel/pull/8170))
 - Fix `pyodide` model syncing ([#8174](https://github.com/holoviz/panel/pull/8174))
+- Ensure mathjax bundle can be loaded after initial extension call ([#8179](https://github.com/holoviz/panel/pull/8179))
 
 ### 📦 Compatibility & Infrastructure
 
