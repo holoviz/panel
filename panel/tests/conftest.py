@@ -31,12 +31,14 @@ from panel.config import panel_extension
 from panel.io.reload import (
     _local_modules, _modules, _watched_files, async_file_watcher, watch,
 )
+from panel.io.resources import EXTENSION_CDN
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 from panel.tests.util import get_open_ports, reverse_proxy as reverse_proxy_ctx
 from panel.theme import Design
 
 CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
+TEST_DIR = pathlib.Path(__file__).parent
 
 config.apply_signatures = False
 
@@ -595,3 +597,11 @@ def df_strings():
 def reverse_proxy():
     with reverse_proxy_ctx() as (port, proxy):
         yield port, proxy
+
+@pytest.fixture
+def panel_test_cdn():
+    EXTENSION_CDN[TEST_DIR] = 'https://panel-test.holoviz.org'
+    try:
+        yield TEST_DIR
+    except Exception:
+        del EXTENSION_CDN[TEST_DIR]
