@@ -9,42 +9,29 @@ function sendPatch(patch, buffers, msg_id) {
 }
 
 async function startApplication() {
-  console.log("Loading pyodide!");
+  console.log("Loading pyodide...");
   self.postMessage({type: 'status', msg: 'Loading pyodide'})
   self.pyodide = await loadPyodide();
   self.pyodide.globals.set("sendPatch", sendPatch);
-  console.log("Loaded!");
+  console.log("Loaded pyodide");
   await self.pyodide.loadPackage("micropip");
-  const env_spec = [{{ env_spec }}]
-  for (const pkg of env_spec) {
-    let pkg_name;
-    if (pkg.endsWith('.whl')) {
-      pkg_name = pkg.split('/').slice(-1)[0].split('-')[0]
-    } else {
-      pkg_name = pkg
-    }
-    self.postMessage({type: 'status', msg: `Installing ${pkg_name}`})
-    try {
-      await self.pyodide.runPythonAsync(`
-        import micropip
-        await micropip.install('${pkg}');
-      `);
-    } catch(e) {
-      console.log(e)
-      self.postMessage({
-	type: 'status',
-	msg: `Error while installing ${pkg_name}`
-      });
-    }
-  }
-  console.log("Packages loaded!");
-  self.postMessage({type: 'status', msg: 'Executing code'})
-  const code = `
-  {{ code }}
-  `
-
+  self.postMessage({type: 'status', msg: `Installing environment`})
   try {
-    const [docs_json, render_items, root_ids] = await self.pyodide.runPythonAsync(code)
+    await self.pyodide.runPythonAsync(`
+      import micropip
+      await micropip.install([{{ env_spec }}]);
+    `);
+  } catch(e) {
+    console.log(e)
+    self.postMessage({
+      type: 'status',
+      msg: `Error while installing ${pkg_name}`
+    });
+  }
+  console.log("Environment loaded!");
+  self.postMessage({type: 'status', msg: 'Executing code'})
+  try {
+    const [docs_json, render_items, root_ids] = await self.pyodide.runPythonAsync(`{{ code }}`)
     self.postMessage({
       type: 'render',
       docs_json: docs_json,
