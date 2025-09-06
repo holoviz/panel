@@ -125,6 +125,14 @@ pn.state.onload(onload)
 row.servable()
 """
 
+resources_app = """
+import panel as pn
+
+with open('app.md') as f:
+    row = pn.Row(f.read())
+
+row.servable()
+"""
 
 @pytest.fixture(scope="module")
 def http_serve():
@@ -284,5 +292,15 @@ def test_pyodide_test_convert_onload_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, onload_app, page, runtime)
 
     expect(page.locator('.markdown')).to_have_text('Bar')
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_resources_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, onload_app, page, runtime, resources=['./app.md'])
+
+    with open('app.md') as f:
+        expect(page.locator('.markdown')).to_have_text(f.read())
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
