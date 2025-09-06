@@ -102,7 +102,7 @@ const run_main_on_load = () => {
   if (typeof loadPyodide !== 'undefined') {
     main();
   } else {
-    setTimeout(loadPyodideCheck, 100);
+    setTimeout(run_main_on_load, 100);
   }
 };
 run_main_on_load();
