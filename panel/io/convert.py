@@ -8,13 +8,13 @@ import os
 import pathlib
 import uuid
 
+from collections.abc import Sequence
 from typing import IO, Any, Literal
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import bokeh
 
-from bokeh.application.application import SessionContext
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import FILE, MACROS, get_env
@@ -27,6 +27,7 @@ from bokeh.util.serialization import make_id
 from .. import __version__, config
 from ..util import base_version, escape
 from .application import Application, build_single_handler_application
+from .document import MockSessionContext
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import find_requirements
 from .resources import (
@@ -43,8 +44,8 @@ WORKER_HANDLER_TEMPLATE = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.26.2'
-PYSCRIPT_VERSION = '2024.8.1'
+PYODIDE_VERSION = 'v0.28.2'
+PYSCRIPT_VERSION = '2025.8.1'
 WHL_PATH = DIST_DIR / 'wheels'
 PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
@@ -53,11 +54,13 @@ BOKEH_CDN_WHL = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
 PYODIDE_PYC_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/pyc/pyodide.js'
 PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.css" />'
-PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylsheet" href="{CDN_DIST}css/pyscript.css" />'
-PYSCRIPT_JS = f'<script type="module" src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.js"></script>'
-PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
-PYODIDE_PYC_JS = f'<script src="{PYODIDE_PYC_URL}"></script>'
+PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylesheet" href="{CDN_DIST}css/pyscript.css" />'
+PYSCRIPT_JS = f'<script type="module" src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.js" defer></script>'
+PYODIDE_JS = f'<script src="{PYODIDE_URL}" defer></script>'
+PYODIDE_PYC_JS = f'<script src="{PYODIDE_PYC_URL}" defer></script>'
 LOCAL_PREFIX = './'
+
+MINIMUM_VERSIONS: dict[str, str] = {}
 
 ICON_DIR = DIST_DIR / 'images'
 PWA_IMAGES = [
@@ -69,8 +72,6 @@ PWA_IMAGES = [
     ICON_DIR / 'apple-touch-icon.png',
     ICON_DIR / 'index_background.png'
 ]
-
-MINIMUM_VERSIONS = {}
 
 Runtimes = Literal['pyodide', 'pyscript', 'pyodide-worker', 'pyscript-worker']
 
@@ -105,7 +106,14 @@ async function main() {
   code = `{{ code }}`
   await pyodide.runPythonAsync(code);
 }
-main();
+const run_main_on_load = () => {
+  if (typeof loadPyodide !== 'undefined') {
+    main();
+  } else {
+    setTimeout(run_main_on_load, 100);
+  }
+};
+run_main_on_load();
 </script>
 """
 
@@ -128,37 +136,11 @@ if ('serviceWorker' in navigator) {
 </script>
 """
 
-
-@dataclasses.dataclass
-class Request:
-    headers: dict
-    cookies: dict
-    arguments: dict
-
-
 @dataclasses.dataclass
 class DummyRequirement:
     url: str
     name: str = 'DUMMY'
     specifier: str = ''
-
-
-class MockSessionContext(SessionContext):
-
-    def __init__(self, *args, document=None, **kwargs):
-        self._document = document
-        super().__init__(*args, server_context=None, session_id=None, **kwargs)
-
-    def with_locked_document(self, *args):
-        return
-
-    @property
-    def destroyed(self) -> bool:
-        return False
-
-    @property
-    def request(self):
-        return Request(headers={}, cookies={}, arguments={})
 
 
 def make_index(files, title=None, manifest=True):
@@ -174,8 +156,7 @@ def make_index(files, title=None, manifest=True):
         favicon=favicon, title=title, PANEL_CDN=CDN_DIST
     )
 
-
-def build_pwa_manifest(files, title=None, **kwargs):
+def build_pwa_manifest(files, title=None, **kwargs) -> str:
     if len(files) > 1:
         title = title or 'Panel Applications'
         path = 'index.html'
@@ -292,9 +273,33 @@ def pack_files(filemap: dict, destination: str | os.PathLike | IO):
             packfile.write(fname, arcname=arcname)
 
 
+def loading_resources(template, inline) -> list[str]:
+    css_resources = []
+    if template in (BASE_TEMPLATE, FILE):
+        # Add loading.css if not served from Panel template
+        if inline:
+            svg_name = f'{config.loading_spinner}_spinner.svg'
+            svg_b64 = base64.b64encode((DIST_DIR / 'assets' / svg_name).read_bytes()).decode('utf-8')
+            loading_base = (
+                DIST_DIR / "css" / "loading.css"
+            ).read_text(encoding='utf-8').replace(
+                f'../assets/{svg_name}', f'data:image/svg+xml;base64,{svg_b64}'
+            )
+            loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
+        else:
+            loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
+        css_resources.append(loading_style)
+    spinner_css = loading_css(
+        config.loading_spinner, config.loading_color, config.loading_max_height
+    )
+    css_resources.append(
+        f'<style type="text/css">\n{spinner_css}\n</style>'
+    )
+    return css_resources
+
 def script_to_html(
     filename: str | os.PathLike | IO,
-    requirements: list[str],
+    requirements: list[str] = [],
     app_resources: os.PathLike = None,
     js_resources: Literal['auto'] | list[str] = 'auto',
     css_resources: Literal['auto'] | list[str] | None = 'auto',
@@ -305,22 +310,22 @@ def script_to_html(
     manifest: str | None = None,
     inline: bool = False,
     compiled: bool = True
-) -> str:
+) -> tuple[str, str | None]:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
     application.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: str | Path | IO
         The filename of the Panel/Bokeh application to convert.
-    requirements: List[str]
+    requirements: list[str]
         The preprocessed, micropip-compatible list of requirements to include.
     app_resources: os.PathLike
         relative path of zip with data to extract
-    js_resources: 'auto' | List[str]
+    js_resources: 'auto' | list[str]
         The list of JS resources to include in the exported HTML.
-    css_resources: 'auto' | List[str] | None
+    css_resources: 'auto' | list[str] | None
         The list of CSS resources to include in the exported HTML.
     runtime: 'pyodide' | 'pyscript'
         The runtime to use for running Python in the browser.
@@ -345,7 +350,7 @@ def script_to_html(
         app_name = '.'.join(path.name.split('.')[:-1])
         app = build_single_handler_application(str(path.absolute()))
     document = Document()
-    document._session_context = lambda: MockSessionContext(document=document)
+    document._session_context = lambda: MockSessionContext(document=document)  # type: ignore
     with set_curdoc(document):
         app.initialize_document(document)
         state._on_load(None)
@@ -376,6 +381,7 @@ def script_to_html(
             'plugins': ['!error'],
             'files': {app_resources: './*'} if app_resources else {},
         })
+        css_resources.append('<style type="text/css">.py-error { display: none; }</style>')
         if 'worker' in runtime:
             plot_script = f'<script type="py" async worker config=\'{pyconfig}\' src="{app_name}.py"></script>'
             web_worker = code
@@ -435,26 +441,7 @@ def script_to_html(
 
     # Collect resources
     resources = Resources(mode='inline' if inline else 'cdn')
-    if template in (BASE_TEMPLATE, FILE):
-        # Add loading.css if not served from Panel template
-        if inline:
-            svg_name = f'{config.loading_spinner}_spinner.svg'
-            svg_b64 = base64.b64encode((DIST_DIR / 'assets' / svg_name).read_bytes()).decode('utf-8')
-            loading_base = (
-                DIST_DIR / "css" / "loading.css"
-            ).read_text(encoding='utf-8').replace(
-                f'../assets/{svg_name}', f'data:image/svg+xml;base64,{svg_b64}'
-            )
-            loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
-        else:
-            loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
-        css_resources.append(loading_style)
-    spinner_css = loading_css(
-        config.loading_spinner, config.loading_color, config.loading_max_height
-    )
-    css_resources.append(
-        f'<style type="text/css">\n{spinner_css}\n.py-error {{ display: none; }}</style>'
-    )
+    css_resources += loading_resources(template, inline)
     with set_curdoc(document):
         bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
     extra_js = [INIT_SERVICE_WORKER, bokeh_js] if manifest else [bokeh_js]
@@ -584,11 +571,9 @@ def convert_app(
 
     with open(dest_path / filename, 'w', encoding='utf-8') as out:
         out.write(html)
-    if runtime == 'pyscript-worker':
-        with open(dest_path / f'{app_name}.py', 'w', encoding='utf-8') as out:
-            out.write(worker)
-    elif runtime == 'pyodide-worker':
-        with open(dest_path / f'{app_name}.js', 'w', encoding='utf-8') as out:
+    if 'worker' in runtime and worker:
+        ext = 'py' if runtime.startswith('pyscript') else 'js'
+        with open(dest_path / f'{app_name}.{ext}', 'w', encoding="utf-8") as out:
             out.write(worker)
     if verbose:
         print(f'Successfully converted {app} to {runtime} target and wrote output to {filename}.')
@@ -596,8 +581,8 @@ def convert_app(
 
 
 def _convert_process_pool(
-    apps: list[str],
-    dest_path: str | None = None,
+    apps: Sequence[str | os.PathLike],
+    dest_path: os.PathLike | str | None = None,
     max_workers: int = 4,
     requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
     **kwargs
@@ -631,7 +616,7 @@ def _convert_process_pool(
 
 
 def convert_apps(
-    apps: str | os.PathLike | list[str | os.PathLike],
+    apps: str | os.PathLike | Sequence[str | os.PathLike],
     dest_path: str | os.PathLike | None = None,
     title: str | None = None,
     runtime: Runtimes = 'pyodide-worker',
@@ -650,8 +635,8 @@ def convert_apps(
     verbose: bool = True,
 ):
     """
-    Arguments
-    ---------
+    Parameters
+    ----------
     apps: str | List[str]
         The filename(s) of the Panel/Bokeh application(s) to convert.
     dest_path: str | pathlib.Path
@@ -693,7 +678,7 @@ def convert_apps(
     compiled: bool
         Whether to use the compiled and faster version of Pyodide.
     """
-    if isinstance(apps, str):
+    if isinstance(apps, (str, os.PathLike)):
         apps = [apps]
     if dest_path is None:
         dest_path = pathlib.Path('./')
@@ -708,7 +693,7 @@ def convert_apps(
         for app in apps:
             matches = [
                 deps for name, deps in requirements.items()
-                if app.endswith(name.replace(os.path.sep, '/'))
+                if str(app).endswith(name.replace(os.path.sep, '/'))
             ]
             app_requirements[app] = matches[0] if matches else 'auto'
     else:
@@ -729,7 +714,10 @@ def convert_apps(
     }
 
     if state._is_pyodide:
-        files = dict(convert_app(app, dest_path, **kwargs) for app in apps)
+        files = {
+            app: convert_app(app, dest_path, requirements=app_requirements, **kwargs)  # type: ignore
+            for app in apps
+        }
     else:
         files = _convert_process_pool(
             apps, dest_path, max_workers=max_workers, **kwargs

@@ -7,8 +7,11 @@ from bokeh.core.properties import (
 from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource, LayoutDOM
 
-from ..io.resources import JS_URLS, bundled_files
+from ..config import config
+from ..io.resources import bundled_files
 from ..util import classproperty
+
+PLOTLY_VERSION = '3.0.1'
 
 
 class PlotlyEvent(ModelEvent):
@@ -25,10 +28,16 @@ class PlotlyPlot(LayoutDOM):
     A bokeh model that wraps around a plotly plot and renders it inside
     a bokeh plot.
     """
+    __css_raw__ = [
+        f"{config.npm_cdn}/maplibre-gl@4.4.1/dist/maplibre-gl.css"
+    ]
+
+    @classproperty
+    def __css__(cls):
+        return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
-        JS_URLS['jQuery'],
-        'https://cdn.plot.ly/plotly-2.31.1.min.js'
+        f'https://cdn.plot.ly/plotly-{PLOTLY_VERSION}.min.js'
     ]
 
     @classproperty
@@ -41,7 +50,7 @@ class PlotlyPlot(LayoutDOM):
 
     __js_require__ = {
         'paths': {
-            'plotly': 'https://cdn.plot.ly/plotly-2.31.1.min'
+            'plotly': f'https://cdn.plot.ly/plotly-{PLOTLY_VERSION}.min'
         },
         'exports': {'plotly': 'Plotly'}
     }

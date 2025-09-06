@@ -1,7 +1,8 @@
-from datetime import date, datetime
+from datetime import date, datetime, time as dt_time
 from pathlib import Path
 
 import numpy as np
+import param
 import pytest
 
 from bokeh.models.widgets import FileInput as BkFileInput
@@ -10,7 +11,7 @@ from panel import config
 from panel.widgets import (
     ArrayInput, Checkbox, DatePicker, DateRangePicker, DatetimeInput,
     DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
-    FloatInput, IntInput, LiteralInput, StaticText, TextInput,
+    FloatInput, IntInput, LiteralInput, StaticText, TextInput, TimePicker,
 )
 
 
@@ -185,6 +186,22 @@ def test_datetime_range_picker(document, comm):
         datetime_range_picker._process_events({'value': '2018-09-10 00:00:01'})
 
 
+def test_time_picker(document, comm):
+    time_picker = TimePicker(name='Time Picker', value=dt_time(hour=18), format='H:i K')
+    assert time_picker.value == dt_time(hour=18)
+    assert time_picker.format == 'H:i K'
+    assert time_picker.start is None
+    assert time_picker.end is None
+
+
+def test_time_picker_str(document, comm):
+    time_picker = TimePicker(name='Time Picker', value="08:28", start='00:00', end='12:00')
+    assert time_picker.value == "08:28"
+    assert time_picker.format == 'H:i'
+    assert time_picker.start == "00:00"
+    assert time_picker.end == "12:00"
+
+
 def test_file_input(document, comm):
     file_input = FileInput(accept='.txt')
 
@@ -227,6 +244,20 @@ def test_literal_input(document, comm):
 
     with pytest.raises(ValueError):
         literal.value = []
+
+def test_literal_input_inheritance():
+    """LiteralInput should be able to be subclassed as done in panel-material-ui."""
+    class DictInput(LiteralInput):
+        """
+        The `DictInput` allows entering a dictionary value using a text input box.
+        """
+
+        type = param.ClassSelector(default=dict, class_=(type, tuple))
+
+    with pytest.raises(ValueError) as ex:
+        DictInput(value="not a dict")
+
+    assert str(ex.value) == "DictInput expected dict type, but value 'not a dict' is of type str."
 
 def test_static_text(document, comm):
 

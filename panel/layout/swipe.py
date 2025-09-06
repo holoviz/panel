@@ -9,6 +9,7 @@ import param
 
 from ..io.resources import CDN_DIST
 from ..reactive import ReactiveHTML
+from ..viewable import Children
 from .base import ListLike
 
 
@@ -20,7 +21,7 @@ class Swipe(ListLike, ReactiveHTML):
     the other side.
     """
 
-    objects = param.List(default=[], bounds=(0, 2), doc="""
+    objects = Children(default=[], bounds=(0, 2), doc="""
         The list of child objects that make up the layout.""", precedence=-1)
 
     slider_width = param.Integer(default=5, bounds=(0, 25), doc="""
@@ -28,6 +29,12 @@ class Swipe(ListLike, ReactiveHTML):
 
     slider_color = param.Color(default="black", doc="""
         The color of the slider""")
+
+    start = param.Integer(default=0, bounds=(0, 100), doc="""
+        Limits the minimum percentage the swipe handler can be moved to.""")
+
+    end = param.Integer(default=100, bounds=(0, 100), doc="""
+        Limits the maximum percentage the swipe handler can be moved to.""")
 
     value = param.Integer(default=50, bounds=(0, 100), doc="""
         The percentage of the *after* panel to show.""")
@@ -70,6 +77,12 @@ class Swipe(ListLike, ReactiveHTML):
              current = e.clientX
              start = view.el.getBoundingClientRect().left
              value = parseInt(((current-start)/ container.clientWidth)*100)
+             if (data.start != null) {
+               value = Math.max(data.start, value)
+             }
+             if (data.end != null) {
+               value = Math.min(data.end, value)
+             }
              data.value = Math.max(0, Math.min(value, 100))
            }
            let e = event || window.event;
@@ -110,6 +123,10 @@ class Swipe(ListLike, ReactiveHTML):
         self._before = self.before
         self._after = self.after
 
+    @param.depends('start', 'end', watch=True, on_init=True)
+    def _sync_bounds(self):
+        self.param.value.bounds = (self.start, self.end)
+
     @property
     def before(self):
         return self[0] if len(self) else None
@@ -131,8 +148,8 @@ class Swipe(ListLike, ReactiveHTML):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.

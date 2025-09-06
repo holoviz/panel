@@ -3,8 +3,8 @@
 This guide addresses how to structure `Parameterized` classes with subobjects to create nested UIs automatically.
 
 ```{admonition} Prerequisites
-1. The [How to > Generate Widgets from Parameters](./uis.md) guide demonstrates the generation of widgets.
-2. The [How to > ](./dependencies.md) guide demonstrates how to use `@param.depends` to express dependencies between parameters and functions.
+1. The [How to > Generate Widgets from Parameters](./uis) guide demonstrates the generation of widgets.
+2. The [How to > ](./dependencies) guide demonstrates how to use `@param.depends` to express dependencies between parameters and functions.
 
 ```
 
@@ -69,7 +69,7 @@ shapes = [NGon(), Circle()]
 
 class ShapeViewer(param.Parameterized):
 
-    shape = param.ObjectSelector(default=shapes[0], objects=shapes)
+    shape = param.Selector(default=shapes[0], objects=shapes)
 
     @param.depends('shape')
     def view(self):
@@ -118,4 +118,4 @@ pn.Row(
 
 ## Related Resources
 
-- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs
+- See the [Explanation > APIs](../../explanation/api/index) for context on this and other Panel APIs

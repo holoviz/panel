@@ -69,7 +69,9 @@ class interactive(Pane):
     manual_update = param.Boolean(default=False, doc="""
         Whether to update manually by clicking on button.""")
 
-    manual_name = param.String(default='Run Interact')
+    manual_name = param.String(default='Run Interact', doc="""
+        The name of the button to run the interact function manually.
+        Only used if manual_update is True.""")
 
     _pane = param.ClassSelector(class_=Viewable)
 
@@ -236,8 +238,8 @@ class _InteractFactory:
     """
     Factory for instances of :class:`interactive`.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     cls: class
       The subclass of :class:`interactive` to construct.
     options: dict

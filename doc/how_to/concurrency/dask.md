@@ -230,6 +230,6 @@ Try running `panel serve dashboard.py`. If your Dask cluster is working, you wil
 
 ## Additional Resources
 
-- [Panel - Use Async Callbacks](../callbacks/async.md)
+- [Panel - Use Async Callbacks](../callbacks/async)
 - [Dask - Async/Await and Non-Blocking Execution Documentation](https://examples.dask.org/applications/async-await.html#Async/Await-and-Non-Blocking-Execution)
 - [Dask - Async Web Server](https://examples.dask.org/applications/async-web-server.html)

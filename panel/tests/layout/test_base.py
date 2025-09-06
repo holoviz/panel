@@ -108,7 +108,7 @@ def test_layout_radd_list(panel, document, comm):
     assert model.children == [div3, div4, div1, div2]
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Column, Row, Accordion, Tabs])
 def test_layout_add_error(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -285,8 +285,11 @@ def test_layout_setitem_replace_all(panel, document, comm):
     assert p1._models == {}
     assert p2._models == {}
 
+    layout[:] = [div3]
+    assert model.children == [div3]
 
-@pytest.mark.parametrize('panel', [Column, Row])
+
+@pytest.mark.parametrize('panel', [Column, Row, Tabs])
 def test_layout_setitem_replace_all_error(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -294,7 +297,7 @@ def test_layout_setitem_replace_all_error(panel, document, comm):
     layout.get_root(document, comm=comm)
 
     div3 = Div()
-    with pytest.raises(IndexError):
+    with pytest.raises(TypeError):
         layout[:] = div3
 
 
@@ -318,16 +321,17 @@ def test_layout_setitem_replace_slice(panel, document, comm):
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
-def test_layout_setitem_replace_slice_error(panel, document, comm):
+def test_layout_setitem_replace_slice_resize(panel, document, comm):
     div1 = Div()
     div2 = Div()
     div3 = Div()
     layout = panel(div1, div2, div3)
-    layout.get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     div3 = Div()
-    with pytest.raises(IndexError):
-        layout[1:] = [div3]
+    layout[1:] = [div3]
+    assert len(layout) == 2
+    assert model.children == [div1, div3]
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -337,11 +341,12 @@ def test_layout_setitem_replace_slice_out_of_bounds(panel, document, comm):
     div3 = Div()
     layout = panel(div1, div2, div3)
     layout.get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
-    div3 = Div()
-    with pytest.raises(IndexError):
-        layout[3:4] = [div3]
-
+    div4 = Div()
+    layout[3:4] = [div4]
+    assert len(layout) == 4
+    assert model.children == [div1, div2, div3, div4]
 
 @pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_pop(panel, document, comm):
@@ -388,7 +393,7 @@ def test_layout_clear(panel, document, comm):
     assert p1._models == p2._models == {}
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Column, Row, Accordion, Tabs])
 def test_layout_clone_args(panel):
     div1 = Div()
     div2 = Div()
@@ -399,7 +404,7 @@ def test_layout_clone_args(panel):
     assert layout.objects[1].object is clone.objects[0].object
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Column, Row, Accordion, Tabs])
 def test_layout_clone_kwargs(panel):
     div1 = Div()
     div2 = Div()
@@ -442,6 +447,34 @@ def test_layout_clone_objects_in_kwargs(panel):
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_children_not_copied(panel):
+    layout = panel()
+
+    objects = [Markdown(), Markdown()]
+    layout.objects = objects
+
+    assert layout.objects is objects
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_children_not_mutated_inplace(panel):
+    layout = panel()
+
+    objects = [Div(), Div()]
+    layout.objects = objects
+
+    assert layout.objects is not objects
+    assert layout.objects[0].object is objects[0]
+    assert layout.objects[1].object is objects[1]
+
+    layout[:] = objects
+
+    assert layout.objects is not objects
+    assert layout.objects[0].object is objects[0]
+    assert layout.objects[1].object is objects[1]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_clone_objects_in_args_and_kwargs(panel):
     div1 = Div()
     div2 = Div()
@@ -466,7 +499,7 @@ def test_widgetbox(document, comm):
 def test_layout_with_param_setitem(document, comm):
     import param
     class TestClass(param.Parameterized):
-        select = param.ObjectSelector(default=0, objects=[0,1])
+        select = param.Selector(default=0, objects=[0,1])
 
         def __init__(self, **params):
             super().__init__(**params)

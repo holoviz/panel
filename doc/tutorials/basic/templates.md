@@ -26,7 +26,7 @@ pn.template.FastListTemplate(
 Serve the app with:
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 It should resemble the following:
@@ -47,7 +47,7 @@ For additional configuration options, refer to the [`FastListTemplate` reference
 Panel offers a rich assortment of built-in templates, including a versatile [`Slides`](../../reference/templates/Slides.md) template.
 :::
 
-Take a moment to explore the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) in the [Component Gallery](../../reference/index.md), then return here.
+Take a moment to explore the [Templates Section](../../reference/index.rst#templates) in the [Component Gallery](../../reference/index.rst), then return here.
 
 ## Integrating Templates in a Notebook
 
@@ -91,9 +91,9 @@ ACCENT = "teal"
 image = pn.pane.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
 
 if pn.config.theme=="dark":
-    alt.themes.enable("dark")
+    alt.theme.enable("dark")
 else:
-    alt.themes.enable("default")
+    alt.theme.enable("default")
 
 @pn.cache # Add caching to only download data once
 def get_data():
@@ -138,7 +138,7 @@ pn.template.FastListTemplate(
 Serve the app with:
 
 ```bash
-panel serve app.py --autoreload
+panel serve app.py --dev
 ```
 
 It should appear as shown below. Try toggling the theme button in the upper right corner.
@@ -153,7 +153,7 @@ Upon toggling, the app should switch to dark mode:
 In the code:
 
 - `pn.config.theme` determines the selected theme ("default" or "dark").
-- `alt.themes.enable("dark")` applies the "dark" theme to the plot. Panel doesn't do this automatically.
+- `alt.theme.enable("dark")` applies the "dark" theme to the plot. Panel doesn't do this automatically.
 - `accent` sets the primary or accent color for the template, allowing quick branding of the app.
 - `main_layout` specifies a layout to wrap each object in the main list. Choose from `"card"` (default) or `None`.
 
@@ -165,7 +165,7 @@ Note that `accent` and `main_layout` are exclusive to Fast templates like [FastL
 In this tutorial, we've explored the power of pre-made templates for structuring your app with ease:
 
 - Templates are available in the `pn.template` namespace.
-- Find a variety of templates in the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md).
+- Find a variety of templates in the [Templates Section](../../reference/index.rst#templates) of the [Component Gallery](../../reference/index.rst).
 - Templates offer high customizability.
 
 ## References
@@ -189,4 +189,4 @@ In this tutorial, we've explored the power of pre-made templates for structuring
 
 ### Component Gallery
 
-- Explore the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) in the [Component Gallery](../../reference/index.md) for more options.
+- Explore the [Templates Section](../../reference/index.rst#templates) in the [Component Gallery](../../reference/index.rst) for more options.

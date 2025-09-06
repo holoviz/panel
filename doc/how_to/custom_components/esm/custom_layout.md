@@ -1,382 +1,643 @@
-# Create Custom Layouts
+# Create Custom Layouts using ESM Components
 
-In this guide we will show you how to build custom, reusable layouts using `Viewer`, `JSComponent` or `ReactComponent`.
+In this guide, we will demonstrate how to build custom, reusable layouts using [`JSComponent`](../../../reference/custom_components/JSComponent.md), [`ReactComponent`](../../../reference/custom_components/ReactComponent.md) or [`AnyWidgetComponent`](../../../reference/custom_components/AnyWidgetComponent.md).
 
-## Layout a single Panel Component
+## Layout Two Objects
 
-You can layout a single `object` as follows.
+This example will show you how to create a *split* layout containing two objects. We will be using the [Split.js](https://split.js.org/) library.
 
 ::::{tab-set}
 
-:::{tab-item} `Viewer`
-
-```{pyodide}
-import panel as pn
-from panel.custom import Child
-from panel.viewable import Viewer, Layoutable
-
-pn.extension()
-
-
-class SingleObjectLayout(Viewer, Layoutable):
-    object = Child(allow_refs=False)
-
-    def __init__(self, **params):
-        super().__init__(**params)
-
-        header = """
-# Temperature
-## A Measurement from the Sensor
-        """
-
-        layoutable_params = {name: self.param[name] for name in Layoutable.param}
-        self._layout = pn.Column(
-            pn.pane.Markdown(header, height=100, sizing_mode="stretch_width"),
-            self._object,
-            **layoutable_params,
-        )
-
-    def __panel__(self):
-        return self._layout
-
-    @pn.depends("object")
-    def _object(self):
-        return self.object
-
-
-dial = pn.widgets.Dial(
-    name="°C",
-    value=37,
-    format="{value}",
-    colors=[(0.40, "green"), (1, "red")],
-    bounds=(0, 100),
-)
-py_layout = SingleObjectLayout(
-    object=dial,
-    name="Temperature",
-    styles={"border": "2px solid lightgray"},
-    sizing_mode="stretch_width",
-)
-py_layout.servable()
-```
-
-:::
-
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 import panel as pn
-from panel.custom import JSComponent, Child
 
-pn.extension()
+from panel.custom import Child, JSComponent
 
-class SingleObjectLayout(JSComponent):
-    object = Child(allow_refs=False)
+CSS = """
+.split {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+}
 
-    _esm = """
-export function render({ model }) {
-    const containerID = `id-${crypto.randomUUID()}`;;
-    const div = document.createElement("div");
-    div.innerHTML = `
-    <div>
-        <h1>Temperature</h1>
-        <h2>A measurement from the sensor</h2>
-        <div id="${containerID}">...</div>
-    </div>`;
-    const container = div.querySelector(`#${containerID}`);
-    container.appendChild(model.get_child("object"))
-    return div;
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+.gutter.gutter-horizontal {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+    cursor: col-resize;
 }
 """
 
-dial = pn.widgets.Dial(
-    name="°C",
-    value=37,
-    format="{value}",
-    colors=[(0.40, "green"), (1, "red")],
-    bounds=(0, 100),
-)
-js_layout = SingleObjectLayout(
-    object=dial,
-    name="Temperature",
-    styles={"border": "2px solid lightgray"},
+
+class SplitJS(JSComponent):
+
+    left = Child()
+    right = Child()
+
+    _esm = """
+    import Split from 'https://esm.sh/split.js@1.6.5'
+
+    export function render({ model }) {
+      const splitDiv = document.createElement('div');
+      splitDiv.className = 'split';
+
+      const split0 = document.createElement('div');
+      splitDiv.appendChild(split0);
+
+      const split1 = document.createElement('div');
+      splitDiv.appendChild(split1);
+
+      const split = Split([split0, split1])
+
+      model.on('remove', () => split.destroy())
+
+      split0.append(model.get_child("left"))
+      split1.append(model.get_child("right"))
+      return splitDiv
+    }"""
+
+    _stylesheets = [CSS]
+
+
+pn.extension("codeeditor")
+
+split_js = SplitJS(
+    left=pn.widgets.CodeEditor(
+        value="Left!",
+        sizing_mode="stretch_both",
+        margin=0,
+        theme="monokai",
+        language="python",
+    ),
+    right=pn.widgets.CodeEditor(
+        value="Right",
+        sizing_mode="stretch_both",
+        margin=0,
+        theme="monokai",
+        language="python",
+    ),
+    height=500,
     sizing_mode="stretch_width",
 )
-js_layout.servable()
+split_js.servable()
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 import panel as pn
 
 from panel.custom import Child, ReactComponent
 
-pn.extension()
+CSS = """
+.split {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+}
 
-class SingleObjectLayout(ReactComponent):
-    object = Child(allow_refs=False)
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
 
-    _esm = """
-export function render({ model }) {
-    return (
-        <div>
-            <h1>Temperature</h1>
-            <h2>A measurement from the sensor</h2>
-            <div>
-                {model.get_child("object")}
-            </div>
-        </div>
-    );
+.gutter.gutter-horizontal {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+    cursor: col-resize;
 }
 """
 
-dial = pn.widgets.Dial(
-    name="°C",
-    value=37,
-    format="{value}",
-    colors=[(0.40, "green"), (1, "red")],
-    bounds=(0, 100),
-)
-react_layout = SingleObjectLayout(
-    object=dial,
-    name="Temperature",
-    styles={"border": "2px solid lightgray"},
+
+class SplitReact(ReactComponent):
+
+    left = Child()
+    right = Child()
+
+    _esm = """
+    import Split from 'https://esm.sh/react-split@2.0.14'
+
+    export function render({ model }) {
+      return (
+        <Split className="split">
+          {model.get_child("left")}
+          {model.get_child("right")}
+        </Split>
+      )
+    }
+    """
+
+    _stylesheets = [CSS]
+
+
+pn.extension("codeeditor")
+
+split_react = SplitReact(
+    left=pn.widgets.CodeEditor(
+        value="Left!",
+        sizing_mode="stretch_both",
+        margin=0,
+        theme="monokai",
+        language="python",
+    ),
+    right=pn.widgets.CodeEditor(
+        value="Right",
+        sizing_mode="stretch_both",
+        margin=0,
+        theme="monokai",
+        language="python",
+    ),
+    height=500,
     sizing_mode="stretch_width",
 )
-react_layout.servable()
+split_react.servable()
 ```
+:::
 
+:::{tab-item} `AnyWidgetComponent`
+```{pyodide}
+import panel as pn
+
+from panel.custom import Child, AnyWidgetComponent
+
+CSS = """
+.split {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+}
+
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+.gutter.gutter-horizontal {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+    cursor: col-resize;
+}
+"""
+
+
+class SplitAnyWidget(AnyWidgetComponent):
+
+    left = Child()
+    right = Child()
+
+    _esm = """
+    import Split from 'https://esm.sh/split.js@1.6.5'
+
+    function render({ model, el }) {
+      const splitDiv = document.createElement('div');
+      splitDiv.className = 'split';
+
+      const split0 = document.createElement('div');
+      splitDiv.appendChild(split0);
+
+      const split1 = document.createElement('div');
+      splitDiv.appendChild(split1);
+
+      const split = Split([split0, split1])
+
+      model.on('remove', () => split.destroy())
+
+      split0.append(model.get_child("left"))
+      split1.append(model.get_child("right"))
+
+      el.appendChild(splitDiv)
+    }
+
+    export default {render}
+    """
+
+    _stylesheets = [CSS]
+
+
+pn.extension("codeeditor")
+
+split_anywidget = SplitAnyWidget(
+    left=pn.widgets.CodeEditor(
+        value="Left!",
+        sizing_mode="stretch_both",
+        margin=0,
+        theme="monokai",
+        language="python",
+    ),
+    right=pn.widgets.CodeEditor(
+        value="Right",
+        sizing_mode="stretch_both",
+        margin=0,
+        theme="monokai",
+        language="python",
+    ),
+    height=500,
+    sizing_mode="stretch_width",
+)
+split_anywidget.servable()
+```
 :::
 
 ::::
 
-Lets verify the layout will automatically update when the `object` is changed.
+Let's verify that the layout will automatically update when the `object` is changed.
 
 ::::{tab-set}
-
-:::{tab-item} `Viewer`
-
-```{pyodide}
-html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
-radio_button_group = pn.widgets.RadioButtonGroup(
-    options=["Dial", "Markdown"],
-    value="Dial",
-    name="Select the object to display",
-    button_type="success", button_style="outline"
-)
-
-@pn.depends(radio_button_group, watch=True)
-def update(value):
-    if value == "Dial":
-        py_layout.object = dial
-    else:
-        py_layout.object = html
-
-radio_button_group.servable()
-```
-
-:::
 
 :::{tab-item} `JSComponent`
 
 ```{pyodide}
-html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
-radio_button_group = pn.widgets.RadioButtonGroup(
-    options=["Dial", "Markdown"],
-    value="Dial",
-    name="Select the object to display",
-    button_type="success", button_style="outline"
-)
-
-@pn.depends(radio_button_group, watch=True)
-def update(value):
-    if value == "Dial":
-        js_layout.object = dial
-    else:
-        js_layout.object = html
-
-radio_button_group.servable()
+split_js.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
-
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
-html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
-radio_button_group = pn.widgets.RadioButtonGroup(
-    options=["Dial", "Markdown"],
-    value="Dial",
-    name="Select the object to display",
-    button_type="success", button_style="outline"
-)
-
-@pn.depends(radio_button_group, watch=True)
-def update(value):
-    if value == "Dial":
-        react_layout.object = dial
-    else:
-        react_layout.object = html
-
-radio_button_group.servable()
+split_react.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
+:::
 
+:::{tab-item} `AnyWidgetComponent`
+```{pyodide}
+split_anywidget.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
+```
+:::
+
+::::
+
+Now, let's change it back:
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+```{pyodide}
+split_js.right=pn.widgets.CodeEditor(
+    value="Right",
+    sizing_mode="stretch_both",
+    margin=0,
+    theme="monokai",
+    language="python",
+)
+```
+:::
+
+:::{tab-item} `ReactComponent`
+```{pyodide}
+split_react.right=pn.widgets.CodeEditor(
+    value="Right",
+    sizing_mode="stretch_both",
+    margin=0,
+    theme="monokai",
+    language="python",
+)
+```
+:::
+
+:::{tab-item} `AnyWidgetComponent`
+```{pyodide}
+split_anywidget.right=pn.widgets.CodeEditor(
+    value="Right",
+    sizing_mode="stretch_both",
+    margin=0,
+    theme="monokai",
+    language="python",
+)
+```
+:::
+
+::::
+
+Now, let's change it back:
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+```{pyodide}
+split_js.right=pn.widgets.CodeEditor(
+    value="Right",
+    sizing_mode="stretch_both",
+    margin=0,
+    theme="monokai",
+    language="python",
+)
+```
+:::
+
+:::{tab-item} `ReactComponent`
+```{pyodide}
+split_react.right=pn.widgets.CodeEditor(
+    value="Right",
+    sizing_mode="stretch_both",
+    margin=0,
+    theme="monokai",
+    language="python",
+)
+```
 :::
 
 ::::
 
 ## Layout a List of Objects
 
-A Panel `Column` or `Row` works as a list of objects. It is *list-like*. In this section will show you how to create your own *list-like* layout using Panels `NamedListLike` class.
+A Panel `Column` or `Row` works as a list of objects. It is *list-like*. In this section, we will show you how to create your own *list-like* layout using Panel's `NamedListLike` class.
 
 ::::{tab-set}
 
-:::{tab-item} `Viewer`
-
-```{pyodide}
-import panel as pn
-from panel.viewable import Viewer, Layoutable
-from panel.custom import Children
-from panel.layout.base import NamedListLike
-
-pn.extension()
-
-
-class ListLikeLayout(NamedListLike, Layoutable, Viewer):
-    objects = Children()
-
-    def __init__(self, *args, **params):
-        super().__init__(*args, **params)
-
-        layoutable_params = {name: self.param[name] for name in Layoutable.param}
-        self._layout = pn.Column(
-            **layoutable_params,
-        )
-        self._objects()
-
-    def __panel__(self):
-        return self._layout
-
-    @pn.depends("objects", watch=True)
-    def _objects(self):
-        objects = []
-        for object in self.objects:
-            objects.append(object)
-            objects.append(
-                pn.pane.HTML(
-                    styles={"width": "calc(100% - 15px)", "border-top": "3px dotted #bbb"},
-                    height=10,
-                )
-            )
-
-        self._layout[:] = objects
-
-
-ListLikeLayout(
-    "I love beat boxing",
-    "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
-    "Yes I do!",
-    styles={"border": "2px solid lightgray"},
-).servable()
-```
-
-You must list `NamedListLike, Layoutable, Viewer` in exactly that order when you define the class! Other combinations might not work.
-
-:::
-
 :::{tab-item} `JSComponent`
-
 ```{pyodide}
 import panel as pn
 import param
+
 from panel.custom import JSComponent
-from panel.layout.base import NamedListLike
 
-pn.extension()
+from panel.layout.base import ListLike
+
+CSS = """
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+.gutter.gutter-vertical {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
+    cursor: row-resize;
+}
+"""
 
 
-class ListLikeLayout(NamedListLike, JSComponent):
-    objects = param.List()
+class GridJS(ListLike, JSComponent):
 
     _esm = """
-    export function render({ model }) {
-      const div = document.createElement('div')
-      let objects = model.get_child("objects")
+    import Split from 'https://esm.sh/split.js@1.6.5'
+
+    export function render({ model}) {
+      const objects = model.get_child("objects")
+
+      const splitDiv = document.createElement('div');
+      splitDiv.className = 'split';
+      splitDiv.style.height = `calc(100% - ${(objects.length - 1) * 10}px)`;
+
+      let splits = [];
 
       objects.forEach((object, index) => {
-        div.appendChild(object);
+        const split = document.createElement('div');
+        splits.push(split)
 
-        // If it's not the last object, add a divider
-        if (index < objects.length - 1) {
-            const divider = document.createElement("div");
-            divider.className = "divider";
-            div.appendChild(divider);
-        }
-        });
-      return div
+        splitDiv.appendChild(split);
+        split.appendChild(object);
+      })
+
+      Split(splits, {direction: 'vertical'})
+
+      return splitDiv
     }"""
 
-    _stylesheets = [
-        """
-.divider {border-top: 3px dotted #bbb};
-"""
-    ]
+    _stylesheets = [CSS]
 
 
-ListLikeLayout(
-    "I love beat boxing",
-    "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
-    "Yes I do!",
+pn.extension("codeeditor")
+
+grid_js = GridJS(
+    pn.widgets.CodeEditor(
+        value="I love beatboxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
+    ),
+    pn.panel(
+        "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
+        sizing_mode="stretch_width",
+        height=100,
+    ),
+    pn.widgets.CodeEditor(
+        value="Yes, I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
+    ),
     styles={"border": "2px solid lightgray"},
+    height=800,
+    width=500,
+    sizing_mode="fixed",
 ).servable()
 ```
 
-You must list `NamedListLike, JSComponent` in exactly that order when you define the class! The other
-way around `JSComponent, NamedListLike` will not work.
-
+You must list `ListLike, JSComponent` in exactly that order when you define the class! Reversing the order to `JSComponent, ListLike` will not work.
 :::
 
 :::{tab-item} `ReactComponent`
-
 ```{pyodide}
 import panel as pn
+import param
 
-from panel.custom import Children, ReactComponent
+from panel.custom import ReactComponent
+from panel.layout.base import ListLike
 
-class Example(ReactComponent):
+CSS = """
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+.gutter.gutter-vertical {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
 
-    objects = Children()
+
+ cursor: row-resize;
+}
+"""
+
+
+class GridReact(ListLike, ReactComponent):
 
     _esm = """
-    export function render({ model }) {
-        let objects = model.get_child("objects")
-        return (
-            <div>
-                {objects.map((object, index) => (
-                    <React.Fragment key={index}>
-                        {object}
-                        {index < objects.length - 1 && <div className="divider"></div>}
-                    </React.Fragment>
-                ))}
-            </div>
-        );
+    import Split from 'https://esm.sh/react-split@2.0.14'
+
+    export function render({ model}) {
+      const objects = model.get_child("objects")
+      const calculatedHeight = `calc( 100% - ${(objects.length - 1) * 10}px )`;
+
+      return (
+        <Split
+            className="split"
+            direction="vertical"
+            style={{ height: "100%" }}
+        >{...objects}</Split>
+      )
     }"""
 
+    _stylesheets = [CSS]
 
-Example(
-    objects=[pn.panel("A **Markdown** pane!"), pn.widgets.Button(name="Click me!"), {"text": "I'm shown as a JSON Pane"}]
+
+pn.extension("codeeditor")
+
+grid_react = GridReact(
+    pn.widgets.CodeEditor(
+        value="I love beatboxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
+    ),
+    pn.panel(
+        "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
+        sizing_mode="stretch_width",
+        height=100,
+    ),
+    pn.widgets.CodeEditor(
+        value="Yes, I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
+    ),
+    styles={"border": "2px solid lightgray"},
+    height=800,
+    width=500,
+    sizing_mode="fixed",
+)
+grid_react.servable()
+```
+
+You must list `ListLike, ReactComponent` in exactly that order when you define the class! Reversing the order to `ReactComponent, ListLike` will not work.
+:::
+
+:::{tab-item} `AnyWidgetComponent`
+```{pyodide}
+import panel as pn
+import param
+
+from panel.custom import AnyWidgetComponent
+
+from panel.layout.base import ListLike
+
+CSS = """
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+.gutter.gutter-vertical {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
+    cursor: row-resize;
+}
+"""
+
+
+class GridAnyWidget(ListLike, AnyWidgetComponent):
+
+    _esm = """
+    import Split from 'https://esm.sh/split.js@1.6.5'
+
+    function render({ model, el}) {
+      const objects = model.get_child("objects")
+
+      const splitDiv = document.createElement('div');
+      splitDiv.className = 'split';
+      splitDiv.style.height = `calc(100% - ${(objects.length - 1) * 10}px)`;
+
+      let splits = [];
+
+      objects.forEach((object, index) => {
+        const split = document.createElement('div');
+        splits.push(split)
+
+        splitDiv.appendChild(split);
+        split.appendChild(object);
+      })
+
+      Split(splits, {direction: 'vertical'})
+
+      el.appendChild(splitDiv);
+    }
+    export default {render}
+    """
+
+    _stylesheets = [CSS]
+
+
+pn.extension("codeeditor")
+
+grid_anywidget = GridAnyWidget(
+    pn.widgets.CodeEditor(
+        value="I love beatboxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
+    ),
+    pn.panel(
+        "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
+        sizing_mode="stretch_width",
+        height=100,
+    ),
+    pn.widgets.CodeEditor(
+        value="Yes, I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
+    ),
+    styles={"border": "2px solid lightgray"},
+    height=800,
+    width=500,
+    sizing_mode="fixed",
 ).servable()
 ```
 
+You must list `ListLike, AnyWidgetComponent` in exactly that order when you define the class! Reversing the order to `AnyWidgetComponent, ListLike` will not work.
 :::
 
 ::::
 
-:::{note}
-You must list `ListLike, ReactComponent` in exactly that order when you define the class! The other way around `ReactComponent, ListLike` will not work.
+You can now use `[...]` indexing and methods like `.append`, `.insert`, `pop`, etc., as you would expect:
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+```{pyodide}
+grid_js.append(
+    pn.widgets.CodeEditor(
+        value="Another one bites the dust\n" * 10,
+        theme="monokai",
+        sizing_mode="stretch_both",
+    )
+)
+```
 :::
 
-You can now use `[...]` indexing and the `.append`, `.insert`, `pop`, ... methods that you would expect.
+:::{tab-item} `ReactComponent`
+```{pyodide}
+grid_react.append(
+    pn.widgets.CodeEditor(
+        value="Another one bites the dust\n" * 10,
+        theme="monokai",
+        sizing_mode="stretch_both",
+    )
+)
+```
+:::
+
+:::{tab-item} `AnyWidgetComponent`
+```{pyodide}
+grid_anywidget.append(
+    pn.widgets.CodeEditor(
+        value="Another one bites the dust\n" * 10,
+        theme="monokai",
+        sizing_mode="stretch_both",
+    )
+)
+```
+:::
+
+::::
+
+Let's remove it again:
+
+::::{tab-set}
+
+:::{tab-item} `JSComponent`
+```{pyodide}
+grid_js.pop(-1)
+```
+:::
+
+:::{tab-item} `ReactComponent`
+```{pyodide}
+grid_react.pop(-1)
+```
+:::
+
+:::{tab-item} `AnyWidgetComponent`
+```{pyodide}
+grid_anywidget.pop(-1)
+```
+:::
+
+::::

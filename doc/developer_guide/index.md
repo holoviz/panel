@@ -1,4 +1,8 @@
-# Setting up a development environment
+# Developer Guide
+
+Welcome. We are so happy you've decided to contribute.
+
+## Setting up a development environment
 
 The Panel library is a project that provides a wide range of data interfaces and an extensible set of plotting backends, which means the development and testing process involves a broad set of libraries.
 
@@ -80,9 +84,19 @@ The first time you run it, it will create a `pixi.lock` file with information fo
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
+:::{admonition} Note
+:class: info
+
+If a pixi command fails to lock or install an environment, you can try to limit the number of [concurrent solves](https://pixi.sh/latest/reference/cli/pixi/install/#arg---concurrent-solves) and/or [concurrent downloads](https://pixi.sh/latest/reference/cli/pixi/install/#arg---concurrent-downloads), An example of this is:
+
+```bash
+pixi install --concurrent-solves 4 --concurrent-downloads 4
+```
+:::
+
 ### Editable install
 
-It can be advantageous to install the Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
+It can be advantageous to install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
 
 ```bash
 pixi run install
@@ -96,6 +110,8 @@ Currently, this needs to be run for each environment. So, if you want to install
 ```bash
 pixi run -e test-ui install
 ```
+
+You can find the list of environments in the **pixi.toml** file or via the command `pixi info`.
 
 :::
 
@@ -165,7 +181,7 @@ As Panel uses notebooks for much of the documentation, this will take significan
 
 A development version of Panel can be found [here](https://holoviz-dev.github.io/panel/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
-To be able to run cells interactively you need `pyodide` server, this can be ran with:
+To be able to run cells interactively you need `pyodide` server, this can be run with:
 
 ```bash
 pixi run docs-server
@@ -173,7 +189,7 @@ pixi run docs-server
 
 ## Build
 
-Panel have four build tasks. One is for building packages for Pip, Conda, Pyodide, and NPM.
+Panel has four build tasks, for building packages for Pip, Conda, Pyodide, and NPM.
 
 ```bash
 pixi run build-pip

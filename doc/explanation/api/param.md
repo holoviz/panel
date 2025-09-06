@@ -51,7 +51,7 @@ Not only does the parameter hold the various metadata and validation options for
 
 ## References
 
-The concept of a reference is crucial to using Panel effectively, as much of the [reactivity](reactivity.md) in Panel is built on top of the idea of reference binding. The other piece (i.e. the binding) is that parameters can be given a reference, which they will internally resolve and update whenever the reference updates. In param itself this has to be declared by declaring `allow_ref=True` on the parameter, in Panel effectively all parameters automatically enable this functionality and also allow support for `nested_refs=True` where possible.
+The concept of a reference is crucial to using Panel effectively, as much of the [reactivity](reactivity) in Panel is built on top of the idea of reference binding. The other piece (i.e. the binding) is that parameters can be given a reference, which they will internally resolve and update whenever the reference updates. In param itself this has to be declared by declaring `allow_ref=True` on the parameter, in Panel effectively all parameters automatically enable this functionality and also allow support for `nested_refs=True` where possible.
 
 Let us explore this with a simple example:
 
@@ -62,7 +62,7 @@ class TextFormatter(param.Parameterized):
 
     text = param.String(allow_refs=True)
 
-    def __str__(self):
+    def __repr__(self):
         return f'**{self.text}**'
 
 text_input = pn.widgets.TextInput(value='A string!')

@@ -43,6 +43,6 @@ Internally the layout will create a so called `ParamFunction` component to wrap 
 
 ## Related Resources
 
-- Learn [how to use reactive functions to update components](./bind_component)
-- Learn [how to use reactive generators to generate interactive components ](./bind_generator)
-- Understand [Param](../../explanation/dependencies/param.md)
+- Learn [how to use reactive functions to update components](bind_component)
+- Learn [how to use reactive generators to generate interactive components ](bind_generators)
+- Understand [Param](../../explanation/dependencies/param)

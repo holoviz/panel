@@ -16,24 +16,27 @@
 }
 
 :host(.step-header) {
-  width: max-content;
+  width: fit-content;
 }
 
 .step-title {
+  width: calc(100% - 50px);
   font-size: 1.25em;
+  text-align: left;
+  overflow-wrap: break-word;
 }
 
 .step-message {
   font-size: 1.25em;
   padding-block: 0px;
   padding-inline: 7px;
+  word-break: break-word;
 }
 
 .step-avatar-container {
   width: 15px;
   height: 15px;
-  margin-inline: 5px;
-  margin-block: 5px;
+  margin: 3px;
 }
 
 .step-avatar {

@@ -88,6 +88,7 @@ export class DatetimePickerView extends InputWidgetView {
     super.render()
 
     const options: flatpickr.Options.Options = {
+      allowInput: this.model.allow_input,
       appendTo: this.group_el,
       positionElement: this.input_el,
       defaultDate: this.model.value!,
@@ -232,6 +233,7 @@ export namespace DatetimePicker {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = InputWidget.Props & {
+    allow_input:    p.Property<boolean>
     value:          p.Property<string | null>
     min_date:       p.Property<string | null>
     max_date:       p.Property<string | null>
@@ -266,6 +268,7 @@ export class DatetimePicker extends InputWidget {
       const DateStr = Str
       const DatesList = List(Or(DateStr, Tuple(DateStr, DateStr)))
       return {
+        allow_input:    [ Bool, false ],
         value:          [ Nullable(Str), null ],
         min_date:       [ Nullable(Str), null ],
         max_date:       [ Nullable(Str), null ],

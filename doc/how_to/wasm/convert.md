@@ -4,6 +4,7 @@ Writing an HTML file from scratch with all the Javascript and Python dependencie
 
 The ``panel convert`` command has the following options:
 
+```bash
     positional arguments:
     DIRECTORY-OR-SCRIPT   The app directories or scripts to serve (serve empty document if not specified)
 
@@ -78,7 +79,7 @@ You can now add the `script.html` (and `script.js` file if you used the `pyodide
 
 ## Tips & Tricks for development
 
-- While developing you should run the script locally with *auto reload*: `panel serve script.py --autoreload`.
+- While developing you should run the script locally in dev mode (enabling autoreload): `panel serve script.py --dev`.
 - You can also watch your script for changes and rebuild it if you make an edit with `panel convert ... --watch`
 - If the converted app does not work as expected, you can most often find the errors in the browser
 console. [This guide](https://balsamiq.com/support/faqs/browserconsole/) describes how to open the

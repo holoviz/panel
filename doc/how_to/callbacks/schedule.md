@@ -4,7 +4,7 @@ This guide addresses how to schedule tasks that run independently of any user vi
 
 ---
 
-The `pn.state.schedule_task` functionality allows scheduling global tasks at certain times or on a specific schedule. This is distinct from [periodic callbacks](./periodic.md), which are scheduled per user session. Global tasks are useful for performing periodic actions like updating cached data, performing cleanup actions or other housekeeping tasks, while periodic callbacks should be reserved for making periodic updates to an application.
+The `pn.state.schedule_task` functionality allows scheduling global tasks at certain times or on a specific schedule. This is distinct from [periodic callbacks](./periodic), which are scheduled per user session. Global tasks are useful for performing periodic actions like updating cached data, performing cleanup actions or other housekeeping tasks, while periodic callbacks should be reserved for making periodic updates to an application.
 
 The different contexts in which global tasks and periodic callbacks run also has implications on how they should be scheduled. Scheduled task **must not** be declared in the application code itself, i.e. if you are serving `panel serve app.py` the callback you are scheduling must not be declared in the `app.py`. It must be defined in an external module or in a separate script declared as part of the `panel serve` invocation using the `--setup` commandline argument.
 

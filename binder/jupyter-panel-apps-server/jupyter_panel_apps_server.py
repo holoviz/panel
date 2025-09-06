@@ -20,7 +20,7 @@ def get_apps():
     return [
         app
         for app in glob("examples/gallery/**/*.ipynb", recursive=True)
-        if not app in DONT_SERVE
+        if app not in DONT_SERVE
     ]
 
 

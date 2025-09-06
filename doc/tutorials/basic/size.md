@@ -12,7 +12,7 @@ Panel provides various options to control the size of components:
 - `max_width`/`max_height`: Allows setting a maximum width or height if responsive sizing is set along the corresponding dimension.
 
 :::{note}
-Throughout this tutorial, you can execute the provided code directly in the Panel documentation using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --autoreload`.
+Throughout this tutorial, you can execute the provided code directly in the Panel documentation using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --dev`.
 :::
 
 ## Inherent and Absolute Sizing
@@ -326,7 +326,7 @@ pn.FlexBox(*spacers).servable()
 Adjust the width of your browser window to observe the layout's responsiveness.
 
 :::{note}
-We'll explore `FlexBox` in more detail in the [Control the Size (intermediate)](../intermediate/size.md) tutorial.
+We'll explore `FlexBox` in more detail in the [Advanced Layouts](../intermediate/advanced_layouts.md) tutorial.
 :::
 
 ## Recap
@@ -342,7 +342,7 @@ In this tutorial, we've explored various aspects of controlling component size i
 
 ### Tutorials
 
-- [Control the Size (intermediate)](../intermediate/size.md)
+- [Advanced Layouts](../intermediate/advanced_layouts.md)
 
 ### How-to
 

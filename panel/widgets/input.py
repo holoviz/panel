@@ -8,9 +8,10 @@ import ast
 import json
 
 from base64 import b64decode
-from datetime import date, datetime
+from collections.abc import Iterable, Mapping
+from datetime import date, datetime, time as dt_time
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Type,
 )
 
 import numpy as np
@@ -31,7 +32,7 @@ from ..config import config
 from ..layout import Column, Panel
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
-    TextInput as _BkTextInput,
+    TextInput as _BkTextInput, TimePicker as _BkTimePicker,
 )
 from ..util import (
     escape, lazy_load, param_reprs, try_datetime64_to_datetime,
@@ -111,8 +112,8 @@ class TextInput(_TextInputBase):
     _rename = {'enter_pressed': None}
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('enter-pressed', model=model, doc=doc, comm=comm)
@@ -171,7 +172,7 @@ class TextAreaInput(_TextInputBase):
     rows = param.Integer(default=2, doc="""
         Number of rows in the text input field.""")
 
-    resizable = param.ObjectSelector(
+    resizable = param.Selector(
         objects=["both", "width", "height", False], doc="""
         Whether the layout is interactively resizable,
         and if so in which dimensions: `width`, `height`, or `both`.
@@ -237,7 +238,7 @@ class FileInput(Widget):
         multiple is False or a list of bytes otherwise.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'filename': None, 'name': None
+        'filename': None
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -255,7 +256,7 @@ class FileInput(Widget):
         return msg
 
     @property
-    def _linked_properties(self):
+    def _linked_properties(self) -> tuple[str, ...]:
         properties = super()._linked_properties
         return properties + ('filename',)
 
@@ -277,8 +278,8 @@ class FileInput(Widget):
         Saves the uploaded FileInput data object(s) to file(s) or
         BytesIO object(s).
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename (str or list[str]): File path or file-like object
         """
         value = self.value
@@ -363,6 +364,13 @@ class FileDropper(Widget):
     multiple = param.Boolean(default=False, doc="""
         Whether to allow uploading multiple files.""")
 
+    previews = param.ListSelector(default=["image", "pdf"],
+        objects=["image", "pdf"], doc="""
+        List of previews to enable in the FileDropper.
+        The following previews are available:
+        - image: Adds support for image previews.
+        - pdf: Adds support for PDF previews.""")
+
     value = param.Dict(default={}, doc="""
         A dictionary containing the uploaded file(s) as bytes or string
         objects indexed by the filename. Files that have a text/* mimetype
@@ -379,11 +387,12 @@ class FileDropper(Widget):
         self._file_buffer = {}
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._widget_type = lazy_load(
-            'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root
+        FileDropper._widget_type = lazy_load(
+            'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root,
+            ext='filedropper'
         )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('delete_event', 'upload_event', model=model, doc=doc, comm=comm)
@@ -407,8 +416,8 @@ class FileDropper(Widget):
             return
 
         buffers = self._file_buffer.pop(name)
-        file_buffer = b''.join(buffers)
-        if data['type'].startswith('text/'):
+        file_buffer: bytes | str = b''.join(buffers)
+        if data['type'].startswith('text/') and isinstance(file_buffer, bytes):
             try:
                 file_buffer = file_buffer.decode('utf-8')
             except UnicodeDecodeError:
@@ -448,7 +457,7 @@ class StaticText(Widget):
     _widget_type: ClassVar[type[Model]] = _BkDiv
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return ()
 
     def _init_params(self) -> dict[str, Any]:
@@ -495,9 +504,11 @@ class DatePicker(Widget):
     end = param.CalendarDate(default=None, doc="""
         Inclusive upper bound of the allowed date selection""")
 
-    disabled_dates = param.List(default=None, item_type=(date, str))
+    disabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make unavailable for selection; others will be available.""")
 
-    enabled_dates = param.List(default=None, item_type=(date, str))
+    enabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make available for selection; others will be unavailable.""")
 
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -564,9 +575,11 @@ class DateRangePicker(Widget):
     end = param.CalendarDate(default=None, doc="""
         Inclusive upper bound of the allowed date selection""")
 
-    disabled_dates = param.List(default=None, item_type=(date, str))
+    disabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make unavailable for selection; others will be available.""")
 
-    enabled_dates = param.List(default=None, item_type=(date, str))
+    enabled_dates = param.List(default=None, item_type=(date, str), doc="""
+        Dates to make available for selection; others will be unavailable.""")
 
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -606,8 +619,11 @@ class DateRangePicker(Widget):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            msg['value'] = tuple(self._convert_date_to_string(v) for v in msg['value'])
+        if 'value' in msg and msg['value'] is not None:
+            msg['value'] = tuple(
+                v if v is None else self._convert_date_to_string(v)
+                for v in msg['value']
+            )
         if 'min_date' in msg:
             msg['min_date'] = self._convert_date_to_string(msg['min_date'])
         if 'max_date' in msg:
@@ -624,6 +640,9 @@ class DateRangePicker(Widget):
 
 
 class _DatetimePickerBase(Widget):
+
+    allow_input = param.Boolean(default=False, doc="""
+      Enable manual date input in the widget.""")
 
     disabled_dates = param.List(default=None, item_type=(date, str), doc="""
       Dates to make unavailable for selection.""")
@@ -749,7 +768,8 @@ class DatetimePicker(_DatetimePickerBase):
 
     value = param.Date(default=None)
 
-    mode = param.String('single', constant=True)
+    mode = param.String('single', constant=True, doc="""
+        The mode of the datetime picker, which is always 'single' for this widget.""")
 
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
@@ -784,7 +804,8 @@ class DatetimeRangePicker(_DatetimePickerBase):
     value = param.DateRange(default=None, doc="""
         The current value""")
 
-    mode = param.String('range', constant=True)
+    mode = param.String('range', constant=True, doc="""
+        The mode of the datetime picker, which is always 'range' for this widget.""")
 
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
@@ -805,6 +826,77 @@ class DatetimeRangePicker(_DatetimePickerBase):
             value = ""
 
         return value
+
+
+class _TimeCommon(Widget):
+
+    hour_increment = param.Integer(default=1, bounds=(1, None), doc="""
+    Defines the granularity of hour value increments in the UI.
+    """)
+
+    minute_increment = param.Integer(default=1, bounds=(1, None), doc="""
+    Defines the granularity of minute value increments in the UI.
+    """)
+
+    second_increment = param.Integer(default=1, bounds=(1, None), doc="""
+    Defines the granularity of second value increments in the UI.
+    """)
+
+    seconds = param.Boolean(default=False, doc="""
+    Allows to select seconds. By default only hours and minutes are
+    selectable, and AM/PM depending on the `clock` option.
+    """)
+
+    clock = param.Selector(default='12h', objects=['12h', '24h'], doc="""
+        Whether to use 12 hour or 24 hour clock.""")
+
+    __abstract = True
+
+
+class TimePicker(_TimeCommon):
+    """
+    The `TimePicker` allows selecting a `time` value using a text box
+    and a time-picking utility.
+
+    Reference: https://panel.holoviz.org/reference/widgets/TimePicker.html
+
+    :Example:
+
+    >>> TimePicker(
+    ...     value="12:59:31", start="09:00:00", end="18:00:00", name="Time"
+    ... )
+    """
+
+    value = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        The current value""")
+
+    start = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        Inclusive lower bound of the allowed time selection""")
+
+    end = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        Inclusive upper bound of the allowed time selection""")
+
+    format = param.String(default='H:i', doc="""
+        Formatting specification for the display of the picked date.
+
+        +---+------------------------------------+------------+
+        | H | Hours (24 hours)                   | 00 to 23   |
+        | h | Hours                              | 1 to 12    |
+        | G | Hours, 2 digits with leading zeros | 1 to 12    |
+        | i | Minutes                            | 00 to 59   |
+        | S | Seconds, 2 digits                  | 00 to 59   |
+        | s | Seconds                            | 0, 1 to 59 |
+        | K | AM/PM                              | AM or PM   |
+        +---+------------------------------------+------------+
+
+        See also https://flatpickr.js.org/formatting/#date-formatting-tokens.
+    """)
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'start': 'min_time', 'end': 'max_time', 'format': 'time_format'
+    }
+
+    _widget_type: ClassVar[type[Model]] = _BkTimePicker
 
 
 class ColorPicker(Widget):
@@ -929,12 +1021,12 @@ class _SpinnerBase(_NumericInputBase):
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
 
     @property
-    def _linked_properties(self) -> tuple[str]:
+    def _linked_properties(self) -> tuple[str, ...]:
         return super()._linked_properties + ('value_throttled',)
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'value_throttled' in msg:
             del msg['value_throttled']
@@ -955,6 +1047,11 @@ class _SpinnerBase(_NumericInputBase):
             if "value_throttled" in msg:
                 msg["value"] = msg["value_throttled"]
         return super()._process_property_change(msg)
+
+    def _process_events(self, events: dict[str, Any]) -> None:
+        if config.throttled:
+            events.pop("value", None)
+        super()._process_events(events)
 
 
 class IntInput(_SpinnerBase, _IntInputBase):
@@ -1061,13 +1158,14 @@ class LiteralInput(Widget):
     placeholder = param.String(default='', doc="""
       Placeholder for empty input field.""")
 
-    serializer = param.ObjectSelector(default='ast', objects=['ast', 'json'], doc="""
+    serializer = param.Selector(default='ast', objects=['ast', 'json'], doc="""
        The serialization (and deserialization) method to use. 'ast'
        uses ast.literal_eval and 'json' uses json.loads and json.dumps.
     """)
 
     type = param.ClassSelector(default=None, class_=(type, tuple),
-                               is_instance=True)
+                               is_instance=True, doc="""
+        A Python literal type (e.g. list, dict, set, int, float, bool, str).""")
 
     value = param.Parameter(default=None)
 
@@ -1088,7 +1186,7 @@ class LiteralInput(Widget):
         'value': """JSON.stringify(value).replace(/,/g, ",").replace(/:/g, ": ")"""
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkTextInput
+    _widget_type: ClassVar[Type[Model]] = _BkTextInput  # noqa
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -1103,7 +1201,7 @@ class LiteralInput(Widget):
             if event:
                 self.value = event.old
             types = repr(self.type) if isinstance(self.type, tuple) else self.type.__name__
-            raise ValueError(f'LiteralInput expected {types} type but value {new} '
+            raise ValueError(f'{self.__class__.__name__} expected {types} type, but value \'{new}\' '
                              f'is of type {type(new).__name__}.')
 
     def _process_property_change(self, msg):
@@ -1407,7 +1505,7 @@ class _BooleanWidget(Widget):
     value = param.Boolean(default=False, doc="""
         The current value""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
 
@@ -1450,7 +1548,7 @@ class Switch(_BooleanWidget):
     """
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'value': 'active'
+        'value': 'active'
     }
 
     _widget_type: ClassVar[type[Model]] = _BkSwitch

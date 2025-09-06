@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import os
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
+from bokeh.model import Model
 from param.parameterized import register_reference_transform
 from pyviz_comms import JupyterComm
 
@@ -17,7 +16,6 @@ from .base import Pane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
-    from bokeh.model import Model
     from pyviz_comms import Comm
 
 
@@ -71,8 +69,8 @@ class IPyWidget(Pane):
         return model
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if root is None:
             return self.get_root(doc, comm)
@@ -84,11 +82,11 @@ class IPyWidget(Pane):
 
 class IPyLeaflet(IPyWidget):
 
-    sizing_mode = param.ObjectSelector(default='stretch_width', objects=[
+    sizing_mode = param.Selector(default='stretch_width', objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    priority: float | bool | None = 0.7
+    priority: ClassVar[float | bool | None] = 0.7
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -115,7 +113,7 @@ class Reacton(IPyWidget):
         super()._cleanup(root)
 
     def _get_ipywidget(
-        self, obj, doc: Document, root: Model, comm: Optional[Comm], **kwargs
+        self, obj, doc: Document, root: Model, comm: Comm | None, **kwargs
     ):
         if not isinstance(comm, JupyterComm) or "PANEL_IPYWIDGET" in os.environ:
             from ..io.ipywidget import Widget  # noqa
@@ -125,14 +123,14 @@ class Reacton(IPyWidget):
         return super()._get_ipywidget(widget, doc, root, comm, **kwargs)
 
 
-_ipywidget_classes = {}
+_ipywidget_classes: dict[str, type[param.Parameterized]] = {}
 
 def _ipywidget_transform(obj):
     """
     Transforms an ipywidget into a Parameter that listens updates
     when the ipywidget updates.
     """
-    if not (IPyWidget.applies(obj) and hasattr(obj, 'value')):
+    if isinstance(obj, Model) or not (IPyWidget.applies(obj) and hasattr(obj, 'value')):
         return obj
     name = type(obj).__name__
     if name in _ipywidget_classes:

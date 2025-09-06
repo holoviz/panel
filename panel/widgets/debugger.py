@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import logging
 
-from typing import ClassVar, Mapping
+from collections.abc import Mapping
+from typing import ClassVar
 
 import param
 
@@ -94,9 +95,9 @@ class CheckFilter(logging.Filter):
 
         if state.curdoc and state.curdoc.session_context:
             session_id = state.curdoc.session_context.id
-            widget_session_ids = set(m.document.session_context.id
+            widget_session_ids = {m.document.session_context.id
                                      for m in sum(self.debugger._models.values(),
-                                                  tuple()) if m.document.session_context)
+                                                  tuple()) if m.document.session_context}
 
             if session_id not in widget_session_ids:
                 return False
@@ -106,11 +107,14 @@ class CheckFilter(logging.Filter):
 
 class DebuggerButtons(ReactiveHTML):
 
-    terminal_output = param.String()
+    terminal_output = param.String(doc="""
+        The output of the terminal, which is updated by the debugger widget.""")
 
-    debug_name = param.String()
+    debug_name = param.String(doc="""
+        The name of the debugger, used to save the terminal output to a file.""")
 
-    clears = param.Integer(default=0)
+    clears = param.Integer(default=0, doc="""
+        The number of times the terminal has been cleared.""")
 
     _template: ClassVar[str] = """
     <div style="display: flex;">

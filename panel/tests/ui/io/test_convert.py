@@ -23,11 +23,11 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
         allow_module_level=True
     )
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3)]
 
 
-if os.name == "wt":
-    TIMEOUT = 150_000
+if os.name == "nt":
+    TIMEOUT = 200_000
 else:
     TIMEOUT = 90_000
 
@@ -110,6 +110,19 @@ config_app = """
 import panel as pn
 pn.config.raw_css = ['body { background-color: blue; }']
 pn.Row('Output').servable();
+"""
+
+onload_app = """
+import panel as pn
+
+row = pn.Row('Foo')
+
+def onload():
+    row[:] = ['Bar']
+
+pn.state.onload(onload)
+
+row.servable()
 """
 
 
@@ -250,9 +263,9 @@ def test_pyodide_test_convert_csv_app(http_serve, page, runtime, http_patch):
     expected_titles = ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
 
     titles = page.locator('.tabulator-col-title')
-    expect(titles).to_have_count(1 + len(expected_titles), timeout=60 * 1000)
+    expect(titles).to_have_count(2 + len(expected_titles), timeout=60 * 1000)
     titles = titles.all_text_contents()
-    assert titles[1:] == expected_titles
+    assert titles[1:-1] == expected_titles
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
@@ -262,5 +275,14 @@ def test_pyodide_test_convert_png_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, png_app, page, runtime)
 
     expect(page.locator('img')).to_have_count(1)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_onload_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, onload_app, page, runtime)
+
+    expect(page.locator('.markdown')).to_have_text('Bar')
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []

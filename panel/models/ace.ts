@@ -6,16 +6,10 @@ import type {Ace} from "ace-code"
 import type * as AceCode from "ace-code"
 declare const ace: typeof AceCode
 
+import {ID} from "./util"
+
 declare type ModeList = {
   getModeForPath(path: string): {mode: string}
-}
-
-function ID() {
-  // Math.random should be unique because of its seeding algorithm.
-  // Convert it to base 36 (numbers + letters), and grab the first 9 characters
-  // after the decimal.
-  const id = Math.random().toString(36).substr(2, 9)
-  return `_${id}`
 }
 
 export class AcePlotView extends HTMLBoxView {
@@ -29,13 +23,15 @@ export class AcePlotView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {code, theme, language, filename, print_margin, annotations, readonly} = this.model.properties
+    const {code, theme, language, filename, print_margin, annotations, soft_tabs, indent, readonly} = this.model.properties
     this.on_change(code, () => this._update_code_from_model())
     this.on_change(theme, () => this._update_theme())
     this.on_change(language, () => this._update_language())
     this.on_change(filename, () => this._update_filename())
     this.on_change(print_margin, () => this._update_print_margin())
     this.on_change(annotations, () => this._add_annotations())
+    this.on_change(indent, () => this._editor.setOptions({tabSize: this.model.indent}))
+    this.on_change(soft_tabs, () => this._editor.setOptions({useSoftTabs: this.model.soft_tabs}))
     this.on_change(readonly, () => {
       this._editor.setReadOnly(this.model.readonly)
     })
@@ -56,10 +52,12 @@ export class AcePlotView extends HTMLBoxView {
     this._container.textContent = this.model.code
     this._editor = ace.edit(this._container)
     this._editor.renderer.attachToShadowRoot()
-    this._langTools = ace.require("ace/ext/language_tools")
-    this._modelist = ace.require("ace/ext/modelist")
+    this._langTools = (ace as any).require("ace/ext/language_tools")
+    this._modelist = (ace as any).require("ace/ext/modelist")
     this._editor.setOptions({
       enableBasicAutocompletion: true,
+      tabSize: this.model.indent,
+      useSoftTabs: this.model.soft_tabs,
       enableSnippets: true,
       fontFamily: "monospace", //hack for cursor position
     })
@@ -68,7 +66,20 @@ export class AcePlotView extends HTMLBoxView {
     this._update_language()
     this._editor.setReadOnly(this.model.readonly)
     this._editor.setShowPrintMargin(this.model.print_margin)
-    this._editor.on("change", () => this._update_code_from_editor())
+    // if on keyup, update code from editor
+    if (this.model.on_keyup) {
+      this._editor.on("change", () => this._update_code_from_editor())
+    } else {
+      this._editor.on("blur", () => this._update_code_from_editor())
+      this._editor.commands.addCommand({
+        name: "updateCodeFromEditor",
+        bindKey: {win: "Ctrl-Enter", mac: "Command-Enter"},
+        exec: () => {
+          this._update_code_from_editor()
+        },
+      })
+    }
+    this._editor.on("change", () => this._update_code_input_from_editor())
   }
 
   _update_code_from_model(): void {
@@ -84,6 +95,12 @@ export class AcePlotView extends HTMLBoxView {
   _update_code_from_editor(): void {
     if (this._editor.getValue() !=  this.model.code) {
       this.model.code = this._editor.getValue()
+    }
+  }
+
+  _update_code_input_from_editor(): void {
+    if (this._editor.getValue() !=  this.model.code_input) {
+      this.model.code_input = this._editor.getValue()
     }
   }
 
@@ -120,12 +137,16 @@ export namespace AcePlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     code: p.Property<string>
+    code_input: p.Property<string>
+    on_keyup: p.Property<boolean>
     language: p.Property<string>
     filename: p.Property<string | null>
+    indent: p.Property<number>
     theme: p.Property<string>
     annotations: p.Property<any[]>
     print_margin: p.Property<boolean>
     readonly: p.Property<boolean>
+    soft_tabs: p.Property<boolean>
   }
 }
 
@@ -143,14 +164,18 @@ export class AcePlot extends HTMLBox {
   static {
     this.prototype.default_view = AcePlotView
 
-    this.define<AcePlot.Props>(({Any, List, Bool, Str, Nullable}) => ({
-      code:         [ Str,       "" ],
-      filename:     [ Nullable(Str), null],
-      language:     [ Str,       "" ],
-      theme:        [ Str, "chrome" ],
-      annotations:  [ List(Any),   [] ],
-      readonly:     [ Bool,   false ],
-      print_margin: [ Bool,   false ],
+    this.define<AcePlot.Props>(({Any, Bool, Int, List, Str, Nullable}) => ({
+      annotations:  [ List(Any),      []  ],
+      code:         [ Str,            ""  ],
+      code_input:   [ Str,            ""  ],
+      filename:     [ Nullable(Str), null ],
+      indent:       [ Int,              4 ],
+      language:     [ Str,             "" ],
+      on_keyup:     [ Bool,          true ],
+      print_margin: [ Bool,         false ],
+      theme:        [ Str, "github_light_default" ],
+      readonly:     [ Bool,         false ],
+      soft_tabs:    [ Bool,         false ],
     }))
 
     this.override<AcePlot.Props>({

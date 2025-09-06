@@ -5,6 +5,10 @@ import tempfile
 import param
 import pytest
 
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
+
 from panel.layout import Column, Tabs
 from panel.tests.util import serve_component
 from panel.widgets import FileDownload, TextInput
@@ -12,6 +16,18 @@ from panel.widgets import FileDownload, TextInput
 pytestmark = pytest.mark.ui
 not_windows = pytest.mark.skipif(sys.platform=='win32', reason="Does not work on Windows")
 
+
+def test_file_download_label_updates(page):
+
+    download = FileDownload(filename='f.txt', embed=False, callback=lambda: io.StringIO())
+
+    serve_component(page, download)
+
+    expect(page.locator('.bk-btn a')).to_have_text('Download f.txt')
+
+    download.filename = 'g.txt'
+
+    expect(page.locator('.bk-btn a')).to_have_text('Download g.txt')
 
 @not_windows
 def test_file_download_updates_when_navigating_between_dynamic_tabs(page):
@@ -39,7 +55,10 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page):
     download = download_info.value
     tmp = tempfile.NamedTemporaryFile(suffix='.txt')
     download.save_as(tmp.name)
-    assert tmp.file.read().decode('utf-8') == 'abc'
+    try:
+        assert tmp.file.read().decode('utf-8') == 'abc'
+    finally:
+        tmp.close()
 
     page.click('.bk-tab:not(.bk-active)')
     page.click('.bk-tab:not(.bk-active)')
@@ -55,4 +74,7 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page):
     download = download_info.value
     tmp = tempfile.NamedTemporaryFile(suffix='.txt')
     download.save_as(tmp.name)
-    assert tmp.file.read().decode('utf-8') == 'abcdef'
+    try:
+        assert tmp.file.read().decode('utf-8') == 'abcdef'
+    finally:
+        tmp.close()

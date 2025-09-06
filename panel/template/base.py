@@ -11,7 +11,7 @@ import uuid
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Literal, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar, Literal, cast,
 )
 
 import jinja2
@@ -26,14 +26,14 @@ from ..config import _base_config, config, panel_extension
 from ..io.document import init_doc
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
-from ..io.notifications import NotificationArea
+from ..io.notifications import NotificationArea, NotificationAreaBase
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, JS_VERSION, ResourceComponent, _env,
     component_resource_path, get_dist_path, loading_css, parse_template,
     resolve_custom_path, use_cdn,
 )
 from ..io.save import save
-from ..io.state import curdoc_locked, state
+from ..io.state import set_curdoc, state
 from ..layout import Column, GridSpec, ListLike
 from ..models.comm_manager import CommManager
 from ..pane import (
@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     from bokeh.server.contexts import BokehSessionContext
     from jinja2 import Template as _Template
     from pyviz_comms import Comm
+    from typing_extensions import Self
 
     from ..io.location import Location
     from ..io.resources import ResourcesType
@@ -97,13 +98,13 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     #############
 
     # pathlib.Path pointing to local CSS file(s)
-    _css: ClassVar[Path | str | list[Path | str] | None] = None
+    _css: ClassVar[list[Path | str]] = []
 
     # pathlib.Path pointing to local JS file(s)
     _js: ClassVar[Path | str | list[Path | str] | None] = None
 
     # External resources
-    _resources: ClassVar[dict[str, dict[str, str]]] = {
+    _resources = {
         'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}
     }
 
@@ -111,7 +112,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
     def __init__(
         self, template: str | _Template, items=None,
-        nb_template: Optional[str | _Template] = None, **params
+        nb_template: str | _Template | None = None, **params
     ):
         config_params = {
             p: v for p, v in params.items() if p in _base_config.param
@@ -186,13 +187,12 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         self._documents.remove(doc)
 
     def _init_doc(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
-        title: Optional[str] = None, notebook: bool = False,
-        location: bool | Location=True
+        self, doc: Document | None = None, comm: Comm | None = None,
+        title: str | None = None, notebook: bool = False,
+        location: bool | Location = True
     ):
         # Initialize document
-        document: Document = doc or curdoc_locked()
-        document = init_doc(document)
+        document = init_doc(doc or state.curdoc)
 
         self._documents.append(document)
         if document not in state._templates:
@@ -217,7 +217,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         # Add all render items to the document
         objs, models = [], []
         stylesheets, sizing_modes = {}, {}
-        tracked_models = set()
+        tracked_models: set[Model] = set()
         for name, (obj, tags) in self._render_items.items():
             # Render root without pre-processing
             with config.set(design=self.design):
@@ -235,6 +235,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 for sub in obj.select(Viewable):
                     submodel = sub._models.get(mref)
                     for stylesheet in getattr(sub, '_stylesheets', []):
+                        if isinstance(stylesheet, PurePath):
+                            stylesheet = str(stylesheet)
                         if not stylesheet.endswith('.css'):
                             continue
                         sts_name = f'extra_{os.path.basename(stylesheet)}'
@@ -339,8 +341,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         """
         Resolves the resources required for this template component.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cdn: bool | Literal['auto']
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
@@ -372,10 +374,10 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         )])
         for rname, res in self._design.resolve_resources(cdn).items():
             if isinstance(res, dict):
-                resource_types[rname].update(res)
+                resource_types[rname].update(res)  # type: ignore
             else:
-                resource_types[rname] += [
-                    r for r in res if res not in resource_types[rname]
+                resource_types[rname] += [  # type: ignore
+                    r for r in res if r not in resource_types[rname]  # type: ignore
                 ]
 
         for rname, js in self.config.js_files.items():
@@ -402,7 +404,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                     continue
                 elif scls._css is None:
                     break
-                tmpl_css = scls._css if isinstance(scls._css, list) else [scls._css]
+                tmpl_css = scls._css if isinstance(scls._css, list) else [scls._css]  # type: ignore
                 if css in tmpl_css:
                     tmpl_name = scls.__name__.lower()
 
@@ -410,7 +412,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = f'{dist_path}bundled/{tmpl_name}/{css_file}{version_suffix}'
             elif isurl(css):
-                css_files[f'base_{css_file}'] = css
+                css_files[f'base_{css_file}'] = cast("str", css)
             elif resolve_custom_path(self, css):
                 css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
 
@@ -432,23 +434,23 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / js_name).is_file():
                 js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
             elif isurl(js):
-                js_files[f'base_{js_name}'] = js
+                js_files[f'base_{js_name}'] = cast("str", js)
             elif resolve_custom_path(self, js):
                 js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
 
         return resource_types
 
     def save(
-        self, filename: str | os.PathLike | IO, title: Optional[str] = None,
+        self, filename: str | os.PathLike | IO, title: str | None = None,
         resources=None, embed: bool = False, max_states: int = 1000,
         max_opts: int = 3, embed_json: bool = False, json_prefix: str='',
-        save_path: str='./', load_path: Optional[str] = None
+        save_path: str='./', load_path: str | None = None
     ) -> None:
         """
         Saves Panel objects to file.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         filename: string or file-like object
            Filename to save the plot to
         title: string
@@ -480,14 +482,14 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         )
 
     def server_doc(
-        self, doc: Optional[Document] = None, title: str = None,
+        self, doc: Document | None = None, title: str | None = None,
         location: bool | Location = True
     ) -> Document:
         """
-        Returns a servable bokeh Document with the panel attached
+        Returns a servable Document with the template attached.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc : bokeh.Document (optional)
           The Bokeh Document to attach the panel to as a root,
           defaults to bokeh.io.curdoc()
@@ -500,20 +502,20 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         Returns
         -------
         doc : bokeh.Document
-          The Bokeh document the panel was attached to
+          The Bokeh document the panel was attached to.
         """
         return self._init_doc(doc, title=title, location=location)
 
     def servable(
-        self, title: Optional[str] = None, location: bool | 'Location' = True,
-        area: str = 'main', target: Optional[str] = None
-    ) -> 'BaseTemplate':
+        self, title: str | None = None, location: bool | Location = True,
+        area: str = 'main', target: str | None = None
+    ) -> Self:
         """
         Serves the template and returns self to allow it to display
         itself in a notebook context.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         title : str
           A string title to give the Document (if served as an app)
         location : boolean or panel.io.location.Location
@@ -530,9 +532,10 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
         Returns
         -------
-        The template
+        The template object
         """
-        if curdoc_locked().session_context and config.template:
+        doc = state.curdoc
+        if doc and doc.session_context and config.template:
             raise RuntimeError(
                 'Cannot mark template as servable if a global template '
                 'is defined. Either explicitly construct a template and '
@@ -546,8 +549,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         Iterates over the Template and any potential children in the
         applying the Selector.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         selector: type or callable or None
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
@@ -569,9 +572,13 @@ class TemplateActions(ReactiveHTML):
     as opening and closing a modal.
     """
 
-    open_modal = param.Integer(default=0)
+    open_modal = param.Integer(default=0, doc="""
+        The number of times the open modal action has been triggered.
+        This is used to trigger the open modal script.""")
 
-    close_modal = param.Integer(default=0)
+    close_modal = param.Integer(default=0, doc="""
+        The number of times the close modal action has been triggered.
+        This is used to trigger the close modal script.""")
 
     _template: ClassVar[str] = ""
 
@@ -620,7 +627,7 @@ class BasicTemplate(BaseTemplate):
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the modal""")
 
-    notifications = param.ClassSelector(class_=NotificationArea, constant=True, doc="""
+    notifications = param.ClassSelector(class_=NotificationAreaBase, constant=True, doc="""
         The NotificationArea instance attached to this template.
         Automatically added if config.notifications is set, but may
         also be provided explicitly.""")
@@ -629,7 +636,7 @@ class BasicTemplate(BaseTemplate):
         URI of logo to add to the header (if local file, logo is
         base64 encoded as URI). Default is '', i.e. not shown.""")
 
-    favicon = param.String(default=FAVICON_URL, doc="""
+    favicon = param.String(default=None, doc="""
         URI of favicon to add to the document head (if local file, favicon is
         base64 encoded as URI).""")
 
@@ -671,7 +678,7 @@ class BasicTemplate(BaseTemplate):
         Specifies the base URL for all relative URLs in a
         page. Default is '', i.e. not the domain.""")
 
-    base_target = param.ObjectSelector(default="_self",
+    base_target = param.Selector(default="_self",
         objects=["_blank", "_self", "_parent", "_top"], doc="""
         Specifies the base Target for all relative URLs in a page.""")
 
@@ -751,8 +758,8 @@ class BasicTemplate(BaseTemplate):
         self.modal.param.trigger('objects')
 
     def _init_doc(
-        self, doc: Optional[Document] = None, comm: Optional['Comm'] = None,
-        title: Optional[str]=None, notebook: bool = False, location: bool | Location = True
+        self, doc: Document | None = None, comm: Comm | None = None,
+        title: str | None=None, notebook: bool = False, location: bool | Location = True
     ) -> Document:
         title = self.title if self.title != self.param.title.default else title
         if self.busy_indicator:
@@ -762,6 +769,8 @@ class BasicTemplate(BaseTemplate):
             state._notifications[document] = self.notifications
         if self._design.theme.bokeh_theme:
             document.theme = self._design.theme.bokeh_theme
+        with set_curdoc(document):
+            config.design = type(self._design)
         return document
 
     def _update_vars(self, *args) -> None:
@@ -782,22 +791,32 @@ class BasicTemplate(BaseTemplate):
             img = _panel(self.logo)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of logo: {self.logo}.")
-            logo = img._b64(img._data(img.object))
+            imgdata = img._data(img.object)
+            if imgdata:
+                logo = img._b64(imgdata)
+            else:
+                raise ValueError(f"Could not embed logo {self.logo}.")
         else:
             logo = self.logo
-        if os.path.isfile(self.favicon):
+        if self.favicon and os.path.isfile(self.favicon):
             img = _panel(self.favicon)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
-            favicon = img._b64(img._data(img.object))
-        else:
-            if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
-                favicon = CDN_DIST + "images/favicon.ico"
+            imgdata = img._data(img.object)
+            if imgdata:
+                favicon = img._b64(imgdata)
             else:
-                favicon = self.favicon
+                raise ValueError(f"Could not embed favicon {self.favicon}.")
+        elif _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
+            favicon = CDN_DIST + "images/favicon.ico"
+        elif self.favicon:
+            favicon = self.favicon
+        else:
+            favicon = (f"{state.rel_path}/" if state.rel_path else "./") + "favicon.ico"
         self._render_variables['app_logo'] = logo
-        self._render_variables['app_favicon'] = favicon
-        self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
+        if favicon:
+            self._render_variables['app_favicon'] = favicon
+            self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width
@@ -942,7 +961,7 @@ class Template(BaseTemplate):
 
     def __init__(
         self, template: str | _Template, nb_template: str | _Template | None = None,
-        items: Optional[dict[str, Any]] = None, **params
+        items: dict[str, Any] | None = None, **params
     ):
         super().__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
@@ -953,13 +972,13 @@ class Template(BaseTemplate):
     # Public API
     #----------------------------------------------------------------
 
-    def add_panel(self, name: str, panel: Viewable, tags: list[str] = []) -> None:
+    def add_panel(self, name: str, panel: Any, tags: list[str] = []) -> None:
         """
         Add panels to the Template, which may then be referenced by
         the given name using the jinja2 embed macro.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name : str
           The name to refer to the panel by in the template
         panel : panel.Viewable
@@ -970,7 +989,10 @@ class Template(BaseTemplate):
                              'another panel. Ensure each panel '
                              'has a unique name by which it can be '
                              'referenced in the template.')
-        self._render_items[name] = (_panel(panel), tags)
+        rendered = _panel(panel)
+        if not isinstance(rendered, Viewable):
+            raise ValueError(f"Cannot add {type(panel).__name__!r} type")
+        self._render_items[name] = (rendered, tags)
         self._layout[0].object = repr(self) # type: ignore
 
     def add_variable(self, name: str, value: Any) -> None:
@@ -978,8 +1000,8 @@ class Template(BaseTemplate):
         Add parameters to the template, which may then be referenced
         by the given name in the Jinja2 template.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name : str
           The name to refer to the panel by in the template
         value : object

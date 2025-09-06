@@ -36,7 +36,7 @@ from .echarts import ECharts  # noqa
 from .equation import LaTeX  # noqa
 from .holoviews import HoloViews, Interactive  # noqa
 from .image import (  # noqa
-    GIF, ICO, JPG, PDF, PNG, SVG, Image, WebP,
+    AVIF, GIF, ICO, JPG, PDF, PNG, SVG, Image, WebP,
 )
 from .ipywidget import IPyLeaflet, IPyWidget, Reacton  # noqa
 from .markup import (  # noqa
@@ -62,6 +62,7 @@ from ..param import (  # noqa  # isort: skip
 __all__ = (
     "Alert",
     "Audio",
+    "AVIF",
     "Bokeh",
     "DataFrame",
     "DeckGL",

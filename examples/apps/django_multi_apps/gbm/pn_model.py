@@ -17,7 +17,7 @@ class GBM(param.Parameterized):
     refresh = pn.widgets.Button(name="Refresh", button_type='primary')
 
     def __init__(self, **params):
-        super(GBM, self).__init__(**params)
+        super().__init__(**params)
 
     # update the plot for every changes
     # @param.depends('mean', 'volatility', 'maturity', 'n_observations', 'n_simulations', watch=True)

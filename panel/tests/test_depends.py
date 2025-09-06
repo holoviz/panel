@@ -1,6 +1,8 @@
 import pytest
 
-from panel.depends import bind, transform_reference
+from param.parameterized import transform_reference
+
+from panel.depends import bind
 from panel.pane import panel
 from panel.param import ParamFunction
 from panel.widgets import IntSlider

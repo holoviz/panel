@@ -20,7 +20,6 @@ function extractClasses() {
     classesDict[cls] = deck[cls]
   }
   const carto = (window as any).CartoLibrary
-  console.log(carto)
   const layers = Object.keys(carto.CARTO_LAYERS).filter(x => x.endsWith("Layer"))
   for (const layer of layers) {
     classesDict[layer] = carto.CARTO_LAYERS[layer]
@@ -47,11 +46,12 @@ export class DeckGLPlotView extends LayoutDOMView {
   _map: any
   _layer_map: any
   _view_cb: any
+  _initialized: boolean = false
 
   override connect_signals(): void {
     super.connect_signals()
     const {data, mapbox_api_key, tooltip, configuration, layers, initialViewState, data_sources} = this.model.properties
-    this.on_change([mapbox_api_key, tooltip, configuration], () => this.render())
+    this.on_change([mapbox_api_key, tooltip, configuration], () => this.rerender_())
     this.on_change([data, initialViewState], () => this.updateDeck())
     this.on_change([layers], () => this._update_layers())
     this.on_change([data_sources], () => this._connect_sources(true))
@@ -193,9 +193,19 @@ export class DeckGLPlotView extends LayoutDOMView {
     this._view_cb(event)
   }
 
+  rerender_(): void {
+    // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
+    if (this.rerender) {
+      this.rerender()
+    } else {
+      this.render()
+      this.r_after_render()
+    }
+  }
+
   updateDeck(): void {
     if (!this.deckGL) {
-      this.render()
+      this.rerender_()
       return
     }
     const data = this.getData()
@@ -219,7 +229,9 @@ export class DeckGLPlotView extends LayoutDOMView {
       this.jsonConverter.mergeConfiguration(configuration)
       const props = this.jsonConverter.convert(jsonInput)
       const getTooltip = makeTooltip(tooltip, props.layers)
-      if (props.mapStyle && props.mapStyle.includes("carto")) {
+      if (props.mapStyle === null) {
+        props.map = null
+      } else if (props.mapStyle.includes("carto")) {
         this._map = new (window as any).maplibregl.Map({
           container,
           style: props.mapStyle,
@@ -268,14 +280,30 @@ export class DeckGLPlotView extends LayoutDOMView {
       })
     }
     this.shadow_el.appendChild(container)
+    this._initialized = false
   }
 
-  override after_layout(): void {
-    super.after_layout()
+  resize(): void {
+    if (this.deckGL == null) {
+      return
+    }
     this.deckGL.redraw(true)
     if (this._map) {
       this._map.resize()
     }
+  }
+
+  override after_layout(): void {
+    super.after_layout()
+    if (!this._initialized) {
+      this.resize()
+    }
+    this._initialized = true
+  }
+
+  override after_resize(): void {
+    super.after_resize()
+    this.resize()
   }
 }
 

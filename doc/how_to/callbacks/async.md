@@ -118,4 +118,4 @@ pn.Row(button, pane)
 
 ## Related Resources
 
-- See the related [How-to > Link Parameters with Callbacks API](../links/index.md) guides, including [How to > Create Low-Level Python Links Using `.watch`](../links/watchers.md).
+- See the related [How-to > Link Parameters with Callbacks API](../links/index) guides, including [How to > Create Low-Level Python Links Using `.watch`](../links/watchers).

@@ -56,12 +56,12 @@ INSTALLED_APPS = [
 ]
 ```
 
-Secondly we need to declare the `bokehjsdir` as part of the `STATICFILES_DIRS`:
+Secondly we need to declare the `bokehjs_path` as part of the `STATICFILES_DIRS`:
 
 ```python
-from bokeh.settings import bokehjsdir
+from bokeh.settings import bokehjs_path
 
-STATICFILES_DIRS = [bokehjsdir()]
+STATICFILES_DIRS = [bokehjs_path()]
 ```
 
 Now we need to add any templates we have:

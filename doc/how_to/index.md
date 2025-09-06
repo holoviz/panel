@@ -189,6 +189,13 @@ How to cache data across sessions and memoize the output of functions.
 How to improve the scalability of your Panel application.
 :::
 
+:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1 sd-animate-grow50` Best Practices
+:link: best_practices/index
+:link-type: doc
+
+A checklist of best practices for improving the development and user experience with Panel.
+:::
+
 :::{grid-item-card} {octicon}`shield-check;2.5em;sd-mr-1 sd-animate-grow50` Add authentication
 :link: authentication/index
 :link-type: doc

@@ -27,11 +27,11 @@ How to develop a Panel app in 3 simple steps
 
 - Run your app
 
-$ panel serve my_script.py --autoreload --show
+$ panel serve my_script.py --dev --show
 
 or
 
-$ panel serve my_notebook.ipynb --autoreload --show
+$ panel serve my_notebook.ipynb --dev --show
 
 The app will be available in your browser!
 
@@ -64,13 +64,14 @@ from .io import (  # noqa
 )
 from .layout import (  # noqa
     Accordion, Card, Column, Feed, FlexBox, FloatPanel, GridBox, GridSpec,
-    GridStack, HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
+    GridStack, HSpacer, Modal, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
 )
 from .pane import panel  # noqa
 from .param import Param, ReactiveExpr  # noqa
 from .template import Template  # noqa
 from .widgets import indicators, widget  # noqa
 
+from . import custom  # isort:skip noqa has to be after widgets
 from . import chat  # isort:skip noqa has to be after widgets
 
 __all__ = (
@@ -79,6 +80,7 @@ __all__ = (
     "Card",
     "chat",
     "Column",
+    "custom",
     "Feed",
     "FlexBox",
     "FloatPanel",
@@ -86,6 +88,7 @@ __all__ = (
     "GridSpec",
     "GridStack",
     "HSpacer",
+    "Modal",
     "Param",
     "ReactiveExpr",
     "Row",

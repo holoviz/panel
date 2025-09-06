@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 try:
     from langchain.callbacks.base import BaseCallbackHandler
@@ -108,7 +108,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self._reset_active()
         return super().on_llm_end(response, *args, **kwargs)
 
-    def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], *args, **kwargs):
+    def on_llm_error(self, error: Exception | KeyboardInterrupt, *args, **kwargs):
         return super().on_llm_error(error, *args, **kwargs)
 
     def on_agent_action(self, action: AgentAction, *args, **kwargs: Any) -> Any:
@@ -130,7 +130,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         return super().on_tool_end(output, *args, **kwargs)
 
     def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], *args, **kwargs
+        self, error: Exception | KeyboardInterrupt, *args, **kwargs
     ):
         return super().on_tool_error(error, *args, **kwargs)
 
@@ -146,7 +146,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         return super().on_chain_end(outputs, *args, **kwargs)
 
     def on_retriever_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+        self, error: Exception | KeyboardInterrupt, **kwargs: Any
     ) -> Any:
         """Run when Retriever errors."""
         return super().on_retriever_error(error, **kwargs)

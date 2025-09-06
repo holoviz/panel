@@ -56,6 +56,13 @@ For guides on running and configuring a Panel server see the [server how-to guid
 ![Ploomber Logo](../../_static/logos/ploomber.png)
 :::
 
+:::{grid-item-card} PY.CAFE
+:link: pycafe
+:link-type: doc
+
+![PY.CAFE Logo](../../_static/logos/pycafe.png)
+:::
+
 ::::
 
 ## Other Cloud Providers
@@ -74,4 +81,5 @@ gcp
 heroku
 huggingface
 ploomber
+pycafe
 ```

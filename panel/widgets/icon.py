@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, ClassVar, Mapping
+from collections.abc import Callable, Mapping
+from typing import ClassVar
 
 import param
 
@@ -125,6 +126,8 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
     }
 
     def __init__(self, **params):
+        if "active_icon" not in params:
+            params["active_icon"] = "check"
         click_handler = params.pop('on_click', None)
         super().__init__(**params)
         if click_handler:
@@ -138,8 +141,8 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
 
         The callback is given an `Event` argument declaring the number of clicks.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         callback: (Callable[[param.parameterized.Event], None])
             The function to run on click events. Must accept a positional `Event` argument
 

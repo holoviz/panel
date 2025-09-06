@@ -1,5 +1,3 @@
-
-
 from panel.io.document import unlocked
 from panel.io.state import set_curdoc
 from panel.tests.util import serve_and_request

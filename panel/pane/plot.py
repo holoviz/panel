@@ -6,12 +6,11 @@ from __future__ import annotations
 import re
 import sys
 
+from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import partial
 from io import BytesIO
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -94,7 +93,7 @@ class Bokeh(Pane):
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         self._track_overrides(*(e for e in events if e.name in Layoutable.param))
-        super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes']))
+        super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes', 'visible']))
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -162,8 +161,8 @@ class Bokeh(Pane):
             self._syncing_props = False
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if root is None:
             return self.get_root(doc, comm)
@@ -319,8 +318,8 @@ class Matplotlib(Image, IPyWidget):
         return self._img_type._transform_object(self, obj)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if not self.interactive:
             return self._img_type._get_model(self, doc, root, parent, comm)
@@ -401,7 +400,8 @@ class RGGPlot(PNG):
 
     width = param.Integer(default=400)
 
-    dpi = param.Integer(default=144, bounds=(1, None))
+    dpi = param.Integer(default=144, bounds=(1, None), doc="""
+        Scales the dpi of the ggplot figure.""")
 
     _rerender_params = PNG._rerender_params + ['object', 'dpi', 'width', 'height']
 
@@ -443,7 +443,7 @@ class Folium(HTML):
     The Folium pane wraps Folium map components.
     """
 
-    sizing_mode = param.ObjectSelector(default='stretch_width', objects=[
+    sizing_mode = param.Selector(default='stretch_width', objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 

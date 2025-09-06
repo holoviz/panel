@@ -11,9 +11,10 @@ import sys
 import traceback
 import urllib.parse as urlparse
 
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from types import ModuleType
-from typing import IO, Any, Callable
+from typing import IO, TYPE_CHECKING, Any
 
 import bokeh.command.util
 
@@ -26,10 +27,14 @@ from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
 from ..config import config
+from ..util import BOKEH_GE_3_8
 from .mime_render import MIME_RENDERERS
 from .profile import profile_ctx
 from .reload import record_modules
-from .state import state
+from .state import set_curdoc, state
+
+if TYPE_CHECKING:
+    from nbformat import NotebookNode
 
 log = logging.getLogger('panel.io.handlers')
 
@@ -51,7 +56,7 @@ def _patch_ipython_display():
         pass
 
 @contextmanager
-def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> dict[str, Any]:
+def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> Iterator[None]:
     import bokeh.io as io
     old: dict[str, Any] = {}
     for f in CodeHandler._io_functions:
@@ -102,7 +107,7 @@ def extract_code(
     inblock = False
     block_opener = None
     title = None
-    markdown = []
+    markdown: list[str] = []
     out = []
     while True:
         line = filehandle.readline()
@@ -176,7 +181,7 @@ def capture_code_cell(cell):
 
     if not parses:
         # Skip cell if it cannot be parsed
-        log.warn(
+        log.warning(
             "The following cell did not contain valid Python syntax "
             f"and was skipped:\n\n{cell['source']}"
         )
@@ -222,6 +227,10 @@ def autoreload_handle_exception(handler, module, e):
         handle_exception(handler, e)
         return
 
+    # Print to console
+    traceback.print_exception(e)
+
+    from ..layout import Column
     from ..pane import Alert
 
     # Clean up module
@@ -231,13 +240,88 @@ def autoreload_handle_exception(handler, module, e):
     except ValueError:
         pass
 
-    # Serve error
+    # Format error message and traceback
     e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
     tb = html.escape(traceback.format_exc()).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-    Alert(
-        f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
-        alert_type='danger', margin=5, sizing_mode='stretch_width'
-    ).servable()
+
+    # Create full error text for copying
+    full_error_text = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+
+    # Create copy button using ButtonIcon with absolute positioning
+    copy_button = _create_copy_button(full_error_text)
+
+    # Create the main error alert with relative positioning
+    error_alert = Alert(
+        f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto; margin-top: 20px;">{tb}</pre>',
+        alert_type='danger',
+        margin=5,
+        sizing_mode='stretch_width',
+        styles={'position': 'relative'}
+    )
+
+    # Create container with the alert and positioned button
+    error_container = Column(
+        error_alert,
+        copy_button,
+        margin=0,
+        sizing_mode='stretch_width',
+        styles={'position': 'relative'}
+    )
+
+    error_container.servable()
+
+def _create_copy_button(full_error_text):
+    from ..widgets import ButtonIcon
+    copy_button = ButtonIcon(
+        icon="clipboard",
+        active_icon="check",
+        # description="Copy error to clipboard", # disabled because it displays outside window
+        size="1.5em",
+        toggle_duration=2000,
+        styles={
+            'position': 'absolute',
+            'top': '7px',
+            'right': '3px',
+            'z-index': '1000',
+            'background-color': 'var(--panel-surface-color)',
+            'color': 'var(--panel-on-surface-color)',
+            'border-radius': '3px',
+            'padding': '2px',
+        }, height=25, width=23,
+    )
+
+    # Add JavaScript callback to handle clipboard copy
+    copy_button.js_on_click(args={'error_text': full_error_text}, code="""
+    const errorText = error_text;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(errorText).catch(err => {
+            console.error('Failed to copy to clipboard:', err);
+            // Fallback method
+            fallbackCopyTextToClipboard(errorText);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(errorText);
+    }
+    function fallbackCopyTextToClipboard(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+        }
+        document.body.removeChild(textArea);
+    }
+    """)
+
+    return copy_button
 
 def run_app(handler, module, doc, post_run=None, allow_empty=False):
     try:
@@ -249,7 +333,7 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
     sessions = []
 
     def post_check():
-        newdoc = curdoc()
+        newdoc = state.curdoc
         # Do not let curdoc track modules when autoreload is enabled
         # otherwise it will erroneously complain that there is
         # a memory leak
@@ -261,30 +345,33 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
             raise RuntimeError(f"{handler._origin} at '{handler._runner.path}' replaced the output document")
 
     try:
-        state._launching.append(doc)
-        with _monkeypatch_io(handler._loggers):
-            with patch_curdoc(doc):
-                with profile_ctx(config.profiler) as sessions:
-                    with record_modules(handler=handler):
-                        runner = handler._runner
-                        if runner.error:
-                            from ..pane import Alert
-                            Alert(
-                                f'<b>{runner.error}</b>\n<pre style="overflow-y: auto">{runner.error_detail}</pre>',
-                                alert_type='danger', margin=5, sizing_mode='stretch_width'
-                            ).servable()
-                        else:
-                            handler._runner.run(module, post_check)
-                            if post_run:
-                                post_run()
-                if not doc.roots and not allow_empty and config.autoreload:
-                    from ..pane import Alert
-                    Alert(
-                        ('<b>Application did not publish any contents</b>\n\n<span>'
-                        'Ensure you have marked items as servable or added models to '
-                        'the bokeh document manually.'),
-                        alert_type='danger', margin=5, sizing_mode='stretch_width'
-                    ).servable()
+        state._launching.add(doc)
+        with _monkeypatch_io(handler._loggers), patch_curdoc(doc), set_curdoc(doc), profile_ctx(config.profiler) as sessions, record_modules(handler=handler):
+            runner = handler._runner
+            if runner.error:
+                from ..pane import Alert
+                Alert(
+                    f'<b>{runner.error}</b>\n<pre style="overflow-y: auto">{runner.error_detail}</pre>',
+                    alert_type='danger', margin=5, sizing_mode='stretch_width'
+                ).servable()
+            else:
+                handler._runner.run(module, post_check)
+                if post_run:
+                    post_run()
+            if not doc.roots and not allow_empty and config.autoreload and doc not in state._templates:
+                from ..pane import Alert
+                Alert(
+                    ('<b>Application did not publish any contents</b>\n\n<span>'
+                     'Ensure you have marked items as servable or added models to '
+                     'the bokeh document manually.'),
+                    alert_type='danger', margin=5, sizing_mode='stretch_width'
+                ).servable()
+            if BOKEH_GE_3_8:
+                doc.config.update(
+                    reconnect_session=config.reconnect == True,
+                    notifications=None,
+                    notify_connection_status=False
+                )
     finally:
         if config.profiler:
             try:
@@ -297,12 +384,15 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
         if old_doc is not None:
             bk_set_curdoc(old_doc)
 
-def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None = None):
+def parse_notebook(
+    filename: str | os.PathLike | IO,
+    preamble: list[str] | None = None
+) -> tuple[NotebookNode, str, dict[str, Any]]:
     """
     Parses a notebook on disk and returns a script.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: str | os.PathLike
       The notebook file to parse.
     preamble: list[str]
@@ -320,7 +410,7 @@ def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None 
     nbconvert = import_required('nbconvert', 'The Panel notebook application handler requires nbconvert to be installed.')
     nbformat = import_required('nbformat', 'The Panel notebook application handler requires Jupyter Notebook to be installed.')
 
-    class StripMagicsProcessor(nbconvert.preprocessors.Preprocessor):
+    class StripMagicsProcessor(nbconvert.preprocessors.Preprocessor):  # type: ignore
         """
         Preprocessor to convert notebooks to Python source while stripping
         out all magics (i.e IPython specific syntax).
@@ -376,8 +466,8 @@ def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None 
         elif cell['cell_type'] == 'markdown':
             md = ''.join(cell['source']).replace('"', r'\"')
             code.append(f'_pn__state._cell_outputs[{cell_id!r}].append("""{md}""")')
-    code = '\n'.join(code)
-    return nb, code, cell_layouts
+    code_string = '\n'.join(code)
+    return nb, code_string, cell_layouts
 
 #---------------------------------------------------------------------
 # Handler classes
@@ -429,10 +519,22 @@ class PanelCodeHandler(CodeHandler):
     - Track modules loaded during app execution to enable autoreloading
     """
 
-    def __init__(self, *, source: str, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        source: str | None = None,
+        filename: PathLike, argv: list[str] = [],
+        package: ModuleType | None = None,
+        runner: PanelCodeRunner | None = None
+    ) -> None:
         Handler.__init__(self)
 
-        self._runner = PanelCodeRunner(source, filename, argv, package=package)
+        if runner:
+            self._runner = runner
+        elif source is not None:
+            self._runner = PanelCodeRunner(source, filename, argv, package=package)
+        else:
+            raise ValueError("Must provide source code to PanelCodeHandler")
 
         self._loggers = {}
         for f in PanelCodeHandler._io_functions:
@@ -445,7 +547,7 @@ class PanelCodeHandler(CodeHandler):
         # TODO should fix invalid URL characters
         return '/' + os.path.splitext(os.path.basename(self._runner.path))[0]
 
-    def modify_document(self, doc: 'Document'):
+    def modify_document(self, doc: Document):
         if config.autoreload:
             path = self._runner.path
             argv = self._runner._argv
@@ -468,7 +570,7 @@ class PanelCodeHandler(CodeHandler):
 
         run_app(self, module, doc)
 
-CodeHandler.modify_document = PanelCodeHandler.modify_document
+CodeHandler.modify_document = PanelCodeHandler.modify_document  # type: ignore
 
 
 class ScriptHandler(PanelCodeHandler):
@@ -492,7 +594,7 @@ class ScriptHandler(PanelCodeHandler):
 
         super().__init__(source=source, filename=filename, argv=argv, package=package)
 
-bokeh.application.handlers.directory.ScriptHandler = ScriptHandler
+bokeh.application.handlers.directory.ScriptHandler = ScriptHandler  # type: ignore
 
 
 class MarkdownHandler(PanelCodeHandler):
@@ -579,8 +681,8 @@ class NotebookHandler(PanelCodeHandler):
         found in the notebook and lays them out according to the
         cell metadata (if present).
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         doc (Document)
             A ``Document`` to render the template into
         path (str):
@@ -657,8 +759,8 @@ class NotebookHandler(PanelCodeHandler):
     def modify_document(self, doc: Document) -> None:
         """Run Bokeh application code to update a ``Document``
 
-        Arguments
-        ----------
+        Parameters
+        -----------
         doc (Document) : a ``Document`` to update
         """
         path = self._runner._path
@@ -720,4 +822,4 @@ class NotebookHandler(PanelCodeHandler):
             json.dump(nb_layout, f)
         self._stale = True
 
-bokeh.application.handlers.directory.NotebookHandler = NotebookHandler
+bokeh.application.handlers.directory.NotebookHandler = NotebookHandler  # type: ignore

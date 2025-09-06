@@ -9,7 +9,7 @@ function sendPatch(patch, buffers, msg_id) {
 }
 
 async function startApplication() {
-  console.log("Loading pyodide!");
+  console.log("Loading pyodide...");
   self.postMessage({type: 'status', msg: 'Loading pyodide'})
   self.pyodide = await loadPyodide();
   self.pyodide.globals.set("sendPatch", sendPatch);
@@ -22,29 +22,23 @@ async function startApplication() {
     self.pyodide.unpackArchive(zipBinary, "zip");
   }
   await self.pyodide.loadPackage("micropip");
-  self.postMessage({type: 'status', msg: `Installing packages`});
-  // a finegrained approach installing dependencies one after another with status updates was implemented previously
-  // it somehow did not resolve previously installed dependencies correctly
+  self.postMessage({type: 'status', msg: `Installing environment`})
   try {
-    await pyodide.runPythonAsync(`
-    import micropip
-    await micropip.install([{{ env_spec }}]);
+    await self.pyodide.runPythonAsync(`
+      import micropip
+      await micropip.install([{{ env_spec }}]);
     `);
   } catch(e) {
     console.log(e)
     self.postMessage({
       type: 'status',
       msg: `Error while installing packages`
-  });
+    });
   }
-  console.log("Packages loaded!");
+  console.log("Environment loaded!");
   self.postMessage({type: 'status', msg: 'Executing code'})
-  const code = `
-  {{ code }}
-  `
-
   try {
-    const [docs_json, render_items, root_ids] = await self.pyodide.runPythonAsync(code)
+    const [docs_json, render_items, root_ids] = await self.pyodide.runPythonAsync(`{{ code }}`)
     self.postMessage({
       type: 'render',
       docs_json: docs_json,

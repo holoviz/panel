@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pathlib
 
+from collections.abc import Callable
+
 import param
 
 from bokeh.themes import Theme as _BkTheme
@@ -10,7 +12,7 @@ from ..config import config
 from ..io.resources import CDN_DIST
 from ..layout import Accordion
 from ..reactive import ReactiveHTML
-from ..viewable import Viewable
+from ..viewable import Child, Viewable
 from ..widgets import Tabulator
 from ..widgets.indicators import Dial, Number, String
 from .base import (
@@ -137,9 +139,11 @@ class FastWrapper(ReactiveHTML):
     using the Fast design system have access to the Fast CSS variables.
     """
 
-    object = param.ClassSelector(class_=Viewable, allow_refs=False)
+    object = Child(doc="""
+        The Panel component to wrap with the Fast design provider.""")
 
-    style = param.ClassSelector(class_=FastStyle)
+    style = param.ClassSelector(class_=FastStyle, doc="""
+        The style to apply to the Fast design provider""")
 
     _template = '<div id="fast-wrapper" class="fast-wrapper">${object}</div>'
 
@@ -169,6 +173,10 @@ class FastWrapper(ReactiveHTML):
         """
     }
 
+    def select(
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> list[Viewable]:
+        return [] if self.object is None else self.object.select(selector)
 
 DEFAULT_STYLE = FastStyle()
 

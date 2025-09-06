@@ -7,14 +7,19 @@ import bokeh
 from packaging.version import Version
 
 from panel.config import config, panel_extension as extension
+from panel.custom import JSComponent
 from panel.io.resources import (
-    CDN_DIST, DIST_DIR, JS_VERSION, PANEL_DIR, Resources, resolve_custom_path,
+    CDN_DIST, DIST_DIR, JS_VERSION, PANEL_DIR, Resources,
+    component_resource_path, resolve_custom_path, resolve_resource_cdn,
     resolve_stylesheet, set_resource_mode,
 )
-from panel.io.state import set_curdoc
+from panel.io.state import set_curdoc, state
 from panel.models.tabulator import TABULATOR_VERSION
 from panel.theme.native import Native
+from panel.util import edit_readonly
 from panel.widgets import Button
+
+from ..conftest import TEST_DIR
 
 bokeh_version = Version(bokeh.__version__)
 if bokeh_version.is_devrelease or bokeh_version.is_prerelease:
@@ -44,6 +49,7 @@ def test_resources_cdn():
     resources = Resources(mode='cdn', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
+        f'https://cdn.holoviz.org/panel/{JS_VERSION}/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{bokeh_version}.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-gl-{bokeh_version}.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-widgets-{bokeh_version}.min.js',
@@ -55,6 +61,7 @@ def test_resources_server_absolute():
     resources = Resources(mode='server', absolute=True, minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
+        'http://localhost:5006/static/extensions/panel/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
         'http://localhost:5006/static/js/bokeh.min.js',
         'http://localhost:5006/static/js/bokeh-gl.min.js',
         'http://localhost:5006/static/js/bokeh-widgets.min.js',
@@ -66,6 +73,7 @@ def test_resources_server():
     resources = Resources(mode='server', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
+        'static/extensions/panel/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js',
         'static/js/bokeh.min.js',
         'static/js/bokeh-gl.min.js',
         'static/js/bokeh-widgets.min.js',
@@ -84,7 +92,7 @@ def test_resources_model_server(document):
     with set_resource_mode('server'):
         with set_curdoc(document):
             extension('tabulator')
-            assert resources.js_files[:2] == [
+            assert resources.js_files[1:3] == [
                 f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
                 'static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
@@ -97,12 +105,12 @@ def test_resources_model_cdn(document):
     with set_resource_mode('cdn'):
         with set_curdoc(document):
             extension('tabulator')
-            assert resources.js_files[:2] == [
+            assert resources.js_files[1:3] == [
                 f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
                 f'{CDN_DIST}bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
-                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
+                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css'
             ]
 
 def test_resources_model_inline(document):
@@ -141,8 +149,8 @@ def test_resources_reactive_html_cdn(document):
                 f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-all.js'
             ]
             assert resources.css_files == [
-                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css?v={JS_VERSION}',
-                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css?v={JS_VERSION}'
+                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css',
+                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css'
             ]
 
 def test_resources_reactive_html_inline(document):
@@ -208,3 +216,41 @@ def test_resolve_stylesheet_long_css():
 }
 """
     assert resolve_stylesheet(cls, stylesheet, "_stylesheets")==stylesheet
+
+def test_resources_global_loading_indicator_server():
+    resources = Resources(mode='server')
+    with config.set(global_loading_spinner=True):
+        assert len(resources.css_raw) == 2
+        assert resources.css_raw[0].count('static/extensions/panel/assets') == 5
+
+def test_resources_global_loading_indicator_cdn():
+    resources = Resources(mode='cdn')
+    with config.set(global_loading_spinner=True):
+        assert len(resources.css_raw) == 2
+        assert resources.css_raw[0].count('https://cdn.holoviz.org/panel/') == 5
+        assert resources.css_raw[0].count('/dist/assets/') == 5
+
+def test_component_resource_path_ext_dir():
+    assert component_resource_path(
+        Button, '_stylesheets', DIST_DIR / 'css' / 'button.css'
+    ) == 'static/extensions/panel/css/button.css'
+
+def test_component_resource_path_ext_dir_rel_path():
+    with edit_readonly(state):
+        with state.param.update(_rel_path='..'):
+            assert component_resource_path(
+                Button, '_stylesheets', DIST_DIR / 'css' / 'button.css'
+            ) == '../static/extensions/panel/css/button.css'
+
+def test_resolve_resource_cdn(panel_test_cdn):
+    assert resolve_resource_cdn(TEST_DIR / 'assets' / 'custom.css') == 'https://panel-test.holoviz.org/assets/custom.css'
+
+def test_resolve_resource_cdn_custom_esm(panel_test_cdn):
+
+    class CustomESM(JSComponent):
+
+        __css__ = [str(TEST_DIR / 'assets' / 'custom.css')]
+
+    resources = Resources(mode='cdn')
+
+    assert resources.css_files == ['https://panel-test.holoviz.org/assets/custom.css']

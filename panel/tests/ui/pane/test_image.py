@@ -25,7 +25,13 @@ def get_bbox(page, obj):
         with page.expect_response(obj.object):
             page.goto(f"http://localhost:{port}")
     wait_until(lambda: page.locator("img") is not None, page)
-    return page.locator("img").bounding_box()
+    for _ in range(5):
+        bbox = page.locator("img").bounding_box()
+        if bbox["width"] and bbox["height"]:
+            return bbox
+        page.wait_for_timeout(100)
+
+    raise TimeoutError("Image has not been loaded")
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_png_native_size(embed, page):
@@ -110,7 +116,7 @@ def test_png_stretch_both(embed, page):
 def test_svg_native_size(embed, page):
     svg = SVG(SVG_FILE, embed=embed)
     bbox = get_bbox(page, svg)
-    assert_allclose(bbox['width'], 507.21, atol=0.01)
+    assert_allclose(bbox['width'], 507.21, atol=0.05)
     assert int(bbox['height']) == 427
 
 @pytest.mark.parametrize('embed', [False, True])

@@ -11,12 +11,12 @@ import pytest
 try:
     import vtk
 except Exception:
-    vtk = None
+    vtk = None  # type: ignore
 
 try:
     import pyvista as pv
 except Exception:
-    pv = None
+    pv = None  # type: ignore
 
 from bokeh.models import ColorBar
 

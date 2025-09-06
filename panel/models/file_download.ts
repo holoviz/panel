@@ -38,6 +38,7 @@ export class FileDownloadView extends InputWidgetView {
 
   anchor_el: HTMLAnchorElement
   button_el: HTMLButtonElement
+  label_el: Text
   declare input_el: HTMLInputElement  // HACK: So this.input_el.id = "input" can be set in Bokeh 3.4
   _downloadable: boolean = false
   _click_listener: any
@@ -101,8 +102,9 @@ export class FileDownloadView extends InputWidgetView {
       this.anchor_el.appendChild(separator)
       this.icon_view.render()
     }
+    this.label_el = document.createTextNode(this.model.label)
+    this.anchor_el.appendChild(this.label_el)
     this._update_button_style()
-    this._update_label()
 
     // Changing the disabled property calls render() so it needs to be handled here.
     // This callback is inherited from ControlView in bokehjs.
@@ -201,8 +203,7 @@ export class FileDownloadView extends InputWidgetView {
   }
 
   _update_label(): void {
-    const label = document.createTextNode(this.model.label)
-    this.anchor_el.appendChild(label)
+    this.label_el.data = this.model.label
   }
 
   _update_button_style(): void {

@@ -17,7 +17,7 @@ from ipywidgets._version import __protocol_version__
 from ipywidgets.widgets.widget import _remove_buffers
 
 # Stop ipywidgets_bokeh from patching the kernel
-ipykernel.kernelbase.Kernel._instance = ''
+ipykernel.kernelbase.Kernel._instance = ''  # type: ignore
 
 from ipywidgets_bokeh.kernel import (
     BokehKernel, SessionWebsocket, WebsocketStream,
@@ -33,7 +33,7 @@ from .state import set_curdoc, state
 try:
     from ipykernel.comm.comm import BaseComm as _IPyComm
 except Exception:
-    from ipykernel.comm.comm import Comm as _IPyComm
+    from ipykernel.comm.comm import Comm as _IPyComm  # type: ignore
 
 try:
     # Support for ipywidgets>=8.0.5
@@ -46,7 +46,7 @@ try:
 
     comm.create_comm = lambda *args, **kwargs: TempComm(target_name='panel-temp-comm', primary=False)
 except Exception:
-    comm = None
+    comm = None  # type: ignore
 
 def _get_kernel(cls=None, doc=None):
     doc = doc or state.curdoc
@@ -90,8 +90,8 @@ def _on_widget_constructed(widget, doc=None):
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
     try:
+        _IPyComm.kernel = kernel
         widget.comm = _IPyComm(**args)
-        widget.comm.kernel = kernel
     except Exception as e:
         if 'PANEL_IPYWIDGET' not in os.environ:
             raise e
@@ -192,7 +192,7 @@ class PanelKernel(Kernel):
     implementation_version = __version__
     banner = 'banner'
 
-    shell_stream = Any(ShellStream(), allow_none=True)
+    shell_stream = Any(ShellStream(), allow_none=True)  # type: ignore
 
     def __init__(self, key=None, document=None):
         super().__init__()
@@ -233,5 +233,5 @@ class PanelKernel(Kernel):
 # Patch kernel and widget objects
 _ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance
 if isinstance(ipykernel.kernelbase.Kernel._instance, (BokehKernel, str)):
-    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)
+    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)  # type: ignore
 Widget.on_widget_constructed(_on_widget_constructed)

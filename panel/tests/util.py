@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import http.server
+import json
 import os
 import platform
 import re
+import socket
 import subprocess
 import sys
 import time
@@ -21,6 +25,7 @@ from packaging.version import Version
 
 import panel as pn
 
+from panel.io.compile import check_cli_tool
 from panel.io.server import serve
 from panel.io.state import state
 
@@ -28,37 +33,42 @@ from panel.io.state import state
 # Will begin to fail again when the first rc is released.
 pnv = Version(pn.__version__)
 
+not_osx = pytest.mark.skipif(sys.platform == 'darwin', reason="Sometimes fails on OSX")
+not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
+
 try:
     import holoviews as hv
-    hv_version = Version(hv.__version__)
+    hv_version: Version | None = Version(hv.__version__)
 except Exception:
-    hv, hv_version = None, None
-hv_available = pytest.mark.skipif(hv is None or hv_version < Version('1.13.0a23'),
+    hv, hv_version = None, None  # type: ignore
+hv_available = pytest.mark.skipif(hv_version is None or hv_version < Version('1.13.0a23'),
                                   reason="requires holoviews")
 
 try:
     import matplotlib as mpl
     mpl.use('Agg')
 except Exception:
-    mpl = None
+    mpl = None  # type: ignore
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 
 try:
     import streamz
 except Exception:
-    streamz = None
+    streamz = None  # type: ignore
 streamz_available = pytest.mark.skipif(streamz is None, reason="requires streamz")
 
 try:
     import jupyter_bokeh
 except Exception:
-    jupyter_bokeh = None
+    jupyter_bokeh = None  # type: ignore
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
 
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
 ON_POSIX = 'posix' in sys.builtin_module_names
 
 linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
+unix_only = pytest.mark.skipif(platform.system() == 'Windows', reason="Only supported on unix-like systems")
+reverse_proxy_available = pytest.mark.skipif(not check_cli_tool('caddy'), reason="No reverse proxy available")
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
@@ -151,6 +161,9 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
     # Hide this function traceback from the pytest output if the test fails
     __tracebackhide__ = True
 
+    if page:
+        page.wait_for_load_state('networkidle')
+
     start = time.time()
 
     def timed_out():
@@ -165,7 +178,7 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
             result = fn()
         except AssertionError as e:
             if timed_out():
-                raise TimeoutError(timeout_msg) from e
+                raise TimeoutError(f"{timeout_msg}: {e}") from e
         else:
             if result not in (None, True, False):
                 raise ValueError(
@@ -220,6 +233,9 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
     # Hide this function traceback from the pytest output if the test fails
     __tracebackhide__ = True
 
+    if page:
+        await page.wait_for_load_state('networkidle')
+
     start = time.time()
 
     def timed_out():
@@ -237,6 +253,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
         except AssertionError as e:
             if timed_out():
                 raise TimeoutError(timeout_msg) from e
+            raise e
         else:
             if result not in (None, True, False):
                 raise ValueError(
@@ -271,38 +288,74 @@ def get_ctrl_modifier():
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
 
 
-def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
+def get_open_ports(n=1):
+    sockets,ports = [], []
+    for _ in range(n):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('127.0.0.1', 0))
+        ports.append(s.getsockname()[1])
+        sockets.append(s)
+    for s in sockets:
+        s.close()
+    return tuple(ports)
+
+
+def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs):
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
-    serve(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
+    if serve_and_wait.server_implementation == 'fastapi':
+        from panel.io.fastapi import serve as serve_app
+        port = port or get_open_ports()[0]
+    else:
+        serve_app = serve
+    if proxy:
+        kwargs['websocket_origin'] = [f'localhost:{proxy}']
+    serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
-    port = server.port
+    if proxy:
+        port = proxy
+    elif serve_and_wait.server_implementation == 'fastapi':
+        port = port
+    else:
+        port = server.port
     wait_for_server(port, prefix=prefix)
+    if page:
+        page.wait_for_function("document.readyState === 'complete'", timeout=5000)
+        page.wait_for_load_state('networkidle')
     return port
 
+serve_and_wait.server_implementation = 'tornado'
 
 def serve_component(page, app, suffix='', wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
     port = serve_and_wait(app, page, **kwargs)
-    page.goto(f"http://localhost:{port}{suffix}")
+    page.goto(f"http://localhost:{port}{suffix}", wait_until="domcontentloaded")
 
     if wait:
         wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
 
+    if page and wait:
+        page.wait_for_function("document.readyState === 'complete'", timeout=5000)
+        page.wait_for_load_state('networkidle')
     return msgs, port
 
 
-def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
-    port = serve_and_wait(app, port=port, **kwargs)
-    reqs = [requests.get(f"http://localhost:{port}{suffix}") for i in range(n)]
-    return reqs[0] if len(reqs) == 1 else reqs
+def serve_and_request(app, suffix="", n=1, port=None, proxy=None, **kwargs):
+    port = serve_and_wait(app, port=port, proxy=proxy, **kwargs)
+    if proxy:
+        port = proxy
+    reqs = [r for _ in range(n) if (r := requests.get(f"http://localhost:{port}{suffix}")).ok]
+    assert len(reqs) == n, "Not all requests were successful"
+    return reqs[0] if n == 1 else reqs
 
 
 def wait_for_server(port, prefix=None, timeout=3):
     start = time.time()
     prefix = prefix or ""
-    url = f"http://localhost:{port}{prefix}/liveness"
+    if not prefix.endswith('/'):
+        prefix += '/'
+    url = f"http://localhost:{port}{prefix}liveness"
     while True:
         try:
             if requests.get(url).ok:
@@ -316,11 +369,11 @@ def wait_for_server(port, prefix=None, timeout=3):
 
 @contextlib.contextmanager
 def run_panel_serve(args, cwd=None):
-    cmd = [sys.executable, "-m", "panel", "serve"] + args
+    cmd = [sys.executable, "-m", "panel", "serve", *map(str, args)]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd, close_fds=ON_POSIX)
     try:
         yield p
-    except Exception as e:
+    except BaseException as e:
         p.terminate()
         p.wait()
         print("An error occurred: %s", e)  # noqa: T201
@@ -346,7 +399,7 @@ class NBSR:
         '''
 
         self._s = stream
-        self._q = Queue()
+        self._q: Queue = Queue()
 
         def _populateQueue(stream, queue):
             '''
@@ -370,26 +423,34 @@ class NBSR:
         except Empty:
             return None
 
-def wait_for_port(stdout):
-    nbsr = NBSR(stdout)
+def wait_for_regex(stdout, regex, count=1, return_output=False):
+    if isinstance(stdout, NBSR):
+        nbsr = stdout
+    else:
+        nbsr = NBSR(stdout)
     m = None
-    output = []
-    for _ in range(20):
+    output, found = [], []
+    for _ in range(30):
         o = nbsr.readline(0.5)
         if not o:
             continue
         out = o.decode('utf-8')
         output.append(out)
-        m = APP_PATTERN.search(out)
+        m = regex.search(out)
         if m is not None:
+            found.append(m.group(1))
+        if len(found) == count:
             break
-    if m is None:
+    if len(found) < count:
         output = '\n    '.join(output)
         pytest.fail(
             "No matching log line in process output, following output "
             f"was captured:\n\n   {output}"
         )
-    return int(m.group(1))
+    return (found, output) if return_output else found
+
+def wait_for_port(stdout):
+    return int(wait_for_regex(stdout, APP_PATTERN)[0])
 
 def write_file(content, file_obj):
     file_obj.write(content)
@@ -405,8 +466,8 @@ def http_serve_directory(directory=".", port=0):
     conditions when trying to bind to an open port that turns out not to be
     free after all. The hostname is always "localhost".
 
-    Arguments
-    ----------
+    Parameters
+    -----------
     directory : str, optional
         The directory to server files from. Defaults to the current directory.
     port : int, optional
@@ -434,7 +495,7 @@ def http_serve_directory(directory=".", port=0):
     httpd.timeout = 0.5
     httpd.server_bind()
 
-    address = "http://%s:%d" % (httpd.server_name, httpd.server_port)
+    address = f"http://{httpd.server_name}:{httpd.server_port}"
 
     httpd.server_activate()
 
@@ -455,3 +516,65 @@ class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
         self.send_header('Cross-Origin-Embedder-Policy', 'credentialless')
         http.server.SimpleHTTPRequestHandler.end_headers(self)
+
+
+@contextlib.contextmanager
+def reverse_proxy(port=None, proxy_port=None):
+    if port is None and proxy_port is None:
+        port, proxy_port = get_open_ports(2)
+    elif proxy_port is None:
+        proxy_port, = get_open_ports(1)
+    elif port is None:
+        port, = get_open_ports(1)
+    headers = {
+        "request": {
+            "set": {
+                "Connection": ["Upgrade"],
+                "Upgrade": ["websocket"]
+            }
+        }
+    }
+    route_config = {
+        "match": [
+            {"path": ["/proxy/*"]},
+            {"path_regexp": {
+                "name": "proxy_path",
+                "pattern": "^/proxy/([^/]+)"
+            }}
+        ],
+        "handle": [
+            {"handler": "rewrite", "strip_path_prefix": "/proxy"},
+            {"handler": "reverse_proxy", "upstreams": [{"dial": f"localhost:{port}"}]}
+        ]
+    }
+    ws_config = {
+        "match": [
+            {"path_regexp": {
+                "name": "ws_path",
+                "pattern": "^/proxy/([^/]+)/ws"
+            }}
+        ],
+        "handle": [
+            {"handler": "rewrite", "strip_path_prefix": "/proxy"},
+            {"handler": "reverse_proxy", "upstreams": [{"dial": f"localhost:{port}"}], "headers": headers}
+        ]
+    }
+    proxy_config = {
+        "listen": [f":{proxy_port}"],
+        "routes": [route_config, ws_config]
+    }
+    config = {
+        "admin": {"disabled": True},
+        "apps": {"http": {"servers": {"srv0": proxy_config}}},
+    }
+    process = subprocess.Popen(
+        ['caddy', 'run', '--config', '-'],
+        stdin=subprocess.PIPE, close_fds=ON_POSIX, text=True
+    )
+    process.stdin.write(json.dumps(config))
+    process.stdin.close()
+    try:
+        yield port, proxy_port
+    finally:
+        process.terminate()
+        process.wait()

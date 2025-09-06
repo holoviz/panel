@@ -62,7 +62,7 @@ def test_texteditor_enter_value(page):
     wait_until(lambda: widget.value == '<p>test</p>', page)
 
 
-def test_texteditor_regression_copy_paste(page):
+def test_texteditor_regression_copy_paste(page, browser):
     # https://github.com/holoviz/panel/issues/5545
     widget = TextEditor()
     html = HTML('test')
@@ -77,7 +77,13 @@ def test_texteditor_regression_copy_paste(page):
     page.locator('.ql-editor').press(f'{ctrl_key}+KeyV')
 
     expect(page.locator('.ql-container')).to_have_text('test')
-    wait_until(lambda: widget.value == '<p>test</p>', page)
+    # Quill v2 changed the way copied content is parsed and can preserve
+    # more of the copied html.
+    expected = '<p><span style="color: rgb(33, 37, 41);">test</span></p>'
+    if browser.browser_type.name == 'firefox':
+        # Copy/paste on firefox works a bit differently
+        expected = '<p>test</p>'
+    wait_until(lambda: widget.value == expected, page)
 
 
 def test_texteditor_regression_preserve_formatting_on_view_change(page):
@@ -102,7 +108,10 @@ def test_texteditor_regression_preserve_formatting_on_view_change(page):
     wait_until(lambda: widget.value == expected, page)
 
     html = page.locator('.ql-editor').inner_html()
-    assert html == expected
+    # inner_html() in Quill v2 not longer contains the semantic HTML but:
+    # <ol><li data-list="bullet"><span class="ql-ui" contenteditable="false"></span>aaa</li>...
+    # We just count the number of closed li tags
+    assert html.count('</li>') == expected.count('</li>')
 
     page.locator('button', has_text='1').click()
     wait_until(lambda: w_radio.value == 1, page)
@@ -111,7 +120,7 @@ def test_texteditor_regression_preserve_formatting_on_view_change(page):
     wait_until(lambda: w_radio.value == 0, page)
 
     html = page.locator('.ql-editor').inner_html()
-    assert html == expected
+    assert html.count('</li>') == expected.count('</li>')
     wait_until(lambda: widget.value == expected, page)
 
 
@@ -127,3 +136,69 @@ def test_texteditor_regression_click_toolbar_cursor_stays_in_place(page):
     page.locator('.ql-bold').click()
     editor.press('B')
     wait_until(lambda: widget.value == '<p>A</p><p><strong>B</strong></p>', page)
+
+
+def test_texteditor_space(page):
+    # Quill 2.0.3 has &nbsp; instead of white spaces, this tests aims
+    # at preventing us from introducing this weird behavior.
+    # https://github.com/slab/quill/issues/4509
+    text = 'text with space'
+    widget = TextEditor(value=text)
+
+    serve_component(page, widget)
+
+    wait_until(lambda: widget.value == f'<p>{text}</p>', page)
+
+
+def test_texteditor_nested_lists(page):
+    nested_bullets = """
+    <ul>
+    <li>Coffee</li>
+    <li>Tea
+        <ul>
+        <li>Black</li>
+        <li>Green</li>
+        </ul>
+    </li>
+    <li>Milk</li>
+    </ul>
+    """
+
+    widget = TextEditor(value=nested_bullets)
+
+    serve_component(page, widget)
+
+    expected = '<ul><li>Coffee</li><li>Tea<ul><li>Black</li><li>Green</li></ul></li><li>Milk</li></ul>'
+    wait_until(lambda: widget.value == expected, page)
+
+
+def test_texteditor_select_and_style(page):
+    widget = TextEditor(value='<p>xxx</p></br><p>yyy</p>')
+
+    serve_component(page, widget)
+
+    # Select yyy
+    page.get_by_text('yyy').dblclick()
+    # Bold and underline
+    page.locator('.ql-bold').click()
+    page.locator('.ql-underline').click()
+    wait_until(lambda: widget.value == '<p>xxx</p><p></p><p><strong><u>yyy</u></strong></p>', page)
+
+
+def test_texteditor_link(page):
+    widget = TextEditor(value='<p>xxx</p></br><p>yyy</p>')
+
+    serve_component(page, widget)
+
+    # Select yyy
+    page.get_by_text('yyy').dblclick()
+    # Enter and save link
+    page.locator('.ql-link').click()
+    inp = page.locator('input')
+    inp.fill('http://example.com')
+    inp.press('Enter')
+
+    wait_until(
+        lambda: widget.value == '<p>xxx</p><p></p><p><a href="http://example.com" rel="noopener noreferrer" target="_blank">yyy</a></p>',
+        page
+    )

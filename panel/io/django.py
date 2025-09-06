@@ -4,7 +4,7 @@ from urllib.parse import urljoin, urlparse
 try:
     from bokeh_django.consumers import AutoloadJsConsumer, DocConsumer
 except Exception:
-    from bokeh.server.django.consumers import AutoloadJsConsumer, DocConsumer
+    from bokeh.server.django.consumers import AutoloadJsConsumer, DocConsumer  # type: ignore
 
 from ..util import edit_readonly
 from .resources import Resources

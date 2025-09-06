@@ -81,8 +81,6 @@ class LeafletHeatMap(JSComponent):
     }"""
 
     _stylesheets = ['https://unpkg.com/leaflet@1.7.1/dist/leaflet.css']
-
-pn.extension(template='bootstrap')
 ```
 
 Some of the concepts this component demonstrates:
@@ -95,6 +93,8 @@ Some of the concepts this component demonstrates:
 Now let's try this component:
 
 ```{pyodide}
+pn.extension(template='bootstrap')
+
 url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv"
 
 earthquakes = pd.read_csv(url)
