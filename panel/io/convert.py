@@ -9,7 +9,9 @@ import pathlib
 import uuid
 
 from collections.abc import Sequence
-from typing import IO, Any, Literal
+from typing import (
+    IO, Any, Literal, cast,
+)
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
@@ -23,6 +25,7 @@ from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.util.serialization import make_id
+from packaging.requirements import Requirement
 
 from .. import __version__, config
 from ..util import base_version, escape
@@ -171,7 +174,7 @@ def build_pwa_manifest(files, title=None, **kwargs) -> str:
 
 
 def collect_python_requirements(
-    app: str,
+    code: str | os.PathLike | IO,
     requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
     panel_version: Literal['auto', 'local'] | str = 'auto',
     http_patch: bool = True,
@@ -206,23 +209,22 @@ def collect_python_requirements(
         collected_requirements.append('pyodide-http')
 
     requirements_root = os.getcwd()
+    resolved_reqs: list[str]
     if requirements == 'auto':
-        if hasattr(app, 'read'):
-            source = app.read()
+        if hasattr(code, 'read'):
+            source = code.read()
         else:
-            path = pathlib.Path(app)
-            app = build_single_handler_application(str(path.absolute()))
-            source = app._handlers[0]._runner.source
-        requirements = find_requirements(source)
+            path = pathlib.Path(code)
+            application = build_single_handler_application(path.absolute())
+            source = application._handlers[0]._runner.source
+        resolved_reqs = find_requirements(source)
     elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
         requirements_root = os.path.dirname(requirements)
-        requirements = (
+        resolved_reqs = (
             pathlib.Path(requirements).read_text(encoding='utf-8').splitlines()
         )
 
-    from packaging.requirements import Requirement
-
-    for raw_req in requirements:
+    for raw_req in resolved_reqs:
         stripped_req = raw_req.split('#')[0].strip()
         if not len(stripped_req) > 0:
             continue
@@ -230,7 +232,7 @@ def collect_python_requirements(
             req = Requirement(stripped_req)
         except ValueError as e:
             if stripped_req.endswith('.whl'):
-                req = DummyRequirement(stripped_req)
+                req = cast(Requirement, DummyRequirement(stripped_req))
             else:
                 raise ValueError(f'Requirements parser raised following error: {e}') from e
 
@@ -300,7 +302,7 @@ def loading_resources(template, inline) -> list[str]:
 def script_to_html(
     filename: str | os.PathLike | IO,
     requirements: list[str] = [],
-    app_resources: os.PathLike = None,
+    app_resources: str | os.PathLike | None = None,
     js_resources: Literal['auto'] | list[str] = 'auto',
     css_resources: Literal['auto'] | list[str] | None = 'auto',
     runtime: Runtimes = 'pyodide',
@@ -484,7 +486,7 @@ def convert_app(
     app: str | os.PathLike,
     dest_path: str | os.PathLike | None = None,
     requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
-    resources: list[str] | list[os.PathLike] = None,
+    resources: list[str] | list[os.PathLike] | None = None,
     runtime: Runtimes = 'pyodide-worker',
     prerender: bool = True,
     manifest: str | None = None,
@@ -509,7 +511,7 @@ def convert_app(
     )
     # prepare wheels to be available via emscripten MEMFS
     parsed_requirements_rewritten = []
-    wheels2pack = {}
+    wheels2pack: dict[str | os.PathLike, str] = {}
 
     for req in parsed_requirements:
         try:
@@ -526,8 +528,8 @@ def convert_app(
             parsed_requirements_rewritten.append(req)
 
     # make a zip out of resources
-    resources_validated = {}
-    for resourcepath in resources:
+    resources_validated: dict[str | os.PathLike, str] = {}
+    for resourcepath in ([] if resources is None else resources):
         commonpath = pathlib.Path(
             os.path.commonpath(
                 [os.path.abspath(resourcepath), os.path.abspath(app_folder)]
@@ -595,7 +597,7 @@ def _convert_process_pool(
     groups = [apps[i:i+max_workers] for i in range(0, len(apps), max_workers)]
     for group in groups:
         with ProcessPoolExecutor(
-                max_workers=max_workers, mp_context=mp.get_context('spawn')
+            max_workers=max_workers, mp_context=mp.get_context('spawn')
         ) as executor:
             futures = []
             for app in group:
@@ -621,7 +623,7 @@ def convert_apps(
     title: str | None = None,
     runtime: Runtimes = 'pyodide-worker',
     requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
-    resources: list[str] | list[os.PathLike] = None,
+    resources: list[str] | list[os.PathLike] | None = None,
     prerender: bool = True,
     build_index: bool = True,
     build_pwa: bool = True,
@@ -715,12 +717,12 @@ def convert_apps(
 
     if state._is_pyodide:
         files = {
-            app: convert_app(app, dest_path, requirements=app_requirements, **kwargs)  # type: ignore
+            app: convert_app(app, dest_path, **kwargs)  # type: ignore
             for app in apps
         }
     else:
         files = _convert_process_pool(
-            apps, dest_path, max_workers=max_workers, **kwargs
+            apps, dest_path, max_workers=max_workers, **kwargs  # type: ignore
         )
 
     if build_index and len(files) >= 1:
