@@ -1,6 +1,8 @@
 # Converting Panel applications
 
-Writing an HTML file from scratch with all the Javascript and Python dependencies and other boilerplate can be quite cumbersome, and requires learning a good bit of HTML. To avoid writing all the boilerplate, Panel provides support for converting an entire application (including Panel templates) to an HTML file, using the `panel convert` command-line interface (CLI). As a starting point create one or more Python scripts or notebook files containing your application. The only requirement is that they import only global modules and packages (relative imports of other scripts or modules is not supported) and that the libraries have been [compiled for Pyodide](https://github.com/pyodide/pyodide/tree/main/packages) or are available as pure-Python wheels from PyPI.
+Writing an HTML file from scratch with all the Javascript and Python dependencies and other boilerplate can be quite cumbersome, and requires learning a good bit of HTML. To avoid writing all the boilerplate, Panel provides support for converting an entire application (including Panel templates) to an HTML file, using the `panel convert` command-line interface (CLI).
+
+As a starting point create one or more Python scripts or notebook files containing your application. The only requirement is that they import only global modules and packages (relative imports of other scripts or modules is not supported) and that the libraries have been [compiled for Pyodide](https://github.com/pyodide/pyodide/tree/main/packages) or are available as pure-Python wheels from PyPI.
 
 The ``panel convert`` command has the following options:
 
@@ -109,7 +111,19 @@ Alternatively you may also provide a `requirements.txt` file:
 panel convert script.py --to pyodide-worker --out pyodide --requirements requirements.txt
 ```
 
-One also can provide URLs to Python wheels provided at filesystem or online locations. Wheels available in the local filesystem will be packed into a zip-file (which needs to be hosted with the app) which will be unpacked to emscriptens MEMFS for installation.
+One also can provide URLs to Python wheels provided at filesystem or online locations. Wheels available in the local filesystem will be packed into a zip-file, that needs to be hosted with the converted HTML.
+
+## Resources
+
+If your application requires specific resources such as image or data files `--resources` may be provided to the CLI. The resources will be packed into a zip-file, that needs to be hosted with the converted HTML. The will be unpacked to emscriptens virtual filesystem (MEMFS) during installation, e.g.:
+
+```bash
+panel convert script.py --to pyodide-worker --out pyodide --resources iris.csv
+```
+
+:::note
+The included resources need to be located in the directory of the main panel app or its subdirectories.
+:::
 
 ## Index
 
