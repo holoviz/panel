@@ -309,7 +309,7 @@ def test_pyodide_test_convert_onload_app(http_serve, page, runtime):
 def test_pyodide_test_convert_resources_app(http_serve, page, runtime):
     resource_path = pathlib.Path(__file__).parent / 'app.md'
     msgs = wait_for_app(
-        http_serve, onload_app, page, runtime, resources=[resource_path]
+        http_serve, resources_app, page, runtime, resources=[resource_path]
     )
 
     expect(page.locator('.markdown')).to_have_text(resource_path.read_text())
