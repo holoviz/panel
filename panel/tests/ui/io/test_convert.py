@@ -169,13 +169,22 @@ def http_serve():
         temp_dir.cleanup()
 
 
-def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
+def wait_for_app(http_serve, app, page, runtime, wait=True, resources=None, **kwargs):
     app_path = http_serve(app)
+
+    resource_paths = []
+    for resource in (resources or []):
+        resource_path = app_path.parent / pathlib.Path(resource).name
+        try:
+            shutil.copy(resource, resource_path)
+        except shutil.SameFileError:
+            pass
+        resource_paths.append(resource_path)
 
     convert_apps(
         [app_path], app_path.parent, runtime=runtime, build_pwa=False,
         prerender=False, panel_version='local', inline=True,
-        local_prefix=HTTP_URL, **kwargs
+        local_prefix=HTTP_URL, resources=resource_paths, **kwargs
     )
 
     msgs = []
