@@ -263,18 +263,36 @@ def _get_pyodide_version():
     raise NotImplementedError(F"{PYODIDE_VERSION=} is not valid")
 
 def update_versions(app, docname, source):
+    from panel.models.deckgl import DECKGL_VERSION
+    from panel.models.echarts import ECHARTS_VERSION
+    from panel.models.katex import KATEX_VERSION
+    from panel.models.mathjax import MATHJAX_VERSION
+    from panel.models.perspective import PERSPECTIVE_VERSION
+    from panel.models.plotly import PLOTLY_VERSION
     from panel.models.tabulator import TABULATOR_VERSION
+    from panel.models.vega import VEGA_LITE_VERSION, VEGA_VERSION
     from panel.models.vizzu import VIZZU_VERSION
+    from panel.models.vtk import VTK_VERSION
 
     # Inspired by: https://stackoverflow.com/questions/8821511
     version_replace = {
-        "{{PANEL_VERSION}}" : PY_VERSION,
-        "{{BOKEH_VERSION}}" : BOKEH_VERSION,
-        "{{PYSCRIPT_VERSION}}" : PYSCRIPT_VERSION,
-        "{{PYODIDE_VERSION}}" : _get_pyodide_version(),
-        "{{TABULATOR_VERSION}}" : TABULATOR_VERSION,
+        "{{PANEL_VERSION}}": PY_VERSION,
+        "{{BOKEH_VERSION}}": BOKEH_VERSION,
+        "{{PYSCRIPT_VERSION}}": PYSCRIPT_VERSION,
+        "{{PYODIDE_VERSION}}": _get_pyodide_version(),
+        "{{ALTAIR_VERSION}}": ALTAIR_VERSION,
+        "{{DECKGL_VERSION}}": DECKGL_VERSION,
+        "{{ECHARTS_VERSION}}": ECHARTS_VERSION,
+        "{{KATEX_VERSION}}": KATEX_VERSION,
+        "{{MATHJAX_VERSION}}": MATHJAX_VERSION,
+        "{{PERSPECTIVE_VERSION}}": PERSPECTIVE_VERSION,
+        "{{PLOTLY_VERSION}}": PLOTLY_VERSION,
+        "{{TABULATOR_VERSION}}": TABULATOR_VERSION,
         "{{TABULATOR_VERSION_WWW}}" : ".".join(TABULATOR_VERSION.split(".")[:2]),
-        "{{VIZZU_VERSION}}" : VIZZU_VERSION,
+        "{{VEGA_VERSION}}": VEGA_VERSION,
+        "{{VEGA_VERSION}}": VEGA_LITE_VERSION,
+        "{{VIZZU_VERSION}}": VIZZU_VERSION,
+        "{{VTK_VERSION}}": VTK_VERSION,
     }
 
     for old, new in version_replace.items():
