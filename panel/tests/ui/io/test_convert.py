@@ -316,6 +316,6 @@ def test_pyodide_test_convert_resources_app(http_serve, page, runtime):
         http_serve, resources_app, page, runtime, resources=[resource_path]
     )
 
-    expect(page.locator('.markdown')).to_have_text(resource_path.read_text().replace('```', ''))
+    expect(page.locator('.markdown')).to_have_text(resource_path.read_text().replace('```', '').replace('{pyodide}', ''))
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
