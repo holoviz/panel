@@ -28,7 +28,7 @@ class Sine(param.Parameterized):
     @param.depends('phase', 'frequency')
     def view(self):
         y = np.sin(np.linspace(0, np.pi * 3, 40) * self.frequency + self.phase)
-        y = ((y - y.min()) / y.ptp()) * 20
+        y = (y - y.min()) / np.ptp(y) * 20
         array = np.array(
             [list((' ' * (int(round(d)) - 1) + '*').ljust(20)) for d in y])
         return pn.pane.Str('\n'.join([''.join(r) for r in array.T]), height=380, width=500)
@@ -55,9 +55,9 @@ We also define a ``view`` method that returns an HTML iframe displaying the coun
 ```{pyodide}
 class GoogleMapViewer(param.Parameterized):
 
-    continent = param.ObjectSelector(default='Asia', objects=['Africa', 'Asia', 'Europe'])
+    continent = param.Selector(default='Asia', objects=['Africa', 'Asia', 'Europe'])
 
-    country = param.ObjectSelector(default='China', objects=['China', 'Thailand', 'Japan'])
+    country = param.Selector(default='China', objects=['China', 'Thailand', 'Japan'])
 
     _countries = {'Africa': ['Ghana', 'Togo', 'South Africa', 'Tanzania'],
                   'Asia'  : ['China', 'Thailand', 'Japan'],

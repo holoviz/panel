@@ -3,16 +3,21 @@ The config module supplies the global config object and the extension
 which provides convenient support for  loading and configuring panel
 components.
 """
+from __future__ import annotations
+
 import ast
+import builtins
 import copy
 import importlib
 import inspect
 import os
 import sys
+import typing
 import warnings
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, ClassVar
 from weakref import WeakKeyDictionary
 
 import param
@@ -24,7 +29,9 @@ from pyviz_comms import (
 from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
-from .util import param_watchers
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
 
 _LOCAL_DEV_VERSION = (
     any(v in __version__ for v in ('post', 'dirty'))
@@ -128,13 +135,16 @@ class _config(_base_config):
     browser_info = param.Boolean(default=True, doc="""
         Whether to request browser info from the frontend.""")
 
+    cache_path = param.Path(default="./cache", check_exists=False, doc="""
+        Path the cache decorator will write to if diskcache is enabled.""")
+
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
 
-    disconnect_notification = param.String(doc="""
+    disconnect_notification = param.String(default="Server connection lost.", doc="""
         The notification to display to the user when the connection
         to the server is dropped.""")
 
@@ -165,7 +175,7 @@ class _config(_base_config):
     loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
 
-    loading_max_height = param.Integer(default=400, doc="""
+    loading_max_height = param.Integer(default=300, doc="""
         Maximum height of the loading indicator.""")
 
     notifications = param.Boolean(default=False, doc="""
@@ -179,13 +189,20 @@ class _config(_base_config):
         The notification to display when the application is ready and
         fully loaded.""")
 
-    reuse_sessions = param.Boolean(default=False, doc="""
+    reconnect = param.Selector(default=False, objects=[True, False, 'prompt'], doc="""
+        Whether to enable automatic re-connect should the server connection
+        be disrupted. Setting "prompt" will not enable automatic re-connect but
+        will pop up a notification asking the user to confirm.""")
+
+    reuse_sessions = param.Selector(default=False, objects=[True, False, 'warm'], doc="""
         Whether to reuse a session for the initial request to speed up
         the initial page render. Note that if the initial page differs
         between sessions, e.g. because it uses query parameters to modify
         the rendered content, then this option will result in the wrong
         content being rendered. Define a session_key_func to ensure that
-        reused sessions are only reused when appropriate.""")
+        reused sessions are only reused when appropriate. If set to 'warm'
+        session reuse is enabled and the session is warmed up as soon as
+        the initial request arrives.""")
 
     session_key_func = param.Callable(default=None, doc="""
         Used in conjunction with the reuse_sessions option, the
@@ -203,12 +220,12 @@ class _config(_base_config):
         information about user sessions. A value of -1 indicates an
         unlimited history.""")
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         Specify the default sizing mode behavior of panels.""")
 
-    template = param.ObjectSelector(default=None, doc="""
+    template = param.Selector(default=None, doc="""
         The default template to render served applications into.""")
 
     throttled = param.Boolean(default=False, doc="""
@@ -222,12 +239,12 @@ class _config(_base_config):
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of the Admin Panel logger")
 
-    _comms = param.ObjectSelector(
+    _comms = param.Selector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
         extension or use the jupyter_bokeh ipywidget model.""")
 
-    _console_output = param.ObjectSelector(default='accumulate', allow_None=True,
+    _console_output = param.Selector(default='accumulate', allow_None=True,
                                  objects=['accumulate', 'replace', 'disable',
                                           False], doc="""
         How to log errors and stdout output triggered by callbacks
@@ -235,6 +252,13 @@ class _config(_base_config):
 
     _cookie_secret = param.String(default=None, doc="""
         Configure to enable getting/setting secure cookies.""")
+
+    _cookie_path = param.String(default="/", doc="""
+        Path setting that controls the scope of cookies. Specifies the URL path
+        prefix that must exist in the requested URL for the browser to send the
+        Cookie header. The default value '/' allows cookies to be sent to all paths.
+        A more restrictive path like '/app1/' would limit cookies to only be sent
+        to URLs under that path.""")
 
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
@@ -266,12 +290,15 @@ class _config(_base_config):
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
 
+    _index_titles = param.Dict(default={}, doc="""
+        Custom titles to use for Multi Page Apps index page.""")
+
     _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
         Password, dictionary with a mapping from username to password
         or filepath containing JSON to use with the basic auth
         provider.""")
 
-    _oauth_provider = param.ObjectSelector(
+    _oauth_provider = param.Selector(
         default=None, allow_None=True, objects=[], doc="""
         Select between a list of authentication providers.""")
 
@@ -310,22 +337,22 @@ class _config(_base_config):
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
-    _theme = param.ObjectSelector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
+    _theme = param.Selector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
         The theme to apply to components.""")
 
     # Global parameters that are shared across all sessions
-    _globals = {
-        'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
+    _globals: ClassVar[set[str]] = {
+        'admin_plugins', 'autoreload', 'comms', 'cookie_path', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin'
+        'oauth_optional', 'admin', 'index_titles'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
 
-    _session_config = WeakKeyDictionary()
+    _session_config: ClassVar[WeakKeyDictionary[Document, dict[str, Any]]] = WeakKeyDictionary()
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -350,12 +377,14 @@ class _config(_base_config):
 
     @param.depends('notifications', watch=True)
     def _setup_notifications(self):
-        from .io.notifications import NotificationArea
-        from .reactive import ReactiveHTMLMetaclass
-        if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
-            ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
+        if state._notification_type is None:
+            from .io.notifications import NotificationArea
+            from .reactive import ReactiveHTMLMetaclass
+            state._notification_type = NotificationArea
+            if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
+                ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
         if not state.curdoc:
-            state._notification = NotificationArea()
+            state._notification = state._notification_type()
 
     @param.depends('disconnect_notification', 'ready_notification', watch=True)
     def _enable_notifications(self):
@@ -407,7 +436,7 @@ class _config(_base_config):
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
-            watchers = param_watchers(self).get(attr, {}).get('value', [])
+            watchers = self.param.watchers.get(attr, {}).get('value', [])
             for w in watchers:
                 w.fn()
         elif f'_{attr}' in _config._parameter_set and hasattr(self, f'_{attr}_'):
@@ -510,6 +539,10 @@ class _config(_base_config):
         return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path)
 
     @property
+    def index_titles(self):
+        return self._index_titles
+
+    @property
     def inline(self):
         return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
 
@@ -552,6 +585,11 @@ class _config(_base_config):
             'PANEL_COOKIE_SECRET',
             os.environ.get('BOKEH_COOKIE_SECRET', self._cookie_secret)
         )
+
+    @property
+    def cookie_path(self):
+        """The sub path of the domain the cookie applies to."""
+        return os.environ.get('PANEL_COOKIE_PATH', self._cookie_path)
 
     @property
     def oauth_secret(self):
@@ -622,18 +660,17 @@ _config_uninitialized = False
 
 class panel_extension(_pyviz_extension):
     """
-    Initializes and configures Panel. You should always run `pn.extension`.
-    This will
+    Initializes and configures Panel. You should always run `pn.extension`
+    as it declares which components should be loaded in your app or notebook.
 
-    - Initialize the `pyviz` notebook extension to enable bi-directional
-    communication and for example plotting with Bokeh.
+    - Initialize the notebook extension to enable bi-directional
+      communication and loading JS and CSS resources.
     - Load `.js` libraries (positional arguments).
-    - Update the global configuration `pn.config`
-    (keyword arguments).
+    - Update the global configuration `pn.config` (keyword arguments).
 
     Parameters
     ----------
-    *args : list[str]
+    *args : tuple[str]
         Positional arguments listing the extension to load. For example "plotly",
         "tabulator".
     **params : dict[str,Any]
@@ -647,16 +684,16 @@ class panel_extension(_pyviz_extension):
 
     This will
 
-    - Initialize the `pyviz` notebook extension.
+    - Initialize the notebook extension.
     - Enable you to use the `Plotly` pane by loading `plotly.js`.
     - Set the default `sizing_mode` to `stretch_width` instead of `fixed`.
     - Set the global configuration `pn.config.template` to `fast`, i.e. you
-    will be using the `FastListTemplate`.
+      will be using the `FastListTemplate`.
     """
 
-    _loaded = False
+    _loaded: bool = False
 
-    _imports = {
+    _imports: ClassVar[dict[str, str]] = {
         'ace': 'panel.models.ace',
         'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
@@ -666,6 +703,7 @@ class panel_extension(_pyviz_extension):
         'jsoneditor': 'panel.models.jsoneditor',
         'katex': 'panel.models.katex',
         'mathjax': 'panel.models.mathjax',
+        'modal': 'panel.models.modal',
         'perspective': 'panel.models.perspective',
         'plotly': 'panel.models.plotly',
         'tabulator': 'panel.models.tabulator',
@@ -679,7 +717,7 @@ class panel_extension(_pyviz_extension):
     # Check whether these are loaded before rendering (if any item
     # in the list is available the extension will be confidered as
     # loaded)
-    _globals = {
+    _globals: ClassVar[dict[str, list[str]]] = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
         'filedropper': ['FilePond'],
@@ -687,6 +725,7 @@ class panel_extension(_pyviz_extension):
         'gridstack': ['GridStack'],
         'katex': ['katex'],
         'mathjax': ['MathJax'],
+        'modal': ['A11yDialog'],
         'perspective': ["customElements.get('perspective-viewer')"],
         'plotly': ['Plotly'],
         'tabulator': ['Tabulator'],
@@ -696,16 +735,26 @@ class panel_extension(_pyviz_extension):
         'vtk': ['vtk']
     }
 
-    _loaded_extensions = []
+    _loaded_extensions: list[str] = []
 
-    _comms_detected_before = False
+    _comms_detected_before: bool = False
 
-    def __call__(self, *args, **params):
+    @typing.overload  # type: ignore
+    def __init__(
+        self, *extensions: str, **params: Any
+    ):
+        # Typing overload to ensure that type checkers
+        # handle the ParameterizedFunction call signature
+        ...
+
+    def __call__(self, *args: str, **params: Any):
         from bokeh.core.has_props import _default_resolver
         from bokeh.model import Model
         from bokeh.settings import settings as bk_settings
 
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
+
+        _in_ipython = hasattr(builtins, '__IPYTHON__')
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
         }
@@ -723,12 +772,8 @@ class panel_extension(_pyviz_extension):
                 from .io.resources import CSS_URLS
                 params['css_files'] = params.get('css_files', []) + [CSS_URLS['font-awesome']]
             if arg in self._imports:
-                try:
-                    if (arg == 'ipywidgets' and get_ipython() and # noqa (get_ipython)
-                        "PANEL_IPYWIDGET" not in os.environ):
-                        continue
-                except Exception:
-                    pass
+                if arg == 'ipywidgets' and _in_ipython and "PANEL_IPYWIDGET" not in os.environ:
+                    continue
 
                 # Ensure all models are registered
                 module = self._imports[arg]
@@ -811,13 +856,14 @@ class panel_extension(_pyviz_extension):
             self._load_entry_points()
 
         # Abort if IPython not found
+        if not (_in_ipython or 'ip' in params):
+            return
         try:
-            ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
+            ip = params.get('ip') or get_ipython()  # type: ignore # noqa
         except Exception:
             return
 
         from .io.notebook import load_notebook
-
         self._detect_comms(params)
 
         panel_extension._loaded_extensions += newly_loaded
@@ -839,7 +885,10 @@ class panel_extension(_pyviz_extension):
                 nb_loaded = True
             else:
                 with param.logging_level('ERROR'):
-                    hv.plotting.Renderer.load_nb(config.inline)
+                    hv.plotting.Renderer.load_nb(
+                        config.inline,
+                        enable_mathjax="mathjax" in panel_extension._loaded_extensions
+                    )
                     nb_loaded = True
 
         # Disable simple ids, old state and multiple tabs in notebooks can cause IDs to clash

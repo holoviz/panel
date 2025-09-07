@@ -2,11 +2,16 @@
 
 The OAuth component will stop any user from accessing the application before first logging into the selected provider. The configuration to set up OAuth is all handled via the global `pn.config` object, which has a number of OAuth related parameters. When launching the application via the `panel serve` CLI command these config options can be set as CLI arguments or environment variables, when using the `pn.serve` function on the other hand these variables can be passed in as arguments.
 
+:::warning
+
+If your app is deployed behind a reverse proxy, you may need to increase its proxy buffer size, e.g. to 16k, in order to accommodate large OAuth requests. See the [reverse proxy configuration guide](../server/proxy) for more details.
+:::
+
 ## `oauth_provider`
 
 The first step in configuring a OAuth is to specify a specific OAuth provider. Panel ships with a number of providers by default:
 
-* `azure`: Azure Active Directory
+* `azure`: Azure Entra ID. Previously known as Azure Active Directory.
 * `bitbucket`: Bitbucket
 * `github`: GitHub
 * `gitlab`: GitLab
@@ -37,7 +42,7 @@ pn.serve(app, oauth_provider=...)
 The login and logout endpoints are configurable:
 
 ```
-panel serve oauth_example.py --login-endpoint="/signin" --logout-endpoint="/signoff"
+panel serve oauth_example.py --login-endpoint /signin --logout-endpoint /signoff ...
 ```
 
 or in Python:
@@ -81,7 +86,7 @@ Some OAuth providers will require some additional configuration options which wi
 Examples:
 
 ```
-panel serve oauth_example.py --oauth-extra-params={'tenant_id': ...}
+panel serve oauth_example.py --oauth-extra-params="{'tenant_id': ...}"
 
 PANEL_OAUTH_EXTRA_PARAMS={'tenant_id': ...} panel serve oauth_example.py ...
 ```
@@ -112,6 +117,32 @@ or in Python:
 
 ```python
 pn.serve(app, cookie_secret="my-super-secret-secret", ...)
+```
+
+## `cookie_path`
+
+Path setting that controls the scope of cookies. Specifies the URL path
+prefix that must exist in the requested URL for the browser to send the
+Cookie header. The default value '/' allows cookies to be sent to all paths.
+A more restrictive path like '/app1/' would limit cookies to only be sent
+to URLs under that path.
+
+If you are serving multiple individual Panel apps at the same domain you may want the cookie to apply to only an individual app or a subset of apps like `/sub/path/app1` or `/sub/path/`.
+
+You can set the `cookie_path` by supplying the `--cookie-path` as a CLI argument or set the `PANEL_COOKIE_PATH` environment variable.
+
+Examples:
+
+```
+panel serve oauth_example.py --cookie-path=/sub/path
+
+PANEL_COOKIE_PATH=/sub/path panel serve oauth_example.py ...
+```
+
+or in Python:
+
+```python
+pn.serve(app, cookie_path="/sub/path", ...)
 ```
 
 ## `oauth_expiry`
@@ -150,7 +181,7 @@ pn.serve(app, oauth_encryption_key=...)
 
 ## Redirect URI
 
-Once the OAuth provider has authenticated a user it has to redirect them back to the application, this is what is known as the redirect URI. For security reasons this has to match the URL registered with the OAuth provider exactly. By default Panel will redirect the user straight back to the original URL of your app, e.g. when you're hosting your app at `https://myapp.myprovider.com` Panel will use that as the redirect URI. However in certain scenarios you may override this to provide a specific redirect URI. This can be achieved with the `--oauth-redirect-uri` CLI argument or the `PANEL_OAUTH_REDIRECT_URI` environment variable.
+Once the OAuth provider has authenticated a user it has to redirect them back to the application, this is what is known as the redirect URI. For security reasons this has to match the URL registered with the OAuth provider exactly. By default Panel will redirect the user straight back to the original URL of your app, e.g. when you're hosting your app at `https://myapp.myprovider.com` Panel will use that as the redirect URI. However in certain scenarios you may override this to provide a specific redirect URI (simply the protocol and domain `https://myapp.otherprovider.com` without the suffix `/oauth2/...`). This can be achieved with the `--oauth-redirect-uri` CLI argument or the `PANEL_OAUTH_REDIRECT_URI` environment variable.
 
 Examples:
 
@@ -167,7 +198,7 @@ OAuth allows the application to request specific scopes to perform certain actio
 Examples:
 
 ```
-panel serve oauth_example.py --oauth-extra-params {'scope': 'openid'}
+panel serve oauth_example.py --oauth-extra-params="{'scope': 'openid'}"
 
 PANEL_OAUTH_SCOPE=openid panel serve oauth_example.py
 ```
@@ -183,9 +214,9 @@ pn.serve(app, ..., oauth_extra_params={'scope': 'openid'})
 A fully configured OAuth configuration may look like this:
 
 ```
-panel serve oauth_example.py --oauth-provider=github --oauth-key=... --oauth-secret=... --cookie-secret=... --oauth-encryption-key=...
+panel serve oauth_example.py --oauth-provider=github --oauth-key=... --oauth-secret=... --cookie-secret=... --oauth-encryption-key=... --oauth-redirect-uri=...
 
-PANEL_OAUTH_PROVIDER=... PANEL_OAUTH_KEY=... PANEL_OAUTH_SECRET=... PANEL_COOKIE_SECRET=... PANEL_OAUTH_ENCRYPTION=... panel serve oauth_example.py ...`
+PANEL_OAUTH_PROVIDER=... PANEL_OAUTH_KEY=... PANEL_OAUTH_SECRET=... PANEL_COOKIE_SECRET=... PANEL_OAUTH_ENCRYPTION=... PANEL_OAUTH_REDIRECT_URI=... panel serve oauth_example.py ...`
 ```
 
 or in Python:

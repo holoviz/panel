@@ -37,7 +37,7 @@ from .checks import (  # noqa
     is_series, isdatetime, isfile, isIn, isurl,
 )
 from .parameters import (  # noqa
-    edit_readonly, extract_dependencies, get_method_owner, param_watchers,
+    edit_readonly, extract_dependencies, get_method_owner,
     recursive_parameterized,
 )
 
@@ -45,6 +45,7 @@ log = logging.getLogger('panel.util')
 
 bokeh_version = Version(Version(bokeh.__version__).base_version)
 BOKEH_GE_3_6 = bokeh_version >= Version('3.6')
+BOKEH_GE_3_8 = bokeh_version >= Version('3.8')
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
@@ -258,7 +259,7 @@ def decode_token(token: str, signed: bool = True) -> dict[str, Any]:
         signing_input, _ = token.encode('utf-8').rsplit(b".", 1)
         _, payload_segment = signing_input.split(b".", 1)
     else:
-        payload_segment = token
+        payload_segment = token.encode('ascii')
     return json.loads(base64url_decode(payload_segment).decode('utf-8'))
 
 
@@ -377,10 +378,13 @@ def parse_timedelta(time_str: str) -> dt.timedelta | None:
     return dt.timedelta(**time_params)
 
 
-def fullpath(path: AnyStr | os.PathLike) -> AnyStr | os.PathLike:
-    """Expanduser and then abspath for a given path
+def fullpath(path: AnyStr | os.PathLike) -> str:
     """
-    return os.path.abspath(os.path.expanduser(path))
+    Expanduser and then abspath for a given path.
+    """
+    if '://' in str(path):
+        return str(path)
+    return str(os.path.abspath(os.path.expanduser(path)))
 
 
 def base_version(version: str) -> str:
@@ -444,8 +448,8 @@ def styler_update(styler, new_df):
     Updates the todo items on a pandas Styler object to apply to a new
     DataFrame.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     styler: pandas.io.formats.style.Styler
       Styler objects
     new_df: pd.DataFrame
@@ -505,6 +509,16 @@ async def to_async_gen(sync_gen):
             break
         yield value
 
+def unique_iterator(seq):
+    """
+    Returns an iterator containing all non-duplicate elements
+    in the input sequence.
+    """
+    seen = set()
+    for item in seq:
+        if item not in seen:
+            seen.add(item)
+            yield item
 
 def prefix_length(a: str, b: str) -> int:
     """

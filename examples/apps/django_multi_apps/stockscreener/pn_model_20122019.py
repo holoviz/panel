@@ -41,7 +41,7 @@ class StockScreener(param.Parameterized):
     From = pn.widgets.DateSlider()
 
     def __init__(self, df, **params):
-        super(StockScreener, self).__init__(**params)
+        super().__init__(**params)
         # init df
         self.df = df
         self.start_date = dt.datetime(year=df.index[0].year, month=df.index[0].month, day=df.index[0].day)

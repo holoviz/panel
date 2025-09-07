@@ -27,7 +27,7 @@ class StoppableThread(threading.Thread):
         try:
             bokeh_server = target(*args, **kwargs)
         finally:
-            if hasattr(bokeh_server, 'stop'):
+            if bokeh_server is not None and hasattr(bokeh_server, 'stop'):
                 # Handle tornado server
                 try:
                     bokeh_server.stop()

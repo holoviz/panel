@@ -84,6 +84,16 @@ The first time you run it, it will create a `pixi.lock` file with information fo
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
+:::{admonition} Note
+:class: info
+
+If a pixi command fails to lock or install an environment, you can try to limit the number of [concurrent solves](https://pixi.sh/latest/reference/cli/pixi/install/#arg---concurrent-solves) and/or [concurrent downloads](https://pixi.sh/latest/reference/cli/pixi/install/#arg---concurrent-downloads), An example of this is:
+
+```bash
+pixi install --concurrent-solves 4 --concurrent-downloads 4
+```
+:::
+
 ### Editable install
 
 It can be advantageous to install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):

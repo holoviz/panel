@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Callable, ClassVar, Mapping,
-)
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -37,7 +36,7 @@ class Accordion(NamedListPanel):
     >>> pn.Accordion(some_pane_with_a_name, ("Plot", some_plot))
     """
 
-    active_header_background = param.String(default='#ddd', doc="""
+    active_header_background = param.String(default=None, doc="""
         Color for currently active headers.""")
 
     active = param.List(default=[], doc="""

@@ -94,6 +94,12 @@ class TestChatStep:
         assert step.title == "Error: 'RuntimeError'", "Title should update to 'Error: 'RuntimeError'' on failure again"
         assert step.objects[0].object == "Testing\nSecond Testing", "Error message should be streamed to the message pane"
 
+    def test_context_manually_set_failed(self):
+        step = ChatStep()
+        with step:
+            step.status = "failed"
+        assert step.status == "failed", "Status should be 'failed' after manually setting it to 'failed'"
+
     def test_context_exception_ignore(self):
         step = ChatStep(context_exception="ignore")
         with step:

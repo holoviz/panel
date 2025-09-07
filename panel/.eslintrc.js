@@ -85,7 +85,6 @@ module.exports = {
     "no-floating-decimal": ["error"],
     "no-multiple-empty-lines": ["error", {"max": 1, "maxBOF": 0, "maxEOF": 0}],
     "no-new-wrappers": "error",
-    "no-template-curly-in-string": "error",
     "no-throw-literal": "error",
     "no-trailing-spaces": ["error"],
     "no-var": "error",
@@ -116,7 +115,7 @@ module.exports = {
       "overrides": {},
     }],
     "guard-for-in": ["warn"],
-    "quotes": ["error", "double", {"avoidEscape": true, "allowTemplateLiterals": false}],
+    "quotes": ["error", "double", {"avoidEscape": true, "allowTemplateLiterals": true}],
     "curly": ["error", "all"],
     "prefer-template": ["error"],
     "generator-star-spacing": ["error", {

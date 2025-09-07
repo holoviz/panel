@@ -8,9 +8,8 @@ import json
 import sys
 
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -157,13 +156,14 @@ class DeckGL(ModelPane):
         return {col: np.asarray(vals) for col, vals in columns.items()}
 
     @classmethod
-    def _update_sources(cls, json_data, sources):
+    def _update_sources(cls, json_data, sources: list[ColumnDataSource]):
         layers = json_data.get('layers', [])
 
         # Create index of sources by columns
         source_columns = defaultdict(list)
         for i, source in enumerate(sources):
-            key = tuple(sorted(source.data.keys()))
+            # source.data = cast("DataDict", source.data)
+            key = tuple(sorted(source.data.keys()))  # type: ignore[operator]
             source_columns[key].append((i, source))
 
         # Process
@@ -188,7 +188,8 @@ class DeckGL(ModelPane):
                     if not np.array_equal(data[col], cds.data[col]):
                         updates[col] = values
                 if updates:
-                    cds.data.update(updates)
+                    # cds.data = cast("DataDict", cds.data)
+                    cds.data.update(updates)  # type: ignore[arg-type]
                 unused.remove(cds)
             else:
                 unprocessed.append((layer, data))
@@ -276,19 +277,20 @@ class DeckGL(ModelPane):
         return dict(data=data, tooltip=tooltip, configuration=configuration, mapbox_api_key=mapbox_api_key or "")
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = DeckGLPlot = lazy_load(
+        DeckGL._bokeh_model = lazy_load(
             'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root
         )
         properties = self._get_properties(doc)
         data = properties.pop('data')
-        properties['data_sources'] = sources = []
+        sources: list[ColumnDataSource] = []
+        properties['data_sources'] = sources
         self._update_sources(data, sources)
         properties['layers'] = data.pop('layers', [])
         properties['initialViewState'] = data.pop('initialViewState', {})
-        model = DeckGLPlot(data=data, **properties)
+        model = DeckGL._bokeh_model(data=data, **properties)
         root = root or model
         self._link_props(model, ['clickState', 'hoverState', 'viewState'], doc, root, comm)
         self._models[root.ref["id"]] = (model, parent)

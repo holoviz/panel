@@ -20,6 +20,7 @@ from bokeh.models.widgets.tables import (
 from playwright.sync_api import expect
 
 from panel.depends import bind
+from panel.io.model import JSCode
 from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
@@ -71,18 +72,6 @@ def df_mixed_as_string():
     """
 
 
-@pytest.fixture
-def df_multiindex(df_mixed):
-    df_mi = df_mixed.copy()
-    df_mi.index = pd.MultiIndex.from_tuples([
-        ('group0', 'subgroup0'),
-        ('group0', 'subgroup1'),
-        ('group1', 'subgroup0'),
-        ('group1', 'subgroup1'),
-    ], names=['groups', 'subgroups'])
-    return df_mi
-
-
 def count_per_page(count: int, page_size: int):
     """
     >>> count_per_page(12, 7)
@@ -126,7 +115,7 @@ def test_tabulator_default(page, df_mixed, df_mixed_as_string):
 
     serve_component(page, widget)
 
-    expected_ncols = ncols + 2  # _index + index + data columns
+    expected_ncols = ncols + 3  # _index + index + data columns + empty
 
     # Check that the whole table content is on the page
     table = page.locator('.pnx-tabulator.tabulator')
@@ -246,13 +235,13 @@ def test_tabulator_buttons_display(page, df_mixed):
 
     serve_component(page, widget)
 
-    expected_ncols = ncols + 3  # _index + index + data columns + button col
+    expected_ncols = ncols + 4  # _index + index + data columns + button col + empty
 
     # Check that an additional column has been added to the table
     # with no header title
     cols = page.locator(".tabulator-col")
     expect(cols).to_have_count(expected_ncols)
-    button_col_idx = expected_ncols - 1
+    button_col_idx = expected_ncols - 2
     assert not cols.nth(button_col_idx).get_attribute('tabulator-field')
     assert cols.nth(button_col_idx).inner_text() == '\xa0'
     assert cols.nth(button_col_idx).is_visible()
@@ -286,6 +275,21 @@ def test_tabulator_buttons_event(page, df_mixed):
     icon.click()
 
     wait_until(lambda: state == expected_state, page)
+
+
+def test_tabulator_formatters_jscode(page, df_mixed):
+    s = [True] * len(df_mixed)
+    s[-1] = False
+    df_mixed['bool'] = s
+    widget = Tabulator(df_mixed, formatters={'bool': JSCode("function(cell) { return cell.getValue() ? 'foo' : 'bar' }")})
+
+    serve_component(page, widget)
+
+    cells = page.locator('.tabulator-cell[tabulator-field="bool"]')
+    expect(cells).to_have_count(len(df_mixed))
+
+    for i in range(len(df_mixed) - 1):
+        expect(cells.nth(i)).to_have_text('foo' if df_mixed.iloc[i, 5] else 'bar')
 
 
 def test_tabulator_formatters_bokeh_bool(page, df_mixed):
@@ -486,6 +490,48 @@ def test_tabulator_editors_bokeh_string(page, df_mixed):
     expect(page.locator('input[type="text"]')).to_have_count(1)
 
 
+def test_tabulator_editor_jscode(page, df_mixed):
+
+    editor = """
+    function simpleInputEditor(cell, onRendered, success, cancel, editorParams){
+      const value = cell.getValue();
+      const input = document.createElement("input");
+      input.className = "custom-jscode"
+      input.type = "text";
+      input.value = value ?? "";
+      input.style.width = "100%";
+      input.style.boxSizing = "border-box";
+
+      // Prevent clicks inside the editor from bubbling to Tabulator
+      input.addEventListener("click", e => e.stopPropagation());
+
+      // Commit on Enter, cancel on Esc
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") success(input.value);
+        else if (e.key === "Escape") cancel();
+      });
+
+      // Commit on blur (optional; remove if you want explicit Enter only)
+      input.addEventListener("blur", () => success(input.value));
+
+      // Focus/select after Tabulator finishes rendering
+      onRendered(() => {
+        input.focus();
+        input.select();
+      });
+
+      return input;
+    }"""
+
+    widget = Tabulator(df_mixed, editors={'str': JSCode(editor)})
+
+    serve_component(page, widget)
+
+    cell = page.locator('text="A"')
+    cell.click()
+    expect(page.locator('.custom-jscode')).to_have_count(1)
+
+
 def test_tabulator_editors_bokeh_string_completions(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'str': StringEditor(completions=['AAA'])})
 
@@ -589,6 +635,7 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     # Need to Enter to validate the change
     page.locator('input[type="date"]').press('Enter')
     expect(page.locator(f'text="{new_date}"')).to_have_count(1)
+    page.wait_for_timeout(200)
     new_date = dt.datetime.strptime(new_date, '%Y-%m-%d').date()
     assert new_date in widget.value['date'].tolist()
 
@@ -600,6 +647,7 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     # Escape invalidates the change
     page.locator('input[type="date"]').press('Escape')
     expect(page.locator(f'text="{new_date2}"')).to_have_count(0)
+    page.wait_for_timeout(200)
     new_date2 = dt.datetime.strptime(new_date2, '%Y-%m-%d').date()
     assert new_date2 not in widget.value['date'].tolist()
 
@@ -714,20 +762,20 @@ def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumul
     val = ['red', 'blue']
     for v in val:
         item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click()
+        item.evaluate("el => el.click()")
     # Validating the filters doesn't have a very nice behavior, you need to lose
     # focus on the multiselect by clicking somewhere else.
     # Delay required before clicking for the focus to be lost and the filters accounted for.
     page.wait_for_timeout(200)
-    page.locator('text="foo1"').click()
+    page.locator('text="foo1"').click(force=True)
 
     cell.click()
     val = ['red', 'blue']
     for v in val:
         item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click()
+        item.evaluate("el => el.click()")
     page.wait_for_timeout(200)
-    page.locator('text="foo1"').click()
+    page.locator('text="foo1"').click(force=True)
 
     assert not exception_handler_accumulator
 
@@ -755,18 +803,21 @@ def test_tabulator_editors_nested(page, opt0, opt1):
 
     # Change the 0th column
     cells.nth(0).click()
+    page.wait_for_timeout(200)
     item = page.locator('.tabulator-edit-list-item', has_text=opt0)
     expect(item).to_have_count(1)
-    item.click()
+    item.click(force=True)
 
     # Change the 1th column
     cells.nth(1).click()
+    page.wait_for_timeout(200)
     item = page.locator('.tabulator-edit-list-item', has_text=opt1)
     expect(item).to_have_count(1)
-    item.click()
+    item.click(force=True)
 
     # Check the last column matches
     cells.nth(2).click()
+    page.wait_for_timeout(200)
     items = page.locator('.tabulator-edit-list-item')
     expect(items).to_have_count(5)
 
@@ -1077,18 +1128,20 @@ def test_tabulator_frozen_rows(page):
     assert Y_bb == page.locator('text="Y"').bounding_box()
 
 
+@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
     df_mixed['tomodify'] = 'target'
-    widget = Tabulator(df_mixed, width=width, widths=widths)
+    widget = Tabulator(df_mixed.iloc[:1], width=width, widths=widths)
 
     serve_component(page, widget)
 
-    cell = page.locator('text="target"').first
+    cell = page.locator('text="target"')
+    expect(cell).to_be_attached()
+
     # Scroll to the right
     cell.scroll_into_view_if_needed()
-    page.wait_for_timeout(200)
     bb = page.locator('text="tomodify"').bounding_box()
     # Patch a cell in the latest column
     widget.patch({'tomodify': [(0, 'target-modified')]}, as_index=False)
@@ -1585,6 +1638,35 @@ def test_tabulator_selection_on_multi_index(page, pagination):
     checkboxes.nth(17).check()
 
     wait_until(lambda: widget.selection == [0, 16], page)
+
+
+def test_tabulator_selection_add_filter(page):
+    # https://github.com/holoviz/panel/issues/7505
+    df = pd.DataFrame(
+        {"col": ["a", "aa", "b", "bb", "bbb"]},
+        index=["idx0", "idx1", "idx2", "idx3", "idx4"],
+    )
+    w_col = Select(value="b", options=["a", "b"])
+    widget = Tabulator(df, selectable=1)
+
+    def f(df, pattern):
+        return df[df['col'].str.contains(pattern)]
+
+    widget.add_filter(bind(f, pattern=w_col))
+
+    serve_component(page, widget)
+
+    # Click on the first row of the index column to select the row
+    rows = page.locator('.tabulator-row')
+    c0 = page.locator('text="idx2"')
+    c0.wait_for()
+    c0.click()
+    wait_until(lambda: widget.selection == [2], page)
+    assert 'tabulator-selected' in rows.first.get_attribute('class')
+    for i in range(1, rows.count()):
+        assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
+    expected_selected = df.loc[['idx2'], :]
+    assert widget.selected_dataframe.equals(expected_selected)
 
 
 @pytest.mark.parametrize('embed_content', [False, True])
@@ -2394,6 +2476,36 @@ def test_tabulator_patching_no_event(page, df_mixed):
 
     assert len(events) == 0
 
+def test_tabulator_patch_scalar_as_index_filtered(page):
+    # https://github.com/holoviz/panel/issues/7619
+    sample_data = pd.DataFrame({"Number": np.arange(100, 110)})
+    table = Tabulator(sample_data, height=200)
+
+    def filt(df):
+        return df[df.index >= 5]
+
+    table.add_filter(filt)
+
+    def edit(e):
+        table.patch({"Number": [(sample_data.index[e.row], 10)]}, as_index=True)
+
+    table.on_edit(edit)
+
+    serve_component(page, table)
+
+    # Chankge the cell that contains B to BB
+    cell = page.locator('text="107"')
+    cell.click()
+    editable_cell = page.locator('input[type="number"]')
+    editable_cell.fill("120")
+    editable_cell.press('Enter')
+
+    def test():
+        assert table.value.shape[0] > 7
+        assert table.value.iloc[7, 0] == 10
+
+    wait_until(test, page)
+
 
 def color_false(val):
     color = 'red' if not val else 'black'
@@ -2431,6 +2543,8 @@ def test_tabulator_patching_and_styling(page, df_mixed):
     widget = Tabulator(df_styled)
 
     serve_component(page, widget)
+
+    expect(page.locator('.tabulator-cell')).not_to_have_count(0)
 
     # Changing the highest value in the int column should
     # update the style so that this cell gets a yellow background
@@ -2869,6 +2983,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     assert len(widget.current_view) == 2
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pagination):
     df = pd.DataFrame({
@@ -2907,7 +3022,6 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     assert len(widget.current_view) == 4
 
     page.locator('text="Last"').click()
-    page.wait_for_timeout(200)
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(2)
@@ -3494,19 +3608,16 @@ def test_tabulator_sorter_default_number(page):
     widget = Tabulator(df, sorters=[{"field": "x", "dir": "desc"}])
 
     serve_component(page, widget)
+    expect(page.locator('.tabulator-cell')).to_have_count(0)
+    page.wait_for_timeout(200)
 
     df2 = pd.DataFrame({'x': [0, 96, 116]})
     widget.value = df2
 
     def x_values():
-        try:
-            table_values = [int(v) for v in tabulator_column_values(page, 'x')]
-        except Exception:
-            return False
-        if table_values:
-            assert table_values == list(df2['x'].sort_values(ascending=False))
-        else:
-            return False
+        table_values = [int(v) for v in tabulator_column_values(page, 'x')]
+        assert table_values == [116, 96, 0]
+
     wait_until(x_values, page)
 
 
@@ -3554,7 +3665,7 @@ def test_tabulator_remote_pagination_auto_page_size_grow(page, df_mixed):
 
 def test_tabulator_remote_pagination_auto_page_size_shrink(page, df_mixed):
     nrows, ncols = df_mixed.shape
-    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=10, height=150)
+    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=10, height=160)
 
     serve_component(page, widget)
 
@@ -4094,3 +4205,210 @@ def test_tabulator_row_content_markup_wrap(page):
     md = page.locator('.row-content .bk-panel-models-markup-HTML')
 
     assert md.bounding_box()['height'] >= 130
+
+
+@pytest.fixture(scope='session')
+def df_agg():
+    data = {
+        "employee_id": range(1, 6),
+        "gender": ["Male", "Male", "Female", "Male", "Female"],
+        "region": ["East", "North", "North", "North", "North"],
+        "name": ["Charlie", "Bob", "Alice", "David", "Eve"],
+        "salary": [75000.0, 82000.5, np.nan, 64000.0, 91000.0],
+        "date_joined": [
+            np.nan,  # Charlie
+            dt.datetime(2019, 3, 15),  # Bob
+            dt.datetime(2020, 1, 10),  # Alice
+            dt.datetime(2021, 5, 20),  # David
+            dt.datetime(2022, 7, 30),  # Eve
+        ],
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture(scope='session')
+def df_agg_int_column_names(df_agg):
+    return df_agg.rename(columns={"salary": 1, "date_joined": 2})
+
+
+@pytest.mark.parametrize("df", ["df_agg", "df_agg_int_column_names"])
+def test_tabulator_hierarchical_data_grouping(page, df, request):
+    df_agg = request.getfixturevalue(df)
+    widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True)
+    serve_component(page, widget)
+
+    expanded_groups = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-collapse')
+    collapsed_groups = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
+
+    expect(collapsed_groups).to_have_count(2)
+    expect(expanded_groups).to_have_count(0)
+    group_east = collapsed_groups.nth(0)
+    group_north = collapsed_groups.nth(1)
+
+    # expand first group and see the data there
+    group_east.click()
+    expect(collapsed_groups).to_have_count(1)
+    expect(expanded_groups).to_have_count(1)
+    collapsed_genders = page.locator(".tabulator-tree-level-1 .tabulator-data-tree-control-expand")
+    expanded_genders = page.locator(".tabulator-tree-level-1 .tabulator-data-tree-control-collapse")
+    expect(collapsed_genders).to_have_count(1)
+    expect(expanded_genders).to_have_count(0)
+    # TODO: uncomment when showing indexes fixed
+    # expect(collapsed_genders).to_contain_text("Male")
+    collapsed_genders.click()
+    employees = page.locator(".tabulator-tree-level-2")
+    expect(employees).to_have_count(1)
+    # TODO: assert employee id
+    expect(employees).to_contain_text("Charlie")
+
+    # collapse 1st group and expand 2nd group and see the data there
+    expanded_groups.click()
+    group_north.click()
+    expect(collapsed_genders).to_have_count(2)
+    # note: after clicking 1st gender group, `gender` now has count 1 as we queries for css class
+    # .tabulator-data-tree-control-expand
+    collapsed_genders.nth(0).click()
+    expect(collapsed_genders).to_have_count(1)
+    expect(expanded_genders).to_have_count(1)
+    expect(employees).to_have_count(2)
+    expect(employees.nth(0)).to_contain_text("Bob")
+    expect(employees.nth(1)).to_contain_text("David")
+
+    collapsed_genders.nth(0).click()
+    expanded_genders.nth(0).click()
+    expect(employees).to_have_count(2)
+    expect(employees.nth(0)).to_contain_text("Alice")
+    expect(employees.nth(1)).to_contain_text("Eve")
+
+
+@pytest.mark.parametrize("aggs", [
+    {"region": "min", "gender": "max"},
+    {"region": "min", "gender": {"salary": "max", "date_joined": "max"}},
+    {"region": {"salary": "min", "date_joined": "min"}, "gender": {"salary": "max", "date_joined": "max"}},
+    {"region": {"salary": "min", "date_joined": "min"}, "gender": "max"},
+])
+def test_tabulator_aggregators_data_aggregation(page, df_agg, aggs):
+    # TODO: parametrize agg_method, index level and column
+    widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True, aggregators=aggs)
+    serve_component(page, widget)
+
+    column_titles = page.locator('.tabulator-col-title')
+    col_mapping = {"salary": 3, "date_joined": 4}
+    for col in col_mapping:
+        expect(column_titles.nth(col_mapping[col])).to_have_text(col)
+
+    expected_results = {
+        "region": {
+            "region1": {"salary": "75,000.0", "date_joined": "-"},
+            "region2": {"salary": "82,000.5", "date_joined": "2021-05-20 00:00:00"},
+        },
+        "gender": {
+            "region1": {
+                "Male": {"salary": "75,000.0", "date_joined": "-"},
+                # "Female": {},  # no female in this region
+            },
+            "region2": {
+                "Male": {"salary": "82,000.5", "date_joined": "2021-05-20 00:00:00"},
+                "Female": {"salary": "-", "date_joined": "2022-07-30 00:00:00"},
+            },
+        }
+    }
+
+    # region level
+    rows = page.locator('.tabulator-row')
+    expect(rows).to_have_count(2)
+    agged = {
+        "region1": rows.nth(0).inner_text().split("\n"),
+        "region2": rows.nth(1).inner_text().split("\n"),
+    }
+    region_agged = {
+        region: {col: agged[region][col_mapping[col] - 1] for col in col_mapping} for region in agged
+    }
+    assert region_agged == expected_results["region"]
+
+    regions = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
+    # expand all region groups and see the data there
+    regions.nth(0).click()
+    regions.nth(0).click()
+    rows = page.locator(".tabulator-row.tabulator-tree-level-1")
+    expect(rows).to_have_count(3)
+    # gender level
+    agged = {
+        "region1": {"Male": rows.nth(0).inner_text().split("\n")},
+        "region2": {
+            "Male": rows.nth(1).inner_text().split("\n"),
+            "Female": rows.nth(2).inner_text().split("\n"),
+        },
+    }
+    gender_agged = {
+        region: {
+            gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
+    }
+    assert gender_agged == expected_results["gender"]
+
+
+@pytest.mark.parametrize("aggs", [
+    {"region": "min", "gender": "max"},
+    {"region": "min", "gender": {1: "max", 2: "max"}},
+    {"region": {1: "min", 2: "min"}, "gender": {1: "max", 2: "max"}},
+    {"region": {1: "min", 2: "min"}, "gender": "max"},
+])
+def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_agg_int_column_names, aggs):
+    # TODO: parametrize agg_method, index level and column
+    df_agg = df_agg_int_column_names
+    widget = Tabulator(df_agg.set_index(["region", "gender", "employee_id"]), hierarchical=True, aggregators=aggs)
+    serve_component(page, widget)
+
+    column_titles = page.locator('.tabulator-col-title')
+    col_mapping = {1: 3, 2: 4}
+    for col in col_mapping:
+        expect(column_titles.nth(col_mapping[col])).to_have_text(str(col))
+
+    expected_results = {
+        "region": {
+            "region1": {1: "75,000.0", 2: "-"},
+            "region2": {1: "82,000.5", 2: "2021-05-20 00:00:00"},
+        },
+        "gender": {
+            "region1": {
+                "Male": {1: "75,000.0", 2: "-"},
+                # "Female": {},  # no female in this region
+            },
+            "region2": {
+                "Male": {1: "82,000.5", 2: "2021-05-20 00:00:00"},
+                "Female": {1: "-", 2: "2022-07-30 00:00:00"},
+            },
+        }
+    }
+
+    # region level
+    rows = page.locator('.tabulator-row')
+    expect(rows).to_have_count(2)
+    agged = {
+        "region1": rows.nth(0).inner_text().split("\n"),
+        "region2": rows.nth(1).inner_text().split("\n"),
+    }
+    region_agged = {
+        region: {col: agged[region][col_mapping[col] - 1] for col in col_mapping} for region in agged
+    }
+    assert region_agged == expected_results["region"]
+
+    regions = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
+    # expand all region groups and see the data there
+    regions.nth(0).click()
+    regions.nth(0).click()
+    rows = page.locator(".tabulator-row.tabulator-tree-level-1")
+    expect(rows).to_have_count(3)
+    # gender level
+    agged = {
+        "region1": {"Male": rows.nth(0).inner_text().split("\n")},
+        "region2": {
+            "Male": rows.nth(1).inner_text().split("\n"),
+            "Female": rows.nth(2).inner_text().split("\n"),
+        },
+    }
+    gender_agged = {
+        region: {
+            gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
+    }
+    assert gender_agged == expected_results["gender"]

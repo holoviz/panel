@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import traceback
 
-from typing import ClassVar, Literal, Mapping
+from collections.abc import Mapping
+from typing import ClassVar, Literal
 
 import param
 
@@ -12,16 +13,17 @@ from ..pane.image import ImageBase
 from ..pane.markup import HTML, HTMLBasePane, Markdown
 from ..pane.placeholder import Placeholder
 from ..util import edit_readonly
+from ..viewable import Child
 from ..widgets.indicators import BooleanStatus
 from .utils import (
     avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
 )
 
 DEFAULT_STATUS_BADGES = {
-    "pending": BooleanStatus(value=False, margin=0, color="primary"),
-    "running": BooleanStatus(value=True, margin=0, color="warning"),
-    "success": BooleanStatus(value=True, margin=0, color="success"),
-    "failed": BooleanStatus(value=True, margin=0, color="danger"),
+    "pending": lambda: BooleanStatus(value=False, margin=0, color="primary"),
+    "running": lambda: BooleanStatus(value=True, margin=0, color="warning"),
+    "success": lambda: BooleanStatus(value=True, margin=0, color="success"),
+    "failed": lambda: BooleanStatus(value=True, margin=0, color="danger"),
 }
 
 
@@ -43,7 +45,7 @@ class ChatStep(Card):
     collapsed_on_success = param.Boolean(default=True, doc="""
         Whether to collapse the card on completion.""")
 
-    context_exception = param.ObjectSelector(
+    context_exception = param.Selector(
         default="raise", objects=["raise", "summary", "verbose", "ignore"], doc="""
         How to handle exceptions raised upon exiting the context manager.
         If "raise", the exception will be raised.
@@ -51,9 +53,6 @@ class ChatStep(Card):
         If "verbose", the full traceback will be sent to the chat step.
         If "ignore", the exception will be ignored.
         """)
-
-    success_title = param.String(default=None, doc="""
-        Title to display when status is success.""")
 
     default_badges = param.Dict(default=DEFAULT_STATUS_BADGES, doc="""
         Mapping from status to default status badge; keys must be one of
@@ -66,7 +65,7 @@ class ChatStep(Card):
     failed_title = param.String(default=None, doc="""
         Title to display when status is failed.""")
 
-    header = param.Parameter(doc="""
+    header = Child(doc="""
         A Panel component to display in the header bar of the Card.
         Will override the given title if defined.""", readonly=True)
 
@@ -82,7 +81,10 @@ class ChatStep(Card):
         Title to display when status is running.""")
 
     status = param.Selector(default="pending", objects=[
-        "pending", "running", "success", "failed"])
+        "pending", "running", "success", "failed"], doc="""The status of the chat step.""")
+
+    success_title = param.String(default=None, doc="""
+        Title to display when status is success.""")
 
     title = param.String(default="", constant=True, doc="""
         The title of the chat step. Will redirect to default_title on init.
@@ -97,8 +99,7 @@ class ChatStep(Card):
         "running_title": None,
         "success_title": None,
         "failed_title": None,
-        "status": None,
-        **Card._rename,
+        "status": None
     }
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_step.css"]
@@ -156,7 +157,7 @@ class ChatStep(Card):
             self.status = "failed"
             if self.context_exception == "raise":
                 return False
-        else:
+        elif self.status in ("pending", "running"):
             self.status = "success"
         return True  # suppress exception if any
 
@@ -222,8 +223,8 @@ class ChatStep(Card):
         """
         Stream a token to the title header.
 
-        Arguments:
-        ---------
+        Parameters
+        ----------
         token : str
             The token to stream.
         status : str
@@ -241,8 +242,8 @@ class ChatStep(Card):
         """
         Stream a token to the last available string-like object.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         token : str
             The token to stream.
         replace : bool
@@ -264,6 +265,9 @@ class ChatStep(Card):
         else:
             stream_to(self.objects[-1], token, replace=replace)
 
+        if self._instance is not None:
+            self._instance._chat_log.scroll_to_latest(self._instance.auto_scroll_limit)
+
     def serialize(
         self,
         prefix_with_viewable_label: bool = True,
@@ -272,8 +276,8 @@ class ChatStep(Card):
         """
         Format the object to a string.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         prefix_with_viewable_label : bool
             Whether to include the name of the Viewable, or type
             of the viewable if no name is specified.

@@ -35,3 +35,19 @@ def test_json_editor_edit(page):
     page.locator('.jsoneditor').click()
 
     wait_until(lambda: editor.value['str'] == 'new', page)
+
+def test_json_editor_edit_in_text_mode(page):
+    editor = JSONEditor(value={'str': 'string', 'int': 1}, mode='text')
+
+    msgs, _ = serve_component(page, editor)
+
+    expect(page.locator('.jsoneditor')).to_have_count(1)
+
+    page.locator('.jsoneditor-text').click()
+    ctrl_key = 'Meta' if sys.platform == 'darwin' else 'Control'
+    page.keyboard.press(f'{ctrl_key}+A')
+    page.keyboard.press('Backspace')
+    page.keyboard.type('{"str": "new"}')
+    page.locator('.jsoneditor').click()
+
+    wait_until(lambda: editor.value['str'] == 'new', page)

@@ -1,12 +1,64 @@
+from __future__ import annotations
+
 import os
 import pathlib
 import sys
 
-from collections import defaultdict
-
 from bokeh.command.subcommand import Argument, Subcommand
 
-from ..io.compile import RED, compile_components, find_components
+from ..custom import ReactiveESM
+from ..io.compile import RED, compile_components, find_module_bundles
+
+
+def run_compile(
+    bundles: dict[pathlib.Path, list[type[ReactiveESM]]],
+    build_dir: str | os.PathLike | None = None,
+    unminified: bool = False,
+    skip_npm: bool = False,
+    file_loaders: list[str] | None = None,
+    verbose: bool = False
+) -> int:
+    """
+    Runs the compile command on the provided bundles.
+
+    Parameters
+    ----------
+    bundles : dict[type[ReactiveESM]]
+        A list of `ReactiveESM` component classes to compile.
+    build_dir : str | os.PathLike, optional
+        The directory where the build output will be saved. If None, a
+        temporary directory will be used.
+    unminified : bool, optional
+        If True, minifies the compiled JavaScript bundle.
+    skip_npm: bool
+        Whether to skip npm install (assumes build_dir is set)
+    file_loaders: list[str]
+        List of file types (e.g. woff2 or svg) loaders to carry along
+    verbose : bool, optional
+        If True, prints detailed logs during the compilation process.
+
+    Returns
+    -------
+    int:
+       Count of errors.
+    """
+    file_loaders = file_loaders or []
+    errors = 0
+    for bundle, components in bundles.items():
+        component_names = '\n- '.join(c.name for c in components)
+        print(f"Building {bundle} containing the following components:\n\n- {component_names}\n")  # noqa
+        out = compile_components(
+            components,
+            build_dir=build_dir,
+            minify=not unminified,
+            outfile=bundle,
+            skip_npm=skip_npm,
+            file_loaders=file_loaders,
+            verbose=verbose,
+        )
+        if not out:
+            errors += 1
+    return errors
 
 
 class Compile(Subcommand):
@@ -26,75 +78,71 @@ class Compile(Subcommand):
             help    = "The Python modules to compile. May optionally define a single class.",
             default = None,
         )),
-        ('--build-dir', dict(
+        ('--build-dir', Argument(
             action = 'store',
             type    = str,
             help    = "Where to write the build directory."
         )),
-        ('--unminified', dict(
+        ('--skip-npm', Argument(
+            action  = 'store_true',
+            help    = "Whether to skip npm install step (only possible if build_dir with existing node_modules is available)."
+        )),
+        ('--unminified', Argument(
             action  = 'store_true',
             help    = "Whether to generate unminified output."
         )),
-        ('--verbose', dict(
+        ('--file-loaders', Argument(
+            action  = 'store',
+            nargs   = '*',
+            help    = "List of file types to include in the compiled bundle.",
+        )),
+        ('--verbose', Argument(
             action  = 'store_true',
             help    = "Whether to show verbose output. Note when setting --outfile only the result will be printed to stdout."
+        )),
+        ('--watch', Argument(
+            action  = 'store_true',
+            help    = 'Whether to watch the input files for changes and recompile the bundle.'
         )),
     )
 
     def invoke(self, args):
-        bundles = defaultdict(list)
-        for module_spec in args.modules:
-            if ':' in module_spec:
-                *parts, cls = module_spec.split(':')
-                module = ':'.join(parts)
-            else:
-                module = module_spec
-                cls = ''
-            classes = cls.split(',') if cls else None
-            module_name, ext = os.path.splitext(os.path.basename(module))
-            if ext not in ('', '.py'):
-                print(  # noqa
-                    f'{RED} Can only compile ESM components defined in Python '
-                    'file or importable module.'
-                )
-                return 1
+        bundles = {}
+        for module in args.modules:
             try:
-                components = find_components(module, classes)
-            except ValueError:
-                cls_error = f' and that class(es) {cls!r} are defined therein' if cls else ''
-                print(  # noqa
-                    f'{RED} Could not find any ESM components to compile, ensure '
-                    f'you provided the right module{cls_error}.'
-                )
+                module_bundles = find_module_bundles(module)
+            except RuntimeError as e:
+                print(f'{RED} {e}')  # noqa
                 return 1
-            if module in sys.modules:
-                module_path = sys.modules[module].__file__
-            else:
-                module_path = module
-            module_path = pathlib.Path(module_path).parent
-            for component in components:
-                if component._bundle:
-                    bundle_path = component._bundle
-                    if isinstance(bundle_path, str):
-                        path = (module_path / bundle_path).absolute()
-                    else:
-                        path = bundle_path.absolute()
-                    bundles[str(path)].append(component)
-                elif len(components) > 1 and not classes:
-                    component_module = module_name if ext else component.__module__
-                    bundles[module_path / f'{component_module}.bundle.js'].append(component)
+            if not module_bundles:
+                print (  # noqa
+                    f'{RED} Could not find any ESM components to compile '
+                    f'in {module}, ensure you provided the right module.'
+                )
+            for bundle, components in module_bundles.items():
+                if bundle in bundles:
+                    bundles[bundle] += components
                 else:
-                    bundles[module_path / f'{component.__name__}.bundle.js'].append(component)
+                    bundles[bundle] = components
 
-        errors = 0
-        for bundle, components in bundles.items():
-            out = compile_components(
-                components,
-                build_dir=args.build_dir,
-                minify=not args.unminified,
-                outfile=bundle,
-                verbose=args.verbose,
-            )
-            if not out:
-                errors += 1
+        errors = run_compile(
+            bundles, args.build_dir, args.unminified, args.skip_npm, args.file_loaders, args.verbose
+        )
+        if args.watch:
+            from watchfiles import watch
+            paths_to_watch = set()
+            for _, components in bundles.items():
+                for component in components:
+                    mod = sys.modules[component.__module__]
+                    mod_path = pathlib.Path(mod.__file__)
+                    paths_to_watch.add(mod_path)
+                    paths_to_watch.add(mod_path.parent / component._esm_path(compiled='compiling'))
+                    for shared in component._esm_shared.values():
+                        if isinstance(shared, os.PathLike):
+                            paths_to_watch.add(shared)
+
+            for _changes in watch(*paths_to_watch):
+                errors = run_compile(
+                    bundles, args.build_dir, args.unminified, args.skip_npm, args.file_loaders, args.verbose
+                )
         return int(errors>0)

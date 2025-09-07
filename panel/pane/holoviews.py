@@ -8,10 +8,9 @@ from __future__ import annotations
 import sys
 
 from collections import defaultdict
+from collections.abc import Mapping
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -58,7 +57,7 @@ class HoloViews(Pane):
     >>> HoloViews(some_holoviews_object)
     """
 
-    backend = param.ObjectSelector(
+    backend = param.Selector(
         default=None, objects=['bokeh', 'matplotlib', 'plotly'], doc="""
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
@@ -81,18 +80,18 @@ class HoloViews(Pane):
                                 allow_None=True, doc="""
         Bokeh theme to apply to the HoloViews plot.""")
 
-    widget_location = param.ObjectSelector(default='right_top', objects=[
+    widget_location = param.Selector(default='right_top', objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
         'right_top', 'right_bottom'], doc="""
         The layout of the plot and the widgets. The value refers to the
         position of the widgets relative to the plot.""")
 
-    widget_layout = param.ObjectSelector(
+    widget_layout = param.Selector(
         objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")
 
-    widget_type = param.ObjectSelector(default='individual',
+    widget_type = param.Selector(default='individual',
                                        objects=['individual', 'scrubber'], doc=""")
         Whether to generate individual widgets for each dimension or
         on global scrubber.""")
@@ -150,11 +149,19 @@ class HoloViews(Pane):
             p for p, v in params.items()
             if p in Layoutable.param and v != self.param[p].default
         ]
-        watcher = self.param.watch(self._update_widgets, self._rerender_params)
-        self._internal_callbacks.append(watcher)
+        sync_params = [p for p in Layoutable.param if p != 'name' and p not in self._skip_layoutable]
+        self._internal_callbacks.extend([
+            self.param.watch(self._update_widgets, self._rerender_params),
+            self.param.watch(self._sync_viewable_param, sync_params)
+        ])
         self._update_responsive()
         self._update_widgets()
         self._initialized = True
+
+    def _sync_viewable_param(self, *events):
+        params = {e.name: e.new for e in events}
+        for _, pane in self._plots.values():
+            pane.param.update(params)
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         if self._object_changing:
@@ -327,16 +334,13 @@ class HoloViews(Pane):
                 key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
         if plot.backend == 'bokeh':
-            if plot.comm or state._unblocked(plot.document):
+            if plot.comm or state._unblocked(plot.document) or not plot.document.session_context:
                 with unlocked():
                     plot.update(key)
                 if plot.comm and 'embedded' not in plot.root.tags:
                     plot.push()
             else:
-                if plot.document.session_context:
-                    plot.document.add_next_tick_callback(partial(plot.update, key))
-                else:
-                    plot.update(key)
+                plot.document.add_next_tick_callback(partial(plot.update, key))
         else:
             plot.update(key)
             if hasattr(plot.renderer, 'get_plot_state'):
@@ -417,8 +421,8 @@ class HoloViews(Pane):
     #----------------------------------------------------------------
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         from holoviews.plotting.plot import Plot
         if root is None:
@@ -662,11 +666,15 @@ class HoloViews(Pane):
             widget_kwargs.update(kwargs)
 
             if vals:
-                if all(isnumeric(v) or isinstance(v, datetime_types) for v in vals) and len(vals) > 1:
+                if len(vals) > 1 and all(isnumeric(v) or isinstance(v, datetime_types) for v in vals):
                     vals = sorted(vals)
                     labels = [str(dim.pprint_value(v)) for v in vals]
                     options = dict(zip(labels, vals))
                     widget_type = widget_type or DiscreteSlider
+                elif len(vals) == 1:
+                    val = next(iter(vals))
+                    options = {str(dim.pprint_value(val)): val}
+                    widget_type = widget_type or Select
                 else:
                     options = list(vals)
                     widget_type = widget_type or Select
@@ -738,8 +746,8 @@ class Interactive(Pane):
         self._layout_panel.param.update(**{e.name: e.new for e in events})
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if root is None:
             return self.get_root(doc, comm)

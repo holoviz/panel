@@ -1,9 +1,27 @@
+import pathlib
+
 import pytest
 
+from panel.custom import ReactiveESM
 from panel.io.compile import (
-    packages_from_code, packages_from_importmap, replace_imports,
+    find_module_bundles, packages_from_code, packages_from_importmap,
+    replace_imports,
 )
 
+
+class ESM1(ReactiveESM):
+    pass
+
+
+def test_find_module_bundles_as_dotted_module():
+    assert find_module_bundles('panel.tests.io.test_compile') == {pathlib.Path(__file__).parent / 'ESM1.bundle.js': [ESM1]}
+
+def test_find_module_bundles_as_path():
+    path = pathlib.Path(__file__).parent / 'ESM1.bundle.js'
+    bundles = find_module_bundles(__file__)
+    assert path in bundles
+    assert len(bundles[path]) == 1
+    assert bundles[path][0].name == 'ESM1'
 
 def test_packages_from_code_esm_sh():
     code, pkgs = packages_from_code('import * from "https://esm.sh/confetti-canvas@1.0.0"')

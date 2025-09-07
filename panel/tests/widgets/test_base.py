@@ -5,7 +5,6 @@ from panel.io import block_comm
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.tests.util import check_layoutable_properties
-from panel.util import param_watchers
 from panel.widgets import (
     CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge,
     LoadingSpinner, Terminal, TextInput, ToggleGroup, Tqdm, Widget,
@@ -38,7 +37,7 @@ def test_widget_untracked_watchers(widget, document, comm):
     except ImportError:
         pytest.skip("Dependent library could not be imported.")
     watchers = [
-        w for pwatchers in param_watchers(widg).values()
+        w for pwatchers in widg.param.watchers.values()
         for awatchers in pwatchers.values() for w in awatchers
     ]
     assert len([wfn for wfn in watchers if wfn not in widg._internal_callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
@@ -198,3 +197,13 @@ def test_widget_from_param_instance_with_kwargs():
 
     widget.value = 4.3
     assert test.a == 4.3
+
+
+def test_infer_params_attribute_error():
+    class MyComponent(param.Parameterized):
+        name = param.String(default='World', doc="Name to greet")
+
+    with pytest.raises(ValueError) as excinfo:
+        TextInput.from_param(MyComponent.name, name='Name Input')
+
+    assert str(excinfo.value) == "TextInput.from_param only accepts Parameter types, provided value is of type <class 'str'>."

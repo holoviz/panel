@@ -16,7 +16,7 @@ import {debounce} from "debounce"
 import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
 import {HTMLBox, HTMLBoxView} from "./layout"
-import {schedule_when} from "./util"
+import {schedule_when, transformJsPlaceholders} from "./util"
 
 import tabulator_css from "styles/models/tabulator.css"
 
@@ -73,12 +73,17 @@ function find_group(key: any, value: string, records: any[]): any {
   return null
 }
 
-function summarize(grouped: any[], columns: any[], aggregators: string[], depth: number = 0): any {
+function summarize(grouped: any[], columns: any[], aggregators: any[], depth: number = 0): any {
   const summary: any = {}
   if (grouped.length == 0) {
     return summary
   }
-  const agg = aggregators[depth]
+  // depth level 0 is the root, finish here
+  let aggs = ""
+  if (depth > 0) {
+    aggs = aggregators[depth-1]
+  }
+
   for (const group of grouped) {
     const subsummary = summarize(group._children, columns, aggregators, depth+1)
     for (const col in subsummary) {
@@ -88,14 +93,23 @@ function summarize(grouped: any[], columns: any[], aggregators: string[], depth:
         group[col] = subsummary[col]
       }
     }
+
     for (const column of columns.slice(1)) {
+      // if no aggregation method provided for an index level,
+      // or a specific column of an index level, do not aggregate data
+      let agg: string = ""
+      if (typeof aggs === "string") {
+        agg = aggs
+      } else if (column.field in aggs) {
+        agg = aggs[column.field]
+      }
       const val = group[column.field]
       if (column.field in summary) {
         const old_val = summary[column.field]
         if (agg === "min") {
-          summary[column.field] = Math.min(val, old_val)
+          summary[column.field] = (val < old_val) ? val : old_val
         } else if (agg === "max") {
-          summary[column.field] = Math.max(val, old_val)
+          summary[column.field] = (val > old_val) ? val : old_val
         } else if (agg === "sum") {
           summary[column.field] = val + old_val
         } else if (agg === "mean") {
@@ -125,7 +139,6 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
       grouped.push(group)
     }
     let subgroup = group
-    const groups: any = {}
     for (const index of indexes.slice(1)) {
       subgroup = find_group(index_field, record[index], subgroup._children)
       if (subgroup == null) {
@@ -133,7 +146,6 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
         subgroup[index_field] = record[index]
         group._children.push(subgroup)
       }
-      groups[index] = group
       for (const column of columns.slice(1)) {
         subgroup[column.field] = record[column]
       }
@@ -145,7 +157,16 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
   }
   const aggs = []
   for (const index of indexes) {
-    aggs.push((index in aggregators) ? aggregators[index] : "sum")
+    if (index in aggregators) {
+      if (aggregators[index] instanceof Map) {
+        // when some column names are numeric, need to convert that from a Map to an Object
+        aggs.push(Object.fromEntries(aggregators[index]))
+      } else {
+        aggs.push(aggregators[index])
+      }
+    } else {
+      aggs.push("sum")
+    }
   }
   summarize(grouped, columns, aggs)
   return grouped
@@ -354,6 +375,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _updating_page: boolean = false
   _updating_expanded: boolean = false
   _updating_sort: boolean = false
+  _updating_page_size: boolean = false
   _selection_updating: boolean = false
   _last_selected_row: any = null
   _initializing: boolean
@@ -366,6 +388,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
   _is_scrolling: boolean = false
+  _automatic_page_size: boolean = false
 
   override connect_signals(): void {
     super.connect_signals()
@@ -499,7 +522,7 @@ export class DataTabulatorView extends HTMLBoxView {
   override invalidate_render(): void {
     this.tabulator.destroy()
     this.tabulator = null
-    this.render()
+    this.rerender_()
   }
 
   redraw(columns: boolean = true, rows: boolean = true): void {
@@ -548,6 +571,7 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     this.redraw(true, true)
     this.restore_scroll()
+    this.recompute_page_size()
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -686,30 +710,6 @@ export class DataTabulatorView extends HTMLBoxView {
     }
 
     if (this.model.pagination) {
-      if (this.model.page_size == null) {
-        const table = this.shadow_el.querySelector(".tabulator-table")
-        if (table != null && holder != null) {
-          const table_height = holder.clientHeight
-          let height = 0
-          let page_size = null
-          const heights = []
-          for (let i = 0; i<table.children.length; i++) {
-            const row_height = table.children[i].clientHeight
-            heights.push(row_height)
-            height += row_height
-            if (height > table_height) {
-              page_size = i
-              break
-            }
-          }
-          if (height < table_height) {
-            page_size = table.children.length
-            const remaining = table_height - height
-            page_size += Math.floor(remaining / Math.min(...heights))
-          }
-          this.model.page_size = Math.max(page_size || 1, 1)
-        }
-      }
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
     }
@@ -720,7 +720,49 @@ export class DataTabulatorView extends HTMLBoxView {
       if (initializing) {
         this._resize_redraw()
       }
-    }, () => this.root.has_finished())
+    }, () => this.root.has_finished() && [...this._initialized_stylesheets.values()].every(v => v))
+  }
+
+  recompute_page_size(): void {
+    if (!this.model.pagination || this.model.page_size !== null || this._automatic_page_size) {
+      return
+    }
+    this._automatic_page_size = true
+    const responsive = this.model.sizing_mode && (this.model.sizing_mode.includes("height") || this.model.sizing_mode.includes("both"))
+    const holder = this.shadow_el.querySelector(".tabulator-tableholder")
+    const table = this.shadow_el.querySelector(".tabulator-table")
+    if (table != null && holder != null) {
+      const table_height = holder.clientHeight
+      let height = 0
+      let page_size = null
+      const heights = []
+      for (let i = 0; i<table.children.length; i++) {
+        const row_height = table.children[i].clientHeight
+        heights.push(row_height)
+        height += row_height
+        if (height > table_height) {
+          page_size = i
+          if (responsive) {
+            page_size -= 1
+          }
+          break
+        }
+      }
+      if (height < table_height) {
+        page_size = table.children.length
+        const remaining = table_height - height
+        page_size += Math.floor(remaining / Math.min(...heights))
+        if (responsive) {
+          page_size -= 2
+        }
+      }
+      this._updating_page_size = true
+      try {
+        this.model.page_size = Math.max(page_size || 1, 1)
+      } finally {
+        this._updating_page_size = false
+      }
+    }
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
@@ -770,7 +812,7 @@ export class DataTabulatorView extends HTMLBoxView {
     // Only use selectable mode if explicitly requested otherwise manually handle selections
     const selectableRows = this.model.select_mode === "toggle" ? true : NaN
     const configuration = {
-      ...this.model.configuration,
+      ...transformJsPlaceholders(this.model.configuration),
       index: "_index",
       nestedFieldSeparator: false,
       movableColumns: false,
@@ -782,6 +824,7 @@ export class DataTabulatorView extends HTMLBoxView {
       paginationMode: this.model.pagination,
       paginationSize: this.model.page_size || 20,
       paginationInitialPage: 1,
+      popupContainer: this.container,
       groupBy: this.groupBy,
       frozenRows: (row: any) => {
         return (this.model.frozen_rows.length > 0) ? this.model.frozen_rows.includes(row._row.data._index) : false
@@ -877,8 +920,7 @@ export class DataTabulatorView extends HTMLBoxView {
       display(view.el)
       viewEl.appendChild(view.el)
       if (view.shadow_el.children.length === 0) {
-        view.render()
-        view.after_render()
+        this.rerender_(view)
       }
       if (resize) {
         this._update_children()
@@ -952,7 +994,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
   getColumns(): any {
     this.columns = new Map()
-    const config_columns: (any[] | undefined) = this.model.configuration?.columns
+    const config_columns: (any[] | undefined) = transformJsPlaceholders(this.model.configuration?.columns)
     const columns = []
     columns.push({field: "_index", frozen: true, visible: false})
     if (config_columns != null) {
@@ -997,6 +1039,9 @@ export class DataTabulatorView extends HTMLBoxView {
       this.columns.set(column.field, tab_column)
       if (tab_column.title == null) {
         tab_column.title = column.title
+      }
+      if (tab_column.headerTooltip === undefined) {
+        tab_column.headerTooltip = true
       }
       if (tab_column.width == null && column.width != null && column.width != 0) {
         tab_column.width = column.width
@@ -1108,6 +1153,9 @@ export class DataTabulatorView extends HTMLBoxView {
       }
       columns.push(button_column)
     }
+    // We insert an empty last column to ensure select editor is rendered in correct position
+    // see: https://github.com/holoviz/panel/issues/7295
+    columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", sorter: null})
     return columns
   }
 
@@ -1295,6 +1343,9 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setPageSize(): void {
+    if (!this._updating_page_size) {
+      this._automatic_page_size = false
+    }
     this.tabulator.setPageSize(this.model.page_size)
     if (this.model.pagination === "local") {
       this.setStyles()

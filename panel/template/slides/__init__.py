@@ -34,7 +34,7 @@ class SlidesTemplate(VanillaTemplate):
     show_header = param.Boolean(default=False, doc="""
         Whether to show the header component.""")
 
-    _css = [VanillaTemplate._css, pathlib.Path(__file__).parent / 'slides.css']
+    _css = VanillaTemplate._css + [pathlib.Path(__file__).parent / 'slides.css']
 
     _template = pathlib.Path(__file__).parent / 'slides.html'
 

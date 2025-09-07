@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import json
 import sys
 
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
-)
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
+from bokeh.core.serialization import Serializer
 from bokeh.models import CustomJS
 from pyviz_comms import JupyterComm
 
@@ -44,10 +43,10 @@ class ECharts(ModelPane):
         the `objects` with a value containing a smaller number of series.
         """)
 
-    renderer = param.ObjectSelector(default="canvas", objects=["canvas", "svg"], doc="""
+    renderer = param.Selector(default="canvas", objects=["canvas", "svg"], doc="""
        Whether to render as HTML canvas or SVG""")
 
-    theme = param.ObjectSelector(default="default", objects=["default", "light", "dark"], doc="""
+    theme = param.Selector(default="default", objects=["default", "light", "dark"], doc="""
        Theme to apply to plots.""")
 
     priority: ClassVar[float | bool | None] = None
@@ -98,6 +97,17 @@ class ECharts(ModelPane):
                 js_events[event].append({'query': query, 'callback': CustomJS(code=code, args=models)})
         return dict(js_events)
 
+    def _serialize(self, obj):
+        if hasattr(obj, 'opts'):
+            obj = obj.opts
+        if isinstance(obj, dict):
+            data = {k: self._serialize(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            data = [self._serialize(v) for v in obj]
+        else:
+            data = obj
+        return data
+
     def _process_param_change(self, params):
         props = super()._process_param_change(params)
         if 'data' not in props:
@@ -105,7 +115,7 @@ class ECharts(ModelPane):
         data = props['data'] or {}
         if not isinstance(data, dict):
             w, h = data.width, data.height
-            props['data'] = data = json.loads(data.dump_options())
+            props['data'] = data = self._serialize(data.get_options())
             if not self.height and h:
                 props['height'] = int(h.replace('px', ''))
             if not self.width and w:
@@ -116,7 +126,7 @@ class ECharts(ModelPane):
             props['sizing_mode'] = 'stretch_both'
         return props
 
-    def _get_properties(self, document: Document):
+    def _get_properties(self, document: Document | None) -> dict[str, Any]:
         props = super()._get_properties(document)
         props['event_config'] = {
             event: list(queries) for event, queries in self._py_callbacks.items()
@@ -124,10 +134,17 @@ class ECharts(ModelPane):
         return props
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
+        if self.is_pyecharts(self.object):
+            from pyecharts.commons.utils import JsCode
+            try:
+                Serializer.register(JsCode, lambda obj, __: obj.js_code)  # type: ignore
+            except AssertionError:
+                pass
+
+        ECharts._bokeh_model = lazy_load(
             'panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root
         )
         model = super()._get_model(doc, root, parent, comm)
@@ -140,8 +157,8 @@ class ECharts(ModelPane):
 
         Reference: https://apache.github.io/echarts-handbook/en/concepts/event/
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         event: str
             The name of the event to register a handler on, e.g. 'click'.
         callback: str | CustomJS
@@ -163,8 +180,8 @@ class ECharts(ModelPane):
 
         Reference: https://apache.github.io/echarts-handbook/en/concepts/event/
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         event: str
             The name of the event to register a handler on, e.g. 'click'.
         code: str

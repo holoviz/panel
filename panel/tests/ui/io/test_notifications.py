@@ -6,6 +6,7 @@ from playwright.sync_api import expect
 
 from panel.config import config
 from panel.io.state import state
+from panel.layout import Column
 from panel.pane import Markdown
 from panel.template import BootstrapTemplate
 from panel.tests.util import serve_component
@@ -29,6 +30,24 @@ def test_notifications_no_template(page):
 
     expect(page.locator('.notyf__message')).to_have_text('MyError')
 
+def test_notifications_multiple(page):
+    def callback(event):
+        state.notifications.error('MyError')
+        state.notifications.error('MyError2')
+
+    def app():
+        config.notifications = True
+        button = Button(name='Display error')
+        button.on_click(callback)
+        return button
+
+    serve_component(page, app)
+
+    page.click('.bk-btn')
+
+    expect(page.locator('.notyf__message')).to_have_count(2)
+    expect(page.locator('.notyf__message').nth(0)).to_have_text('MyError')
+    expect(page.locator('.notyf__message').nth(1)).to_have_text('MyError2')
 
 def test_notifications_with_template(page):
     def callback(event):
@@ -46,7 +65,6 @@ def test_notifications_with_template(page):
 
     expect(page.locator('.notyf__message')).to_have_text('MyError')
 
-
 def test_ready_notification(page):
     def app():
         config.ready_notification = 'Ready!'
@@ -55,7 +73,6 @@ def test_ready_notification(page):
     serve_component(page, app)
 
     expect(page.locator('.notyf__message')).to_have_text('Ready!')
-
 
 def test_disconnect_notification(page):
     def app():
@@ -71,3 +88,50 @@ def test_disconnect_notification(page):
     page.click('.bk-btn')
 
     expect(page.locator('.notyf__message')).to_have_text('Disconnected!')
+
+def test_reconnect_notification(page):
+    doc = None
+
+    def app():
+        nonlocal doc
+        doc = state.curdoc
+        config.reconnect = True
+        config.disconnect_notification = 'Disconnected!'
+        col = Column()
+        button = Button(name='Stop server', on_click=lambda _: col.append('Foo'))
+        col.append(button)
+        return col
+
+    serve_component(page, app)
+
+    page.click('.bk-btn')
+
+    expect(page.locator(".markdown").locator("div")).to_have_text('Foo\n')
+
+    session = doc.session_context.server_context.sessions[0]
+
+    # Close WebSocket
+    list(session._subscribed_connections)[0]._socket.ws_connection.close()
+
+    # Ensure reconnect notifications are shown
+    expect(page.locator('.notyf__message').nth(0)).to_have_text('Disconnected! Reconnecting now.')
+    expect(page.locator('.notyf__message', has_text='Connection with server was re-established.')).to_have_count(1)
+
+    # Ensure that session state persists
+    expect(page.locator(".markdown").locator("div")).to_have_text('Foo\n')
+
+def test_onload_notification(page):
+    def onload_callback():
+        state.notifications.warning("Warning", duration=0)
+        state.notifications.info("Info", duration=0)
+
+    def app():
+        config.notifications = True
+        state.onload(onload_callback)
+        return Markdown("# Hello world")
+
+    serve_component(page, app)
+
+    expect(page.locator('.notyf__message')).to_have_count(2)
+    expect(page.locator('.notyf__message').nth(0)).to_have_text("Warning")
+    expect(page.locator('.notyf__message').nth(1)).to_have_text("Info")

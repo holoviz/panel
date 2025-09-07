@@ -17,9 +17,9 @@ def calculate_sha256(file_path):
     return sha256_hash.hexdigest()
 
 
-with open("package.json") as f:
+with open("package-lock.json") as f:
     package = json.load(f)
-pyodide_version = package["dependencies"]["pyodide"].removeprefix("^")
+pyodide_version = package["packages"]["node_modules/pyodide"]["version"]
 
 path = "pyodide-lock.json"
 url = f"https://cdn.jsdelivr.net/pyodide/v{pyodide_version}/full"
@@ -41,6 +41,11 @@ for whl_file in whl_files:
     package["file_name"] = os.path.basename(whl_file)
     package["sha256"] = calculate_sha256(whl_file)
     package["imports"] = [name]
+
+# Can be removed when micropip 0.9.0 is part of pyodide
+bokeh_req = data["packages"]["bokeh"]["depends"]
+if "narwhals" not in bokeh_req:
+    bokeh_req.append("narwhals")
 
 
 with open(path, "w") as f:

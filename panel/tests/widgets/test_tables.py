@@ -1,5 +1,7 @@
 import asyncio
 import datetime as dt
+import random
+import string
 
 from zoneinfo import ZoneInfo
 
@@ -200,7 +202,8 @@ def test_dataframe_duplicate_column_name(document, comm):
         table.value = table.value.rename(columns={'a': 'b'})
 
 
-def test_hierarchical_index(document, comm):
+@pytest.fixture
+def df_agg():
     df = pd.DataFrame([
         ('Germany', 2020, 9, 2.4, 'A'),
         ('Germany', 2021, 3, 7.3, 'C'),
@@ -209,8 +212,11 @@ def test_hierarchical_index(document, comm):
         ('UK', 2021, 1, 3.9, 'B'),
         ('UK', 2022, 9, 2.2, 'A')
     ], columns=['Country', 'Year', 'Int', 'Float', 'Str']).set_index(['Country', 'Year'])
+    return df
 
-    table = DataFrame(value=df, hierarchical=True,
+
+def test_hierarchical_index(document, comm, df_agg):
+    table = DataFrame(value=df_agg, hierarchical=True,
                       aggregators={'Year': {'Int': 'sum', 'Float': 'mean'}})
 
     model = table.get_root(document, comm)
@@ -311,6 +317,18 @@ def test_tabulator_multi_index(document, comm):
     assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3', 'foo4', 'foo5']))
 
 
+def test_tabulator_multi_index_hide_index(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df.set_index(['A', 'C']), show_index=False)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'B', 'sorter': 'number'},
+        {'field': 'D', 'sorter': 'timestamp'}
+    ]
+
+
 def test_tabulator_multi_index_remote_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df.set_index(['A', 'C']), pagination='remote', page_size=3)
@@ -339,12 +357,87 @@ def test_tabulator_multi_index_columns(document, comm):
     # Create a DataFrame with this MultiIndex as columns
     df = pd.DataFrame(np.random.randn(4, 6), columns=multi_index)
 
-    table = Tabulator(df)
+    formatters = {('A', 'one', 'Y'): NumberFormatter(format='0.0000')}
+    text_align = {('A', 'two', 'X'): 'left'}
+    titles = {}
+    widths = {}
+    frozen_columns = []
+    header_tooltips = {('A', 'one', 'Y'): 'Tooltips 1'}
+    header_align = {('A', 'one', 'X'): 'left'}
+    sortable = {('B', 'three', 'X'): False}
+    title_formatters = {('B', 'three', 'Y'): {'type': 'star', 'stars': 5}}
+
+    table = Tabulator(
+        df,
+        show_index=True,
+        formatters=formatters,
+        text_align=text_align,
+        titles=titles,
+        widths=widths,
+        frozen_columns=frozen_columns,
+        header_tooltips=header_tooltips,
+        header_align=header_align,
+        sortable=sortable,
+        title_formatters=title_formatters,
+    )
 
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index', 'sorter': 'number'},
+        {'field': 'index', 'sorter': 'number', 'headerSort': True},
+        {
+            'title': 'A',
+            'columns': [
+                {
+                    'title': 'one',
+                    'columns': [
+                        {'field': 'A_one_X', 'sorter': 'number', 'headerHozAlign': 'left', 'headerSort': True},
+                        {'field': 'A_one_Y', 'sorter': 'number', 'headerTooltip': 'Tooltips 1', 'headerSort': True},
+                    ],
+                },
+                {'title': 'two', 'columns': [{'field': 'A_two_X', 'sorter': 'number', 'hozAlign': 'left', 'headerSort': True}]},
+            ],
+        },
+        {
+            'title': 'B',
+            'columns': [
+                {'title': 'two', 'columns': [{'field': 'B_two_Y', 'sorter': 'number', 'headerSort': True}]},
+                {
+                    'title': 'three',
+                    'columns': [
+                        {'field': 'B_three_X', 'sorter': 'number', 'headerSort': False},
+                        {'field': 'B_three_Y', 'sorter': 'number', 'titleFormatter': 'star', 'titleFormatterParams': {'stars': 5}, 'headerSort': True},
+                    ],
+                },
+            ],
+        },
+    ]
+
+    assert model.columns[2].field == 'A_one_Y'
+    mformatter = model.columns[2].formatter
+    assert isinstance(mformatter, NumberFormatter)
+    assert mformatter.format == '0.0000'
+
+    for field in ("index", "A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
+
+
+def test_tabulator_multi_index_columns_hide_index(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_index = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create a DataFrame with this MultiIndex as columns
+    df = pd.DataFrame(np.random.randn(4, 6), columns=multi_index)
+
+    table = Tabulator(df, show_index=False)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
         {'title': 'A', 'columns': [
             {'title': 'one', 'columns': [
                 {'field': 'A_one_X', 'sorter': 'number'},
@@ -364,6 +457,108 @@ def test_tabulator_multi_index_columns(document, comm):
             ]},
         ]}
     ]
+    for field in ("A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
+
+
+def test_tabulator_multi_index_multi_index_columns(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_columns = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create multiIndex
+    numbers = [0, 1, 2]
+    colors = ['green', 'purple']
+    multi_index = pd.MultiIndex.from_product([numbers, colors], names=['number', 'color'])
+
+    # Create a DataFrame with MultiIndex as columns and MultiIndex as index
+    df = pd.DataFrame(np.random.randn(6, 6), index=multi_index, columns=multi_columns)
+
+    table = Tabulator(
+        df,
+        show_index=True,
+        titles={
+            ("A",): "Title a",
+            ("A", "two"): "Title two",
+            ("A", "two", "X"): "New title",
+        },
+    )
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'number__', 'sorter': 'number'},
+        {'field': 'color__'},
+        {'title': 'Title a', 'columns': [
+            {'title': 'one', 'columns': [
+                {'field': 'A_one_X', 'sorter': 'number'},
+                {'field': 'A_one_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'Title two', 'columns': [
+                {'field': 'A_two_X', 'sorter': 'number'}
+            ]},
+        ]},
+        {'title': 'B', 'columns': [
+            {'title': 'two', 'columns': [
+                {'field': 'B_two_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'three', 'columns': [
+                {'field': 'B_three_X', 'sorter': 'number'},
+                {'field': 'B_three_Y', 'sorter': 'number'}
+            ]},
+        ]}
+    ]
+    for field in ("number__", "color__", "A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
+
+    assert(model.columns[4].field == "A_two_X")
+    assert(model.columns[4].title == "New title")
+
+def test_tabulator_multi_index_multi_index_columns_hide_index(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_columns = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create multiIndex
+    numbers = [0, 1, 2]
+    colors = ['green', 'purple']
+    multi_index = pd.MultiIndex.from_product([numbers, colors], names=['number', 'color'])
+
+    # Create a DataFrame with MultiIndex as columns and MultiIndex as index
+    df = pd.DataFrame(np.random.randn(6, 6), index=multi_index, columns=multi_columns)
+
+    table = Tabulator(df, show_index=False)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'title': 'A', 'columns': [
+            {'title': 'one', 'columns': [
+                {'field': 'A_one_X', 'sorter': 'number'},
+                {'field': 'A_one_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'two', 'columns': [
+                {'field': 'A_two_X', 'sorter': 'number'}
+            ]},
+        ]},
+        {'title': 'B', 'columns': [
+            {'title': 'two', 'columns': [
+                {'field': 'B_two_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'three', 'columns': [
+                {'field': 'B_three_X', 'sorter': 'number'},
+                {'field': 'B_three_Y', 'sorter': 'number'}
+            ]},
+        ]}
+    ]
+    for field in ("A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
 
 
 def test_tabulator_expanded_content(document, comm):
@@ -733,7 +928,7 @@ def test_tabulator_header_filters_column_config_list(document, comm):
         {'field': 'index', 'sorter': 'number'},
         {'field': 'A', 'sorter': 'number'},
         {'field': 'B', 'sorter': 'number'},
-        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'in'},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'like'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
     assert model.configuration['selectable'] == True
@@ -743,7 +938,7 @@ def test_tabulator_header_filters_column_config_select_autocomplete_backwards_co
     df = makeMixedDataFrame()
     table = Tabulator(df, header_filters={
         'C': editor,
-        'D': {'type': editor, 'values': True}
+        'D': {'type': editor, 'values': True, 'multiselect': True}
     })
 
     model = table.get_root(document, comm)
@@ -752,8 +947,8 @@ def test_tabulator_header_filters_column_config_select_autocomplete_backwards_co
         {'field': 'index', 'sorter': 'number'},
         {'field': 'A', 'sorter': 'number'},
         {'field': 'B', 'sorter': 'number'},
-        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'in'},
-        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'sorter': 'timestamp', 'headerFilterFunc': 'in'},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'like'},
+        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True, 'multiselect': True}, 'sorter': 'timestamp', 'headerFilterFunc': 'in'},
     ]
     assert model.configuration['selectable'] == True
 
@@ -2170,6 +2365,47 @@ def test_tabulator_function_filter(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
+def test_tabulator_function_filter_selection(document, comm):
+    # issue https://github.com/holoviz/panel/issues/7695
+    def generate_random_string(min_length=5, max_length=20):
+        length = random.randint(min_length, max_length)
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+    def df_strings():
+        num_strings = 12
+        randomized_descr = [generate_random_string() for _ in range(num_strings)]
+        code = [f'{i:02d}' for i in range(num_strings)]
+        return pd.DataFrame(dict(code=code, descr=randomized_descr))
+
+    df = df_strings()
+    tbl = Tabulator(df)
+
+    descr_filter = TextInput(name='descr', value='')
+
+    def contains_filter(df, pattern=None):
+        if not pattern:
+            return df
+        return df[df.descr.str.contains(pattern, case=False)]
+
+    filter_fn = param.bind(contains_filter, pattern=descr_filter)
+
+    tbl.add_filter(filter_fn)
+
+    model = tbl.get_root(document, comm)
+
+    tbl.selection = [0, 1, 2]
+
+    assert model.source.selected.indices == [0, 1, 2]
+
+    descr_filter.value = df.iloc[5, -1]
+
+    assert model.source.selected.indices == []
+
+    descr_filter.value = ""
+
+    assert model.source.selected.indices == [0, 1, 2]
+
+
 def test_tabulator_function_mask_filter(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
@@ -2571,6 +2807,39 @@ def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(
     assert list(model.cell_styles['data'][0]) == [1, 6, 4]
 
 @mpl_available
+def test_tabulator_style_background_with_frozen_index(document, comm):
+    df = pd.DataFrame([[1, 2, 3, 4, 5]], columns=list("abcde")).set_index("a")
+    table = Tabulator(df, frozen_columns=["a"])
+    table.style.background_gradient(vmin=0, vmax=1, subset=["c"])
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [3]
+
+
+@mpl_available
+def test_tabulator_style_background_with_frozen_indexes(document, comm):
+    df = pd.DataFrame([[1, 2, 3, 4, 5]], columns=list("abcde")).set_index(["a", "b"])
+    table = Tabulator(df, frozen_columns=["a", "b"])
+    table.style.background_gradient(vmin=0, vmax=1, subset=["c"])
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [3]
+
+
+@mpl_available
+def test_tabulator_style_background_with_frozen_index_and_column(document, comm):
+    df = pd.DataFrame([[1, 2, 3, 4, 5]], columns=list("abcde")).set_index(["a", "d"])
+    table = Tabulator(df, frozen_columns=["a", "b"])
+    table.style.background_gradient(vmin=0, vmax=1, subset=["c"])
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [4]
+
+
+@mpl_available
 def test_tabulator_style_background_gradient(document, comm):
     df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
     table = Tabulator(df)
@@ -2713,3 +2982,8 @@ def test_header_filters_categorial_dtype():
     widget = Tabulator(df, header_filters=True)
     widget.filters = [{'field': 'model', 'type': 'like', 'value': 'A'}]
     assert widget.current_view.size == 1
+
+@pytest.mark.parametrize('aggs', [{}, {'Country': 'sum'}, {'Country': {'Int': 'sum', 'Float': 'mean'}}])
+def test_tabulator_aggregators(document, comm, df_agg, aggs):
+    tabulator = Tabulator(df_agg, hierarchical=True, aggregators=aggs)
+    tabulator.get_root(document, comm)

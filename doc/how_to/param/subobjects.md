@@ -69,7 +69,7 @@ shapes = [NGon(), Circle()]
 
 class ShapeViewer(param.Parameterized):
 
-    shape = param.ObjectSelector(default=shapes[0], objects=shapes)
+    shape = param.Selector(default=shapes[0], objects=shapes)
 
     @param.depends('shape')
     def view(self):

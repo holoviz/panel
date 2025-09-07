@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Callable, ClassVar, Mapping,
-)
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
 from ..models import Card as BkCard
+from ..viewable import Child
 from .base import Column, Row
 
 if TYPE_CHECKING:
@@ -30,7 +30,7 @@ class Card(Column):
     ... )
     """
 
-    active_header_background = param.String(doc="""
+    active_header_background = param.String(default=None, doc="""
         A valid CSS color for the header background when not collapsed.""")
 
     button_css_classes = param.List(default=['card-button'], doc="""
@@ -45,7 +45,7 @@ class Card(Column):
     css_classes = param.List(default=['card'], doc="""
         CSS classes to apply to the overall Card.""")
 
-    header = param.Parameter(doc="""
+    header = Child(doc="""
         A Panel component to display in the header bar of the Card.
         Will override the given title if defined.""")
 

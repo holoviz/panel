@@ -20,7 +20,8 @@ case is up to you to evaluate.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -38,7 +39,7 @@ class Language(param.Parameterized):
 
     country = param.String(doc="A country like 'United States'")
 
-    name = param.String(doc="""
+    name = param.String(constant=False, doc="""
         The bcp 47 code uniquely identifying the language. For example
         'en-US'.""")
 
@@ -318,7 +319,7 @@ class SpeechToText(Widget):
         incoming audio, and attempts to return a RecognitionResult
         using the audio captured so far.""")
 
-    lang = param.ObjectSelector(default="", objects=[""] + LANGUAGE_CODES,
+    lang = param.Selector(default="", objects=[""] + LANGUAGE_CODES,
                                 allow_None=True, label="Language", doc="""
         The language of the current SpeechRecognition in BCP 47
         format. For example 'en-US'. If not specified, this defaults
@@ -353,7 +354,7 @@ class SpeechToText(Widget):
     button_hide = param.Boolean(default=False, label="Hide the Button", doc="""
         If True no button is shown. If False a toggle Start/ Stop button is shown.""")
 
-    button_type = param.ObjectSelector(default="light", objects=BUTTON_TYPES, doc="""
+    button_type = param.Selector(default="light", objects=BUTTON_TYPES, doc="""
         The button styling.""")
 
     button_not_started = param.String(label="Button Text when not started", doc="""

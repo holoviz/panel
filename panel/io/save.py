@@ -6,9 +6,8 @@ from __future__ import annotations
 import io
 import os
 
-from typing import (
-    IO, TYPE_CHECKING, Any, Iterable, Optional,
-)
+from collections.abc import Iterable
+from typing import IO, TYPE_CHECKING, Any
 
 import bokeh
 
@@ -19,6 +18,7 @@ from bokeh.embed.util import (
 )
 from bokeh.io.export import get_screenshot_as_png
 from bokeh.model import Model
+from bokeh.models import UIElement
 from bokeh.resources import CDN, INLINE, Resources as BkResources
 from pyviz_comms import Comm
 
@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from jinja2 import Template
 
     from ..viewable import Viewable
+    from .resources import MODES
 
 #---------------------------------------------------------------------
 # Private API
@@ -59,14 +60,18 @@ else
 bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
 
 def save_png(
-    model: Model, filename: str, resources=CDN, template=None,
-    template_variables=None, timeout: int = 5
+    model: UIElement | Document,
+    filename: str | os.PathLike | IO,
+    resources: BkResources = CDN,
+    template=None,
+    template_variables: dict[str, Any] | None = None,
+    timeout: int = 5
 ) -> None:
     """
     Saves a bokeh model to png
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     model: bokeh.model.Model
       Model to save to png
     filename: str
@@ -104,7 +109,7 @@ def save_png(
         """
 
     try:
-        def get_layout_html(obj, resources, width, height, **kwargs):
+        def get_layout_html(obj: UIElement | Document, resources: Resources, width: int | None, height: int | None, **kwargs):
             resources = Resources.from_bokeh(resources)
             return file_html(
                 obj, resources, title="", template=template,
@@ -112,7 +117,7 @@ def save_png(
                 _always_new=True
             )
         old_layout_fn = bokeh.io.export.get_layout_html
-        bokeh.io.export.get_layout_html = get_layout_html
+        bokeh.io.export.get_layout_html = get_layout_html    # type: ignore
         img = get_screenshot_as_png(model, driver=webdriver, timeout=timeout, resources=resources)
 
         if img.width == 0 or img.height == 0:
@@ -140,9 +145,12 @@ def _title_from_models(models: Iterable[Model], title: str) -> str:
     return DEFAULT_TITLE
 
 def file_html(
-    models: Model | Document | list[Model], resources: Resources | None,
-    title: Optional[str] = None, template: Template | str = BASE_TEMPLATE,
-    template_variables: dict[str, Any] = {}, theme: ThemeLike = None,
+    models: Model | Document | list[Model],
+    resources: BkResources,
+    title: str | None = None,
+    template: Template | str = BASE_TEMPLATE,
+    template_variables: dict[str, Any] = {},
+    theme: ThemeLike = None,
     _always_new: bool = False
 ):
     models_seq = []
@@ -159,7 +167,7 @@ def file_html(
         (docs_json, render_items) = standalone_docs_json_and_render_items(
             models_seq, suppress_callback_warning=True
         )
-        title = _title_from_models(models_seq, title)
+        title = _title_from_models(models_seq, title or 'Panel Application')
         bundle = bundle_resources(models_seq, resources)
         return html_page_for_render_items(
             bundle, docs_json, render_items, title=title, template=template,
@@ -171,19 +179,29 @@ def file_html(
 #---------------------------------------------------------------------
 
 def save(
-    panel: Viewable, filename: str | os.PathLike | IO, title: Optional[str]=None,
-    resources: BkResources | None = None, template: Template | str | None = None,
-    template_variables: dict[str, Any] = None, embed: bool = False,
-    max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
-    json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
-    progress: bool = True, embed_states={}, as_png=None,
+    panel: Viewable | Document,
+    filename: str | os.PathLike | IO,
+    title: str | None = None,
+    resources: BkResources | None = None,
+    template: Template | str | None = None,
+    template_variables: dict[str, Any] | None = None,
+    embed: bool = False,
+    max_states: int = 1000,
+    max_opts: int = 3,
+    embed_json: bool = False,
+    json_prefix: str = '',
+    save_path: str = './',
+    load_path: str | None = None,
+    progress: bool = True,
+    embed_states={},
+    as_png: bool | None = None,
     **kwargs
 ) -> None:
     """
     Saves Panel objects to file.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable
       The Panel Viewable to save to file
     filename: str or file-like object
@@ -232,6 +250,7 @@ def save(
     else:
         doc = Document()
 
+    mode: MODES
     if resources is None:
         resources = CDN
         mode = 'cdn'
@@ -252,7 +271,7 @@ def save(
     comm = Comm()
     with config.set(embed=embed):
         if isinstance(panel, Document):
-            model = panel
+            model: Document | Model = panel
         elif isinstance(panel, BaseTemplate):
             with set_resource_mode(mode):
                 panel._init_doc(doc, title=title)
@@ -267,6 +286,9 @@ def save(
                 )
             else:
                 add_to_doc(model, doc, True)
+
+    if isinstance(model, Model) and not isinstance(model, UIElement):
+        raise ValueError("Cannot render non-UI components.")
 
     if as_png:
         return save_png(
@@ -285,11 +307,11 @@ def save(
     if template_variables:
         kwargs['template_variables'] = template_variables
 
-    resources = Resources.from_bokeh(resources, absolute=True)
+    save_resources = Resources.from_bokeh(resources, absolute=True)
 
     # Set resource mode
-    with set_resource_mode(resources):
-        html = file_html(doc, resources, title, **kwargs)
+    with set_resource_mode(save_resources.mode):
+        html = file_html(doc, save_resources, title, **kwargs)
     if hasattr(filename, 'write'):
         if isinstance(filename, io.BytesIO):
             html = html.encode('utf-8')

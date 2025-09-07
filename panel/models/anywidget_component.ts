@@ -1,4 +1,5 @@
 import type * as p from "@bokehjs/core/properties"
+import type {Transform} from "sucrase"
 
 import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
 
@@ -17,19 +18,34 @@ class AnyWidgetModelAdapter {
 
   get(name: any) {
     let value
-    if (name in this.model.data.attributes) {
-      value = this.model.data.attributes[name]
+    const propPath = name.split(".")
+    let targetModel: any = this.model.data
+
+    for (let i = 0; i < propPath.length - 1; i++) {
+      if (targetModel && targetModel.attributes && propPath[i] in targetModel.attributes) {
+        targetModel = targetModel.attributes[propPath[i]]
+      } else {
+        // Stop if any part of the path is missing
+        targetModel = null
+        break
+      }
+    }
+
+    if (targetModel && targetModel.attributes && propPath[propPath.length - 1] in targetModel.attributes) {
+      value = targetModel.attributes[propPath[propPath.length - 1]]
     } else {
       value = this.model.attributes[name]
     }
+
     if (value instanceof ArrayBuffer) {
       value = new DataView(value)
     }
+
     return value
   }
 
   set(name: string, value: any) {
-    if (name in this.model.data.attributes) {
+    if (name.split(".")[0] in this.model.data.attributes) {
       this.data_changes = {...this.data_changes, [name]: value}
     } else if (name in this.model.attributes) {
       this.model_changes = {...this.model_changes, [name]: value}
@@ -39,7 +55,24 @@ class AnyWidgetModelAdapter {
   save_changes() {
     this.model.setv(this.model_changes)
     this.model_changes = {}
-    this.model.data.setv(this.data_changes)
+    for (const key in this.data_changes) {
+      const propPath = key.split(".")
+      let targetModel: any = this.model.data
+      for (let i = 0; i < propPath.length - 1; i++) {
+        if (targetModel && targetModel.attributes && propPath[i] in targetModel.attributes) {
+          targetModel = targetModel.attributes[propPath[i]]
+        } else {
+          console.warn(`Skipping '${key}': '${propPath[i]}' does not exist.`)
+          targetModel = null
+          break
+        }
+      }
+      if (targetModel && targetModel.attributes && propPath[propPath.length - 1] in targetModel.attributes) {
+        targetModel.setv({[propPath[propPath.length - 1]]: this.data_changes[key]})
+      } else {
+        console.warn(`Skipping '${key}': Final property '${propPath[propPath.length - 1]}' not found.`)
+      }
+    }
     this.data_changes = {}
   }
 
@@ -107,21 +140,6 @@ export class AnyWidgetComponentView extends ReactiveESMView {
     }
   }
 
-  protected override _render_code(): string {
-    return `
-const view = Bokeh.index.find_one_by_id('${this.model.id}')
-
-function render() {
-  const out = Promise.resolve(view.render_fn({
-    view, model: view.adapter, data: view.model.data, el: view.container
-  }) || null)
-  view.destroyer = out
-  out.then(() => view.after_rendered())
-}
-
-export default {render}`
-  }
-
   override after_rendered(): void {
     this.render_children()
     this._rendered = true
@@ -138,9 +156,26 @@ export interface AnyWidgetComponent extends AnyWidgetComponent.Attrs {}
 
 export class AnyWidgetComponent extends ReactiveESM {
   declare properties: AnyWidgetComponent.Props
+  override sucrase_transforms: Transform[] = ["typescript", "jsx"]
 
   constructor(attrs?: Partial<AnyWidgetComponent.Attrs>) {
     super(attrs)
+  }
+
+  protected override _render_code(): string {
+    return `
+function render(id) {
+  const view = Bokeh.index.find_one_by_id(id)
+  if (!view) { return }
+
+  const out = Promise.resolve(view.render_fn({
+    view, model: view.adapter, data: view.model.data, el: view.container
+  }) || null)
+  view.destroyer = out
+  out.then(() => view.after_rendered())
+}
+
+export default {render}`
   }
 
   protected override _run_initializer(initialize: (props: any) => void): void {

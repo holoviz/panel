@@ -3,7 +3,8 @@ Defines Player widgets which offer media-player like controls.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -30,7 +31,7 @@ class PlayerBase(Widget):
         Interval between updates, in milliseconds. Default is 500, i.e.
         two updates per second.""")
 
-    loop_policy = param.ObjectSelector(
+    loop_policy = param.Selector(
         default='once', objects=['once', 'loop', 'reflect'], doc="""
         Policy used when player hits last frame""")
 
@@ -49,7 +50,7 @@ class PlayerBase(Widget):
 
     height = param.Integer(default=80)
 
-    value_align = param.ObjectSelector(
+    value_align = param.Selector(
         objects=["start", "center", "end"], doc="""
         Location to display the value of the slider
         ("start", "center", "end")""")
@@ -119,7 +120,7 @@ class Player(PlayerBase):
     value_throttled = param.Integer(default=0, constant=True, doc="""
         Current throttled player value.""")
 
-    _supports_embed: ClassVar[bool] = True
+    _supports_embed: bool = True
 
     def __init__(self, **params):
         if 'length' in params:

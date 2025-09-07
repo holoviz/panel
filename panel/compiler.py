@@ -91,7 +91,7 @@ def _write_bundled_files(name, files, explicit_dir=None, ext=None):
         filename = str(filename)
         if ext and not str(filename).endswith(ext):
             filename += f'.{ext}'
-        if filename.endswith(('.ttf', '.wasm')):
+        if filename.endswith(('.ttf', '.wasm', '.png', '.gif')):
             with open(filename, 'wb') as f:
                 f.write(response.content)
         else:
@@ -349,7 +349,7 @@ def bundle_icons(verbose=False, external=True, download_list=None):
         shutil.copyfile(icon, dest_dir / os.path.basename(icon))
 
 def patch_tabulator():
-    path = BUNDLE_DIR / 'datatabulator' / 'tabulator-tables@6.3.0' / 'dist' / 'js' / 'tabulator.min.js'
+    path = BUNDLE_DIR / 'datatabulator' / 'tabulator-tables@6.3.1' / 'dist' / 'js' / 'tabulator.min.js'
     text = path.read_text()
     # https://github.com/olifolkerd/tabulator/issues/4421
     old = '"focus"!==this.options("editTriggerEvent")&&"click"!==this.options("editTriggerEvent")'

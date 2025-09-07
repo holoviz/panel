@@ -55,7 +55,7 @@ export class PlayerView extends WidgetView {
     this.on_change(title, () => this.update_title_and_value())
     this.on_change(value_align, () => this.set_value_align())
     this.on_change(direction, () => this.set_direction())
-    this.on_change(value, () => this.render())
+    this.on_change(value, () => this.update_value())
     this.on_change(loop_policy, () => this.set_loop_state(this.model.loop_policy))
     this.on_change(disabled, () => this.toggle_disable())
     this.on_change(show_loop_controls, () => {
@@ -140,15 +140,15 @@ export class PlayerView extends WidgetView {
     }
   }
 
-  override render(): void {
-    if (this.sliderEl == null) {
-      super.render()
-    } else {
+  update_value(): void {
+    if (this.sliderEl != null) {
       this.sliderEl.min = String(this.model.start)
       this.sliderEl.max = String(this.model.end)
       this.sliderEl.value = String(this.model.value)
-      return
     }
+  }
+  override render(): void {
+    super.render()
 
     // Layout to group the elements
     this.groupEl = div()
@@ -309,6 +309,7 @@ export class PlayerView extends WidgetView {
     this.toggle_disable()
     this.update_css()
     this.shadow_el.appendChild(this.groupEl)
+    this.set_direction()
   }
 
   set_frame(frame: number, throttled: boolean = true): void {

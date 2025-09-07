@@ -1,5 +1,5 @@
 :root {
-  --bokeh-base-font: inherit;
+  --bokeh-base-font: Roboto, sans-serif, Verdana;
   --mdc-theme-surface: var(--design-surface-color, var(--panel-surface-color));
   --mdc-theme-primary: var(--design-primary-color, var(--panel-primary-color));
   --mdc-theme-primary-lightened: color-mix(

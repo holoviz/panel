@@ -7,11 +7,10 @@ import json
 import logging
 import os
 
+from collections.abc import Callable, Sequence
 from functools import partial
 from types import FunctionType, MethodType
-from typing import (
-    TYPE_CHECKING, Any, Callable, Mapping,
-)
+from typing import TYPE_CHECKING, Any, TypeAlias
 from urllib.parse import urljoin
 
 import bokeh.command.util
@@ -40,15 +39,15 @@ if TYPE_CHECKING:
     from ..viewable import Viewable, Viewer
     from .location import Location
 
-    TViewable = Viewable | Viewer | BaseTemplate
-    TViewableFuncOrPath = TViewable | Callable[[], TViewable] | os.PathLike | str
+    TViewable: TypeAlias = Viewable | Viewer | BaseTemplate
+    TViewableFuncOrPath: TypeAlias = TViewable | Callable[[], TViewable] | os.PathLike | str
 
 
 logger = logging.getLogger('panel.io.application')
 
 
 def _eval_panel(
-    panel: TViewableFuncOrPath, server_id: str, title: str,
+    panel: TViewableFuncOrPath, server_id: str | None, title: str,
     location: bool | Location, admin: bool, doc: Document
 ):
     from ..pane import panel as as_panel
@@ -73,9 +72,11 @@ def _eval_panel(
     with set_curdoc(doc):
         if isinstance(panel, (FunctionType, MethodType)):
             panel = panel()
+        if panel is None and config.template:
+            panel = state.template
         if isinstance(panel, BaseTemplate):
             doc = panel._modify_doc(server_id, title, doc, location)
-        else:
+        elif panel is not None:
             doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
         return doc
 
@@ -173,7 +174,11 @@ class Application(BkApplication):
         if user and config.cookie_secret:
             from tornado.web import decode_signed_value
             try:
-                user = decode_signed_value(config.cookie_secret, 'user', user.value).decode('utf-8')
+                decoded = decode_signed_value(config.cookie_secret, 'user', user.value)
+                if decoded:
+                    user = decoded.decode('utf-8')
+                else:
+                    user = user.value
             except Exception:
                 user = user.value
             if user in state._oauth_user_overrides:
@@ -186,7 +191,7 @@ class Application(BkApplication):
 bokeh.command.util.Application = Application # type: ignore
 
 
-def build_single_handler_application(path, argv=None):
+def build_single_handler_application(path: str | os.PathLike, argv=None) -> Application:
     argv = argv or []
     path = os.path.abspath(os.path.expanduser(path))
     handler: Handler
@@ -204,7 +209,7 @@ def build_single_handler_application(path, argv=None):
         elif path.endswith(".py"):
             handler = ScriptHandler(filename=path, argv=argv)
         else:
-            raise ValueError(f"Expected a '.py' script or '.ipynb' notebook, got: {path!r}" % path)
+            raise ValueError(f"Expected a '.py' script or '.ipynb' notebook, got: {path!r}")
     else:
         raise ValueError(f"Path for Bokeh server application does not exist: {path}")
 
@@ -219,18 +224,18 @@ bokeh.command.util.build_single_handler_application = build_single_handler_appli
 
 
 def build_applications(
-    panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
+    panel: TViewableFuncOrPath | dict[str, TViewableFuncOrPath],
     title: str | dict[str, str] | None = None,
     location: bool | Location = True,
     admin: bool = False,
     server_id: str | None = None,
-    custom_handlers: list | None = None
-) -> dict[str, Application]:
+    custom_handlers: Sequence[Callable[[str, TViewableFuncOrPath], TViewableFuncOrPath]] | None = None
+) -> dict[str, BkApplication]:
     """
     Converts a variety of objects into a dictionary of Applications.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     panel: Viewable, function or {str: Viewable}
         A Panel object, a function returning a Panel object or a
         dictionary mapping from the URL slug to either.
@@ -248,7 +253,7 @@ def build_applications(
     if not isinstance(panel, dict):
         panel = {'/': panel}
 
-    apps = {}
+    apps: dict[str, BkApplication] = {}
     for slug, app in panel.items():
         if slug.endswith('/') and slug != '/':
             raise ValueError(f"Invalid URL: trailing slash '/' used for {slug!r} not supported.")
@@ -260,13 +265,15 @@ def build_applications(
                     "Keys of the title dictionary and of the apps "
                     f"dictionary must match. No {slug} key found in the "
                     "title dictionary.") from None
-        else:
+        elif title:
             title_ = title
+        else:
+            title_ = 'Panel Application'
         slug = slug if slug.startswith('/') else '/'+slug
 
         # Handle other types of apps using a custom handler
-        for handler in (custom_handlers or ()):
-            new_app = handler(slug, app)
+        for custom_handler in (custom_handlers or ()):
+            new_app = custom_handler(slug, app)
             if app is not None:
                 break
         else:

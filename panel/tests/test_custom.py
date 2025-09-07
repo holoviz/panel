@@ -48,7 +48,7 @@ def test_py_component_cleanup(document, comm):
 
 class ESMDataFrame(ReactiveESM):
 
-    df = param.DataFrame()
+    df = param.DataFrame(doc="""A DataFrame to be displayed in the ESM.""")
 
 
 def test_reactive_esm_sync_dataframe(document, comm):
@@ -67,9 +67,9 @@ def test_reactive_esm_sync_dataframe(document, comm):
 
 class ESMWithChildren(ReactiveESM):
 
-    child = param.ClassSelector(class_=Viewable)
+    child = param.ClassSelector(class_=Viewable, doc="""A child Viewable to be displayed in the ESM.""")
 
-    children = param.List(item_type=Viewable)
+    children = param.List(item_type=Viewable, doc="""Child Viewables to be displayed in the ESM.""")
 
 
 def test_reactive_esm_model_cleanup(document, comm):
@@ -143,3 +143,18 @@ def test_reactive_esm_children_models_cleanup_on_replace(document, comm):
     assert ref in md2._models
     md2_model, _ = md2._models[ref]
     assert model.data.children == [md2_model]
+
+class ESMOverride(ReactiveESM):
+
+    width = param.Integer(default=42)
+
+def test_esm_parameter_override(document, comm):
+    esm = ESMOverride()
+
+    model = esm.get_root(document, comm)
+
+    assert model.width == 42
+
+    esm.width = 84
+
+    assert model.width == 84

@@ -32,7 +32,7 @@ Discover how to bind parameters, widgets, and bound functions to components.
 :link: hvplot_interactive
 :link-type: doc
 
-How to use `hvplot.interactive` with widgets to make your data workflows interactive
+How to use `param.rx` with widgets to make your data workflows interactive
 :::
 
 ::::
