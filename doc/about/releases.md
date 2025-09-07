@@ -4,13 +4,14 @@ See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual su
 
 ## Version 1.8.0
 
-This release brings a wide range of new features, enhancements, and compatibility improvements. Highlights include support for `JSCode` in ECharts and Tabulator, reworked WebSocket reconnection, expanded format and resource handling, and numerous bug fixes to improve stability across components and templates. It also includes compatibility updates for **Bokeh 3.8** and several improvements for use in **Pyodide**, **JupyterLite**, and **authentication-based deployments**. Many thanks to our returning contributors @dalthviz and @etihwo, a very warm welcome to our new contributor @c-meier and as usual many thanks to our core team including @maximlt, @hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr.
+This release brings a wide range of new features, enhancements, and compatibility improvements. Highlights include support for `JSCode` in ECharts and Tabulator, reworked WebSocket reconnection, and the ability to bundle resources into WASM apps, and numerous bug fixes to improve stability across components and templates. It also includes compatibility updates for **Bokeh 3.8** and several improvements for use in **Pyodide**, **JupyterLite**, and **authentication-based deployments**. Many thanks to our returning contributors @dalthviz and @etihwo, a very warm welcome to our new contributors @c-meier and @flxmr and as usual many thanks to our core team including @maximlt, @hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr.
 
 ### 🚀 Features
 
 - Support for inline JavaScript functions in `ECharts` and `Tabulator` via `JSCode` wrapper ([#8162](https://github.com/holoviz/panel/pull/8162))
 - Add support for reconnecting to a session after network disruption ([#8120](https://github.com/holoviz/panel/pull/8120))
 - Add support for `AVIF` images ([#8164](https://github.com/holoviz/panel/pull/8164))
+- Add support for bundling local resources into WASM apps ([#8181](https://github.com/holoviz/panel/pull/8181))
 
 ### ✨ Enhancements
 

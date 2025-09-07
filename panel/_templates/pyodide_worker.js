@@ -13,7 +13,14 @@ async function startApplication() {
   self.postMessage({type: 'status', msg: 'Loading pyodide'})
   self.pyodide = await loadPyodide();
   self.pyodide.globals.set("sendPatch", sendPatch);
-  console.log("Loaded pyodide");
+  console.log("Loaded pyodide!");
+  const data_archives = [{{ data_archives }}];
+  for (const archive of data_archives) {
+    let zipResponse = await fetch(archive);
+    let zipBinary = await zipResponse.arrayBuffer();
+    self.postMessage({type: 'status', msg: `Unpacking ${archive}`})
+    self.pyodide.unpackArchive(zipBinary, "zip");
+  }
   await self.pyodide.loadPackage("micropip");
   self.postMessage({type: 'status', msg: `Installing environment`})
   try {
@@ -25,7 +32,7 @@ async function startApplication() {
     console.log(e)
     self.postMessage({
       type: 'status',
-      msg: `Error while installing ${pkg_name}`
+      msg: `Error while installing packages`
     });
   }
   console.log("Environment loaded!");
