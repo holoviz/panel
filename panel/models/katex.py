@@ -5,17 +5,19 @@ from bokeh.models import Markup
 
 from ..config import config
 
+KATEX_VERSION = "0.16.22"
+
 
 class KaTeX(Markup):
     """
     A bokeh model that renders text using KaTeX.
     """
 
-    __css__ = ["https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.css"]
+    __css__ = [f"{config.npm_cdn}/katex@{KATEX_VERSION}/dist/katex.min.css"]
 
     __javascript__ = [
-        "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.js",
-        f"{config.npm_cdn}/katex@0.10.1/dist/contrib/auto-render.min.js"
+        f"{config.npm_cdn}/katex@{KATEX_VERSION}/dist/katex.min.js",
+        f"{config.npm_cdn}/katex@{KATEX_VERSION}/dist/contrib/auto-render.min.js"
     ]
 
     __js_skip__ = {
@@ -25,8 +27,8 @@ class KaTeX(Markup):
 
     __js_require__ = {
         'paths': {
-            'katex': "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min",
-            'autoLoad': f"{config.npm_cdn}/katex@0.10.1/dist/contrib/auto-render.min"
+            'katex': f"{config.npm_cdn}/katex@{KATEX_VERSION}/dist/katex.min",
+            'autoLoad': f"{config.npm_cdn}/katex@{KATEX_VERSION}/dist/contrib/auto-render.min"
         },
         'exports': {'katex': 'katex', 'autoLoad': 'renderMathInElement'}
     }
