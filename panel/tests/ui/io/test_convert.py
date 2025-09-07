@@ -128,8 +128,11 @@ row.servable()
 resources_app = """
 import panel as pn
 
-with open('app.md') as f:
-    row = pn.Row(f.read())
+row = pn.Row()
+
+if os.path.isfile('./app.md'):
+    with open('./app.md') as f:
+        row[:] = [f.read()]
 
 row.servable()
 """
