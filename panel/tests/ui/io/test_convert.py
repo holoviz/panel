@@ -298,7 +298,9 @@ def test_pyodide_test_convert_onload_app(http_serve, page, runtime):
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
 def test_pyodide_test_convert_resources_app(http_serve, page, runtime):
-    msgs = wait_for_app(http_serve, onload_app, page, runtime, resources=['./app.md'])
+    msgs = wait_for_app(
+        http_serve, onload_app, page, runtime, resources=[pathlib.Path(__file__).parent / 'app.md']
+    )
 
     with open('app.md') as f:
         expect(page.locator('.markdown')).to_have_text(f.read())
