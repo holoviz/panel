@@ -41,6 +41,14 @@ This release brings a wide range of new features, enhancements, and compatibilit
 
 ### 📦 Compatibility & Infrastructure
 
+- Update component versions ([#7447](https://github.com/holoviz/panel/pull/7447))
+  - `DeckGL` version from 9.0.20 to 9.1.14
+  - `ECharts` version from 5.6.0 to 6.0.0
+  - `KaTeX` version from 0.6.0 to 0.16.22
+  - `Perspective` version from 3.7.4 to 3.8.0
+  - `Plotly` version from 3.0.1 to 3.1.0
+  - `Vega` version from 5 to 6.1.2 and vega-lite dependency from 5 to 6.3.0
+  - `Vizzu` version from 0.15 to 0.17.1
 - Drop support for Bokeh 3.5 and 3.6 ([#8116](https://github.com/holoviz/panel/pull/8116))
 - Full compatibility with **Bokeh 3.8** ([#8160](https://github.com/holoviz/panel/pull/8160))
 
