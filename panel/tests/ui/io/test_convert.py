@@ -126,6 +126,7 @@ row.servable()
 """
 
 resources_app = """
+import os
 import panel as pn
 
 row = pn.Row()
