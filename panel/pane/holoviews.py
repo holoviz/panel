@@ -589,8 +589,8 @@ class HoloViews(Pane):
         from holoviews.plotting.util import get_dynamic_mode
 
         from ..widgets import (
-            DatetimeInput, DiscreteSlider, FloatSlider, IntSlider, Select,
-            WidgetBase,
+            DatetimeInput, DiscreteSlider, EditableFloatSlider,
+            EditableIntSlider, FloatSlider, IntSlider, Select, WidgetBase,
         )
 
         if widget_types is None:
@@ -690,12 +690,12 @@ class HoloViews(Pane):
                 if widget_type is not None:
                     pass
                 elif all(isinstance(v, int) for v in (start, end, default)):
-                    widget_type = IntSlider
+                    widget_type = EditableIntSlider if dynamic else IntSlider
                     step = 1 if dim.step is None else dim.step
                 elif isinstance(default, datetime_types):
                     widget_type = DatetimeInput
                 else:
-                    widget_type = FloatSlider
+                    widget_type = EditableFloatSlider if dynamic else FloatSlider
                     step = 0.1 if dim.step is None else dim.step
                 widget_kwargs = dict(dict(step=step, name=dim.label, start=dim.range[0],
                                           end=dim.range[1], value=default),
