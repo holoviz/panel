@@ -287,7 +287,7 @@ def update_versions(app, docname, source):
         "{{TABULATOR_VERSION}}": TABULATOR_VERSION,
         "{{TABULATOR_VERSION_WWW}}" : ".".join(TABULATOR_VERSION.split(".")[:2]),
         "{{VEGA_VERSION}}": VEGA_VERSION,
-        "{{VEGA_VERSION}}": VEGA_LITE_VERSION,
+        "{{VEGA_LITE_VERSION}}": VEGA_LITE_VERSION,
         "{{VIZZU_VERSION}}": VIZZU_VERSION,
         "{{VTK_VERSION}}": VTK_VERSION,
     }
