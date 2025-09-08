@@ -223,6 +223,8 @@ def collect_python_requirements(
         resolved_reqs = (
             pathlib.Path(requirements).read_text(encoding='utf-8').splitlines()
         )
+    else:
+        resolved_reqs = requirements
 
     for raw_req in resolved_reqs:
         stripped_req = raw_req.split('#')[0].strip()
