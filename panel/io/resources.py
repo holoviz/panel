@@ -728,7 +728,7 @@ class Resources(BkResources):
                 if self.mode == 'cdn':
                     resource = resolve_resource_cdn(resource)
                 if state.rel_path:
-                    resource = resource.lstrip(state.rel_path+'/')
+                    resource = resource.removeprefix(state.rel_path+'/')
                 if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
                     resource = component_resource_path(model, resource_type, resource)
                 if resource not in resources:
@@ -898,7 +898,7 @@ class Resources(BkResources):
                 continue
             for js_module in model.__javascript_modules__:
                 if state.rel_path:
-                    js_module = js_module.lstrip(state.rel_path+'/')
+                    js_module = js_module.removeprefix(state.rel_path+'/')
                 if not isurl(js_module) and not js_module.startswith('static/extensions'):
                     js_module = component_resource_path(model, '__javascript_modules__', js_module)
                 if js_module not in modules:
