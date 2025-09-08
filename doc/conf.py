@@ -266,7 +266,6 @@ def update_versions(app, docname, source):
     from panel.models.deckgl import DECKGL_VERSION
     from panel.models.echarts import ECHARTS_VERSION
     from panel.models.katex import KATEX_VERSION
-    from panel.models.mathjax import MATHJAX_VERSION
     from panel.models.perspective import PERSPECTIVE_VERSION
     from panel.models.plotly import PLOTLY_VERSION
     from panel.models.tabulator import TABULATOR_VERSION
@@ -280,17 +279,15 @@ def update_versions(app, docname, source):
         "{{BOKEH_VERSION}}": BOKEH_VERSION,
         "{{PYSCRIPT_VERSION}}": PYSCRIPT_VERSION,
         "{{PYODIDE_VERSION}}": _get_pyodide_version(),
-        "{{ALTAIR_VERSION}}": ALTAIR_VERSION,
         "{{DECKGL_VERSION}}": DECKGL_VERSION,
         "{{ECHARTS_VERSION}}": ECHARTS_VERSION,
         "{{KATEX_VERSION}}": KATEX_VERSION,
-        "{{MATHJAX_VERSION}}": MATHJAX_VERSION,
         "{{PERSPECTIVE_VERSION}}": PERSPECTIVE_VERSION,
         "{{PLOTLY_VERSION}}": PLOTLY_VERSION,
         "{{TABULATOR_VERSION}}": TABULATOR_VERSION,
         "{{TABULATOR_VERSION_WWW}}" : ".".join(TABULATOR_VERSION.split(".")[:2]),
         "{{VEGA_VERSION}}": VEGA_VERSION,
-        "{{VEGA_VERSION}}": VEGA_LITE_VERSION,
+        "{{VEGA_LITE_VERSION}}": VEGA_LITE_VERSION,
         "{{VIZZU_VERSION}}": VIZZU_VERSION,
         "{{VTK_VERSION}}": VTK_VERSION,
     }
