@@ -33,7 +33,7 @@ from panel.tests.util import hv_available, mpl_available
 from panel.theme import Native
 from panel.util.warnings import PanelDeprecationWarning
 from panel.widgets import (
-    Checkbox, DiscreteSlider, FloatSlider, Select,
+    Checkbox, DiscreteSlider, EditableFloatSlider, Select,
 )
 
 
@@ -276,21 +276,21 @@ def test_holoviews_widgets_from_dynamicmap(document, comm):
 
     assert len(widgets) == len(kdims)
 
-    assert isinstance(widgets[0], FloatSlider)
+    assert isinstance(widgets[0], EditableFloatSlider)
     assert widgets[0].name == 'A'
     assert widgets[0].start == range_dim.range[0]
     assert widgets[0].end == range_dim.range[1]
     assert widgets[0].value == range_dim.range[0]
     assert widgets[0].step == 0.1
 
-    assert isinstance(widgets[1], FloatSlider)
+    assert isinstance(widgets[1], EditableFloatSlider)
     assert widgets[1].name == 'B'
     assert widgets[1].start == range_step_dim.range[0]
     assert widgets[1].end == range_step_dim.range[1]
     assert widgets[1].value == range_step_dim.range[0]
     assert widgets[1].step == range_step_dim.step
 
-    assert isinstance(widgets[2], FloatSlider)
+    assert isinstance(widgets[2], EditableFloatSlider)
     assert widgets[2].name == 'C'
     assert widgets[2].start == range_default_dim.range[0]
     assert widgets[2].end == range_default_dim.range[1]
