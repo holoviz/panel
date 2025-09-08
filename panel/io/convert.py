@@ -186,7 +186,7 @@ def collect_python_requirements(
     ---------
     app: str | os.PathLike | IO,
         The filename of the Panel/Bokeh application to convert.
-    requirements: List[str]
+    requirements: list[str] | os.PathLike | Literal['auto']
         The list of requirements to include (in addition to Panel).
     panel_version: Literal['auto', 'local'] | str
         The panel release version to use in the exported HTML.
@@ -223,8 +223,14 @@ def collect_python_requirements(
         resolved_reqs = (
             pathlib.Path(requirements).read_text(encoding='utf-8').splitlines()
         )
-    else:
+    elif isinstance(requirements, list):
         resolved_reqs = requirements
+    else:
+        raise ValueError(
+            f'Requirements {requirements!r} could not be resolved. '
+            'Provide a list of requirement specs, a path to a requirements.txt '
+            'file that exists on disk or \'auto\' as a literal.'
+        )
 
     for raw_req in resolved_reqs:
         stripped_req = raw_req.split('#')[0].strip()
