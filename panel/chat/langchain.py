@@ -17,6 +17,7 @@ from ..chat.feed import ChatFeed
 from ..chat.interface import ChatInterface
 from ..chat.message import DEFAULT_AVATARS
 from ..layout import Accordion
+from ..util.warnings import deprecated
 
 
 class PanelCallbackHandler(BaseCallbackHandler):
@@ -46,6 +47,10 @@ class PanelCallbackHandler(BaseCallbackHandler):
             raise ImportError(
                 "LangChainCallbackHandler requires `langchain` to be installed."
             )
+        deprecated(
+            '1.9.0', 'panel.chat.langchain.PanelCallbackHandler',
+            warn_version='1.8.0'
+        )
         self.instance = instance
         self._message = None
         self._active_user = user
