@@ -759,8 +759,10 @@ class HoloViews(Pane):
                     widget_type = cls._resolve_widget('float', dynamic, default_widgets)
                     step = 0.1 if dim.step is None else dim.step
                 widget_kwargs = dict(
-                    step=step, name=dim.label, start=dim.range[0],
-                    end=dim.range[1], value=default, **widget_kwargs
+                    dict(
+                        step=step, name=dim.label, start=dim.range[0],
+                        end=dim.range[1], value=default
+                    ), **widget_kwargs
                 )
                 widget = widget_type(**widget_kwargs)
             if widget is not None:
