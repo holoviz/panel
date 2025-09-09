@@ -6,7 +6,6 @@ from __future__ import annotations
 import textwrap
 
 from collections.abc import Iterable, Sequence
-from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -22,13 +21,10 @@ from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource, FlexBox, Model
 from bokeh.protocol.messages.patch_doc import patch_doc
 
-from ..util.warnings import deprecated
 from .state import state
 
 if TYPE_CHECKING:
-    from bokeh.core.enums import HoldPolicyType
     from bokeh.protocol.message import Message
-    from pyviz_comms import Comm
 
 #---------------------------------------------------------------------
 # Private API
@@ -197,29 +193,3 @@ def apply_changes_without_dispatch(doc, model, changes):
             e.new is not changes[e.attr]
         ]
         doc.callbacks._hold = hold_value
-
-@contextmanager
-def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
-    """
-    Context manager that holds events on a particular Document
-    allowing them all to be collected and dispatched when the context
-    manager exits. This allows multiple events on the same object to
-    be combined if the policy is set to 'combine'.
-
-    Parameters
-    ----------
-    doc: Document
-        The Bokeh Document to hold events on.
-    policy: HoldPolicyType
-        One of 'combine', 'collect' or None determining whether events
-        setting the same property are combined or accumulated to be
-        dispatched when the context manager exits.
-    comm: Comm
-        The Comm to dispatch events on when the context manager exits.
-    """
-    deprecated(
-        '1.7.0', 'panel.io.model.hold', 'panel.io.document.hold',
-        warn_version='1.6.0'
-    )
-    from .document import hold
-    yield hold(doc, policy, comm)

@@ -43,6 +43,11 @@ This release brings a wide range of new features, enhancements, and compatibilit
 - Allow `Card` to overflow container ([#8170](https://github.com/holoviz/panel/pull/8170))
 - Fix `pyodide` model syncing ([#8174](https://github.com/holoviz/panel/pull/8174))
 
+### ⚠️ Deprecations
+
+- Removed `panel.io.model.hold` (was moved to `panel.io.document.hold` in 1.6.0) ([#8188](https://github.com/holoviz/panel/pull/8188))
+- Deprecated `panel.chat.langchain.PanelCallbackHandler` (to be removed in 1.9.0) ([#8188](https://github.com/holoviz/panel/pull/8188))
+
 ### 📦 Compatibility & Infrastructure
 
 - Update component versions ([#7447](https://github.com/holoviz/panel/pull/7447))
