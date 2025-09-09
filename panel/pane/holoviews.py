@@ -168,7 +168,8 @@ class HoloViews(Pane):
         'backend': None, 'center': None, 'linked_axes': None,
         'renderer': None, 'theme': None, 'widgets': None,
         'widget_layout': None, 'widget_location': None,
-        'widget_type': None, 'format': None
+        'widget_type': None, 'format': None,
+        'default_widgets': None
     }
 
     _rerender_params = ['object', 'backend', 'format']
