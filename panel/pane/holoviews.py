@@ -11,7 +11,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, TypedDict, cast,
+    TYPE_CHECKING, Any, ClassVar, Literal, TypedDict,
 )
 
 import param
@@ -627,12 +627,12 @@ class HoloViews(Pane):
     ) -> WidgetType:
         if default_widgets is None:
             default_widgets = {}
-        widget_type = cast(DimensionWidgetType, default_widgets.get(key, cls.default_widgets.get(key, None)))
+        widget_type = default_widgets.get(key, cls.default_widgets.get(key, None))
         if widget_type is None:
             raise ValueError("No valid {key} widget type found.")
         elif isinstance(widget_type, tuple):
             widget_type = widget_type[int(dynamic)]
-        return widget_type
+        return widget_type  # type: ignore
 
     @classmethod
     def widgets_from_dimensions(
