@@ -48,7 +48,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
                 "LangChainCallbackHandler requires `langchain` to be installed."
             )
         deprecated(
-            '1.9.0', 'panel.chat.langchain.PanelCallbackHandler',
+            '1.10.0', 'panel.chat.langchain.PanelCallbackHandler',
             warn_version='1.8.0'
         )
         self.instance = instance
