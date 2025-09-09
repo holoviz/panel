@@ -23,6 +23,7 @@ This release brings a wide range of new features, enhancements, and compatibilit
 - Improve uniformity and consistency in `Tabulator` column configuration ([#8127](https://github.com/holoviz/panel/pull/8127))
 - Trigger `param.Event` correctly on value change ([#8148](https://github.com/holoviz/panel/pull/8148))
 - Allow registering external `extension_cdn` for JS resources ([#8175](https://github.com/holoviz/panel/pull/8175))
+- Allow overriding the `default_widgets` on `HoloViews` pane ([#8186](https://github.com/holoviz/panel/pull/8186))
 
 ### 🐛 Bug Fixes
 
