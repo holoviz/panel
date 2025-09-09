@@ -10,7 +10,9 @@ import sys
 from collections import defaultdict
 from collections.abc import Mapping
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal, TypedDict, cast,
+)
 
 import param
 
@@ -25,7 +27,10 @@ from ..layout import (
     Column, HSpacer, Row, WidgetBox,
 )
 from ..viewable import Layoutable, Viewable
-from ..widgets import Player
+from ..widgets import (
+    DatetimeInput, DiscreteSlider, EditableFloatSlider, EditableIntSlider,
+    FloatSlider, IntSlider, Player, Select, WidgetBase,
+)
 from .base import Pane, RerenderError, panel
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
@@ -34,6 +39,17 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+
+    WidgetType = type[WidgetBase]
+    DimensionWidgetType = tuple[WidgetType, WidgetType] | WidgetType
+
+    class WidgetMapping(TypedDict, total=False):
+        date: DimensionWidgetType
+        discrete: DimensionWidgetType
+        discrete_numeric: DimensionWidgetType
+        float: DimensionWidgetType
+        int: DimensionWidgetType
+        scrubber: DimensionWidgetType
 
 
 def check_holoviews(version):
@@ -64,6 +80,33 @@ class HoloViews(Pane):
 
     center = param.Boolean(default=False, doc="""
         Whether to center the plot.""")
+
+    default_widgets: WidgetMapping = param.Dict(
+        default={
+            'date': DatetimeInput,
+            'discrete': Select,
+            'discrete_numeric': DiscreteSlider,
+            'float': (FloatSlider, EditableFloatSlider),
+            'int': (IntSlider, EditableIntSlider),
+            'scrubber': Player
+        }, constant=True, doc="""
+        Mapping that determines which widgets are used by default when
+        constructing interactive controls for HoloViews dimensions.
+
+        Keys and expected values:
+
+        - ``'date'``: For datetime ranges.
+        - ``'discrete'``: For categorical values.
+        - ``'discrete_numeric'``: For discrete, numeric values.
+        - ``'float'``: For continuous floating-point ranges.
+        - ``'int'``: For integer ranges.
+        - ``'scrubber'``: For stepping through frame sequences.
+
+        Note that float and int widgets may be given a tuple
+        to select between the static case (i.e. a HoloMap) and
+        dynamic case (i.e. a DynamicMap).
+        """
+    )
 
     format = param.Selector(default='png', objects=['png', 'svg'], doc="""
         The format to render Matplotlib plots with.""")
@@ -295,7 +338,8 @@ class HoloViews(Pane):
         else:
             direction = getattr(self.widget_layout, '_direction', 'vertical')
             widgets, values = self.widgets_from_dimensions(
-                self.object, self.widgets, self.widget_type, direction
+                self.object, self.widgets, self.widget_type, direction,
+                default_widgets=self.default_widgets
             )
         self._values = values
 
@@ -578,7 +622,27 @@ class HoloViews(Pane):
     jslink.__doc__ = Pane.jslink.__doc__
 
     @classmethod
-    def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual', direction='vertical'):
+    def _resolve_widget(
+        cls, key: str, dynamic: bool, default_widgets: WidgetMapping | None = None
+    ) -> WidgetType:
+        if default_widgets is None:
+            default_widgets = {}
+        widget_type = cast(DimensionWidgetType, default_widgets.get(key, cls.default_widgets.get(key, None)))
+        if widget_type is None:
+            raise ValueError("No valid {key} widget type found.")
+        elif isinstance(widget_type, tuple):
+            widget_type = widget_type[int(dynamic)]
+        return widget_type
+
+    @classmethod
+    def widgets_from_dimensions(
+        cls,
+        object: Any,
+        widget_types: dict[str, WidgetBase] | None = None,
+        widgets_type: Literal['individual', 'scrubber'] = 'individual',
+        direction: Literal['vertical', 'horizontal'] = 'vertical',
+        default_widgets: WidgetMapping | None = None
+    ):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
         from holoviews.core.traversal import unique_dimkeys
@@ -587,11 +651,6 @@ class HoloViews(Pane):
         )
         from holoviews.plotting.plot import GenericCompositePlot, Plot
         from holoviews.plotting.util import get_dynamic_mode
-
-        from ..widgets import (
-            DatetimeInput, DiscreteSlider, EditableFloatSlider,
-            EditableIntSlider, FloatSlider, IntSlider, Select, WidgetBase,
-        )
 
         if widget_types is None:
             widget_types = {}
@@ -602,12 +661,12 @@ class HoloViews(Pane):
             object = object.hmap
 
         if isinstance(object, DynamicMap) and object.unbounded:
-            dims = ', '.join(f'{dim!r}' for dim in object.unbounded)
+            unbounded_dims = ', '.join(f'{dim!r}' for dim in object.unbounded)
             msg = ('DynamicMap cannot be displayed without explicit indexing '
                    'as {dims} dimension(s) are unbounded. '
                    '\nSet dimensions bounds with the DynamicMap redim.range '
                    'or redim.values methods.')
-            raise SkipRendering(msg.format(dims=dims))
+            raise SkipRendering(msg.format(dims=unbounded_dims))
 
         dynamic, bounded = get_dynamic_mode(object)
         dims, keys = unique_dimkeys(object)
@@ -666,18 +725,19 @@ class HoloViews(Pane):
             widget_kwargs.update(kwargs)
 
             if vals:
+                options: dict[str, Any] | list[str]
                 if len(vals) > 1 and all(isnumeric(v) or isinstance(v, datetime_types) for v in vals):
                     vals = sorted(vals)
                     labels = [str(dim.pprint_value(v)) for v in vals]
                     options = dict(zip(labels, vals))
-                    widget_type = widget_type or DiscreteSlider
+                    widget_type = widget_type or cls._resolve_widget('discrete_numeric', dynamic, default_widgets)
                 elif len(vals) == 1:
                     val = next(iter(vals))
                     options = {str(dim.pprint_value(val)): val}
-                    widget_type = widget_type or Select
+                    widget_type = widget_type or cls._resolve_widget('discrete', dynamic, default_widgets)
                 else:
                     options = list(vals)
-                    widget_type = widget_type or Select
+                    widget_type = widget_type or cls._resolve_widget('discrete', dynamic, default_widgets)
                 default = vals[0] if dim.default is None else dim.default
                 widget_name = dim.pprint_label
                 widget_kwargs = dict(dict(name=widget_name, options=options, value=default), **widget_kwargs)
@@ -690,22 +750,23 @@ class HoloViews(Pane):
                 if widget_type is not None:
                     pass
                 elif all(isinstance(v, int) for v in (start, end, default)):
-                    widget_type = EditableIntSlider if dynamic else IntSlider
+                    widget_type = cls._resolve_widget('int', dynamic, default_widgets)
                     step = 1 if dim.step is None else dim.step
                 elif isinstance(default, datetime_types):
-                    widget_type = DatetimeInput
+                    widget_type = cls._resolve_widget('date', dynamic, default_widgets)
                 else:
-                    widget_type = EditableFloatSlider if dynamic else FloatSlider
+                    widget_type = cls._resolve_widget('float', dynamic, default_widgets)
                     step = 0.1 if dim.step is None else dim.step
-                widget_kwargs = dict(dict(step=step, name=dim.label, start=dim.range[0],
-                                          end=dim.range[1], value=default),
-                                     **widget_kwargs)
+                widget_kwargs = dict(
+                    step=step, name=dim.label, start=dim.range[0],
+                    end=dim.range[1], value=default, **widget_kwargs
+                )
                 widget = widget_type(**widget_kwargs)
             if widget is not None:
                 widget.param.name.constant = True
                 widgets.append(widget)
         if widgets_type == 'scrubber':
-            widgets = [Player(length=nframes, width=550)]
+            widgets = [cls._resolve_widget('scrubber', dynamic, default_widgets)(length=nframes, width=550)]
         return widgets, dim_values
 
 
