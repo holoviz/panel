@@ -1171,6 +1171,10 @@ class Tabulator(BaseTable):
         Dictionary mapping from column name to a HTML element
         to use as the button icon.""")
 
+    container_popup = param.Boolean(default=True, doc="""
+        If True, popups will appear within the table container, otherwise
+        popups will be appended to the body element of the DOM.""")
+
     expanded = param.List(default=[], nested_refs=True, doc="""
         List of expanded rows, only applicable if a row_content function
         has been defined.""")

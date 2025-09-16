@@ -824,7 +824,7 @@ export class DataTabulatorView extends HTMLBoxView {
       paginationMode: this.model.pagination,
       paginationSize: this.model.page_size || 20,
       paginationInitialPage: 1,
-      popupContainer: this.container,
+      popupContainer: this.model.container_popup && this.container,
       groupBy: this.groupBy,
       frozenRows: (row: any) => {
         return (this.model.frozen_rows.length > 0) ? this.model.frozen_rows.includes(row._row.data._index) : false
@@ -1153,9 +1153,11 @@ export class DataTabulatorView extends HTMLBoxView {
       }
       columns.push(button_column)
     }
-    // We insert an empty last column to ensure select editor is rendered in correct position
-    // see: https://github.com/holoviz/panel/issues/7295
-    columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", sorter: null})
+    if (this.model.container_popup) {
+      // We insert an empty last column to ensure select editor is rendered in correct position
+      // see: https://github.com/holoviz/panel/issues/7295
+      columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", sorter: null})
+    }
     return columns
   }
 
@@ -1556,6 +1558,7 @@ export namespace DataTabulator {
     sorters: p.Property<any[]>
     cell_styles: p.Property<any>
     theme_classes: p.Property<string[]>
+    container_popup: p.Property<boolean>
   }
 }
 
@@ -1602,6 +1605,7 @@ export class DataTabulator extends HTMLBox {
       sorters:        [ List(Any),              [] ],
       cell_styles:    [ Any,                     {} ],
       theme_classes:  [ List(Str),           [] ],
+      container_popup: [ Bool, true ],
     }))
   }
 }
