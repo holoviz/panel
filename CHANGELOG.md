@@ -1,5 +1,22 @@
 # Releases
 
+## Version 1.8.1
+
+Many thanks to [@ATL2001](https://github.com/ATL2001) (first contribution), [@Coderambling](https://github.com/Coderambling), [@philippjfr](https://github.com/philippjfr), and [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+### Enhancements
+
+- Add configuration to disable container popup ([#8200](https://github.com/holoviz/panel/pull/8200))
+
+### Bug Fixes
+
+- Ensure Tabulator empty column has no width ([#8193](https://github.com/holoviz/panel/pull/8193))
+- Add UTC timezone to default time for croniter ([#8199](https://github.com/holoviz/panel/pull/8199))
+
+### Documentation
+
+- Update indicators_performance.md to fix typo ([#8192](https://github.com/holoviz/panel/pull/8192))
+
 ## Version 1.8.0
 
 This release brings a wide range of new features, enhancements, and compatibility improvements. Highlights include support for `JSCode` in ECharts and Tabulator, reworked WebSocket reconnection, and the ability to bundle resources into WASM apps, and numerous bug fixes to improve stability across components and templates. It also includes compatibility updates for **Bokeh 3.8** and several improvements for use in **Pyodide**, **JupyterLite**, and **authentication-based deployments**. Many thanks to our returning contributors @dalthviz and @etihwo, a very warm welcome to our new contributors @c-meier and @flxmr and as usual many thanks to our core team including @maximlt, @hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr.
