@@ -2,11 +2,16 @@
 
 ## Version 1.8.1
 
-Many thanks to [@Coderambling](https://github.com/Coderambling), [@philippjfr](https://github.com/philippjfr), and [@hoxbro](https://github.com/hoxbro) for their contributions.
+Many thanks to [@ATL2001](https://github.com/ATL2001) (first contribution), [@Coderambling](https://github.com/Coderambling), [@philippjfr](https://github.com/philippjfr), and [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+### Enhancements
+
+- Add configuration to disable container popup ([#8200](https://github.com/holoviz/panel/pull/8200))
 
 ### Bug Fixes
 
 - Ensure Tabulator empty column has no width ([#8193](https://github.com/holoviz/panel/pull/8193))
+- Add UTC timezone to default time for croniter ([#8199](https://github.com/holoviz/panel/pull/8199))
 
 ### Documentation
 
