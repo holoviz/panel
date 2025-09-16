@@ -972,7 +972,7 @@ class _state(param.Parameterized):
             )
         else:
             from croniter import croniter
-            base = dt.datetime.now() if at is None else at
+            base = dt.datetime.now(dt.timezone.utc) if at is None else at
             diter = croniter(cron, base)
         now = dt.datetime.now().timestamp()
         try:
