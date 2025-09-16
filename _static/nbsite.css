@@ -1,0 +1,214 @@
+/* Align navbar item in center */
+.navbar-header-items__center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Ensure content fills full space */
+.bd-main .bd-content .bd-article-container {
+  max-width: unset;
+}
+
+/* Hide primary sidenav bottom section to avoid extra scroll */
+.sidebar-primary-items__end.sidebar-primary__section {
+  display: none;
+}
+
+.nav-link {
+  white-space: nowrap;
+}
+
+ul.current.nav.bd-sidenav {
+  padding: 0;
+}
+
+@media (max-width: 960px) {
+  .homepage-logo {
+    display: none;
+  }
+}
+
+@media (min-width: 960px) {
+  .bd-sidebar {
+    max-width: 250px;
+  }
+
+  .bd-page-width {
+    max-width: min(100%, 1600px);
+  }
+}
+
+@media (min-width: 1200px) {
+  .bd-main .bd-content .bd-article-container .bd-article {
+    padding-left: 0;
+  }
+
+  .bd-sidebar-secondary {
+    max-width: 250px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .bd-sidebar {
+    max-width: 300px;
+  }
+
+  .bd-main .bd-content .bd-article-container .bd-article {
+    padding-left: 0.5rem;
+    padding-top: 0.5rem;
+  }
+}
+
+.theme-switch-button {
+  font-size: unset;
+}
+
+.related a {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+
+p.caption:not([role="heading"]) {
+  text-align: center !important;
+  font-weight: bold;
+}
+
+ul.parents {
+  display: none;
+}
+
+.related a:hover {
+  background: #7cb92f;
+}
+.related a[href="#"]:hover,
+.related a[href="index.html"]:hover {
+  background: #9edb4f;
+}
+.related a[href="#"],
+.related a[href="index.html"] {
+  background: #8dca3f;
+}
+.related a {
+  padding: 0.5em;
+  margin: 0;
+}
+
+.global-toc li a[href="#"]:hover,
+.global-toc li a[href="index.html"]:hover {
+  background: #fff;
+}
+
+.global-toc li a[href="#"],
+.global-toc li a[href="index.html"] {
+  background: #fafafa;
+}
+
+.global-toc li a {
+  display: block;
+}
+
+.global-toc li a:hover {
+  background: #f5f5f5;
+}
+
+div.body h1 {
+  background: #beebbe;
+}
+
+div.body h2 {
+  background: #c8e3c8;
+}
+
+div.body h3,
+div.body h4,
+div.body h5,
+div.body h6 {
+  background: #d9e3d8;
+}
+
+div.inheritance_box {
+  overflow: auto;
+}
+
+tt.docutils.literal {
+  background: transparent;
+  font-size: 0.9em;
+}
+
+dl.class {
+  border-top: 1px solid #5a970d;
+  padding-top: 15px;
+}
+
+dl.class.rm_expanded,
+dl.class.rm_collapsed {
+  border-top: none;
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  /*padding-left: 1.5em;*/
+}
+
+dl.class.rm_expanded > dt:before {
+  content: "[-]";
+  cursor: pointer;
+  color: #005b81;
+}
+
+dl.class.rm_collapsed dt:before {
+  content: "[+]";
+  cursor: pointer;
+  color: #005b81;
+}
+
+dl.class.rm_expanded dd {
+  display: block;
+}
+
+dl.class.rm_collapsed dd {
+  display: none;
+}
+
+a.anchor-link {
+  visibility: hidden;
+}
+
+/* Avoid wrapping in HoloViews extension logo block */
+div.logo-block {
+  display: inline-block;
+}
+
+div.bk-root {
+  min-height: 50px;
+}
+
+.output {
+  overflow-x: auto;
+}
+
+/* Adapted from the sphinx book theme */
+main.bd-content a.headerlink {
+  opacity: 0;
+  margin-left: 0.2em;
+}
+
+main.bd-content a.headerlink:hover {
+  background-color: transparent;
+  color: rgba(var(--pst-color-headerlink-hover), 1);
+  opacity: 1 !important;
+}
+
+main.bd-content h1:hover a.headerlink,
+main.bd-content h2:hover a.headerlink,
+main.bd-content h3:hover a.headerlink,
+main.bd-content h4:hover a.headerlink,
+main.bd-content h5:hover a.headerlink {
+  opacity: 0.5;
+}
+/* End of copy  */
+
+/* Color of the  paragraph symbol of the header link */
+:root {
+  --pst-color-headerlink: 170, 170, 170;
+  --pst-color-headerlink-hover: 170, 170, 170;
+}

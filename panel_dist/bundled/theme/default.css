@@ -1,0 +1,46 @@
+:host,
+:root {
+  --panel-primary-color: #0072b5;
+  --panel-on-primary-color: #ffffff;
+  --panel-secondary-color: #e1e1e1;
+  --panel-on-secondary-color: #090c0;
+  --panel-background-color: #ffffff;
+  --panel-on-background-color: #212529;
+  --panel-surface-color: #f3f3f3;
+  --panel-on-surface-color: #1a1d21;
+  --panel-shadow-color: #3c4043;
+  --code-bg-color: #263238;
+  --code-text-color: #82aaff;
+  --primary-bg-color: #0d6efd;
+  --secondary-bg-color: #6c757d;
+  --success-bg-color: #198754;
+  --danger-bg-color: #dc3545;
+  --warning-bg-color: #ffc107;
+  --info-bg-color: #0dcaf0;
+  --light-bg-color: #f8f9fa;
+  --dark-bg-color: #212529;
+  --primary-text-color: #0a58ca;
+  --secondary-text-color: #6c757d;
+  --success-text-color: #146c43;
+  --info-text-color: #087990;
+  --warning-text-color: #997404;
+  --danger-text-color: #b02a37;
+  --light-text-color: #6c757d;
+  --dark-text-color: #495057;
+  --primary-bg-subtle: #cfe2ff;
+  --secondary-bg-subtle: #f8f9fa;
+  --success-bg-subtle: #d1e7dd;
+  --info-bg-subtle: #cff4fc;
+  --warning-bg-subtle: #fff3cd;
+  --danger-bg-subtle: #f8d7da;
+  --light-bg-subtle: #fcfcfd;
+  --dark-bg-subtle: #ced4da;
+  --primary-border-subtle: #9ec5fe;
+  --secondary-border-subtle: #e9ecef;
+  --success-border-subtle: #a3cfbb;
+  --info-border-subtle: #9eeaf9;
+  --warning-border-subtle: #ffe69c;
+  --danger-border-subtle: #f1aeb5;
+  --light-border-subtle: #e9ecef;
+  --dark-border-subtle: #adb5bd;
+}
