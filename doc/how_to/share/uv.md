@@ -7,6 +7,7 @@ This approach eliminates dependency management headaches and makes your Panel ap
 ## What You'll Accomplish
 
 By the end of this guide, you'll have:
+
 - Created a self-contained Panel script with embedded dependencies
 - Configured the script for both local development and sharing
 - Published your script for others to run directly from GitHub
@@ -122,28 +123,20 @@ Make your script accessible to others by publishing it:
 Others can now run your script directly from GitHub:
 
 ```bash
-# Run the script directly from GitHub
 uv run https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/script.py
-
-# Or serve it with Panel
-uv run --with panel -- panel serve https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/script.py --show
 ```
 
-For example try:
+For example try running [examples/apps/uv/app.py](https://raw.githubusercontent.com/holoviz/panel/main/examples/apps/uv/app.py):
 
 ```bash
-# Run the script directly from GitHub
-uv run https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/script.py
-
-# Or serve it with Panel
-uv run --with panel -- panel serve https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/script.py --show
+uv run https://raw.githubusercontent.com/holoviz/panel/main/examples/apps/uv/app.py
 ```
 
 ## Advanced Sharing Patterns
 
 ### GitHub Gists
 
-For quick sharing without a full repository create a [gist](https://gist.github.com/) and run it directly:
+For quick sharing without a full repository [create a public gist](https://gist.github.com/) and run it directly:
 
 ```bash
 uv run https://gist.githubusercontent.com/USERNAME/GIST_ID/raw/script.py
