@@ -15,4 +15,5 @@ Integrate with other servers<integrations/index>
 Deploy applications<deployment/index>
 Export apps<export/index>
 Run panel in WebAssembly<wasm/index>
+Share Panel scripts with UV<share/uv.md>
 ```

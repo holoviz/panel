@@ -245,6 +245,13 @@ How to export and save Panel applications as static files.
 How to run Panel applications entirely in the browser using WebAssembly (Wasm), Pyodide, and PyScript.
 :::
 
+:::{grid-item-card} {octicon}`terminal;2.5em;sd-mr-1 sd-animate-grow50` How to share with UV
+:link: share/uv.md
+:link-type: doc
+
+How to share your Panel scripts with UV
+:::
+
 ::::
 
 ## Migrate to Panel
