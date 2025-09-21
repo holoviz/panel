@@ -893,7 +893,7 @@ def test_tabulator_editable(page, df_mixed):
     cell = page.locator('text="false"').first
     cell.click()
     checkboxes = page.locator('input[type="checkbox"]')
-    checkboxes.first.click()
+    checkboxes.first.click(force=True)
     cell = page.locator('text="D"')
     cell.click()
     expect(page.locator('input[type="text"]')).to_have_count(1)
