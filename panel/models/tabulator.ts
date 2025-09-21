@@ -1117,12 +1117,12 @@ export class DataTabulatorView extends HTMLBoxView {
         }
       }
       tab_column.visible = (tab_column.visible != false && !this.model.hidden_columns.includes(column.field))
-      const originalEditable = tab_column.editable;
-      if (isFunction(originalEditable)){
+      const originalEditable = tab_column.editable
+      if (isFunction(originalEditable)) {
         tab_column.editable = (cell: any) => (this.model.editable && (editor.default_view != null) && originalEditable(cell))
-      } else if (isBoolean(originalEditable)){
+      } else if (isBoolean(originalEditable)) {
         tab_column.editable = () => (this.model.editable && (editor.default_view != null) && originalEditable)
-      }else{
+      } else {
         tab_column.editable = () => (this.model.editable && (editor.default_view != null))
       }
       if (tab_column.headerFilter) {
