@@ -826,6 +826,109 @@ def test_tabulator_editors_nested(page, opt0, opt1):
     assert items_text == list(map(str, expected))
 
 
+def test_tabulator_editable(page, df_mixed):
+    code = """
+    function format(cell) {
+        var data = cell.getRow().getData();
+        return data.bool;
+    }
+    """
+    jscode = JSCode(code)
+    widget = Tabulator(
+        df_mixed,
+        editors={
+            "str": StringEditor(),
+            "float": None,
+            "int": IntEditor(),
+            "bool": CheckboxEditor(),
+            "date": None,
+            "datetime": None,
+        },
+        editables={
+            "str": jscode,
+            "float": jscode,
+            "int": False,
+            "bool": True,
+            "date": False,
+            "datetime": True,
+        },
+    )
+
+    serve_component(page, widget)
+
+    # ``str`` is editable depending of the value of bool
+    cell = page.locator('text="A"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(1)
+    cell = page.locator('text="D"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(0)
+
+    # ``float`` is not editable since editor is None
+    cell = page.locator('text="3.14"')
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    # ``int`` is not editable since editable is False
+    cell = page.locator('text="1"').first
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    # ``bool`` is editable
+    cell = page.locator('text="true"').first
+    cell.click()
+    expect(page.locator('input[type="checkbox"]')).to_have_count(1)
+
+    # ``date`` is not editable since editor is None
+    cell = page.locator('text="2019-01-01"')
+    cell.click()
+    expect(page.locator('input[type="date"]')).to_have_count(0)
+
+    # ``datetime`` is not editable since editor is None
+    cell = page.locator('text="2019-01-01 10:00:00"')
+    cell.click()
+    expect(page.locator('input[type="datetime-local"]')).to_have_count(0)
+
+    # Change the False on the same row of D to True and check that D is editable
+    cell = page.locator('text="false"').first
+    cell.click()
+    checkboxes = page.locator('input[type="checkbox"]')
+    checkboxes.first.click()
+    cell = page.locator('text="D"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(1)
+
+    # Disable the Tabulator to check that all cell are non editable
+    widget.disabled = True
+
+    cell = page.locator('text="A"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(0)
+    cell = page.locator('text="D"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(0)
+
+    cell = page.locator('text="3.14"')
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    cell = page.locator('text="1"').first
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    cell = page.locator('text="true"').first
+    cell.click()
+    expect(page.locator('input[type="checkbox"]')).to_have_count(0)
+
+    cell = page.locator('text="2019-01-01"')
+    cell.click()
+    expect(page.locator('input[type="date"]')).to_have_count(0)
+
+    cell = page.locator('text="2019-01-01 10:00:00"')
+    cell.click()
+    expect(page.locator('input[type="datetime-local"]')).to_have_count(0)
+
+
 @pytest.mark.parametrize('layout', Tabulator.param['layout'].objects)
 def test_tabulator_column_layouts(page, df_mixed, layout):
     widget = Tabulator(df_mixed, layout=layout)
