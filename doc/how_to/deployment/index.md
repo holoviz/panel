@@ -8,7 +8,7 @@ For guides on running and configuring a Panel server see the [server how-to guid
 :gutter: 1 1 1 2
 
 :::{grid-item-card} Anaconda Notebooks
-:link: anadonda_notebooks
+:link: anaconda_notebooks
 :link-type: doc
 
 ![Anaconda Notebooks Logo](../../_static/logos/anaconda.png)
