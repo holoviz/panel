@@ -58,7 +58,7 @@ if TYPE_CHECKING:
         headerFilterPlaceholder: str
 
 class ColumnSpec(TypedDict, total=False):
-    editable: bool
+    editable: bool | JSCode
     editor: str | CellEditor | JSCode
     editorParams: dict[str, Any]
     field: str
