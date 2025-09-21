@@ -11,7 +11,6 @@ By the end of this guide, you'll have:
 - Created a self-contained Panel script with embedded dependencies
 - Configured the script for both local development and sharing
 - Published your script for others to run directly from GitHub
-- Learned best practices for portable Panel application distribution
 
 ## Prerequisites
 
@@ -100,7 +99,7 @@ Verify your script works in an isolated environment:
 uv run script.py
 
 # Or serve with Panel's development server
-uv run --with panel -- panel serve script.py --dev --show
+uv run panel serve script.py --dev --show
 ```
 
 The `--dev` flag enables auto-reload during development, and `--show` automatically opens your browser.
