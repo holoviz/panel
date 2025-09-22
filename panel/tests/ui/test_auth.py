@@ -196,8 +196,8 @@ def test_auth0_oauth_via_proxy(py_file, page):
             py_file.name
         ]
         with run_panel_serve(cmd) as p:
-            port = wait_for_port(p.stdout)
-            page.goto(f"http://localhost:{port}")
+            wait_for_port(p.stdout)
+            page.goto(f"http://localhost:{proxy}/proxy/{app_name}")
 
             page.locator('input[name="username"]').fill(auth0_user)
             page.locator('input[name="password"]').fill(auth0_password)
