@@ -81,6 +81,7 @@ Panel can be used with just about any cloud provider that can launch a Python pr
 :hidden:
 :maxdepth: 2
 
+anaconda_notebooks
 aws
 azure
 binder
