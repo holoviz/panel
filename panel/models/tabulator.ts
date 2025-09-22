@@ -542,7 +542,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   get is_drawing(): boolean {
-    return this._building || this._redrawing || !this.root.has_finished()
+    return this._building || this._redrawing || !this.has_finished()
   }
 
   override after_layout(): void {
@@ -720,7 +720,7 @@ export class DataTabulatorView extends HTMLBoxView {
       if (initializing) {
         this._resize_redraw()
       }
-    }, () => this.root.has_finished() && [...this._initialized_stylesheets.values()].every(v => v))
+    }, () => this.has_finished() && [...this._initialized_stylesheets.values()].every(v => v))
   }
 
   recompute_page_size(): void {
@@ -926,7 +926,7 @@ export class DataTabulatorView extends HTMLBoxView {
         this._update_children()
         this.resize_table()
       }
-    }, () => this.root.has_finished())
+    }, () => this.has_finished())
   }
 
   resize_table(): void {
