@@ -7,6 +7,13 @@ For guides on running and configuring a Panel server see the [server how-to guid
 ::::{grid} 2 3 3 5
 :gutter: 1 1 1 2
 
+:::{grid-item-card} Anaconda Notebooks
+:link: anaconda_notebooks
+:link-type: doc
+
+![Anaconda Notebooks Logo](../../_static/logos/anaconda.png)
+:::
+
 :::{grid-item-card} AWS
 :link: aws
 :link-type: doc
@@ -74,6 +81,7 @@ Panel can be used with just about any cloud provider that can launch a Python pr
 :hidden:
 :maxdepth: 2
 
+anaconda_notebooks
 aws
 azure
 binder

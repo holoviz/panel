@@ -119,7 +119,7 @@ class FileDownload(IconMixin):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
-    _clicks = param.Integer(default=0)
+    _clicks = param.Integer(default=0, doc="Internal counter for button clicks.")
 
     _transfers = param.Integer(default=0)
 
@@ -219,6 +219,8 @@ class FileDownload(IconMixin):
             if filename is None:
                 filename = fileobj.name
         elif hasattr(fileobj, 'read'):
+            if hasattr(fileobj, 'seek'):
+                fileobj.seek(0)
             bdata = fileobj.read()
             if not isinstance(bdata, bytes):
                 bdata = bdata.encode("utf-8")

@@ -46,7 +46,8 @@ if TYPE_CHECKING:
 
 class _SliderBase(Widget):
 
-    bar_color = param.Color(default="#e6e6e6", doc="""""")
+    bar_color = param.Color(default="#e6e6e6", doc="""
+        The color of the slider bar. Accepts any valid CSS color string.""")
 
     direction = param.Selector(default='ltr', objects=['ltr', 'rtl'], doc="""
         Whether the slider should go from left-to-right ('ltr') or

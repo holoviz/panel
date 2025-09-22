@@ -169,6 +169,8 @@ class DataTabulator(HTMLBox):
 
     theme_classes = List(String)
 
+    container_popup  = Bool(True)
+
     __css_raw__ = CSS_URLS
 
     @classproperty

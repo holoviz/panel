@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sys
 
 from collections import defaultdict
@@ -9,6 +8,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
+from bokeh.core.serialization import Serializer
 from bokeh.models import CustomJS
 from pyviz_comms import JupyterComm
 
@@ -97,6 +97,17 @@ class ECharts(ModelPane):
                 js_events[event].append({'query': query, 'callback': CustomJS(code=code, args=models)})
         return dict(js_events)
 
+    def _serialize(self, obj):
+        if hasattr(obj, 'opts'):
+            obj = obj.opts
+        if isinstance(obj, dict):
+            data = {k: self._serialize(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            data = [self._serialize(v) for v in obj]
+        else:
+            data = obj
+        return data
+
     def _process_param_change(self, params):
         props = super()._process_param_change(params)
         if 'data' not in props:
@@ -104,7 +115,7 @@ class ECharts(ModelPane):
         data = props['data'] or {}
         if not isinstance(data, dict):
             w, h = data.width, data.height
-            props['data'] = data = json.loads(data.dump_options())
+            props['data'] = data = self._serialize(data.get_options())
             if not self.height and h:
                 props['height'] = int(h.replace('px', ''))
             if not self.width and w:
@@ -126,6 +137,13 @@ class ECharts(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
+        if self.is_pyecharts(self.object):
+            from pyecharts.commons.utils import JsCode
+            try:
+                Serializer.register(JsCode, lambda obj, __: obj.js_code)  # type: ignore
+            except AssertionError:
+                pass
+
         ECharts._bokeh_model = lazy_load(
             'panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root
         )

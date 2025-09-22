@@ -1,6 +1,86 @@
 # Releases
 
-See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
+## Version 1.8.1
+
+Many thanks to [@ATL2001](https://github.com/ATL2001) (first contribution), [@Coderambling](https://github.com/Coderambling), [@philippjfr](https://github.com/philippjfr), and [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+### Enhancements
+
+- Add configuration to disable container popup ([#8200](https://github.com/holoviz/panel/pull/8200))
+
+### Bug Fixes
+
+- Ensure Tabulator empty column has no width ([#8193](https://github.com/holoviz/panel/pull/8193))
+- Add UTC timezone to default time for croniter ([#8199](https://github.com/holoviz/panel/pull/8199))
+
+### Documentation
+
+- Update indicators_performance.md to fix typo ([#8192](https://github.com/holoviz/panel/pull/8192))
+
+## Version 1.8.0
+
+This release brings a wide range of new features, enhancements, and compatibility improvements. Highlights include support for `JSCode` in ECharts and Tabulator, reworked WebSocket reconnection, and the ability to bundle resources into WASM apps, and numerous bug fixes to improve stability across components and templates. It also includes compatibility updates for **Bokeh 3.8** and several improvements for use in **Pyodide**, **JupyterLite**, and **authentication-based deployments**. Many thanks to our returning contributors @dalthviz and @etihwo, a very warm welcome to our new contributors @c-meier and @flxmr and as usual many thanks to our core team including @maximlt, @hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr.
+
+### 🚀 Features
+
+- Support for inline JavaScript functions in `ECharts` and `Tabulator` via `JSCode` wrapper ([#8162](https://github.com/holoviz/panel/pull/8162))
+- Add support for reconnecting to a session after network disruption ([#8120](https://github.com/holoviz/panel/pull/8120))
+- Add support for `AVIF` images ([#8164](https://github.com/holoviz/panel/pull/8164))
+- Add support for bundling local resources into WASM apps ([#8181](https://github.com/holoviz/panel/pull/8181))
+
+### ✨ Enhancements
+
+- Improve `.from_param()` behavior and error messages ([#8047](https://github.com/holoviz/panel/pull/8047), [#8079](https://github.com/holoviz/panel/pull/8079))
+- Add `--reuse-sessions warm` option to reduce session cold starts ([#8087](https://github.com/holoviz/panel/pull/8087))
+- Enable event dispatch immediately after WebSocket connect ([#8101](https://github.com/holoviz/panel/pull/8101))
+- Improve error message display in `LiteralInput` ([#8102](https://github.com/holoviz/panel/pull/8102))
+- Allow `hold` usage from a thread ([#8113](https://github.com/holoviz/panel/pull/8113))
+- Improve uniformity and consistency in `Tabulator` column configuration ([#8127](https://github.com/holoviz/panel/pull/8127))
+- Trigger `param.Event` correctly on value change ([#8148](https://github.com/holoviz/panel/pull/8148))
+- Allow registering external `extension_cdn` for JS resources ([#8175](https://github.com/holoviz/panel/pull/8175))
+- Allow overriding the `default_widgets` on `HoloViews` pane ([#8186](https://github.com/holoviz/panel/pull/8186))
+
+### 🐛 Bug Fixes
+
+- Ensure `Terminal` resizes correctly ([#8109](https://github.com/holoviz/panel/pull/8109))
+- Bundle correct `AceEditor` version ([#8111](https://github.com/holoviz/panel/pull/8111))
+- Remove `bokeh-sampledata` dependency from Pyodide builds ([#8138](https://github.com/holoviz/panel/pull/8138))
+- Correct resource handling when resources are symlinked ([#8143](https://github.com/holoviz/panel/pull/8143))
+- Correct behavior when `FileDownload` resets cursor before reading ([#8154](https://github.com/holoviz/panel/pull/8154))
+- Fix handling of `NaT` values ([#8156](https://github.com/holoviz/panel/pull/8156))
+- Apply template design after rendering template ([#8155](https://github.com/holoviz/panel/pull/8155))
+- Prevent `select-all` checkbox from being hidden in Material theme ([#8147](https://github.com/holoviz/panel/pull/8147))
+- Fix handling of exclusive bounds in `Param` widgets ([#8165](https://github.com/holoviz/panel/pull/8165))
+- Fix layout of `Card` headers with `row` flex mode ([#8166](https://github.com/holoviz/panel/pull/8166))
+- Uncap height of children in scrollable `Column` layouts ([#8167](https://github.com/holoviz/panel/pull/8167))
+- Fix errors in `ECharts` when chart has already been destroyed ([#8168](https://github.com/holoviz/panel/pull/8168))
+- Fix `Tabulator` filter behavior with list-based filters ([#8169](https://github.com/holoviz/panel/pull/8169))
+- Allow `Card` to overflow container ([#8170](https://github.com/holoviz/panel/pull/8170))
+- Fix `pyodide` model syncing ([#8174](https://github.com/holoviz/panel/pull/8174))
+
+### ⚠️ Deprecations
+
+- Removed `panel.io.model.hold` (was moved to `panel.io.document.hold` in 1.6.0) ([#8188](https://github.com/holoviz/panel/pull/8188))
+- Deprecated `panel.chat.langchain.PanelCallbackHandler` (to be removed in 1.9.0) ([#8188](https://github.com/holoviz/panel/pull/8188))
+
+### 📦 Compatibility & Infrastructure
+
+- Update component versions ([#7447](https://github.com/holoviz/panel/pull/7447))
+  - `DeckGL` version from 9.0.20 to 9.1.14
+  - `ECharts` version from 5.6.0 to 6.0.0
+  - `KaTeX` version from 0.6.0 to 0.16.22
+  - `Perspective` version from 3.6.1 to 3.8.0
+  - `Plotly` version from 3.0.1 to 3.1.0
+  - `Vega` version from 5 to 6.1.2 and vega-lite dependency from 5 to 6.3.0
+  - `Vizzu` version from 0.15 to 0.17.1
+- Drop support for Bokeh 3.5 and 3.6 ([#8116](https://github.com/holoviz/panel/pull/8116))
+- Full compatibility with **Bokeh 3.8** ([#8160](https://github.com/holoviz/panel/pull/8160))
+
+### 📚 Documentation
+
+- Add guide for using WebSocket comms ([#7952](https://github.com/holoviz/panel/pull/7952))
+- Update links for Tabulator ([#8126](https://github.com/holoviz/panel/pull/8126))
+- Align component parameter reference documentation ([#8152](https://github.com/holoviz/panel/pull/8152))
 
 ## Version 1.7.5
 

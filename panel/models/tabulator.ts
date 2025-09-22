@@ -16,7 +16,7 @@ import {debounce} from "debounce"
 import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
 import {HTMLBox, HTMLBoxView} from "./layout"
-import {schedule_when} from "./util"
+import {schedule_when, transformJsPlaceholders} from "./util"
 
 import tabulator_css from "styles/models/tabulator.css"
 
@@ -812,7 +812,7 @@ export class DataTabulatorView extends HTMLBoxView {
     // Only use selectable mode if explicitly requested otherwise manually handle selections
     const selectableRows = this.model.select_mode === "toggle" ? true : NaN
     const configuration = {
-      ...this.model.configuration,
+      ...transformJsPlaceholders(this.model.configuration),
       index: "_index",
       nestedFieldSeparator: false,
       movableColumns: false,
@@ -824,6 +824,7 @@ export class DataTabulatorView extends HTMLBoxView {
       paginationMode: this.model.pagination,
       paginationSize: this.model.page_size || 20,
       paginationInitialPage: 1,
+      popupContainer: this.model.container_popup && this.container,
       groupBy: this.groupBy,
       frozenRows: (row: any) => {
         return (this.model.frozen_rows.length > 0) ? this.model.frozen_rows.includes(row._row.data._index) : false
@@ -993,7 +994,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
   getColumns(): any {
     this.columns = new Map()
-    const config_columns: (any[] | undefined) = this.model.configuration?.columns
+    const config_columns: (any[] | undefined) = transformJsPlaceholders(this.model.configuration?.columns)
     const columns = []
     columns.push({field: "_index", frozen: true, visible: false})
     if (config_columns != null) {
@@ -1151,6 +1152,11 @@ export class DataTabulatorView extends HTMLBoxView {
         },
       }
       columns.push(button_column)
+    }
+    if (this.model.container_popup) {
+      // We insert an empty last column to ensure select editor is rendered in correct position
+      // see: https://github.com/holoviz/panel/issues/7295
+      columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", sorter: null})
     }
     return columns
   }
@@ -1552,6 +1558,7 @@ export namespace DataTabulator {
     sorters: p.Property<any[]>
     cell_styles: p.Property<any>
     theme_classes: p.Property<string[]>
+    container_popup: p.Property<boolean>
   }
 }
 
@@ -1598,6 +1605,7 @@ export class DataTabulator extends HTMLBox {
       sorters:        [ List(Any),              [] ],
       cell_styles:    [ Any,                     {} ],
       theme_classes:  [ List(Str),           [] ],
+      container_popup: [ Bool, true ],
     }))
   }
 }

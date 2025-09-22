@@ -357,31 +357,67 @@ def test_tabulator_multi_index_columns(document, comm):
     # Create a DataFrame with this MultiIndex as columns
     df = pd.DataFrame(np.random.randn(4, 6), columns=multi_index)
 
-    table = Tabulator(df, show_index=True)
+    formatters = {('A', 'one', 'Y'): NumberFormatter(format='0.0000')}
+    text_align = {('A', 'two', 'X'): 'left'}
+    titles = {}
+    widths = {}
+    frozen_columns = []
+    header_tooltips = {('A', 'one', 'Y'): 'Tooltips 1'}
+    header_align = {('A', 'one', 'X'): 'left'}
+    sortable = {('B', 'three', 'X'): False}
+    title_formatters = {('B', 'three', 'Y'): {'type': 'star', 'stars': 5}}
+
+    table = Tabulator(
+        df,
+        show_index=True,
+        formatters=formatters,
+        text_align=text_align,
+        titles=titles,
+        widths=widths,
+        frozen_columns=frozen_columns,
+        header_tooltips=header_tooltips,
+        header_align=header_align,
+        sortable=sortable,
+        title_formatters=title_formatters,
+    )
 
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index', 'sorter': 'number'},
-        {'title': 'A', 'columns': [
-            {'title': 'one', 'columns': [
-                {'field': 'A_one_X', 'sorter': 'number'},
-                {'field': 'A_one_Y', 'sorter': 'number'},
-            ]},
-            {'title': 'two', 'columns': [
-                {'field': 'A_two_X', 'sorter': 'number'}
-            ]},
-        ]},
-        {'title': 'B', 'columns': [
-            {'title': 'two', 'columns': [
-                {'field': 'B_two_Y', 'sorter': 'number'},
-            ]},
-            {'title': 'three', 'columns': [
-                {'field': 'B_three_X', 'sorter': 'number'},
-                {'field': 'B_three_Y', 'sorter': 'number'}
-            ]},
-        ]}
+        {'field': 'index', 'sorter': 'number', 'headerSort': True},
+        {
+            'title': 'A',
+            'columns': [
+                {
+                    'title': 'one',
+                    'columns': [
+                        {'field': 'A_one_X', 'sorter': 'number', 'headerHozAlign': 'left', 'headerSort': True},
+                        {'field': 'A_one_Y', 'sorter': 'number', 'headerTooltip': 'Tooltips 1', 'headerSort': True},
+                    ],
+                },
+                {'title': 'two', 'columns': [{'field': 'A_two_X', 'sorter': 'number', 'hozAlign': 'left', 'headerSort': True}]},
+            ],
+        },
+        {
+            'title': 'B',
+            'columns': [
+                {'title': 'two', 'columns': [{'field': 'B_two_Y', 'sorter': 'number', 'headerSort': True}]},
+                {
+                    'title': 'three',
+                    'columns': [
+                        {'field': 'B_three_X', 'sorter': 'number', 'headerSort': False},
+                        {'field': 'B_three_Y', 'sorter': 'number', 'titleFormatter': 'star', 'titleFormatterParams': {'stars': 5}, 'headerSort': True},
+                    ],
+                },
+            ],
+        },
     ]
+
+    assert model.columns[2].field == 'A_one_Y'
+    mformatter = model.columns[2].formatter
+    assert isinstance(mformatter, NumberFormatter)
+    assert mformatter.format == '0.0000'
+
     for field in ("index", "A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
         assert field in model.source.data
 
@@ -892,7 +928,7 @@ def test_tabulator_header_filters_column_config_list(document, comm):
         {'field': 'index', 'sorter': 'number'},
         {'field': 'A', 'sorter': 'number'},
         {'field': 'B', 'sorter': 'number'},
-        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'in'},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'like'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
     assert model.configuration['selectable'] == True
@@ -902,7 +938,7 @@ def test_tabulator_header_filters_column_config_select_autocomplete_backwards_co
     df = makeMixedDataFrame()
     table = Tabulator(df, header_filters={
         'C': editor,
-        'D': {'type': editor, 'values': True}
+        'D': {'type': editor, 'values': True, 'multiselect': True}
     })
 
     model = table.get_root(document, comm)
@@ -911,8 +947,8 @@ def test_tabulator_header_filters_column_config_select_autocomplete_backwards_co
         {'field': 'index', 'sorter': 'number'},
         {'field': 'A', 'sorter': 'number'},
         {'field': 'B', 'sorter': 'number'},
-        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'in'},
-        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'sorter': 'timestamp', 'headerFilterFunc': 'in'},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'like'},
+        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True, 'multiselect': True}, 'sorter': 'timestamp', 'headerFilterFunc': 'in'},
     ]
     assert model.configuration['selectable'] == True
 

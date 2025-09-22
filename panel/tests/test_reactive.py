@@ -416,7 +416,7 @@ def test_reactive_html_basic():
     assert int_prop.class_default(data_model) == 3
 
     float_prop = data_model.lookup('float')
-    assert isinstance(float_prop.property, bp.Float)
+    assert isinstance(float_prop.property, bp.Either)
     assert float_prop.class_default(data_model) == 3.14
 
     assert Test._node_callbacks == {}
@@ -472,7 +472,7 @@ def test_reactive_html_dom_events():
     assert int_prop.class_default(data_model) == 3
 
     float_prop = data_model.lookup('float')
-    assert isinstance(float_prop.property, bp.Float)
+    assert isinstance(float_prop.property, bp.Either)
     assert float_prop.class_default(data_model) == 3.14
 
     assert TestDOMEvents._node_callbacks == {}

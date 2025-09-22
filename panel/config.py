@@ -144,7 +144,7 @@ class _config(_base_config):
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
 
-    disconnect_notification = param.String(doc="""
+    disconnect_notification = param.String(default="Server connection lost.", doc="""
         The notification to display to the user when the connection
         to the server is dropped.""")
 
@@ -175,7 +175,7 @@ class _config(_base_config):
     loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
 
-    loading_max_height = param.Integer(default=400, doc="""
+    loading_max_height = param.Integer(default=300, doc="""
         Maximum height of the loading indicator.""")
 
     notifications = param.Boolean(default=False, doc="""
@@ -188,6 +188,11 @@ class _config(_base_config):
     ready_notification = param.String(doc="""
         The notification to display when the application is ready and
         fully loaded.""")
+
+    reconnect = param.Selector(default=False, objects=[True, False, 'prompt'], doc="""
+        Whether to enable automatic re-connect should the server connection
+        be disrupted. Setting "prompt" will not enable automatic re-connect but
+        will pop up a notification asking the user to confirm.""")
 
     reuse_sessions = param.Selector(default=False, objects=[True, False, 'warm'], doc="""
         Whether to reuse a session for the initial request to speed up

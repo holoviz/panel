@@ -35,6 +35,8 @@ env:
   DISPLAY: ":99.0"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   COV: "--cov=./panel --cov-report=xml --cov-append"
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
 
 jobs:
   pre_commit:
@@ -242,7 +244,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        environment: ["test-core", "test-bokeh35", "test-bokeh36"]
+        environment: ["test-core", "test-bokeh37"]
     timeout-minutes: 30
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@v0

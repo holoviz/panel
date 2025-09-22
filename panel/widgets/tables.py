@@ -13,6 +13,7 @@ from typing import (
 import numpy as np
 import param
 
+from bokeh.core.serialization import Serializer
 from bokeh.model import Model
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from bokeh.models.widgets.tables import (
@@ -25,11 +26,12 @@ from bokeh.util.serialization import convert_datetime_array
 from param.parameterized import transform_reference
 from pyviz_comms import JupyterComm
 
+from ..io.model import JSCode
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
-    BOKEH_GE_3_6, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
+    clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
 from ..util.warnings import warn
@@ -57,7 +59,7 @@ if TYPE_CHECKING:
 
 class ColumnSpec(TypedDict, total=False):
     editable: bool
-    editor: str | CellEditor
+    editor: str | CellEditor | JSCode
     editorParams: dict[str, Any]
     field: str
     frozen: bool
@@ -65,11 +67,11 @@ class ColumnSpec(TypedDict, total=False):
     headerSort: bool
     headerTooltip: str
     hozAlign: Literal["center", "left", "right"]
-    formatter: str | CellFormatter
+    formatter: str | CellFormatter | JSCode
     formatterParams: dict[str, Any]
     sorter: str
     title: str
-    titleFormatter: str | CellFormatter
+    titleFormatter: str | CellFormatter | JSCode
     titleFormatterParams: dict[str, Any]
     width: str | int
 
@@ -82,6 +84,15 @@ def _convert_datetime_array_ignore_list(v):
     if isinstance(v, np.ndarray):
         return convert_datetime_array(v)
     return v
+
+def _get_value_from_keys(d:dict, key1, key2, default=None):
+    if key1 in d:
+        return d[key1]
+    if key2 in d:
+        msg = f"The {key1} format should be preferred over the {key2}."
+        warn(msg, DeprecationWarning)
+        return d[key2]
+    return default
 
 class BaseTable(ReactiveData, Widget):
 
@@ -163,6 +174,8 @@ class BaseTable(ReactiveData, Widget):
         }
 
     def _reset_selection(self, event):
+        if 'selectable' in self.param and not self.selectable:
+            return
         if event.type == 'triggered' and self._updating:
             return
         if self._indexes_changed(event.old, event.new):
@@ -253,7 +266,7 @@ class BaseTable(ReactiveData, Widget):
             else:
                 editor = StringEditor()
 
-            if col in self.editors and not isinstance(self.editors[col], (dict, str)):
+            if col in self.editors and not isinstance(self.editors[col], (dict, str, JSCode)):
                 editor = self.editors[col]
                 if isinstance(editor, CellEditor):
                     editor = clone_model(editor)
@@ -261,7 +274,7 @@ class BaseTable(ReactiveData, Widget):
             if col in indexes or editor is None:
                 editor = CellEditor()
 
-            if formatter is None or isinstance(formatter, (dict, str)):
+            if formatter is None or isinstance(formatter, (dict, str, JSCode)):
                 if kind == 'i':
                     formatter = NumberFormatter(text_align='right')
                 elif kind == 'b':
@@ -275,10 +288,7 @@ class BaseTable(ReactiveData, Widget):
                         date_format = '%Y-%m-%d %H:%M:%S'
                     formatter = DateFormatter(format=date_format, text_align='right')
                 else:
-                    params: dict[str, Any] = {}
-                    if BOKEH_GE_3_6:
-                        params['null_format'] = ''
-                    formatter = StringFormatter(**params)
+                    formatter = StringFormatter(null_format='')
 
                 default_text_align = True
             else:
@@ -680,6 +690,13 @@ class BaseTable(ReactiveData, Widget):
         # we send the unfiltered data
 
         import pandas as pd
+
+        # Ensure NaT serialization is enabled
+        try:
+            Serializer.register(pd.NaT, lambda _, __: None)  # type: ignore
+        except AssertionError:
+            pass
+
         df = self._filter_dataframe(df, header_filters=False)
         if df is None:
             return [], {}
@@ -1154,6 +1171,10 @@ class Tabulator(BaseTable):
         Dictionary mapping from column name to a HTML element
         to use as the button icon.""")
 
+    container_popup = param.Boolean(default=True, doc="""
+        If True, popups will appear within the table container, otherwise
+        popups will be appended to the body element of the DOM.""")
+
     expanded = param.List(default=[], nested_refs=True, doc="""
         List of expanded rows, only applicable if a row_content function
         has been defined.""")
@@ -1202,13 +1223,26 @@ class Tabulator(BaseTable):
 
     layout = param.Selector(default='fit_data_table', objects=[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
-        'fit_columns'])
+        'fit_columns'], doc="""
+        Describes the column layout mode with one of the following options
+        'fit_columns', 'fit_data', 'fit_data_stretch', 'fit_data_fill',
+        'fit_data_table'.""")
 
     initial_page_size = param.Integer(default=20, bounds=(1, None), doc="""
         Initial page size if page_size is None and therefore automatically set.""")
 
     pagination = param.Selector(default=None, allow_None=True,
-                                      objects=['local', 'remote'])
+                                      objects=['local', 'remote'], doc="""
+        Defines the pagination mode of the Tabulator.
+
+          - None
+              No pagination is applied, all rows are rendered.
+          - 'local' (client-side)
+              Pagination is applied locally, i.e. the entire DataFrame
+              is loaded and then paginated.
+          - 'remote' (server-side)
+              Pagination is applied remotely, i.e. only the current page
+              is loaded from the server.""")
 
     page = param.Integer(default=1, doc="""
         Currently selected page (indexed starting at 1), if pagination is enabled.""")
@@ -1950,7 +1984,7 @@ class Tabulator(BaseTable):
             if not filter_params:
                 filter_params = {'valuesLookup': True}
             if filter_func is None:
-                filter_func = 'in'
+                filter_func = 'in' if filter_params.get('multiselect') else 'like'
         fspec['headerFilter'] = filter_type
         if filter_params:
             fspec['headerFilterParams'] = filter_params
@@ -2012,26 +2046,26 @@ class Tabulator(BaseTable):
             ]
             col_dict: ColumnSpec = dict(field=field)
             if isinstance(self.sortable, dict):
-                col_dict['headerSort'] = self.sortable.get(field, True)
+                col_dict['headerSort'] = _get_value_from_keys(self.sortable, index, field, True)
             elif not self.sortable:
                 col_dict['headerSort'] = self.sortable
             if isinstance(self.text_align, str):
                 col_dict['hozAlign'] = self.text_align  # type: ignore
-            elif field in self.text_align:
-                col_dict['hozAlign'] = self.text_align[field]
+            elif index in self.text_align or field in self.text_align:
+                col_dict['hozAlign'] = _get_value_from_keys(self.text_align, index, field)
             if isinstance(self.header_align, str):
                 col_dict['headerHozAlign'] = self.header_align  # type: ignore
-            elif field in self.header_align:
-                col_dict['headerHozAlign'] = self.header_align[field]  # type: ignore
-            formatter = self.formatters.get(field)
-            if isinstance(formatter, str):
+            elif index in self.header_align or field in self.header_align:
+                col_dict['headerHozAlign'] = _get_value_from_keys(self.header_align, index, field)  # type: ignore
+            formatter = _get_value_from_keys(self.formatters, index, field)
+            if isinstance(formatter, (str, JSCode)):
                 col_dict['formatter'] = formatter
             elif isinstance(formatter, dict):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
-            title_formatter = self.title_formatters.get(field)
-            if isinstance(title_formatter, str):
+            title_formatter = _get_value_from_keys(self.title_formatters, index, field)
+            if isinstance(title_formatter, (str, JSCode)):
                 col_dict['titleFormatter'] = title_formatter
             elif isinstance(title_formatter, dict):
                 title_formatter = dict(title_formatter)
@@ -2050,10 +2084,10 @@ class Tabulator(BaseTable):
                 col_dict['sorter'] = 'number'
             elif dtype.kind == 'b':
                 col_dict['sorter'] = 'boolean'
-            editor = self.editors.get(field)
-            if field in self.editors and editor is None:
+            editor = _get_value_from_keys(self.editors, index, field)
+            if (index in self.editors or field in self.editors) and editor is None:
                 col_dict['editable'] = False
-            if isinstance(editor, str):
+            if isinstance(editor, (str, JSCode)):
                 col_dict['editor'] = editor
             elif isinstance(editor, dict):
                 editor = dict(editor)
@@ -2062,20 +2096,23 @@ class Tabulator(BaseTable):
             if col_dict.get('editor') in ['select', 'autocomplete']:
                 self.param.warning(
                     f'The {col_dict["editor"]!r} editor has been deprecated, use '
-                    f'instead the "list" editor type to configure column {field!r}'
+                    f'instead the "list" editor type to configure column {index!r}'
                 )
                 col_dict['editor'] = 'list'
                 if col_dict.get('editorParams', {}).get('values', False) is True:
                     del col_dict['editorParams']['values']
                     col_dict['editorParams']['valuesLookup'] = True
-            if field in self.frozen_columns or i in self.frozen_columns:
+            if index in self.frozen_columns or field in self.frozen_columns or i in self.frozen_columns:
+                if index != field and field in self.frozen_columns:
+                    msg = f"The {index} format should be preferred over the {field}."
+                    warn(msg, DeprecationWarning)
                 col_dict['frozen'] = True
-            if isinstance(self.widths, dict) and isinstance(self.widths.get(field), str):
-                col_dict['width'] = self.widths[field]
+            if isinstance(self.widths, dict) and (col_width := _get_value_from_keys(self.widths, index, field)) and isinstance(col_width, str):
+                col_dict['width'] = col_width
             col_dict.update(self._get_filter_spec(column))
 
-            if field in self.header_tooltips:
-                col_dict["headerTooltip"] = self.header_tooltips[field]
+            if index in self.header_tooltips or field in self.header_tooltips:
+                col_dict["headerTooltip"] = _get_value_from_keys(self.header_tooltips, index, field)
 
             if isinstance(index, tuple):
                 children = columns

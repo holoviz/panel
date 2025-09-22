@@ -50,7 +50,7 @@ from .io.notebook import (
 )
 from .io.resources import set_resource_mode
 from .io.save import save
-from .io.state import curdoc_locked, set_curdoc, state
+from .io.state import set_curdoc, state
 from .util import escape, param_reprs
 from .util.parameters import get_params_to_inherit
 
@@ -389,7 +389,7 @@ class ServableMixin:
         -------
         The Panel object itself
         """
-        doc = curdoc_locked()
+        doc = state.curdoc
         if doc and doc.session_context:
             logger = logging.getLogger('bokeh')
             for handler in logger.handlers:
@@ -413,7 +413,7 @@ class ServableMixin:
                 elif area == 'header':
                     template.header.append(self)
             else:
-                self.server_doc(title=title, location=location) # type: ignore
+                self.server_doc(doc, title=title, location=location) # type: ignore
         elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
             from .io.pyodide import (
                 _IN_PYSCRIPT_WORKER, _IN_WORKER, _get_pyscript_target, write,
