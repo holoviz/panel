@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 
     from bokeh.document import Document
     from bokeh.model import Model
-    from jsonschema import ValidationError
     from pyviz_comms import Comm
 
     VEGA_EXPORT_FORMATS = Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url', 'scenegraph']
@@ -281,7 +280,7 @@ class Vega(ModelPane):
         return requests.get(schema_url).json()
 
     @staticmethod
-    def _format_validation_error(error: ValidationError) -> str:
+    def _format_validation_error(error: Exception) -> str:
         """Format JSONSchema validation errors into a readable message."""
         errors: dict[str, str] = {}
         last_path = ""
