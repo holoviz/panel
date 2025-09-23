@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 
     from bokeh.document import Document
     from bokeh.model import Model
+    from jsonschema import ValidationError
     from pyviz_comms import Comm
 
     VEGA_EXPORT_FORMATS = Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url', 'scenegraph']
@@ -276,13 +277,13 @@ class Vega(ModelPane):
         self._update_selections()
 
     @cache
-    def _download_vega_lite_schema(self, schema_url: str | None = None):
+    def _download_vega_lite_schema(self, schema_url: str):
         return requests.get(schema_url).json()
 
     @staticmethod
-    def _format_validation_error(error) -> str:
+    def _format_validation_error(error: ValidationError) -> str:
         """Format JSONSchema validation errors into a readable message."""
-        errors = {}
+        errors: dict[str, str] = {}
         last_path = ""
         rejected_paths = set()
 
@@ -316,21 +317,26 @@ class Vega(ModelPane):
 
     @param.depends("object", watch=True, on_init=True)
     def _validate_object(self):
-        from jsonschema import Draft7Validator, ValidationError
+        try:
+            from jsonschema import (  # type: ignore[import-untyped]
+                Draft7Validator, ValidationError,
+            )
+        except ImportError:
+            return  # Skip validation if jsonschema is not available
 
         object = self.object
-        if not self.validate or not object:
+        if not self.validate or not object or not isinstance(object, dict):
             return
 
         schema = object.get('$schema', '')
         if not schema:
             raise ValidationError("No $schema found on Vega object")
-        else:
-            try:
-                schema = self._download_vega_lite_schema(schema)
-            except Exception as e:
-                self.param.warning(f"Skipping validation because could not load Vega schema at {schema}: {e}")
-                return
+
+        try:
+            schema = self._download_vega_lite_schema(schema)
+        except Exception as e:
+            self.param.warning(f"Skipping validation because could not load Vega schema at {schema}: {e}")
+            return
 
         try:
             vega_validator = Draft7Validator(schema)
