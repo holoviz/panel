@@ -878,6 +878,8 @@ def test_tabulator_editable(page, df_mixed):
     cell = page.locator('text="true"').first
     cell.click()
     expect(page.locator('input[type="checkbox"]')).to_have_count(1)
+    page.locator('text="D"').click() # To ensure editing mode is not active
+    expect(page.locator('input[type="checkbox"]')).to_have_count(0)
 
     # ``date`` is not editable since editor is None
     cell = page.locator('text="2019-01-01"')
