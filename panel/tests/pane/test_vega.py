@@ -2,11 +2,7 @@ from copy import deepcopy
 
 import pytest
 
-try:
-    from jsonschema import ValidationError  # type: ignore[import-untyped]
-except ImportError:
-    ValidationError = Exception
-
+from jsonschema import ValidationError  # type: ignore[import-untyped]
 from packaging.version import Version
 
 try:

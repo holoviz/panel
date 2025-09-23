@@ -21,7 +21,6 @@ from .base import ModelPane
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
-    from jsonschema import ValidationError
     from pyviz_comms import Comm
 
 SCHEMA_URL = "https://vega.github.io/schema/vega-lite/v5.json"
@@ -221,7 +220,7 @@ class Vega(ModelPane):
         return requests.get(schema_url).json()
 
     @staticmethod
-    def _format_validation_error(error: ValidationError) -> str:
+    def _format_validation_error(error: Exception) -> str:
         """Format JSONSchema validation errors into a readable message."""
         errors: dict[str, str] = {}
         last_path = ""
