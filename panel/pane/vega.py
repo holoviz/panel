@@ -277,7 +277,8 @@ class Vega(ModelPane):
 
     @cache
     def _download_vega_lite_schema(self, schema_url: str | bytes) -> dict:
-        return requests.get(schema_url).json()
+        response = requests.get(schema_url, timeout=5)
+        return response.json()
 
     @staticmethod
     def _format_validation_error(error: Exception) -> str:
