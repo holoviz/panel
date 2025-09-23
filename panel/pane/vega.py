@@ -277,7 +277,7 @@ class Vega(ModelPane):
         self._update_selections()
 
     @cache
-    def _download_vega_lite_schema(self, schema_url: str):
+    def _download_vega_lite_schema(self, schema_url: str | bytes) -> dict:
         return requests.get(schema_url).json()
 
     @staticmethod
