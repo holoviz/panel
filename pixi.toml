@@ -152,6 +152,7 @@ polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+jsonschema = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
