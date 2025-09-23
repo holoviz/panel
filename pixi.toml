@@ -121,9 +121,13 @@ pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "<16.0"  # See https://github.com/pytest-dev/pytest-rerunfailures/issues/303
 pytest-xdist = "*"
+platformdirs = "*"
+jsonschema = "*"
 
 [feature.bokeh37.dependencies]
 bokeh = "3.7.*"
+platformdirs = "*"
+jsonschema = "*"
 
 [feature.test.dependencies]
 # Optional dependencies - recommended
@@ -148,6 +152,7 @@ ipympl = "*"
 ipyvuetify = "*"
 ipywidgets_bokeh = "*"
 numba = "*"
+platformdirs = "*"
 polars = "*"
 reacton = "*"
 scipy = "*"
