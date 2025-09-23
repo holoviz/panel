@@ -12,6 +12,7 @@ from typing import (
 
 import numpy as np
 import param
+import platformdirs
 import requests
 
 from bokeh.models import ColumnDataSource
@@ -275,7 +276,7 @@ class Vega(ModelPane):
         self.param.watch(self._update_selections, ['object'])
         self._update_selections()
 
-    @cache
+    @cache(to_disk=True, cache_path=platformdirs.user_cache_dir("vega", "panel"))
     def _download_vega_lite_schema(self, schema_url: str | bytes) -> dict:
         response = requests.get(schema_url, timeout=5)
         return response.json()
