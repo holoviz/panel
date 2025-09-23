@@ -15,7 +15,6 @@ import param
 import requests
 
 from bokeh.models import ColumnDataSource
-from jsonschema import Draft7Validator, ValidationError
 from pyviz_comms import JupyterComm
 
 from ..io import cache
@@ -281,7 +280,7 @@ class Vega(ModelPane):
         return requests.get(schema_url).json()
 
     @staticmethod
-    def _format_validation_error(error: ValidationError) -> str:
+    def _format_validation_error(error) -> str:
         """Format JSONSchema validation errors into a readable message."""
         errors = {}
         last_path = ""
@@ -317,6 +316,8 @@ class Vega(ModelPane):
 
     @param.depends("object", watch=True, on_init=True)
     def _validate_object(self):
+        from jsonschema import Draft7Validator, ValidationError
+
         object = self.object
         if not self.validate or not object:
             return
