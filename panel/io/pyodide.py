@@ -281,9 +281,42 @@ def _bytes_converter(value, converter, other):
     )
     return {'id': uid}
 
+def to_py(obj):
+    """Convert JS value to Python, replacing any jsnull (even nested) with None."""
+    root = obj.to_py(default_converter=_bytes_converter)
+    seen = {}
+
+    def fix(x):
+        if x is pyodide.ffi.jsnull:
+            return None
+
+        if isinstance(x, (str, bytes, int, float, bool, type(None))):
+            return x
+
+        oid = id(x)
+        if oid in seen:
+            return seen[oid]
+
+        if isinstance(x, dict):
+            out = {}
+            seen[oid] = out
+            for k, v in x.items():
+                out[k] = fix(v)
+            return out
+
+        if isinstance(x, list):
+            out = []
+            seen[oid] = out
+            out.extend(fix(v) for v in x)
+            return out
+
+        return x
+
+    return fix(root)
+
 def _convert_json_patch(json_patch):
     try:
-        patch = json_patch.to_py(default_converter=_bytes_converter)
+        patch = to_py(json_patch)
         serialized = Serialized(content=patch, buffers=list(_current_buffers))
     finally:
         _current_buffers.clear()
