@@ -75,6 +75,12 @@ def panel(obj: Any, **kwargs) -> Viewable | ServableMixin:
        A Viewable representation of the input object
     """
     if isinstance(obj, (Viewable, ServableMixin)):
+        if kwargs and isinstance(obj, Viewable):
+            obj.param.warning(
+                "The `panel` function is intended to promote non-Viewable objects. "
+                "Since the supplied object is already a Viewable, any keyword "
+                "arguments passed here are ignored."
+            )
         return obj
     elif hasattr(obj, '__panel__'):
         if isinstance(obj, Viewer):
@@ -732,7 +738,7 @@ class ReplacementPane(Pane):
         else:
             # Replace pane entirely
             pane_params = {k: v for k, v in kwargs.items() if k in pane_type.param}
-            pane = panel(object, **pane_params)
+            pane = panel(object, **pane_params) if not isinstance(object, Viewable) else object
             internal = pane is not object
         return pane, internal
 
