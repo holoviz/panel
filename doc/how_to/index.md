@@ -217,6 +217,13 @@ How to configure OAuth to add authentication to a server deployment.
 How to configure the Panel server.
 :::
 
+:::{grid-item-card} {octicon}`terminal;2.5em;sd-mr-1 sd-animate-grow50` Distribute applications
+:link: distribute/index
+:link-type: doc
+
+How to distribute your Panel applications
+:::
+
 :::{grid-item-card} {octicon}`package-dependencies;2.5em;sd-mr-1 sd-animate-grow50` Integrate with other servers
 :link: integrations/index
 :link-type: doc
