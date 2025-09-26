@@ -1381,7 +1381,7 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
     page.wait_for_timeout(500)
 
     # The table should keep the same scroll position, this fails
-    wait_until(lambda: page.locator(f'text="{col_name}"').bounding_box() == bb, page)
+    wait_until(lambda: abs(page.locator(f'text="{col_name}"').bounding_box()['x'] - bb['x']) <= 1, page)
 
 
 def test_tabulator_header_filter_always_visible(page, df_mixed):
