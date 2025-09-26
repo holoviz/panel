@@ -58,7 +58,7 @@ if TYPE_CHECKING:
         headerFilterPlaceholder: str
 
 class ColumnSpec(TypedDict, total=False):
-    editable: bool
+    editable: bool | JSCode
     editor: str | CellEditor | JSCode
     editorParams: dict[str, Any]
     field: str
@@ -103,6 +103,9 @@ class BaseTable(ReactiveData, Widget):
         aggregators for different columns are required the dictionary
         may be nested as `{index_name: {column_name: aggregator}}`""")
 
+    editables = param.Dict(default={}, nested_refs=True, doc="""
+        Allows to edit table's contents for a particular column.""")
+
     editors = param.Dict(default={}, nested_refs=True, doc="""
         Bokeh CellEditor to use for a particular column
         (overrides the default chosen based on the type).""")
@@ -142,7 +145,7 @@ class BaseTable(ReactiveData, Widget):
     _data_params: ClassVar[list[str]] = ['value']
 
     _manual_params: ClassVar[list[str]] = [
-        'formatters', 'editors', 'widths', 'titles', 'value', 'show_index'
+        'formatters', 'editables', 'editors', 'widths', 'titles', 'value', 'show_index'
     ]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
@@ -2084,6 +2087,8 @@ class Tabulator(BaseTable):
                 col_dict['sorter'] = 'number'
             elif dtype.kind == 'b':
                 col_dict['sorter'] = 'boolean'
+            if index in self.editables or field in self.editables:
+                col_dict['editable'] = _get_value_from_keys(self.editables, index, field)
             editor = _get_value_from_keys(self.editors, index, field)
             if (index in self.editors or field in self.editors) and editor is None:
                 col_dict['editable'] = False

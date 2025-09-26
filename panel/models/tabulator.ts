@@ -1,6 +1,6 @@
 import {display, undisplay} from "@bokehjs/core/dom"
 import {sum} from "@bokehjs/core/util/arrayable"
-import {isArray, isBoolean, isString, isNumber} from "@bokehjs/core/util/types"
+import {isArray, isBoolean, isFunction, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
@@ -542,7 +542,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   get is_drawing(): boolean {
-    return this._building || this._redrawing || !this.root.has_finished()
+    return this._building || this._redrawing || !this.has_finished()
   }
 
   override after_layout(): void {
@@ -720,7 +720,7 @@ export class DataTabulatorView extends HTMLBoxView {
       if (initializing) {
         this._resize_redraw()
       }
-    }, () => this.root.has_finished() && [...this._initialized_stylesheets.values()].every(v => v))
+    }, () => this.has_finished() && [...this._initialized_stylesheets.values()].every(v => v))
   }
 
   recompute_page_size(): void {
@@ -926,7 +926,7 @@ export class DataTabulatorView extends HTMLBoxView {
         this._update_children()
         this.resize_table()
       }
-    }, () => this.root.has_finished())
+    }, () => this.has_finished())
   }
 
   resize_table(): void {
@@ -1117,7 +1117,14 @@ export class DataTabulatorView extends HTMLBoxView {
         }
       }
       tab_column.visible = (tab_column.visible != false && !this.model.hidden_columns.includes(column.field))
-      tab_column.editable = () => (this.model.editable && (editor.default_view != null))
+      const originalEditable = tab_column.editable
+      if (isFunction(originalEditable)) {
+        tab_column.editable = (cell: any) => (this.model.editable && (editor.default_view != null) && originalEditable(cell))
+      } else if (isBoolean(originalEditable)) {
+        tab_column.editable = () => (this.model.editable && (editor.default_view != null) && originalEditable)
+      } else {
+        tab_column.editable = () => (this.model.editable && (editor.default_view != null))
+      }
       if (tab_column.headerFilter) {
         if (isBoolean(tab_column.headerFilter) && isString(tab_column.editor)) {
           tab_column.headerFilter = tab_column.editor
