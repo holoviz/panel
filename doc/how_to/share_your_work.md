@@ -11,6 +11,7 @@
 :maxdepth: 1
 
 Configure the server<server/index>
+Distribute applications<distribute/index>
 Integrate with other servers<integrations/index>
 Deploy applications<deployment/index>
 Export apps<export/index>
