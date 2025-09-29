@@ -566,6 +566,10 @@ def test_vega_missing_schema_auto_added():
     assert pane.object["$schema"] == SCHEMA_URL
 
 
+@pytest.mark.skipif(
+    pytest.importorskip("diskcache", reason="requires diskcache") is None,
+    reason="requires diskcache"
+)
 def test_vega_validate():
     vegalite = {
         "$schema": SCHEMA_URL,

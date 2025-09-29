@@ -179,6 +179,7 @@ jsonschema = "*"
 
 [feature.bokeh37.dependencies]
 bokeh = "3.7.*"
+diskcache = "*"
 platformdirs = "*"
 jsonschema = "*"
 

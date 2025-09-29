@@ -276,7 +276,7 @@ class Vega(ModelPane):
         self.param.watch(self._update_selections, ['object'])
         self._update_selections()
 
-    @cache(to_disk=True, cache_path=platformdirs.user_cache_dir("vega", "panel"))
+    @cache(to_disk=True, cache_path=platformdirs.user_cache_dir("panel"))
     def _download_vega_lite_schema(self, schema_url: str | bytes) -> dict:
         response = requests.get(schema_url, timeout=5)
         return response.json()
@@ -322,7 +322,8 @@ class Vega(ModelPane):
             from jsonschema import (  # type: ignore[import-untyped]
                 Draft7Validator, ValidationError,
             )
-        except ImportError:
+        except ImportError as e:
+            self.param.warning(f"Skipping validation due to {e}.")
             return  # Skip validation if jsonschema is not available
 
         object = self.object
