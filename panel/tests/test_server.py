@@ -89,6 +89,15 @@ def test_server_static_dirs():
     with open(__file__, encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+def test_server_static_dirs_index():
+    html = Markdown('# Title')
+
+    static = {'tests': os.path.dirname(INDEX_HTML)}
+
+    r = serve_and_request(html, static_dirs=static, suffix="/tests/")
+
+    with open(INDEX_HTML, encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 def test_server_root_handler():
     html = Markdown('# Title')
