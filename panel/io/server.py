@@ -902,7 +902,7 @@ def get_static_routes(static_dirs):
         if not os.path.isdir(path):
             raise ValueError(f"Cannot serve non-existent path {path}")
         patterns.append(
-            (rf"{slug}/(.*)", AuthenticatedStaticFileHandler, {"path": path})
+            (rf"{slug}/(.*)", AuthenticatedStaticFileHandler, {"path": path, "default_filename": "index.html"})
         )
     patterns.append((
         f'/{COMPONENT_PATH}(.*)', ComponentResourceHandler, {}

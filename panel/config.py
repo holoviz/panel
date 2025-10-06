@@ -553,7 +553,7 @@ class _config(_base_config):
 
     @property
     def npm_cdn(self):
-        return os.environ.get('PANEL_NPM_CDN', _config._npm_cdn)
+        return os.environ.get('PANEL_NPM_CDN', self._npm_cdn)
 
     @property
     def nthreads(self):

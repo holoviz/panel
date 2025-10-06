@@ -526,7 +526,7 @@ def convert_app(
             req_as_url = urlparse(req)
             if req_as_url.scheme == 'file':
                 wheel_name = os.path.basename(req_as_url.path)
-                emfs_wheel_path = os.path.join('packed_wheels', wheel_name)
+                emfs_wheel_path = 'packed_wheels' + '/' + wheel_name
                 parsed_requirements_rewritten.append(f'emfs:{emfs_wheel_path}')
                 wheels2pack[req_as_url.path] = emfs_wheel_path
             else:
@@ -552,8 +552,11 @@ def convert_app(
 
     # resources unpacked into emscripten MEMFS
     app_resources = {**wheels2pack, **resources_validated}
-    app_resources_packfile = f'{app_name}.resources.zip'
-    pack_files(app_resources, os.path.join(dest_path, app_resources_packfile))
+    if app_resources:
+        app_resources_packfile = f'{app_name}.resources.zip'
+        pack_files(app_resources, os.path.join(dest_path, app_resources_packfile))
+    else:
+        app_resources_packfile = None
 
     # try to convert the app to a standalone package
     try:

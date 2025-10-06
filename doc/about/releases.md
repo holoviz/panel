@@ -1,5 +1,30 @@
 # Releases
 
+## Version 1.8.2
+
+This patch release focuses on polishing the user experience, fixing regressions, and improving documentation—particularly around app deployment and Tabulator interactivity. It includes several frontend and CSS tweaks, pyodide compatibility fixes, and two new deployment guides for **Anaconda Notebooks** and **PythonAnywhere**. Thanks to @philippjfr, @maximlt, @etihwo, @MarcSkovMadsen, and @Coderambling for their contributions to this release.
+
+### ✨ Enhancements
+
+- Allow custom control over Tabulator editable rows using `JSCode` ([#8204](https://github.com/holoviz/panel/pull/8204))
+- Improve UI discoverability on `EditableTemplate` ([#8206](https://github.com/holoviz/panel/pull/8206))
+- Set pointer cursor on "Connection Lost" toast notification ([#8209](https://github.com/holoviz/panel/pull/8209))
+- Serve `index.html` automatically when serving a static directory ([#8222](https://github.com/holoviz/panel/pull/8222))
+
+### 🐛 Bug Fixes
+
+- Ensure Tabulator does not break if other components don't correctly initialize ([#8212](https://github.com/holoviz/panel/pull/8212))
+- Fix Pyodide `jsnull` value conversion in Bokeh JSON patches ([#8217](https://github.com/holoviz/panel/pull/8217))
+- Fix regression causing column headers not to stretch properly across layout ([#8219](https://github.com/holoviz/panel/pull/8219))
+
+### 📚 Documentation
+
+- Add how-to guide on deploying Panel apps on [**Anaconda Notebooks**](https://notebooks.anaconda.cloud) ([#8207](https://github.com/holoviz/panel/pull/8207))
+- Add how-to guide on deploying Panel apps on [**PythonAnywhere**](https://www.pythonanywhere.com/) ([#8216](https://github.com/holoviz/panel/pull/8216))
+-  Update `Plotly.ipynb` to reflect current Plotly version and correct doc URLs ([#8214](https://github.com/holoviz/panel/pull/8214), [#8203](https://github.com/holoviz/panel/pull/8203))
+- Add missing Anaconda logo to documentation ([#8208](https://github.com/holoviz/panel/pull/8208))
+- Add how-to guide on using `uv` to distribute Panel apps and dependencies ([#8205](https://github.com/holoviz/panel/pull/8205))
+
 ## Version 1.8.1
 
 Many thanks to [@ATL2001](https://github.com/ATL2001) (first contribution), [@Coderambling](https://github.com/Coderambling), [@philippjfr](https://github.com/philippjfr), and [@hoxbro](https://github.com/hoxbro) for their contributions.
