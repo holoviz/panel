@@ -552,8 +552,11 @@ def convert_app(
 
     # resources unpacked into emscripten MEMFS
     app_resources = {**wheels2pack, **resources_validated}
-    app_resources_packfile = f'{app_name}.resources.zip'
-    pack_files(app_resources, os.path.join(dest_path, app_resources_packfile))
+    if app_resources:
+        app_resources_packfile = f'{app_name}.resources.zip'
+        pack_files(app_resources, os.path.join(dest_path, app_resources_packfile))
+    else:
+        app_resources_packfile = None
 
     # try to convert the app to a standalone package
     try:
