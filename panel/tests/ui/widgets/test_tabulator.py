@@ -5,7 +5,7 @@ import datetime as dt
 from contextlib import contextmanager
 
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import param
 import pytest
 

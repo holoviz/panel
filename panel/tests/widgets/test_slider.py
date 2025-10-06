@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import pytest
 
 from bokeh.models import (

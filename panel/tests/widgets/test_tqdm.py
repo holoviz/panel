@@ -2,7 +2,7 @@
 import time
 
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import pytest
 
 from tqdm.contrib.concurrent import process_map

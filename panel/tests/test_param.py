@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-import pandas as pd
+# import pandas as pd
 import param
 import pytest
 

@@ -5,7 +5,7 @@ import pathlib
 from io import BytesIO
 from zoneinfo import ZoneInfo
 
-import pandas as pd
+# import pandas as pd
 import pytest
 
 from panel import Param, bind

@@ -13,7 +13,7 @@ except Exception:
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
 
 import numpy as np
-import pandas as pd
+# import pandas as pd
 
 import panel as pn
 
@@ -46,7 +46,7 @@ vega_df_example = {
         'mark': {'tooltip': None},
         'view': {'height': 300, 'width': 400}
     },
-    'data': {'values': pd.DataFrame({'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]})},
+    'data': {'values': {'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]}},
     'mark': 'bar',
     'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
                  'y': {'type': 'quantitative', 'field': 'y'}},

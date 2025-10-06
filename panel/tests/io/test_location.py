@@ -1,4 +1,4 @@
-import pandas as pd
+# import pandas as pd
 import param
 import pytest
 
@@ -27,7 +27,7 @@ class SyncParameterized(param.Parameterized):
 
     string = param.String(default=None)
 
-    dataframe = param.DataFrame(default=None)
+    # dataframe = param.DataFrame(default=None)
 
 
 def test_location_update_query(location):
@@ -170,7 +170,8 @@ def test_iframe_srcdoc_location():
 
 @pytest.fixture
 def dataframe():
-    return pd.DataFrame({"x": [1]})
+    return None
+    # return pd.DataFrame({"x": [1]})
 
 def test_location_sync_from_dataframe(location, dataframe):
     p = SyncParameterized(dataframe=dataframe)

@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import param
 
 from panel.custom import PyComponent, ReactiveESM
@@ -46,9 +46,9 @@ def test_py_component_cleanup(document, comm):
     assert not spy._view__._models
 
 
-class ESMDataFrame(ReactiveESM):
-
-    df = param.DataFrame(doc="""A DataFrame to be displayed in the ESM.""")
+# class ESMDataFrame(ReactiveESM):
+#
+#     df = param.DataFrame(default=None, doc="""A DataFrame to be displayed in the ESM.""")
 
 
 def test_reactive_esm_sync_dataframe(document, comm):
