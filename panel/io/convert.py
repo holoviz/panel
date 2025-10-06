@@ -526,7 +526,7 @@ def convert_app(
             req_as_url = urlparse(req)
             if req_as_url.scheme == 'file':
                 wheel_name = os.path.basename(req_as_url.path)
-                emfs_wheel_path = os.path.join('packed_wheels', wheel_name)
+                emfs_wheel_path = 'packed_wheels' + '/' + wheel_name
                 parsed_requirements_rewritten.append(f'emfs:{emfs_wheel_path}')
                 wheels2pack[req_as_url.path] = emfs_wheel_path
             else:
