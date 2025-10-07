@@ -1,5 +1,23 @@
+diff --git a/src/bokeh/document/events.py b/src/bokeh/document/events.py
+index 093a899da..37988e0d0 100644
+--- a/src/bokeh/document/events.py
++++ b/src/bokeh/document/events.py
+@@ -515,8 +515,11 @@ class ColumnsStreamedEvent(DocumentPatchedEvent):
+         self.attr = attr
+
+
+-        import pandas as pd
+-        if isinstance(data, pd.DataFrame):
++        try:
++            import pandas as pd
++        except ImportError:
++            pd = None
++        if pd and isinstance(data, pd.DataFrame):
+             data = {c: data[c] for c in data.columns}
+
+         self.data = data
 diff --git a/src/bokeh/models/sources.py b/src/bokeh/models/sources.py
-index cb6293919..18828a9cb 100644
+index cb6293919..6be5aa2f5 100644
 --- a/src/bokeh/models/sources.py
 +++ b/src/bokeh/models/sources.py
 @@ -230,12 +230,15 @@ class ColumnDataSource(ColumnarDataSource):
@@ -20,6 +38,32 @@ index cb6293919..18828a9cb 100644
                  raw_data = self._data_from_groupby(raw_data)
              else:
                  raise ValueError(f"expected a dict or eager dataframe support by Narwhals, got {raw_data}")
+@@ -542,11 +545,14 @@ class ColumnDataSource(ColumnarDataSource):
+             source.stream(new_data)
+
+         '''
+-        import pandas as pd
++        try:
++            import pandas as pd
++        except ImportError:
++            pd = None
+
+         needs_length_check = True
+
+-        if isinstance(new_data, pd.Series | pd.DataFrame):
++        if pd and isinstance(new_data, pd.Series | pd.DataFrame):
+             if isinstance(new_data, pd.Series):
+                 new_data = new_data.to_frame().T
+
+@@ -574,7 +580,7 @@ class ColumnDataSource(ColumnarDataSource):
+
+         if needs_length_check:
+             lengths: set[int] = set()
+-            arr_types = (np.ndarray, pd.Series)
++            arr_types = (np.ndarray, pd.Series) if pd else (np.ndarray,)
+             for _, x in new_data.items():
+                 if isinstance(x, arr_types):
+                     if len(x.shape) != 1:
 diff --git a/src/bokeh/plotting/_plot.py b/src/bokeh/plotting/_plot.py
 index 677a2a8dc..d6d65bc25 100644
 --- a/src/bokeh/plotting/_plot.py
