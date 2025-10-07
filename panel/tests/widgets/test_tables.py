@@ -16,7 +16,6 @@ from bokeh.models.widgets.tables import (
     NumberEditor, NumberFormatter, SelectEditor, StringEditor, StringFormatter,
     SumAggregator,
 )
-from packaging.version import Version
 
 from panel.depends import bind
 from panel.io.state import set_curdoc
@@ -24,6 +23,8 @@ from panel.models.tabulator import CellClickEvent, TableEditEvent
 from panel.tests.util import mpl_available, serve_and_request, wait_until
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
+
+pd = pytest.importorskip("pandas")  # HACK: REMOVE
 
 pd_old = pytest.mark.skipif(False, reason="Requires latest pandas")
 
