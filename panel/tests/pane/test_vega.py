@@ -13,7 +13,6 @@ except Exception:
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
 
 import numpy as np
-# import pandas as pd
 
 import panel as pn
 
@@ -221,8 +220,8 @@ def test_vega_pane(document, comm, example):
 
     assert dict(model.data, **blank_schema) == dict(expected, **blank_schema)
     cds_data = model.data_sources['data'].data
-    assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E']))
-    assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
+    np.testing.assert_array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E']))
+    np.testing.assert_array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     point_example = dict(deepcopy(vega_example), mark='point')
     point_example['data']['values'][0]['x'] = 'C'
@@ -230,8 +229,8 @@ def test_vega_pane(document, comm, example):
     point_example = dict(point_example, data={})
     assert model.data == point_example
     cds_data = model.data_sources['data'].data
-    assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E']))
-    assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
+    np.testing.assert_array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E']))
+    np.testing.assert_array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     pane._cleanup(model)
     assert pane._models == {}
