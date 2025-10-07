@@ -61,6 +61,7 @@ def test_tqdm_color():
 
 
 def get_tqdm_app():
+    pd = pytest.importorskip("pandas")
     tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
 
     def run(*events):

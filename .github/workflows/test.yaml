@@ -133,8 +133,7 @@ jobs:
 
   unit_test_suite:
     name: unit:${{ matrix.environment }}:${{ matrix.os }}
-    needs: [setup, pixi_lock]
-    # needs: [pre_commit, setup, pixi_lock]  # HACK: Should be added back
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
     strategy:
