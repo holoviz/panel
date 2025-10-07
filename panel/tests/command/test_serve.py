@@ -61,6 +61,7 @@ def test_autoreload_app_local_module(py_files):
 
 @linux_only
 def test_serve_admin(py_file):
+    pytest.importorskip("pandas")  # TODO: Investigate if we can remove this
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     write_file(app, py_file.file)
 
@@ -72,6 +73,7 @@ def test_serve_admin(py_file):
 
 @linux_only
 def test_serve_admin_custom_endpoint(py_file):
+    pytest.importorskip("pandas")  # TODO: Investigate if we can remove this
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     write_file(app, py_file.file)
 
