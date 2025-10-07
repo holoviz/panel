@@ -6,7 +6,6 @@ import string
 from zoneinfo import ZoneInfo
 
 import numpy as np
-# import pandas as pd
 import param
 import pytest
 
