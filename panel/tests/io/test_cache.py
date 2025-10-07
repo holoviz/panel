@@ -5,6 +5,7 @@ import time
 
 from collections import Counter
 from importlib.util import find_spec
+from typing import Any
 
 import numpy as np
 import param
@@ -385,7 +386,7 @@ def test_cache_on_undecorated_parameterized_method():
 
     assert model.executions == 2
 
-is_equal_parameterized = [
+is_equal_parameterized: list[tuple[Any, Any, bool]] = [
     (None, None, True),
     (True, False, False), (False, True, False), (False, False, True), (True, True, True),
     (None, 1, False), (1, None, False), (1, 1, True), (1,2,False),

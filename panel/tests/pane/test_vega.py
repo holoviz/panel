@@ -1,5 +1,6 @@
 from copy import deepcopy
 from importlib.util import find_spec
+from typing import Any
 
 import pytest
 
@@ -41,6 +42,7 @@ vega_example = {
     '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
 }
 
+vega_df_example: dict[str, Any] | None
 if find_spec("pandas"):
     import pandas as pd
     vega_df_example = {
