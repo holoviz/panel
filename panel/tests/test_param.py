@@ -1,7 +1,6 @@
 import asyncio
 import os
 
-# import pandas as pd
 import param
 import pytest
 
@@ -1769,6 +1768,7 @@ def test_param_editablefloatslider_with_bounds():
 
 
 def test_param_function_inplace_dataframe_update(document, comm):
+    pd = pytest.importorskip("pandas")
     number = NumberInput(value=0)
 
     def layout(value):

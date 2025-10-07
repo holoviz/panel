@@ -5,7 +5,6 @@ import pathlib
 from io import BytesIO
 from zoneinfo import ZoneInfo
 
-# import pandas as pd
 import pytest
 
 from panel import Param, bind
@@ -388,6 +387,7 @@ class TestChatMessage:
         assert message.serialize() == f"Audio='{ASSETS / 'mp3.mp3'}'"
 
     def test_serialize_dataframe(self):
+        pd = pytest.importorskip("pandas")
         message = ChatMessage(DataFrame(pd.DataFrame({'a': [1, 2, 3]})))
         assert message.serialize() == "DataFrame=   a\n0  1\n1  2\n2  3"
 
@@ -396,5 +396,6 @@ class TestChatMessage:
         assert repr(message) == "ChatMessage(object='Hello', user='User', reactions=['favorite'])"
 
     def test_repr_dataframe(self):
+        pd = pytest.importorskip("pandas")
         message = ChatMessage(pd.DataFrame({'a': [1, 2, 3]}), avatar="D")
         assert repr(message) == "ChatMessage(object=   a\n0  1\n1  2\n2  3, user='User', reactions=[])"

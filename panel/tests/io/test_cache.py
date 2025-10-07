@@ -6,7 +6,6 @@ import time
 from collections import Counter
 
 import numpy as np
-# import pandas as pd
 import param
 import pytest
 import requests
@@ -138,6 +137,7 @@ def test_ndarray_hash():
     )
 
 def test_dataframe_hash():
+    pd = pytest.importorskip("pandas")
     data = {
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
         "B": [0.0, 1.0, 0.0, 1.0, 0.0],
@@ -150,6 +150,7 @@ def test_dataframe_hash():
     assert not hashes_equal(df1, df2)
 
 def test_series_hash():
+    pd = pytest.importorskip("pandas")
     series1 = pd.Series([0.0, 1.0, 2.0, 3.0, 4.0])
     series2 = series1.copy()
     assert hashes_equal(series1, series2)

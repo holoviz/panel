@@ -21,10 +21,12 @@ def test_get_markdown_pane_type():
     assert PaneBase.get_pane_type("**Markdown**") is Markdown
 
 def test_get_dataframe_pane_type():
+    pd = pytest.importorskip("pandas")
     df = pd.DataFrame({"A": [1, 2, 3]})
     assert PaneBase.get_pane_type(df) is DataFrame
 
 def test_get_series_pane_type():
+    pd = pytest.importorskip("pandas")
     ser = pd.Series([1, 2, 3])
     assert PaneBase.get_pane_type(ser) is DataFrame
 
@@ -246,6 +248,7 @@ def test_html_pane_sanitize_html(document, comm):
     assert model.text.endswith('&lt;h1&gt;&lt;strong&gt;HTML&lt;/h1&gt;&lt;/strong&gt;')
 
 def test_dataframe_pane_pandas(document, comm):
+    pd = pytest.importorskip("pandas")
     pane = DataFrame(pd.DataFrame({"A": [1, 2, 3]}))
 
     # Create pane
@@ -265,6 +268,7 @@ def test_dataframe_pane_pandas(document, comm):
     assert pane._models == {}
 
 def test_dataframe_pane_supports_escape(document, comm):
+    pd = pytest.importorskip("pandas")
     url = "<a href='https://panel.holoviz.org/'>Panel</a>"
     df = pd.DataFrame({"url": [url]})
     pane = DataFrame(df)

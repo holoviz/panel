@@ -271,7 +271,7 @@ def port():
 
 @pytest.fixture
 def dataframe():
-    import pandas as pd
+    pd = pytest.importorskip("pandas")
     return pd.DataFrame({
         'int': [1, 2, 3],
         'float': [3.14, 6.28, 9.42],
@@ -281,7 +281,7 @@ def dataframe():
 
 @pytest.fixture
 def df_mixed():
-    import pandas as pd
+    pd = pytest.importorskip("pandas")
     df = pd.DataFrame({
         'int': [1, 2, 3, 4],
         'float': [3.14, 6.28, 9.42, -2.45],
@@ -295,7 +295,7 @@ def df_mixed():
 
 @pytest.fixture
 def df_multiindex(df_mixed):
-    import pandas as pd
+    pd = pytest.importorskip("pandas")
     df_mi = df_mixed.copy()
     df_mi.index = pd.MultiIndex.from_tuples([
         ('group0', 'subgroup0'),

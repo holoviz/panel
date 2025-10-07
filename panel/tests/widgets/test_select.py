@@ -53,6 +53,7 @@ def test_select_from_array(document, comm):
     assert select.value == 'A'
 
 def test_select_from_index(document, comm):
+    pd = pytest.importorskip("pandas")
     select = Select.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
 
     assert select.options == ['A', 'B', 'C']
@@ -60,6 +61,7 @@ def test_select_from_index(document, comm):
     assert select.name == 'index'
 
 def test_select_from_series(document, comm):
+    pd = pytest.importorskip("pandas")
     select = Select.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
     assert select.options == ['A', 'B', 'C']
@@ -332,6 +334,7 @@ def test_nested_select_from_multi_index(df_multiindex):
     assert select.levels == ['groups', 'subgroups']
 
 def test_nested_select_from_index():
+    pd = pytest.importorskip("pandas")
     select = NestedSelect.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
 
     assert select.options == ['A', 'B', 'C']
@@ -339,6 +342,7 @@ def test_nested_select_from_index():
     assert select._max_depth == 1
 
 def test_nested_select_from_series():
+    pd = pytest.importorskip("pandas")
     select = NestedSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
     assert select.options == ['A', 'B', 'C']
@@ -939,6 +943,7 @@ def test_multi_select_from_array():
     assert select.value == []
 
 def test_multi_select_from_index():
+    pd = pytest.importorskip("pandas")
     select = MultiSelect.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
 
     assert select.options == ['A', 'B', 'C']
@@ -946,6 +951,7 @@ def test_multi_select_from_index():
     assert select.name == 'index'
 
 def test_multi_select_from_series(document, comm):
+    pd = pytest.importorskip("pandas")
     select = MultiSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
     assert select.options == ['A', 'B', 'C']
