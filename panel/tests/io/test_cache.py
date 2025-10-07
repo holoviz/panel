@@ -397,8 +397,12 @@ if find_spec("pandas"):
     import pandas as pd
     DF1 = pd.DataFrame({"x": [1]})
     DF2 = pd.DataFrame({"y": [1]})
-    is_equal_parameterized.append([
-        (None, DF1, False), (DF1, None, False), (DF1, DF1, True), (DF1, DF1.copy(), True), (DF1,DF2,False),
+    is_equal_parameterized.extend([
+        (None, DF1, False,),
+        (DF1, None, False,),
+        (DF1, DF1, True,),
+        (DF1, DF1.copy(), True,),
+        (DF1, DF2, False,),
     ])
 
 def test_hash_on_simple_dataframes():

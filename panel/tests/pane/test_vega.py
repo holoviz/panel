@@ -48,7 +48,7 @@ if find_spec("pandas"):
             'mark': {'tooltip': None},
             'view': {'height': 300, 'width': 400}
         },
-        'data': pd.DataFrame({'values': {'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]}}),
+        'data': {'values': pd.DataFrame({'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]})},
         'mark': 'bar',
         'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
                      'y': {'type': 'quantitative', 'field': 'y'}},
