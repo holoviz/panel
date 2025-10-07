@@ -8,7 +8,6 @@ The doc_available tests check that python in markdown files can be run top to bo
 import ast
 import runpy
 
-from importlib.util import find_spec
 from inspect import isclass
 from pathlib import Path
 
@@ -129,10 +128,6 @@ async def test_markdown_codeblocks(file, tmp_path):
     if not lines:
         return
 
-    # HACK: Not sure if we should keep or remove this if statement
-    if "import pandas" in lines and find_spec("pandas") is None:
-        return
-
     ast.parse(lines)
 
     if any(w in lines for w in exceptions):
@@ -143,7 +138,12 @@ async def test_markdown_codeblocks(file, tmp_path):
     with open(mod, 'w', encoding='utf-8') as f:
         f.writelines(lines)
 
-    runpy.run_path(str(mod))
+    # HACK: Not sure if we should keep or remove this try/except
+    try:
+        runpy.run_path(str(mod))
+    except ModuleNotFoundError as e:
+        if e.name != "pandas":
+            raise e
 
 
 @doc_available
