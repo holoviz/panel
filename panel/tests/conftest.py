@@ -575,7 +575,7 @@ def exception_handler_accumulator():
 
 @pytest.fixture
 def df_strings():
-    import pandas as pd
+    pd = pytest.importorskip("pandas")
     descr = [
         'Under the Weather',
         'Top Drawer',

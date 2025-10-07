@@ -4,6 +4,7 @@ import pathlib
 import time
 
 from collections import Counter
+from importlib.util import find_spec
 
 import numpy as np
 import param
@@ -384,20 +385,27 @@ def test_cache_on_undecorated_parameterized_method():
 
     assert model.executions == 2
 
-# DF1 = pd.DataFrame({"x": [1]})
-# DF2 = pd.DataFrame({"y": [1]})
-
-# def test_hash_on_simple_dataframes():
-#     assert _generate_hash(DF1)!=_generate_hash(DF2)
-
-@pytest.mark.parametrize(["value", "other", "expected"], [
+is_equal_parameterized = [
     (None, None, True),
     (True, False, False), (False, True, False), (False, False, True), (True, True, True),
     (None, 1, False), (1, None, False), (1, 1, True), (1,2,False),
     (None, "a", False), ("a", None, False), ("a", "a", True), ("a","b",False),
     (1,"1", False),
-    # (None, DF1, False), (DF1, None, False), (DF1, DF1, True), (DF1, DF1.copy(), True), (DF1,DF2,False),
-])
+]
+
+if find_spec("pandas"):
+    import pandas as pd
+    DF1 = pd.DataFrame({"x": [1]})
+    DF2 = pd.DataFrame({"y": [1]})
+    is_equal_parameterized.append([
+        (None, DF1, False), (DF1, None, False), (DF1, DF1, True), (DF1, DF1.copy(), True), (DF1,DF2,False),
+    ])
+
+def test_hash_on_simple_dataframes():
+    pytest.importorskip("pandas")
+    assert _generate_hash(DF1)!=_generate_hash(DF2)
+
+@pytest.mark.parametrize(["value", "other", "expected"], is_equal_parameterized)
 def test_is_equal(value, other, expected):
     assert is_equal(value, other)==expected
 

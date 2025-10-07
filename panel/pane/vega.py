@@ -25,13 +25,11 @@ def ds_as_cds(dataset):
     """
     Converts Vega dataset into Bokeh ColumnDataSource data
     """
-    if len(dataset) == 0:
-        return {}
     pd = sys.modules.get("pandas")
     if pd and isinstance(dataset, pd.DataFrame):
         return {k: dataset[k].values for k in dataset.columns}
-    if isinstance(dataset, dict):
-        return {k: np.asarray(v) for k, v in dataset.items()}
+    if len(dataset) == 0:
+        return {}
     # create a list of unique keys from all items as some items may not include optional fields
     keys = sorted({k for d in dataset for k in d.keys()})
     data = {k: [] for k in keys}

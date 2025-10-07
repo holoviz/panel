@@ -1,4 +1,5 @@
 from copy import deepcopy
+from importlib.util import find_spec
 
 import pytest
 
@@ -40,17 +41,21 @@ vega_example = {
     '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
 }
 
-vega_df_example = {
-    'config': {
-        'mark': {'tooltip': None},
-        'view': {'height': 300, 'width': 400}
-    },
-    'data': {'values': {'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]}},
-    'mark': 'bar',
-    'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
-                 'y': {'type': 'quantitative', 'field': 'y'}},
-    '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
-}
+if find_spec("pandas"):
+    import pandas as pd
+    vega_df_example = {
+        'config': {
+            'mark': {'tooltip': None},
+            'view': {'height': 300, 'width': 400}
+        },
+        'data': pd.DataFrame({'values': {'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]}}),
+        'mark': 'bar',
+        'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
+                     'y': {'type': 'quantitative', 'field': 'y'}},
+        '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
+    }
+else:
+    vega_df_example = None
 
 vega4_selection_example = {
     'config': {'view': {'continuousWidth': 300, 'continuousHeight': 300}},
@@ -210,6 +215,8 @@ def test_get_vega_pane_type_from_dict():
 
 @pytest.mark.parametrize('example', [vega_example, vega_df_example])
 def test_vega_pane(document, comm, example):
+    if example is None:
+        pytest.skip("pandas not installed")
     pane = pn.panel(example)
 
     # Create pane
