@@ -93,7 +93,7 @@ index 677a2a8dc..d6d65bc25 100644
      if isinstance(range_input, Sequence | np.ndarray):
          if all(isinstance(x, str) for x in range_input):
 diff --git a/src/bokeh/util/serialization.py b/src/bokeh/util/serialization.py
-index 27a834c15..66baf4ccd 100644
+index 27a834c15..655ae63bb 100644
 --- a/src/bokeh/util/serialization.py
 +++ b/src/bokeh/util/serialization.py
 @@ -29,6 +29,7 @@ log = logging.getLogger(__name__)
@@ -140,3 +140,32 @@ index 27a834c15..66baf4ccd 100644
 +    _dt_tuple = tuple(_compute_datetime_types("pandas" in sys.modules))
 
      return isinstance(obj, _dt_tuple)
+
+@@ -176,22 +178,22 @@ def convert_datetime_type(obj: Any | pd.Timestamp | pd.Timedelta | dt.datetime |
+         float : milliseconds
+
+     '''
+-    import pandas as pd
++    pd = sys.modules.get("pandas")
+
+     # Pandas NaT
+-    if obj is pd.NaT:
++    if pd and obj is pd.NaT:
+         return np.nan
+
+     # Pandas Period
+-    if isinstance(obj, pd.Period):
++    if pd and isinstance(obj, pd.Period):
+         return obj.to_timestamp().value / 10**6.0
+
+     # Pandas Timestamp
+-    if isinstance(obj, pd.Timestamp):
++    if pd and isinstance(obj, pd.Timestamp):
+         return obj.value / 10**6.0
+
+     # Pandas Timedelta
+-    elif isinstance(obj, pd.Timedelta):
++    elif pd and isinstance(obj, pd.Timedelta):
+         return obj.value / 10**6.0
+
+     # Datetime (datetime is a subclass of date)
