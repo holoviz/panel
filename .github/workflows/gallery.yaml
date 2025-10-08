@@ -55,8 +55,11 @@ jobs:
           python scripts/gallery/collect_thumbnails.py
       - name: Upload and deploy dev gallery
         if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
-          (github.event_name == 'workflow_run' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+          github.event_name != 'schedule' &&
+          (
+            (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
+            (github.event_name == 'workflow_run' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+          )
         run: |
           conda activate test
           ae5 login --hostname holoviz-demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
@@ -66,8 +69,11 @@ jobs:
           ae5 deployment start panel-gallery-dev --endpoint panel-gallery-dev --command dev --public --resource-profile large --wait
       - name: Upload and deploy prod gallery
         if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
-          (github.event_name == 'workflow_run' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')) && contains(steps.vars.outputs.tag, 'v'))
+          github.event_name != 'schedule' &&
+          (
+            (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+            (github.event_name == 'workflow_run' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')) && contains(steps.vars.outputs.tag, 'v'))
+          )
         run: |
           conda activate test
           ae5 login --hostname holoviz-demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
