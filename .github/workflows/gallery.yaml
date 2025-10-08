@@ -44,6 +44,11 @@ jobs:
         run: |
           conda activate test
           conda install -c ae5-admin anaconda-project ae5-tools
+      - name: Prepare environment to check it solves
+        run: |
+          anaconda-project prepare --directory examples/gallery
+          git clean -fxd examples/gallery
+          git reset --hard "$GITHUB_SHA"
       - name: Fetch thumbnails
         run: |
           conda activate test
