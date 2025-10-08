@@ -125,7 +125,7 @@ pillow = "*"
 plotly = ">=4.0"
 # Example dependencies
 aiohttp = "*"
-altair = "*"
+# altair = "*"
 bokeh_sampledata = "*"
 croniter = "*"
 # datashader = "*"
@@ -214,7 +214,7 @@ plotly = ">=6.0"
 # Optional dependencies - dev
 watchfiles = "*"
 # Test dependencies
-altair = "*"
+# altair = "*"
 anywidget = "*"
 bokeh-fastapi = "*"
 bokeh_sampledata = "*"
