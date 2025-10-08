@@ -234,6 +234,9 @@ filterwarnings = [
     "ignore:Failed to generate report", # OK, CovReportWarning: Failed to generate report: No data to report.
     "ignore:Couldn't parse", # OK, CoverageWarning: Couldn't parse
     "ignore:unclosed <socket.socket:ResourceWarning", # Windows Python 3.10 test-example
+    # 2025-10
+    "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::starlette",
+    "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::fastapi",
 ]
 
 [tool.coverage.run]
