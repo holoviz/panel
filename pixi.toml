@@ -125,7 +125,7 @@ pillow = "*"
 plotly = ">=4.0"
 # Example dependencies
 aiohttp = "*"
-# altair = "*"
+# altair = "*" Remove from ALLOWED_NO_DOCS_MODULES
 bokeh_sampledata = "*"
 croniter = "*"
 # datashader = "*"
