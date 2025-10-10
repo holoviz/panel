@@ -25,8 +25,8 @@ def ds_as_cds(dataset):
     """
     Converts Vega dataset into Bokeh ColumnDataSource data
     """
-    import pandas as pd
-    if isinstance(dataset, pd.DataFrame):
+    pd = sys.modules.get("pandas")
+    if pd and isinstance(dataset, pd.DataFrame):
         return {k: dataset[k].values for k in dataset.columns}
     if len(dataset) == 0:
         return {}

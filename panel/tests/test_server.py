@@ -814,8 +814,7 @@ def test_server_thread_pool_change_event(server_implementation, threads):
 
 
 def test_server_thread_pool_bokeh_event(server_implementation, threads):
-    import pandas as pd
-
+    pd = pytest.importorskip("pandas")
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['A', 'B'])
 
     tabulator = Tabulator(df)

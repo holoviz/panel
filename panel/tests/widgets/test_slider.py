@@ -1,7 +1,6 @@
 from datetime import date, datetime
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from bokeh.models import (
@@ -31,6 +30,7 @@ def test_float_slider_from_array():
     assert slider.value == 1.1
 
 def test_float_slider_from_series():
+    pd = pytest.importorskip("pandas")
     slider = FloatSlider.from_values(pd.Series([1.1, 2.2], name='Series'))
 
     assert slider.start == 1.1
@@ -123,6 +123,7 @@ def test_range_slider_from_array():
     assert slider.value == (1.1, 2.2)
 
 def test_range_slider_from_series():
+    pd = pytest.importorskip("pandas")
     slider = RangeSlider.from_values(pd.Series([1.1, 2.2], name='Series'))
 
     assert slider.start == 1.1

@@ -145,6 +145,11 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
           opengl: true
+      - name: PATCH  # HACK: Should never be merged into main
+        run: |
+          pixi run -e ${{ matrix.environment }} bash scripts/no_pandas_bokeh.sh
+          pixi run -e ${{ matrix.environment }} pip install git+https://github.com/holoviz/holoviews@improve_nopandas
+          pixi run -e ${{ matrix.environment }} pip uninstall pandas -y
       - name: Test unit
         run: |
           pixi run -e ${{ matrix.environment }} test-unit $COV

@@ -3,8 +3,6 @@ import re
 from io import StringIO
 from pathlib import Path
 
-import numpy as np
-
 from bokeh.resources import Resources
 
 from panel.config import config
@@ -66,7 +64,7 @@ def test_save_cdn_resources():
 def test_static_path_in_holoviews_save(tmpdir):
     import holoviews as hv
     hv.Store.set_current_backend('bokeh')
-    plot = hv.Curve(np.random.seed(42))
+    plot = hv.Curve([])
     res = Resources(mode='server', root_url='/')
     out_file = Path(tmpdir) / 'plot.html'
     hv.save(plot, out_file, resources=res)

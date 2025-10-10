@@ -1,4 +1,6 @@
 from copy import deepcopy
+from importlib.util import find_spec
+from typing import Any
 
 import pytest
 
@@ -13,7 +15,6 @@ except Exception:
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
 
 import numpy as np
-import pandas as pd
 
 import panel as pn
 
@@ -41,17 +42,22 @@ vega_example = {
     '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
 }
 
-vega_df_example = {
-    'config': {
-        'mark': {'tooltip': None},
-        'view': {'height': 300, 'width': 400}
-    },
-    'data': {'values': pd.DataFrame({'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]})},
-    'mark': 'bar',
-    'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
-                 'y': {'type': 'quantitative', 'field': 'y'}},
-    '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
-}
+vega_df_example: dict[str, Any] | None
+if find_spec("pandas"):
+    import pandas as pd
+    vega_df_example = {
+        'config': {
+            'mark': {'tooltip': None},
+            'view': {'height': 300, 'width': 400}
+        },
+        'data': {'values': pd.DataFrame({'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]})},
+        'mark': 'bar',
+        'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
+                     'y': {'type': 'quantitative', 'field': 'y'}},
+        '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
+    }
+else:
+    vega_df_example = None
 
 vega4_selection_example = {
     'config': {'view': {'continuousWidth': 300, 'continuousHeight': 300}},
@@ -211,6 +217,8 @@ def test_get_vega_pane_type_from_dict():
 
 @pytest.mark.parametrize('example', [vega_example, vega_df_example])
 def test_vega_pane(document, comm, example):
+    if example is None:
+        pytest.skip("pandas not installed")
     pane = pn.panel(example)
 
     # Create pane
@@ -221,8 +229,8 @@ def test_vega_pane(document, comm, example):
 
     assert dict(model.data, **blank_schema) == dict(expected, **blank_schema)
     cds_data = model.data_sources['data'].data
-    assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E']))
-    assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
+    np.testing.assert_array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E']))
+    np.testing.assert_array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     point_example = dict(deepcopy(vega_example), mark='point')
     point_example['data']['values'][0]['x'] = 'C'
@@ -230,8 +238,8 @@ def test_vega_pane(document, comm, example):
     point_example = dict(point_example, data={})
     assert model.data == point_example
     cds_data = model.data_sources['data'].data
-    assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E']))
-    assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
+    np.testing.assert_array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E']))
+    np.testing.assert_array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     pane._cleanup(model)
     assert pane._models == {}
