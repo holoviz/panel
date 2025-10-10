@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import pytest
 
+from jsonschema import ValidationError  # type: ignore[import-untyped]
 from packaging.version import Version
 
 try:
@@ -19,6 +20,7 @@ import panel as pn
 
 from panel.models.vega import VegaPlot
 from panel.pane import PaneBase, Vega
+from panel.pane.vega import SCHEMA_URL
 
 blank_schema = {'$schema': ''}
 
@@ -328,3 +330,37 @@ def test_altair_pane(document, comm):
 def test_vega_can_instantiate_empty_with_sizing_mode(document, comm):
     pane = Vega(sizing_mode="stretch_width")
     pane.get_root(document, comm=comm)
+
+
+def test_vega_missing_schema_auto_added():
+    vegalite = {
+        "data": {"url": "https://raw.githubusercontent.com/vega/vega/master/docs/data/barley.json"},
+        "mark": "bar",
+        "encoding": {
+            "x": {"aggregate": "sum", "field": "yield", "type": "quantitative"},
+            "y": {"field": "variety", "type": "nominal"},
+            "color": {"field": "site", "type": "nominal"}
+        }
+    }
+    # test self.param.warning
+    pane = pn.pane.Vega(vegalite)
+    assert pane.object["$schema"] == SCHEMA_URL
+
+
+@pytest.mark.skipif(
+    pytest.importorskip("diskcache", reason="requires diskcache") is None,
+    reason="requires diskcache"
+)
+def test_vega_validate():
+    vegalite = {
+        "$schema": SCHEMA_URL,
+        "data": {"url": "https://raw.githubusercontent.com/vega/vega/master/docs/data/barley.json"},
+        "mark": "bar",
+        "encoding": {
+            "x": {"aggregate": "sum", "field": "yield", "type": "qnt"},
+            "y": {"field": "variety", "type": "nominal"},
+            "color": {"field": "site", "type": "nominal"}
+        }
+    }
+    with pytest.raises(ValidationError, match="'qnt' is not one of"):
+        pn.pane.Vega(vegalite)
