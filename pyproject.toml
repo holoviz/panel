@@ -237,7 +237,7 @@ filterwarnings = [
     # 2025-10
     "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::starlette",
     "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::fastapi",
-    "ignore:Implicitly cleaning up <_TemporaryFileWrapper:RuntimeWarning",
+    "ignore:Implicitly cleaning up <_TemporaryFileWrapper:ResourceWarning",
 ]
 
 [tool.coverage.run]

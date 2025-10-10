@@ -44,5 +44,5 @@ def test_compile_component_with_shared_file(py_file):
         assert 'function log(msg) {\n  console.log(msg);\n}' in bundle.read_text()
         assert 'function render() {\n  log("foo");\n}' in bundle.read_text()
     finally:
-        bundle.unlink()
+        bundle.unlink(missing_ok=True)
         p.kill()
