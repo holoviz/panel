@@ -392,6 +392,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     try:
         pydoc.unhold()
         pydoc.on_event('document_ready', functools.partial(state._schedule_on_load, pydoc))
+        state._loaded[pydoc] = state._connected[pydoc] = True
         pydoc.callbacks.trigger_event(DocumentReady())
     except Exception as e:
         print(f'Error raised while processing Document events: {e}')  # noqa: T201
