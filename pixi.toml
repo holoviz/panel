@@ -154,7 +154,7 @@ s3fs = "*"
 scikit-image = "*"
 scikit-learn = "*"
 seaborn = "*"
-# streamz = "*"  # raises exception
+# streamz = "*"  # raises AttributeError: 'OrderedSet' object has no attribute 'copy'
 textual = "*"
 tqdm = ">=4.48.0"
 vega_datasets = "*"
