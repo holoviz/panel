@@ -148,7 +148,7 @@ pyecharts = "*"
 pygraphviz = "*"
 pyinstrument = ">=4.0"
 python-graphviz = "*"
-# pyvista = "*"  # https://github.com/conda-forge/pyvista-feedstock/issues/115
+pyvista = "*"
 reacton = "*"
 s3fs = "*"
 scikit-image = "*"
