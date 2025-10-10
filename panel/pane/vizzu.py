@@ -118,7 +118,7 @@ class Vizzu(ModelPane, SyncableData):
                     value = array[0]
                     if isinstance(value, dt.date):
                         columns.append({'name': col, 'type': 'datetime'})
-                    elif pd and isdatetime(value) or isinstance(value, pd.Period):
+                    elif isdatetime(value) or pd and isinstance(value, pd.Period):
                         columns.append({'name': col, 'type': 'datetime'})
                     elif isinstance(value, str):
                         columns.append({'name': col, 'type': 'dimension'})
