@@ -678,8 +678,11 @@ bokeh.server.tornado.create_static_handler = create_static_handler
 # Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
 # support the WindowsProactorEventLoopPolicy so we restore it,
 # unless we detect we are running on jupyter_server.
+# get_event_loop_policy, WindowsProactorEventLoopPolicy, WindowsProactorEventLoopPolicy
+# is deprecated in Python 3.14.
 if (
     sys.platform == 'win32' and
+    sys.version_info < (3, 14, 0) and
     tornado.version_info >= (6, 1) and
     type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy and
     (('jupyter_server' not in sys.modules and
