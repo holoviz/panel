@@ -20,6 +20,9 @@ import bokeh.command.util
 
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.application.handlers.code_runner import CodeRunner
+from bokeh.application.handlers.function import (
+    FunctionHandler as BokehFunctionHandler,
+)
 from bokeh.application.handlers.handler import Handler, handle_exception
 from bokeh.core.types import PathLike
 from bokeh.document import Document
@@ -56,7 +59,10 @@ def _patch_ipython_display():
         pass
 
 @contextmanager
-def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> Iterator[None]:
+def _monkeypatch_io(loggers: dict[str, Callable[..., None]] | None) -> Iterator[None]:
+    if loggers is None:
+        yield
+        return
     import bokeh.io as io
     old: dict[str, Any] = {}
     for f in CodeHandler._io_functions:
@@ -323,7 +329,7 @@ def _create_copy_button(full_error_text):
 
     return copy_button
 
-def run_app(handler, module, doc, post_run=None, allow_empty=False):
+def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = False):
     try:
         old_doc = curdoc()
     except RuntimeError:
@@ -346,9 +352,24 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
 
     try:
         state._launching.add(doc)
-        with _monkeypatch_io(handler._loggers), patch_curdoc(doc), set_curdoc(doc), profile_ctx(config.profiler) as sessions, record_modules(handler=handler):
-            runner = handler._runner
-            if runner.error:
+        with (
+            _monkeypatch_io(getattr(handler, '_loggers', None)),
+            patch_curdoc(doc),
+            set_curdoc(doc),
+            profile_ctx(config.profiler) as sessions,
+            record_modules(handler=handler)
+        ):
+            runner = getattr(handler, '_runner', None)
+            if isinstance(handler, FunctionHandler):
+                from ..pane import Alert
+                try:
+                    handler._func(doc)
+                except Exception as e:
+                    Alert(
+                        f'<b>{type(e).__name__}</b>\n<pre style="overflow-y: auto">{str(e)}</pre>',
+                        alert_type='danger', margin=5, sizing_mode='stretch_width'
+                    ).servable()
+            elif runner.error:
                 from ..pane import Alert
                 Alert(
                     f'<b>{runner.error}</b>\n<pre style="overflow-y: auto">{runner.error_detail}</pre>',
@@ -472,6 +493,25 @@ def parse_notebook(
 #---------------------------------------------------------------------
 # Handler classes
 #---------------------------------------------------------------------
+
+class FunctionHandler(BokehFunctionHandler):
+
+    def modify_document(self, doc: Document) -> None:
+        ''' Execute the configured ``func`` to modify the document.
+
+        After this method is first executed, ``safe_to_fork`` will return
+        ``False``.
+
+        '''
+        try:
+            run_app(self, None, doc)
+        except Exception as e:
+            if self._trap_exceptions:
+                handle_exception(self, e)
+            else:
+                raise
+        finally:
+            self._safe_to_fork = False
 
 class PanelCodeRunner(CodeRunner):
 
