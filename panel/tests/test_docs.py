@@ -25,6 +25,7 @@ IGNORED = ['vtk']
 doc_files = [df for df in sorted(DOC_PATH.rglob("*.md")) if not any(ig in str(df).lower() for ig in IGNORED)]
 doc_available = pytest.mark.skipif(not DOC_PATH.is_dir(), reason="folder 'doc' not found")
 
+ALLOWED_NO_DOCS_MODULES = ("altair", "pandas")
 
 @ref_available
 def test_layouts_are_in_reference_gallery():
@@ -138,11 +139,10 @@ async def test_markdown_codeblocks(file, tmp_path):
     with open(mod, 'w', encoding='utf-8') as f:
         f.writelines(lines)
 
-    # HACK: Not sure if we should keep or remove this try/except
     try:
         runpy.run_path(str(mod))
     except ModuleNotFoundError as e:
-        if e.name != "pandas":
+        if e.name not in ALLOWED_NO_DOCS_MODULES:
             raise e
 
 
