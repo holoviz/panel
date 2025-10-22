@@ -585,6 +585,10 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
+  setLayoutAttribute(el: HTMLDivElement): void {
+    el.setAttribute("tabulator-layout", this.getLayout())
+  }
+
   override render(): void {
     if (this.tabulator != null) {
       this.tabulator.destroy()
@@ -596,6 +600,7 @@ export class DataTabulatorView extends HTMLBoxView {
     const el = div({style: {width: "100%", height: "100%", visibility: "hidden"}})
     this.container = el
     this.setCSSClasses(el)
+    this.setLayoutAttribute(el)
     container.appendChild(el)
     this.shadow_el.appendChild(container)
 
