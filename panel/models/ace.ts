@@ -84,7 +84,7 @@ export class AcePlotView extends HTMLBoxView {
 
   _update_code_from_model(): void {
     if (this._editor && this._editor.getValue() != this.model.code) {
-      this._editor.setValue(this.model.code)
+      this._editor.setValue(this.model.code, 1)
     }
   }
 
