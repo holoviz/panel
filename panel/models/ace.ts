@@ -84,7 +84,14 @@ export class AcePlotView extends HTMLBoxView {
 
   _update_code_from_model(): void {
     if (this._editor && this._editor.getValue() != this.model.code) {
-      this._editor.setValue(this.model.code, 1)
+      const position = this._editor.getCursorPosition()
+      const scroll_top = this._editor.session.getScrollTop()
+      const scroll_left = this._editor.session.getScrollLeft()
+      this._editor.setValue(this.model.code, -1)
+      this._editor.clearSelection()
+      this._editor.moveCursorToPosition(position)
+      this._editor.session.setScrollTop(scroll_top)
+      this._editor.session.setScrollLeft(scroll_left)
     }
   }
 
