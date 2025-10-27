@@ -4,9 +4,12 @@ import re
 import sys
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import numpy as np
+import pandas as pd
 import param
 
 from bokeh.models import ColumnDataSource
@@ -25,7 +28,6 @@ def ds_as_cds(dataset):
     """
     Converts Vega dataset into Bokeh ColumnDataSource data
     """
-    import pandas as pd
     if isinstance(dataset, pd.DataFrame):
         return {k: dataset[k].values for k in dataset.columns}
     if len(dataset) == 0:
@@ -217,6 +219,87 @@ class Vega(ModelPane):
         if isinstance(obj, dict) and 'vega' in obj.get('$schema', '').lower():
             return True
         return cls.is_altair(obj)
+
+    def export(self, fmt: Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url'], **kwargs: dict) -> bytes | str:
+        """
+        Exports the Vega spec to various formats.
+
+        The export method converts the Vega/Altair specification to different
+        output formats. It requires vl-convert-python to be installed.
+
+        Supported formats:
+        - 'png': Returns PNG image as bytes
+        - 'jpeg': Returns JPEG image as bytes
+        - 'svg': Returns SVG as string
+        - 'pdf': Returns PDF as bytes
+        - 'html': Returns HTML as string
+        - 'url': Returns Vega Editor URL as string
+
+        Parameters
+        ----------
+        fmt : str
+            The format to export to. Must be one of 'png', 'jpeg', 'svg',
+            'pdf', 'html', or 'url'.
+        **kwargs : dict
+            Additional keyword arguments passed to the vl-convert functions.
+
+        Returns
+        -------
+        bytes | str
+            The exported data in the requested format.
+            - PNG/JPEG/PDF: Returns bytes
+            - SVG/HTML: Returns string
+            - URL: Returns string (Vega Editor URL)
+
+        Raises
+        ------
+        ImportError
+            If vl-convert-python is not installed.
+        ValueError
+            If an unsupported format is specified.
+
+        Examples
+        --------
+        >>> vega_pane = Vega(spec_dict)
+        >>> png_bytes = vega_pane.export('png')
+        >>> svg_string = vega_pane.export('svg')
+        >>> html_string = vega_pane.export('html')
+        """
+        try:
+            import vl_convert as vlc
+        except ImportError:
+            raise ImportError(
+                'vl-convert-python is required to export Vega specs. '
+                'Please install it via `pip install vl-convert-python`.'
+            ) from None
+
+        spec = self.object if isinstance(self.object, dict) else self.object.to_dict()
+        spec = dict(spec)
+
+        # Get dimensions from container or use spec
+        width = self.width or spec.get("width", 800)
+        height = self.height or spec.get("height", 600)
+        spec['width'] = width
+        spec['height'] = height
+
+        fmt = fmt.lower()
+        if fmt == 'png':
+            return vlc.vegalite_to_png(spec, **kwargs)
+        elif fmt == 'jpeg':
+            return vlc.vegalite_to_jpeg(spec, **kwargs)
+        elif fmt == 'svg':
+            return vlc.vegalite_to_svg(spec, **kwargs)
+        elif fmt == 'pdf':
+            return vlc.vegalite_to_pdf(spec, **kwargs)
+        elif fmt == 'html':
+            return vlc.vegalite_to_html(spec, **kwargs)
+        elif fmt == 'url':
+            return vlc.vegalite_to_url(spec, **kwargs)
+        else:
+            raise ValueError(
+                f'Unsupported format {fmt!r}. Must be one of '
+                f"'png', 'jpeg', 'svg', 'pdf', 'html', or 'url'."
+            )
 
     def _get_sources(self, json, sources=None):
         sources = {} if sources is None else dict(sources)
