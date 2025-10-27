@@ -204,6 +204,7 @@ polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+vl-convert-python = "*"
 
 [feature.test-314.dependencies]
 # Optional dependencies - recommended
