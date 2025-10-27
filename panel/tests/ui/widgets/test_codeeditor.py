@@ -41,6 +41,32 @@ def test_code_editor_on_keyup(page):
     wait_until(lambda: editor.value == "print(\"Hello UI!\")", page)
 
 
+def test_code_editor_value_update_no_selection(page):
+    """Test that updating editor value programmatically doesn't select all text."""
+    editor = CodeEditor(value="foo", on_keyup=True)
+    serve_component(page, editor)
+    ace_input = page.locator(".ace_content")
+    expect(ace_input).to_have_count(1)
+
+    # Update the value programmatically (simulating periodic callback)
+    # Replace "foo" with "bar"
+    s = editor.value
+    s = "bar".join(s.split("foo"))
+    editor.value = s
+    wait_until(lambda: editor.value == "bar", page)
+    expect(page.locator(".ace_content")).to_have_text("bar", use_inner_text=True)
+
+    # Click in the editor to place cursor
+    ace_input.click()
+
+    # Type some text - if all text was selected, this would replace everything
+    page.keyboard.type('X')
+
+    # The text should now contain both the updated text and the new character
+    # If text was selected, it would only contain 'X'
+    wait_until(lambda: 'X' in editor.value and 'bar' in editor.value, page)
+
+
 def test_code_editor_not_on_keyup(page):
 
     editor = CodeEditor(value="print('Hello World!')", on_keyup=False)
