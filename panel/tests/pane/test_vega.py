@@ -1,3 +1,5 @@
+import sys
+
 from copy import deepcopy
 from unittest.mock import patch
 
@@ -348,10 +350,7 @@ class TestVegaExport:
 
     def test_export_requires_vl_convert(self):
         """Test that export raises ImportError if vl_convert is not available."""
-        import sys
-
         pane = Vega(vega_example)
-
         with patch.dict(sys.modules, {'vl_convert': None}):
             with pytest.raises(ImportError, match='vl-convert-python is required'):
                 pane.export('png')
