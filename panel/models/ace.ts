@@ -90,11 +90,19 @@ export class AcePlotView extends HTMLBoxView {
       const scrollLeft = this._editor.session.getScrollLeft()
 
       // Update the value without selecting all text
-      // The second parameter (1) puts cursor at end without selecting
-      this._editor.setValue(this.model.code, 1)
+      // The second parameter (-1) keeps cursor where it is
+      this._editor.setValue(this.model.code, -1)
 
-      // Restore cursor position and scroll position
-      this._editor.moveCursorToPosition(cursorPosition)
+      // Restore cursor position only if it's valid in the new content
+      const newRowCount = this._editor.session.getLength()
+      if (cursorPosition.row < newRowCount) {
+        const newRowLength = this._editor.session.getLine(cursorPosition.row).length
+        const newColumn = Math.min(cursorPosition.column, newRowLength)
+        this._editor.moveCursorToPosition({row: cursorPosition.row, column: newColumn})
+      } else {
+        // If the cursor was beyond the new document length, move to end
+        this._editor.moveCursorToPosition({row: newRowCount - 1, column: this._editor.session.getLine(newRowCount - 1).length})
+      }
       this._editor.clearSelection()
       this._editor.session.setScrollTop(scrollTop)
       this._editor.session.setScrollLeft(scrollLeft)

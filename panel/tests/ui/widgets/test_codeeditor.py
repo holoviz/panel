@@ -48,23 +48,29 @@ def test_code_editor_value_update_no_selection(page):
     ace_input = page.locator(".ace_content")
     expect(ace_input).to_have_count(1)
 
-    # Update the value programmatically (simulating periodic callback)
-    # Replace "foo" with "bar"
-    s = editor.value
-    s = "bar".join(s.split("foo"))
-    editor.value = s
-    wait_until(lambda: editor.value == "bar", page)
-    expect(page.locator(".ace_content")).to_have_text("bar", use_inner_text=True)
-
-    # Click in the editor to place cursor
+    # Click in the editor and position cursor after 'f' (position 1)
     ace_input.click()
+    page.keyboard.press('End')  # Go to end
+    page.keyboard.press('ArrowLeft')  # Move left twice to be after 'f'
+    page.keyboard.press('ArrowLeft')
 
-    # Type some text - if all text was selected, this would replace everything
+    # Type 'X' to verify cursor position (should result in "fXoo")
     page.keyboard.type('X')
+    wait_until(lambda: editor.value == "fXoo", page)
 
-    # The text should now contain both the updated text and the new character
-    # If text was selected, it would only contain 'X'
-    wait_until(lambda: 'X' in editor.value and 'bar' in editor.value, page)
+    # Update the value programmatically (simulating periodic callback)
+    # This should preserve cursor position at index 2 (after "fX")
+    editor.value = "fXoo bar"
+    wait_until(lambda: editor.value == "fXoo bar", page)
+    expect(page.locator(".ace_content")).to_have_text("fXoo bar", use_inner_text=True)
+
+    # Type some more text - cursor should still be at position 2
+    # If cursor position was preserved, typing 'Y' should give "fXYoo bar"
+    # If cursor moved to end, typing 'Y' would give "fXoo barY"
+    page.keyboard.type('Y')
+
+    # Check that cursor was preserved (Y inserted at original position)
+    wait_until(lambda: editor.value == "fXYoo bar", page)
 
 
 def test_code_editor_not_on_keyup(page):
