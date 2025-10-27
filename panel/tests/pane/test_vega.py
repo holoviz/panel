@@ -25,10 +25,8 @@ from panel.pane import PaneBase, Vega
 
 try:
     import vl_convert as vlc
-    vl_convert_available = True
 except ImportError:
     vlc = None
-    vl_convert_available = False
 
 blank_schema = {'$schema': ''}
 
