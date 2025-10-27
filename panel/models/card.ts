@@ -106,14 +106,11 @@ export class CardView extends ColumnView {
       header.r_after_render()
     }
 
-    if (this.model.collapsed) {
-      return
-    }
-
     for (const child_view of this.child_views.slice(1)) {
-      this.shadow_el.appendChild(child_view.el)
       child_view.render()
       child_view.r_after_render()
+      this.shadow_el.appendChild(child_view.el)
+      child_view.model.visible = !this.model.collapsed
     }
   }
 
