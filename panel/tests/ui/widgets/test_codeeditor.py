@@ -73,6 +73,37 @@ def test_code_editor_value_update_no_selection(page):
     wait_until(lambda: editor.value == "fXYoo bar", page)
 
 
+def test_code_editor_value_update_cursor_to_end_when_invalid(page):
+    """Test that cursor moves to end when its position becomes invalid after update."""
+    editor = CodeEditor(value="line1\nline2\nline3\nline4", on_keyup=True)
+    serve_component(page, editor)
+    ace_input = page.locator(".ace_content")
+    expect(ace_input).to_have_count(1)
+
+    # Click in the editor and position cursor on line 3
+    ace_input.click()
+    page.keyboard.press('End')  # Go to end of document
+    page.keyboard.press('ArrowUp')  # Move up to line 3
+    page.keyboard.press('Home')  # Go to start of line 3
+
+    # Type 'X' to verify cursor position (should be at start of line 3)
+    page.keyboard.type('X')
+    wait_until(lambda: "Xline3" in editor.value, page)
+
+    # Update the value programmatically to something with fewer lines
+    # The cursor was on line 3 (row 2), but now there's only 1 line
+    editor.value = "short"
+    wait_until(lambda: editor.value == "short", page)
+    expect(page.locator(".ace_content")).to_have_text("short", use_inner_text=True)
+
+    # Type some text - cursor should now be at the end since old position is invalid
+    # Typing 'Y' should give "shortY"
+    page.keyboard.type('Y')
+
+    # Check that cursor moved to end (Y appended at end)
+    wait_until(lambda: editor.value == "shortY", page)
+
+
 def test_code_editor_not_on_keyup(page):
 
     editor = CodeEditor(value="print('Hello World!')", on_keyup=False)
