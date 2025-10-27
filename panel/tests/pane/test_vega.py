@@ -1,4 +1,5 @@
 from copy import deepcopy
+from unittest.mock import patch
 
 import pytest
 
@@ -19,6 +20,13 @@ import panel as pn
 
 from panel.models.vega import VegaPlot
 from panel.pane import PaneBase, Vega
+
+try:
+    import vl_convert as vlc
+    vl_convert_available = True
+except ImportError:
+    vlc = None
+    vl_convert_available = False
 
 blank_schema = {'$schema': ''}
 
@@ -342,8 +350,6 @@ class TestVegaExport:
         """Test that export raises ImportError if vl_convert is not available."""
         import sys
 
-        from unittest.mock import patch
-
         pane = Vega(vega_example)
 
         with patch.dict(sys.modules, {'vl_convert': None}):
@@ -450,8 +456,6 @@ class TestVegaExport:
         with pytest.raises(ValueError, match="Unsupported format 'scenegraph'"):
             pane.export('scenegraph')
 
-
-
     def test_export_dimension_handling(self, vl_convert):
         """Test dimension handling: pane params > spec values > defaults (800x600)."""
         # Test 1: Default dimensions when nothing specified
@@ -509,10 +513,6 @@ class TestVegaExport:
 
     def test_export_kwargs_passed_to_vl_convert(self, vl_convert):
         """Test that additional kwargs are passed to vl_convert functions."""
-        from unittest.mock import patch
-
-        import vl_convert as vlc
-
         pane = Vega(vega_example)
         with patch.object(vlc, 'vegalite_to_png', return_value=b'fake_png') as mock_convert:
             result = pane.export('png', scale=2.0)
