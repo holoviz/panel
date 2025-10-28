@@ -444,7 +444,7 @@ class TestVegaExport:
         result_mixed = pane.export('Svg')
         assert isinstance(result_mixed, str)
 
-    def test_export_invalid_format(self):
+    def test_export_invalid_format(self, vl_convert):
         """Test that invalid format raises ValueError."""
         pane = Vega(vega_example)
 
