@@ -285,33 +285,33 @@ class Vega(ModelPane):
         if fmt == 'png':
             result = vlc.vegalite_to_png(spec, **kwargs)
             if as_pane:
-                return Image(result)
+                return Image(result, width=self.width, height=self.height)
             return result
         elif fmt == 'jpeg':
             result = vlc.vegalite_to_jpeg(spec, **kwargs)
             if as_pane:
-                return Image(result)
+                return Image(result, width=self.width, height=self.height)
             return result
         elif fmt == 'svg':
             result = vlc.vegalite_to_svg(spec, **kwargs)
             if as_pane:
-                return SVG(result)
+                return SVG(result, width=self.width, height=self.height)
             return result
         elif fmt == 'pdf':
             result = vlc.vegalite_to_pdf(spec, **kwargs)
             if as_pane:
-                return PDF(result)
+                return PDF(result, width=self.width, height=self.height)
             return result
         elif fmt == 'html':
             result = vlc.vegalite_to_html(spec, **kwargs)
             if as_pane:
-                return HTML(result)
+                return HTML(result, width=self.width, height=self.height)
             return result
         elif fmt == 'url':
             result = vlc.vegalite_to_url(spec, **kwargs)
             if as_pane:
                 iframe_html = f'<iframe src="{result}" width="100%" height="600" frameborder="0"></iframe>'
-                return HTML(iframe_html)
+                return HTML(iframe_html, width=self.width, height=self.height)
             return result
         else:
             raise ValueError(
