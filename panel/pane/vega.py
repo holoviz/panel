@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import sys
 
@@ -16,6 +17,8 @@ from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
 from .base import ModelPane
+from .image import PDF, SVG, Image
+from .markup import HTML
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -220,36 +223,28 @@ class Vega(ModelPane):
             return True
         return cls.is_altair(obj)
 
-    def export(self, fmt: Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url'], **kwargs: dict) -> bytes | str:
+    def export(self, fmt: Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url'], as_pane: bool = False, **kwargs: dict) -> bytes | str | ModelPane:
         """
         Exports the Vega spec to various formats.
 
         The export method converts the Vega/Altair specification to different
         output formats. It requires vl-convert-python to be installed.
 
-        Supported formats:
-        - 'png': Returns PNG image as bytes
-        - 'jpeg': Returns JPEG image as bytes
-        - 'svg': Returns SVG as string
-        - 'pdf': Returns PDF as bytes
-        - 'html': Returns HTML as string
-        - 'url': Returns Vega Editor URL as string
-
         Parameters
         ----------
         fmt : str
             The format to export to. Must be one of 'png', 'jpeg', 'svg',
             'pdf', 'html', or 'url'.
+        as_pane : bool, default False
+            If True, wraps the exported data in the appropriate Panel pane.
         **kwargs : dict
             Additional keyword arguments passed to the vl-convert functions.
 
         Returns
         -------
-        bytes | str
-            The exported data in the requested format.
-            - PNG/JPEG/PDF: Returns bytes
-            - SVG/HTML: Returns string
-            - URL: Returns string (Vega Editor URL)
+        bytes | str | ModelPane
+            The exported data in the requested format, or a Panel pane if
+            as_pane=True.
 
         Raises
         ------
@@ -262,9 +257,9 @@ class Vega(ModelPane):
         --------
         >>> vega_pane = Vega(spec_dict)
         >>> png_bytes = vega_pane.export('png')
-        >>> svg_string = vega_pane.export('svg')
-        >>> html_string = vega_pane.export('html')
+        >>> image_pane = vega_pane.export('png', as_pane=True)
         """
+        import pandas as pd
         try:
             import vl_convert as vlc
         except ImportError:
@@ -275,6 +270,10 @@ class Vega(ModelPane):
 
         spec = self.object if isinstance(self.object, dict) else self.object.to_dict()
         spec = dict(spec)
+        if isinstance(spec.get('data', {}).get('values'), pd.DataFrame):
+            spec['data']['values'] = json.loads(
+                spec['data']['values'].to_json(orient='records', date_format='iso')
+            )
 
         # Get dimensions from container or use spec
         width = self.width or spec.get("width", 800)
@@ -284,17 +283,36 @@ class Vega(ModelPane):
 
         fmt = fmt.lower()
         if fmt == 'png':
-            return vlc.vegalite_to_png(spec, **kwargs)
+            result = vlc.vegalite_to_png(spec, **kwargs)
+            if as_pane:
+                return Image(result)
+            return result
         elif fmt == 'jpeg':
-            return vlc.vegalite_to_jpeg(spec, **kwargs)
+            result = vlc.vegalite_to_jpeg(spec, **kwargs)
+            if as_pane:
+                return Image(result)
+            return result
         elif fmt == 'svg':
-            return vlc.vegalite_to_svg(spec, **kwargs)
+            result = vlc.vegalite_to_svg(spec, **kwargs)
+            if as_pane:
+                return SVG(result)
+            return result
         elif fmt == 'pdf':
-            return vlc.vegalite_to_pdf(spec, **kwargs)
+            result = vlc.vegalite_to_pdf(spec, **kwargs)
+            if as_pane:
+                return PDF(result)
+            return result
         elif fmt == 'html':
-            return vlc.vegalite_to_html(spec, **kwargs)
+            result = vlc.vegalite_to_html(spec, **kwargs)
+            if as_pane:
+                return HTML(result)
+            return result
         elif fmt == 'url':
-            return vlc.vegalite_to_url(spec, **kwargs)
+            result = vlc.vegalite_to_url(spec, **kwargs)
+            if as_pane:
+                iframe_html = f'<iframe src="{result}" width="100%" height="600" frameborder="0"></iframe>'
+                return HTML(iframe_html)
+            return result
         else:
             raise ValueError(
                 f'Unsupported format {fmt!r}. Must be one of '

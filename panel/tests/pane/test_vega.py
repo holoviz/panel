@@ -22,6 +22,8 @@ import panel as pn
 
 from panel.models.vega import VegaPlot
 from panel.pane import PaneBase, Vega
+from panel.pane.image import PDF, SVG, Image
+from panel.pane.markup import HTML
 
 try:
     import vl_convert as vlc
@@ -515,3 +517,56 @@ class TestVegaExport:
             result = pane.export('png', scale=2.0)
             assert result == b'fake_png'
             assert mock_convert.call_args[1]['scale'] == 2.0
+
+    def test_export_as_pane_png(self, vl_convert):
+        """Test PNG export with as_pane=True returns Image pane."""
+        pane = Vega(vega_example)
+        result = pane.export('png', as_pane=True)
+        assert isinstance(result, Image)
+
+    def test_export_as_pane_jpeg(self, vl_convert):
+        """Test JPEG export with as_pane=True returns Image pane."""
+        pane = Vega(vega_example)
+        result = pane.export('jpeg', as_pane=True)
+        assert isinstance(result, Image)
+
+    def test_export_as_pane_svg(self, vl_convert):
+        """Test SVG export with as_pane=True returns SVG pane."""
+        pane = Vega(vega_example)
+        result = pane.export('svg', as_pane=True)
+        assert isinstance(result, SVG)
+
+    def test_export_as_pane_pdf(self, vl_convert):
+        """Test PDF export with as_pane=True returns PDF pane."""
+        pane = Vega(vega_example)
+        result = pane.export('pdf', as_pane=True)
+        assert isinstance(result, PDF)
+
+    def test_export_as_pane_html(self, vl_convert):
+        """Test HTML export with as_pane=True returns HTML pane."""
+        pane = Vega(vega_example)
+        result = pane.export('html', as_pane=True)
+        assert isinstance(result, HTML)
+
+    def test_export_as_pane_url(self, vl_convert):
+        """Test URL export with as_pane=True returns HTML pane with iframe."""
+        pane = Vega(vega_example)
+        result = pane.export('url', as_pane=True)
+        assert isinstance(result, HTML)
+        # Check that the object contains an iframe tag
+        assert '<iframe' in result.object.lower()
+        assert 'https://' in result.object
+
+    def test_export_as_pane_false_returns_raw_data(self, vl_convert):
+        """Test that as_pane=False returns raw data, not panes."""
+        pane = Vega(vega_example)
+
+        # PNG returns bytes, not Image pane
+        result = pane.export('png', as_pane=False)
+        assert isinstance(result, bytes)
+        assert not isinstance(result, Image)
+
+        # SVG returns string, not SVG pane
+        result = pane.export('svg', as_pane=False)
+        assert isinstance(result, str)
+        assert not isinstance(result, SVG)
