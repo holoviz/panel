@@ -336,7 +336,7 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
         old_doc = None
         bk_set_curdoc(doc)
 
-    sessions = []
+    sessions: list[Any] = []
 
     def post_check():
         newdoc = state.curdoc
@@ -369,10 +369,14 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
                         f'<b>{type(e).__name__}</b>\n<pre style="overflow-y: auto">{str(e)}</pre>',
                         alert_type='danger', margin=5, sizing_mode='stretch_width'
                     ).servable()
-            elif runner.error:
+            elif runner is None or runner.error:
                 from ..pane import Alert
+                if runner is None:
+                    error, detail = 'Missing runner', 'Application handler did not provide a way to run the application.'
+                else:
+                    error, detail = runner.error, runner.error_detail
                 Alert(
-                    f'<b>{runner.error}</b>\n<pre style="overflow-y: auto">{runner.error_detail}</pre>',
+                    f'<b>{error}</b>\n<pre style="overflow-y: auto">{detail}</pre>',
                     alert_type='danger', margin=5, sizing_mode='stretch_width'
                 ).servable()
             else:
