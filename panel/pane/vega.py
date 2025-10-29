@@ -71,15 +71,22 @@ def _to_iso(v):
 
 def _normalize_temporals_on_frame(df: nw.DataFrame) -> nw.DataFrame:
     import narwhals as nw
+    overrides = {}
+    ns = nw.get_native_namespace(df)
     for col in df.columns:
         dtype = df[col].dtype
         if dtype.is_temporal() or dtype == nw.Date or dtype == nw.Datetime:
-            df = df.with_columns(**{col: df[col].cast(nw.String)})
-            continue
-        if dtype == nw.Object or dtype == nw.Unknown:
+            overrides[col] = df[col].cast(nw.String)
+        elif dtype == nw.Object or dtype == nw.Unknown:
             vals = df[col].to_list()
             if any(_is_dt_like(v) for v in vals):
-                df = df.with_columns(**{col: [_to_iso(v) for v in vals]})
+                overrides[col] = nw.new_series(
+                    name=col,
+                    values=[_to_iso(v) for v in vals],
+                    backend=ns
+                )
+    if overrides:
+        return df.with_columns(**overrides)
     return df
 
 def ds_to_records(dataset: Any) -> list[dict[str, Any]] | None:
