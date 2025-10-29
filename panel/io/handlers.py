@@ -398,7 +398,7 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
                     notify_connection_status=False
                 )
     finally:
-        if config.profiler:
+        if config.profiler and doc.session_context is not None:
             try:
                 path = doc.session_context.request.path
                 state._profiles[(path, config.profiler)] += sessions
