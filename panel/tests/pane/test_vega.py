@@ -25,12 +25,12 @@ from panel.models.vega import VegaPlot
 from panel.pane import PaneBase, Vega
 from panel.pane.image import PDF, SVG, Image
 from panel.pane.markup import HTML
+from panel.pane.vega import SCHEMA_URL
 
 try:
     import vl_convert as vlc  # type: ignore[import-untyped]
 except ImportError:
     vlc = None
-from panel.pane.vega import SCHEMA_URL
 
 blank_schema = {'$schema': ''}
 
