@@ -39,6 +39,7 @@ def ds_as_cds(dataset):
     except TypeError:
         df = None
     if isinstance(df, (nw.DataFrame, nw.LazyFrame)):
+        df = df.collect() if isinstance(df, nw.LazyFrame) else df
         return {name: df[name].to_numpy() for name in df.columns}
 
     if len(dataset) == 0:
