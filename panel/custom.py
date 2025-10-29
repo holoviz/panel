@@ -9,8 +9,11 @@ import pathlib
 import sys
 import textwrap
 
+from abc import abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Mapping
+from collections.abc import (
+    Awaitable, Callable, Iterator, Mapping,
+)
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
@@ -165,6 +168,9 @@ class PyComponent(Viewable, Layoutable):
             self._view__ = self._create__view()
         return super().select(selector) + self._view__.select(selector)
 
+    @abstractmethod
+    def __panel__(self) -> Viewable | Iterator[Viewable] | Awaitable[Viewable]:
+        raise NotImplementedError
 
 
 class ReactiveESMMetaclass(ReactiveMetaBase):
