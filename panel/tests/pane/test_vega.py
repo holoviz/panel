@@ -552,10 +552,17 @@ class TestVegaExport:
         assert not isinstance(result, SVG)
 
 def test_vega_missing_schema_auto_added():
-    vega = deepcopy(vega_example)
-    del vega['$schema']
+    vegalite = {
+        "data": {"url": "https://raw.githubusercontent.com/vega/vega/master/docs/data/barley.json"},
+        "mark": "bar",
+        "encoding": {
+            "x": {"aggregate": "sum", "field": "yield", "type": "quantitative"},
+            "y": {"field": "variety", "type": "nominal"},
+            "color": {"field": "site", "type": "nominal"}
+        }
+    }
     # test self.param.warning
-    pane = pn.pane.Vega(vega)
+    pane = pn.pane.Vega(vegalite)
     assert pane.object["$schema"] == SCHEMA_URL
 
 

@@ -90,7 +90,6 @@ tests = [
     'pytest-asyncio',
     'pytest-rerunfailures <16.0',
     'pytest-xdist',
-    'jsonschema',
 ]
 mypy = [
     "mypy",

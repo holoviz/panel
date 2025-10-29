@@ -205,6 +205,7 @@ polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+jsonschema = "*"
 vl-convert-python = "*"
 
 [feature.test-314.dependencies]
@@ -234,6 +235,8 @@ polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+jsonschema = "*"
+vl-convert-python = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
