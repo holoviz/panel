@@ -165,6 +165,9 @@ class PyComponent(Viewable, Layoutable):
             self._view__ = self._create__view()
         return super().select(selector) + self._view__.select(selector)
 
+    def __panel__(self):
+        raise NotImplementedError("PyComponent requires __panel__ to be defined")
+
 
 
 class ReactiveESMMetaclass(ReactiveMetaBase):
