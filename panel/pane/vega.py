@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+import datetime as dt
 import re
 import sys
 
@@ -18,24 +18,33 @@ from pyviz_comms import JupyterComm
 from ..util import lazy_load
 from .base import ModelPane
 from .image import PDF, SVG, Image
-from .markup import HTML
+from .markup import HTML, JSON
 
 if TYPE_CHECKING:
+    import narwhals as nw
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    VEGA_EXPORT_FORMATS = Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url', 'scenegraph']
 
 def ds_as_cds(dataset):
     """
-    Converts Vega dataset into Bokeh ColumnDataSource data
+    Converts Vega dataset into Bokeh ColumnDataSource data (Narwhals-compatible)
     """
-    import pandas as pd
-    if isinstance(dataset, pd.DataFrame):
-        return {k: dataset[k].values for k in dataset.columns}
+    import narwhals as nw
+    try:
+        df = nw.from_native(dataset)
+    except TypeError:
+        df = None
+    if isinstance(df, (nw.DataFrame, nw.LazyFrame)):
+        return {name: df[name].to_numpy() for name in df.columns}
+
     if len(dataset) == 0:
         return {}
-    # create a list of unique keys from all items as some items may not include optional fields
+
+    # Create a list of unique keys from all items as some items may not include optional fields
     keys = sorted({k for d in dataset for k in d.keys()})
     data = {k: [] for k in keys}
     for item in dataset:
@@ -44,6 +53,43 @@ def ds_as_cds(dataset):
     data = {k: np.asarray(v) for k, v in data.items()}
     return data
 
+def _is_dt_like(v):
+    return (
+        isinstance(v, (dt.date, dt.datetime, np.datetime64))
+        or (hasattr(v, "to_pydatetime") and v.__class__.__module__.startswith("pandas"))
+    )
+
+def _to_iso(v):
+    if isinstance(v, (dt.datetime, dt.date)):
+        return v.isoformat()
+    if isinstance(v, np.datetime64):
+        # choose precision to taste: "s", "ms", "us", "ns"
+        return np.datetime_as_string(v, unit="s")
+    if hasattr(v, "to_pydatetime") and v.__class__.__module__.startswith("pandas"):
+        return v.to_pydatetime().isoformat()
+    return v
+
+def _normalize_temporals_on_frame(df: nw.DataFrame) -> nw.DataFrame:
+    import narwhals as nw
+    for col in df.columns:
+        dtype = df[col].dtype
+        if dtype.is_temporal() or dtype == nw.Date or dtype == nw.Datetime:
+            df = df.with_columns(**{col: df[col].cast(nw.String)})
+            continue
+        if dtype == nw.Object or dtype == nw.Unknown:
+            vals = df[col].to_list()
+            if any(_is_dt_like(v) for v in vals):
+                df = df.with_columns(**{col: [_to_iso(v) for v in vals]})
+    return df
+
+def ds_to_records(dataset: Any) -> list[dict[str, Any]] | None:
+    import narwhals as nw
+    try:
+        df = nw.from_native(dataset)
+    except TypeError:
+        return None
+    df = _normalize_temporals_on_frame(df)
+    return df.rows(named=True)
 
 _containers = ['hconcat', 'vconcat', 'layer']
 
@@ -223,7 +269,9 @@ class Vega(ModelPane):
             return True
         return cls.is_altair(obj)
 
-    def export(self, fmt: Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url'], as_pane: bool = False, **kwargs: dict) -> bytes | str | ModelPane:
+    def export(
+        self, fmt: VEGA_EXPORT_FORMATS, as_pane: bool = False, **kwargs: dict
+    ) -> bytes | str | dict | ModelPane:
         """
         Exports the Vega spec to various formats.
 
@@ -234,7 +282,7 @@ class Vega(ModelPane):
         ----------
         fmt : str
             The format to export to. Must be one of 'png', 'jpeg', 'svg',
-            'pdf', 'html', or 'url'.
+            'pdf', 'html', 'url', 'scenegraph'.
         as_pane : bool, default False
             If True, wraps the exported data in the appropriate Panel pane.
         **kwargs : dict
@@ -259,7 +307,6 @@ class Vega(ModelPane):
         >>> png_bytes = vega_pane.export('png')
         >>> image_pane = vega_pane.export('png', as_pane=True)
         """
-        import pandas as pd
         try:
             import vl_convert as vlc
         except ImportError:
@@ -270,54 +317,53 @@ class Vega(ModelPane):
 
         spec = self.object if isinstance(self.object, dict) else self.object.to_dict()
         spec = dict(spec)
-        if isinstance(spec.get('data', {}).get('values'), pd.DataFrame):
-            spec['data']['values'] = json.loads(
-                spec['data']['values'].to_json(orient='records', date_format='iso')
-            )
+        data = spec.get('data', {})
+        if isinstance(data, list):
+            converted = []
+            for datum in data:
+                if isinstance(datum, dict) and 'values' in datum:
+                    records = ds_to_records(datum['values'])
+                    if records is not None:
+                        datum = dict(datum, values=records)
+                converted.append(datum)
+            spec["data"] = converted
+        elif isinstance(data, dict) and 'values' in data:
+            records = ds_to_records(data['values'])
+            if records is not None:
+                spec["data"] = dict(data, values=records)
 
         # Get dimensions from container or use spec
-        width = self.width or spec.get("width", 800)
-        height = self.height or spec.get("height", 600)
-        spec['width'] = width
-        spec['height'] = height
+        spec['width'] = self.width or spec.get("width", 800)
+        spec['height'] = self.height or spec.get("height", 600)
 
-        fmt_lower = fmt.lower()
-        if fmt_lower == 'png':
-            result = vlc.vegalite_to_png(spec, **kwargs)
-            if as_pane:
-                return Image(result, width=self.width, height=self.height)
-            return result
-        elif fmt_lower == 'jpeg':
-            result = vlc.vegalite_to_jpeg(spec, **kwargs)
-            if as_pane:
-                return Image(result, width=self.width, height=self.height)
-            return result
-        elif fmt_lower == 'svg':
-            result = vlc.vegalite_to_svg(spec, **kwargs)
-            if as_pane:
-                return SVG(result, width=self.width, height=self.height)
-            return result
-        elif fmt_lower == 'pdf':
-            result = vlc.vegalite_to_pdf(spec, **kwargs)
-            if as_pane:
-                return PDF(result, width=self.width, height=self.height)
-            return result
-        elif fmt_lower == 'html':
-            result = vlc.vegalite_to_html(spec, **kwargs)
-            if as_pane:
-                return HTML(result, width=self.width, height=self.height)
-            return result
-        elif fmt_lower == 'url':
-            result = vlc.vegalite_to_url(spec, **kwargs)
-            if as_pane:
-                iframe_html = f'<iframe src="{result}" width="100%" height="600" frameborder="0"></iframe>'
-                return HTML(iframe_html, width=self.width, height=self.height)
-            return result
+        if 'schema/vega/' in spec.get('$schema', 'schema/vega-lite/'):
+            src = 'vega'
         else:
+            src = 'vegalite'
+        fmt_lower = fmt.lower()
+        func_name = f"{src}_to_{fmt_lower}"
+        func = getattr(vlc, func_name, None)
+        if func is None:
             raise ValueError(
                 f'Unsupported format {fmt!r}. Must be one of '
                 f"'png', 'jpeg', 'svg', 'pdf', 'html', or 'url'."
             )
+        result = func(spec, **kwargs)
+        if as_pane:
+            params = {'width': self.width, 'height': self.height, 'sizing_mode': self.sizing_mode}
+            if fmt_lower == 'svg':
+                return SVG(result, **params)
+            elif fmt_lower == 'pdf':
+                return PDF(result, **params)
+            elif fmt_lower == 'html':
+                return HTML(result, **params)
+            elif fmt_lower == 'url':
+                iframe_html = f'<iframe src="{result}" width="100%" height="600" frameborder="0"></iframe>'
+                return HTML(iframe_html, **params)
+            elif fmt_lower == 'scenegraph':
+                return JSON(result)
+            return Image(result, **params)
+        return result
 
     def _get_sources(self, json, sources=None):
         sources = {} if sources is None else dict(sources)
