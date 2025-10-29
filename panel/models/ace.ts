@@ -126,7 +126,9 @@ export class AcePlotView extends HTMLBoxView {
   }
 
   _update_theme(): void {
-    this._editor.setTheme(`ace/theme/${this.model.theme}`)
+    if (this._editor) {
+      this._editor.setTheme(`ace/theme/${this.model.theme}`)
+    }
   }
 
   _update_filename(): void {
