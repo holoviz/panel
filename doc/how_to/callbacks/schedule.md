@@ -8,6 +8,8 @@ The `pn.state.schedule_task` functionality allows scheduling global tasks at cer
 
 The different contexts in which global tasks and periodic callbacks run also has implications on how they should be scheduled. Scheduled task **must not** be declared in the application code itself, i.e. if you are serving `panel serve app.py` the callback you are scheduling must not be declared in the `app.py`. It must be defined in an external module or in a separate script declared as part of the `panel serve` invocation using the `--setup` commandline argument.
 
+When using `panel serve` provide a Python setup script with `--setup <script.py>`; do not wrap setup code in `if __name__ == "__main__":` and avoid blocking loops — use `pn.state.schedule_task` for periodic work.
+
 Scheduling using `pn.state.schedule_task` is idempotent, i.e. if a callback has already been scheduled under the same name subsequent calls will have no effect. By default the starting time is immediate but may be overridden with the `at` keyword argument. The period may be declared using the `period` argument or a cron expression (which requires the `croniter` library). Note that the `at` time should be in local time but if a callable is provided it must return a UTC time. If `croniter` is installed a `cron` expression can be provided using the `cron` argument.
 
 Here is a simple example of a task scheduled at a fixed interval:

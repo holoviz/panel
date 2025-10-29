@@ -141,10 +141,10 @@ PARAM_MAPPING = {
     pm.Integer: lambda p, kwargs: bp.Int(**kwargs),
     pm.List: list_param_to_ppt,
     pm.Number: lambda p, kwargs: bp.Either(bp.Float, bp.Bool, **kwargs),
-    pm.NumericTuple: lambda p, kwargs: bp.Tuple(*(bp.Float for p in range(p.length)), **kwargs),
+    pm.NumericTuple: lambda p, kwargs: bp.Any(**kwargs),
     pm.Range: lambda p, kwargs: bp.Tuple(bp.Float, bp.Float, **kwargs),
     pm.String: lambda p, kwargs: bp.String(**kwargs),
-    pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in range(p.length)), **kwargs),
+    pm.Tuple: lambda p, kwargs: bp.Any(**kwargs),
     Child: lambda p, kwargs: bp.Nullable(bp.Instance(Model), **kwargs),
     Children: lambda p, kwargs: bp.List(bp.Instance(Model), **kwargs),
 }

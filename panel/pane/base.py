@@ -638,7 +638,16 @@ class ReplacementPane(Pane):
         })
 
     def _update_inner_layout(self, *events):
-        self._pane.param.update({event.name: event.new for event in events})
+        updates = {}
+        for event in events:
+            value = event.new
+            if event.name in ('css_classes', 'stylesheets'):
+                value = [
+                    v for v in getattr(self._pane, event.name)
+                    if v not in event.old
+                ] + event.new
+            updates[event.name] = value
+        self._pane.param.update(updates)
 
     @classmethod
     def _recursive_update(cls, old: Reactive, new: Reactive):
