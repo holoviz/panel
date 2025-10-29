@@ -6,7 +6,7 @@ import re
 import tempfile
 import uuid
 
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from cProfile import Profile
 from functools import wraps
@@ -197,7 +197,7 @@ def profiling_tabs(state, allow=None, deny=[]):
 
 
 @contextmanager
-def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[Sequence[Profile | bytes | Session]]:
+def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[list[Profile | bytes | Session]]:
     """
     A context manager which profiles the body of the with statement
     with the supplied profiling engine and returns the profiling object
@@ -231,7 +231,7 @@ def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[Sequence[P
         tracker.__enter__()
     elif engine is None:
         pass
-    sessions: Sequence[Profile | bytes | Session] = []
+    sessions: list[Profile | bytes | Session] = []
     yield sessions
     if engine == 'pyinstrument':
         sessions.append(prof.stop())
