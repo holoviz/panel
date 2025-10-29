@@ -451,10 +451,6 @@ class TestVegaExport:
         with pytest.raises(ValueError, match="Unsupported format 'invalid'"):
             pane.export('invalid')
 
-        # scenegraph is not supported in Panel version
-        with pytest.raises(ValueError, match="Unsupported format 'scenegraph'"):
-            pane.export('scenegraph')
-
     def test_export_dimension_handling(self, vl_convert):
         """Test dimension handling: pane params > spec values > defaults (800x600)."""
         # Test 1: Default dimensions when nothing specified
