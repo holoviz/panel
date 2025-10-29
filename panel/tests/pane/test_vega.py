@@ -513,35 +513,18 @@ class TestVegaExport:
             assert result == b'fake_png'
             assert mock_convert.call_args[1]['scale'] == 2.0
 
-    def test_export_as_pane_png(self, vl_convert):
-        """Test PNG export with as_pane=True returns Image pane."""
+    @pytest.mark.parametrize('fmt,expected_pane', [
+        ('png', Image),
+        ('jpeg', Image),
+        ('svg', SVG),
+        ('pdf', PDF),
+        ('html', HTML),
+    ])
+    def test_export_as_pane(self, vl_convert, fmt, expected_pane):
+        """Test export with as_pane=True returns correct pane type."""
         pane = Vega(vega_example)
-        result = pane.export('png', as_pane=True)
-        assert isinstance(result, Image)
-
-    def test_export_as_pane_jpeg(self, vl_convert):
-        """Test JPEG export with as_pane=True returns Image pane."""
-        pane = Vega(vega_example)
-        result = pane.export('jpeg', as_pane=True)
-        assert isinstance(result, Image)
-
-    def test_export_as_pane_svg(self, vl_convert):
-        """Test SVG export with as_pane=True returns SVG pane."""
-        pane = Vega(vega_example)
-        result = pane.export('svg', as_pane=True)
-        assert isinstance(result, SVG)
-
-    def test_export_as_pane_pdf(self, vl_convert):
-        """Test PDF export with as_pane=True returns PDF pane."""
-        pane = Vega(vega_example)
-        result = pane.export('pdf', as_pane=True)
-        assert isinstance(result, PDF)
-
-    def test_export_as_pane_html(self, vl_convert):
-        """Test HTML export with as_pane=True returns HTML pane."""
-        pane = Vega(vega_example)
-        result = pane.export('html', as_pane=True)
-        assert isinstance(result, HTML)
+        result = pane.export(fmt, as_pane=True)
+        assert isinstance(result, expected_pane)
 
     def test_export_as_pane_url(self, vl_convert):
         """Test URL export with as_pane=True returns HTML pane with iframe."""
