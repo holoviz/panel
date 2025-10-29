@@ -5,16 +5,20 @@ import re
 import sys
 
 from collections.abc import Mapping
+from copy import deepcopy
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
 )
 
 import numpy as np
 import param
+import requests
 
 from bokeh.models import ColumnDataSource
+from jsonschema import Draft7Validator, ValidationError
 from pyviz_comms import JupyterComm
 
+from ..io import cache
 from ..util import lazy_load
 from .base import ModelPane
 from .image import PDF, SVG, Image
@@ -28,6 +32,34 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
     VEGA_EXPORT_FORMATS = Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url', 'scenegraph']
+
+SCHEMA_URL = "https://vega.github.io/schema/vega-lite/v5.json"
+
+_VEGA_ZOOMABLE_MAP_ITEMS = {
+    "params": [
+        {"name": "tx", "update": "width / 2"},
+        {"name": "ty", "update": "height / 2"},
+        {
+            "name": "scale",
+            "value": 300,
+            "on": [{"events": {"type": "wheel", "consume": True}, "update": "clamp(scale * pow(1.003, -event.deltaY * pow(16, event.deltaMode)), 150, 50000)"}],
+        },
+        {"name": "angles", "value": [0, 0], "on": [{"events": "pointerdown", "update": "[rotateX, centerY]"}]},
+        {"name": "cloned", "value": None, "on": [{"events": "pointerdown", "update": "copy('projection')"}]},
+        {"name": "start", "value": None, "on": [{"events": "pointerdown", "update": "invert(cloned, xy())"}]},
+        {"name": "drag", "value": None, "on": [{"events": "[pointerdown, window:pointerup] > window:pointermove", "update": "invert(cloned, xy())"}]},
+        {"name": "delta", "value": None, "on": [{"events": {"signal": "drag"}, "update": "[drag[0] - start[0], start[1] - drag[1]]"}]},
+        {"name": "rotateX", "value": -240, "on": [{"events": {"signal": "delta"}, "update": "angles[0] + delta[0]"}]},
+        {"name": "centerY", "value": 40, "on": [{"events": {"signal": "delta"}, "update": "clamp(angles[1] + delta[1], -60, 60)"}]},
+    ],
+    "projection": {
+        "scale": {"signal": "scale"},
+        "rotate": [{"signal": "rotateX"}, 0, 0],
+        "center": [0, {"signal": "centerY"}],
+        "translate": [{"signal": "tx"}, {"signal": "ty"}]
+    }
+}
+
 
 def ds_as_cds(dataset):
     """
@@ -226,17 +258,94 @@ class Vega(ModelPane):
         'urbaninstitute', or 'googlecharts'.
         """)
 
+    validate = param.Boolean(default=True, doc="""
+        Whether to validate the Vega specification against the schema.""")
+
     priority: ClassVar[float | bool | None] = 0.8
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'selection': None, 'debounce': None, 'object': 'data'}
+        'selection': None, 'debounce': None, 'object': 'data', 'validate': None}
 
     _updates: ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
+        if isinstance(object, dict) and "$schema" not in object:
+            self.param.warning(f"No $schema found; using {SCHEMA_URL} by default. Specify the schema explicitly to avoid this warning.")
+            object["$schema"] = SCHEMA_URL
         super().__init__(object, **params)
         self.param.watch(self._update_selections, ['object'])
         self._update_selections()
+
+    @cache
+    def _download_vega_lite_schema(self, schema_url: str | None = None):
+        return requests.get(schema_url).json()
+
+    @staticmethod
+    def _format_validation_error(error: ValidationError) -> str:
+        """Format JSONSchema validation errors into a readable message."""
+        errors = {}
+        last_path = ""
+        rejected_paths = set()
+
+        def process_error(err):
+            nonlocal last_path
+            path = err.json_path
+            if errors and path == "$":
+                return  # these $ downstream errors are due to upstream errors
+            if err.validator != "anyOf":
+                # other downstream errors that are due to upstream errors
+                # $.encoding.x.sort: '-host_count' is not one of ..
+                #$.encoding.x: 'value' is a required property
+                if (
+                    (last_path != path
+                    and last_path.split(path)[-1].count(".") <= 1)
+                    or path in rejected_paths
+                ):
+                    rejected_paths.add(path)
+                # if we have a more specific error message, e.g. enum, don't overwrite it
+                elif path in errors and err.validator in ("const", "type"):
+                    pass
+                else:
+                    errors[path] = f"{path}: {err.message}"
+            last_path = path
+            if err.context:
+                for e in err.context:
+                    process_error(e)
+
+        process_error(error)
+        return "\n".join(errors.values())
+
+    @param.depends("object", watch=True, on_init=True)
+    def _validate_object(self):
+        object = self.object
+        if not self.validate or not object:
+            return
+
+        schema = object.get('$schema', '')
+        if not schema:
+            raise ValidationError("No $schema found on Vega object")
+        else:
+            try:
+                schema = self._download_vega_lite_schema(schema)
+            except Exception as e:
+                self.param.warning(f"Skipping validation because could not load Vega schema at {schema}: {e}")
+                return
+
+        try:
+            vega_validator = Draft7Validator(schema)
+            # the zoomable params work, but aren't officially valid
+            # so we need to remove them for validation
+            # https://stackoverflow.com/a/78342773/9324652
+            object_copy = deepcopy(object)
+            for key in _VEGA_ZOOMABLE_MAP_ITEMS.get("projection", {}):
+                object_copy.get("projection", {}).pop(key, None)
+            object_copy.pop("params", None)
+            # Use dummy URL to avoid $.data: 'url' is a required property
+            # when data is an inline dict / dataframe
+            object_copy["data"] = {"url": "dummy_url"}
+            vega_validator.validate(object_copy)
+        except ValidationError as e:
+            raise ValidationError(self._format_validation_error(e)) from e
 
     @property
     def _selections(self):

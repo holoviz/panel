@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
+from jsonschema import ValidationError
 from packaging.version import Version
 
 try:
@@ -29,6 +30,7 @@ try:
     import vl_convert as vlc  # type: ignore[import-untyped]
 except ImportError:
     vlc = None
+from panel.pane.vega import SCHEMA_URL
 
 blank_schema = {'$schema': ''}
 
@@ -548,3 +550,25 @@ class TestVegaExport:
         result = pane.export('svg', as_pane=False)
         assert isinstance(result, str)
         assert not isinstance(result, SVG)
+
+def test_vega_missing_schema_auto_added():
+    vega = deepcopy(vega_example)
+    del vega['$schema']
+    # test self.param.warning
+    pane = pn.pane.Vega(vega)
+    assert pane.object["$schema"] == SCHEMA_URL
+
+
+def test_vega_validate():
+    vegalite = {
+        "$schema": SCHEMA_URL,
+        "data": {"url": "https://raw.githubusercontent.com/vega/vega/master/docs/data/barley.json"},
+        "mark": "bar",
+        "encoding": {
+            "x": {"aggregate": "sum", "field": "yield", "type": "qnt"},
+            "y": {"field": "variety", "type": "nominal"},
+            "color": {"field": "site", "type": "nominal"}
+        }
+    }
+    with pytest.raises(ValidationError, match="'qnt' is not one of"):
+        pn.pane.Vega(vegalite)
