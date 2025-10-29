@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import datetime as dt
 import re
 import sys
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import numpy as np
 import param
@@ -14,23 +17,35 @@ from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
 from .base import ModelPane
+from .image import PDF, SVG, Image
+from .markup import HTML, JSON
 
 if TYPE_CHECKING:
+    import narwhals as nw
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    VEGA_EXPORT_FORMATS = Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url', 'scenegraph']
 
 def ds_as_cds(dataset):
     """
-    Converts Vega dataset into Bokeh ColumnDataSource data
+    Converts Vega dataset into Bokeh ColumnDataSource data (Narwhals-compatible)
     """
-    import pandas as pd
-    if isinstance(dataset, pd.DataFrame):
-        return {k: dataset[k].values for k in dataset.columns}
+    import narwhals.stable.v2 as nw
+    try:
+        df = nw.from_native(dataset)
+    except TypeError:
+        df = None
+    if isinstance(df, (nw.DataFrame, nw.LazyFrame)):
+        df = df.collect() if isinstance(df, nw.LazyFrame) else df
+        return {name: df[name].to_numpy() for name in df.columns}
+
     if len(dataset) == 0:
         return {}
-    # create a list of unique keys from all items as some items may not include optional fields
+
+    # Create a list of unique keys from all items as some items may not include optional fields
     keys = sorted({k for d in dataset for k in d.keys()})
     data = {k: [] for k in keys}
     for item in dataset:
@@ -39,6 +54,50 @@ def ds_as_cds(dataset):
     data = {k: np.asarray(v) for k, v in data.items()}
     return data
 
+def _is_dt_like(v):
+    return (
+        isinstance(v, (dt.date, dt.datetime, np.datetime64))
+        or (hasattr(v, "to_pydatetime") and v.__class__.__module__.startswith("pandas"))
+    )
+
+def _to_iso(v):
+    if isinstance(v, (dt.datetime, dt.date)):
+        return v.isoformat()
+    if isinstance(v, np.datetime64):
+        # choose precision to taste: "s", "ms", "us", "ns"
+        return np.datetime_as_string(v, unit="s")
+    if hasattr(v, "to_pydatetime") and v.__class__.__module__.startswith("pandas"):
+        return v.to_pydatetime().isoformat()
+    return v
+
+def _normalize_temporals_on_frame(df: nw.DataFrame) -> nw.DataFrame:
+    import narwhals.stable.v2 as nw
+    overrides = {}
+    ns = nw.get_native_namespace(df)
+    for col in df.columns:
+        dtype = df[col].dtype
+        if dtype.is_temporal():
+            overrides[col] = df[col].cast(nw.String)
+        elif dtype == nw.Object or dtype == nw.Unknown:
+            vals = df[col].to_list()
+            if any(_is_dt_like(v) for v in vals):
+                overrides[col] = nw.new_series(
+                    name=col,
+                    values=[_to_iso(v) for v in vals],
+                    backend=ns
+                )
+    if overrides:
+        return df.with_columns(**overrides)
+    return df
+
+def ds_to_records(dataset: Any) -> list[dict[str, Any]] | None:
+    import narwhals.stable.v2 as nw
+    try:
+        df = nw.from_native(dataset)
+    except TypeError:
+        return None
+    df = _normalize_temporals_on_frame(df)
+    return df.rows(named=True)
 
 _containers = ['hconcat', 'vconcat', 'layer']
 
@@ -217,6 +276,102 @@ class Vega(ModelPane):
         if isinstance(obj, dict) and 'vega' in obj.get('$schema', '').lower():
             return True
         return cls.is_altair(obj)
+
+    def export(
+        self, fmt: VEGA_EXPORT_FORMATS, as_pane: bool = False, **kwargs: dict
+    ) -> bytes | str | dict | ModelPane:
+        """
+        Exports the Vega spec to various formats.
+
+        The export method converts the Vega/Altair specification to different
+        output formats. It requires vl-convert-python to be installed.
+
+        Parameters
+        ----------
+        fmt : str
+            The format to export to. Must be one of 'png', 'jpeg', 'svg',
+            'pdf', 'html', 'url', 'scenegraph'.
+        as_pane : bool, default False
+            If True, wraps the exported data in the appropriate Panel pane.
+        **kwargs : dict
+            Additional keyword arguments passed to the vl-convert functions.
+
+        Returns
+        -------
+        bytes | str | ModelPane
+            The exported data in the requested format, or a Panel pane if
+            as_pane=True.
+
+        Raises
+        ------
+        ImportError
+            If vl-convert-python is not installed.
+        ValueError
+            If an unsupported format is specified.
+
+        Examples
+        --------
+        >>> vega_pane = Vega(spec_dict)
+        >>> png_bytes = vega_pane.export('png')
+        >>> image_pane = vega_pane.export('png', as_pane=True)
+        """
+        try:
+            import vl_convert as vlc  # type: ignore[import-untyped]
+        except ImportError:
+            raise ImportError(
+                'vl-convert-python is required to export Vega specs. '
+                'Please install it via `pip install vl-convert-python`.'
+            ) from None
+
+        spec = self.object if isinstance(self.object, dict) else self.object.to_dict()
+        spec = dict(spec)
+        data = spec.get('data', {})
+        if isinstance(data, list):
+            converted = []
+            for datum in data:
+                if isinstance(datum, dict) and 'values' in datum:
+                    records = ds_to_records(datum['values'])
+                    if records is not None:
+                        datum = dict(datum, values=records)
+                converted.append(datum)
+            spec["data"] = converted
+        elif isinstance(data, dict) and 'values' in data:
+            records = ds_to_records(data['values'])
+            if records is not None:
+                spec["data"] = dict(data, values=records)
+
+        # Get dimensions from container or use spec
+        spec['width'] = self.width or spec.get("width", 800)
+        spec['height'] = self.height or spec.get("height", 600)
+
+        if 'schema/vega/' in spec.get('$schema', 'schema/vega-lite/'):
+            src = 'vega'
+        else:
+            src = 'vegalite'
+        fmt_lower = fmt.lower()
+        func_name = f"{src}_to_{fmt_lower}"
+        func = getattr(vlc, func_name, None)
+        if func is None:
+            raise ValueError(
+                f'Unsupported format {fmt!r}. Must be one of '
+                f"'png', 'jpeg', 'svg', 'pdf', 'html', or 'url'."
+            )
+        result = func(spec, **kwargs)
+        if as_pane:
+            params = {'width': self.width, 'height': self.height, 'sizing_mode': self.sizing_mode}
+            if fmt_lower == 'svg':
+                return SVG(result, **params)
+            elif fmt_lower == 'pdf':
+                return PDF(result, **params)
+            elif fmt_lower == 'html':
+                return HTML(result, **params)
+            elif fmt_lower == 'url':
+                iframe_html = f'<iframe src="{result}" width="100%" height="600" frameborder="0"></iframe>'
+                return HTML(iframe_html, **params)
+            elif fmt_lower == 'scenegraph':
+                return JSON(result)
+            return Image(result, **params)
+        return result
 
     def _get_sources(self, json, sources=None):
         sources = {} if sources is None else dict(sources)

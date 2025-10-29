@@ -37,6 +37,7 @@ linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
 mdit-py-plugins = "*"
+narwhals = ">2"
 numpy = "*"
 packaging = "*"
 pandas = ">=1.2"
@@ -204,6 +205,7 @@ polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+vl-convert-python = "*"
 
 [feature.test-314.dependencies]
 # Optional dependencies - recommended
