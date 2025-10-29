@@ -369,10 +369,9 @@ class TestVegaExport:
         assert isinstance(result, str)
         assert '<svg' in result.lower()
 
+    @altair_available
     def test_export_with_altair_chart(self, vl_convert):
         """Test export with an Altair chart object."""
-        if alt is None:
-            pytest.skip('altair not available')
 
         pane = Vega(altair_example())
 

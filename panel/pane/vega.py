@@ -33,7 +33,7 @@ def ds_as_cds(dataset):
     """
     Converts Vega dataset into Bokeh ColumnDataSource data (Narwhals-compatible)
     """
-    import narwhals as nw
+    import narwhals.stable.v2 as nw
     try:
         df = nw.from_native(dataset)
     except TypeError:
@@ -70,12 +70,12 @@ def _to_iso(v):
     return v
 
 def _normalize_temporals_on_frame(df: nw.DataFrame) -> nw.DataFrame:
-    import narwhals as nw
+    import narwhals.stable.v2 as nw
     overrides = {}
     ns = nw.get_native_namespace(df)
     for col in df.columns:
         dtype = df[col].dtype
-        if dtype.is_temporal() or dtype == nw.Date or dtype == nw.Datetime:
+        if dtype.is_temporal():
             overrides[col] = df[col].cast(nw.String)
         elif dtype == nw.Object or dtype == nw.Unknown:
             vals = df[col].to_list()
@@ -90,7 +90,7 @@ def _normalize_temporals_on_frame(df: nw.DataFrame) -> nw.DataFrame:
     return df
 
 def ds_to_records(dataset: Any) -> list[dict[str, Any]] | None:
-    import narwhals as nw
+    import narwhals.stable.v2 as nw
     try:
         df = nw.from_native(dataset)
     except TypeError:
