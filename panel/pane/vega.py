@@ -308,7 +308,7 @@ class Vega(ModelPane):
         >>> image_pane = vega_pane.export('png', as_pane=True)
         """
         try:
-            import vl_convert as vlc
+            import vl_convert as vlc  # type: ignore[import-untyped]
         except ImportError:
             raise ImportError(
                 'vl-convert-python is required to export Vega specs. '

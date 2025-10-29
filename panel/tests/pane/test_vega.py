@@ -26,7 +26,7 @@ from panel.pane.image import PDF, SVG, Image
 from panel.pane.markup import HTML
 
 try:
-    import vl_convert as vlc
+    import vl_convert as vlc  # type: ignore[import-untyped]
 except ImportError:
     vlc = None
 
