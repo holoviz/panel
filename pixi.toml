@@ -24,47 +24,47 @@ default = [
 ]
 
 [environments.test-310]
-features = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
+features = ["py310", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-311]
-features = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
+features = ["py311", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-312]
-features = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
+features = ["py312", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-313]
-features = ["py313", "test-core", "test", "example", "test-example", "test-unit-task"]
+features = ["py313", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-314]
-features = ["py314", "test-core", "test-314", "example-314", "test-example", "test-unit-task"]
+features = ["py314", "required", "test-core", "test-314", "example-314", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-ui]
-features = ["py313", "test-core", "test", "test-ui"]
+features = ["py313", "required", "test-core", "test", "test-ui"]
 no-default-feature = true
 
 [environments.test-core]
-features = ["py314", "test-core", "test-unit-task"]
+features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-bokeh37]
-features = ["py310", "test-core", "test-unit-task", "bokeh37"]
+features = ["py310", "required", "test-core", "test-unit-task", "bokeh37"]
 no-default-feature = true
 
 [environments.test-type]
-features = ["py311", "type", "example", "test"]
+features = ["py311", "required", "type", "example", "test"]
 no-default-feature = true
 
 [environments.docs]
-features = ["py311", "example", "doc"]
+features = ["py311", "required", "example", "doc"]
 no-default-feature = true
 
 [environments.build]
-features = ["py311", "build"]
+features = ["py311", "required", "build"]
 no-default-feature = true
 
 [environments.lint]
@@ -72,7 +72,7 @@ features = ["py311", "lint"]
 no-default-feature = true
 
 [environments.lite]
-features = ["py311", "lite"]
+features = ["py311", "required", "lite"]
 no-default-feature = true
 
 [feature.required.dependencies]
