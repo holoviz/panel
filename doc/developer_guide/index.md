@@ -74,13 +74,18 @@ git push --tags
 
 ## Start developing
 
-To start developing, run the following command
+To start developing, run the following command, this will create an environment called `default` (in `.pixi/envs`), install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs), and install `pre-commit`:
 
 ```bash
-pixi install
+pixi run setup-dev
 ```
 
-The first time you run it, it will create a `pixi.lock` file with information for all available environments. This command will take a minute or so to run.
+:::{admonition} Note
+:class: info
+
+The first time you run it, it will create a `pixi.lock` file with information for all available environments.
+This command will take a minute or so to run.
+:::
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
@@ -115,19 +120,69 @@ You can find the list of environments in the **pixi.toml** file or via the comma
 
 :::
 
+### Syncing Git tags with upstream repository
+
+If you are working from a forked repository of Panel, you will need to sync the tags with the upstream repository.
+This is needed because the Panel version number depends on [`git tags`](https://git-scm.com/book/en/v2/Git-Basics-Tagging).
+Syncing the git tags can be done with:
+
+```bash
+pixi run sync-git-tags
+```
+
+## Developer Environment
+
+The `default` environment is meant to provide all the tools needed to develop Panel.
+
+This environment is created by running `pixi run setup-dev`. Run `pixi shell` to activate it; this is equivalent to `source venv/bin/activate` in a Python virtual environment or `conda activate` in a conda environment.
+
+If you need to run a command directly instead of via `pixi`, activate the environment and run the command (e.g. `pixi shell` and `pytest panel/tests/<somefile.py>`).
+
+### VS Code
+
+This environment can also be selected in your IDE. In VS Code, this can be done by running the command `Python: Select Interpreter` and choosing `{'default': Pixi}`.
+
+<p style="text-align: center">
+  <img
+    src="https://assets.holoviews.org/static/dev_guide/001.png"
+    alt="001"
+    style="width: 45%; display: inline-block"
+  />
+  <img
+    src="https://assets.holoviews.org/static/dev_guide/002.png"
+    alt="002"
+    style="width: 45%; display: inline-block"
+  />
+</p>
+
+To confirm you are using this dev environment, check the bottom right corner:
+
+![003](https://assets.holoviews.org/static/dev_guide/003.png)
+
+### Jupyter Lab
+
+You can launch Jupyter lab with the `default` environment with `pixi run lab`. This can be advantageous when you need to edit the documentation or debug an example notebook.
+
 ## Linting
 
-Panel uses [pre-commit](https://pre-commit.com/) to apply linting to Panel code. Linting can be run for all the files with:
+Panel uses [`pre-commit`](https://pre-commit.com/) to lint and format the source code. `pre-commit` is installed automatically when running `pixi run setup-dev`; it can also be installed with `pixi run lint-install`.
+`pre-commit` runs all the linters when a commit is made locally. Linting can be forced to run for all the files with:
 
 ```bash
 pixi run lint
 ```
 
-Linting can also be set up to run automatically with each commit; this is the recommended way because if linting is not passing, the [Continuous Integration](https://en.wikipedia.org/wiki/Continuous_integration) (CI) will also fail.
+:::{admonition} Note
+:class: info
+
+Alternatively, if you have `pre-commit` installed elsewhere you can run:
 
 ```bash
-pixi run lint-install
+pre-commit install  # To install
+pre-commit run --all-files  # To run on all files
 ```
+
+:::
 
 ## Testing
 
