@@ -74,7 +74,7 @@ git push --tags
 
 ## Start developing
 
-To start developing, run the following command, this will create an environment called `default` (in `.pixi/envs`), install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs), and install `pre-commit`:
+To start developing, run the following command, this will create an environment called `default` (in `.pixi/envs`), install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs), and install `pre-commit` git hooks:
 
 ```bash
 pixi run setup-dev
