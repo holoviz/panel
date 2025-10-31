@@ -7,6 +7,7 @@ import ast
 import asyncio
 import base64
 import datetime as dt
+import inspect
 import json
 import logging
 import numbers
@@ -544,3 +545,32 @@ def camel_to_kebab(name):
     kebab_case = re.sub(r'([a-z0-9])([A-Z])', r'\1-\2', name)
     kebab_case = re.sub(r'([A-Z]+)([A-Z][a-z0-9])', r'\1-\2', kebab_case)
     return kebab_case.lower()
+
+
+def _is_abstract(class_: type) -> bool:
+    if inspect.isabstract(class_):
+        return True
+    try:
+        return class_.abstract
+    except AttributeError:
+        return False
+
+
+def _descendents(class_: type, concrete: bool = False) -> list[type]:
+    if not isinstance(class_, type):
+        raise TypeError(f"descendents expected a class object, not {type(class_).__name__}")
+    q = [class_]
+    out = []
+    while len(q):
+        x = q.pop(0)
+        out.insert(0, x)
+        try:
+            subclasses = x.__subclasses__()
+        except TypeError:
+            # TypeError raised when __subclasses__ is called on unbound methods,
+            # on `type` for example.
+            continue
+        for b in subclasses:
+            if b not in q and b not in out:
+                q.append(b)
+    return [kls for kls in out if not (concrete and _is_abstract(kls))][::-1]

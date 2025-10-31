@@ -29,6 +29,7 @@ from pyviz_comms import (
 from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
+from .util import _descendents
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -756,7 +757,7 @@ class panel_extension(_pyviz_extension):
 
         _in_ipython = hasattr(builtins, '__IPYTHON__')
         reactive_exts = {
-            v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
+            v._extension_name: v for v in _descendents(ReactiveHTML, concrete=True)
         }
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
@@ -806,7 +807,7 @@ class panel_extension(_pyviz_extension):
                 except Exception:
                     pass
                 designs = {
-                    p.lower(): t for p, t in param.concrete_descendents(Design).items()
+                    t.__name__.lower(): t for t in _descendents(Design, concrete=True)
                 }
                 if v not in designs:
                     raise ValueError(
@@ -959,8 +960,8 @@ class panel_extension(_pyviz_extension):
 
         from .viewable import Viewable
 
-        descendants = param.concrete_descendents(Viewable)
-        for cls in reversed(list(descendants.values())):
+        descendants = _descendents(Viewable, concrete=True)
+        for cls in reversed(descendants):
             if cls.__doc__ is None:
                 pass
             elif cls.__doc__.startswith('params'):

@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import param
 
 from ..models import PDF as _BkPDF
-from ..util import isfile, isurl
+from ..util import _descendents, isfile, isurl
 from .markup import HTMLBasePane, escape
 
 if TYPE_CHECKING:
@@ -255,7 +255,7 @@ class Image(ImageBase):
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         precedences = []
-        for img_cls in param.concrete_descendents(ImageBase).values():
+        for img_cls in _descendents(ImageBase, concrete=True):
             if img_cls is Image:
                 continue
             applies = img_cls.applies(obj)
@@ -272,7 +272,7 @@ class Image(ImageBase):
             k: v for k, v in self.param.values().items()
             if k not in ('name', 'object')
         }
-        for img_cls in param.concrete_descendents(ImageBase).values():
+        for img_cls in _descendents(ImageBase, concrete=True):
             if img_cls is not Image and img_cls.applies(obj):
                 return img_cls(obj, **params)._transform_object(obj)
         return {'object': '<img></img>'}
