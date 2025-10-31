@@ -33,8 +33,6 @@ To contribute to Panel, you will also need [Github account](https://github.com/j
 
 Developing all aspects of Panel requires a wide range of packages in different environments. To make this more manageable, Pixi manages the developer experience. To install Pixi, follow [this guide](https://pixi.sh/latest/#installation).
 
-:::
-
 :::{admonition} Note
 :class: info
 
