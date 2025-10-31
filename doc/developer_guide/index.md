@@ -33,6 +33,20 @@ To contribute to Panel, you will also need [Github account](https://github.com/j
 
 Developing all aspects of Panel requires a wide range of packages in different environments. To make this more manageable, Pixi manages the developer experience. To install Pixi, follow [this guide](https://pixi.sh/latest/#installation).
 
+:::
+
+:::{admonition} Note
+:class: info
+
+You may want to update Pixi occasionally, especially when troubleshooting, to get the latest fixes and improvements:
+
+```bash
+pixi self-update
+```
+
+:::
+
+
 #### Glossary
 
 - Tasks: A task is what can be run with `pixi run <task-name>`. Tasks can be anything from installing packages to running tests.
