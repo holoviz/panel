@@ -310,12 +310,9 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 [feature.test-example.dependencies]
 nbval = "*"
 
-[feature.test-ui]
-channels = ["microsoft"]
-
 [feature.test-ui.dependencies]
-playwright = { version = "*", channel = "microsoft" }
-pytest-playwright = { version = "*", channel = "microsoft" }
+playwright = ">=1.52.0"
+pytest-playwright = "*"
 pytest-asyncio = "*"
 jupyter_server = "*"
 esbuild = "*"
