@@ -548,6 +548,7 @@ def camel_to_kebab(name):
 
 
 def _is_abstract(class_: type) -> bool:
+    """Added from Param."""
     if inspect.isabstract(class_):
         return True
     try:
@@ -557,6 +558,8 @@ def _is_abstract(class_: type) -> bool:
 
 
 def _descendents(class_: type, concrete: bool = False) -> list[type]:
+    """Added from Param to be used instead of concrete_descendents that clobber
+    class names."""
     if not isinstance(class_, type):
         raise TypeError(f"descendents expected a class object, not {type(class_).__name__}")
     q = [class_]
