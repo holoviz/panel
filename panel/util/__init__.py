@@ -563,7 +563,7 @@ def _descendents(class_: type, concrete: bool = False) -> list[type]:
     if not isinstance(class_, type):
         raise TypeError(f"descendents expected a class object, not {type(class_).__name__}")
     q = [class_]
-    out = []
+    out: list[type] = []
     while len(q):
         x = q.pop(0)
         out.insert(0, x)
