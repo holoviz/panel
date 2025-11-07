@@ -29,7 +29,7 @@ from ..layout.base import (
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
-from ..util import param_reprs
+from ..util import _descendents, param_reprs
 from ..util.checks import is_dataframe, is_series
 from ..util.parameters import get_params_to_inherit
 from ..viewable import (
@@ -249,7 +249,7 @@ class PaneBase(Layoutable):
         if isinstance(obj, Viewable):
             return type(obj)
         descendents = []
-        for p in param.concrete_descendents(PaneBase).values():
+        for p in _descendents(PaneBase, concrete=True):
             if p.priority is None:
                 applies = True
                 try:
