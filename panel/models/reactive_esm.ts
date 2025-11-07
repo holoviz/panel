@@ -234,7 +234,7 @@ export class ReactiveESMView extends HTMLBoxView {
     }
     this.on_change([], () => {
       if (this.model.render_policy !== "manual") {
-	this.render_esm()
+        this.render_esm()
       }
     })
     this.model.on_event(ESMEvent, (event: ESMEvent) => {
@@ -428,7 +428,7 @@ export class ReactiveESMView extends HTMLBoxView {
           continue
         }
         const parent = view.el.parentNode
-	if (parent && !this._child_rendered.has(view)) {
+        if (parent && !this._child_rendered.has(view)) {
           this.rerender_(view)
           this._child_rendered.set(view, true)
         }
@@ -512,7 +512,7 @@ export class ReactiveESMView extends HTMLBoxView {
     const all_views = this.child_views
     if (this.model.render_policy !== "manual") {
       for (const child_view of all_views) {
-	child_view.el.remove()
+        child_view.el.remove()
       }
     }
 
@@ -680,11 +680,11 @@ export class ReactiveESM extends HTMLBox {
             })
           }
           orig_cb()
-	  if (view && this.render_policy === "manual") {
-	    view.render_children()
-	    (view as any)._update_children()
-	    view.invalidate_layout()
-	  }
+          if (view && this.render_policy === "manual") {
+            view.render_children()
+            (view as any)._update_children()
+            view.invalidate_layout()
+          }
         }
       }
       target.property(resolvedProp).change.connect(cb)
