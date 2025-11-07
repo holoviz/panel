@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import bokeh
 import bokeh.embed.notebook
-import param
 
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import MACROS
@@ -39,7 +38,7 @@ from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, nb_mime_js,
 )
 
-from ..util import escape
+from ..util import _descendents, escape
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
@@ -298,7 +297,7 @@ def require_components():
             js_requires.append(model)
 
     from ..reactive import ReactiveHTML
-    js_requires += list(param.concrete_descendents(ReactiveHTML).values())
+    js_requires += list(_descendents(ReactiveHTML, concrete=True))
 
     for export, js in config.js_files.items():
         name = js.split('/')[-1].replace('.min', '').split('.')[-2]

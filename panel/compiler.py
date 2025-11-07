@@ -14,7 +14,6 @@ import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from functools import cache, partial
 
-import param
 import requests
 
 from bokeh.model import Model
@@ -24,6 +23,7 @@ from .io.resources import RESOURCE_URLS
 from .reactive import ReactiveHTML
 from .template.base import BasicTemplate
 from .theme import Design
+from .util import _descendents
 
 BASE_DIR = pathlib.Path(__file__).parent
 BUNDLE_DIR = pathlib.Path(__file__).parent / 'dist' / 'bundled'
@@ -204,7 +204,8 @@ def bundle_resource_urls(verbose=False, external=True, download_list=None):
 
 def bundle_templates(verbose=False, external=True, download_list=None):
     # Bundle Template resources
-    for name, template in param.concrete_descendents(BasicTemplate).items():
+    for template in _descendents(BasicTemplate, concrete=True):
+        name = template.__name__
         if verbose:
             print(f'Bundling {name} resources')
 
@@ -252,7 +253,8 @@ def bundle_templates(verbose=False, external=True, download_list=None):
 
 def bundle_themes(verbose=False, external=True, download_list=None):
     # Bundle design stylesheets
-    for name, design in param.concrete_descendents(Design).items():
+    for design in _descendents(Design, concrete=True):
+        name = design.__name__
         if verbose:
             print(f'Bundling {name} design resources')
 
@@ -275,7 +277,7 @@ def bundle_models(verbose=False, external=True, download_list=None):
 
     # Extract Model dependencies
     js_files, css_files, resource_files = {}, {}, {}
-    reactive = param.concrete_descendents(ReactiveHTML).values()
+    reactive = _descendents(ReactiveHTML, concrete=True)
     models = (
         list(Model.model_class_reverse_map.items()) +
         [(f'{m.__module__}.{m.__name__}', m) for m in reactive]
