@@ -941,7 +941,7 @@ export default {render}`
       esm:         [ Str,                 "" ],
       events:      [ Array(Str),          [] ],
       importmap:   [ Any,                 {} ],
-      render_policy: [ RenderPolicy, "children"]
+      render_policy: [ RenderPolicy, "children"],
     }))
   }
 }
