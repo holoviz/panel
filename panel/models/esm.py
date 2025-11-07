@@ -50,6 +50,8 @@ class ReactiveESM(HTMLBox):
 
     importmap = bp.Dict(bp.String, bp.Dict(bp.String, bp.String))
 
+    render_policy = bp.Enum('manual', 'children', default="children")
+
     __javascript_raw__ = [
         f"{config.npm_cdn}/es-module-shims@^1.10.0/dist/es-module-shims.min.js"
     ]
@@ -63,6 +65,8 @@ class ReactComponent(ReactiveESM):
     """
     Renders jsx/tsx based ESM bundles using React.
     """
+
+    render_policy = bp.Override(default="manual")
 
     root_node = bp.Nullable(bp.String)
 
