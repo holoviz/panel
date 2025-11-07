@@ -251,6 +251,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _importmap: ClassVar[dict[Literal['imports', 'scopes'], dict[str,str]]] = {}
 
+    _render_policy: Literal['manual', 'children'] = "children"
+
     __abstract = True
 
     def __init__(self, **params):
@@ -496,6 +498,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             'esm': self._render_esm(not config.autoreload, server=is_session),
             'events': events,
             'importmap': importmap,
+            'render_policy': self._render_policy,
             'name': cls.__name__
         })
         return props
@@ -819,6 +822,8 @@ class ReactComponent(ReactiveESM):
     _bokeh_model = _BkReactComponent
 
     _react_version = '18.3.1'
+
+    _render_policy = "manual"
 
     @classproperty  # type: ignore
     def _exports__(cls) -> ExportSpec:  # type: ignore
