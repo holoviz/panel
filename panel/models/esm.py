@@ -66,7 +66,7 @@ class ReactComponent(ReactiveESM):
     Renders jsx/tsx based ESM bundles using React.
     """
 
-    render_policy = bp.Override(default="manual")
+    render_policy = bp.Override(default="manual") # type: ignore
 
     root_node = bp.Nullable(bp.String)
 
