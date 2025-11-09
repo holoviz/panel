@@ -23,8 +23,9 @@ conda install -c conda-forge bokeh-django django==5 django-channels panel
 Based on a standard Django app template, the sliders app shows how to
 integrate panel with a Django view.
 
-:::{note} currently there is no interaction
-between param and Django models. :::
+:::{note}
+Currently there is no interaction between param and Django models.
+:::
 
 Additions/modifications to django2 app template:
 
