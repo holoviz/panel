@@ -27,6 +27,8 @@ calls it with the rendered model.
   const py_version = '{{ version }}'.replace('rc', '-rc.').replace('.dev', '-dev.');
   const reloading = {{ reloading|default(False)|json }};
   const Bokeh = root.Bokeh;
+  const BK_RE = /^https:\/\/cdn\.bokeh\.org\/bokeh\/release\/bokeh-/;
+  const PN_RE = /^https:\/\/cdn\.holoviz\.org\/panel\/[^/]+\/dist\/panel/i
 
   // Set a timeout for this load but only if we are not already initializing
   if (typeof (root._bokeh_timeout) === "undefined" || (force || !root._bokeh_is_initializing)) {
@@ -46,7 +48,7 @@ calls it with the rendered model.
     console.debug("Bokeh: all callbacks have finished");
   }
 
-  function load_libs(css_urls, js_urls, js_modules, js_exports, callback) {
+  function load_libs(css_urls, js_urls, js_modules, js_exports, Bokeh, callback) {
     if (css_urls == null) css_urls = [];
     if (js_urls == null) js_urls = [];
     if (js_modules == null) js_modules = [];
@@ -138,7 +140,7 @@ calls it with the rendered model.
     for (let i = 0; i < js_urls.length; i++) {
       const url = js_urls[i];
       const escaped = encodeURI(url)
-      if (skip.indexOf(escaped) !== -1 || existing_scripts.indexOf(escaped) !== -1) {
+      if (skip.indexOf(escaped) !== -1 || existing_scripts.indexOf(escaped) !== -1 && !((Bokeh == null || Bokeh.Panel == null) && (BK_RE.test(escaped) || BK_RE.test(escaped)))) {
         if (!window.requirejs) {
           on_load();
         }
@@ -231,17 +233,6 @@ calls it with the rendered model.
           }
         }
       }
-      // Cache old bokeh versions
-      if (Bokeh != undefined && !reloading) {
-        var NewBokeh = root.Bokeh;
-        if (Bokeh.versions === undefined) {
-          Bokeh.versions = new Map();
-        }
-        if (NewBokeh.version !== Bokeh.version) {
-          Bokeh.versions.set(NewBokeh.version, NewBokeh)
-        }
-        root.Bokeh = Bokeh;
-      }
     } else if (Date.now() < root._bokeh_timeout) {
       setTimeout(run_inline_js, 100);
     } else if (!root._bokeh_failed_load) {
@@ -273,16 +264,28 @@ calls it with the rendered model.
     } else {
       root._bokeh_is_initializing = true
       root._bokeh_onload_callbacks = []
-      const bokeh_loaded = root.Bokeh != null && (root.Bokeh.version === py_version || (root.Bokeh.versions !== undefined && root.Bokeh.versions.has(py_version)));
+      const bokeh_loaded = Bokeh != null && ((Bokeh.version === py_version && Bokeh.Panel) || (Bokeh.versions !== undefined && Bokeh.versions.has(py_version) && Bokeh.versions.has(py_version).Panel));
       if (!reloading && !bokeh_loaded) {
         if (root.Bokeh) {
           root.Bokeh = undefined;
         }
         console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
       }
-      load_libs(css_urls, js_urls, js_modules, js_exports, function() {
+      load_libs(css_urls, js_urls, js_modules, js_exports, Bokeh, function() {
         console.debug("Bokeh: BokehJS plotting callback run at", now());
         run_inline_js();
+        if (Bokeh != undefined && !reloading) {
+          const NewBokeh = root.Bokeh;
+          if (Bokeh.versions === undefined) {
+            Bokeh.versions = new Map();
+          }
+          if (NewBokeh.version !== Bokeh.version) {
+            Bokeh.versions.set(NewBokeh.version, NewBokeh)
+          } else if (Bokeh.Panel == null) {
+            Bokeh.Panel = NewBokeh.Panel
+	  }
+          root.Bokeh = Bokeh;
+        }
       });
     }
   }
