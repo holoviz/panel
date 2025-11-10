@@ -1,0 +1,82 @@
+{
+	"Panel App": {
+		"prefix": "import panel",
+		"body": [
+			"import panel as pn",
+			"",
+			"pn.extension(sizing_mode=\"stretch_width\")",
+			"",
+			"TEXT = \"Panel\"",
+			"",
+			"length = pn.widgets.IntSlider(value=len(TEXT), end=len(TEXT), name=\"length\")",
+			"",
+			"def text(value):",
+			"    return TEXT[:value]",
+			"",
+			"layout = pn.Column(length, pn.bind(text, length))",
+			"",
+			"pn.template.FastListTemplate(site=\"Panel\", title=\"App\", sidebar=[length], main=[layout]).servable()"
+		]
+	},
+	"Panel ReactiveHTML component": {
+		"prefix": [
+			"import panel",
+			"from panel.reactive"
+		],
+		"body": [
+			"import panel as pn",
+			"import param",
+			"from panel.reactive import ReactiveHTML",
+			"",
+			"pn.extension()",
+			"",
+			"",
+			"class CustomComponent(ReactiveHTML):",
+			"    index = param.Integer(default=0)",
+			"",
+			"    _template = '<img id=\"slideshow\" src=\"https://picsum.photos/800/300?image=${index}\" onclick=\"${_img_click}\"></img>'",
+			"",
+			"    def _img_click(self, event):",
+			"        self.index += 1",
+			"",
+			"CustomComponent(width=500, height=200).servable()"
+		]
+	},
+	"Panel Viewer component": {
+		"prefix": [
+			"import panel",
+			"from panel.viewable"
+		],
+		"body": [
+			"import param",
+			"import panel as pn",
+			"",
+			"from panel.viewable import Viewer",
+			"",
+			"class CustomComponent(Viewer):",
+			"",
+			"    value = param.Parameter()",
+			"",
+			"    def __init__(self, **params):",
+			"        super().__init__(**params)",
+			"        self._layout = None",
+			"        ",
+			"",
+			"    def __panel__(self):",
+			"        if not self._layout:",
+			"            self._layout = self._get_layout()",
+			"        ",
+			"        return self._layout",
+			"",
+			"    def _get_layout(self):",
+			"        return pn.Column(\"# Custom Component\", self.param.value)",
+			"",
+			"if pn.state.served:",
+			"    pn.extension(sizing_mode=\"stretch_width\")",
+			"    ",
+			"    pn.Column(",
+			"        CustomComponent",
+			"    ).servable()"
+		]
+	}
+}
