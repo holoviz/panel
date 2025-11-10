@@ -140,7 +140,7 @@ calls it with the rendered model.
     for (let i = 0; i < js_urls.length; i++) {
       const url = js_urls[i];
       const escaped = encodeURI(url)
-      if (skip.indexOf(escaped) !== -1 || existing_scripts.indexOf(escaped) !== -1 && !((Bokeh == null || Bokeh.Panel == null) && (BK_RE.test(escaped) || BK_RE.test(escaped)))) {
+      if (skip.indexOf(escaped) !== -1 || existing_scripts.indexOf(escaped) !== -1 && !((Bokeh == null || Bokeh.Panel == null) && (BK_RE.test(escaped) || PN_RE.test(escaped)))) {
         if (!window.requirejs) {
           on_load();
         }
@@ -281,8 +281,10 @@ calls it with the rendered model.
           }
           if (NewBokeh.version !== Bokeh.version) {
             Bokeh.versions.set(NewBokeh.version, NewBokeh)
-          } else if (Bokeh.Panel == null) {
+          } 
+          if (Bokeh.Panel == null) {
             Bokeh.Panel = NewBokeh.Panel
+          }
 	  }
           root.Bokeh = Bokeh;
         }
