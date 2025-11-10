@@ -78,7 +78,7 @@ recommended = [
     'plotly',
 ]
 fastapi = [
-    'bokeh-fastapi >= 0.1.2,<0.2.0',
+    'bokeh-fastapi >= 0.1.5,<0.2.0',
     'fastapi[standard]',
 ]
 dev = [

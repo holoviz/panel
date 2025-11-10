@@ -561,6 +561,19 @@ def test_server_reuse_sessions(reuse_sessions):
     assert session.token in r1.content.decode('utf-8')
     assert session.token not in r2.content.decode('utf-8')
 
+def test_server_session_args(port, server_implementation):
+    session_args = []
+    def app():
+        arg = state.session_args.get("arg", [b"baz"])[0].decode('utf-8')
+        session_args.append(arg)
+        return arg
+
+    serve_and_wait(app, port=port)
+
+    requests.get(f"http://localhost:{port}/?arg=foo")
+    requests.get(f"http://localhost:{port}/?arg=bar")
+
+    assert session_args == ["foo", "bar"]
 
 @pytest.mark.xdist_group(name="server")
 def test_server_reuse_sessions_with_session_key_func(port, reuse_sessions):
