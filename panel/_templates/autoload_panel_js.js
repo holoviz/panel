@@ -264,7 +264,7 @@ calls it with the rendered model.
     } else {
       root._bokeh_is_initializing = true
       root._bokeh_onload_callbacks = []
-      const bokeh_loaded = Bokeh != null && ((Bokeh.version === py_version && Bokeh.Panel) || (Bokeh.versions !== undefined && Bokeh.versions.has(py_version) && Bokeh.versions.has(py_version).Panel));
+      const bokeh_loaded = Bokeh != null && ((Bokeh.version === py_version && Bokeh.Panel) || (Bokeh.versions !== undefined && Bokeh.versions.has(py_version) && Bokeh.versions.get(py_version).Panel));
       if (!reloading && !bokeh_loaded) {
         if (root.Bokeh) {
           root.Bokeh = undefined;
