@@ -285,8 +285,8 @@ calls it with the rendered model.
           if (Bokeh.Panel == null) {
             Bokeh.Panel = NewBokeh.Panel;
           }
+          root.Bokeh = Bokeh;
         }
-        root.Bokeh = Bokeh;
       });
     }
   }
