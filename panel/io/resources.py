@@ -867,6 +867,14 @@ class Resources(BkResources):
         js_files = self.adjust_paths([
             js for js in files if self.mode != 'inline' or not is_cdn_url(js)
         ])
+
+        if self.notebook:
+            bokeh_pattern = re.compile(r"/bokeh-[\d.]+(?:rc\d+|dev\d+)?\.min\.js$")
+            js_files = [
+                re.sub(r"\.min\.js$", ".esm.min.js", url) if bokeh_pattern.search(url) else url
+                for url in js_files
+            ]
+
         return js_files
 
     @property
