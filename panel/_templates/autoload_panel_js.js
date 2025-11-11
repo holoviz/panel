@@ -24,7 +24,7 @@ calls it with the rendered model.
   }
 
   const force = {{ force|default(False)|json }};
-  const py_version = '{{ version }}'.replace('rc', '-rc.').replace('.dev', '-dev.');
+  const version = '{{ version }}'.replace('rc', '-rc.').replace('.dev', '-dev.');
   const reloading = {{ reloading|default(False)|json }};
   const Bokeh = root.Bokeh;
   const BK_RE = /^https:\/\/cdn\.bokeh\.org\/bokeh\/release\/bokeh-/;
@@ -140,7 +140,10 @@ calls it with the rendered model.
     for (let i = 0; i < js_urls.length; i++) {
       const url = js_urls[i];
       const escaped = encodeURI(url)
-      if (skip.indexOf(escaped) !== -1 || existing_scripts.indexOf(escaped) !== -1 && !((Bokeh == null || Bokeh.Panel == null) && (BK_RE.test(escaped) || PN_RE.test(escaped)))) {
+      const shouldSkip = skip.includes(escaped) || existing_scripts.includes(escaped)
+      const isBokehOrPanel = BK_RE.test(escaped) || PN_RE.test(escaped)
+      const missingOrBroken = Bokeh == null || Bokeh.Panel == null || (Bokeh.version != version && !Bokeh?.versions.has(version)) || Bokeh.versions.get(version).Panel == null
+      if (shouldSkip && !(isBokehOrPanel && missingOrBroken)) {
         if (!window.requirejs) {
           on_load();
         }
@@ -264,7 +267,7 @@ calls it with the rendered model.
     } else {
       root._bokeh_is_initializing = true;
       root._bokeh_onload_callbacks = [];
-      const bokeh_loaded = Bokeh != null && ((Bokeh.version === py_version && Bokeh.Panel) || (Bokeh.versions !== undefined && Bokeh.versions.has(py_version) && Bokeh.versions.get(py_version).Panel));
+      const bokeh_loaded = Bokeh != null && ((Bokeh.version === version && Bokeh.Panel) || (Bokeh.versions !== undefined && Bokeh.versions.has(version) && Bokeh.versions.get(version).Panel));
       if (!reloading && !bokeh_loaded) {
         if (root.Bokeh) {
           root.Bokeh = undefined;
@@ -280,10 +283,8 @@ calls it with the rendered model.
             Bokeh.versions = new Map();
           }
           if (NewBokeh.version !== Bokeh.version) {
+            Bokeh[NewBokeh.version] = NewBokeh;
             Bokeh.versions.set(NewBokeh.version, NewBokeh);
-          }
-          if (Bokeh.Panel == null) {
-            Bokeh.Panel = NewBokeh.Panel;
           }
           root.Bokeh = Bokeh;
         }
