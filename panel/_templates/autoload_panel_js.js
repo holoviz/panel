@@ -239,7 +239,7 @@ calls it with the rendered model.
       console.log("Bokeh: BokehJS failed to load within specified timeout.");
       root._bokeh_failed_load = true;
     }
-    root._bokeh_is_initializing = false
+    root._bokeh_is_initializing = false;
   }
 
   function load_or_wait() {
@@ -256,14 +256,14 @@ calls it with the rendered model.
       root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
       root._bokeh_is_initializing = false;
       root._bokeh_onload_callbacks = undefined;
-      root._bokeh_is_loading = 0
+      root._bokeh_is_loading = 0;
       console.log("Bokeh: BokehJS was loaded multiple times but one version failed to initialize.");
       load_or_wait();
     } else if (root._bokeh_is_initializing || (typeof root._bokeh_is_initializing === "undefined" && root._bokeh_onload_callbacks !== undefined)) {
       setTimeout(load_or_wait, 100);
     } else {
-      root._bokeh_is_initializing = true
-      root._bokeh_onload_callbacks = []
+      root._bokeh_is_initializing = true;
+      root._bokeh_onload_callbacks = [];
       const bokeh_loaded = Bokeh != null && ((Bokeh.version === py_version && Bokeh.Panel) || (Bokeh.versions !== undefined && Bokeh.versions.has(py_version) && Bokeh.versions.get(py_version).Panel));
       if (!reloading && !bokeh_loaded) {
         if (root.Bokeh) {
@@ -280,14 +280,13 @@ calls it with the rendered model.
             Bokeh.versions = new Map();
           }
           if (NewBokeh.version !== Bokeh.version) {
-            Bokeh.versions.set(NewBokeh.version, NewBokeh)
-          } 
-          if (Bokeh.Panel == null) {
-            Bokeh.Panel = NewBokeh.Panel
+            Bokeh.versions.set(NewBokeh.version, NewBokeh);
           }
-	  }
-          root.Bokeh = Bokeh;
+          if (Bokeh.Panel == null) {
+            Bokeh.Panel = NewBokeh.Panel;
+          }
         }
+        root.Bokeh = Bokeh;
       });
     }
   }
