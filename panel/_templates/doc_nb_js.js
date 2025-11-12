@@ -6,7 +6,6 @@
     return
   }
   const version = docs[0].version.replace('rc', '-rc.').replace('.dev', '-dev.')
-  console.log(version)
   async function embed_document(root) {
     var Bokeh = get_bokeh(root)
     await Bokeh.embed.embed_items_notebook(docs_json, render_items);
