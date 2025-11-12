@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import io
 import os
+import tempfile
 
 from collections.abc import Iterable
 from typing import IO, TYPE_CHECKING, Any
@@ -57,7 +58,72 @@ else
   doc.idle.connect(done);
 """
 
+_SAVE_TEMPLATE = r"""\
+{% block preamble %}
+<style>
+html, body {
+box-sizing: border-box;
+width: 100%;
+height: 100%;
+margin: 0;
+border: 0;
+padding: 0;
+overflow: hidden;
+}
+</style>
+{% endblock %}
+"""
+
 bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
+
+def save_pdf(
+    model: Model, filename: str, resources=CDN, template=None,
+    template_variables=None, timeout: int = 5
+) -> None:
+    """
+    Saves a bokeh model to pdf
+
+    Arguments
+    ---------
+    model: bokeh.model.Model
+      Model to save to PDF
+    filename: str
+      Filename to save to
+    resources: str
+      Resources
+    template:
+      template file, as used by bokeh.file_html. If None will use bokeh defaults
+    template_variables:
+      template_variables file dict, as used by bokeh.file_html
+    timeout: int
+      The maximum amount of time (in seconds) to wait for
+    """
+    if not isinstance(model, Model):
+        model = model.get_root()
+    from playwright.sync_api import sync_playwright
+    resources = Resources.from_bokeh(resources)
+    html = file_html(
+        model, resources, title="", template=template,
+        template_variables=template_variables or {},
+        _always_new=True
+    )
+    with tempfile.NamedTemporaryFile(suffix='.html') as nf:
+        nf.write(html.encode('utf-8'))
+        nf.flush()
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto(f"file://{nf.name}")
+            page.emulate_media(media="screen")
+            out = page.pdf(print_background=True)
+
+    if hasattr(filename, 'write'):
+        filename.write(out)
+    else:
+        with open(filename, 'wb') as f:
+            f.write(out)
+
 
 def save_png(
     model: UIElement | Document,
@@ -91,22 +157,7 @@ def save_png(
 
     webdriver = state.webdriver
 
-    if template is None:
-        template = r"""\
-        {% block preamble %}
-        <style>
-        html, body {
-        box-sizing: border-box;
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            border: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        </style>
-        {% endblock %}
-        """
+    template = template or _SAVE_TEMPLATE
 
     try:
         def get_layout_html(obj: UIElement | Document, resources: Resources, width: int | None, height: int | None, **kwargs):
@@ -119,7 +170,6 @@ def save_png(
         old_layout_fn = bokeh.io.export.get_layout_html
         bokeh.io.export.get_layout_html = get_layout_html    # type: ignore
         img = get_screenshot_as_png(model, driver=webdriver, timeout=timeout, resources=resources)
-
         if img.width == 0 or img.height == 0:
             raise ValueError("unable to save an empty image")
 
