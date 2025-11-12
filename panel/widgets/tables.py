@@ -1844,7 +1844,10 @@ class Tabulator(BaseTable):
         else:
             start = 0
         ilocs = list(existing)
-        index = self._processed.iloc[[start+ind for ind in indexes]].index
+        try:
+            index = self._processed.iloc[[start+ind for ind in indexes]].index
+        except IndexError:
+            index = self._processed.iloc[[]].index
         for v in index.values:
             try:
                 iloc = self.value.index.get_loc(v)
@@ -1869,7 +1872,6 @@ class Tabulator(BaseTable):
             selected = indices.selected
             ilocs = [] if indices.flush else self.selection.copy()
             inds = indices.indices
-
         ilocs = self._map_indexes(inds, ilocs, add=selected)
         if isinstance(self.selectable, int) and not isinstance(self.selectable, bool):
             ilocs = ilocs[len(ilocs) - self.selectable:]
