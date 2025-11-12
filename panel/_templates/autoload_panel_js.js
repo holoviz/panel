@@ -27,8 +27,8 @@ calls it with the rendered model.
   const version = '{{ version }}'.replace('rc', '-rc.').replace('.dev', '-dev.');
   const reloading = {{ reloading|default(False)|json }};
   const Bokeh = root.Bokeh;
-  const BK_RE = /^https:\/\/cdn\.bokeh\.org\/bokeh\/release\/bokeh-/;
-  const PN_RE = /^https:\/\/cdn\.holoviz\.org\/panel\/[^/]+\/dist\/panel/i
+  const BK_RE = /^https:\/\/cdn\.bokeh\.org\/bokeh\/(release|dev)\/bokeh-/;
+  const PN_RE = /^https:\/\/cdn\.holoviz\.org\/panel\/[^/]+\/dist\/panel/i;
 
   // Set a timeout for this load but only if we are not already initializing
   if (typeof (root._bokeh_timeout) === "undefined" || (force || !root._bokeh_is_initializing)) {
@@ -142,7 +142,7 @@ calls it with the rendered model.
       const escaped = encodeURI(url)
       const shouldSkip = skip.includes(escaped) || existing_scripts.includes(escaped)
       const isBokehOrPanel = BK_RE.test(escaped) || PN_RE.test(escaped)
-      const missingOrBroken = Bokeh == null || Bokeh.Panel == null || (Bokeh.version != version && !Bokeh?.versions.has(version)) || Bokeh.versions.get(version).Panel == null
+      const missingOrBroken = Bokeh == null || Bokeh.Panel == null || (Bokeh.version != version && !Bokeh.versions?.has(version)) || Bokeh.versions.get(version).Panel == null;
       if (shouldSkip && !(isBokehOrPanel && missingOrBroken)) {
         if (!window.requirejs) {
           on_load();
@@ -267,7 +267,7 @@ calls it with the rendered model.
     } else {
       root._bokeh_is_initializing = true;
       root._bokeh_onload_callbacks = [];
-      const bokeh_loaded = Bokeh != null && ((Bokeh.version === version && Bokeh.Panel) || (Bokeh.versions !== undefined && Bokeh.versions.has(version) && Bokeh.versions.get(version).Panel));
+      const bokeh_loaded = Bokeh != null && ((Bokeh.version === version && Bokeh.Panel) || (Bokeh.versions?.has(version) && Bokeh.versions.get(version).Panel));
       if (!reloading && !bokeh_loaded) {
         if (root.Bokeh) {
           root.Bokeh = undefined;
