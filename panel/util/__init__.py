@@ -599,6 +599,6 @@ def set_bokeh_validation(validate: bool):
         bokeh.util.callback_manager._nargs = _orig_nargs
     else:
         def _check_callback(callback, fargs, what=None): return
-        def _nargs(fn): return 0
+        def _nargs(fn): return 1
         bokeh.util.callback_manager._check_callback = _check_callback
         bokeh.util.callback_manager._nargs = _nargs
