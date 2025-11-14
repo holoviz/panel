@@ -1,6 +1,6 @@
 [workspace]
 name = "panel"
-channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
+channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]  # HACK: Don't merge to main
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [activation.env]
@@ -82,7 +82,7 @@ nomkl = "*"
 pip = "*"
 # Required
 bleach = "*"
-bokeh = ">=3.7.0,<3.9.0a0"
+bokeh = "==3.9.0.dev4"  # HACK: Don't merge to main
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
