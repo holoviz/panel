@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "panel"
 channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
@@ -7,25 +7,75 @@ platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 MPLBACKEND = "Agg"
 PYTHONIOENCODING = "utf-8"
 
-[tasks]
-install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
-
 [environments]
-test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-313 = ["py313", "test-core", "test", "example", "test-example", "test-unit-task"]
-test-314 = ["py314", "test-core", "test-314", "example-314", "test-example", "test-unit-task"]
-test-ui = ["py313", "test-core", "test", "test-ui"]
-test-core = ["py314", "test-core", "test-unit-task"]
-test-bokeh37 = ["py310", "test-core", "test-unit-task", "bokeh37"]
-test-type = ["py311", "type", "example", "test"]
-docs = ["py311", "example", "doc"]
-build = ["py311", "build"]
-lint = ["py311", "lint"]
-lite = ["py311", "lite"]
+default = [
+    "py312",
+    "required",
+    "test-core",
+    "test",
+    "example",
+    "test-example",
+    "test-unit-task",
+    "test-ui",
+    "type",
+    "lint",
+    "doc",
+    "dev",
+]
 
-[dependencies]
+[environments.test-310]
+features = ["py310", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-311]
+features = ["py311", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-312]
+features = ["py312", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-313]
+features = ["py313", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-314]
+features = ["py314", "required", "test-core", "test-314", "example-314", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-ui]
+features = ["py313", "required", "test-core", "test", "test-ui"]
+no-default-feature = true
+
+[environments.test-core]
+features = ["py314", "required", "test-core", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-bokeh37]
+features = ["py310", "required", "test-core", "test-unit-task", "bokeh37"]
+no-default-feature = true
+
+[environments.test-type]
+features = ["py311", "required", "type", "example", "test"]
+no-default-feature = true
+
+[environments.docs]
+features = ["py311", "required", "example", "doc"]
+no-default-feature = true
+
+[environments.build]
+features = ["py311", "required", "build"]
+no-default-feature = true
+
+[environments.lint]
+features = ["py311", "lint"]
+no-default-feature = true
+
+[environments.lite]
+features = ["py311", "required", "lite"]
+no-default-feature = true
+
+[feature.required.dependencies]
 nodejs = ">=18"
 esbuild = "*"
 nomkl = "*"
@@ -37,6 +87,7 @@ linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
 mdit-py-plugins = "*"
+narwhals = ">2"
 numpy = "*"
 packaging = "*"
 pandas = ">=1.2"
@@ -45,6 +96,9 @@ pyviz_comms = ">=2.0.0"
 requests = "*"
 tqdm = ">=4.48.0"
 typing_extensions = "*"
+
+[feature.required.tasks]
+install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [feature.py310.dependencies]
 python = "3.10.*"
@@ -162,6 +216,17 @@ vtk = "*"
 xarray = "*"
 xgboost = "*"
 
+# =================== DEV ===================
+
+[feature.dev.dependencies]
+jupyterlab = "*"
+setuptools_scm = ">=6"
+
+[feature.dev.tasks]
+lab = 'jupyter lab'
+sync-git-tags = 'python scripts/sync_git_tags.py param'
+setup-dev = { depends-on = ["install", "lint-install"] }
+
 # =============================================
 # =================== TESTS ===================
 # =============================================
@@ -189,7 +254,7 @@ watchfiles = "*"
 # Test dependencies
 altair = "*"
 anywidget = "*"
-bokeh-fastapi = "*"
+bokeh-fastapi = ">=0.1.5"
 bokeh_sampledata = "*"
 caddy = "*"
 cryptography = "*"
@@ -204,6 +269,7 @@ polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+vl-convert-python = "*"
 
 [feature.test-314.dependencies]
 # Optional dependencies - recommended
@@ -244,12 +310,9 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 [feature.test-example.dependencies]
 nbval = "*"
 
-[feature.test-ui]
-channels = ["microsoft"]
-
 [feature.test-ui.dependencies]
-playwright = { version = "*", channel = "microsoft" }
-pytest-playwright = { version = "*", channel = "microsoft" }
+playwright = ">=1.52.0"
+pytest-playwright = "*"
 pytest-asyncio = "*"
 jupyter_server = "*"
 esbuild = "*"

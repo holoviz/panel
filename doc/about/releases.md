@@ -1,5 +1,49 @@
 # Releases
 
+## Version 1.8.3
+
+This patch release brings targeted UI fixes, improves Python and Django compatibility, and enhances the developer and contributor experience. It also includes fixes for Tabulator, Pyodide, templates, and app interactivity, along with several documentation and robustness improvements. Many thanks to @ahuang11, @hoxbro, @maximlt, @MarcSkovMadsen, @Coderambling and  @philippjfr for their contributions to this release.
+
+### ✨ Enhancements
+
+- Align CSS variables between default and dark themes ([#8248](https://github.com/holoviz/panel/pull/8248))
+- Ensure behavior of dynamically served apps is aligned with file based apps ([#8249](https://github.com/holoviz/panel/pull/8249))
+- Add `export()` method to `Vega` pane ([#8266](https://github.com/holoviz/panel/pull/8266))
+- Add official support for **Python 3.14** ([#8241](https://github.com/holoviz/panel/pull/8241))
+- Add `render_policy="manual"` option for `JSComponent` ([#8285](https://github.com/holoviz/panel/pull/8285))
+- Disable text selection when editing in `EditableTemplate` ([#8286](https://github.com/holoviz/panel/pull/8286))
+- Prevent full text selection when replacing input values on `CodeEditor` ([#8262](https://github.com/holoviz/panel/pull/8262))
+
+### 🐛 Bug Fixes
+
+- Fix FastAPI bug where `pn.state.location` wasn’t retained ([#8283](https://github.com/holoviz/panel/pull/8283))
+- Fix Tabulator popup container rendering issues ([#8247](https://github.com/holoviz/panel/pull/8247))
+- Resolve issues with pipeline `next/previous` buttons ([#8273](https://github.com/holoviz/panel/pull/8273))
+- Ensure ESM compilation uses `_esm` path ([#8245](https://github.com/holoviz/panel/pull/8245))
+- Fix CORS issue with `turbine` data URL in Pyodide ([#8272](https://github.com/holoviz/panel/pull/8272))
+- Ensure `ParamRef`, `ParamFunction`, and `ParamMethod` do not override styling ([#8264](https://github.com/holoviz/panel/pull/8264))
+- Fix toggle behavior in `BootstrapTemplate` sidebar ([#8268](https://github.com/holoviz/panel/pull/8268))
+- Minor robustness improvements for Bokeh model interop ([#8270](https://github.com/holoviz/panel/pull/8270))
+
+### 📚 Documentation
+
+- Minor enhancements to the [Panel Gallery](https://panel.holoviz.org/gallery/) deployment ([#8240](https://github.com/holoviz/panel/pull/8240))
+- Update Django integration docs ([#8252](https://github.com/holoviz/panel/pull/8252))
+- Clarify setup instructions ([#8255](https://github.com/holoviz/panel/pull/8255))
+- Fix typo and layout issue in `README.md` ([#8287](https://github.com/holoviz/panel/pull/8287))
+- Fix unclosed code block in `convert.md` ([#8280](https://github.com/holoviz/panel/pull/8280))
+
+### 🧪 Infrastructure & Developer Experience
+
+- Remove Bokeh metadata workaround related to Tornado ([#8243](https://github.com/holoviz/panel/pull/8243))
+- Bump Django versions in example apps:
+
+  - `4.2.22` → `4.2.25` ([#8226](https://github.com/holoviz/panel/pull/8226))
+  - `4.2.22` → `4.2.26` in multi-apps example ([#8282](https://github.com/holoviz/panel/pull/8282))
+- Add `setup-dev` command for easier local development ([#8277](https://github.com/holoviz/panel/pull/8277))
+- Improve internal `_descendents` resolution for parameterized classes ([#8284](https://github.com/holoviz/panel/pull/8284))
+- Add `__panel__` stub method to `PyComponent` ([#8271](https://github.com/holoviz/panel/pull/8271))
+
 ## Version 1.8.2
 
 This patch release focuses on polishing the user experience, fixing regressions, and improving documentation, particularly around app deployment and Tabulator interactivity. It includes several frontend and CSS tweaks, pyodide compatibility fixes, and two new deployment guides for **Anaconda Notebooks** and **PythonAnywhere**. Thanks to @philippjfr, @maximlt, @etihwo, @MarcSkovMadsen, and @Coderambling for their contributions to this release.
@@ -10,7 +54,6 @@ This patch release focuses on polishing the user experience, fixing regressions,
 - Improve UI discoverability on `EditableTemplate` ([#8206](https://github.com/holoviz/panel/pull/8206))
 - Set pointer cursor on "Connection Lost" toast notification ([#8209](https://github.com/holoviz/panel/pull/8209))
 - Serve `index.html` automatically when serving a static directory ([#8222](https://github.com/holoviz/panel/pull/8222))
-
 
 ### 🐛 Bug Fixes
 

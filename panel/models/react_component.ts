@@ -92,7 +92,7 @@ export class ReactComponentView extends ReactiveESMView {
     this._force_update_callbacks = []
     if (this.react_root && this.use_shadow_dom) {
       super.remove()
-      this.react_root.then((root: any) => root.unmount())
+      this.react_root.then((root: any) => root && root.unmount())
     } else {
       this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
       for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
@@ -585,5 +585,9 @@ ${compiled}`
       root_node:  [ Nullable(Str), null ],
       use_shadow_dom:   [ Bool,    true ],
     }))
+
+    this.override<ReactComponent.Props>({
+      render_policy: "manual",
+    })
   }
 }

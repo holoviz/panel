@@ -1306,8 +1306,10 @@ def test_tabulator_patch_no_height_resize(page):
 
     page.mouse.wheel(delta_x=0, delta_y=10000)
     at_bottom_script = """
-    () => Math.round(window.innerHeight + window.scrollY) === document.body.scrollHeight
-    """
+    () => {
+      const diff = document.body.scrollHeight - (window.innerHeight + window.scrollY);
+      return Math.abs(diff) <= 5;
+    }"""
     wait_until(lambda: page.evaluate(at_bottom_script), page)
 
     widget.patch({'a': [(len(df)-1, 100)]})

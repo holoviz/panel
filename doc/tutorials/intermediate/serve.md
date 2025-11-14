@@ -253,14 +253,13 @@ options:
   --autoreload          Whether to autoreload source when script changes.
   --num-threads NUM_THREADS
                         Whether to start a thread pool which events are dispatched to.
-  --setup SETUP         Path to a setup script to run before server starts.
+  --setup SETUP         Path to a Python setup script to run before server starts.
   --liveness            Whether to add a liveness endpoint.
   --liveness-endpoint LIVENESS_ENDPOINT
                         The endpoint for the liveness API.
   --reuse-sessions      Whether to reuse sessions when serving the initial request.
   --global-loading-spinner
                         Whether to add a global loading spinner to the application(s).
-```
 
 ## Recap
 
