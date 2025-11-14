@@ -82,7 +82,7 @@ nomkl = "*"
 pip = "*"
 # Required
 bleach = "*"
-bokeh = "==3.9.0.dev4"  # HACK: Don't merge to main
+bokeh = ">=3.7.0,<3.10.0a0"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
