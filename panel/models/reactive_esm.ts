@@ -5,6 +5,7 @@ import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {ImportedStyleSheet} from "@bokehjs/core/dom"
+import {Enum} from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs} from "@bokehjs/core/types"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
@@ -227,8 +228,13 @@ export class ReactiveESMView extends HTMLBoxView {
       this.container.className = this.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
     })
     const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
-    this.on_change(child_props, () => {
-      this.update_children()
+    for (const cp of child_props) {
+      cp.change.connect(() => this.update_children())
+    }
+    this.on_change([], () => {
+      if (this.model.render_policy !== "manual") {
+        this.render_esm()
+      }
     })
     this.model.on_event(ESMEvent, (event: ESMEvent) => {
       for (const cb of this._event_handlers) {
@@ -399,6 +405,7 @@ export class ReactiveESMView extends HTMLBoxView {
     if (this.model.compiled === null || this.model.render_module === null) {
       return
     }
+    this.container.replaceChildren()
     this.accessed_properties = []
     for (const lf of this._lifecycle_handlers.keys()) {
       (this._lifecycle_handlers.get(lf) || []).splice(0)
@@ -409,6 +416,9 @@ export class ReactiveESMView extends HTMLBoxView {
 
   render_children() {
     for (const child of this.model.children) {
+      if (!this.accessed_children.includes(child)) {
+        return
+      }
       const child_model = this.model.data[child]
       const children = isArray(child_model) ? child_model : [child_model]
       for (const subchild of children) {
@@ -423,7 +433,26 @@ export class ReactiveESMView extends HTMLBoxView {
         }
       }
     }
+    this._stale_children = false
     this.after_render()
+  }
+
+  override has_finished(): boolean {
+    if (!super.has_finished()) {
+      return false
+    }
+
+    if (this.is_layout_root && !(this as any)._layout_computed) {
+      return false
+    }
+
+    for (const child_view of this.child_views) {
+      if (!child_view.has_finished() && this._child_rendered.has(child_view)) {
+        return false
+      }
+    }
+
+    return true
   }
 
   override invalidate_layout(): void {
@@ -480,8 +509,10 @@ export class ReactiveESMView extends HTMLBoxView {
     const created_children = new Set(await this.build_child_views())
 
     const all_views = this.child_views
-    for (const child_view of all_views) {
-      child_view.el.remove()
+    if (this.model.render_policy !== "manual") {
+      for (const child_view of all_views) {
+        child_view.el.remove()
+      }
     }
 
     const new_views = new Map()
@@ -514,12 +545,13 @@ export class ReactiveESMView extends HTMLBoxView {
         callback(new_children)
       }
     }
-    if (this._stale_children) {
+
+    if (this._stale_children && this.model.render_policy !== "manual") {
       this.render_esm()
-      this._stale_children = false
+      this._update_children()
+      this.invalidate_layout()
     }
-    this._update_children()
-    this.invalidate_layout()
+    this._stale_children = false
   }
 
   on_child_render(child: string, callback: (new_views: UIElementView[]) => void): void {
@@ -544,6 +576,8 @@ export class ReactiveESMView extends HTMLBoxView {
   }
 }
 
+export const RenderPolicy = Enum("manual", "children")
+
 export namespace ReactiveESM {
   export type Attrs = p.AttrsOf<Props>
 
@@ -557,6 +591,7 @@ export namespace ReactiveESM {
     esm: p.Property<string>
     events: p.Property<string[]>
     importmap: p.Property<any>
+    render_policy: p.Property<typeof RenderPolicy["__type__"]>
   }
 }
 
@@ -594,12 +629,6 @@ export class ReactiveESM extends HTMLBox {
   }
 
   watch(view: ReactiveESMView | null, prop: string, cb: any, force: boolean = false): void {
-    if (prop in this._esm_watchers) {
-      this._esm_watchers[prop].push([view, cb])
-    } else {
-      this._esm_watchers[prop] = [[view, cb]]
-    }
-
     const propPath = prop.split(".")
     let target: any = this.data
     let resolvedProp: string | null = null
@@ -631,9 +660,41 @@ export class ReactiveESM extends HTMLBox {
 
     // Attach watcher if property is found
     if (resolvedProp && target) {
+      if (this.children.includes(resolvedProp)) {
+        const orig_cb = cb
+        cb = async () => {
+          if (view) {
+            view._stale_children = true
+          }
+          if (view && view._stale_children) {
+            await new Promise(resolve => {
+              const check = () => {
+                if (!view._stale_children) {
+                  resolve(undefined)
+                } else {
+                  setTimeout(check, 10)
+                }
+              }
+              check()
+            })
+          }
+          orig_cb()
+          if (view && this.render_policy === "manual") {
+            view.render_children();
+            (view as any)._update_children()
+            view.invalidate_layout()
+          }
+        }
+      }
       target.property(resolvedProp).change.connect(cb)
     } else if (prop in this.properties) {
       this.property(prop).change.connect(cb)
+    }
+
+    if (prop in this._esm_watchers) {
+      this._esm_watchers[prop].push([view, cb])
+    } else {
+      this._esm_watchers[prop] = [[view, cb]]
     }
   }
 
@@ -879,6 +940,7 @@ export default {render}`
       esm:         [ Str,                 "" ],
       events:      [ Array(Str),          [] ],
       importmap:   [ Any,                 {} ],
+      render_policy: [ RenderPolicy, "children"],
     }))
   }
 }

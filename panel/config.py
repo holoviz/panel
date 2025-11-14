@@ -29,6 +29,7 @@ from pyviz_comms import (
 from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
+from .util import _descendents, set_bokeh_validation
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -340,6 +341,9 @@ class _config(_base_config):
     _theme = param.Selector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
         The theme to apply to components.""")
 
+    _disable_validation = param.Boolean(default=False, doc="""
+        Whether to disable bokeh validation, speeding up applications.""")
+
     # Global parameters that are shared across all sessions
     _globals: ClassVar[set[str]] = {
         'admin_plugins', 'autoreload', 'comms', 'cookie_path', 'cookie_secret',
@@ -347,7 +351,7 @@ class _config(_base_config):
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin', 'index_titles'
+        'oauth_optional', 'admin', 'index_titles', 'disable_validation'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -454,6 +458,10 @@ class _config(_base_config):
         from .io.admin import log_handler as admin_log_handler
         admin_log_handler.setLevel(self._log_level)
 
+    @param.depends('_disable_validation', watch=True)
+    def _configure_validation(self):
+        set_bokeh_validation(not self.disable_validation)
+
     def __getattribute__(self, attr):
         """
         Ensures that configuration parameters that are defined per
@@ -513,6 +521,10 @@ class _config(_base_config):
             return 'disable'
         else:
             return os.environ.get('PANEL_CONSOLE_OUTPUT', _config._console_output)
+
+    @property
+    def disable_validation(self):
+        return self._disable_validation
 
     @property
     def embed(self):
@@ -756,7 +768,7 @@ class panel_extension(_pyviz_extension):
 
         _in_ipython = hasattr(builtins, '__IPYTHON__')
         reactive_exts = {
-            v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
+            v._extension_name: v for v in _descendents(ReactiveHTML, concrete=True)
         }
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
@@ -806,7 +818,7 @@ class panel_extension(_pyviz_extension):
                 except Exception:
                     pass
                 designs = {
-                    p.lower(): t for p, t in param.concrete_descendents(Design).items()
+                    t.__name__.lower(): t for t in _descendents(Design, concrete=True)
                 }
                 if v not in designs:
                     raise ValueError(
@@ -959,8 +971,8 @@ class panel_extension(_pyviz_extension):
 
         from .viewable import Viewable
 
-        descendants = param.concrete_descendents(Viewable)
-        for cls in reversed(list(descendants.values())):
+        descendants = _descendents(Viewable, concrete=True)
+        for cls in reversed(descendants):
             if cls.__doc__ is None:
                 pass
             elif cls.__doc__.startswith('params'):

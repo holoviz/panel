@@ -585,5 +585,9 @@ ${compiled}`
       root_node:  [ Nullable(Str), null ],
       use_shadow_dom:   [ Bool,    true ],
     }))
+
+    this.override<ReactComponent.Props>({
+      render_policy: "manual",
+    })
   }
 }
