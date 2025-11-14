@@ -22,6 +22,7 @@ export class CardView extends ColumnView {
 
   button_el: HTMLButtonElement
   header_el: HTMLElement
+  initially_collapsed: boolean
 
   readonly collapsed_style = new DOM.InlineStyleSheet()
 
@@ -29,6 +30,7 @@ export class CardView extends ColumnView {
     super.connect_signals()
 
     const {active_header_background, collapsed, header_background, header_color, hide_header} = this.model.properties
+    this.initially_collapsed = this.model.collapsed
     this.on_change(collapsed, () => this._collapse())
     this.on_change([header_color, hide_header], () => this.render())
 
@@ -106,11 +108,11 @@ export class CardView extends ColumnView {
       header.r_after_render()
     }
 
-    if (this.model.collapsed) {
-      return
-    }
-
     for (const child_view of this.child_views.slice(1)) {
+      if (this.initially_collapsed) {
+        child_view.model.visible = false
+        this.initially_collapsed = false
+      }
       this.shadow_el.appendChild(child_view.el)
       child_view.render()
       child_view.r_after_render()
