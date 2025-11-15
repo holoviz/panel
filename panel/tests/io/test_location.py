@@ -1,4 +1,5 @@
-import pandas as pd
+from importlib.util import find_spec
+
 import param
 import pytest
 
@@ -27,7 +28,8 @@ class SyncParameterized(param.Parameterized):
 
     string = param.String(default=None)
 
-    dataframe = param.DataFrame(default=None)
+    if find_spec("pandas") is not None:
+        dataframe = param.DataFrame(default=None)
 
 
 def test_location_update_query(location):
@@ -170,6 +172,7 @@ def test_iframe_srcdoc_location():
 
 @pytest.fixture
 def dataframe():
+    pd = pytest.importorskip("pandas")
     return pd.DataFrame({"x": [1]})
 
 def test_location_sync_from_dataframe(location, dataframe):
@@ -178,12 +181,14 @@ def test_location_sync_from_dataframe(location, dataframe):
     assert location.search == "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
 
 def test_location_sync_to_dataframe(location, dataframe):
+    pd = pytest.importorskip("pandas")
     p = SyncParameterized()
     location.search = "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
     location.sync(p)
     pd.testing.assert_frame_equal(p.dataframe, dataframe)
 
 def test_location_sync_to_dataframe_with_initial_value(location, dataframe):
+    pd = pytest.importorskip("pandas")
     p = SyncParameterized(dataframe=pd.DataFrame({"y": [2]}))
     location.search = "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
     location.sync(p)

@@ -18,7 +18,6 @@ from contextlib import contextmanager
 from functools import cache
 from subprocess import PIPE, Popen
 
-import pandas as pd
 import pytest
 
 from bokeh.client import pull_session
@@ -272,6 +271,7 @@ def port():
 
 @pytest.fixture
 def dataframe():
+    pd = pytest.importorskip("pandas")
     return pd.DataFrame({
         'int': [1, 2, 3],
         'float': [3.14, 6.28, 9.42],
@@ -281,6 +281,7 @@ def dataframe():
 
 @pytest.fixture
 def df_mixed():
+    pd = pytest.importorskip("pandas")
     df = pd.DataFrame({
         'int': [1, 2, 3, 4],
         'float': [3.14, 6.28, 9.42, -2.45],
@@ -294,6 +295,7 @@ def df_mixed():
 
 @pytest.fixture
 def df_multiindex(df_mixed):
+    pd = pytest.importorskip("pandas")
     df_mi = df_mixed.copy()
     df_mi.index = pd.MultiIndex.from_tuples([
         ('group0', 'subgroup0'),
@@ -573,6 +575,7 @@ def exception_handler_accumulator():
 
 @pytest.fixture
 def df_strings():
+    pd = pytest.importorskip("pandas")
     descr = [
         'Under the Weather',
         'Top Drawer',

@@ -6,7 +6,6 @@ import string
 from zoneinfo import ZoneInfo
 
 import numpy as np
-import pandas as pd
 import param
 import pytest
 
@@ -16,7 +15,6 @@ from bokeh.models.widgets.tables import (
     NumberEditor, NumberFormatter, SelectEditor, StringEditor, StringFormatter,
     SumAggregator,
 )
-from packaging.version import Version
 
 from panel.depends import bind
 from panel.io.state import set_curdoc
@@ -25,11 +23,13 @@ from panel.tests.util import mpl_available, serve_and_request, wait_until
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
-pd_old = pytest.mark.skipif(Version(pd.__version__) < Version('1.3'),
-                            reason="Requires latest pandas")
+pd = pytest.importorskip("pandas")  # HACK: REMOVE
+
+pd_old = pytest.mark.skipif(False, reason="Requires latest pandas")
 
 
 def makeMixedDataFrame():
+    import pandas as pd
     data = {
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
         "B": [0.0, 1.0, 0.0, 1.0, 0.0],

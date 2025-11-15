@@ -16,7 +16,6 @@ except Exception:
 plotly_available = pytest.mark.skipif(plotly is None, reason="requires plotly")
 
 import numpy as np
-import pandas as pd
 
 from panel.models.plotly import PlotlyPlot
 from panel.pane import PaneBase, Plotly
@@ -216,6 +215,7 @@ def test_clean_relayout_data():
 @pytest.mark.skipif(not find_spec("scipy"), reason="requires scipy")
 @plotly_available
 def test_plotly_swap_traces(document, comm):
+    pd = pytest.importorskip("pandas")
     data_bar = pd.DataFrame({'Count': [1, 2, 3, 4], 'Category': ["A", "B", "C", "D"]})
     data_cts = np.random.randn(1000)
 
@@ -248,6 +248,7 @@ def test_plotly_swap_traces(document, comm):
 @plotly_available
 def test_plotly_shape_datetime_converted(document, comm):
     # see https://github.com/holoviz/panel/issues/5252
+    pd = pytest.importorskip("pandas")
     start = pd.Timestamp('2022-05-11 0:00:00', tz=dt.timezone.utc)
     date_range = pd.date_range(start=start, periods=20, freq='h')
 
@@ -269,6 +270,7 @@ def test_plotly_shape_datetime_converted(document, comm):
 @plotly_available
 def test_plotly_datetime_converted_2d_array(document, comm):
     # see https://github.com/holoviz/panel/issues/7309
+    pd = pytest.importorskip("pandas")
     n_points = 3
     data = pd.DataFrame({
         'timestamp': pd.date_range(start='2023-01-01', periods=n_points, freq='min'),

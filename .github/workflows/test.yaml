@@ -145,6 +145,9 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
           opengl: true
+      - name: PATCH  # HACK: Should never be merged into main
+        run: |
+          pixi run -e ${{ matrix.environment }} pip uninstall pandas -y
       - name: Test unit
         run: |
           pixi run -e ${{ matrix.environment }} test-unit $COV
