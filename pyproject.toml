@@ -96,6 +96,7 @@ mypy = [
     "pandas-stubs",
     "types-bleach",
     "types-croniter",
+    "types-jsonschema",
     "types-Markdown",
     "types-psutil",
     "types-requests",
