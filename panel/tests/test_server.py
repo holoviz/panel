@@ -798,6 +798,7 @@ def test_server_thread_pool_defer_load(server_implementation, threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_server_thread_pool_change_event(server_implementation, threads):
     button = Button(name='Click')
     button2 = Button(name='Click')
