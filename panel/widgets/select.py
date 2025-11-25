@@ -428,13 +428,14 @@ class NestedSelect(CompositeWidget):
 
     @param.depends("width", watch=True)
     def _update_width(self):
-        if self.width is not None:
-            for i, widget in enumerate(self._widgets):
-                # Don't override level-specified widths
-                level = self._levels[i]
-                if isinstance(level, dict) and "width" in level:
-                    continue
-                widget.width = self.width
+        if self.width is None or not getattr(self, '_widgets', None):
+            return
+        for i, widget in enumerate(self._widgets):
+            # Don't override level-specified widths
+            level = self._levels[i]
+            if isinstance(level, dict) and "width" in level:
+                continue
+            widget.width = self.width
 
     def _gather_values_from_widgets(self, up_to_i=None):
         """
