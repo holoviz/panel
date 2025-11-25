@@ -844,6 +844,57 @@ def test_nested_select_layout_dynamic_update(document, comm):
     assert isinstance(select._composite, Row)
 
 
+def test_nested_select_width(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(options=options, width=50)
+    assert select.width == 50
+    # Check that inner widgets have the width set
+    for widget in select._widgets:
+        assert widget.width == 50
+
+    # Test updating width after creation
+    select.width = 100
+    for widget in select._widgets:
+        assert widget.width == 100
+
+
+def test_nested_select_width_with_levels(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    # Test that level-specified width takes precedence
+    select = NestedSelect(
+        options=options,
+        levels=[
+            {"name": "Name", "type": Select, "width": 250},
+            {"name": "Variable", "type": Select},
+            {"name": "lvl"},
+        ],
+        width=100,
+    )
+    # First widget has explicit width in level config
+    assert select._widgets[0].width == 250
+    # Other widgets inherit from NestedSelect width
+    assert select._widgets[1].width == 100
+    assert select._widgets[2].width == 100
+
+
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
 def test_select_disabled_options_init(options, size, document, comm):

@@ -426,6 +426,12 @@ class NestedSelect(CompositeWidget):
         super().__init__(**params)
         self._update_widgets()
 
+    @param.depends("width", watch=True)
+    def _update_width(self):
+        if self.width is not None:
+            for widget in self._widgets:
+                widget.width = self.width
+
     def _gather_values_from_widgets(self, up_to_i=None):
         """
         Gather values from all the select widgets to update the class' value.
@@ -589,6 +595,8 @@ class NestedSelect(CompositeWidget):
         if "visible" not in widget_kwargs:
             # first select widget always visible
             widget_kwargs["visible"] = i == 0 or callable(options) or len(options) > 0
+        if "width" not in widget_kwargs and self.width is not None:
+            widget_kwargs["width"] = self.width
         widget = widget_type(**widget_kwargs)
         self.link(widget, disabled="disabled")
         widget.param.watch(self._update_widget_options_interactively, "value")
