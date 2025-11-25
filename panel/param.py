@@ -643,7 +643,7 @@ class Param(Pane):
                     widget.param.unwatch(prev_watcher)
                     def action(event):
                         change.new(parameterized)
-                        watchers[0] = widget.param.watch(action, 'clicks')
+                    watchers[0] = widget.param.watch(action, 'clicks')
                 return
             elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
