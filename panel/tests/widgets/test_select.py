@@ -894,6 +894,13 @@ def test_nested_select_width_with_levels(document, comm):
     assert select._widgets[1].width == 100
     assert select._widgets[2].width == 100
 
+    # Test updating width after creation
+    # Level-specified width should be preserved
+    select.width = 200
+    assert select._widgets[0].width == 250  # Level-specified width preserved
+    assert select._widgets[1].width == 200
+    assert select._widgets[2].width == 200
+
 
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
