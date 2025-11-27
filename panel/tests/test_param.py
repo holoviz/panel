@@ -401,6 +401,24 @@ def test_action_param(document, comm):
     assert test.b == 2
 
 
+def test_action_param_triggers_once(document, comm):
+    class Test(param.Parameterized):
+        a = param.Action(default=lambda x: x.param.trigger('a'))
+        b = param.List(default=[])
+
+        @param.depends('a', watch=True)
+        def _record_a(self):
+            self.b.append(True)
+
+    test = Test()
+    test_pane = Param(test)
+
+    pn_button = test_pane.layout[1]
+    pn_button._process_event(None)
+
+    assert len(test.b) == 1
+
+
 def test_number_param_overrides(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=0.1, bounds=(0, 1.1))

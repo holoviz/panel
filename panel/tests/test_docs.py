@@ -25,7 +25,7 @@ IGNORED = ['vtk']
 doc_files = [df for df in sorted(DOC_PATH.rglob("*.md")) if not any(ig in str(df).lower() for ig in IGNORED)]
 doc_available = pytest.mark.skipif(not DOC_PATH.is_dir(), reason="folder 'doc' not found")
 
-ALLOWED_NO_DOCS_MODULES = ("altair",)
+ALLOWED_NO_DOCS_MODULES = ()
 
 @ref_available
 def test_layouts_are_in_reference_gallery():
