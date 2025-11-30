@@ -507,7 +507,8 @@ class Syncable(Renderable):
             state._busy_counter += 1
         try:
             with set_curdoc(doc):
-                self._process_event(event)
+                # Delay events similarly to server changes
+                doc.add_timeout_callback(partial(self._process_event, event), self._debounce) # type: ignore
         finally:
             self._log('finished processing bokeh event %s', event)
             with edit_readonly(state):
