@@ -632,9 +632,13 @@ async def test_tabulator_content_embed_async(document, comm):
 
     model = table.get_root(document, comm)
 
+    await asyncio.sleep(0.05)
+
     await async_wait_until(lambda: len(model.children) == len(df))
 
+    await asyncio.sleep(0.05)
     for i, r in df.iterrows():
+        await asyncio.sleep(0.05)
         await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A}&lt;/pre&gt;")
 
     async def row_content(row):
@@ -643,7 +647,9 @@ async def test_tabulator_content_embed_async(document, comm):
 
     table.row_content = row_content
 
+    await asyncio.sleep(0.05)
     for i, r in df.iterrows():
+        await asyncio.sleep(0.05)
         await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;")
 
 
