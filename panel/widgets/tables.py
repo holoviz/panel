@@ -1642,8 +1642,7 @@ class Tabulator(BaseTable):
                     placeholder.loading = False
                     raise
 
-                placeholder.object = resolved
-                placeholder.loading = False
+                placeholder.param.update(object=resolved, loading=False)
 
             param.parameterized.async_executor(_await_content)
             return placeholder

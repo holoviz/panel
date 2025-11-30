@@ -601,7 +601,7 @@ def resolve_async_row_content_text(model, idx):
     return child.children[0].text
 
 
-def test_tabulator_expanded_content_async(document, comm):
+async def test_tabulator_expanded_content_async(document, comm):
     df = makeMixedDataFrame()
 
     async def row_content(row):
@@ -616,7 +616,7 @@ def test_tabulator_expanded_content_async(document, comm):
     assert len(model.children) == 1
 
 
-def test_tabulator_content_embed_async(document, comm):
+async def test_tabulator_content_embed_async(document, comm):
     df = makeMixedDataFrame()
 
     async def row_content(row):
