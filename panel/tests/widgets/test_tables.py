@@ -21,7 +21,9 @@ from packaging.version import Version
 from panel.depends import bind
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
-from panel.tests.util import mpl_available, serve_and_request, wait_until
+from panel.tests.util import (
+    async_wait_until, mpl_available, serve_and_request, wait_until,
+)
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
@@ -612,7 +614,7 @@ async def test_tabulator_expanded_content_async(document, comm):
 
     model = table.get_root(document, comm)
 
-    wait_until(lambda: resolve_async_row_content_text(model, 0) == "&lt;pre&gt;0.0&lt;/pre&gt;")
+    await async_wait_until(lambda: resolve_async_row_content_text(model, 0) == "&lt;pre&gt;0.0&lt;/pre&gt;")
     assert len(model.children) == 1
 
 
@@ -630,19 +632,19 @@ async def test_tabulator_content_embed_async(document, comm):
 
     model = table.get_root(document, comm)
 
-    wait_until(lambda: len(model.children) == len(df))
+    await async_wait_until(lambda: len(model.children) == len(df))
 
     for i, r in df.iterrows():
-        wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A}&lt;/pre&gt;")
+        await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A}&lt;/pre&gt;")
 
     async def row_content(row):
-        await asyncio.sleep(0.05)
+        await asyncio.sleep(0.01)
         return row.A + 1
 
     table.row_content = row_content
 
     for i, r in df.iterrows():
-        wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;")
+        await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;")
 
 
 def test_tabulator_remote_paginated_expanded_content(document, comm):
