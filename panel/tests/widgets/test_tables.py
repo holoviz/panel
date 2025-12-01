@@ -625,12 +625,9 @@ async def test_tabulator_content_embed_async(document, comm):
 
     table = Tabulator(df, embed_content=True, row_content=row_content)
 
-    # To create an event loop
-    serve_and_request(table)
-
     model = table.get_root(document, comm)
 
-    await async_wait_until(lambda: len(model.children) == len(df))
+    assert len(model.children) == len(df)
 
     for i, r in df.iterrows():
         await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A}&lt;/pre&gt;")

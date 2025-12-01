@@ -263,7 +263,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
             # None is returned when the function has an assert
             if result is None:
                 return
-            # When the function returns True or False
+            # When the function returns True
             if result:
                 return
             if timed_out():
