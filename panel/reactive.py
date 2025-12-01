@@ -617,14 +617,14 @@ class Syncable(Renderable):
         if doc.session_context:
             event_id = uuid.uuid4().hex
             cb = partial(self._change_coroutine, doc, event_id=event_id)
+            if doc in state._change_callbacks:
+                state._change_callbacks[doc][event_id] = cb
+            else:
+                state._change_callbacks[doc] = {event_id: cb}
             if attr in self._priority_changes:
                 with set_curdoc(doc):
                     state.execute(cb, schedule=True)
             else:
-                if doc in state._change_callbacks:
-                    state._change_callbacks[doc][event_id] = cb
-                else:
-                    state._change_callbacks[doc] = {event_id: cb}
                 doc.add_timeout_callback(cb, self._debounce) # type: ignore
         else:
             try:
