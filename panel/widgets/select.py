@@ -23,6 +23,8 @@ from bokeh.models.widgets import (
     RadioGroup as _BkRadioBoxGroup,
 )
 
+from panel.viewable import Layoutable
+
 from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..layout.base import Column, ListPanel, NamedListPanel
@@ -369,8 +371,9 @@ class NestedSelect(CompositeWidget):
         Either a list of strings or a list of dictionaries. If a list of strings, the strings
         are used as the names of the levels. If a list of dictionaries, each dictionary may
         have a "name" key, which is used as the name of the level, a "type" key, which
-        is used as the type of widget, and any corresponding widget keyword arguments.
-        Must be specified if options is callable.""")
+        is used as the type of widget, and any corresponding widget keyword arguments;
+        otherwise, will inherit layoutable keyword arguments from the `NestedSelect` itself, e.g.
+        width, height, and sizing_mode. Must be specified if options is callable.""")
 
     options = param.ClassSelector(class_=(list, dict, FunctionType), doc="""
         The options to select from. The options may be nested dictionaries, lists,
@@ -514,12 +517,12 @@ class NestedSelect(CompositeWidget):
                     f"{type(options).__name__}"
                 )
 
+        layout_kwargs = self._collect_layoutable_kwargs()
         if isinstance(self.layout, dict):
             layout_type = self.layout.pop("type", Column)
-            layout_kwargs = self.layout.copy()
+            layout_kwargs.update(self.layout.copy())
         elif issubclass(self.layout, (ListPanel, NamedListPanel)):
             layout_type = self.layout
-            layout_kwargs = {}
         else:
             raise ValueError(
                 f"The layout must be a subclass of ListLike or dict, got {self.layout!r}."
@@ -529,17 +532,25 @@ class NestedSelect(CompositeWidget):
         if self.options is not None:
             self.value = self._gather_values_from_widgets()
 
+    def _collect_layoutable_kwargs(self):
+        layout_params = [p for p in Layoutable.param if p != 'name']
+        return {
+            p: getattr(self, p) for p in layout_params
+            if getattr(self, p) is not None
+        }
+
     def _extract_level_metadata(self, i):
         """
         Extract the widget type and keyword arguments from the level metadata.
         """
         level = self._levels[i]
+        widget_kwargs = self._collect_layoutable_kwargs()
         if isinstance(level, int):
-            return Select, {}
+            return Select, widget_kwargs
         elif isinstance(level, str):
-            return Select, {"name": level}
+            return Select, {"name": level, **widget_kwargs}
         widget_type = level.get("type", Select)
-        widget_kwargs = {k: v for k, v in level.items() if k != "type"}
+        widget_kwargs.update({k: v for k, v in level.items() if k != "type"})
         return widget_type, widget_kwargs
 
     def _lookup_value(self, i, options, values, name=None, error=False):
