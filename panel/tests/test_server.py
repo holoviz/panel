@@ -821,7 +821,7 @@ async def test_server_text_input_update_before_click_event(server_implementation
         text_input._server_change(doc, ref=None, subpath=None, attr='value', old='', new='foo')
         # Give a chance to the event to propagate
         await asyncio.sleep(0.01)
-        button._comm_event(doc, ButtonClick(model=button.get_root()))
+        button._server_event(doc, ButtonClick(model=model.children[0]))
 
     wait_until(lambda: bool(called))
 

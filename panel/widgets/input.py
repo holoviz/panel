@@ -111,8 +111,6 @@ class TextInput(_TextInputBase):
 
     _rename = {'enter_pressed': None}
 
-    _priority_changes = ['value']
-
     def _get_model(
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None

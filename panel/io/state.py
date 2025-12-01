@@ -196,6 +196,7 @@ class _state(param.Parameterized):
     # Scheduled callbacks
     _scheduled: ClassVar[dict[str, tuple[TIterator[int] | None, Callable[[], None]]]] = {}
     _periodic: ClassVar[WeakKeyDictionary[Document, list[PeriodicCallback]]] = WeakKeyDictionary()
+    _change_callbacks: ClassVar[WeakKeyDictionary[Document, list[Callable[[], None]]]] = WeakKeyDictionary()
 
     # Indicators listening to the busy state
     _indicators: ClassVar[list[BooleanIndicator]] = []
