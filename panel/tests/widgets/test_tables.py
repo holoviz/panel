@@ -593,7 +593,7 @@ def test_tabulator_expanded_content(document, comm):
 
 
 def resolve_async_row_content_text(model, idx):
-    if 0 not in model.children:
+    if idx not in model.children:
         return False
     child = model.children[idx]
     if not getattr(child, "children", None):
@@ -607,7 +607,6 @@ async def test_tabulator_expanded_content_async(document, comm):
     df = makeMixedDataFrame()
 
     async def row_content(row):
-        await asyncio.sleep(0.05)
         return row.A
 
     table = Tabulator(df, expanded=[0], row_content=row_content)
@@ -622,7 +621,6 @@ async def test_tabulator_content_embed_async(document, comm):
     df = makeMixedDataFrame()
 
     async def row_content(row):
-        await asyncio.sleep(0.05)
         return row.A
 
     table = Tabulator(df, embed_content=True, row_content=row_content)
@@ -632,24 +630,17 @@ async def test_tabulator_content_embed_async(document, comm):
 
     model = table.get_root(document, comm)
 
-    await asyncio.sleep(0.05)
-
     await async_wait_until(lambda: len(model.children) == len(df))
 
-    await asyncio.sleep(0.05)
     for i, r in df.iterrows():
-        await asyncio.sleep(0.05)
         await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A}&lt;/pre&gt;")
 
     async def row_content(row):
-        await asyncio.sleep(0.01)
         return row.A + 1
 
     table.row_content = row_content
 
-    await asyncio.sleep(0.05)
     for i, r in df.iterrows():
-        await asyncio.sleep(0.05)
         await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;")
 
 

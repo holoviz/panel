@@ -1648,23 +1648,22 @@ class Tabulator(BaseTable):
 
     def _get_row_content_panel(self, row):
         from ..layout import Spacer
-        from ..pane import Placeholder, panel
+        from ..pane import panel
 
         content = self.row_content(row)
         if inspect.isawaitable(content):
-            placeholder = Placeholder(Spacer(height=30), loading=True)
-
             async def _await_content():
+                spacer = Spacer(height=30, loading=True, sizing_mode="stretch_width")
+                yield spacer
                 try:
-                    resolved = await content
+                    result = await content
                 except Exception:
-                    placeholder.loading = False
+                    spacer.loading = False
                     raise
+                yield result
 
-                placeholder.param.update(object=resolved, loading=False)
+            return panel(_await_content)
 
-            param.parameterized.async_executor(_await_content)
-            return placeholder
         return panel(content)
 
     def _get_children(self):
