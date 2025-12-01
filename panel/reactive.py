@@ -533,6 +533,10 @@ class Syncable(Renderable):
                     state._handle_exception(e)
 
     async def _event_coroutine(self, doc: Document, event: Event) -> None:
+        callbacks = state._change_callbacks.pop(doc, {})
+        for cb in callbacks.values():
+            await cb()
+
         if state._thread_pool:
             future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
@@ -543,10 +547,6 @@ class Syncable(Renderable):
                 state._handle_exception(e)
 
     def _change_event(self, doc: Document) -> None:
-        callbacks = state._change_callbacks.pop(doc, {})
-        for cb in callbacks.values():
-            cb()
-
         events = self._events
         self._events = {}
         with set_curdoc(doc):
