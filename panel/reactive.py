@@ -521,6 +521,8 @@ class Syncable(Renderable):
             if event_id not in callbacks:
                 return
             del callbacks[event_id]
+            if not callbacks and doc in state._change_callbacks:
+                del state._change_callbacks[doc]
 
         if state._thread_pool:
             future = state._thread_pool.submit(self._change_event, doc)
@@ -533,8 +535,8 @@ class Syncable(Renderable):
                     state._handle_exception(e)
 
     async def _event_coroutine(self, doc: Document, event: Event) -> None:
-        callbacks = state._change_callbacks.pop(doc, {})
-        for cb in callbacks.values():
+        callbacks = state._change_callbacks.get(doc, {})
+        for cb in list(callbacks.values()):
             await cb()
 
         if state._thread_pool:
@@ -592,7 +594,7 @@ class Syncable(Renderable):
             model.on_event(event_name, partial(method, doc))
 
     def _server_event(self, doc: Document, event: Event) -> None:
-        if doc.session_context and not state._unblocked(doc):
+        if doc.session_context and (not state._unblocked(doc) or doc in state._change_callbacks):
             cb = partial(self._event_coroutine, doc, event)
             with set_curdoc(doc):
                 state.execute(cb, schedule=True)
