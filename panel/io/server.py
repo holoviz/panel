@@ -480,6 +480,11 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated
     async def get(self, *args, **kwargs):
+        prefix = self.application.prefix
+        if prefix and self.request.uri == prefix and not prefix.endswith('/'):
+            self.redirect(f'{prefix}/')
+            return
+
         # Run global authorization callback
         payload = self._generate_token_payload()
         if config.authorize_callback:
