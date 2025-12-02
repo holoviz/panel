@@ -603,14 +603,14 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
                 index = self.index
                 apps = []
                 for slug in self.applications.keys():
+                    default_title = slug[1:]
                     slug = (
                         slug
                         if self.request.uri.endswith("/") or not self.prefix
                         else f"{self.prefix}{slug}"
                     )
                     # Try to get custom application page card title from config
-                    # using as default value the application page slug
-                    default_title = slug[1:].replace("_", " ").title()
+                    # using as default value the application name
                     title = config.index_titles.get(slug, default_title)
                     apps.append((slug, title))
                 apps = sorted(apps, key=lambda app: app[1])

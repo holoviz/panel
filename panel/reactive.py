@@ -14,6 +14,7 @@ import pathlib
 import re
 import sys
 import textwrap
+import uuid
 
 from collections import Counter, defaultdict, namedtuple
 from collections.abc import Callable, Mapping, Sequence
@@ -513,7 +514,14 @@ class Syncable(Renderable):
             with edit_readonly(state):
                 state._busy_counter -= 1
 
-    async def _change_coroutine(self, doc: Document) -> None:
+    async def _change_coroutine(self, doc: Document, event_id: str | None = None) -> None:
+        if event_id is not None:
+            # Determine if change event was already processed
+            callbacks = state._change_callbacks.get(doc, {})
+            if event_id not in callbacks:
+                return
+            del callbacks[event_id]
+
         if state._thread_pool:
             future = state._thread_pool.submit(self._change_event, doc)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
@@ -524,7 +532,11 @@ class Syncable(Renderable):
                 except Exception as e:
                     state._handle_exception(e)
 
-    async def _event_coroutine(self, doc: Document, event) -> None:
+    async def _event_coroutine(self, doc: Document, event: Event) -> None:
+        callbacks = state._change_callbacks.pop(doc, {})
+        for cb in callbacks.values():
+            await cb()
+
         if state._thread_pool:
             future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
@@ -603,9 +615,15 @@ class Syncable(Renderable):
             return
 
         if doc.session_context:
-            cb = partial(self._change_coroutine, doc)
+            event_id = uuid.uuid4().hex
+            cb = partial(self._change_coroutine, doc, event_id=event_id)
+            if doc in state._change_callbacks:
+                state._change_callbacks[doc][event_id] = cb
+            else:
+                state._change_callbacks[doc] = {event_id: cb}
             if attr in self._priority_changes:
-                doc.add_next_tick_callback(cb) # type: ignore
+                with set_curdoc(doc):
+                    state.execute(cb, schedule=True)
             else:
                 doc.add_timeout_callback(cb, self._debounce) # type: ignore
         else:
