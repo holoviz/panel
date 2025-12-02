@@ -528,7 +528,7 @@ class Param(Pane):
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
         non_param_kwargs = {k: v for k, v in kw_widget.items() if k not in widget_class.param}
 
-        if isinstance(widget_class, type) and issubclass(widget_class, Button):
+        if isinstance(widget_class, type) and isinstance(widget_class.param.value, param.Event):
             kwargs.pop('value', None)
 
         if isinstance(widget_class, WidgetBase):
@@ -638,11 +638,12 @@ class Param(Pane):
             elif p_key in updating or isinstance(p_obj, param.Event):
                 return
             elif isinstance(p_obj, param.Action):
-                prev_watcher = watchers[0]
-                widget.param.unwatch(prev_watcher)
-                def action(event):
-                    change.new(parameterized)
-                watchers[0] = widget.param.watch(action, 'clicks')
+                if change.type == "changed":
+                    prev_watcher = watchers[0]
+                    widget.param.unwatch(prev_watcher)
+                    def action(event):
+                        change.new(parameterized)
+                    watchers[0] = widget.param.watch(action, 'clicks')
                 return
             elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new

@@ -9,8 +9,11 @@ import pathlib
 import sys
 import textwrap
 
+from abc import abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Mapping
+from collections.abc import (
+    Awaitable, Callable, Iterator, Mapping,
+)
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
@@ -165,6 +168,9 @@ class PyComponent(Viewable, Layoutable):
             self._view__ = self._create__view()
         return super().select(selector) + self._view__.select(selector)
 
+    @abstractmethod
+    def __panel__(self) -> Viewable | Iterator[Viewable] | Awaitable[Viewable]:
+        raise NotImplementedError
 
 
 class ReactiveESMMetaclass(ReactiveMetaBase):
@@ -244,6 +250,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     _exports__: ClassVar[ExportSpec] = {}
 
     _importmap: ClassVar[dict[Literal['imports', 'scopes'], dict[str,str]]] = {}
+
+    _render_policy: Literal['manual', 'children'] = "children"
 
     __abstract = True
 
@@ -490,6 +498,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             'esm': self._render_esm(not config.autoreload, server=is_session),
             'events': events,
             'importmap': importmap,
+            'render_policy': self._render_policy,
             'name': cls.__name__
         })
         return props
@@ -813,6 +822,8 @@ class ReactComponent(ReactiveESM):
     _bokeh_model = _BkReactComponent
 
     _react_version = '18.3.1'
+
+    _render_policy = "manual"
 
     @classproperty  # type: ignore
     def _exports__(cls) -> ExportSpec:  # type: ignore

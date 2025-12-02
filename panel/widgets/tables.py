@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import datetime as dt
+import inspect
 import uuid
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from functools import partial
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, Sequence, TypedDict, cast,
+    TYPE_CHECKING, Any, ClassVar, Literal, TypedDict, cast,
 )
 
 import numpy as np
@@ -863,11 +864,11 @@ class BaseTable(ReactiveData, Widget):
 
         Parameters
         ----------
-        patch_value: (pd.DataFrame | pd.Series | Dict)
+        patch_value: pd.DataFrame | pd.Series | Dict
           The value(s) to patch the existing value with.
-        as_index: boolean
+        as_index: boolean, optional
           Whether to treat the patch index as DataFrame indexes (True)
-          or as simple integer index.
+          or as simple integer index. Default is True.
 
         Raises
         ------
@@ -937,7 +938,26 @@ class BaseTable(ReactiveData, Widget):
             patches = {}
             for k, v in patch_value.items():
                 values = []
-                for (patch_ind, value) in v:
+                if not isinstance(v, Sequence):
+                    raise ValueError(
+                        f'The patches for column {k!r} must be wrapped in an'
+                        'object of type sequence (list, tuple, etc.), not of '
+                        f'type {type(v).__name__!r}.'
+                    )
+                for sv in v:
+                    if not isinstance(sv, Sequence):
+                        raise ValueError(
+                            f'The individual patches for column {k!r} must be '
+                            'wrapped in an object of type sequence, not of type '
+                            f'{type(v).__name__!r}.'
+                        )
+                    if not len(sv) == 2:
+                        raise ValueError(
+                            f'The individual patches for column {k!r} must be '
+                            'wrapped in an object of type sequence with 2 items '
+                            f', not {len(sv)}.'
+                        )
+                    patch_ind, value = sv
                     data_ind = patch_ind
                     if isinstance(patch_ind, slice):
                         data_ind = range(patch_ind.start, patch_ind.stop, patch_ind.step or 1)
@@ -1253,9 +1273,10 @@ class Tabulator(BaseTable):
     page_size = param.Integer(default=None, bounds=(1, None), doc="""
         Number of rows to render per page, if pagination is enabled.""")
 
-    row_content = param.Callable(doc="""
+    row_content = param.Callable(allow_refs=False, doc="""
         A function which is given the DataFrame row and should return
-        a Panel object to render as additional detail below the row.""")
+        a Panel object to render as additional detail below the row.
+        The function may also be asynchronous.""")
 
     row_height = param.Integer(default=30, doc="""
         The height of each table row.""")
@@ -1625,10 +1646,29 @@ class Tabulator(BaseTable):
         for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
 
+    def _get_row_content_panel(self, row):
+        from ..layout import Spacer
+        from ..pane import panel
+
+        content = self.row_content(row)
+        if inspect.isawaitable(content):
+            async def _await_content():
+                spacer = Spacer(height=30, loading=True, sizing_mode="stretch_width")
+                yield spacer
+                try:
+                    result = await content
+                except Exception:
+                    spacer.loading = False
+                    raise
+                yield result
+
+            return panel(_await_content)
+
+        return panel(content)
+
     def _get_children(self):
         if self.row_content is None or self.value is None:
             return {}, [], []
-        from ..pane import panel
         df = self._processed
         if self.pagination == 'remote':
             nrows = self.page_size or self.initial_page_size
@@ -1647,7 +1687,7 @@ class Tabulator(BaseTable):
                 if idx in self._indexed_children:
                     child = self._indexed_children[idx]
                 else:
-                    child = panel(self.row_content(df.iloc[i]))
+                    child = self._get_row_content_panel(df.iloc[i])
                 indexed_children[idx] = children[i] = child
         else:
             expanded = []
@@ -1656,7 +1696,7 @@ class Tabulator(BaseTable):
                 if idx in self._indexed_children:
                     child = self._indexed_children[idx]
                 else:
-                    child = panel(self.row_content(self.value.iloc[i]))
+                    child = self._get_row_content_panel(self.value.iloc[i])
                 try:
                     loc = df.index.get_loc(idx)
                 except KeyError:

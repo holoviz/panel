@@ -561,6 +561,19 @@ def test_server_reuse_sessions(reuse_sessions):
     assert session.token in r1.content.decode('utf-8')
     assert session.token not in r2.content.decode('utf-8')
 
+def test_server_session_args(port, server_implementation):
+    session_args = []
+    def app():
+        arg = state.session_args.get("arg", [b"baz"])[0].decode('utf-8')
+        session_args.append(arg)
+        return arg
+
+    serve_and_wait(app, port=port)
+
+    requests.get(f"http://localhost:{port}/?arg=foo")
+    requests.get(f"http://localhost:{port}/?arg=bar")
+
+    assert session_args == ["foo", "bar"]
 
 @pytest.mark.xdist_group(name="server")
 def test_server_reuse_sessions_with_session_key_func(port, reuse_sessions):
@@ -783,6 +796,34 @@ def test_server_thread_pool_defer_load(server_implementation, threads):
 
     # Checks whether defer_load callback was executed concurrently
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+
+
+async def test_server_text_input_update_before_click_event(server_implementation):
+    button = Button(name='Click')
+    text_input = TextInput()
+
+    called = []
+
+    def cb(event):
+        called.append(event)
+        # cb would be called before `value` is set would the Bokeh event
+        # not be debounced.
+        assert text_input.value == 'foo'
+
+    button.on_click(cb)
+    layout = Row(button, text_input)
+
+    serve_and_request(layout)
+
+    model = list(layout._models.values())[0][0]
+    doc = model.document
+    with set_curdoc(doc):
+        text_input._server_change(doc, ref=None, subpath=None, attr='value', old='', new='foo')
+        # Give a chance to the event to propagate
+        await asyncio.sleep(0.01)
+        button._server_event(doc, ButtonClick(model=model.children[0]))
+
+    wait_until(lambda: bool(called))
 
 
 def test_server_thread_pool_change_event(server_implementation, threads):

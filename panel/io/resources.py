@@ -23,7 +23,6 @@ from typing import (
 )
 
 import bokeh.embed.wrappers
-import param
 
 from bokeh.embed.bundle import (
     CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle,
@@ -38,7 +37,7 @@ from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
-from ..util import isurl, url_path
+from ..util import _descendents, isurl, url_path
 from .state import state
 
 if TYPE_CHECKING:
@@ -714,7 +713,7 @@ class Resources(BkResources):
         Adds resources for ReactiveHTML components.
         """
         from ..reactive import ReactiveCustomBase
-        for model in param.concrete_descendents(ReactiveCustomBase).values():
+        for model in _descendents(ReactiveCustomBase, concrete=True):
             cls_files = getattr(model, resource_type, None)
             if not (cls_files and model._loaded()):
                 continue
@@ -868,6 +867,13 @@ class Resources(BkResources):
         js_files = self.adjust_paths([
             js for js in files if self.mode != 'inline' or not is_cdn_url(js)
         ])
+
+        # Load requirejs last to avoid interfering with other libraries
+        require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
+        if require_index:
+            requirejs = js_files.pop(require_index[0])
+            js_files.append(requirejs)
+
         return js_files
 
     @property
@@ -893,7 +899,7 @@ class Resources(BkResources):
                 if res not in modules
             ]
 
-        for model in param.concrete_descendents(ReactiveCustomBase).values():
+        for model in _descendents(ReactiveCustomBase, concrete=True):
             if not (getattr(model, '__javascript_modules__', None) and model._loaded()):
                 continue
             for js_module in model.__javascript_modules__:

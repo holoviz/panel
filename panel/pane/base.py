@@ -29,7 +29,7 @@ from ..layout.base import (
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
-from ..util import param_reprs
+from ..util import _descendents, param_reprs
 from ..util.checks import is_dataframe, is_series
 from ..util.parameters import get_params_to_inherit
 from ..viewable import (
@@ -249,7 +249,7 @@ class PaneBase(Layoutable):
         if isinstance(obj, Viewable):
             return type(obj)
         descendents = []
-        for p in param.concrete_descendents(PaneBase).values():
+        for p in _descendents(PaneBase, concrete=True):
             if p.priority is None:
                 applies = True
                 try:
@@ -638,7 +638,16 @@ class ReplacementPane(Pane):
         })
 
     def _update_inner_layout(self, *events):
-        self._pane.param.update({event.name: event.new for event in events})
+        updates = {}
+        for event in events:
+            value = event.new
+            if event.name in ('css_classes', 'stylesheets'):
+                value = [
+                    v for v in getattr(self._pane, event.name)
+                    if v not in event.old
+                ] + event.new
+            updates[event.name] = value
+        self._pane.param.update(updates)
 
     @classmethod
     def _recursive_update(cls, old: Reactive, new: Reactive):

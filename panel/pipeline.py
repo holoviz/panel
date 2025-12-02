@@ -10,7 +10,6 @@ import param
 
 from .layout import Column, Row
 from .pane import HoloViews, Markdown
-from .param import Param
 from .util import param_reprs
 from .viewable import Viewer
 from .widgets import Button, Select
@@ -161,9 +160,9 @@ class Pipeline(Viewer):
         Whether to show the header with the title, network diagram,
         and buttons.""")
 
-    next = param.Action(default=lambda x: x.param.trigger('next'))
+    next = param.Event()
 
-    previous = param.Action(default=lambda x: x.param.trigger('previous'))
+    previous = param.Event()
 
     _ignored_refs: ClassVar[tuple[str, ...]] = ('next_parameter', 'ready_parameter')
 
@@ -189,10 +188,10 @@ class Pipeline(Viewer):
         # Declare UI components
         self._progress_sel = hv.streams.Selection1D()
         self._progress_sel.add_subscriber(self._set_stage)
-        self.prev_button = Param(self.param.previous).layout[0]
+        self.prev_button = Button.from_param(self.param.previous)
         self.prev_button.width = 125
         self.prev_selector = Select(width=125)
-        self.next_button = Param(self.param.next).layout[0]
+        self.next_button = Button.from_param(self.param.next)
         self.next_button.width = 125
         self.next_selector = Select(width=125)
         self.prev_button.disabled = True
@@ -410,7 +409,8 @@ class Pipeline(Viewer):
         self._stage = self._next_stage
         self.stage.loading = True
         try:
-            self.stage[0] = self._init_stage()
+            if self._stage is not None:
+                self.stage[0] = self._init_stage()
         except Exception as e:
             self._error = self._stage
             self._stage = prev_stage

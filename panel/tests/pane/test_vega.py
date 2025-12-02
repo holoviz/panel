@@ -1,4 +1,7 @@
+import sys
+
 from copy import deepcopy
+from unittest.mock import patch
 
 import pytest
 
@@ -19,6 +22,13 @@ import panel as pn
 
 from panel.models.vega import VegaPlot
 from panel.pane import PaneBase, Vega
+from panel.pane.image import PDF, SVG, Image
+from panel.pane.markup import HTML
+
+try:
+    import vl_convert as vlc  # type: ignore[import-untyped]
+except ImportError:
+    vlc = None
 
 blank_schema = {'$schema': ''}
 
@@ -328,3 +338,213 @@ def test_altair_pane(document, comm):
 def test_vega_can_instantiate_empty_with_sizing_mode(document, comm):
     pane = Vega(sizing_mode="stretch_width")
     pane.get_root(document, comm=comm)
+
+
+class TestVegaExport:
+    """Tests for Vega.export() method."""
+
+    @pytest.fixture
+    def vl_convert(self):
+        """Fixture to skip tests if vl_convert is not available."""
+        pytest.importorskip('vl_convert')
+
+    def test_export_requires_vl_convert(self):
+        """Test that export raises ImportError if vl_convert is not available."""
+        pane = Vega(vega_example)
+        with patch.dict(sys.modules, {'vl_convert': None}):
+            with pytest.raises(ImportError, match='vl-convert-python is required'):
+                pane.export('png')
+
+    def test_export_with_dict_spec(self, vl_convert):
+        """Test export with a dict specification."""
+        pane = Vega(vega_example)
+
+        # Test PNG export returns bytes
+        result = pane.export('png')
+        assert isinstance(result, bytes)
+        assert len(result) > 0
+
+        # Test SVG export returns string
+        result = pane.export('svg')
+        assert isinstance(result, str)
+        assert '<svg' in result.lower()
+
+    @altair_available
+    def test_export_with_altair_chart(self, vl_convert):
+        """Test export with an Altair chart object."""
+
+        pane = Vega(altair_example())
+
+        # Test PNG export returns bytes
+        result = pane.export('png')
+        assert isinstance(result, bytes)
+        assert len(result) > 0
+
+        # Test SVG export returns string
+        result = pane.export('svg')
+        assert isinstance(result, str)
+        assert '<svg' in result.lower()
+
+    def test_export_png_format(self, vl_convert):
+        """Test PNG export format."""
+        pane = Vega(vega_example)
+        result = pane.export('png')
+        assert isinstance(result, bytes)
+        # PNG files start with specific magic bytes
+        assert result[:8] == b'\x89PNG\r\n\x1a\n'
+
+    def test_export_jpeg_format(self, vl_convert):
+        """Test JPEG export format."""
+        pane = Vega(vega_example)
+        result = pane.export('jpeg')
+        assert isinstance(result, bytes)
+        # JPEG files start with FFD8
+        assert result[:2] == b'\xff\xd8'
+
+    def test_export_svg_format(self, vl_convert):
+        """Test SVG export format."""
+        pane = Vega(vega_example)
+        result = pane.export('svg')
+        assert isinstance(result, str)
+        assert result.startswith('<svg')
+        assert '</svg>' in result
+
+    def test_export_pdf_format(self, vl_convert):
+        """Test PDF export format."""
+        pane = Vega(vega_example)
+        result = pane.export('pdf')
+        assert isinstance(result, bytes)
+        # PDF files start with %PDF
+        assert result.startswith(b'%PDF')
+
+    def test_export_html_format(self, vl_convert):
+        """Test HTML export format."""
+        pane = Vega(vega_example)
+        result = pane.export('html')
+        assert isinstance(result, str)
+        assert '<html' in result.lower() or '<!doctype' in result.lower()
+
+    def test_export_url_format(self, vl_convert):
+        """Test URL export format."""
+        pane = Vega(vega_example)
+        result = pane.export('url')
+        assert isinstance(result, str)
+        assert result.startswith('https://')
+        assert 'vega.github.io' in result
+
+    def test_export_case_insensitive(self, vl_convert):
+        """Test that format is case insensitive."""
+        pane = Vega(vega_example)
+
+        # Should handle uppercase
+        result_upper = pane.export('PNG')
+        assert isinstance(result_upper, bytes)
+
+        result_mixed = pane.export('Svg')
+        assert isinstance(result_mixed, str)
+
+    def test_export_invalid_format(self, vl_convert):
+        """Test that invalid format raises ValueError."""
+        pane = Vega(vega_example)
+
+        with pytest.raises(ValueError, match="Unsupported format 'invalid'"):
+            pane.export('invalid')
+
+    def test_export_dimension_handling(self, vl_convert):
+        """Test dimension handling: pane params > spec values > defaults (800x600)."""
+        # Test 1: Default dimensions when nothing specified
+        spec_no_dims = {
+            '$schema': 'https://vega.github.io/schema/vega-lite/v5.0.0.json',
+            'mark': 'bar',
+            'data': {'values': [{'x': 'A', 'y': 5}]},
+            'encoding': {'x': {'field': 'x', 'type': 'ordinal'},
+                        'y': {'field': 'y', 'type': 'quantitative'}}
+        }
+        pane = Vega(spec_no_dims)
+        result = pane.export('svg')
+        assert '800' in result and '600' in result
+
+        # Test 2: Spec dimensions used when pane has none
+        spec = dict(vega_example)
+        spec['width'] = 500
+        spec['height'] = 400
+        pane = Vega(spec, width=None, height=None)
+        result = pane.export('svg')
+        assert '500' in result and '400' in result
+
+        # Test 3: Pane width overrides spec width, spec height preserved
+        spec['width'] = 300
+        spec['height'] = 250
+        pane = Vega(spec, width=700)
+        result = pane.export('svg')
+        assert '700' in result and '250' in result
+
+        # Test 4: Pane height overrides spec height, spec width preserved
+        pane = Vega(spec, height=600)
+        result = pane.export('svg')
+        assert '300' in result and '600' in result
+
+        # Test 5: Both pane dimensions override spec
+        pane = Vega(spec, width=1000, height=800)
+        result = pane.export('svg')
+        assert '1000' in result and '800' in result
+
+    @altair_available
+    def test_export_altair_dimensions(self, vl_convert):
+        """Test dimension handling with Altair charts."""
+        # Altair chart dimensions in spec
+        chart = altair_example()
+        chart = chart.properties(width=600, height=400)
+        pane = Vega(chart)
+        result = pane.export('svg')
+        assert '600' in result and '400' in result
+
+        # Pane dimensions override Altair dimensions
+        chart = chart.properties(width=300, height=200)
+        pane = Vega(chart, width=1000, height=750)
+        result = pane.export('svg')
+        assert '1000' in result and '750' in result
+
+    def test_export_kwargs_passed_to_vl_convert(self, vl_convert):
+        """Test that additional kwargs are passed to vl_convert functions."""
+        pane = Vega(vega_example)
+        with patch.object(vlc, 'vegalite_to_png', return_value=b'fake_png') as mock_convert:
+            result = pane.export('png', scale=2.0)
+            assert result == b'fake_png'
+            assert mock_convert.call_args[1]['scale'] == 2.0
+
+    @pytest.mark.parametrize('fmt,expected_pane', [
+        ('png', Image),
+        ('jpeg', Image),
+        ('svg', SVG),
+        ('pdf', PDF),
+        ('html', HTML),
+    ])
+    def test_export_as_pane(self, vl_convert, fmt, expected_pane):
+        """Test export with as_pane=True returns correct pane type."""
+        pane = Vega(vega_example)
+        result = pane.export(fmt, as_pane=True)
+        assert isinstance(result, expected_pane)
+
+    def test_export_as_pane_url(self, vl_convert):
+        """Test URL export with as_pane=True returns HTML pane with iframe."""
+        pane = Vega(vega_example)
+        result = pane.export('url', as_pane=True)
+        assert isinstance(result, HTML)
+        # Check that the object contains an iframe tag
+        assert '<iframe' in result.object.lower()
+        assert 'https://' in result.object
+
+    def test_export_as_pane_false_returns_raw_data(self, vl_convert):
+        """Test that as_pane=False returns raw data, not panes."""
+        pane = Vega(vega_example)
+
+        # PNG returns bytes, not Image pane
+        result = pane.export('png', as_pane=False)
+        assert isinstance(result, bytes)
+        assert not isinstance(result, Image)
+
+        # SVG returns string, not SVG pane
+        result = pane.export('svg', as_pane=False)
+        assert isinstance(result, str)
+        assert not isinstance(result, SVG)
