@@ -3,11 +3,11 @@ from __future__ import annotations
 import datetime as dt
 import uuid
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from functools import partial
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, Sequence, TypedDict, cast,
+    TYPE_CHECKING, Any, ClassVar, Literal, TypedDict, cast,
 )
 
 import numpy as np
@@ -863,11 +863,11 @@ class BaseTable(ReactiveData, Widget):
 
         Parameters
         ----------
-        patch_value: (pd.DataFrame | pd.Series | Dict)
+        patch_value: pd.DataFrame | pd.Series | Dict
           The value(s) to patch the existing value with.
-        as_index: boolean
+        as_index: boolean, optional
           Whether to treat the patch index as DataFrame indexes (True)
-          or as simple integer index.
+          or as simple integer index. Default is True.
 
         Raises
         ------
@@ -937,7 +937,26 @@ class BaseTable(ReactiveData, Widget):
             patches = {}
             for k, v in patch_value.items():
                 values = []
-                for (patch_ind, value) in v:
+                if not isinstance(v, Sequence):
+                    raise ValueError(
+                        f'The patches for column {k!r} must be wrapped in an'
+                        'object of type sequence (list, tuple, etc.), not of '
+                        f'type {type(v).__name__!r}.'
+                    )
+                for sv in v:
+                    if not isinstance(sv, Sequence):
+                        raise ValueError(
+                            f'The individual patches for column {k!r} must be '
+                            'wrapped in an object of type sequence, not of type '
+                            f'{type(v).__name__!r}.'
+                        )
+                    if not len(sv) == 2:
+                        raise ValueError(
+                            f'The individual patches for column {k!r} must be '
+                            'wrapped in an object of type sequence with 2 items '
+                            f', not {len(sv)}.'
+                        )
+                    patch_ind, value = sv
                     data_ind = patch_ind
                     if isinstance(patch_ind, slice):
                         data_ind = range(patch_ind.start, patch_ind.stop, patch_ind.step or 1)

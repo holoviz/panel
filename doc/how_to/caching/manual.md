@@ -27,4 +27,5 @@ data = pn.state.as_cached('data', load_data, *args, **kwargs)
 Now, the first time the app is loaded the data will be cached and subsequent sessions will simply look up the data in the cache, speeding up the process of rendering. If you want to warm up the cache before the first user visits the application you can also provide the `--warm` argument to the `panel serve` command, which will ensure the application is initialized as soon as it is launched. If you want to populate the cache in a separate script from your main application you may also provide the path to a setup script using the `--setup` argument to `panel serve`.
 
 ## Related Resources
+
 - If you want to periodically update the cache, consult the [How to > Schedule Tasks](../callbacks/schedule) guide.
