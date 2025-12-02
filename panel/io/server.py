@@ -481,8 +481,10 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
     @authenticated
     async def get(self, *args, **kwargs):
         prefix = self.application.prefix
-        if prefix and self.request.uri == prefix and not prefix.endswith('/'):
-            self.redirect(f'{prefix}/')
+        if prefix and self.request.path == prefix and not prefix.endswith('/'):
+            query_string = self.request.query if self.request.query else ''
+            redirect_url = f'{prefix}/' + (f'?{query_string}' if query_string else '')
+            self.redirect(redirect_url)
             return
 
         # Run global authorization callback
