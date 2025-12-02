@@ -22,6 +22,7 @@ Panel 1.8.4 includes key bug fixes and behavior improvements around event orderi
 - Ensure discrete events (e.g. button clicks) are scheduled after change events ([#8311](https://github.com/holoviz/panel/pull/8311), [#8319](https://github.com/holoviz/panel/pull/8319))
 - Reinstate application name as default index page title ([#8313](https://github.com/holoviz/panel/pull/8313))
 - Redirect requests to the prefixed root when `--prefix` is set ([#8321](https://github.com/holoviz/panel/pull/8321))
+- Ensure non-active `Tabs` are not clickable ([#8324](https://github.com/holoviz/panel/pull/8324))
 
 ### 🧪 Maintenance & Infrastructure
 
@@ -29,6 +30,10 @@ Panel 1.8.4 includes key bug fixes and behavior improvements around event orderi
 - Fix type checking errors ([#8314](https://github.com/holoviz/panel/pull/8314))
 - Pin `jupyterlite-core` temporarily ([#8315](https://github.com/holoviz/panel/pull/8315))
 - Clean up `pixi.toml` project config ([#8303](https://github.com/holoviz/panel/pull/8303))
+
+### ⚠️ Compatibility & Deprecations
+
+- Heads up: Starting with Panel 1.9.0, pandas will no longer be installed by default. If your code depends on pandas and you were relying on Panel to install it implicitly, you’ll need to add it as an explicit dependency in your environment or project configuration.
 
 ## Version 1.8.3
 
