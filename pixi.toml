@@ -279,7 +279,7 @@ plotly = ">=6.0"
 # Optional dependencies - dev
 watchfiles = "*"
 # Test dependencies
-# altair = "*"
+altair = "*"
 anywidget = "*"
 bokeh-fastapi = "*"
 bokeh_sampledata = "*"
@@ -390,6 +390,7 @@ depends-on = [
 [feature.build.dependencies]
 python-build = "*"
 conda-build = "*"
+conda-libmamba-solver = "!=25.11.0" # tmp pin https://github.com/conda/conda-libmamba-solver/issues/790
 
 [feature.build.tasks]
 build-conda = 'bash scripts/conda/build.sh'
