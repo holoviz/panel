@@ -21,7 +21,9 @@ from packaging.version import Version
 from panel.depends import bind
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
-from panel.tests.util import mpl_available, serve_and_request, wait_until
+from panel.tests.util import (
+    async_wait_until, mpl_available, serve_and_request, wait_until,
+)
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
@@ -588,6 +590,55 @@ def test_tabulator_expanded_content(document, comm):
     assert 2 in model.children
     row2 = model.children[2]
     assert row2.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+
+def resolve_async_row_content_text(model, idx):
+    if idx not in model.children:
+        return False
+    child = model.children[idx]
+    if not getattr(child, "children", None):
+        return False
+    if not hasattr(child.children[0], "text"):
+        return False
+    return child.children[0].text
+
+
+async def test_tabulator_expanded_content_async(document, comm):
+    df = makeMixedDataFrame()
+
+    async def row_content(row):
+        return row.A
+
+    table = Tabulator(df, expanded=[0], row_content=row_content)
+
+    model = table.get_root(document, comm)
+
+    await async_wait_until(lambda: resolve_async_row_content_text(model, 0) == "&lt;pre&gt;0.0&lt;/pre&gt;")
+    assert len(model.children) == 1
+
+
+async def test_tabulator_content_embed_async(document, comm):
+    df = makeMixedDataFrame()
+
+    async def row_content(row):
+        return row.A
+
+    table = Tabulator(df, embed_content=True, row_content=row_content)
+
+    model = table.get_root(document, comm)
+
+    assert len(model.children) == len(df)
+
+    for i, r in df.iterrows():
+        await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A}&lt;/pre&gt;")
+
+    async def row_content(row):
+        return row.A + 1
+
+    table.row_content = row_content
+
+    for i, r in df.iterrows():
+        await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;")
 
 
 def test_tabulator_remote_paginated_expanded_content(document, comm):
