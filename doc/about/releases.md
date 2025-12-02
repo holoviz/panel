@@ -4,7 +4,7 @@
 
 Panel 1.8.4 includes key bug fixes and behavior improvements around event ordering, Tabulator interop, and Jupyter/Notebook usage. It also improves support for async usage, validation, and app routing—plus quality-of-life enhancements for both developers and users. Thanks to @philippjfr, @hoxbro, @maximlt, @ahuang11, @MarcSkovMadsen, @TheoMathurin, @ruoyu0088, and @dieterweber for your contributions to this release!
 
-### ✨ Bug Fixes
+### ✨ Enhancements
 
 - Add config toggle to disable Bokeh validation ([#8294](https://github.com/holoviz/panel/pull/8294))
 - Allow `Tabulator.row_content` to be an async function ([#8309](https://github.com/holoviz/panel/pull/8309))
