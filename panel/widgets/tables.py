@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import inspect
 import uuid
 
 from collections.abc import Callable, Mapping, Sequence
@@ -1272,9 +1273,10 @@ class Tabulator(BaseTable):
     page_size = param.Integer(default=None, bounds=(1, None), doc="""
         Number of rows to render per page, if pagination is enabled.""")
 
-    row_content = param.Callable(doc="""
+    row_content = param.Callable(allow_refs=False, doc="""
         A function which is given the DataFrame row and should return
-        a Panel object to render as additional detail below the row.""")
+        a Panel object to render as additional detail below the row.
+        The function may also be asynchronous.""")
 
     row_height = param.Integer(default=30, doc="""
         The height of each table row.""")
@@ -1644,10 +1646,29 @@ class Tabulator(BaseTable):
         for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
 
+    def _get_row_content_panel(self, row):
+        from ..layout import Spacer
+        from ..pane import panel
+
+        content = self.row_content(row)
+        if inspect.isawaitable(content):
+            async def _await_content():
+                spacer = Spacer(height=30, loading=True, sizing_mode="stretch_width")
+                yield spacer
+                try:
+                    result = await content
+                except Exception:
+                    spacer.loading = False
+                    raise
+                yield result
+
+            return panel(_await_content)
+
+        return panel(content)
+
     def _get_children(self):
         if self.row_content is None or self.value is None:
             return {}, [], []
-        from ..pane import panel
         df = self._processed
         if self.pagination == 'remote':
             nrows = self.page_size or self.initial_page_size
@@ -1666,7 +1687,7 @@ class Tabulator(BaseTable):
                 if idx in self._indexed_children:
                     child = self._indexed_children[idx]
                 else:
-                    child = panel(self.row_content(df.iloc[i]))
+                    child = self._get_row_content_panel(df.iloc[i])
                 indexed_children[idx] = children[i] = child
         else:
             expanded = []
@@ -1675,7 +1696,7 @@ class Tabulator(BaseTable):
                 if idx in self._indexed_children:
                     child = self._indexed_children[idx]
                 else:
-                    child = panel(self.row_content(self.value.iloc[i]))
+                    child = self._get_row_content_panel(self.value.iloc[i])
                 try:
                     loc = df.index.get_loc(idx)
                 except KeyError:

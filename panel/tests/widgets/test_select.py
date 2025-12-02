@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from panel.layout import GridBox, Row
+from panel.layout import Column, GridBox, Row
 from panel.pane import panel
 from panel.tests.util import mpl_available
 from panel.widgets import (
@@ -842,6 +842,29 @@ def test_nested_select_layout_dynamic_update(document, comm):
 
     select.layout = Row
     assert isinstance(select._composite, Row)
+
+
+def test_nested_select_propagate_layoutable_params(document, comm):
+    select = NestedSelect(
+        options={
+            "gfs": {"tmp": [1000, 500], "pcp": [1000]},
+            "name": {"tmp": [1000, 925, 850, 700, 500], "pcp": [1000]},
+        },
+        sizing_mode="stretch_width",
+        max_width=500,
+        layout={"type": Column, "height": 300},
+        levels=["model", {"name": "var", "height": 100}, {"name": "level", "sizing_mode": "fixed", "width": 150}],
+    )
+    widgets = select._widgets
+    assert widgets[0].max_width == 500
+    assert widgets[0].sizing_mode == "stretch_width"
+    assert widgets[1].max_width == 500
+    assert widgets[1].height == 100
+    assert widgets[1].sizing_mode == "stretch_width"
+    assert widgets[2].max_width == 500
+    assert widgets[2].sizing_mode == "fixed"
+    assert widgets[2].width == 150
+    assert select._composite[0].height == 300
 
 
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
