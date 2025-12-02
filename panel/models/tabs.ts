@@ -18,7 +18,7 @@ function hide(element: HTMLElement): void {
   element.style.visibility = "hidden"
   element.style.opacity = "0"
   element.style.pointerEvents = "none"
-   element.setAttribute("aria-hidden", "true")
+  element.setAttribute("aria-hidden", "true")
 }
 
 export class TabsView extends BkTabsView {
