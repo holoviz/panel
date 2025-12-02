@@ -89,6 +89,19 @@ def test_server_static_dirs():
     with open(__file__, encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+def test_server_prefix_root_redirect():
+    html = Markdown('# Title')
+
+    response = serve_and_request(html, prefix="/foo", suffix="/foo")
+
+    assert len(response.history)
+    redirect = response.history[0]
+    assert redirect.status_code == 302
+    assert redirect.url.endswith('/foo')
+
+    assert response.status_code == 200
+    assert response.url.endswith('/foo/')
+
 def test_server_static_dirs_index():
     html = Markdown('# Title')
 
