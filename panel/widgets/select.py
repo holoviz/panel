@@ -545,6 +545,7 @@ class NestedSelect(CompositeWidget):
         """
         level = self._levels[i]
         widget_kwargs = self._collect_layoutable_kwargs()
+        widget_kwargs.pop("visible", None)  # this will be set dynamically
         if isinstance(level, int):
             return Select, widget_kwargs
         elif isinstance(level, str):
