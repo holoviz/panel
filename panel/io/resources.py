@@ -874,6 +874,11 @@ class Resources(BkResources):
                 re.sub(r"\.min\.js$", ".esm.min.js", url) if bokeh_pattern.search(url) else url
                 for url in js_files
             ]
+        # Load requirejs last to avoid interfering with other libraries
+        require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
+        if require_index:
+            requirejs = js_files.pop(require_index[0])
+            js_files.append(requirejs)
 
         return js_files
 

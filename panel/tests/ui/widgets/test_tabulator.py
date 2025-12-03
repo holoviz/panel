@@ -19,6 +19,7 @@ from bokeh.models.widgets.tables import (
 )
 from playwright.sync_api import expect
 
+from panel import extension
 from panel.depends import bind
 from panel.io.model import JSCode
 from panel.io.state import state
@@ -104,6 +105,18 @@ def test_tabulator_no_console_error(page, df_mixed):
 
     msgs, _ = serve_component(page, widget)
 
+    page.wait_for_timeout(1000)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+def test_tabulator_with_loading_ipywidgets_no_console_error(page, df_mixed):
+
+    def app():
+        extension("ipywidgets", "tabulator")
+        return Tabulator(df_mixed)
+
+    msgs, _ = serve_component(page, app)
     page.wait_for_timeout(1000)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []

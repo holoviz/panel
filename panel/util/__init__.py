@@ -26,10 +26,12 @@ from importlib import import_module
 from typing import Any, AnyStr
 
 import bokeh
+import bokeh.util.callback_manager
 import numpy as np
 import param
 
 from bokeh.core.has_props import _default_resolver
+from bokeh.core.property.bases import Property
 from bokeh.model import Model
 from packaging.version import Version
 
@@ -577,3 +579,26 @@ def _descendents(class_: type, concrete: bool = False) -> list[type]:
             if b not in q and b not in out:
                 q.append(b)
     return [kls for kls in out if not (concrete and _is_abstract(kls))][::-1]
+
+
+_orig_check_callback = bokeh.util.callback_manager._check_callback
+_orig_nargs = bokeh.util.callback_manager._nargs
+
+def set_bokeh_validation(validate: bool):
+    """
+    Sets the bokeh validation mode for properties and callbacks.
+
+    Parameters
+    ----------
+    validate: bool
+        Whether to enable validation.
+    """
+    Property._should_validate = validate
+    if validate:
+        bokeh.util.callback_manager._check_callback = _orig_check_callback
+        bokeh.util.callback_manager._nargs = _orig_nargs
+    else:
+        def _check_callback(callback, fargs, what=None): return
+        def _nargs(fn): return 1
+        bokeh.util.callback_manager._check_callback = _check_callback
+        bokeh.util.callback_manager._nargs = _nargs

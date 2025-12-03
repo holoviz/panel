@@ -89,6 +89,19 @@ def test_server_static_dirs():
     with open(__file__, encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+def test_server_prefix_root_redirect():
+    html = Markdown('# Title')
+
+    response = serve_and_request(html, prefix="/foo", suffix="/foo")
+
+    assert len(response.history)
+    redirect = response.history[0]
+    assert redirect.status_code == 302
+    assert redirect.url.endswith('/foo')
+
+    assert response.status_code == 200
+    assert response.url.endswith('/foo/')
+
 def test_server_static_dirs_index():
     html = Markdown('# Title')
 
@@ -796,6 +809,34 @@ def test_server_thread_pool_defer_load(server_implementation, threads):
 
     # Checks whether defer_load callback was executed concurrently
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+
+
+async def test_server_text_input_update_before_click_event(server_implementation):
+    button = Button(name='Click')
+    text_input = TextInput()
+
+    called = []
+
+    def cb(event):
+        called.append(event)
+        # cb would be called before `value` is set would the Bokeh event
+        # not be debounced.
+        assert text_input.value == 'foo'
+
+    button.on_click(cb)
+    layout = Row(button, text_input)
+
+    serve_and_request(layout)
+
+    model = list(layout._models.values())[0][0]
+    doc = model.document
+    with set_curdoc(doc):
+        text_input._server_change(doc, ref=None, subpath=None, attr='value', old='', new='foo')
+        # Give a chance to the event to propagate
+        await asyncio.sleep(0.01)
+        button._server_event(doc, ButtonClick(model=model.children[0]))
+
+    wait_until(lambda: bool(called))
 
 
 def test_server_thread_pool_change_event(server_implementation, threads):

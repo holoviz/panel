@@ -480,6 +480,13 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated
     async def get(self, *args, **kwargs):
+        prefix = self.application.prefix
+        if prefix and self.request.path == prefix and not prefix.endswith('/'):
+            query_string = self.request.query if self.request.query else ''
+            redirect_url = f'{prefix}/' + (f'?{query_string}' if query_string else '')
+            self.redirect(redirect_url)
+            return
+
         # Run global authorization callback
         payload = self._generate_token_payload()
         if config.authorize_callback:
@@ -603,14 +610,14 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
                 index = self.index
                 apps = []
                 for slug in self.applications.keys():
+                    default_title = slug[1:]
                     slug = (
                         slug
                         if self.request.uri.endswith("/") or not self.prefix
                         else f"{self.prefix}{slug}"
                     )
                     # Try to get custom application page card title from config
-                    # using as default value the application page slug
-                    default_title = slug[1:].replace("_", " ").title()
+                    # using as default value the application name
                     title = config.index_titles.get(slug, default_title)
                     apps.append((slug, title))
                 apps = sorted(apps, key=lambda app: app[1])
