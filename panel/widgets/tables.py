@@ -1963,8 +1963,6 @@ class Tabulator(BaseTable):
             'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
         )
         model = super()._get_model(doc, root, parent, comm)
-        from ..io.resources import bundled_module_string
-        model.__js_module__ = bundled_module_string(model.__class__, notebook=isinstance(comm, JupyterComm))
         root = root or model
         self._child_panels, removed, expanded = self._get_children()
         model.expanded = expanded

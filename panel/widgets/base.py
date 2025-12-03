@@ -177,7 +177,7 @@ class Widget(Reactive, WidgetBase):
     def _sync__label(self):
         self.label = self.name
 
-    @param.depends("name", watch=True)
+    @param.depends("label", watch=True)
     def _sync__name(self):
         self.name = self.label
 
