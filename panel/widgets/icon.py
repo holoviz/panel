@@ -34,7 +34,7 @@ class _ClickableIcon(Widget):
     _widget_type = _PnClickableIcon
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, 'name': 'title',
+        **TooltipMixin._rename, 'label': 'title',
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -118,7 +118,7 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
     _widget_type = _PnButtonIcon
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, 'name': 'title', 'clicks': None,
+        **TooltipMixin._rename, 'label': 'title', 'clicks': None,
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
