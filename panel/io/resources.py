@@ -868,6 +868,12 @@ class Resources(BkResources):
             js for js in files if self.mode != 'inline' or not is_cdn_url(js)
         ])
 
+        if self.notebook:
+            bokeh_pattern = re.compile(r"/bokeh-[\d.]+(?:rc\d+|dev\d+)?\.min\.js$")
+            js_files = [
+                re.sub(r"\.min\.js$", ".esm.min.js", url) if bokeh_pattern.search(url) else url
+                for url in js_files
+            ]
         # Load requirejs last to avoid interfering with other libraries
         require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
         if require_index:
