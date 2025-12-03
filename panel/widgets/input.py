@@ -444,7 +444,7 @@ class StaticText(Widget):
 
     _format: ClassVar[str] = '<b>{title}</b>: {value}'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'text'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'label': None, 'value': 'text'}
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': 'target.text.split(": ")[0]+": "+value'
@@ -1238,9 +1238,9 @@ class LiteralInput(Widget):
                     else:
                         value = typed_value
             msg['value'] = value
-        msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
+        msg['label'] = msg.get('title', self.label).replace(self._state, '') + new_state
         self._state = new_state
-        self.param.trigger('name')
+        self.param.trigger('label')
         return msg
 
     def _process_param_change(self, msg):
@@ -1399,7 +1399,7 @@ class DatetimeInput(LiteralInput):
                     new_state = ' (out of bounds)'
                     value = self.value
             msg['value'] = value
-        msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
+        msg['label'] = msg.get('title', self.label).replace(self._state, '') + new_state
         self._state = new_state
         return msg
 
@@ -1460,9 +1460,9 @@ class DatetimeRangeInput(CompositeWidget):
         self._update_widgets()
         self._update_label()
 
-    @param.depends('name', '_start.name', '_end.name', watch=True)
+    @param.depends('label', '_start.label', '_end.label', watch=True)
     def _update_label(self):
-        self._text.value = f'{self.name}{self._start.name}{self._end.name}{self._msg}'
+        self._text.value = f'{self.label}{self._start.label}{self._end.label}{self._msg}'
 
     @param.depends('_start.value', '_end.value', watch=True)
     def _update(self):
@@ -1507,7 +1507,7 @@ class _BooleanWidget(Widget):
 
     _supports_embed: bool = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active'}
 
     __abstract = True
 

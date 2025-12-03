@@ -150,7 +150,7 @@ class BaseTable(ReactiveData, Widget):
     ]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'hierarchical': None, 'name': None, 'selection': None
+        'hierarchical': None, 'label': None, 'selection': None
     }
 
     __abstract = True
@@ -1963,6 +1963,8 @@ class Tabulator(BaseTable):
             'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
         )
         model = super()._get_model(doc, root, parent, comm)
+        from ..io.resources import bundled_module_string
+        model.__js_module__ = bundled_module_string(model.__class__, notebook=isinstance(comm, JupyterComm))
         root = root or model
         self._child_panels, removed, expanded = self._get_children()
         model.expanded = expanded
@@ -2250,15 +2252,15 @@ class Tabulator(BaseTable):
             The Button that triggers a download.
         """
         text_kwargs = dict(text_kwargs)
-        if 'name' not in text_kwargs:
-            text_kwargs['name'] = 'Filename'
+        if 'label' not in text_kwargs:
+            text_kwargs['label'] = 'Filename'
         if 'value' not in text_kwargs:
             text_kwargs['value'] = 'table.csv'
         filename = TextInput(**text_kwargs)
 
         button_kwargs = dict(button_kwargs)
-        if 'name' not in button_kwargs:
-            button_kwargs['name'] = 'Download'
+        if 'label' not in button_kwargs:
+            button_kwargs['label'] = 'Download'
         button = Button(**button_kwargs)
         button.js_on_click({'table': self, 'filename': filename}, code="""
         table.filename = filename.value
