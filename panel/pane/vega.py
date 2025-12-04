@@ -384,7 +384,10 @@ class Vega(ModelPane):
                 # Handle geometry records types
                 datasets[name] = data
                 continue
-            columns = set(data[0]) if data else []
+            if hasattr(data, 'columns'):
+                columns = data.columns
+            else:
+                columns = set(data[0]) if data else []
             if self.is_altair(self.object):
                 import altair as alt
                 if (not isinstance(self.object.data, (alt.Data, alt.UrlData, type(alt.Undefined))) and
