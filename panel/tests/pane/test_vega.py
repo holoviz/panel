@@ -215,6 +215,36 @@ gdf_example = {
     }
 }
 
+datasets_example = {'$schema': 'https://vega.github.io/schema/vega-lite/v6.json',
+  'width': 700,
+  'height': 400,
+  'title': {'text': 'Total Admissions by State',
+   'subtitle': 'Illinois has the highest admissions by a large margin'},
+  'data': {'url': 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json',
+   'format': {'type': 'topojson', 'feature': 'states'}},
+  'transform': [{'lookup': 'properties.name',
+    'from': {'data': {'name': 'total_admissions_by_state_uiuc_students'},
+     'key': 'State',
+     'fields': ['Total_Admissions']}}],
+  'projection': {'type': 'albersUsa'},
+  'mark': 'geoshape',
+  'encoding': {'color': {'field': 'Total_Admissions',
+    'type': 'quantitative',
+    'scale': {'scheme': 'blues'},
+    'legend': {'title': 'Total Admissions'}},
+   'tooltip': [{'field': 'properties.name',
+     'type': 'nominal',
+     'title': 'State'},
+    {'field': 'Total_Admissions',
+     'type': 'quantitative',
+     'format': ',',
+     'title': 'Total Admissions'}]},
+  'datasets': {'total_admissions_by_state_uiuc_students': pd.DataFrame(
+      {'State': ['Alabama', 'Alaska', 'Arizona'],
+       'Total_Admissions': [1106.0, 328.0, 1438.0]}
+  )}
+}
+
 def test_get_vega_pane_type_from_dict():
     assert PaneBase.get_pane_type(vega_example) is Vega
 
@@ -337,6 +367,11 @@ def test_altair_pane(document, comm):
 
 def test_vega_can_instantiate_empty_with_sizing_mode(document, comm):
     pane = Vega(sizing_mode="stretch_width")
+    pane.get_root(document, comm=comm)
+
+
+def test_vega_can_support_datasets_with_pandas(document, comm):
+    pane = Vega(datasets_example)
     pane.get_root(document, comm=comm)
 
 
