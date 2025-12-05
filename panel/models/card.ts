@@ -40,6 +40,13 @@ export class CardView extends ColumnView {
       this.child_views[0].el.style.backgroundColor = header_background
       this.header_el.style.backgroundColor = header_background
     })
+
+    for (const child_view of this.child_views.slice(1)) {
+      const {visible} = child_view.model.properties
+      this.on_change(visible, () => {
+          child_view.model.visible = !this.model.collapsed
+      })
+    }
   }
 
   override stylesheets(): StyleSheetLike[] {
