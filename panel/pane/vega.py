@@ -384,20 +384,7 @@ class Vega(ModelPane):
                 # Handle geometry records types
                 datasets[name] = data
                 continue
-            if hasattr(data, 'columns'):
-                columns = data.columns
-            else:
-                columns = set(data[0]) if data else []
-            if self.is_altair(self.object):
-                import altair as alt
-                if (not isinstance(self.object.data, (alt.Data, alt.UrlData, type(alt.Undefined))) and
-                    columns == set(self.object.data)):
-                    data = ColumnDataSource.from_df(self.object.data)
-                else:
-                    data = ds_as_cds(data)
-                sources[name] = ColumnDataSource(data=data)
-            else:
-                sources[name] = ColumnDataSource(data=ds_as_cds(data))
+            sources[name] = ColumnDataSource(data=ds_as_cds(data))
         data = json.get('data', {})
         if isinstance(data, dict):
             data = data.pop('values', {})
