@@ -44,7 +44,7 @@ export class CardView extends ColumnView {
     for (const child_view of this.child_views.slice(1)) {
       const {visible} = child_view.model.properties
       this.on_change(visible, () => {
-          child_view.model.visible = !this.model.collapsed
+        child_view.model.visible = !this.model.collapsed
       })
     }
   }
