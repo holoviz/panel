@@ -1,5 +1,40 @@
 # Releases
 
+## Version 1.8.4
+
+Panel 1.8.4 includes key bug fixes and behavior improvements around event ordering, Tabulator interop, and Jupyter/Notebook usage. It also improves support for async usage, validation, and app routing—plus quality-of-life enhancements for both developers and users. Thanks to @philippjfr, @hoxbro, @maximlt, @ahuang11, @MarcSkovMadsen, @TheoMathurin, @ruoyu0088, and @dieterweber for your contributions to this release!
+
+### ✨ Enhancements
+
+- Add config toggle to disable Bokeh validation ([#8294](https://github.com/holoviz/panel/pull/8294))
+- Allow `Tabulator.row_content` to be an async function ([#8309](https://github.com/holoviz/panel/pull/8309))
+- Improve documentation and validation of `patch_value` ([#8312](https://github.com/holoviz/panel/pull/8312))
+- Propagate layout-related parameters to `NestedSelect` ([#8317](https://github.com/holoviz/panel/pull/8317))
+
+### 🐛 Bug Fixes
+
+- Fix crash when emptying a `DataFrame` ([#8256](https://github.com/holoviz/panel/pull/8256))
+- Ensure new Panel instance is always loaded ([#8293](https://github.com/holoviz/panel/pull/8293))
+- Improve robustness of Bokeh/Panel notebook integration ([#8289](https://github.com/holoviz/panel/pull/8289))
+- Fix notebook reading errors by explicitly using UTF-8 encoding ([#8304](https://github.com/holoviz/panel/pull/8304))
+- Ensure `param.Action` only triggers one event ([#8305](https://github.com/holoviz/panel/pull/8305))
+- Fix conflict when using both `ipywidgets` and `Tabulator` extensions ([#8308](https://github.com/holoviz/panel/pull/8308))
+- Ensure discrete events (e.g. button clicks) are scheduled after change events ([#8311](https://github.com/holoviz/panel/pull/8311), [#8319](https://github.com/holoviz/panel/pull/8319))
+- Reinstate application name as default index page title ([#8313](https://github.com/holoviz/panel/pull/8313))
+- Redirect requests to the prefixed root when `--prefix` is set ([#8321](https://github.com/holoviz/panel/pull/8321))
+- Ensure non-active `Tabs` are not clickable ([#8324](https://github.com/holoviz/panel/pull/8324))
+
+### 🧪 Maintenance & Infrastructure
+
+- Update Python/JS dependencies ([#8318](https://github.com/holoviz/panel/pull/8318))
+- Fix type checking errors ([#8314](https://github.com/holoviz/panel/pull/8314))
+- Pin `jupyterlite-core` temporarily ([#8315](https://github.com/holoviz/panel/pull/8315))
+- Clean up `pixi.toml` project config ([#8303](https://github.com/holoviz/panel/pull/8303))
+
+### ⚠️ Compatibility & Deprecations
+
+- Heads up: Starting with Panel 1.9.0, pandas will no longer be installed by default. If your code depends on pandas and you were relying on Panel to install it implicitly, you’ll need to add it as an explicit dependency in your environment or project configuration.
+
 ## Version 1.8.3
 
 This patch release brings targeted UI fixes, improves Python and Django compatibility, and enhances the developer and contributor experience. It also includes fixes for Tabulator, Pyodide, templates, and app interactivity, along with several documentation and robustness improvements. Many thanks to @ahuang11, @hoxbro, @maximlt, @MarcSkovMadsen, @Coderambling and  @philippjfr for their contributions to this release.
