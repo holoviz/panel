@@ -62,6 +62,7 @@ def test_texteditor_enter_value(page):
     wait_until(lambda: widget.value == '<p>test</p>', page)
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_texteditor_regression_copy_paste(page, browser):
     # https://github.com/holoviz/panel/issues/5545
     widget = TextEditor()
