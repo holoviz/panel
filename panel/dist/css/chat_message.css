@@ -75,7 +75,7 @@
       0px,
     color-mix(in srgb, var(--panel-shadow-color) 15%, transparent) 0px 1px 3px
       1px;
-  font-size: 1.25em;
+  font-size: 1.1em;
   min-height: 50px;
   margin-left: 10px; /* Space for avatar */
   background-color: var(--panel-surface-color, #f1f1f1);
@@ -144,7 +144,8 @@
   animation: fadeOut 2s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
   color: #32cd32;
   /* since 1.25em, adjust line-height */
-  font-size: 1.1em;
+  font-size: 1.25em;
+  line-height: 0.9em;
 }
 
 .edit-icon {
