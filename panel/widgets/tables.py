@@ -163,12 +163,13 @@ class BaseTable(ReactiveData, Widget):
         super().__init__(value=value, **params)
         self._internal_callbacks.extend([
             self.param.watch(self._setup_on_change, ['editors', 'formatters']),
-            self.param._watch(self._reset_selection, ['value'], precedence=-1)
+            self.param._watch(self._reset_selection, ['value'], precedence=-1),
+            self.param.watch(lambda e: self.param.trigger("hidden_columns"), ['show_index']),
         ])
         self.param.trigger('editors')
         self.param.trigger('formatters')
 
-    @param.depends('value', watch=True, on_init=True)
+    @param.depends('value', 'show_index', watch=True, on_init=True)
     def _compute_renamed_cols(self):
         if self.value is None:
             self._renamed_cols.clear()

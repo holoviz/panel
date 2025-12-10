@@ -28,7 +28,9 @@ from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.pane import Markdown
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
 from panel.util import BOKEH_GE_3_6
-from panel.widgets import Select, Tabulator, TextInput
+from panel.widgets import (
+    Select, Switch, Tabulator, TextInput,
+)
 
 pytestmark = pytest.mark.ui
 
@@ -4532,3 +4534,19 @@ def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_ag
             gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
     }
     assert gender_agged == expected_results["gender"]
+
+
+@pytest.mark.parametrize('show_index', [True, False])
+def test_tabulator_show_index_toggle(page, show_index):
+    s = Switch(value=show_index)
+    t = Tabulator(pd.DataFrame(range(10)), show_index=s)
+    row = Column(s, t)
+    serve_component(page, row)
+
+    expect(page.locator('text="index"')).to_have_count(int(show_index))
+
+    page.locator('.bk-knob').first.click()
+    expect(page.locator('text="index"')).to_have_count(int(not show_index))
+
+    page.locator('.bk-knob').first.click()
+    expect(page.locator('text="index"')).to_have_count(int(show_index))
