@@ -1,297 +1,283 @@
 {#
-Renders JavaScript code for "autoloading".
-
-The code automatically and asynchronously loads BokehJS (if necessary) and
-then replaces the AUTOLOAD_TAG ``<script>`` tag that
-calls it with the rendered model.
-
-:param js_urls: URLs of JS files making up Bokeh library
-:type js_urls: list
-
-:param js_modules: URLs of JS modules making up Bokeh library
-:type js_modules: list
-
-:param js_exports: URLs of JS modules to be exported
-:type js_exports: dict
-
-:param css_urls: CSS urls to inject
-:type css_urls: list
-
+ESM-only autoload for Panel notebooks with safe Panel IIFE handling.
+- Waits for es-module-shim before using importShim.
+- No legacy globals remain after load (we temporarily patch window.Bokeh only to capture Panel).
+- Each pn.extension(esm=True) defines a unique @pn/env/<bundle_id> module and imports it inline.
 #}
+
 (function(root) {
-  function now() {
-    return new Date();
-  }
-
-  const force = {{ force|default(False)|json }};
-  const version = '{{ version }}'.replace('rc', '-rc.').replace('.dev', '-dev.');
-  const reloading = {{ reloading|default(False)|json }};
-  const Bokeh = root.Bokeh;
-  const BK_RE = /^https:\/\/cdn\.bokeh\.org\/bokeh\/(release|dev)\/bokeh-/;
+  const BK_RE = /^https:\/\/cdn\.bokeh\.org\/bokeh\/release\/bokeh-/;
   const PN_RE = /^https:\/\/cdn\.holoviz\.org\/panel\/[^/]+\/dist\/panel/i;
+  const reloading = {{ reloading|default(False)|json }};
 
-  // Set a timeout for this load but only if we are not already initializing
-  if (typeof (root._bokeh_timeout) === "undefined" || (force || !root._bokeh_is_initializing)) {
-    root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
-    root._bokeh_failed_load = false;
+  root._pn_env_registry  = root._pn_env_registry  || new Map(); // bundleId -> envSpec
+  root._pn_spec_catalog  = root._pn_spec_catalog  || new Set(); // all spec keys we've registered
+
+  // ------------------------------------------------------------
+  // Helpers
+  // ------------------------------------------------------------
+  const BUNDLE_ID = {{ BUNDLE_ID|json }};
+
+  // Shared registries
+  root._pn_imports = root._pn_imports || { imports: {} };
+  const IMPORTS = root._pn_imports.imports;
+
+  function installImportMapDelta(delta) {
+    if (!delta || !Object.keys(delta).length) return;
+    const tag = document.createElement('script');
+    tag.type = 'importmap-shim';
+    tag.textContent = JSON.stringify({ imports: delta });
+    document.head.appendChild(tag);
   }
 
-  function run_callbacks() {
+  function blobURL(content, type) {
+    const blob = new Blob([content], { type });
+    return URL.createObjectURL(blob);
+  }
+
+  function injectCSS(urls) {
+    const existing = new Set(Array.from(document.getElementsByTagName('link')).map(l => l.href));
+    for (const url of urls || []) {
+      const enc = encodeURI(url);
+      if (existing.has(enc)) continue;
+      const el = document.createElement("link");
+      el.rel = "stylesheet";
+      el.type = "text/css";
+      el.href = url;
+      document.head.appendChild(el);
+    }
+  }
+
+  function injectRawCSS(cssList) {
+    for (const css of cssList || []) {
+      const el = document.createElement("style");
+      el.appendChild(document.createTextNode(css));
+      document.head.appendChild(el);
+    }
+  }
+
+  // ------------------------------------------------------------
+  // Ensure es-module-shim is loaded (so importShim exists)
+  // ------------------------------------------------------------
+  async function ensureEsModuleShim() {
+    if (root.importShim) return; // already present
+    // Reuse a shared ready-promise so concurrent cells don't duplicate work
+    if (!root._pn_esms_ready) {
+      root._pn_esms_ready = new Promise((resolve, reject) => {
+        const existing = Array.from(document.scripts).find(s => /es-module-shim/.test(s.src));
+        if (existing) {
+          // If the tag is already there, wait for its load event or next tick if already complete
+          if (existing.dataset._pn_loaded === "1" || root.importShim) {
+            resolve();
+          } else {
+            existing.addEventListener('load', () => {
+              existing.dataset._pn_loaded = "1";
+              resolve();
+            }, { once: true });
+            existing.addEventListener('error', () => reject(new Error("[Panel ESM] Failed to load es-module-shim")), { once: true });
+          }
+          return;
+        }
+        const s = document.createElement('script');
+        s.async = true;
+        s.src = "https://unpkg.com/es-module-shims@1/dist/es-module-shims.js";
+        s.addEventListener('load', () => {
+          s.dataset._pn_loaded = "1";
+          resolve();
+        }, { once: true });
+        s.addEventListener('error', () => reject(new Error("[Panel ESM] Failed to load es-module-shim")), { once: true });
+        document.head.appendChild(s);
+      });
+    }
+    await root._pn_esms_ready;
+    if (!root.importShim) throw new Error("[Panel ESM] importShim unavailable after es-module-shim load");
+  }
+
+  // ------------------------------------------------------------
+  // Bootstrap this bundle
+  // ------------------------------------------------------------
+  (async function bootstrap() {
+    // CSS first
+    injectCSS({{ bundle.css_urls|default([])|json }});
+    injectRawCSS({{ bundle.css_raw|default([])|json }});
+
+    const JS_URLS     = {{ bundle.js_urls|default([])|json }};
+    const JS_MODULES  = {{ bundle.js_modules|default([])|json }};
+    const JS_EXPORTS  = {{ bundle.js_module_exports|default({})|json }};
+
+    const BOKEH_ESM_URLS = (JS_URLS || []).filter(u => BK_RE.test(u));
+    const PANEL_IIFE_URL = (JS_URLS || []).find(u => PN_RE.test(u)) || null;
+
+    // Build the env module source
+    let envSrc = "";
+
+    // Bokeh
+    if (BOKEH_ESM_URLS)
+      envSrc += `import * as _bokeh_mod from ${JSON.stringify(BOKEH_ESM_URLS[0])};\n const Bokeh = _bokeh_mod.default ?? _bokeh_mod;\n Bokeh[Bokeh.version] = Bokeh;`;
+    else
+      envSrc += `import const Bokeh = undefined;\n`;
+
+    // Named ESM exports
+    for (const [name, url] of Object.entries(JS_EXPORTS || {}))
+      envSrc += `import ${name} from ${JSON.stringify(url)};\nexport { ${name} };\n`;
+
+    // Self-contained Panel IIFE capture (uses globalThis for caches)
+    envSrc += `
+// Assumes Bokeh is already resolved in the env module (from Bokeh ESM default export).
+// Same signature as before, but bokehPluginUrls are IIFE URLs (e.g. GL, tables, widgets...).
+async function __pnEnsurePanelIIFE(panelUrl, bokehPluginUrls) {
+  if (!panelUrl) throw new Error("[Panel ESM] No Panel IIFE URL provided");
+
+  const locks  = (globalThis._pn_iife_locks  ||= new Map()); // key -> Promise
+  const panels = (globalThis._pn_panel_cache ||= new Map()); // key -> Panel API
+  const loaded = (globalThis._pn_iife_loaded ||= new Set()); // URL set for plugin/panel scripts
+
+  const plugins = Array.isArray(bokehPluginUrls) ? bokehPluginUrls : (bokehPluginUrls ? [bokehPluginUrls] : []);
+  const key = panelUrl + "||" + plugins.join(",");
+
+  if (panels.has(key)) return panels.get(key);
+  if (locks.has(key))  return locks.get(key);
+
+  const task = (async () => {
+    // Ensure we have a real Bokeh namespace with register_plugin
+    if (!Bokeh || typeof Bokeh.register_plugin !== "function") {
+      throw new Error("[Panel ESM] Bokeh namespace missing or lacks register_plugin; ensure core Bokeh ESM loaded first");
+    }
+
+    // Temporarily expose Bokeh on globalThis so plugin IIFEs can register
+    const hadOwnBokeh = Object.prototype.hasOwnProperty.call(globalThis, "Bokeh");
+    const prevBokeh = hadOwnBokeh ? globalThis.Bokeh : undefined;
+    Object.defineProperty(globalThis, "Bokeh", {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: Bokeh,
+    });
+
     try {
-      root._bokeh_onload_callbacks.forEach(function(callback) {
-        if (callback != null)
-          callback();
-      });
+      // 1) Load Bokeh plugin IIFEs (GL, etc.) sequentially (deterministic)
+      for (const url of plugins) {
+        if (!url) continue;
+        if (loaded.has(url)) continue;
+        // If a <script> with same src already exists, wait a tick; otherwise append and await
+        const existing = Array.from(document.scripts).some(s => s.src === url);
+        if (!existing) {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement("script");
+            s.async = false; // preserve registration order
+            s.src = url;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error("[Panel ESM] Failed to load Bokeh plugin IIFE "+url));
+            document.head.appendChild(s);
+          });
+        } else {
+          await Promise.resolve();
+        }
+        loaded.add(url);
+      }
+
+      // 2) Load Panel IIFE (registers onto Bokeh)
+      if (!loaded.has(panelUrl)) {
+        const existingPanel = Array.from(document.scripts).some(s => s.src === panelUrl);
+        if (!existingPanel) {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement("script");
+            s.async = false;
+            s.src = panelUrl;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error("[Panel ESM] Failed to load Panel IIFE "+panelUrl));
+            document.head.appendChild(s);
+          });
+        } else {
+          await Promise.resolve();
+        }
+        loaded.add(panelUrl);
+      }
+
+      // 3) Capture and freeze Panel API from the real Bokeh namespace
+      const panelApi = Bokeh && Bokeh.Panel;
+      if (!panelApi) throw new Error("[Panel ESM] Panel API not found after IIFE execution");
+      const frozen = Object.freeze(panelApi);
+      panels.set(key, frozen);
+      return frozen;
     } finally {
-      delete root._bokeh_onload_callbacks;
+      // Restore whatever Bokeh was there before
+      if (hadOwnBokeh) globalThis.Bokeh = prevBokeh;
+      else { try { delete globalThis.Bokeh; } catch {} }
     }
-    console.debug("Bokeh: all callbacks have finished");
-  }
+  })();
 
-  function load_libs(css_urls, js_urls, js_modules, js_exports, Bokeh, callback) {
-    if (css_urls == null) css_urls = [];
-    if (js_urls == null) js_urls = [];
-    if (js_modules == null) js_modules = [];
-    if (js_exports == null) js_exports = {};
+  locks.set(key, task);
+  try { return await task; }
+  finally { if (locks.get(key) === task) locks.delete(key); }
+}
 
-    root._bokeh_onload_callbacks.push(callback);
+const Panel = (async () => {
+  const api = await __pnEnsurePanelIIFE(
+    ${JSON.stringify(PANEL_IIFE_URL)},
+    ${JSON.stringify(BOKEH_ESM_URLS.slice(1))}
+  );
+  return api;
+})();
 
-    if (root._bokeh_is_loading > 0) {
-      // Don't load bokeh if it is still initializing
-      console.debug("Bokeh: BokehJS is being loaded, scheduling callback at", now());
-      return null;
-    } else if (js_urls.length === 0 && js_modules.length === 0 && Object.keys(js_exports).length === 0) {
-      // There is nothing to load
-      run_callbacks();
-      return null;
-    }
+export { Bokeh, Panel };
+`;
 
-    function on_load() {
-      root._bokeh_is_loading--;
-      if (root._bokeh_is_loading === 0) {
-        console.debug("Bokeh: all BokehJS libraries/stylesheets loaded");
-        run_callbacks()
+    const envURL = blobURL(envSrc, "text/javascript");
+    const baseSpec = `@pn/env/${BUNDLE_ID}`;
+
+    // If we already chose a spec for this bundle, just reuse it (no map changes)
+    let envSpec = root._pn_env_registry.get(BUNDLE_ID);
+    const delta = {};
+
+    if (!envSpec) {
+      // Prefer the base spec if it's unused; else auto-suffix
+      if (!IMPORTS[baseSpec]) {
+	envSpec = baseSpec;
+      } else {
+	// If baseSpec exists, only reuse it if it maps to the *same* URL.
+	if (IMPORTS[baseSpec] === envURL) {
+	  envSpec = baseSpec; // identical; no delta
+	} else {
+	  // Find a free suffixed spec without overriding the map
+	  let i = 2;
+	  let candidate;
+	  do { candidate = `${baseSpec}/${i++}`; } while (IMPORTS[candidate]);
+	  envSpec = candidate;
+	}
       }
-    }
-    window._bokeh_on_load = on_load
 
-    function on_error(e) {
-      const src_el = e.srcElement
-      console.error("failed to load " + (src_el.href || src_el.src));
-    }
-
-    const skip = [];
-    if (window.requirejs) {
-      window.requirejs.config({{ config|conffilter }});
-      {% for r in requirements %}
-      require(["{{ r }}"], function({{ exports[r] }}) {
-        {% if r in exports %}
-        window.{{ exports[r] }} = {{ exports[r] }}
-        {% endif %}
-        on_load()
-      })
-      {% endfor %}
-      root._bokeh_is_loading = css_urls.length + {{ requirements|length }};
-    } else {
-      root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length + Object.keys(js_exports).length;
+      // Register the chosen spec if it's new
+      if (!IMPORTS[envSpec]) {
+	IMPORTS[envSpec] = envURL;
+	delta[envSpec] = envURL;
+	root._pn_spec_catalog.add(envSpec);
+      }
+      root._pn_env_registry.set(BUNDLE_ID, envSpec);
     }
 
-    const existing_stylesheets = []
-    const links = document.getElementsByTagName('link')
-    for (let i = 0; i < links.length; i++) {
-      const link = links[i]
-      if (link.href != null) {
-        existing_stylesheets.push(link.href)
-      }
-    }
-    for (let i = 0; i < css_urls.length; i++) {
-      const url = css_urls[i];
-      const escaped = encodeURI(url)
-      if (existing_stylesheets.indexOf(escaped) !== -1) {
-        on_load()
-        continue;
-      }
-      const element = document.createElement("link");
-      element.onload = on_load;
-      element.onerror = on_error;
-      element.rel = "stylesheet";
-      element.type = "text/css";
-      element.href = url;
-      console.debug("Bokeh: injecting link tag for BokehJS stylesheet: ", url);
-      document.body.appendChild(element);
-    }
+    // 1) Ensure the shim is ready
+    await ensureEsModuleShim();
 
-    {%- for lib, urls in skip_imports.items() %}
-    if (((window.{{ lib }} !== undefined) && (!(window.{{ lib }} instanceof HTMLElement))) || window.requirejs) {
-      var urls = {{ urls }};
-      for (var i = 0; i < urls.length; i++) {
-        skip.push(encodeURI(urls[i]))
-      }
-    }
-    {%- endfor %}
-    var existing_scripts = []
-    const scripts = document.getElementsByTagName('script')
-    for (let i = 0; i < scripts.length; i++) {
-      var script = scripts[i]
-      if (script.src != null) {
-        existing_scripts.push(script.src)
-      }
-    }
-    for (let i = 0; i < js_urls.length; i++) {
-      const url = js_urls[i];
-      const escaped = encodeURI(url)
-      const shouldSkip = skip.includes(escaped) || existing_scripts.includes(escaped)
-      const isBokehOrPanel = BK_RE.test(escaped) || PN_RE.test(escaped)
-      const missingOrBroken = Bokeh == null || Bokeh.Panel == null || (Bokeh.version != version && !Bokeh.versions?.has(version)) || Bokeh.versions?.get(version).Panel == null;
-      if (shouldSkip && !(isBokehOrPanel && missingOrBroken)) {
-        if (!window.requirejs) {
-          on_load();
-        }
-        continue;
-      }
-      const element = document.createElement('script');
-      element.onload = on_load;
-      element.onerror = on_error;
-      element.async = false;
-      element.src = url;
-      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
-      document.head.appendChild(element);
-    }
-    for (let i = 0; i < js_modules.length; i++) {
-      const url = js_modules[i];
-      const escaped = encodeURI(url)
-      if (skip.indexOf(escaped) !== -1 || existing_scripts.indexOf(escaped) !== -1) {
-        if (!window.requirejs) {
-          on_load();
-        }
-        continue;
-      }
-      var element = document.createElement('script');
-      element.onload = on_load;
-      element.onerror = on_error;
-      element.async = false;
-      element.src = url;
-      element.type = "module";
-      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
-      document.head.appendChild(element);
-    }
-    for (const name in js_exports) {
-      const url = js_exports[name];
-      const escaped = encodeURI(url)
-      if (skip.indexOf(escaped) >= 0 || root[name] != null) {
-        if (!window.requirejs) {
-          on_load();
-        }
-        continue;
-      }
-      var element = document.createElement('script');
-      element.onerror = on_error;
-      element.async = false;
-      element.type = "module";
-      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
-      element.textContent = `
-      import ${name} from "${url}"
-      window.${name} = ${name}
-      window._bokeh_on_load()
-      `
-      document.head.appendChild(element);
-    }
-    if (!js_urls.length && !js_modules.length) {
-      on_load()
-    }
-  };
+    installImportMapDelta(delta);
 
-  function inject_raw_css(css) {
-    const element = document.createElement("style");
-    element.appendChild(document.createTextNode(css));
-    document.body.appendChild(element);
-  }
-
-  const js_urls = {{ bundle.js_urls|json }};
-  const js_modules = {{ bundle.js_modules|json }};
-  const js_exports = {{ bundle.js_module_exports|json }};
-  const css_urls = {{ bundle.css_urls|json }};
-  const inline_js = [
-    {%- for css in bundle.css_raw %}
-    function(Bokeh) {
-      inject_raw_css({{ css|json }});
-    },
-    {%- endfor %}
-    {%- for js in (bundle.js_raw if bundle else js_raw) %}
-    function(Bokeh) {
-      {{ js|indent(6) }}
-    },
-    {% endfor -%}
-    function(Bokeh) {} // ensure no trailing comma for IE
-  ];
-
-  function run_inline_js() {
-    if ((root.Bokeh !== undefined) || (force === true)) {
-      for (let i = 0; i < inline_js.length; i++) {
-        try {
-          inline_js[i].call(root, root.Bokeh);
-        } catch(e) {
-          if (!reloading) {
-            throw e;
-          }
-        }
+    // 3) Now it's safe to use importShim
+    try {
+      const Env = await root.importShim(envSpec);
+      const Bokeh = Env.Bokeh;           // namespace object exported from the Bokeh ESM
+      const Panel = await Env.Panel;     // unwrap the async Panel capture
+      const inlineFns = [
+        {% for js in (bundle.js_raw if bundle else js_raw) %}
+        (Env) => { {{ js|indent(8) }} },
+        {% endfor %}
+        (Env) => {}
+      ];
+      for (const fn of inlineFns) {
+        try { fn(Env); } catch (e) { if (!reloading) throw e; }
       }
-    } else if (Date.now() < root._bokeh_timeout) {
-      setTimeout(run_inline_js, 100);
-    } else if (!root._bokeh_failed_load) {
-      console.log("Bokeh: BokehJS failed to load within specified timeout.");
-      root._bokeh_failed_load = true;
+    } catch (err) {
+      console.error("[Panel ESM] Failed to initialize bundle", err);
+      if (!reloading) throw err;
     }
-    root._bokeh_is_initializing = false;
-  }
-
-  function load_or_wait() {
-    // Implement a backoff loop that tries to ensure we do not load multiple
-    // versions of Bokeh and its dependencies at the same time.
-    // In recent versions we use the root._bokeh_is_initializing flag
-    // to determine whether there is an ongoing attempt to initialize
-    // bokeh, however for backward compatibility we also try to ensure
-    // that we do not start loading a newer (Panel>=1.0 and Bokeh>3) version
-    // before older versions are fully initialized.
-    if (root._bokeh_is_initializing && Date.now() > root._bokeh_timeout) {
-      // If the timeout and bokeh was not successfully loaded we reset
-      // everything and try loading again
-      root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
-      root._bokeh_is_initializing = false;
-      root._bokeh_onload_callbacks = undefined;
-      root._bokeh_is_loading = 0;
-      console.log("Bokeh: BokehJS was loaded multiple times but one version failed to initialize.");
-      load_or_wait();
-    } else if (root._bokeh_is_initializing || (typeof root._bokeh_is_initializing === "undefined" && root._bokeh_onload_callbacks !== undefined)) {
-      setTimeout(load_or_wait, 100);
-    } else {
-      root._bokeh_is_initializing = true;
-      root._bokeh_onload_callbacks = [];
-      const bokeh_loaded = Bokeh != null && ((Bokeh.version === version && Bokeh.Panel) || (Bokeh.versions?.has(version) && Bokeh.versions.get(version).Panel));
-      if (!reloading && !bokeh_loaded) {
-        if (root.Bokeh) {
-          root.Bokeh = undefined;
-        }
-        console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
-      }
-      load_libs(css_urls, js_urls, js_modules, js_exports, Bokeh, function() {
-        console.debug("Bokeh: BokehJS plotting callback run at", now());
-        run_inline_js();
-        if (Bokeh != undefined && !reloading) {
-          const NewBokeh = root.Bokeh;
-          if (Bokeh.versions === undefined) {
-            Bokeh.versions = new Map();
-          }
-          if (NewBokeh.version !== Bokeh.version) {
-            Bokeh[NewBokeh.version] = NewBokeh;
-            Bokeh.versions.set(NewBokeh.version, NewBokeh);
-          }
-          root.Bokeh = Bokeh;
-        }
-      });
-    }
-  }
-  // Give older versions of the autoload script a head-start to ensure
-  // they initialize before we start loading newer version.
-  setTimeout(load_or_wait, 100)
-}(window));
+  })();
+})(window);
