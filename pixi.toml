@@ -296,6 +296,7 @@ polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+pydantic = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
@@ -353,6 +354,7 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 [feature.doc.dependencies]
 lxml = "*"
 nbsite = ">=0.8.6rc9"
+pydantic = "*"
 selenium = "*"
 numpydoc = "*"
 pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
