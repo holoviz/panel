@@ -50,6 +50,34 @@ This includes factoring out integrations such as:
 
 These extensions will continue to be supported and documented, but developed and released on their own cadence.
 
+## DataFrame Interoperability and Narwhals Integration
+
+Panel has historically focused on first-class support for pandas DataFrames. While pandas remains a core part of the Python data ecosystem, many users are increasingly working with alternative DataFrame libraries that offer improved performance, scalability, or GPU acceleration.
+
+To better support this diversity, Panel will adopt **Narwhals** as its primary DataFrame compatibility layer wherever pandas is currently supported.
+
+### Adopt Narwhals as the DataFrame Compatibility Layer
+
+Across Panel's APIs that accept or operate on tabular data, we will:
+
+* Replace direct pandas-specific handling with Narwhals abstractions
+* Treat pandas as one of several supported backends rather than the only one
+* Expand support to additional DataFrame implementations, including:
+
+  * Polars
+  * DuckDB
+  * cuDF
+  * Other Narwhals-compatible libraries
+
+This change allows Panel to interoperate with multiple DataFrame ecosystems while keeping a single, consistent internal API.
+
+### Benefits
+
+* **Broader ecosystem support:** Users can work with their preferred DataFrame library without converting to pandas.
+* **Better performance:** Native support for columnar and lazy backends enables more efficient data handling.
+* **Improved scalability:** Better alignment with large, out-of-core, and GPU-backed workflows.
+* **Cleaner internals:** Reduced pandas-specific branching and special cases in Panel's codebase.
+
 ## Developer Experience
 
 ### Improved Hot Reload and Development Feedback Loops
@@ -64,7 +92,7 @@ These improvements aim to make iterative development smoother and less error-pro
 
 ### Typing and IDE Support
 
-Building on recent work in improving `param`’s typing support, Panel will:
+Building on recent work in improving `param`'s typing support, Panel will:
 
 * Expand and refine type annotations across the codebase
 * Improve IDE auto-completion and static analysis
@@ -96,7 +124,7 @@ Documentation remains a core priority. Building on the Diátaxis-aligned restruc
   * Performance tuning
   * Extension development
 
-These resources are intended to help experienced users move from “it works” to “it’s robust, scalable, and maintainable.”
+These resources are intended to help experienced users move from “it works” to “it's robust, scalable, and maintainable.”
 
 ### Continuous Documentation Maintenance
 
@@ -118,7 +146,7 @@ We will continue profiling and optimizing performance, with particular attention
 
 ### Free-Threading and Concurrency Support
 
-As Python’s free-threading ecosystem matures, Panel will explore:
+As Python's free-threading ecosystem matures, Panel will explore:
 
 * Compatibility with free-threaded Python builds
 * Safer and more efficient concurrency patterns
@@ -132,7 +160,7 @@ To support larger deployments, we aim to make scaling more approachable by:
 * Making it easier to deploy Panel apps behind common production infrastructures
 * Reducing the amount of bespoke configuration required for horizontal scaling
 
-Here’s a **“What This Means for Existing Users”** section you can add to the updated roadmap. I’ve incorporated the migration intent from the current discussion in the Panel issue and framed it in a way that sets expectations, reduces risk, and provides clear guidance about the transition from legacy Panel widgets/layouts to the modern UI stack. ([GitHub][1])
+Here's a **“What This Means for Existing Users”** section you can add to the updated roadmap. I've incorporated the migration intent from the current discussion in the Panel issue and framed it in a way that sets expectations, reduces risk, and provides clear guidance about the transition from legacy Panel widgets/layouts to the modern UI stack. ([GitHub][1])
 
 ## What This Means for Existing Users
 
@@ -145,7 +173,7 @@ Panel is transitioning its widget and UI ecosystem toward a **Material UI–base
 To support a smooth migration, Panel will introduce a new **opt-in namespace** (e.g., `panel.v2` or `panel.ui`) that exposes next-generation components backed by this modern UI stack. This allows users to adopt the new API incrementally without breaking existing applications. ([GitHub][1])
 
 * **Opt-in modern API:**
-  You’ll be able to import and use updated widgets via a dedicated namespace (e.g., `panel.ui`) while the legacy API remains unchanged for now. ([GitHub][1])
+  You'll be able to import and use updated widgets via a dedicated namespace (e.g., `panel.ui`) while the legacy API remains unchanged for now. ([GitHub][1])
 
 * **Commercial and community feedback:**
   This approach allows documentation and examples to evolve toward modern widgets while preserving stability for production apps. ([GitHub][1])
@@ -176,7 +204,7 @@ This ensures that users learning Panel today will see the modern UI stack as the
 ### Practical Tips for Users Today
 
 * **Try the modern components early:**
-  Install and experiment with `panel-material-ui`. It’s compatible with Panel and offers more consistent theming out of the box. ([panel-material-ui.holoviz.org][2])
+  Install and experiment with `panel-material-ui`. It's compatible with Panel and offers more consistent theming out of the box. ([panel-material-ui.holoviz.org][2])
 
 * **Use the opt-in namespace for new work:**
   When building new dashboards or components, import widgets from the new namespace (`panel.ui` or similar) when available.
@@ -185,7 +213,7 @@ This ensures that users learning Panel today will see the modern UI stack as the
   Begin auditing usage of legacy modules (`panel.widgets`, `panel.pane`, `panel.layout`) in your codebase so you can plan a gradual migration before Panel 3.0.
 
 
-Here’s a **clear, user-facing timeline** you can drop straight into the roadmap. It’s explicit without being over-committing, and it frames the changes as progressive, opt-in, and well-signposted.
+Here's a **clear, user-facing timeline** you can drop straight into the roadmap. It's explicit without being over-committing, and it frames the changes as progressive, opt-in, and well-signposted.
 
 ---
 
@@ -211,7 +239,7 @@ To ensure stability for existing applications while allowing Panel to modernize 
 * No action required for existing applications.
 * Users are encouraged to experiment with `panel-material-ui` and provide feedback.
 
-### Panel 2.0 — *Target: Q2 2026*
+### Panel 2.0: *Target: Q2 2026*
 
 **Theme:** Dual APIs, opt-in future
 
@@ -255,7 +283,7 @@ This release introduces the **next-generation UI API** while maintaining full ba
 * Actively plan migration paths for larger or long-lived applications.
 * Adopt modern components where possible to benefit from performance and UX improvements.
 
-### Panel 3.0 — *Target: 2027*
+### Panel 3.0: *Target: 2027*
 
 **Theme:** Modern-by-default
 
