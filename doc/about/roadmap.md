@@ -210,11 +210,6 @@ This ensures that users learning Panel today will see the modern UI stack as the
 * **Prepare for deprecation:**
   Begin auditing usage of legacy modules (`panel.widgets`, `panel.pane`, `panel.layout`) in your codebase so you can plan a gradual migration before Panel 3.0.
 
-
-Here's a **clear, user-facing timeline** you can drop straight into the roadmap. It's explicit without being over-committing, and it frames the changes as progressive, opt-in, and well-signposted.
-
----
-
 ## Migration Timeline
 
 To ensure stability for existing applications while allowing Panel to modernize its UI and architecture, changes will be rolled out gradually across major releases.
