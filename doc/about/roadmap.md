@@ -225,7 +225,7 @@ To ensure stability for existing applications while allowing Panel to modernize 
 
   * Improved typing and error messages
   * Performance optimizations
-  * Extension-first architecture
+  * Extension-first architecture.
 
 **What users should do**
 
