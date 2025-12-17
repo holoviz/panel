@@ -160,8 +160,6 @@ To support larger deployments, we aim to make scaling more approachable by:
 * Making it easier to deploy Panel apps behind common production infrastructures
 * Reducing the amount of bespoke configuration required for horizontal scaling
 
-Here's a **“What This Means for Existing Users”** section you can add to the updated roadmap. I've incorporated the migration intent from the current discussion in the Panel issue and framed it in a way that sets expectations, reduces risk, and provides clear guidance about the transition from legacy Panel widgets/layouts to the modern UI stack. ([GitHub][1])
-
 ## What This Means for Existing Users
 
 As Panel evolves toward a more streamlined core and modern UI foundation, the following guidance outlines how existing users will experience and navigate the transition, especially around UI components and widget APIs.
