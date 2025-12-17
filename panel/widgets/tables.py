@@ -168,7 +168,7 @@ class BaseTable(ReactiveData, Widget):
         self.param.trigger('editors')
         self.param.trigger('formatters')
 
-    @param.depends('value', watch=True, on_init=True)
+    @param.depends('value', 'show_index', watch=True, on_init=True)
     def _compute_renamed_cols(self):
         if self.value is None:
             self._renamed_cols.clear()
@@ -1378,6 +1378,7 @@ class Tabulator(BaseTable):
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
         self.param.watch(self._clear_selection_remote_pagination, 'value')
+        self.param.watch(lambda e: self.param.trigger("hidden_columns"), 'show_index')
         if click_handler:
             self.on_click(click_handler)
         if edit_handler:
