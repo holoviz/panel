@@ -62,7 +62,7 @@ To better support this diversity, Panel will adopt **Narwhals** as its primary D
 
 Across Panel's APIs that accept or operate on tabular data, we will:
 
-* Replace direct pandas-specific handling with Narwhals abstractions
+* Replace direct pandas-specific handling with Narwhals abstractions where applicable 
 * Treat pandas as one of several supported backends rather than the only one
 * Expand support to additional DataFrame implementations, including:
 
