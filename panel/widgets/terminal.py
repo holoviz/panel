@@ -260,7 +260,7 @@ class Terminal(Widget):
     _output = param.String(default="")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'clear': None, 'name': None, 'output': None, '_output': 'output',
+        'clear': None, 'label': None, 'output': None, '_output': 'output',
         'value': None, 'write_to_console': None,
     }
 

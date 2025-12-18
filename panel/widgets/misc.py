@@ -37,11 +37,10 @@ class VideoStream(Widget):
 
     :Example:
 
-    >>> VideoStream(name='Video Stream', timeout=100)
+    >>> VideoStream(label='Video Stream', timeout=100)
     """
 
-    format = param.Selector(default='png', objects=['png', 'jpeg'],
-                                  doc="""
+    format = param.Selector(default='png', objects=['png', 'jpeg'], doc="""
         The file format as which the video is returned.""")
 
     paused = param.Boolean(default=False, doc="""
@@ -55,7 +54,7 @@ class VideoStream(Widget):
 
     _widget_type: ClassVar[type[Model]] = _BkVideoStream
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'label': None}
 
     def snapshot(self):
         """
@@ -333,7 +332,7 @@ class JSONEditor(Widget):
         JSON data to be edited.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'value': 'data'
+        'label': None, 'value': 'data'
     }
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
