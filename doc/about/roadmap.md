@@ -11,8 +11,8 @@ Panel continues to evolve as a flexible, high-level framework for building inter
 The `panel-material-ui` extension library was released in early 2025 and has reached a level of maturity and stability that makes us confident in saying it is the future of Panel. To reflect this:
 
 * `panel-material-ui` components will be integrated directly into Panel core
-* Existing legacy widget implementations will remain available initially but marked as legacy
-* A gradual deprecation path will be established, targeting full removal of each legacy widget in **Panel 3.0** if there is a suitable replacement ready
+* Existing legacy widget and layout implementations will remain available initially but marked as legacy.
+* A gradual deprecation path will be established, targeting full removal of each legacy component in **Panel 3.0** if there is a suitable replacement ready.
 
 This transition will provide a more consistent, modern UI foundation while preserving backward compatibility during the migration period.
 
