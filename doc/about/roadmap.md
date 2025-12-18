@@ -8,11 +8,11 @@ Panel continues to evolve as a flexible, high-level framework for building inter
 
 ### Integrate panel-material-ui into Panel Core
 
-The `panel-material-ui` extension library was released in early 2025 and reached a level of maturity and stability that makes us confident in saying it is the future of Panel. To reflect this:
+The `panel-material-ui` extension library was released in early 2025 and has reached a level of maturity and stability that makes us confident in saying it is the future of Panel. To reflect this:
 
 * `panel-material-ui` components will be integrated directly into Panel core
 * Existing legacy widget implementations will remain available initially but marked as legacy
-* A gradual deprecation path will be established, targeting full removal in **Panel 3.0**
+* A gradual deprecation path will be established, targeting full removal of each legacy widget in **Panel 3.0** if there is a suitable replacement ready
 
 This transition will provide a more consistent, modern UI foundation while preserving backward compatibility during the migration period.
 
@@ -49,6 +49,8 @@ This includes factoring out integrations such as:
 * ECharts
 
 These extensions will continue to be supported and documented, but developed and released on their own cadence.
+
+Separating these extensions out not only should make life simpler for the core maintainers, but also helps separate contributors drive these components forward independently of the main Panel release schedule.
 
 ## DataFrame Interoperability and Narwhals Integration
 
@@ -108,7 +110,7 @@ We will improve error handling throughout Panel to:
 * Provide better context when errors occur in callbacks, reactive expressions, or layout construction
 * Make it easier to trace errors back to user code rather than internal machinery
 
-This is particularly important for users building complex, reactive applications.
+These improvements are particularly important for users building complex, reactive applications.
 
 ## Documentation and Learning Resources
 
