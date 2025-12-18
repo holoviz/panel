@@ -6,7 +6,7 @@ Panel continues to evolve as a flexible, high-level framework for building inter
 
 ## UI and Design Foundations
 
-### Integrate panel-material-ui into Panel Core
+### Integrate panel-material-ui into Panel core
 
 The `panel-material-ui` extension library was released in early 2025 and has reached a level of maturity and stability that makes us confident in saying it is the future of Panel. To reflect this:
 
