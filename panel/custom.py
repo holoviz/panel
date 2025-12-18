@@ -468,7 +468,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             elif (k in ignored and k != 'name') or ((p.precedence or 0) < 0):
                 continue
             if k in props:
-                props.pop(k)
+                v = props.pop(k)
             if isinstance(p, param.Event):
                 events.append(k)
             data_params[k] = v
