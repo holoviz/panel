@@ -30,7 +30,7 @@ The aim is to make it easy to build applications that look good by default, whil
 
 ### Reduce Core Scope and Expand the Extension Ecosystem
 
-As Panel has grown, the scope of the core library has expanded to include a wide variety of visualization backends and integrations. While powerful, this breadth increases maintenance burden and complexity for contributors and users alike.
+As Panel has grown, the scope of the core library has expanded to include a wide variety of visualization backends and integrations. While powerful, this breadth increases maintenance burden as well as the JS bundle and Python package size.
 
 Going forward, Panel will focus on a **leaner core** that provides:
 
