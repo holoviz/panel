@@ -19,9 +19,9 @@ def accordion_components():
     return d0, d1
 
 
-def is_collapsed(card_object, card_content):
+def is_collapsed(card_object, card_content, page):
     expect(card_object.locator('svg')).to_have_class("icon icon-tabler icons-tabler-outline icon-tabler-chevron-right")
-    expect(card_object).not_to_contain_text(card_content)
+    expect(page.get_by_text(card_content)).to_be_hidden()
     return True
 
 
@@ -51,8 +51,8 @@ def test_accordion_default(page, accordion_components):
     expect(d1_object).to_contain_text(d1.name)
 
     # cards are collapsed and their content is hidden by default
-    assert is_collapsed(card_object=d0_object, card_content=d0.text)
-    assert is_collapsed(card_object=d1_object, card_content=d1.text)
+    assert is_collapsed(card_object=d0_object, card_content=d0.text, page=page)
+    assert is_collapsed(card_object=d1_object, card_content=d1.text, page=page)
 
     # cards can be expanded simultaneously
     d0_object.click()
@@ -94,7 +94,7 @@ def test_accordion_active(page, accordion_components):
     # second card is collapsed and its content is hidden
     d1_object = accordion_elements.nth(1)
     d1_object.wait_for()
-    assert is_collapsed(card_object=d1_object, card_content=d1.text)
+    assert is_collapsed(card_object=d1_object, card_content=d1.text, page=page)
 
 
 def test_accordion_objects(page, accordion_components):
@@ -127,11 +127,11 @@ def test_accordion_toggle(page, accordion_components):
     # click to expand the first card, 2nd card is collapsed
     d0_object.click()
     assert is_expanded(card_object=d0_object, card_content=d0.text)
-    assert is_collapsed(card_object=d1_object, card_content=d1.text)
+    assert is_collapsed(card_object=d1_object, card_content=d1.text, page=page)
 
     # click to expand the 2nd card, 1st card is collapsed
     d1_object.click()
-    assert is_collapsed(card_object=d0_object, card_content=d0.text)
+    assert is_collapsed(card_object=d0_object, card_content=d0.text, page=page)
     assert is_expanded(card_object=d1_object, card_content=d1.text)
 
 
@@ -150,15 +150,15 @@ def test_accordion_append(page, accordion_components):
     expect(accordion_elements).to_have_count(1)
     # collapsed by default
     d0_object = accordion_elements.nth(0)
-    assert is_collapsed(card_object=d0_object, card_content=d0.text)
+    assert is_collapsed(card_object=d0_object, card_content=d0.text, page=page)
 
     # add new element d1
     accordion.append(d1)
     expect(accordion_elements).to_have_count(2)
     d1_object = accordion_elements.nth(1)
     # both cards are collapsed
-    assert is_collapsed(card_object=d0_object, card_content=d0.text)
-    assert is_collapsed(card_object=d1_object, card_content=d1.text)
+    assert is_collapsed(card_object=d0_object, card_content=d0.text, page=page)
+    assert is_collapsed(card_object=d1_object, card_content=d1.text, page=page)
 
 
 def test_accordion_extend(page, accordion_components):
@@ -179,9 +179,9 @@ def test_accordion_extend(page, accordion_components):
     d0_object = accordion_elements.nth(0)
     d1_object = accordion_elements.nth(1)
     d2_object = accordion_elements.nth(2)
-    assert is_collapsed(card_object=d0_object, card_content=d0.text)
-    assert is_collapsed(card_object=d1_object, card_content=d1.text)
-    assert is_collapsed(card_object=d2_object, card_content=d2.text)
+    assert is_collapsed(card_object=d0_object, card_content=d0.text, page=page)
+    assert is_collapsed(card_object=d1_object, card_content=d1.text, page=page)
+    assert is_collapsed(card_object=d2_object, card_content=d2.text, page=page)
 
 
 def test_accordion_clear(page, accordion_components):
