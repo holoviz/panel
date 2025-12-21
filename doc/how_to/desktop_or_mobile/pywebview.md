@@ -143,7 +143,7 @@ Run:
 python app.py
 ```
 
-The app should look like
+The app should look like:
 
 ![Panel Desktop PyWebView](../../_static/images/panel-desktop-pywebview.png)
 
