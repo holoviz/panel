@@ -96,9 +96,7 @@ class PanelDesktop:
             fullscreen=False,
             width=self.width,
             height=self.height,
-            text_select=True,
-
-        )
+            text_select=True)
         webview.start()
 
 def create_app():
