@@ -90,12 +90,6 @@ def create_app():
     
     button = pn.widgets.Button(name='Close Application', button_type='danger')
     
-    # Close the window when button is clicked
-    def close_window(event):
-        window.destroy()
-    
-    button.on_click(close_window)
-    
     app = pn.Column(
         "# Desktop Panel Application",
         "This is a Panel app running in a native window!",
@@ -104,11 +98,20 @@ def create_app():
         button,
     )
     
-    return app
+    return app, button
 
 def start_server():
     """Start the Panel server in a background thread."""
-    app = create_app()
+    app, button = create_app()
+    
+    # Close the window when button is clicked
+    def close_window(event):
+        # Access the first (and only) window in the webview application
+        if webview.windows:
+            webview.windows[0].destroy()
+    
+    button.on_click(close_window)
+    
     pn.serve(app, port=5000, show=False, threaded=True)
 
 if __name__ == '__main__':

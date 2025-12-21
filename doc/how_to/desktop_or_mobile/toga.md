@@ -594,7 +594,7 @@ class PanelDesktopApp(toga.App):
             - **Slider**: {value:.2f}
             - **Selection**: {option}
             
-            This is a fully functional Panel app running in a native {self.platform} application!
+            This is a fully functional Panel app running in a native application!
             """)
         
         # Layout
