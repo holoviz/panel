@@ -82,7 +82,11 @@ from toga.style import Pack
 
 import panel as pn
 
-pn.extension()
+pn.extension(raw_css=["""
+    body {
+        background-color: white !important;
+    }
+"""])
 
 
 class MyPanelApp(toga.App):
@@ -162,7 +166,7 @@ class MyPanelApp(toga.App):
 
         main_box = toga.Box(
             children=[button_box, self.webview],
-            style=Pack(direction='column', flex=1)
+            style=Pack(direction='column', flex=1, background_color='silver')
         )
 
         self.main_window.content = main_box

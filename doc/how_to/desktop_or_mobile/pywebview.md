@@ -88,9 +88,6 @@ class PanelDesktop:
         )
         server_thread.start()
 
-        # Wait for server to start
-        time.sleep(1)
-
         # Create and start webview
         webview.create_window(
             self.title,
@@ -186,7 +183,6 @@ The executable will be in the `dist` folder.
 **Blank window or errors:**
 
 - Add hidden imports: `--hidden-import=panel --hidden-import=bokeh`
-- Increase sleep time in the `serve()` method
 - Run without `--noconsole` to see error messages
 
 ### Create installer for Windows
