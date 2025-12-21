@@ -74,8 +74,6 @@ my_panel_app/
 Edit `src/mypanelapp/app.py` to integrate Panel with Toga:
 
 ```python
-import asyncio
-import pathlib
 
 import toga
 from toga.style import Pack
