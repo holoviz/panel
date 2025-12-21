@@ -28,46 +28,6 @@ Create cross-platform desktop and mobile applications using Toga and Briefcase.
 
 ::::
 
-## Choosing the Right Approach
-
-### pywebview + PyInstaller
-
-**Best for:**
-- Desktop-only applications (Windows, macOS, Linux)
-- Quick prototypes and simple applications
-- Minimal dependencies and smaller application size
-- Applications that need native window features
-
-**Pros:**
-- Lightweight and fast
-- Simple to set up and use
-- Native window controls and menus
-- Good performance
-
-**Cons:**
-- Desktop only (no mobile support)
-- Limited native UI components
-- Manual packaging process with PyInstaller
-
-### Toga + Briefcase
-
-**Best for:**
-- Cross-platform applications (desktop and mobile)
-- Applications that need native UI components
-- Professional distribution and packaging
-- Long-term maintained applications
-
-**Pros:**
-- True cross-platform support (Windows, macOS, Linux, iOS, Android)
-- Native UI integration
-- Comprehensive packaging and distribution tools
-- Active development and community
-
-**Cons:**
-- Larger application size
-- More complex setup
-- Additional dependencies
-
 ```{toctree}
 :titlesonly:
 :hidden:

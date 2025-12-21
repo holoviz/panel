@@ -1,391 +1,198 @@
 # Create Desktop Apps with pywebview
 
-This guide demonstrates how to convert a Panel application into a standalone desktop application using [pywebview](https://pywebview.flowrl.com/) and [PyInstaller](https://pyinstaller.org/).
+Convert Panel applications into standalone desktop executables using [pywebview](https://pywebview.flowrl.com/) and package them for distribution.
 
----
-
-## Overview
-
-pywebview is a lightweight cross-platform wrapper around a webview component that allows you to display HTML content in a native GUI window. Combined with PyInstaller, you can package your Panel application as a standalone executable that users can run without installing Python.
-
-**What you'll learn:**
-- How to wrap a Panel app with pywebview
-- How to package the application with PyInstaller
-- How to create a distributable executable
-
-## Prerequisites
-
-- Python 3.8 or later
-- Basic familiarity with Panel applications
-- Understanding of your target platform (Windows, macOS, or Linux)
-
-## Installation
-
-Install the required packages:
+## Install Dependencies
 
 ```bash
 pip install panel pywebview pyinstaller
 ```
 
 :::{note}
-On Linux, you may need to install additional GTK dependencies. See the [pywebview documentation](https://pywebview.flowrl.com/guide/installation.html) for platform-specific requirements.
+Linux requires additional GTK dependencies. See [pywebview installation guide](https://pywebview.flowrl.com/guide/installation.html).
 :::
 
-## Creating a Desktop Application
+## Create Your Panel Application
 
-### Step 1: Create Your Panel Application
-
-First, create a Panel application that you want to convert. Here's a simple example:
+Create a Panel application with optional *exit* functionality:
 
 ```python
 import panel as pn
-
-pn.extension()
+import os
 
 def create_app():
-    """Create a simple Panel application."""
-    slider = pn.widgets.IntSlider(name='Value', start=0, end=100, value=50)
-    
-    def update_text(value):
-        return f"The slider value is: {value}"
-    
-    text = pn.bind(update_text, slider.param.value)
-    
-    button = pn.widgets.Button(name='Close Application', button_type='danger')
-    
-    app = pn.Column(
+    """Example Panel app with exit functionality."""
+    pn.extension(design="material")
+
+    pn.pane.Markdown.disable_anchors = True
+
+    slider = pn.widgets.IntSlider(value=3, start=1, end=5)
+    stars = pn.bind(lambda n: "⭐" * n, slider)
+
+    def exit_app(event):
+        """Exit the desktop application."""
+        os._exit(0)
+        # an alternative way:
+        # import webview
+        # webview.windows[0].destroy()
+
+    exit_btn = pn.widgets.Button(name="Exit", on_click=exit_app, button_type="primary")
+
+    return pn.Column(
         "# Desktop Panel Application",
         "This is a Panel app running in a native window!",
-        slider,
-        text,
-        button,
+        slider, stars, exit_btn
     )
-    
-    return app, button
 
-if __name__ == "__main__":
-    app, button = create_app()
-    pn.serve(app, port=5000, show=True)
+if pn.state.served:
+    create_app().servable()
 ```
 
-### Step 2: Wrap with pywebview
+## Wrap with pywebview
 
-Create a file called `app.py` that wraps your Panel application with pywebview:
+Create `app.py` to wrap your Panel application:
 
 ```python
-import threading
 import webview
 import panel as pn
+import threading
+import time
+import os
+import socket
 
-pn.extension()
+class PanelDesktop:
+    """Serve Panel apps as desktop applications using webview."""
+
+    def __init__(self, title="Panel Desktop App", width: int=600, height: int=600):
+        self.title = title
+        self.width = width
+        self.height = height
+
+    @staticmethod
+    def _find_free_port():
+        """Find a free port on localhost."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            s.listen(1)
+            port = s.getsockname()[1]
+        return port
+
+    def serve(self, func_or_path, port: int=0):
+        """Serve a Panel function or file in a desktop window."""
+        if not port:
+            port = self._find_free_port()
+        # Start Panel server in daemon thread
+        server_thread = threading.Thread(
+            target=lambda: pn.serve(func_or_path, port=port, show=False, autoreload=False),
+            daemon=True
+        )
+        server_thread.start()
+
+        # Wait for server to start
+        time.sleep(1)
+
+        # Create and start webview
+        webview.create_window(
+            self.title,
+            f'http://localhost:{port}',
+            resizable=True,
+            fullscreen=False,
+            width=self.width,
+            height=self.height,
+            text_select=True,
+
+        )
+        webview.start()
 
 def create_app():
-    """Create your Panel application."""
-    slider = pn.widgets.IntSlider(name='Value', start=0, end=100, value=50)
-    
-    def update_text(value):
-        return f"The slider value is: {value}"
-    
-    text = pn.bind(update_text, slider.param.value)
-    
-    button = pn.widgets.Button(name='Close Application', button_type='danger')
-    
-    app = pn.Column(
+    """Example Panel app with exit functionality."""
+    pn.extension(design="material")
+
+    pn.pane.Markdown.disable_anchors = True
+
+    slider = pn.widgets.IntSlider(value=3, start=1, end=5)
+    stars = pn.bind(lambda n: "⭐" * n, slider)
+
+    def exit_app(event):
+        """Exit the desktop application."""
+        os._exit(0)
+        # an alternative way:
+        # import webview
+        # webview.windows[0].destroy()
+
+    exit_btn = pn.widgets.Button(name="Exit", on_click=exit_app, button_type="primary")
+
+    return pn.Column(
         "# Desktop Panel Application",
         "This is a Panel app running in a native window!",
-        slider,
-        text,
-        button,
+        slider, stars, exit_btn
     )
-    
-    return app, button
 
-def start_server():
-    """Start the Panel server in a background thread."""
-    app, button = create_app()
-    
-    # Close the window when button is clicked
-    def close_window(event):
-        # Access the first (and only) window in the webview application
-        if webview.windows:
-            webview.windows[0].destroy()
-    
-    button.on_click(close_window)
-    
-    pn.serve(app, port=5000, show=False, threaded=True)
-
-if __name__ == '__main__':
-    # Start Panel server in background thread
-    server_thread = threading.Thread(target=start_server, daemon=True)
-    server_thread.start()
-    
-    # Give the server a moment to start
-    import time
-    time.sleep(2)
-    
-    # Create and show the native window
-    window = webview.create_window(
-        'Panel Desktop App',
-        'http://localhost:5000',
-        width=800,
-        height=600,
-    )
-    webview.start()
+if __name__ == "__main__":
+    desktop = PanelDesktop("My Panel App")
+    desktop.serve(create_app)
 ```
 
-### Step 3: Test the Application
+:::{note}
+You can serve an external file instead of a function:
+```python
+desktop.serve("my_panel_app.py")
+```
+:::
 
-Run your application to ensure it works correctly:
+## Test the Application
+
+Run:
 
 ```bash
 python app.py
 ```
 
-You should see a native window open with your Panel application running inside. Test all functionality before proceeding to packaging.
+The app should look like
 
-## Packaging with PyInstaller
+![Panel Desktop PyWebView](../../_static/images/panel-desktop-pywebview.png)
 
-### Step 1: Create a Spec File (Optional)
+Verify all functionality works before packaging.
 
-For more control over the packaging process, create a PyInstaller spec file:
+## Package for Distribution
 
-```python
-# app.spec
-# -*- mode: python ; coding: utf-8 -*-
+Packaging frameworks by platform:
 
-block_cipher = None
+- **Windows/Linux**: [PyInstaller](https://www.pyinstaller.org/) or [Nuitka](http://nuitka.net/)
+- **macOS**: [py2app](https://py2app.readthedocs.io/en/latest/)
+- **Android**: [Buildozer](https://buildozer.readthedocs.io/en/latest/)
 
-a = Analysis(
-    ['app.py'],
-    pathex=[],
-    binaries=[],
-    datas=[],
-    hiddenimports=['panel', 'bokeh', 'tornado'],
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
-)
+See the [pywebview freezing guide](https://pywebview.flowrl.com/guide/freezing.html) for complete platform-specific instructions.
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+### Package for Windows
 
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    [],
-    name='PanelApp',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
-    console=False,  # Set to False for a GUI-only app
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-)
-```
-
-### Step 2: Build the Executable
-
-Build your application using PyInstaller:
-
-**Using the basic command:**
-```bash
-pyinstaller app.py --onefile --windowed
-```
-
-**Or using the spec file:**
-```bash
-pyinstaller app.spec
-```
-
-**Command options explained:**
-- `--onefile`: Package everything into a single executable
-- `--windowed`: Don't show a console window (Windows/macOS)
-- `--name`: Specify the name of the executable
-
-### Step 3: Test the Executable
-
-Find your executable in the `dist` folder:
-
-- **Windows**: `dist/app.exe` or `dist/PanelApp.exe`
-- **macOS**: `dist/app` or `dist/PanelApp`
-- **Linux**: `dist/app` or `dist/PanelApp`
-
-Run the executable to verify it works correctly.
-
-## Advanced Features
-
-### Adding Application Icons
-
-Add a custom icon to your application:
+Build with PyInstaller:
 
 ```bash
-pyinstaller app.py --onefile --windowed --icon=app_icon.ico
+pyinstaller app.py
 ```
 
-Icon format requirements:
-- **Windows**: `.ico` file
-- **macOS**: `.icns` file  
-- **Linux**: `.png` file
+The executable will be in the `dist` folder.
 
-### Customizing the Window
+**Options:**
 
-You can customize the pywebview window with additional options:
+- `--debug all` - Enable debugging
+- `--icon=favicon.ico` - Add custom icon ([download Panel icon](https://raw.githubusercontent.com/holoviz/panel/refs/heads/main/doc/_static/icons/favicon.ico))
+- `--noconsole` - Hide console window
+- `--onefile` - Create single executable (makes the loading of the application slow)
 
-```python
-window = webview.create_window(
-    'Panel Desktop App',
-    'http://localhost:5000',
-    width=1024,
-    height=768,
-    resizable=True,
-    fullscreen=False,
-    min_size=(800, 600),
-    background_color='#FFFFFF',
-    text_select=True,
-)
-```
+#### Troubleshooting
 
-### Handling Application Lifecycle
+**Blank window or errors:**
 
-Properly handle application startup and shutdown:
-
-```python
-import atexit
-import threading
-import webview
-import panel as pn
-
-pn.extension()
-
-# Store server reference globally
-server = None
-
-def start_server():
-    """Start the Panel server."""
-    global server
-    app = create_app()
-    server = pn.serve(app, port=5000, show=False, threaded=True)
-
-def cleanup():
-    """Clean up resources on exit."""
-    global server
-    if server is not None:
-        server.stop()
-
-# Register cleanup function
-atexit.register(cleanup)
-
-if __name__ == '__main__':
-    server_thread = threading.Thread(target=start_server, daemon=True)
-    server_thread.start()
-    
-    import time
-    time.sleep(2)
-    
-    window = webview.create_window('Panel Desktop App', 'http://localhost:5000')
-    webview.start()
-```
-
-## Troubleshooting
-
-### Application Won't Start
-
-**Issue**: The executable starts but shows a blank window or error.
-
-**Solutions**:
-- Verify all dependencies are included in the PyInstaller build
 - Add hidden imports: `--hidden-import=panel --hidden-import=bokeh`
-- Check the console output by removing the `--windowed` flag
-- Increase the sleep time before creating the window
+- Increase sleep time in the `serve()` method
+- Run without `--noconsole` to see error messages
 
-### Large Executable Size
+### Create installer for Windows
 
-**Issue**: The executable is very large (>100MB).
+For professional distribution, create an installer using [InstallForge](https://installforge.net/), [NSIS](https://nsis.sourceforge.io/), or [Inno Setup](https://jrsoftware.org/isinfo.php).
 
-**Solutions**:
-- Use `--exclude-module` to remove unnecessary packages
-- Consider creating a directory-based distribution instead of `--onefile`
-- Use UPX compression: `--upx-dir=/path/to/upx`
+## Alternative: Distribute as UV Tool
 
-### Port Already in Use
-
-**Issue**: Error message about port 5000 already in use.
-
-**Solutions**:
-- Use a different port or dynamically select an available port:
-
-```python
-import socket
-
-def find_free_port():
-    """Find a free port on localhost."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('', 0))
-        s.listen(1)
-        port = s.getsockname()[1]
-    return port
-
-# Use in your code
-port = find_free_port()
-server = pn.serve(app, port=port, show=False, threaded=True)
-window = webview.create_window('Panel Desktop App', f'http://localhost:{port}')
-```
-
-## Platform-Specific Considerations
-
-### Windows
-
-- Use `.ico` format for icons
-- Consider code signing for distribution
-- Test on target Windows versions
-
-### macOS
-
-- Use `.icns` format for icons
-- May need to sign and notarize for distribution
-- Test on both Intel and Apple Silicon if targeting both
-
-### Linux
-
-- Different distributions may require different dependencies
-- GTK3 is commonly required for pywebview
-- Consider using AppImage or Flatpak for broader distribution
-
-## Distribution
-
-### Windows
-
-1. Test the `.exe` on a clean Windows machine
-2. Consider creating an installer with tools like [NSIS](https://nsis.sourceforge.io/) or [Inno Setup](https://jrsoftware.org/isinfo.php)
-3. Sign the executable for professional distribution
-
-### macOS
-
-1. Test the application on a clean macOS system
-2. Create a `.dmg` installer
-3. Sign and notarize for Gatekeeper compatibility
-
-### Linux
-
-1. Test on multiple distributions
-2. Consider AppImage, Flatpak, or Snap for distribution
-3. Provide installation instructions for dependencies
-
-## Related Resources
-
-- [pywebview Documentation](https://pywebview.flowrl.com/)
-- [PyInstaller Documentation](https://pyinstaller.org/)
-- [Panel Server Configuration](../server/index)
+A simple alternative to PyInstaller, would be to distribute the app as a [`uv` tool](https://docs.astral.sh/uv/guides/tools/).
