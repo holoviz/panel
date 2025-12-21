@@ -292,6 +292,6 @@ Building for Android requires Android SDK. Briefcase will help you install it if
 ## Related Resources
 
 - [BeeWare Project](https://beeware.org/)
-  - [Beeware Tutorial](https://tutorial.beeware.org/en/latest/tutorial/tutorial-0/)
+  - [BeeWare Tutorial](https://tutorial.beeware.org/en/latest/tutorial/tutorial-0/)
 - [Toga Documentation](https://toga.readthedocs.io/)
 - [Briefcase Documentation](https://briefcase.readthedocs.io/)

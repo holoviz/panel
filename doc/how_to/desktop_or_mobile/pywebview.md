@@ -14,39 +14,13 @@ Linux requires additional GTK dependencies. See [pywebview installation guide](h
 
 ## Create Your Panel Application
 
-Create a Panel application with optional *exit* functionality:
+We'll build a simple Panel application with optional *exit* functionality:
 
-```python
-import panel as pn
-import os
+- a slider to choose a number
+- a corresponding row of ⭐ characters
+- an **Exit** button that terminates the desktop application
 
-def create_app():
-    """Example Panel app with exit functionality."""
-    pn.extension(design="material")
-
-    pn.pane.Markdown.disable_anchors = True
-
-    slider = pn.widgets.IntSlider(value=3, start=1, end=5)
-    stars = pn.bind(lambda n: "⭐" * n, slider)
-
-    def exit_app(event):
-        """Exit the desktop application."""
-        os._exit(0)
-        # an alternative way:
-        # import webview
-        # webview.windows[0].destroy()
-
-    exit_btn = pn.widgets.Button(name="Exit", on_click=exit_app, button_type="primary")
-
-    return pn.Column(
-        "# Desktop Panel Application",
-        "This is a Panel app running in a native window!",
-        slider, stars, exit_btn
-    )
-
-if pn.state.served:
-    create_app().servable()
-```
+The full implementation of this Panel app (via a `create_app()` function) is shown in the complete `app.py` example in the next section.
 
 ## Wrap with pywebview
 
@@ -151,11 +125,10 @@ Verify all functionality works before packaging.
 
 ## Package for Distribution
 
-Packaging frameworks by platform:
+Packaging frameworks by desktop platform:
 
 - **Windows/Linux**: [PyInstaller](https://www.pyinstaller.org/) or [Nuitka](http://nuitka.net/)
 - **macOS**: [py2app](https://py2app.readthedocs.io/en/latest/)
-- **Android**: [Buildozer](https://buildozer.readthedocs.io/en/latest/)
 
 See the [pywebview freezing guide](https://pywebview.flowrl.com/guide/freezing.html) for complete platform-specific instructions.
 
