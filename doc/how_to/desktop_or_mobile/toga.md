@@ -31,7 +31,7 @@ pip install briefcase
 ```
 
 :::{note}
-For Windows this will install everything. For other OSs please refer to [BeeWare Tutorial | Install Dependencies](https://tutorial.beeware.org/en/latest/tutorial/tutorial-0/#install-dependencies) guide.
+For Windows this will install everything. For other operating systems, please refer to [BeeWare Tutorial | Install Dependencies](https://tutorial.beeware.org/en/latest/tutorial/tutorial-0/#install-dependencies) guide.
 :::
 
 ## Creating a Cross-Platform Application
