@@ -31,7 +31,7 @@ pip install briefcase
 ```
 
 :::{note}
-For Windows this will install everything. For other OSs please refer to [BeeWare Tutorial | Install Dependencies](https://tutorial.beeware.org/en/latest/tutorial/tutorial-0/#install-dependencies) guide.
+For Windows, this will install everything. For other OSes, refer to the [BeeWare Tutorial | Install Dependencies](https://tutorial.beeware.org/en/latest/tutorial/tutorial-0/#install-dependencies) guide.
 :::
 
 ## Creating a Cross-Platform Application
@@ -247,7 +247,7 @@ This creates:
 
 - **Windows**: An MSI installer
 - **macOS**: A DMG file
-- **Linux**: AppImage, DEB, or RPM packages
+- **Linux**: DEB or RPM packages
 
 ### Mobile Applications
 
@@ -268,7 +268,15 @@ briefcase package iOS
 ```
 
 :::{note}
-Building for iOS requires Xcode and Apple Developer account for distribution.
+
+We have not tested building Panel iOS apps with Toga and Briefcase. If you try it, we would love to hear about your experience.
+
+Panel ships with a lot of JavaScript. Apple is strict about what gets packaged, so we don't know if they'll flag any of that during app submission.
+
+Building for iOS requires a Mac, Xcode, and an Apple Developer account for distribution.
+
+The BeeWare project provides [iOS versions of Pandas](https://anaconda.org/channels/beeware/packages/pandas/overview) and [iOS versions of other dependencies](https://anaconda.org/beeware/repo) with the eventual plan for these maintainers to create packages for iOS themselves.
+
 :::
 
 #### Android
@@ -288,7 +296,11 @@ briefcase package android
 ```
 
 :::{note}
+
+We have not tested building Panel Android apps with Toga and Briefcase. If you try it, we would love to hear about your experience.
+
 Building for Android requires Android SDK. Briefcase will help you install it if needed.
+
 :::
 
 ## Related Resources
@@ -296,4 +308,5 @@ Building for Android requires Android SDK. Briefcase will help you install it if
 - [BeeWare Project](https://beeware.org/)
   - [Beeware Tutorial](https://tutorial.beeware.org/en/latest/tutorial/tutorial-0/)
 - [Toga Documentation](https://toga.readthedocs.io/)
+  - [Toga Positron](https://github.com/beeware/toga/tree/main/positron): Boilerplate templates for Electron-like apps using Python. A Panel template could be added in the future.
 - [Briefcase Documentation](https://briefcase.readthedocs.io/)
