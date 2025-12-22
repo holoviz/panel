@@ -74,8 +74,6 @@ my_panel_app/
 Edit `src/mypanelapp/app.py` to integrate Panel with Toga:
 
 ```python
-import asyncio
-import pathlib
 
 import toga
 from toga.style import Pack
@@ -306,7 +304,7 @@ Building for Android requires Android SDK. Briefcase will help you install it if
 ## Related Resources
 
 - [BeeWare Project](https://beeware.org/)
-  - [Beeware Tutorial](https://tutorial.beeware.org/en/latest/tutorial/tutorial-0/)
+  - [BeeWare Tutorial](https://tutorial.beeware.org/en/latest/tutorial/tutorial-0/)
 - [Toga Documentation](https://toga.readthedocs.io/)
   - [Toga Positron](https://github.com/beeware/toga/tree/main/positron): Boilerplate templates for Electron-like apps using Python. A Panel template could be added in the future.
 - [Briefcase Documentation](https://briefcase.readthedocs.io/)
