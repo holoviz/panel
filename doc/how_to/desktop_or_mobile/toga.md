@@ -307,4 +307,5 @@ Building for Android requires Android SDK. Briefcase will help you install it if
   - [BeeWare Tutorial](https://tutorial.beeware.org/en/latest/tutorial/tutorial-0/)
 - [Toga Documentation](https://toga.readthedocs.io/)
   - [Toga Positron](https://github.com/beeware/toga/tree/main/positron): Boilerplate templates for Electron-like apps using Python. A Panel template could be added in the future.
+  - [Panel-Toga Desktop App](https://github.com/Quansight/panel_desktop_app) A more advanced Panel + Toga app example.
 - [Briefcase Documentation](https://briefcase.readthedocs.io/)
