@@ -27,7 +27,9 @@ from ..layout.base import (
     Column, ListPanel, NamedListPanel, Panel, Row,
 )
 from ..links import Link
-from ..models import ReactiveHTML as _BkReactiveHTML
+from ..models import (
+    ReactiveESM as _ReactiveESM, ReactiveHTML as _BkReactiveHTML,
+)
 from ..reactive import Reactive
 from ..util import _descendents, param_reprs
 from ..util.checks import is_dataframe, is_series
@@ -391,6 +393,23 @@ class Pane(PaneBase, Reactive):
                 old_tab = parent.tabs[index]  # type: ignore
                 props = dict(old_tab.properties_with_values(), child=new_model)
                 parent.tabs[index] = _BkTabPanel(**props)  # type: ignore
+            elif isinstance(parent, _ReactiveESM):
+                for child_prop in parent.children:
+                    try:
+                        values = getattr(parent.data, child_prop)
+                    except AttributeError:
+                        # Skip child properties that are not present on parent.data
+                        continue
+                    if isinstance(values, list) and old_model in values:
+                        new_values = list(values)
+                        new_values[values.index(old_model)] = new_model
+                        setattr(parent.data, child_prop, new_values)
+                        break
+                    elif old_model is values:
+                        setattr(parent.data, child_prop, new_model)
+                        break
+                else:
+                    raise ValueError("No child value to replace found.")
             else:
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model

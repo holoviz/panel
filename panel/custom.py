@@ -56,6 +56,8 @@ if TYPE_CHECKING:
 
     ExportSpec = dict[str, list[str | tuple[str, ...]]]
 
+_IGNORED_ESM_PROPERTIES = ('js_event_callbacks', 'esm_constants', 'js_property_callbacks', 'subscribed_events', 'syncable')
+
 
 class PyComponent(Viewable, Layoutable):
     '''
@@ -444,7 +446,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @property
     def _linked_properties(self) -> tuple[str, ...]:
-        return tuple(p for p in self._data_model.properties() if p != 'js_property_callbacks')
+        return tuple(
+            p for p in self._data_model.properties()
+            if p not in _IGNORED_ESM_PROPERTIES and not isinstance(self.param[p], (Child, Children))
+        )
 
     def _get_properties(self, doc: Document | None) -> dict[str, Any]:
         props = super()._get_properties(doc)
