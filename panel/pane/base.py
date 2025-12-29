@@ -395,7 +395,11 @@ class Pane(PaneBase, Reactive):
                 parent.tabs[index] = _BkTabPanel(**props)  # type: ignore
             elif isinstance(parent, _ReactiveESM):
                 for child_prop in parent.children:
-                    values = getattr(parent.data, child_prop)
+                    try:
+                        values = getattr(parent.data, child_prop)
+                    except AttributeError:
+                        # Skip child properties that are not present on parent.data
+                        continue
                     if isinstance(values, list) and old_model in values:
                         new_values = list(values)
                         new_values[values.index(old_model)] = new_model
