@@ -1235,7 +1235,7 @@ class SyncableData(Reactive):
             self._stream(stream_value, rollover)
         elif pd and isinstance(stream_value, pd.Series):
             if isinstance(self._processed, dict):
-                self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)
+                self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)  # type: ignore
                 return
             value_index_start = self._processed.index.max() + 1
             self._processed.loc[value_index_start] = stream_value
