@@ -62,7 +62,7 @@ To better support this diversity, Panel will adopt **Narwhals** as its primary D
 
 Across Panel's APIs that accept or operate on tabular data, we will:
 
-* Replace direct pandas-specific handling with Narwhals abstractions where applicable 
+* Replace direct pandas-specific handling with Narwhals abstractions where applicable
 * Treat pandas as one of several supported backends rather than the only one
 * Expand support to additional DataFrame implementations, including:
 
@@ -80,17 +80,51 @@ This change allows Panel to interoperate with multiple DataFrame ecosystems whil
 * **Improved scalability:** Better alignment with large, out-of-core, and GPU-backed workflows.
 * **Cleaner internals:** Reduced pandas-specific branching and special cases in Panel's codebase.
 
+## AnyWidget Integration and External Component Ecosystems
+
+As Panel continues to reduce core scope and lean more heavily on extensions, tighter integration with external component ecosystems becomes increasingly important. One such ecosystem is **AnyWidget**, which has emerged as a lightweight, modern foundation for building reusable frontend components with a growing community of extension authors.
+
+Rather than duplicating this work inside Panel, we aim to **interoperate cleanly and efficiently** with AnyWidget-based components wherever possible.
+
+### Efficient AnyWidget Pane
+
+Panel will introduce a dedicated, optimized **AnyWidget pane** designed to:
+
+* Embed AnyWidget-based components with minimal overhead
+* Integrate cleanly with Panel layouts, theming, and reactive updates
+* Work consistently across notebook and server-based Panel applications
+
+This ensures AnyWidget components can be treated as first-class building blocks inside Panel apps, not just embedded artifacts.
+
+### Systematic Compatibility and Upstream Collaboration
+
+To make this integration robust and sustainable, Panel will:
+
+* Systematically evaluate popular AnyWidget components in real Panel applications
+* Identify performance, lifecycle, and rendering issues when used outside narrow contexts
+* Contribute fixes and improvements upstream where possible, reducing long-term maintenance burden
+
+This approach allows both ecosystems to evolve together without Panel-specific forks or fragile adapters.
+
+### Panel + AnyWidget Example Gallery
+
+To make this ecosystem approachable for users, Panel will:
+
+* Publish an example gallery showcasing **Panel applications composed with AnyWidget components**
+* Highlight patterns where AnyWidget-based components complement native Panel components
+* Provide guidance on composing applications from a mix of Panel, extension, and AnyWidget elements
+
+This reinforces Panel’s role as an **application framework and composition layer**, rather than a monolithic component library.
+
+### What This Means for Users
+
+* Access to a broader ecosystem of UI components without waiting for Panel-native implementations
+* Clearer guidance on when to use native Panel components versus external widgets
+* Better long-term stability through upstream collaboration rather than custom integrations
+
+This work supports Panel’s broader direction toward a **leaner core**, **stronger extension story**, and **integration-first architecture**.
+
 ## Developer Experience
-
-### Improved Hot Reload and Development Feedback Loops
-
-We will continue to invest in improving the local development experience, with a particular focus on:
-
-* More reliable and predictable hot reload behavior
-* Faster feedback loops when developing apps and extensions
-* Clearer separation between server reloads and application state resets
-
-These improvements aim to make iterative development smoother and less error-prone.
 
 ### Typing and IDE Support
 
@@ -101,6 +135,28 @@ Building on recent work in improving `param`'s typing support, Panel will:
 * Provide clearer type contracts for components, layouts, and reactive APIs
 
 The goal is to make Panel applications easier to reason about, refactor, and maintain, especially in larger codebases.
+
+### Pydantic & Dataclass Support
+
+Panel has long supported building applications around param.Parameterized classes, providing a structured and reactive foundation for stateful applications. Building on recent advances in typing support in Param, Panel will expand this model to better interoperate with Pydantic and other dataclass-like frameworks commonly used to define structured data and application state.
+
+This includes using these models as:
+
+* Application state containers
+* Inputs and outputs to UI components
+* Configuration and validation layers for Panel applications
+
+The goal is to allow users to define their application’s structure once, using the data-modeling tools they already rely on, and have Panel automatically adapt those models into interactive, reactive interfaces.
+
+### Improved Hot Reload and Development Feedback Loops
+
+We will continue to invest in improving the local development experience, with a particular focus on:
+
+* More reliable and predictable hot reload behavior
+* Faster feedback loops when developing apps and extensions
+* Clearer separation between server reloads and application state resets
+
+These improvements aim to make iterative development smoother and less error-prone.
 
 ### Better Error Messages and Debuggability
 
@@ -123,6 +179,7 @@ Documentation remains a core priority. Building on the Diátaxis-aligned restruc
 
   * Application architecture
   * State management
+  * Theming and Styling
   * Performance tuning
   * Extension development
 
