@@ -446,9 +446,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @property
     def _linked_properties(self) -> tuple[str, ...]:
+        mapping = {v: k for k, v in self._property_mapping.items() if v is not None}
         return tuple(
             p for p in self._data_model.properties()
-            if p not in _IGNORED_ESM_PROPERTIES and not isinstance(self.param[p], (Child, Children))
+            if p not in _IGNORED_ESM_PROPERTIES and not isinstance(self.param[mapping.get(p, p)], (Child, Children))
         )
 
     def _get_properties(self, doc: Document | None) -> dict[str, Any]:
