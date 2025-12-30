@@ -149,6 +149,24 @@ The executable will be in the `dist` folder.
 - `--noconsole` - Hide console window
 - `--onefile` - Create single executable (makes the loading of the application slow)
 
+### Package for MacOS
+
+On OSX you will need `py2app` instead of `pyinstaller`. Begin by generating a `setup.py` for your application with
+
+```bash
+py2applet --make-setup app.py
+```
+
+Next build it with:
+
+```bash
+python setup.py py2app
+```
+
+:::note
+py2app bundles your local environment, since `conda` uses features not supported in a packaged application you cannot use a conda environment as your build environment.
+:::
+
 #### Troubleshooting
 
 **Blank window or errors:**
