@@ -224,10 +224,12 @@ export class ReactComponentView extends ReactiveESMView {
     for (const view of removed) {
       this._resize_observer.unobserve(view.el)
       this._child_rendered.delete(view)
-      if (created.length) {
-        this._scheduled_removals.push(view)
-      } else {
-        view.remove()
+      if (this.model.use_shadow_dom) {
+        if (created.length) {
+          this._scheduled_removals.push(view)
+	} else {
+          view.remove()
+	}
       }
     }
 
