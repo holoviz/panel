@@ -1128,9 +1128,13 @@ def test_react_child_no_shadow_dom_remove_lifecycle_hook(page):
     expect(page.locator('h1')).to_have_text("Hello")
 
     with page.expect_console_message() as msg_info:
-        example.child = "New"
+        example.child = "# New"
 
     wait_until(lambda: msg_info.value.args[0].json_value() == "Removed", page)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("New ¶")
 
 
 class JSDefaultExport(JSComponent):
