@@ -220,6 +220,12 @@ export class ReactComponentView extends ReactiveESMView {
 
     for (const view of removed) {
       this._resize_observer.unobserve(view.el)
+      this._child_rendered.delete(view)
+      if (new_views.size > 0) {
+        this._scheduled_removals.push(view)
+      } else {
+        view.remove()
+      }
     }
 
     for (const view of created) {
@@ -232,7 +238,6 @@ export class ReactComponentView extends ReactiveESMView {
   override async update_children(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
-    const all_views = this.child_views
     const new_views = new Map()
     for (const child_view of this.child_views) {
       if (!created_children.has(child_view)) {
@@ -247,19 +252,6 @@ export class ReactComponentView extends ReactiveESMView {
         new_views.get(child).push(child_view)
       } else {
         new_views.set(child, [child_view])
-      }
-    }
-
-    if (this.use_shadow_dom) {
-      for (const view of this._child_rendered.keys()) {
-        if (!all_views.includes(view)) {
-          this._child_rendered.delete(view)
-          if (new_views.size > 0) {
-            this._scheduled_removals.push(view)
-          } else {
-            view.remove()
-          }
-        }
       }
     }
 
