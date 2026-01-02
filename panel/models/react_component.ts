@@ -254,11 +254,11 @@ export class ReactComponentView extends ReactiveESMView {
       for (const view of this._child_rendered.keys()) {
         if (!all_views.includes(view)) {
           this._child_rendered.delete(view)
-	  if (new_views.size > 0) {
-	    this._scheduled_removals.push(view)
-	  } else {
-	    view.remove()
-	  }
+          if (new_views.size > 0) {
+            this._scheduled_removals.push(view)
+          } else {
+            view.remove()
+          }
         }
       }
     }
