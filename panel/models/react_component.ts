@@ -49,7 +49,8 @@ async function _build_view<T extends HasProps>(view_cls: T["default_view"], mode
   return view
 }
 
-export async function build_views<T extends HasProps>(
+// Custom build_views implementation which does not eagerly destroy old views
+async function build_views<T extends HasProps>(
   view_storage: ViewStorage<T>,
   models: T[],
   options: Options<ViewOf<T>> = {parent: null},
@@ -146,6 +147,8 @@ export class ReactComponentView extends ReactiveESMView {
     if (this.react_root && this.use_shadow_dom) {
       super.remove()
       this.react_root.then((root: any) => root && root.unmount())
+      for (const view of this._scheduled_removals) { view.remove() }
+      this._scheduled_removals = []
     } else {
       this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
       for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
@@ -221,7 +224,7 @@ export class ReactComponentView extends ReactiveESMView {
     for (const view of removed) {
       this._resize_observer.unobserve(view.el)
       this._child_rendered.delete(view)
-      if (new_views.size > 0) {
+      if (created.length) {
         this._scheduled_removals.push(view)
       } else {
         view.remove()
