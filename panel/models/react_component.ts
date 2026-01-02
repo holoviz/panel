@@ -1,8 +1,15 @@
+import type {BuildResult, Options, ViewStorage} from "@bokehjs/core/build_views"
+import type {HasProps} from "@bokehjs/core/has_props"
+import type {ViewOf} from "@bokehjs/core/view"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
+import type {DOMView} from "@bokehjs/core/dom_view"
 import {ClassList, InlineStyleSheet, ImportedStyleSheet} from "@bokehjs/core/dom"
 import type {CSSStyles, CSSStyleSheetDecl} from "@bokehjs/core/css"
 import type * as p from "@bokehjs/core/properties"
+import {difference} from "@bokehjs/core/util/array"
+import {assert} from "@bokehjs/core/util/assert"
 import {isString} from "@bokehjs/core/util/types"
+import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 import type {Transform} from "sucrase"
 
 import {
@@ -34,6 +41,51 @@ export class HostedStyleSheet extends InlineStyleSheet {
 
 }
 
+async function _build_view<T extends HasProps>(view_cls: T["default_view"], model: T, options: Options<ViewOf<T>>): Promise<ViewOf<T>> {
+  assert(view_cls != null, "model doesn't implement a view")
+  const view = new view_cls({...options, model})
+  view.initialize()
+  await view.lazy_initialize()
+  return view
+}
+
+export async function build_views<T extends HasProps>(
+  view_storage: ViewStorage<T>,
+  models: T[],
+  options: Options<ViewOf<T>> = {parent: null},
+  cls: (model: T) => T["default_view"] = (model) => model.default_view,
+): Promise<BuildResult<T>> {
+
+  const to_remove = difference([...view_storage.keys()], models)
+
+  const removed_views: ViewOf<T>[] = []
+  for (const model of to_remove) {
+    const view = view_storage.get(model)
+    if (view != null) {
+      view_storage.delete(model)
+      removed_views.push(view)
+    }
+  }
+
+  const created_views: ViewOf<T>[] = []
+  const new_models = models.filter((model) => !view_storage.has(model))
+
+  for (const model of new_models) {
+    const view = await _build_view(cls(model), model, options)
+    view_storage.set(model, view)
+    created_views.push(view)
+  }
+
+  for (const view of created_views) {
+    view.connect_signals()
+  }
+
+  return {
+    created: created_views,
+    removed: removed_views,
+  }
+}
+
 export class ReactComponentView extends ReactiveESMView {
   declare model: ReactComponent
   declare style_cache: HTMLHeadElement
@@ -42,6 +94,7 @@ export class ReactComponentView extends ReactiveESMView {
   react_root: any = null
 
   _force_update_callbacks: (() => void)[] = []
+  _scheduled_removals: DOMView[] = []
 
   override initialize(): void {
     super.initialize()
@@ -162,6 +215,20 @@ export class ReactComponentView extends ReactiveESMView {
     }
   }
 
+  override async build_child_views(): Promise<UIElementView[]> { // TODO BuildResult<UIElement>
+    const {created, removed} = await build_views(this._child_views, this.child_models, {parent: this})
+
+    for (const view of removed) {
+      this._resize_observer.unobserve(view.el)
+    }
+
+    for (const view of created) {
+      this._resize_observer.observe(view.el, {box: "border-box"})
+    }
+
+    return created
+  }
+
   override async update_children(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
@@ -187,7 +254,11 @@ export class ReactComponentView extends ReactiveESMView {
       for (const view of this._child_rendered.keys()) {
         if (!all_views.includes(view)) {
           this._child_rendered.delete(view)
-          view.el.remove()
+	  if (new_views.size > 0) {
+	    this._scheduled_removals.push(view)
+	  } else {
+	    view.remove()
+	  }
         }
       }
     }
@@ -355,7 +426,10 @@ async function render(id) {
         return
       }
       this.updateElement()
+      for (const view of this.props.parent._scheduled_removals) { view.remove() }
+      this.props.parent._scheduled_removals = []
       this.props.parent.rerender_(view)
+      this.props.parent._child_rendered.set(view, true)
       this.render_callback = (new_views) => {
         const view = this.view
         if (!view) {
