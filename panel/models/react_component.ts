@@ -227,9 +227,9 @@ export class ReactComponentView extends ReactiveESMView {
       if (this.model.use_shadow_dom) {
         if (created.length) {
           this._scheduled_removals.push(view)
-	} else {
+        } else {
           view.remove()
-	}
+        }
       }
     }
 
