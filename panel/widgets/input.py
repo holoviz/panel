@@ -1069,6 +1069,9 @@ class IntInput(_SpinnerBase, _IntInputBase):
     >>> IntInput(name='Value', value=100, start=0, end=1000, step=10)
     """
 
+    placeholder = param.String(default='', doc="""
+        Placeholder when the value is empty.""")
+
     step = param.Integer(default=1, doc="""
         The step size.""")
 
