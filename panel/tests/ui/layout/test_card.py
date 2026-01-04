@@ -187,7 +187,7 @@ def test_card_scrollable(page):
 def test_card_widget_not_collapsed(page, card_components):
     # Fixes https://github.com/holoviz/panel/issues/7045
     w1, w2 = card_components
-    card = Card(w1, header=Row(w2))
+    card = Card("content", title="MyTitle", header=Row(w1, w2))
 
     serve_component(page, card)
 
@@ -198,6 +198,10 @@ def test_card_widget_not_collapsed(page, card_components):
 
     text_input.press("F")
     text_input.press("Enter")
+
+    slider_input = page.locator('.noUi-base')
+    expect(slider_input).to_have_count(1)
+    slider_input.click()
 
     wait_until(lambda: w2.value == 'F', page)
     assert not card.collapsed
