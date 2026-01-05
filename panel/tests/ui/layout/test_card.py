@@ -201,3 +201,22 @@ def test_card_widget_not_collapsed(page, card_components):
 
     wait_until(lambda: w2.value == 'F', page)
     assert not card.collapsed
+
+
+def test_card_child_visible(page, card_components):
+    w1, w2 = card_components
+    w1.visible = False
+    card = Card(w1, header=Row(w2), collapsed=True)
+
+    serve_component(page, card)
+
+    text_input = page.locator('.bk-Slider')
+    expect(text_input).not_to_be_visible()
+
+    w1.visible = True
+
+    expect(text_input).not_to_be_visible()
+
+    card.collapsed = False
+
+    expect(text_input).to_be_visible()
