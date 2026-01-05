@@ -259,7 +259,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     def __init__(self, **params):
         super().__init__(**params)
-        self._watching_esm = False
+        self._watching_esm = None
         self._event__callbacks = defaultdict(list)
         self._msg__callbacks = []
 
@@ -410,7 +410,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             self._watching_esm.set()
             if self._watching_esm in state._watch_events:
                 state._watch_events.remove(self._watching_esm)
-            self._watching_esm = False
+            self._watching_esm = None
 
     async def _watch_esm(self):
         import watchfiles
