@@ -999,7 +999,7 @@ class AutocompleteInput(SingleSelectBase):
 
     _allows_none: ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'label': 'title', 'options': 'completions'}
 
     _widget_type: ClassVar[type[Model]] = _BkAutocompleteInput
 
@@ -1030,7 +1030,7 @@ class _RadioGroupBase(SingleSelectBase):
     _supports_embed = False
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'options': 'labels', 'value': 'active'
+        'label': None, 'options': 'labels', 'value': 'active'
     }
 
     _source_transforms = {'value': "source.labels[value]"}
@@ -1146,7 +1146,7 @@ class _CheckGroupBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'label': None, 'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "value.map((index) => source.labels[index])"}
 
