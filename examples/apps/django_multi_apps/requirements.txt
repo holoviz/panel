@@ -3,7 +3,7 @@ asgiref==3.2.10
 attrs==19.3.0
 autobahn==20.12.3
 Automat==0.8.0
-bokeh==2.0.2
+bokeh==3.8.2
 cffi==1.13.2
 channels==2.4.0
 colorcet==2.0.5
