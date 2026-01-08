@@ -984,7 +984,10 @@ class BasicAuthProvider(AuthProvider):
     def _allow_guest(self, uri):
         if config.oauth_optional and not (uri == self._login_endpoint or '?code=' in uri):
             return True
-        return True if uri.replace('/ws', '') in self._guest_endpoints else False
+        for gep in self._guest_endpoints:
+            if uri == gep or uri == gep.rstrip('/') + '/ws':
+                return True
+        return False
 
     @property
     def get_user(self):
