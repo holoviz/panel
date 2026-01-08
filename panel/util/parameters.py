@@ -38,21 +38,35 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
     Temporarily set parameters on Parameterized object to readonly=False
     to allow editing them.
     """
-    params = parameterized.param.objects("existing").values()
-    readonlys = [p.readonly for p in params]
-    constants = [p.constant for p in params]
-    for p in params:
-        p.readonly = False
-        p.constant = False
+    kls_params = parameterized.param.objects(instance=False)
+    inst_params = parameterized._param__private.params
+    init_inst_params = list(inst_params)
+    updated_ro, updated_co = [], []
+    for pname, pobj in (kls_params | inst_params).items():
+        if pobj.readonly:
+            pobj.readonly = False
+            pobj.constant = False
+            updated_ro.append(pname)
+        elif pobj.constant:
+            pobj.constant = False
+            updated_co.append(pname)
     try:
         yield
-    except Exception:
-        raise
     finally:
-        for (p, readonly) in zip(params, readonlys):
-            p.readonly = readonly
-        for (p, constant) in zip(params, constants):
-            p.constant = constant
+        for pname in updated_ro:
+            # Some operations trigger a parameter instantiation (copy),
+            # we ensure both the class and instance parameters are reset.
+            if pname in kls_params and pname not in init_inst_params:
+                type(parameterized).param[pname].readonly = True
+                type(parameterized).param[pname].constant = True
+            if pname in inst_params:
+                parameterized.param[pname].readonly = True
+                parameterized.param[pname].constant = True
+        for pname in updated_co:
+            if pname in kls_params and pname not in init_inst_params:
+                type(parameterized).param[pname].constant = True
+            if pname in inst_params:
+                parameterized.param[pname].constant = True
 
 
 def extract_dependencies(function):
