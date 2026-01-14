@@ -480,6 +480,13 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated
     async def get(self, *args, **kwargs):
+        prefix = self.application.prefix
+        if prefix and self.request.path == prefix and not prefix.endswith('/'):
+            query_string = self.request.query if self.request.query else ''
+            redirect_url = f'{prefix}/' + (f'?{query_string}' if query_string else '')
+            self.redirect(redirect_url)
+            return
+
         # Run global authorization callback
         payload = self._generate_token_payload()
         if config.authorize_callback:
@@ -603,14 +610,14 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
                 index = self.index
                 apps = []
                 for slug in self.applications.keys():
+                    default_title = slug[1:]
                     slug = (
                         slug
                         if self.request.uri.endswith("/") or not self.prefix
                         else f"{self.prefix}{slug}"
                     )
                     # Try to get custom application page card title from config
-                    # using as default value the application page slug
-                    default_title = slug[1:].replace("_", " ").title()
+                    # using as default value the application name
                     title = config.index_titles.get(slug, default_title)
                     apps.append((slug, title))
                 apps = sorted(apps, key=lambda app: app[1])
@@ -678,8 +685,11 @@ bokeh.server.tornado.create_static_handler = create_static_handler
 # Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
 # support the WindowsProactorEventLoopPolicy so we restore it,
 # unless we detect we are running on jupyter_server.
+# get_event_loop_policy, WindowsProactorEventLoopPolicy, WindowsProactorEventLoopPolicy
+# is deprecated in Python 3.14.
 if (
     sys.platform == 'win32' and
+    sys.version_info < (3, 14, 0) and
     tornado.version_info >= (6, 1) and
     type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy and
     (('jupyter_server' not in sys.modules and

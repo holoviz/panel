@@ -252,6 +252,13 @@ How to export and save Panel applications as static files.
 How to run Panel applications entirely in the browser using WebAssembly (Wasm), Pyodide, and PyScript.
 :::
 
+:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1 sd-animate-grow50` Convert to desktop or mobile apps
+:link: desktop_or_mobile/index
+:link-type: doc
+
+How to convert Panel applications into standalone desktop or mobile applications.
+:::
+
 ::::
 
 ## Migrate to Panel

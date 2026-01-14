@@ -1,3 +1,5 @@
+from importlib.util import find_spec
+
 collect_ignore_glob = [
     "apps/",
     "developer_guide/",
@@ -7,6 +9,33 @@ collect_ignore_glob = [
     "*DeckGL*.ipynb",
     "*Terminal.ipynb",
 ]
+
+if find_spec("altair") is None:
+    collect_ignore_glob += [
+        "gallery/altair_brushing.ipynb",
+        "gallery/gapminders.ipynb",
+        "gallery/penguin_kmeans.ipynb",
+        "reference/panes/Streamz.ipynb",
+    ]
+
+if find_spec("streamz") is None:
+    collect_ignore_glob += [
+        "reference/panes/DataFrame.ipynb",
+        "reference/panes/Streamz.ipynb",
+    ]
+
+if find_spec("datashader") is None:
+    collect_ignore_glob += [
+        "gallery/glaciers.ipynb",
+        "gallery/windturbines.ipynb",
+        "gallery/vtk_slicer.ipynb",
+    ]
+
+if find_spec("pyvista") is None:
+    collect_ignore_glob += [
+        "gallery/vtk_interactive.ipynb",
+        "gallery/vtk_warp.ipynb",
+    ]
 
 
 def pytest_runtest_makereport(item, call):

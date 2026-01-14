@@ -91,6 +91,13 @@
   transition: 0.5s;
 }
 
+.muuri-no-select,
+.muuri-no-select * {
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
 .muuri-handle:hover {
   transition: 0.5s;
   opacity: 1 !important;

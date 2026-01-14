@@ -1,8 +1,111 @@
 # Releases
 
+## Version 1.8.5
+
+This release includes several fixes and enhancements for notebook stability, Tabulator behavior, ESM/ReactiveComponent handling, and Markdown rendering. It also adds documentation updates for FastAPI integration, app conversion guides, and the Panel roadmap.
+
+### 🐛 Bug Fixes
+
+- Fix error in notebook environments causing failure to run apps ([#8334](https://github.com/holoviz/panel/pull/8334))
+- Prevent `Tabulator` from unintentionally reverting `show_index=False` back to `True` ([#8333](https://github.com/holoviz/panel/pull/8333))
+- Ensure transformed param values are inherited by ESM components ([#8338](https://github.com/holoviz/panel/pull/8338))
+- Ensure DataFrame objects can be referenced in Vega `datasets` ([#8330](https://github.com/holoviz/panel/pull/8330))
+- Improve handling of code highlighting in `Markdown` pane ([#8331](https://github.com/holoviz/panel/pull/8331))
+- Allow replacing child models inside `ReactiveESM` components ([#8348](https://github.com/holoviz/panel/pull/8348))
+
+### 📚 Documentation
+
+* Add **how-to guides** for converting Panel apps to **desktop and mobile apps** ([#8349](https://github.com/holoviz/panel/pull/8349))
+* Update **FastAPI integration instructions** ([#8337](https://github.com/holoviz/panel/pull/8337))
+* Publish updated **Roadmap for Panel v2 and beyond** ([#8339](https://github.com/holoviz/panel/pull/8339))
+
+### 🧪 Maintenance & Build
+
+* Use **trusted publisher** setup for NPM release
+* Bump Node.js version used in build
+
+## Version 1.8.4
+
+Panel 1.8.4 includes key bug fixes and behavior improvements around event ordering, Tabulator interop, and Jupyter/Notebook usage. It also improves support for async usage, validation, and app routing—plus quality-of-life enhancements for both developers and users. Thanks to @philippjfr, @hoxbro, @maximlt, @ahuang11, @MarcSkovMadsen, @TheoMathurin, @ruoyu0088, and @dieterweber for your contributions to this release!
+
+### ✨ Enhancements
+
+- Add config toggle to disable Bokeh validation ([#8294](https://github.com/holoviz/panel/pull/8294))
+- Allow `Tabulator.row_content` to be an async function ([#8309](https://github.com/holoviz/panel/pull/8309))
+- Improve documentation and validation of `patch_value` ([#8312](https://github.com/holoviz/panel/pull/8312))
+- Propagate layout-related parameters to `NestedSelect` ([#8317](https://github.com/holoviz/panel/pull/8317))
+
+### 🐛 Bug Fixes
+
+- Fix crash when emptying a `DataFrame` ([#8256](https://github.com/holoviz/panel/pull/8256))
+- Ensure new Panel instance is always loaded ([#8293](https://github.com/holoviz/panel/pull/8293))
+- Improve robustness of Bokeh/Panel notebook integration ([#8289](https://github.com/holoviz/panel/pull/8289))
+- Fix notebook reading errors by explicitly using UTF-8 encoding ([#8304](https://github.com/holoviz/panel/pull/8304))
+- Ensure `param.Action` only triggers one event ([#8305](https://github.com/holoviz/panel/pull/8305))
+- Fix conflict when using both `ipywidgets` and `Tabulator` extensions ([#8308](https://github.com/holoviz/panel/pull/8308))
+- Ensure discrete events (e.g. button clicks) are scheduled after change events ([#8311](https://github.com/holoviz/panel/pull/8311), [#8319](https://github.com/holoviz/panel/pull/8319))
+- Reinstate application name as default index page title ([#8313](https://github.com/holoviz/panel/pull/8313))
+- Redirect requests to the prefixed root when `--prefix` is set ([#8321](https://github.com/holoviz/panel/pull/8321))
+- Ensure non-active `Tabs` are not clickable ([#8324](https://github.com/holoviz/panel/pull/8324))
+
+### 🧪 Maintenance & Infrastructure
+
+- Update Python/JS dependencies ([#8318](https://github.com/holoviz/panel/pull/8318))
+- Fix type checking errors ([#8314](https://github.com/holoviz/panel/pull/8314))
+- Pin `jupyterlite-core` temporarily ([#8315](https://github.com/holoviz/panel/pull/8315))
+- Clean up `pixi.toml` project config ([#8303](https://github.com/holoviz/panel/pull/8303))
+
+### ⚠️ Compatibility & Deprecations
+
+- Heads up: Starting with Panel 1.9.0, pandas will no longer be installed by default. If your code depends on pandas and you were relying on Panel to install it implicitly, you’ll need to add it as an explicit dependency in your environment or project configuration.
+
+## Version 1.8.3
+
+This patch release brings targeted UI fixes, improves Python and Django compatibility, and enhances the developer and contributor experience. It also includes fixes for Tabulator, Pyodide, templates, and app interactivity, along with several documentation and robustness improvements. Many thanks to @ahuang11, @hoxbro, @maximlt, @MarcSkovMadsen, @Coderambling and  @philippjfr for their contributions to this release.
+
+### ✨ Enhancements
+
+- Align CSS variables between default and dark themes ([#8248](https://github.com/holoviz/panel/pull/8248))
+- Ensure behavior of dynamically served apps is aligned with file based apps ([#8249](https://github.com/holoviz/panel/pull/8249))
+- Add `export()` method to `Vega` pane ([#8266](https://github.com/holoviz/panel/pull/8266))
+- Add official support for **Python 3.14** ([#8241](https://github.com/holoviz/panel/pull/8241))
+- Add `render_policy="manual"` option for `JSComponent` ([#8285](https://github.com/holoviz/panel/pull/8285))
+- Disable text selection when editing in `EditableTemplate` ([#8286](https://github.com/holoviz/panel/pull/8286))
+- Prevent full text selection when replacing input values on `CodeEditor` ([#8262](https://github.com/holoviz/panel/pull/8262))
+
+### 🐛 Bug Fixes
+
+- Fix FastAPI bug where `pn.state.location` wasn’t retained ([#8283](https://github.com/holoviz/panel/pull/8283))
+- Fix Tabulator popup container rendering issues ([#8247](https://github.com/holoviz/panel/pull/8247))
+- Resolve issues with pipeline `next/previous` buttons ([#8273](https://github.com/holoviz/panel/pull/8273))
+- Ensure ESM compilation uses `_esm` path ([#8245](https://github.com/holoviz/panel/pull/8245))
+- Fix CORS issue with `turbine` data URL in Pyodide ([#8272](https://github.com/holoviz/panel/pull/8272))
+- Ensure `ParamRef`, `ParamFunction`, and `ParamMethod` do not override styling ([#8264](https://github.com/holoviz/panel/pull/8264))
+- Fix toggle behavior in `BootstrapTemplate` sidebar ([#8268](https://github.com/holoviz/panel/pull/8268))
+- Minor robustness improvements for Bokeh model interop ([#8270](https://github.com/holoviz/panel/pull/8270))
+
+### 📚 Documentation
+
+- Minor enhancements to the [Panel Gallery](https://panel.holoviz.org/gallery/) deployment ([#8240](https://github.com/holoviz/panel/pull/8240))
+- Update Django integration docs ([#8252](https://github.com/holoviz/panel/pull/8252))
+- Clarify setup instructions ([#8255](https://github.com/holoviz/panel/pull/8255))
+- Fix typo and layout issue in `README.md` ([#8287](https://github.com/holoviz/panel/pull/8287))
+- Fix unclosed code block in `convert.md` ([#8280](https://github.com/holoviz/panel/pull/8280))
+
+### 🧪 Infrastructure & Developer Experience
+
+- Remove Bokeh metadata workaround related to Tornado ([#8243](https://github.com/holoviz/panel/pull/8243))
+- Bump Django versions in example apps:
+
+  - `4.2.22` → `4.2.25` ([#8226](https://github.com/holoviz/panel/pull/8226))
+  - `4.2.22` → `4.2.26` in multi-apps example ([#8282](https://github.com/holoviz/panel/pull/8282))
+- Add `setup-dev` command for easier local development ([#8277](https://github.com/holoviz/panel/pull/8277))
+- Improve internal `_descendents` resolution for parameterized classes ([#8284](https://github.com/holoviz/panel/pull/8284))
+- Add `__panel__` stub method to `PyComponent` ([#8271](https://github.com/holoviz/panel/pull/8271))
+
 ## Version 1.8.2
 
-This patch release focuses on polishing the user experience, fixing regressions, and improving documentation—particularly around app deployment and Tabulator interactivity. It includes several frontend and CSS tweaks, pyodide compatibility fixes, and two new deployment guides for **Anaconda Notebooks** and **PythonAnywhere**. Thanks to @philippjfr, @maximlt, @etihwo, @MarcSkovMadsen, and @Coderambling for their contributions to this release.
+This patch release focuses on polishing the user experience, fixing regressions, and improving documentation, particularly around app deployment and Tabulator interactivity. It includes several frontend and CSS tweaks, pyodide compatibility fixes, and two new deployment guides for **Anaconda Notebooks** and **PythonAnywhere**. Thanks to @philippjfr, @maximlt, @etihwo, @MarcSkovMadsen, and @Coderambling for their contributions to this release.
 
 ### ✨ Enhancements
 
@@ -16,6 +119,10 @@ This patch release focuses on polishing the user experience, fixing regressions,
 - Ensure Tabulator does not break if other components don't correctly initialize ([#8212](https://github.com/holoviz/panel/pull/8212))
 - Fix Pyodide `jsnull` value conversion in Bokeh JSON patches ([#8217](https://github.com/holoviz/panel/pull/8217))
 - Fix regression causing column headers not to stretch properly across layout ([#8219](https://github.com/holoviz/panel/pull/8219))
+- Ensure `config.npm_cdn` is respected ([#8233](https://github.com/holoviz/panel/issues/8233))
+- Ensure bundled pyodide resources use correct path separator ([#8230](https://github.com/holoviz/panel/pull/8230))
+- Ensure pyodide resource bundle is only generated if necessary ([#8234](https://github.com/holoviz/panel/pull/8234))
+- Ensure pyodide session is registered as loaded ([#8235](https://github.com/holoviz/panel/pull/8234))
 
 ### 📚 Documentation
 

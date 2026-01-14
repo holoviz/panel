@@ -2,10 +2,12 @@ import numpy as np
 import pandas as pd
 import param
 
+from bokeh.plotting import figure
+
 from panel.custom import PyComponent, ReactiveESM
 from panel.layout import Row
-from panel.pane import Markdown
-from panel.viewable import Viewable
+from panel.pane import Bokeh, Markdown
+from panel.viewable import Child, Children
 
 
 class SimplePyComponent(PyComponent):
@@ -67,9 +69,9 @@ def test_reactive_esm_sync_dataframe(document, comm):
 
 class ESMWithChildren(ReactiveESM):
 
-    child = param.ClassSelector(class_=Viewable, doc="""A child Viewable to be displayed in the ESM.""")
+    child = Child(doc="""A child Viewable to be displayed in the ESM.""")
 
-    children = param.List(item_type=Viewable, doc="""Child Viewables to be displayed in the ESM.""")
+    children = Children(doc="""Child Viewables to be displayed in the ESM.""")
 
 
 def test_reactive_esm_model_cleanup(document, comm):
@@ -114,6 +116,28 @@ def test_reactive_esm_child_model_cleanup_on_replace(document, comm):
     md2_model, _ = md2._models[ref]
     assert model.data.child is md2_model
 
+def test_reactive_esm_child_pane_replace(document, comm):
+    fig1 = figure()
+    bk = Bokeh(fig1)
+    esm = ESMWithChildren(child=bk)
+
+    model = esm.get_root(document, comm)
+
+    ref = model.ref['id']
+    assert ref in bk._models
+    bk_model1, _ = bk._models[ref]
+    assert bk_model1 is fig1
+    assert model.data.child is fig1
+
+    fig2 = figure()
+    bk.object = fig2
+
+    ref = model.ref['id']
+    assert ref in bk._models
+    bk_model2, _ = bk._models[ref]
+    assert bk_model2 is fig2
+    assert model.data.child is fig2
+
 def test_reactive_esm_children_models_cleanup(document, comm):
     md = Markdown('foo')
     esm = ESMWithChildren(children=[md])
@@ -143,6 +167,28 @@ def test_reactive_esm_children_models_cleanup_on_replace(document, comm):
     assert ref in md2._models
     md2_model, _ = md2._models[ref]
     assert model.data.children == [md2_model]
+
+def test_reactive_esm_children_pane_replace(document, comm):
+    fig1 = figure()
+    bk = Bokeh(fig1)
+    esm = ESMWithChildren(children=[bk])
+
+    model = esm.get_root(document, comm)
+
+    ref = model.ref['id']
+    assert ref in bk._models
+    bk_model1, _ = bk._models[ref]
+    assert bk_model1 is fig1
+    assert model.data.children == [fig1]
+
+    fig2 = figure()
+    bk.object = fig2
+
+    ref = model.ref['id']
+    assert ref in bk._models
+    bk_model2, _ = bk._models[ref]
+    assert bk_model2 is fig2
+    assert model.data.children == [fig2]
 
 class ESMOverride(ReactiveESM):
 

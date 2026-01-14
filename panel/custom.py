@@ -9,8 +9,11 @@ import pathlib
 import sys
 import textwrap
 
+from abc import abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Mapping
+from collections.abc import (
+    Awaitable, Callable, Iterator, Mapping,
+)
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
@@ -52,6 +55,8 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
     ExportSpec = dict[str, list[str | tuple[str, ...]]]
+
+_IGNORED_ESM_PROPERTIES = ('js_event_callbacks', 'esm_constants', 'js_property_callbacks', 'subscribed_events', 'syncable')
 
 
 class PyComponent(Viewable, Layoutable):
@@ -165,6 +170,9 @@ class PyComponent(Viewable, Layoutable):
             self._view__ = self._create__view()
         return super().select(selector) + self._view__.select(selector)
 
+    @abstractmethod
+    def __panel__(self) -> Viewable | Iterator[Viewable] | Awaitable[Viewable]:
+        raise NotImplementedError
 
 
 class ReactiveESMMetaclass(ReactiveMetaBase):
@@ -245,11 +253,13 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _importmap: ClassVar[dict[Literal['imports', 'scopes'], dict[str,str]]] = {}
 
+    _render_policy: Literal['manual', 'children'] = "children"
+
     __abstract = True
 
     def __init__(self, **params):
         super().__init__(**params)
-        self._watching_esm = False
+        self._watching_esm = None
         self._event__callbacks = defaultdict(list)
         self._msg__callbacks = []
 
@@ -330,7 +340,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classmethod
     def _esm_path(cls, compiled: bool | Literal['compiling'] = True) -> os.PathLike | None:
-        if compiled or not cls._esm:
+        if compiled is True or not cls._esm:
             bundle_path = cls._bundle_path
             if bundle_path:
                 return bundle_path
@@ -400,7 +410,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             self._watching_esm.set()
             if self._watching_esm in state._watch_events:
                 state._watch_events.remove(self._watching_esm)
-            self._watching_esm = False
+            self._watching_esm = None
 
     async def _watch_esm(self):
         import watchfiles
@@ -436,12 +446,17 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @property
     def _linked_properties(self) -> tuple[str, ...]:
-        return tuple(p for p in self._data_model.properties() if p != 'js_property_callbacks')
+        mapping = {v: k for k, v in self._property_mapping.items() if v is not None}
+        params = self.param.objects(instance=False)
+        return tuple(
+            p for p in self._data_model.properties()
+            if p not in _IGNORED_ESM_PROPERTIES and not isinstance(params[mapping.get(p, p)], (Child, Children))
+        )
 
     def _get_properties(self, doc: Document | None) -> dict[str, Any]:
         props = super()._get_properties(doc)
         cls = type(self)
-        data_params = {}
+        data_props = {}
         # Split data model properties from ESM model properties
         # Note that inherited parameters are generally treated
         # as ESM model properties unless their type has changed
@@ -452,18 +467,17 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
              and type(Reactive.param[p]) is type(cls.param[p]))
         ]
         events = []
-        for k, v in self.param.values().items():
+        for k in self.param.values():
             p = self.param[k]
             if is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
                 props.pop(k, None)
                 continue
-            elif (k in ignored and k != 'name') or ((p.precedence or 0) < 0):
+            elif k not in props or (k in ignored and k != 'name') or ((p.precedence or 0) < 0):
                 continue
-            if k in props:
-                props.pop(k)
+            v = props.pop(k)
             if isinstance(p, param.Event):
                 events.append(k)
-            data_params[k] = v
+            data_props[k] = v
         bundle_path = self._bundle_path
         importmap = self._process_importmap()
         is_session = False
@@ -479,7 +493,6 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
         else:
             bundle_hash = None
-        data_props = self._process_param_change(data_params)
         data_props['esm_constants'] = self._constants
         props.update({
             'bundle': bundle_hash,
@@ -490,6 +503,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             'esm': self._render_esm(not config.autoreload, server=is_session),
             'events': events,
             'importmap': importmap,
+            'render_policy': self._render_policy,
             'name': cls.__name__
         })
         return props
@@ -813,6 +827,8 @@ class ReactComponent(ReactiveESM):
     _bokeh_model = _BkReactComponent
 
     _react_version = '18.3.1'
+
+    _render_policy = "manual"
 
     @classproperty  # type: ignore
     def _exports__(cls) -> ExportSpec:  # type: ignore

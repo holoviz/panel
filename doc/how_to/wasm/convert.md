@@ -27,6 +27,7 @@ The ``panel convert`` command has the following options:
     --watch               Watch the files
     --num-procs NUM_PROCS
                           The number of processes to start in parallel to convert the apps.
+```
 
 ## Example
 

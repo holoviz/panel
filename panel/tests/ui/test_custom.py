@@ -21,6 +21,9 @@ from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
+INIT = "A Markdown pane!"
+ALT = "A different Markdown pane!"
+
 
 @pytest.fixture(scope="module", autouse=True)
 def set_expect_timeout():
@@ -663,15 +666,41 @@ class JSChild(JSComponent):
 
     child = Child()
 
+    count = param.Integer(default=0)
+
     render_count = param.Integer(default=0)
+
+    # default policy is "children" per your note
+    _render_policy = param.ObjectSelector(
+        default="children",
+        objects=["manual", "children"]
+    )
 
     _esm = """
     export function render({ model }) {
-      const button = document.createElement('button')
-      button.appendChild(model.get_child('child'))
-      model.render_count += 1
-      return button
-    }"""
+      // Build the root. DO NOT clear/replace the container here; Panel does that.
+      const button = document.createElement('button');
+      const childEl = model.get_child('child');
+      if (childEl) button.appendChild(childEl);
+
+      model.render_count += 1;
+
+      function patchChild() {
+        const nextChild = model.get_child('child');
+        if (nextChild) button.replaceChildren(nextChild);
+        else button.replaceChildren();
+      }
+
+      model.on("child", () => {
+        const policy = model._render_policy;
+        if (policy === "manual" || policy === "properties") {
+          patchChild();
+        }
+      });
+      return button;
+    }
+    """
+
 
 class ReactChild(ReactComponent):
 
@@ -684,6 +713,7 @@ class ReactChild(ReactComponent):
       model.render_count += 1
       return <button>{model.get_child('child')}</button>
     }"""
+
 
 @pytest.mark.parametrize('component', [JSChild, ReactChild])
 def test_child(page, component):
@@ -700,6 +730,24 @@ def test_child(page, component):
     expect(button).to_have_text('A different Markdown pane!')
 
     wait_until(lambda: example.render_count == (2 if component is JSChild else 1), page)
+
+
+def test_render_policy_manual(page):
+    example = JSChild(child=INIT, _render_policy="manual")
+
+    serve_component(page, example)
+    button = page.locator("button")
+    expect(button).to_have_text(INIT)
+
+    # Children change updates text but does not re-render
+    example.child = ALT
+    expect(button).to_have_text(ALT)
+    assert example.render_count == 1
+
+    # Property change does not re-render either
+    example.count += 1
+    assert example.render_count == 1
+
 
 def test_react_child_no_shadow_dom(page):
     example = ReactChild(
@@ -1080,9 +1128,13 @@ def test_react_child_no_shadow_dom_remove_lifecycle_hook(page):
     expect(page.locator('h1')).to_have_text("Hello")
 
     with page.expect_console_message() as msg_info:
-        example.child = "New"
+        example.child = "# New"
 
     wait_until(lambda: msg_info.value.args[0].json_value() == "Removed", page)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("New ¶")
 
 
 class JSDefaultExport(JSComponent):

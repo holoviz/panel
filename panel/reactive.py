@@ -14,6 +14,7 @@ import pathlib
 import re
 import sys
 import textwrap
+import uuid
 
 from collections import Counter, defaultdict, namedtuple
 from collections.abc import Callable, Mapping, Sequence
@@ -513,7 +514,16 @@ class Syncable(Renderable):
             with edit_readonly(state):
                 state._busy_counter -= 1
 
-    async def _change_coroutine(self, doc: Document) -> None:
+    async def _change_coroutine(self, doc: Document, event_id: str | None = None) -> None:
+        if event_id is not None:
+            # Determine if change event was already processed
+            callbacks = state._change_callbacks.get(doc, {})
+            if event_id not in callbacks:
+                return
+            del callbacks[event_id]
+            if not callbacks and doc in state._change_callbacks:
+                del state._change_callbacks[doc]
+
         if state._thread_pool:
             future = state._thread_pool.submit(self._change_event, doc)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
@@ -524,7 +534,11 @@ class Syncable(Renderable):
                 except Exception as e:
                     state._handle_exception(e)
 
-    async def _event_coroutine(self, doc: Document, event) -> None:
+    async def _event_coroutine(self, doc: Document, event: Event) -> None:
+        callbacks = state._change_callbacks.get(doc, {})
+        for cb in list(callbacks.values()):
+            await cb()
+
         if state._thread_pool:
             future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
@@ -580,7 +594,7 @@ class Syncable(Renderable):
             model.on_event(event_name, partial(method, doc))
 
     def _server_event(self, doc: Document, event: Event) -> None:
-        if doc.session_context and not state._unblocked(doc):
+        if doc.session_context and (not state._unblocked(doc) or doc in state._change_callbacks):
             cb = partial(self._event_coroutine, doc, event)
             with set_curdoc(doc):
                 state.execute(cb, schedule=True)
@@ -603,9 +617,15 @@ class Syncable(Renderable):
             return
 
         if doc.session_context:
-            cb = partial(self._change_coroutine, doc)
+            event_id = uuid.uuid4().hex
+            cb = partial(self._change_coroutine, doc, event_id=event_id)
+            if doc in state._change_callbacks:
+                state._change_callbacks[doc][event_id] = cb
+            else:
+                state._change_callbacks[doc] = {event_id: cb}
             if attr in self._priority_changes:
-                doc.add_next_tick_callback(cb) # type: ignore
+                with set_curdoc(doc):
+                    state.execute(cb, schedule=True)
             else:
                 doc.add_timeout_callback(cb, self._debounce) # type: ignore
         else:
@@ -1215,7 +1235,7 @@ class SyncableData(Reactive):
             self._stream(stream_value, rollover)
         elif pd and isinstance(stream_value, pd.Series):
             if isinstance(self._processed, dict):
-                self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)
+                self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)  # type: ignore
                 return
             value_index_start = self._processed.index.max() + 1
             self._processed.loc[value_index_start] = stream_value

@@ -136,6 +136,7 @@ script.*
 doc/_build/*
 doc/gallery/*
 doc/reference/*
+examples/reference/panes/calculator.tcss
 
 !/panel/dist
 /panel/dist/*

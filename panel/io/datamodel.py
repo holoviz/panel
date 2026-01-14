@@ -6,10 +6,10 @@ from functools import partial
 from typing import Any
 from weakref import WeakKeyDictionary
 
-import bokeh
 import bokeh.core.properties as bp
 import param as pm
 
+from bokeh.core.property.bases import Property
 from bokeh.model import DataModel, Model
 from bokeh.models import ColumnDataSource
 
@@ -20,7 +20,7 @@ from .notebook import push
 from .state import set_curdoc, state
 
 
-class Parameterized(bokeh.core.property.bases.Property):
+class Parameterized(Property):
     """ Accept a Parameterized object.
 
     This property only exists to support type validation, e.g. for "accepts"
@@ -38,7 +38,7 @@ class Parameterized(bokeh.core.property.bases.Property):
         raise ValueError(msg)
 
 
-class PolarsDataFrame(bokeh.core.property.bases.Property):
+class PolarsDataFrame(Property):
     """ Accept Polars DataFrame values.
 
     This property only exists to support type validation, e.g. for "accepts"
@@ -58,7 +58,7 @@ class PolarsDataFrame(bokeh.core.property.bases.Property):
         raise ValueError(msg)
 
 
-class ParameterizedList(bokeh.core.property.bases.Property):
+class ParameterizedList(Property):
     """ Accept a list of Parameterized objects.
 
     This property only exists to support type validation, e.g. for "accepts"
@@ -141,10 +141,10 @@ PARAM_MAPPING = {
     pm.Integer: lambda p, kwargs: bp.Int(**kwargs),
     pm.List: list_param_to_ppt,
     pm.Number: lambda p, kwargs: bp.Either(bp.Float, bp.Bool, **kwargs),
-    pm.NumericTuple: lambda p, kwargs: bp.Tuple(*(bp.Float for p in range(p.length)), **kwargs),
+    pm.NumericTuple: lambda p, kwargs: bp.Any(**kwargs),
     pm.Range: lambda p, kwargs: bp.Tuple(bp.Float, bp.Float, **kwargs),
     pm.String: lambda p, kwargs: bp.String(**kwargs),
-    pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in range(p.length)), **kwargs),
+    pm.Tuple: lambda p, kwargs: bp.Any(**kwargs),
     Child: lambda p, kwargs: bp.Nullable(bp.Instance(Model), **kwargs),
     Children: lambda p, kwargs: bp.List(bp.Instance(Model), **kwargs),
 }

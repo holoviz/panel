@@ -21,6 +21,7 @@ from panel.template import (
     Template, VanillaTemplate,
 )
 from panel.template.base import BasicTemplate
+from panel.util import _descendents
 from panel.widgets import FloatSlider
 
 from .util import hv_available
@@ -90,7 +91,7 @@ def test_template_session_destroy(document, comm):
 
 
 list_templates = [
-    t for t in param.concrete_descendents(BasicTemplate).values()
+    t for t in _descendents(BasicTemplate, concrete=True)
     if not issubclass(t, ReactTemplate)
 ]
 

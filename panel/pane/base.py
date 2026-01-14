@@ -27,9 +27,11 @@ from ..layout.base import (
     Column, ListPanel, NamedListPanel, Panel, Row,
 )
 from ..links import Link
-from ..models import ReactiveHTML as _BkReactiveHTML
+from ..models import (
+    ReactiveESM as _ReactiveESM, ReactiveHTML as _BkReactiveHTML,
+)
 from ..reactive import Reactive
-from ..util import param_reprs
+from ..util import _descendents, param_reprs
 from ..util.checks import is_dataframe, is_series
 from ..util.parameters import get_params_to_inherit
 from ..viewable import (
@@ -249,7 +251,7 @@ class PaneBase(Layoutable):
         if isinstance(obj, Viewable):
             return type(obj)
         descendents = []
-        for p in param.concrete_descendents(PaneBase).values():
+        for p in _descendents(PaneBase, concrete=True):
             if p.priority is None:
                 applies = True
                 try:
@@ -391,6 +393,23 @@ class Pane(PaneBase, Reactive):
                 old_tab = parent.tabs[index]  # type: ignore
                 props = dict(old_tab.properties_with_values(), child=new_model)
                 parent.tabs[index] = _BkTabPanel(**props)  # type: ignore
+            elif isinstance(parent, _ReactiveESM):
+                for child_prop in parent.children:
+                    try:
+                        values = getattr(parent.data, child_prop)
+                    except AttributeError:
+                        # Skip child properties that are not present on parent.data
+                        continue
+                    if isinstance(values, list) and old_model in values:
+                        new_values = list(values)
+                        new_values[values.index(old_model)] = new_model
+                        setattr(parent.data, child_prop, new_values)
+                        break
+                    elif old_model is values:
+                        setattr(parent.data, child_prop, new_model)
+                        break
+                else:
+                    raise ValueError("No child value to replace found.")
             else:
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
@@ -638,7 +657,16 @@ class ReplacementPane(Pane):
         })
 
     def _update_inner_layout(self, *events):
-        self._pane.param.update({event.name: event.new for event in events})
+        updates = {}
+        for event in events:
+            value = event.new
+            if event.name in ('css_classes', 'stylesheets'):
+                value = [
+                    v for v in getattr(self._pane, event.name)
+                    if v not in event.old
+                ] + event.new
+            updates[event.name] = value
+        self._pane.param.update(updates)
 
     @classmethod
     def _recursive_update(cls, old: Reactive, new: Reactive):
