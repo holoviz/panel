@@ -1125,7 +1125,10 @@ class _state(param.Parameterized):
     @rel_path.setter
     def rel_path(self, value: str | None):
         if value is None:
-            return
+            if self.curdoc:
+                self._rel_paths.pop(self.curdoc, None)
+            else:
+                self._rel_path = ''
         elif self.curdoc:
             self._rel_paths[self.curdoc] = value
         else:

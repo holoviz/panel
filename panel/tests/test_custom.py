@@ -5,8 +5,10 @@ import param
 from bokeh.plotting import figure
 
 from panel.custom import PyComponent, ReactiveESM
+from panel.io.state import state
 from panel.layout import Row
 from panel.pane import Bokeh, Markdown
+from panel.util import edit_readonly
 from panel.viewable import Child, Children
 
 
@@ -65,6 +67,25 @@ def test_reactive_esm_sync_dataframe(document, comm):
     expected = {"index": np.array([0]), "1": np.array([2])}
     for col, values in model.data.df.items():
         np.testing.assert_array_equal(values, expected.get(col))
+
+
+class ESMBundle(ReactiveESM):
+
+    _bundle_path = "esm.js"
+
+
+def test_esm_bundle_resource_path():
+    assert ESMBundle._render_esm(compiled=True, server = True) == "./components/panel.tests.test_custom/ESMBundle/_bundle_path/esm.js"
+
+
+def test_esm_bundle_resource_rel_path():
+    with edit_readonly(state):
+        state.rel_path = ".."
+    try:
+        assert ESMBundle._render_esm(compiled=True, server = True) == "../components/panel.tests.test_custom/ESMBundle/_bundle_path/esm.js"
+    finally:
+        with edit_readonly(state):
+            state.rel_path = None
 
 
 class ESMWithChildren(ReactiveESM):
