@@ -75,14 +75,14 @@ class ESMBundle(ReactiveESM):
 
 
 def test_esm_bundle_resource_path():
-    assert ESMBundle._render_esm(compiled=True, server = True) == "./components/panel.tests.test_custom/ESMBundle/_bundle_path/esm.js"
+    assert ESMBundle._render_esm(compiled=True, server=True) == "./components/panel.tests.test_custom/ESMBundle/_bundle_path/esm.js"
 
 
 def test_esm_bundle_resource_rel_path():
     with edit_readonly(state):
         state.rel_path = ".."
     try:
-        assert ESMBundle._render_esm(compiled=True, server = True) == "../components/panel.tests.test_custom/ESMBundle/_bundle_path/esm.js"
+        assert ESMBundle._render_esm(compiled=True, server=True) == "../components/panel.tests.test_custom/ESMBundle/_bundle_path/esm.js"
     finally:
         with edit_readonly(state):
             state.rel_path = None
