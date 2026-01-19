@@ -160,17 +160,17 @@ _VALID_TORCH_DTYPES_FOR_AUDIO = [
 
 _VALID_NUMPY_DTYPES_FOR_AUDIO = [np.int16, np.uint16, np.float32, np.float64]
 
-def _is_1dim_int_or_float_tensor(obj: Any)->bool:
+def _is_1_or_2dim_int_or_float_tensor(obj: Any)->bool:
     return (
         isinstance(obj, TensorLike) and
-        obj.dim()==1 and
+        obj.dim() in (1, 2) and
         str(obj.dtype) in _VALID_TORCH_DTYPES_FOR_AUDIO
     )
 
-def _is_1dim_int_or_float_ndarray(obj: Any)->bool:
+def _is_1_or_2dim_int_or_float_ndarray(obj: Any)->bool:
     return (
         isinstance(obj, np.ndarray) and
-        obj.ndim==1 and
+        obj.ndim in (1, 2) and
         obj.dtype in _VALID_NUMPY_DTYPES_FOR_AUDIO
     )
 
@@ -208,7 +208,7 @@ class Audio(_MediaBase):
 
     The audio player supports ogg, mp3, and wav files
 
-    If SciPy is installed, 1-dim Numpy Arrays and 1-dim
+    If SciPy is installed, 1- or 2-dim Numpy Arrays and 1- or 2-dim
     Torch Tensors are also supported. The dtype must be one of the following
 
     - numpy: np.int16, np.uint16, np.float32, np.float64
@@ -226,7 +226,7 @@ class Audio(_MediaBase):
 
     object = param.ClassSelector(default='', class_=(str, bytes, pathlib.Path, BytesIO, np.ndarray, TensorLike),
                                  allow_None=True, doc="""
-        The audio file either local or remote, a 1-dim NumPy ndarray or a 1-dim Torch Tensor
+        The audio file either local or remote, a 1- or 2-dim NumPy ndarray or a 1- or 2-dim Torch Tensor
         or a bytes or BytesIO object.""")
 
     sample_rate = param.Integer(default=44100, doc="""
@@ -243,8 +243,8 @@ class Audio(_MediaBase):
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         return (super().applies(obj)
-            or _is_1dim_int_or_float_ndarray(obj)
-            or _is_1dim_int_or_float_tensor(obj)
+            or _is_1_or_2dim_int_or_float_ndarray(obj)
+            or _is_1_or_2dim_int_or_float_tensor(obj)
         )
 
     @classmethod

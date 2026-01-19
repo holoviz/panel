@@ -12,7 +12,7 @@ except Exception:
     wavfile = None
 
 from panel.pane import Audio, Video
-from panel.pane.media import TensorLike, _is_1dim_int_or_float_tensor
+from panel.pane.media import TensorLike, _is_1_or_2dim_int_or_float_tensor
 
 ASSETS = pathlib.Path(__file__).parent / 'assets'
 
@@ -124,6 +124,21 @@ def test_audio_array(document, comm):
     assert model_value.split(',')[1] == b64_encoded
     assert model.value.startswith('data:audio/wav;base64')
 
+@scipy_available
+def test_audio_array_stereo(document, comm):
+    data = np.array([[0, 1], [2, 3], [4, 5], [6, 7]], dtype=np.int16)
+    sample_rate = 10
+    buffer = BytesIO()
+    wavfile.write(buffer, sample_rate, data)
+    b64_encoded = b64encode(buffer.getvalue()).decode('utf-8')
+
+    audio = Audio(data, sample_rate=sample_rate)
+    model = audio.get_root(document, comm=comm)
+    model_value = model.value
+
+    assert model_value.split(',')[1] == b64_encoded
+    assert model.value.startswith('data:audio/wav;base64')
+
 def test_audio_url(document, comm):
     audio_url = 'http://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3'
     audio = Audio(audio_url)
@@ -180,6 +195,11 @@ class TensorMock:
     def dtype(self):
         return "torch.float32"
 
+class TensorMockStereo(TensorMock):
+    def __init__(self, duration=2.0):
+        mono = get_audio_np_float32(duration=duration)
+        self._data = np.column_stack([mono, mono])
+
 def test_torch_like():
     mock = TensorMock()
 
@@ -192,7 +212,15 @@ def get_audio_tensor_float32(duration=2.0):
 @scipy_available
 def test_audio_tensor_float32(document, comm):
     obj = get_audio_tensor_float32(duration=0.01)
-    assert _is_1dim_int_or_float_tensor(obj)
+    assert _is_1_or_2dim_int_or_float_tensor(obj)
     audio = Audio(object=obj)
     model = audio.get_root(document, comm=comm)
     assert model.value == 'data:audio/wav;base64,UklGRpYDAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YXIDAAAAAAIEAAj3C+EPuxOCFzEbxB45Iosltyi7K5IuOzGyM/U1AjjWOXE7zzzxPdQ+dz/cP/8/4z+GP+k+DT7zPJs7CDo6ODM29jOFMeIuECwRKeklmyIqH5ob7hcqFFIQaQx0CHYEdABz/HT4fPSQ8LTs6+g55aLhKt7U2qPXm9S+0RDPk8xKyjfIXMa7xFbDLcJDwZjALcABwBfAbMACwdbB6sI6xMfFj8ePycbLMc7P0JzTlta52QPdcOD946bnZ+s97yTzGPcV+xf/GQMZBxEL/g7dEqgWXRr3HXMhzSQCKA8r8S2kMCczdjWPN3E5GTuFPLQ9pj5YP8o//T/vP6E/Ez9FPjk97ztpOqg4rjZ9NBgygC+4LMMppCZfI/UfbBzGGAcVMxFODVsJXwVeAVz9XPli9XPxk+3F6Q7mceLx3pPbWdhI1WHSqM8gzcvKq8jDxhXFosNrwnPBucA/wAbADMBTwNrAoMGmwunDaMUixxbJQMugzTPQ9dLl1f/YQNym3yzjzuaL6lzuQPIx9i36Lv4wAjAGKwobDv0RzRWHGSgdqyANJEsnYSpNLQswmTL0NBo3CDm9Ojc8dT10PjU/tj/3P/g/uD85P3k+ez0/PMc6EzkmNwE1qDIbMF4tcypdJyAkvyA8HZ0Z4xUUEjIOQgpIBkcCRf5E+kj2V/Jz7qHq5OZA47rfVNwR2fbVBtNC0K/NTssiyS3HccXxw6zCpsHewFXADcAFwD3AtsBuwWXCmsMMxbnGn8i+yhHNmc9Q0jbVR9iA293eXOL55a/pfe1c8Uv1RPlE/UYBSAVECTcNHRHxFLEYVxzhH0sjkiaxKacscC8JMnA0ojadOF865zsyPUA+Dz+eP+4//T/MP1s/qj66PYw8ITt7OZs3gzU1M7MwAS4gKxQo4CSGIQsechq+FvMSFQ8oCzAHMAMu/yz7L/c781Tvfeu75xLkhOAW3czZqNat09/QQM7Ty5vJmsfRxUPE8cLcwQbBb8AYwAHAK8CVwD7BJ8JOw7LEUsYsyD7KhcwBz67RitSR18HaFt6O4STl1eie7HrwZfRc+Fv8XQBfBF0IUgw7EBQU2ReFGxYfhyLWJf8o/yvSLnYx6TMnNi84/jmTO+w8CD7lPoM/4T//P90/ej/YPvY91jx5O+A5DTgBNsAzSjGiLswrySg='  # noqa
+
+@scipy_available
+def test_audio_tensor_float32_stereo(document, comm):
+    obj = TensorMockStereo(duration=0.01)
+    assert _is_1_or_2dim_int_or_float_tensor(obj)
+    audio = Audio(object=obj)
+    model = audio.get_root(document, comm=comm)
+    assert model.value.startswith('data:audio/wav;base64')
