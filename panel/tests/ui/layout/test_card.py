@@ -206,17 +206,39 @@ def test_card_widget_not_collapsed(page, card_components):
 def test_card_child_visible(page, card_components):
     w1, w2 = card_components
     w1.visible = False
-    card = Card(w1, header=Row(w2), collapsed=True)
+    card = Card(w1, title="Foo", collapsed=True)
 
     serve_component(page, card)
 
-    text_input = page.locator('.bk-Slider')
-    expect(text_input).not_to_be_visible()
+    slider = page.locator('.bk-Slider')
+    expect(slider).not_to_be_visible()
 
     w1.visible = True
 
-    expect(text_input).not_to_be_visible()
+    expect(slider).not_to_be_visible()
 
     card.collapsed = False
 
+    expect(slider).to_be_visible()
+
+    card.collapsed = True
+
+    # Ensure newly added component respects visibility
+    card.append(w2)
+
+    text_input = page.locator(".class_w2")
+
+    expect(text_input).not_to_be_visible()
+
+    # Ensure opening card renders visible component
+    card.collapsed = False
     expect(text_input).to_be_visible()
+
+    # Ensure setting visible restores visibility
+    w2.visible = False
+    expect(text_input).not_to_be_visible()
+
+    # Ensure toggling collapsed doesn't override visible state
+    card.collapsed = True
+    card.collapsed = False
+    expect(text_input).not_to_be_visible()
