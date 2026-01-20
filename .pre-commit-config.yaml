@@ -47,7 +47,7 @@ repos:
       - id: oxipng
         stages: [manual]
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v10.0.0-beta.0
+    rev: v9.37.0
     hooks:
       - id: eslint
         args: ['-c', 'panel/.eslintrc.js', 'panel/*.ts', 'panel/models/**/*.ts', '--fix']
