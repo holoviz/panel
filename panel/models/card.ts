@@ -25,6 +25,7 @@ export class CardView extends ColumnView {
   header_el: HTMLElement
   visible_child_views: Map<UIElementView, boolean> = new Map()
   protected _updating_child_visibility: Set<UIElementView> = new Set()
+  protected _child_visible_callbacks: Map<UIElementView, () => void> = new Map()
 
   readonly collapsed_style = new DOM.InlineStyleSheet()
 
@@ -127,7 +128,7 @@ export class CardView extends ColumnView {
     const child_views = new Set(this.child_views.slice(1))
     for (const child_view of this.visible_child_views.keys()) {
       if (!child_views.has(child_view)) {
-        this.visible_child_views.delete(child_view)
+        this._unregister_child_view(child_view)
       }
     }
     for (const child_view of child_views) {
@@ -271,7 +272,7 @@ export class CardView extends ColumnView {
     }
     this.visible_child_views.set(child_view, child_view.model.visible)
     const {visible} = child_view.model.properties
-    this.on_change(visible, () => {
+    const callback = () => {
       if (this._updating_child_visibility.has(child_view)) {
         return
       }
@@ -280,7 +281,19 @@ export class CardView extends ColumnView {
       if (this.model.collapsed && desired_visible) {
         this._set_child_visible(child_view, false)
       }
-    })
+    }
+    this._child_visible_callbacks.set(child_view, callback)
+    this.on_change(visible, callback)
+  }
+
+  protected _unregister_child_view(child_view: UIElementView): void {
+    const callback = this._child_visible_callbacks.get(child_view)
+    if (callback != null) {
+      child_view.model.properties.visible.change.disconnect(callback)
+      this._child_visible_callbacks.delete(child_view)
+    }
+    this.visible_child_views.delete(child_view)
+    this._updating_child_visibility.delete(child_view)
   }
 
   protected override _create_element(): HTMLElement {
