@@ -5,7 +5,7 @@ import inspect
 from collections import defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, cast
 
 import param
 
@@ -34,15 +34,15 @@ def get_method_owner(meth):
 # This functionality should be contributed to param
 # See https://github.com/holoviz/param/issues/379
 @contextmanager
-def edit_readonly(parameterized: param.Parameterized) -> Iterator:
+def edit_readonly(parameterized: param.Parameterized) -> Iterator[None]:
     """
     Temporarily set parameters on Parameterized object to readonly=False
     to allow editing them.
     """
     kls_params = parameterized.param.objects(instance=False)
-    inst_params = parameterized._param__private.params
+    inst_params = cast(dict[str, param.Parameter], parameterized._param__private.params)
     init_inst_params = list(inst_params)
-    updated = defaultdict(list)
+    updated: dict[str, list[str]] = defaultdict(list)
     for pname, pobj in (kls_params | inst_params).items():
         if pobj.readonly:
             if not pobj.constant:
