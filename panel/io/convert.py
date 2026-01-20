@@ -218,7 +218,7 @@ def collect_python_requirements(
             application = build_single_handler_application(path.absolute())
             source = application._handlers[0]._runner.source
         resolved_reqs = find_requirements(source)
-    elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
+    elif isinstance(requirements, (str, os.PathLike)) and pathlib.Path(requirements).is_file():
         requirements_root = os.path.dirname(requirements)
         resolved_reqs = (
             pathlib.Path(requirements).read_text(encoding='utf-8').splitlines()

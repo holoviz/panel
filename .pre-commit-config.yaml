@@ -14,12 +14,12 @@ repos:
         exclude: \.min\.js$
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.3
+    rev: v0.14.10
     hooks:
       - id: ruff
         files: panel/
   - repo: https://github.com/pycqa/isort
-    rev: 6.1.0
+    rev: 7.0.0
     hooks:
       - id: isort
         name: isort (python)
@@ -36,12 +36,12 @@ repos:
         additional_dependencies:
           - tomli
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: v3.6.2
+    rev: v3.7.4
     hooks:
       - id: prettier
         entry: prettier --write --ignore-unknown --no-error-on-unmatched-pattern
         types_or: [css]
-  - repo: https://github.com/shssoichiro/oxipng
+  - repo: https://github.com/oxipng/oxipng
     rev: v8.0.0
     hooks:
       - id: oxipng
