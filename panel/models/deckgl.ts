@@ -284,6 +284,9 @@ export class DeckGLPlotView extends LayoutDOMView {
   }
 
   resize(): void {
+    if (this.deckGL == null) {
+      return
+    }
     this.deckGL.redraw(true)
     if (this._map) {
       this._map.resize()

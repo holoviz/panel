@@ -1,5 +1,6 @@
 /* Variables */
-:host {
+:host,
+:root {
   --handle-width: 16px;
   --handle-height: 16px;
   --switch-size: 16px;
@@ -7,6 +8,8 @@
   --padding-vertical: 10px;
   --mdc-on-surface: inherit;
   --current-background-color: var(--mdc-theme-background);
+  --bokeh-base-font: Roboto, sans-serif, Verdana;
+  color: var(--mdc-theme-on-background);
 }
 
 :host-context(.mdc-top-app-bar) .bk-menu {
@@ -216,8 +219,8 @@ button.mdc-button.mdc-card-button {
 
 .bk-input {
   background-color: unset;
-  border: 1px solid var(--design-secondary-color, var(--panel-secondary-color));
-  color: var(--design-secondary-text-color, var(--panel-on-secondary-color));
+  border: 1px solid var(--mdc-theme-secondary);
+  color: var(--mdc-theme-on-secondary);
 }
 
 .bk-input:not([type='file']) {
@@ -234,8 +237,8 @@ textarea.bk-input:not([type='file']) {
 .bk-input[disabled] {
   background-color: unset;
   border: unset;
-  border: 1px dotted var(--design-secondary-color, var(--panel-secondary-color));
-  color: var(--design-secondary-color, var(--panel-secondary-color));
+  border: 1px dotted var(--mdc-theme-secondary);
+  color: var(--mdc-theme-secondary);
 }
 
 .bk-input:not([disabled]):hover {
@@ -283,6 +286,28 @@ textarea.bk-input:not([type='file']) {
 
 .bk-input-group > .bk-spin-wrapper > .bk-spin-btn.bk-spin-btn-up:before {
   border-bottom: 5px solid var(--mdc-theme-on-background);
+}
+
+/* FileDropper */
+
+.bk-input.filepond--root {
+  box-shadow:
+    0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  height: auto;
+}
+
+.bk-input.filepond--root:not([disabled]):hover {
+  border: none;
+  box-shadow:
+    0px 3px 5px -1px rgba(0, 0, 0, 0.2),
+    0px 6px 10px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 18px 0px rgba(0, 0, 0, 0.12);
+}
+
+.filepond--panel-root {
+  background-color: var(--mdc-theme-surface);
 }
 
 /* Select widgets */
@@ -513,6 +538,21 @@ progress:not([value])::before {
   background-color: var(--mdc-theme-background);
 }
 
+.pnx-tabulator.tabulator
+  .tabulator-header
+  .tabulator-col
+  .tabulator-col-content {
+  padding: 10px;
+}
+
+.tabulator
+  .tabulator-header
+  .tabulator-col
+  .tabulator-col-content
+  .tabulator-col-title:has(input[type='checkbox']) {
+  overflow: unset;
+}
+
 div .tabulator .tabulator-headers,
 div .tabulator .tabulator-header .tabulator-col {
   background-color: var(--mdc-theme-background);
@@ -534,10 +574,26 @@ div .tabulator .tabulator-header .tabulator-col {
 .pnx-tabulator.tabulator
   .tabulator-tableholder
   .tabulator-table
+  .tabulator-row {
+  min-height: 35px;
+}
+
+.pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row
+  .tabulator-cell {
+  min-height: 35px;
+  padding: 6px 10px;
+}
+
+.pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
   .tabulator-row.tabulator-selectable:hover {
   background-color: color-mix(
     in srgb,
-    var(--mdc-theme-primary) 25%,
+    var(--mdc-theme-primary) 75%,
     transparent
   );
   color: var(--mdc-theme-on-primary);
@@ -566,12 +622,39 @@ div .tabulator .tabulator-header .tabulator-col {
   color: var(--mdc-theme-on-primary);
 }
 
-.tabulator-row .tabulator-cell.tabulator-editing {
+.pnx-tabulator.tabulator .tabulator-header {
+  background-color: var(--mdc-theme-surface);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pnx-tabulator.tabulator
+    .tabulator-header
+    .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
+    background-color: var(--mdc-theme-surface);
+  }
+}
+
+.pnx-tabulator.tabulator .tabulator-row .tabulator-cell.tabulator-editing {
   border: 1px solid var(--mdc-theme-on-background);
+}
+
+.tabulator-edit-list .tabulator-edit-list-item.active {
+  background-color: var(--mdc-theme-primary);
+  color: var(--mdc-theme-on-primary);
 }
 
 .tabulator-row .tabulator-cell.tabulator-editing input {
   color: var(--mdc-theme-on-background);
+}
+
+.pnx-tabulator.tabulator .tabulator-footer .tabulator-page:not(disabled):hover {
+  background-color: var(--mdc-theme-primary-lightened);
+  color: var(--mdc-theme-on-background);
+}
+
+.pnx-tabulator.tabulator .tabulator-footer .tabulator-page.active {
+  background-color: var(--mdc-theme-primary);
+  color: var(--mdc-theme-on-primary);
 }
 
 /* Quill editor */

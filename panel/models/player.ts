@@ -309,6 +309,7 @@ export class PlayerView extends WidgetView {
     this.toggle_disable()
     this.update_css()
     this.shadow_el.appendChild(this.groupEl)
+    this.set_direction()
   }
 
   set_frame(frame: number, throttled: boolean = true): void {

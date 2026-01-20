@@ -21,20 +21,19 @@ declare const A11yDialog: A11yDialogInterface
 
 @server_event("modal-dialog-event")
 export class ModalDialogEvent extends ModelEvent {
-  open: boolean
-
-  constructor(open: boolean) {
+  constructor(readonly model: Modal, readonly open: boolean) {
     super()
     this.open = open
+    this.origin = model
   }
 
   protected override get event_values(): Attrs {
-    return {open: this.open}
+    return {open: this.open, origin: this.origin}
   }
 
   static override from_values(values: object) {
-    const {open} = values as {open: boolean}
-    return new ModalDialogEvent(open)
+    const {open, model} = values as {open: boolean, model: Modal}
+    return new ModalDialogEvent(model, open)
   }
 }
 
@@ -119,7 +118,7 @@ export class ModalView extends BkColumnView {
       this.model.open = true
       dialog.style.display = ""
       if (!first_open) {
-        requestAnimationFrame(() => { this.invalidate_layout() })
+        requestAnimationFrame(() => { this.invalidate_layout(); dialog.focus() })
         first_open = true
       }
     })

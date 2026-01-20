@@ -74,6 +74,8 @@ options:
                         A list of request headers to make available in the session context (by default all headers are included).
   --include-cookies INCLUDE_COOKIES [INCLUDE_COOKIES ...]
                         A list of request cookies to make available in the session context (by default all cookies are included).
+  --cookie-path COOKIE_PATH
+                        Configure to control which sub path of the domain the cookie applies to.
   --cookie-secret COOKIE_SECRET
                         Configure to enable getting/setting secure cookies
   --index INDEX         Path to a template to use for the site index

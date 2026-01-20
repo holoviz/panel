@@ -5,6 +5,7 @@ from panel.io import block_comm
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.tests.util import check_layoutable_properties
+from panel.util import _descendents
 from panel.widgets import (
     CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge,
     LoadingSpinner, Terminal, TextInput, ToggleGroup, Tqdm, Widget,
@@ -17,7 +18,7 @@ excluded = (
 )
 
 all_widgets = [
-    w for w in param.concrete_descendents(Widget).values()
+    w for w in _descendents(Widget, concrete=True)
     if not w.__name__.startswith('_') and not issubclass(w, excluded)
 ]
 
@@ -197,3 +198,13 @@ def test_widget_from_param_instance_with_kwargs():
 
     widget.value = 4.3
     assert test.a == 4.3
+
+
+def test_infer_params_attribute_error():
+    class MyComponent(param.Parameterized):
+        name = param.String(default='World', doc="Name to greet")
+
+    with pytest.raises(ValueError) as excinfo:
+        TextInput.from_param(MyComponent.name, name='Name Input')
+
+    assert str(excinfo.value) == "TextInput.from_param only accepts Parameter types, provided value is of type <class 'str'>."

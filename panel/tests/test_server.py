@@ -89,6 +89,28 @@ def test_server_static_dirs():
     with open(__file__, encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+def test_server_prefix_root_redirect():
+    html = Markdown('# Title')
+
+    response = serve_and_request(html, prefix="/foo", suffix="/foo")
+
+    assert len(response.history)
+    redirect = response.history[0]
+    assert redirect.status_code == 302
+    assert redirect.url.endswith('/foo')
+
+    assert response.status_code == 200
+    assert response.url.endswith('/foo/')
+
+def test_server_static_dirs_index():
+    html = Markdown('# Title')
+
+    static = {'tests': os.path.dirname(INDEX_HTML)}
+
+    r = serve_and_request(html, static_dirs=static, suffix="/tests/")
+
+    with open(INDEX_HTML, encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 def test_server_root_handler():
     html = Markdown('# Title')
@@ -99,6 +121,46 @@ def test_server_root_handler():
 
     assert 'href="./app"' in r.content.decode('utf-8')
 
+@pytest.mark.parametrize('path', ["/app", "/nested/app"])
+def test_server_ico_handling(path, port):
+    md = Markdown('# Favicon test')
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {path: md}, ico_path=ico_path, port=port, suffix=path
+    )
+
+    dots = path.count('/')*'.'
+    assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
+
+def test_server_ico_handling_with_prefix(port):
+    md = Markdown('# Favicon test')
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {'app': md}, ico_path=ico_path, port=port, prefix='/prefix', suffix='/prefix/app'
+    )
+
+    assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
+
+@pytest.mark.parametrize('path', ["/app", "/nested/app"])
+def test_server_template_ico_handling(path, port):
+    def app():
+        return BootstrapTemplate()
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    r = serve_and_request(
+        {path: app}, ico_path=ico_path, port=port, suffix=path
+    )
+
+    dots = path.count('/')*'.'
+    assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
 
 def test_server_template_static_resources(server_implementation):
     template = BootstrapTemplate()
@@ -512,6 +574,19 @@ def test_server_reuse_sessions(reuse_sessions):
     assert session.token in r1.content.decode('utf-8')
     assert session.token not in r2.content.decode('utf-8')
 
+def test_server_session_args(port, server_implementation):
+    session_args = []
+    def app():
+        arg = state.session_args.get("arg", [b"baz"])[0].decode('utf-8')
+        session_args.append(arg)
+        return arg
+
+    serve_and_wait(app, port=port)
+
+    requests.get(f"http://localhost:{port}/?arg=foo")
+    requests.get(f"http://localhost:{port}/?arg=bar")
+
+    assert session_args == ["foo", "bar"]
 
 @pytest.mark.xdist_group(name="server")
 def test_server_reuse_sessions_with_session_key_func(port, reuse_sessions):
@@ -736,6 +811,34 @@ def test_server_thread_pool_defer_load(server_implementation, threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
+async def test_server_text_input_update_before_click_event(server_implementation):
+    button = Button(name='Click')
+    text_input = TextInput()
+
+    called = []
+
+    def cb(event):
+        called.append(event)
+        # cb would be called before `value` is set would the Bokeh event
+        # not be debounced.
+        assert text_input.value == 'foo'
+
+    button.on_click(cb)
+    layout = Row(button, text_input)
+
+    serve_and_request(layout)
+
+    model = list(layout._models.values())[0][0]
+    doc = model.document
+    with set_curdoc(doc):
+        text_input._server_change(doc, ref=None, subpath=None, attr='value', old='', new='foo')
+        # Give a chance to the event to propagate
+        await asyncio.sleep(0.01)
+        button._server_event(doc, ButtonClick(model=model.children[0]))
+
+    wait_until(lambda: bool(called))
+
+
 def test_server_thread_pool_change_event(server_implementation, threads):
     button = Button(name='Click')
     button2 = Button(name='Click')
@@ -917,6 +1020,21 @@ def test_server_template_custom_resources_on_proxy(reverse_proxy):
 
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+
+@reverse_proxy_available
+def test_server_ico_path_on_proxy(reverse_proxy):
+    md = Markdown('# Favicon test')
+
+    ico_path = DIST_DIR / "images" / "icon-32x32.png"
+    port, proxy = reverse_proxy
+    r = serve_and_request(
+        {'app': md}, port=port, proxy=proxy, ico_path=ico_path,
+        suffix="/proxy/app"
+    )
+
+    assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
+    ico = requests.get(f"http://localhost:{proxy}/proxy/favicon.ico")
+    assert ico.content == ico_path.read_bytes()
 
 def test_server_template_custom_resources_with_prefix(port):
     template = CustomBootstrapTemplate()

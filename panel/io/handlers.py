@@ -20,6 +20,9 @@ import bokeh.command.util
 
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.application.handlers.code_runner import CodeRunner
+from bokeh.application.handlers.function import (
+    FunctionHandler as BokehFunctionHandler,
+)
 from bokeh.application.handlers.handler import Handler, handle_exception
 from bokeh.core.types import PathLike
 from bokeh.document import Document
@@ -27,10 +30,11 @@ from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
 from ..config import config
+from ..util import BOKEH_GE_3_8
 from .mime_render import MIME_RENDERERS
 from .profile import profile_ctx
 from .reload import record_modules
-from .state import state
+from .state import set_curdoc, state
 
 if TYPE_CHECKING:
     from nbformat import NotebookNode
@@ -55,7 +59,10 @@ def _patch_ipython_display():
         pass
 
 @contextmanager
-def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> Iterator[None]:
+def _monkeypatch_io(loggers: dict[str, Callable[..., None]] | None) -> Iterator[None]:
+    if loggers is None:
+        yield
+        return
     import bokeh.io as io
     old: dict[str, Any] = {}
     for f in CodeHandler._io_functions:
@@ -180,7 +187,7 @@ def capture_code_cell(cell):
 
     if not parses:
         # Skip cell if it cannot be parsed
-        log.warn(
+        log.warning(
             "The following cell did not contain valid Python syntax "
             f"and was skipped:\n\n{cell['source']}"
         )
@@ -226,6 +233,10 @@ def autoreload_handle_exception(handler, module, e):
         handle_exception(handler, e)
         return
 
+    # Print to console
+    traceback.print_exception(e)
+
+    from ..layout import Column
     from ..pane import Alert
 
     # Clean up module
@@ -235,25 +246,100 @@ def autoreload_handle_exception(handler, module, e):
     except ValueError:
         pass
 
-    # Serve error
+    # Format error message and traceback
     e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
     tb = html.escape(traceback.format_exc()).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-    Alert(
-        f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
-        alert_type='danger', margin=5, sizing_mode='stretch_width'
-    ).servable()
 
-def run_app(handler, module, doc, post_run=None, allow_empty=False):
+    # Create full error text for copying
+    full_error_text = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+
+    # Create copy button using ButtonIcon with absolute positioning
+    copy_button = _create_copy_button(full_error_text)
+
+    # Create the main error alert with relative positioning
+    error_alert = Alert(
+        f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto; margin-top: 20px;">{tb}</pre>',
+        alert_type='danger',
+        margin=5,
+        sizing_mode='stretch_width',
+        styles={'position': 'relative'}
+    )
+
+    # Create container with the alert and positioned button
+    error_container = Column(
+        error_alert,
+        copy_button,
+        margin=0,
+        sizing_mode='stretch_width',
+        styles={'position': 'relative'}
+    )
+
+    error_container.servable()
+
+def _create_copy_button(full_error_text):
+    from ..widgets import ButtonIcon
+    copy_button = ButtonIcon(
+        icon="clipboard",
+        active_icon="check",
+        # description="Copy error to clipboard", # disabled because it displays outside window
+        size="1.5em",
+        toggle_duration=2000,
+        styles={
+            'position': 'absolute',
+            'top': '7px',
+            'right': '3px',
+            'z-index': '1000',
+            'background-color': 'var(--panel-surface-color)',
+            'color': 'var(--panel-on-surface-color)',
+            'border-radius': '3px',
+            'padding': '2px',
+        }, height=25, width=23,
+    )
+
+    # Add JavaScript callback to handle clipboard copy
+    copy_button.js_on_click(args={'error_text': full_error_text}, code="""
+    const errorText = error_text;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(errorText).catch(err => {
+            console.error('Failed to copy to clipboard:', err);
+            // Fallback method
+            fallbackCopyTextToClipboard(errorText);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(errorText);
+    }
+    function fallbackCopyTextToClipboard(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+        }
+        document.body.removeChild(textArea);
+    }
+    """)
+
+    return copy_button
+
+def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = False):
     try:
         old_doc = curdoc()
     except RuntimeError:
         old_doc = None
         bk_set_curdoc(doc)
 
-    sessions = []
+    sessions: list[Any] = []
 
     def post_check():
-        newdoc = curdoc()
+        newdoc = state.curdoc
         # Do not let curdoc track modules when autoreload is enabled
         # otherwise it will erroneously complain that there is
         # a memory leak
@@ -266,31 +352,53 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
 
     try:
         state._launching.add(doc)
-        with _monkeypatch_io(handler._loggers):
-            with patch_curdoc(doc):
-                with profile_ctx(config.profiler) as sessions:
-                    with record_modules(handler=handler):
-                        runner = handler._runner
-                        if runner.error:
-                            from ..pane import Alert
-                            Alert(
-                                f'<b>{runner.error}</b>\n<pre style="overflow-y: auto">{runner.error_detail}</pre>',
-                                alert_type='danger', margin=5, sizing_mode='stretch_width'
-                            ).servable()
-                        else:
-                            handler._runner.run(module, post_check)
-                            if post_run:
-                                post_run()
-                if not doc.roots and not allow_empty and config.autoreload and doc not in state._templates:
-                    from ..pane import Alert
+        with (
+            _monkeypatch_io(getattr(handler, '_loggers', None)),
+            patch_curdoc(doc),
+            set_curdoc(doc),
+            profile_ctx(config.profiler) as sessions,
+            record_modules(handler=handler)
+        ):
+            runner = getattr(handler, '_runner', None)
+            if isinstance(handler, FunctionHandler):
+                from ..pane import Alert
+                try:
+                    handler._func(doc)
+                except Exception as e:
                     Alert(
-                        ('<b>Application did not publish any contents</b>\n\n<span>'
-                        'Ensure you have marked items as servable or added models to '
-                        'the bokeh document manually.'),
+                        f'<b>{type(e).__name__}</b>\n<pre style="overflow-y: auto">{str(e)}</pre>',
                         alert_type='danger', margin=5, sizing_mode='stretch_width'
                     ).servable()
+            elif runner is None or runner.error:
+                from ..pane import Alert
+                if runner is None:
+                    error, detail = 'Missing runner', 'Application handler did not provide a way to run the application.'
+                else:
+                    error, detail = runner.error, runner.error_detail
+                Alert(
+                    f'<b>{error}</b>\n<pre style="overflow-y: auto">{detail}</pre>',
+                    alert_type='danger', margin=5, sizing_mode='stretch_width'
+                ).servable()
+            else:
+                handler._runner.run(module, post_check)
+                if post_run:
+                    post_run()
+            if not doc.roots and not allow_empty and config.autoreload and doc not in state._templates:
+                from ..pane import Alert
+                Alert(
+                    ('<b>Application did not publish any contents</b>\n\n<span>'
+                     'Ensure you have marked items as servable or added models to '
+                     'the bokeh document manually.'),
+                    alert_type='danger', margin=5, sizing_mode='stretch_width'
+                ).servable()
+            if BOKEH_GE_3_8:
+                doc.config.update(
+                    reconnect_session=config.reconnect == True,
+                    notifications=None,
+                    notify_connection_status=False
+                )
     finally:
-        if config.profiler:
+        if config.profiler and doc.session_context is not None:
             try:
                 path = doc.session_context.request.path
                 state._profiles[(path, config.profiler)] += sessions
@@ -389,6 +497,25 @@ def parse_notebook(
 #---------------------------------------------------------------------
 # Handler classes
 #---------------------------------------------------------------------
+
+class FunctionHandler(BokehFunctionHandler):
+
+    def modify_document(self, doc: Document) -> None:
+        ''' Execute the configured ``func`` to modify the document.
+
+        After this method is first executed, ``safe_to_fork`` will return
+        ``False``.
+
+        '''
+        try:
+            run_app(self, None, doc)
+        except Exception as e:
+            if self._trap_exceptions:
+                handle_exception(self, e)
+            else:
+                raise
+        finally:
+            self._safe_to_fork = False
 
 class PanelCodeRunner(CodeRunner):
 

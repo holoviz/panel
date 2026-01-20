@@ -41,13 +41,16 @@ def _get_location_params(protocol: str|None, host: str| None, uri: str| None)->d
         else:
             params['hostname'] = host
     if uri:
-        search = hash = None
+        search = fragment = None
 
         if uri.startswith("https,"):
             uri = uri.replace("https,", "")
 
         if uri.startswith("http"):
-            uri = urlparse.urlparse(uri).path
+            parsed = urlparse.urlparse(uri)
+            uri = parsed.path
+            search = parsed.query
+            fragment = parsed.fragment
 
         href += uri
         if '?' in uri and '#' in uri:
@@ -56,13 +59,13 @@ def _get_location_params(protocol: str|None, host: str| None, uri: str| None)->d
         elif '?' in uri:
             params['pathname'], search = uri.split('?')
         elif '#' in uri:
-            params['pathname'], hash = uri.split('#')
+            params['pathname'], fragment = uri.split('#')
         else:
             params['pathname'] = uri
         if search:
             params['search'] = f'?{search}'
-        if hash:
-            params['hash'] = f'#{hash}'
+        if fragment:
+            params['hash'] = f'#{fragment}'
     params['href'] = href
     return params
 

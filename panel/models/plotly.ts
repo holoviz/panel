@@ -388,7 +388,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   async plot(new_plot: boolean=false): Promise<void> {
-    if (!(window as any).Plotly) {
+    if (!(window as any).Plotly || !this.container) {
       return
     }
     const data = this._trace_data()

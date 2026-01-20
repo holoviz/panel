@@ -349,7 +349,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
 
     def set_code_cookie(self, code):
         self.set_secure_cookie(
-            CODE_COOKIE_NAME, code, expires_days=config.oauth_expiry, httponly=True
+            CODE_COOKIE_NAME, code, expires_days=config.oauth_expiry, httponly=True, path=config.cookie_path
         )
 
     async def get(self):
@@ -423,7 +423,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                           type(handler).__name__, user_key)
                 raise HTTPError(401, "OAuth token payload missing user information")
             handler.clear_cookie('is_guest')
-            handler.set_secure_cookie('user', user, expires_days=config.oauth_expiry, httponly=True)
+            handler.set_secure_cookie('user', user, expires_days=config.oauth_expiry, httponly=True, path=config.cookie_path)
         else:
             user = None
 
@@ -433,14 +433,14 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 id_token = state.encryption.encrypt(id_token.encode('utf-8'))
             if refresh_token:
                 refresh_token = state.encryption.encrypt(refresh_token.encode('utf-8'))
-        handler.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry, httponly=True)
+        handler.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry, httponly=True, path=config.cookie_path)
         if id_token:
-            handler.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry, httponly=True)
+            handler.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry, httponly=True, path=config.cookie_path)
         if expires_in:
             now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
-            handler.set_secure_cookie('oauth_expiry', str(int(now_ts + expires_in)), expires_days=config.oauth_expiry, httponly=True)
+            handler.set_secure_cookie('oauth_expiry', str(int(now_ts + expires_in)), expires_days=config.oauth_expiry, httponly=True, path=config.cookie_path)
         if refresh_token:
-            handler.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry, httponly=True)
+            handler.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry, httponly=True, path=config.cookie_path)
         if user and user in state._oauth_user_overrides:
             state._oauth_user_overrides.pop(user, None)
         return user
@@ -492,7 +492,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             title='Panel: Authentication Error',
             error_type='Authentication Error',
             error=error,
-            error_msg=error_msg
+            error_msg=error_msg,
+            oauth_logout_link=self._OAUTH_LOGOUT_URL,
         ))
 
 
@@ -515,6 +516,10 @@ class GenericLoginHandler(OAuthLoginHandler):
     @property
     def _OAUTH_USER_URL(self):
         return config.oauth_extra_params.get('USER_URL', os.environ.get('PANEL_OAUTH_USER_URL'))
+
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        return config.oauth_extra_params.get('LOGOUT_URL', os.environ.get('PANEL_OAUTH_LOGOUT_URL'))
 
     @property
     def _USER_KEY(self):
@@ -572,12 +577,12 @@ class CodeChallengeLoginHandler(GenericLoginHandler):
             log.warning("OAuth state mismatch: %s != %s", cookie_state, url_state)
             raise HTTPError(400, "OAuth state mismatch")
 
-        state = _deserialize_state(url_state)
+        decoded_state = _deserialize_state(url_state)
         user = await self.get_authenticated_user(redirect_uri, config.oauth_key, url_state, code=code)
         if user is None:
             raise HTTPError(403)
         log.debug("%s authorized user, redirecting to app.", type(self).__name__)
-        self.redirect(state.get('next_url', state.base_url))
+        self.redirect(decoded_state.get('next_url', state.base_url))
 
     def _authorize_redirect(self, redirect_uri):
         state = self.get_state()
@@ -609,6 +614,7 @@ class GithubLoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
     _OAUTH_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
     _OAUTH_USER_URL = 'https://api.github.com/user'
+    _OAUTH_LOGOUT_URL = ''
 
     _access_token_header = 'token {}'
 
@@ -624,6 +630,7 @@ class BitbucketLoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL = "https://bitbucket.org/site/oauth2/access_token"
     _OAUTH_AUTHORIZE_URL = "https://bitbucket.org/site/oauth2/authorize"
     _OAUTH_USER_URL = "https://api.bitbucket.org/2.0/user?access_token="
+    _OAUTH_LOGOUT_URL = ""
 
     _USER_KEY = 'username'
 
@@ -635,6 +642,7 @@ class Auth0Handler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://{0}.auth0.com/oauth/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://{0}.auth0.com/authorize'
     _OAUTH_USER_URL_ = 'https://{0}.auth0.com/userinfo'
+    _OAUTH_LOGOUT_URL_ = 'https://{0}.auth0.com/v2/logout?client_id={1}&returnTo={2}'
 
     _USER_KEY = 'email'
 
@@ -653,6 +661,12 @@ class Auth0Handler(OAuthLoginHandler):
         url = config.oauth_extra_params.get('subdomain', 'example')
         return self._OAUTH_USER_URL_.format(url)
 
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        subdomain = config.oauth_extra_params.get('subdomain', 'example')
+        client_id = config.oauth_key
+        return_to = f'{self.request.protocol}://{self.request.host}/logout'
+        return self._OAUTH_LOGOUT_URL_.format(subdomain, client_id, return_to)
 
 
 class GitLabLoginHandler(OAuthLoginHandler):
@@ -668,6 +682,7 @@ class GitLabLoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://{0}/oauth/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://{0}/oauth/authorize'
     _OAUTH_USER_URL_ = 'https://{0}/api/v4/user'
+    _OAUTH_LOGOUT_URL_ = ''
 
     _access_token_header = 'Bearer {}'
 
@@ -688,6 +703,10 @@ class GitLabLoginHandler(OAuthLoginHandler):
         url = config.oauth_extra_params.get('url', 'gitlab.com')
         return self._OAUTH_USER_URL_.format(url)
 
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        return self._OAUTH_LOGOUT_URL_.format(**config.oauth_extra_params)
+
 
 class AzureAdLoginHandler(OAuthLoginHandler):
 
@@ -699,6 +718,7 @@ class AzureAdLoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/authorize'
     _OAUTH_USER_URL_ = ''
+    _OAUTH_LOGOUT_URL_ = ''
 
     _USER_KEY = 'unique_name'
 
@@ -716,6 +736,10 @@ class AzureAdLoginHandler(OAuthLoginHandler):
     def _OAUTH_USER_URL(self):
         return self._OAUTH_USER_URL_.format(**config.oauth_extra_params)
 
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        return self._OAUTH_LOGOUT_URL_.format(**config.oauth_extra_params)
+
 
 class AzureAdV2LoginHandler(OAuthLoginHandler):
 
@@ -727,6 +751,7 @@ class AzureAdV2LoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize'
     _OAUTH_USER_URL_ = ''
+    _OAUTH_LOGOUT_URL_ = ''
 
     _USER_KEY = 'email'
 
@@ -743,6 +768,10 @@ class AzureAdV2LoginHandler(OAuthLoginHandler):
     @property
     def _OAUTH_USER_URL(self):
         return self._OAUTH_USER_URL_.format(**config.oauth_extra_params)
+
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        return self._OAUTH_LOGOUT_URL_.format(**config.oauth_extra_params)
 
 
 class OktaLoginHandler(OAuthLoginHandler):
@@ -763,6 +792,8 @@ class OktaLoginHandler(OAuthLoginHandler):
     _OAUTH_AUTHORIZE_URL__ = 'https://{0}/oauth2/v1/authorize'
     _OAUTH_USER_URL_ = 'https://{0}/oauth2/{1}/v1/userinfo?access_token='
     _OAUTH_USER_URL__ = 'https://{0}/oauth2/v1/userinfo?access_token='
+    _OAUTH_LOGOUT_URL_ = ''
+    _OAUTH_LOGOUT_URL__ = ''
 
     _USER_KEY = 'email'
 
@@ -793,6 +824,15 @@ class OktaLoginHandler(OAuthLoginHandler):
         else:
             return self._OAUTH_USER_URL__.format(url, server)
 
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        url = config.oauth_extra_params.get('url', 'okta.com')
+        server = config.oauth_extra_params.get('server', 'default')
+        if server:
+            return self._OAUTH_LOGOUT_URL_.format(url, server)
+        else:
+            return self._OAUTH_LOGOUT_URL__.format(url, server)
+
 
 class GoogleLoginHandler(OAuthLoginHandler):
 
@@ -803,6 +843,7 @@ class GoogleLoginHandler(OAuthLoginHandler):
     _OAUTH_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     _OAUTH_ACCESS_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
     _USER_KEY = 'email'
+    _OAUTH_LOGOUT_URL = ''
 
 
 class BasicLoginHandler(RequestHandler):
@@ -862,11 +903,11 @@ class BasicLoginHandler(RequestHandler):
             self.clear_cookie("user")
             return
         self.clear_cookie("is_guest")
-        self.set_secure_cookie("user", user, expires_days=config.oauth_expiry, httponly=True)
+        self.set_secure_cookie("user", user, expires_days=config.oauth_expiry, httponly=True, path=config.cookie_path)
         id_token = base64url_encode(json.dumps({'user': user}))
         if state.encryption:
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
-        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry, httponly=True)
+        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry, httponly=True, path=config.cookie_path)
 
 
 class LogoutHandler(tornado.web.RequestHandler):
@@ -943,7 +984,10 @@ class BasicAuthProvider(AuthProvider):
     def _allow_guest(self, uri):
         if config.oauth_optional and not (uri == self._login_endpoint or '?code=' in uri):
             return True
-        return True if uri.replace('/ws', '') in self._guest_endpoints else False
+        for gep in self._guest_endpoints:
+            if uri == gep or uri == gep.rstrip('/') + '/ws':
+                return True
+        return False
 
     @property
     def get_user(self):
@@ -955,7 +999,7 @@ class BasicAuthProvider(AuthProvider):
                 user = "guest"
                 request_handler.request.cookies["is_guest"] = "1"
                 if not isinstance(request_handler, WebSocketHandler):
-                    request_handler.set_cookie("is_guest", "1", expires_days=config.oauth_expiry)
+                    request_handler.set_cookie("is_guest", "1", expires_days=config.oauth_expiry, path=config.cookie_path)
 
             if user and isinstance(request_handler, WebSocketHandler):
                 state._active_users[user] += 1

@@ -14,6 +14,7 @@ import pathlib
 import re
 import sys
 import textwrap
+import uuid
 
 from collections import Counter, defaultdict, namedtuple
 from collections.abc import Callable, Mapping, Sequence
@@ -201,6 +202,12 @@ class Syncable(Renderable):
             if self._property_mapping.get(k, False) is not None and
             k not in self._manual_params
         }
+        if 'sizing_mode' in properties:
+            sm = properties['sizing_mode']
+            if sm and ('width' in sm or 'both' in sm) and self.min_width is None:
+                properties['min_width'] = 0
+            if sm and ('height' in sm or 'both' in sm) and self.min_height is None:
+                properties['min_height'] = 0
         if 'width' in properties and self.sizing_mode is None:
             properties['min_width'] = properties['width']
         if 'height' in properties and self.sizing_mode is None:
@@ -218,16 +225,19 @@ class Syncable(Renderable):
             ]
             stylesheets += properties['stylesheets']
             wrapped = []
+            if state.curdoc:
+                css_cache = state._stylesheets.get(state.curdoc, {})
+            else:
+                css_cache = {}
             for stylesheet in stylesheets:
+                if not stylesheet:
+                    continue
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
-                    if state.curdoc:
-                        cache = state._stylesheets.get(state.curdoc, {})
+                    if stylesheet in css_cache:
+                        conv_stylesheet = css_cache[stylesheet]
                     else:
-                        cache = {}
-                    if stylesheet in cache:
-                        stylesheet = cache[stylesheet]
-                    else:
-                        cache[stylesheet] = stylesheet = ImportedStyleSheet(url=stylesheet)
+                        css_cache[stylesheet] = conv_stylesheet = ImportedStyleSheet(url=stylesheet)
+                    stylesheet = conv_stylesheet
                 wrapped.append(stylesheet)
             properties['stylesheets'] = wrapped
         return properties
@@ -311,7 +321,8 @@ class Syncable(Renderable):
             else:
                 cb = partial(self._manual_update, events, model, doc, root, parent, comm)
                 if doc.session_context:
-                    doc.add_next_tick_callback(cb)
+                    with set_curdoc(doc):
+                        state.execute(cb, schedule=True)
                 else:
                     cb()
 
@@ -343,7 +354,8 @@ class Syncable(Renderable):
         else:
             curdoc_events = self._in_process__events.pop(doc, {})
             cb = partial(self._scheduled_update_model, events, msg, root, model, doc, comm, curdoc_events)
-            doc.add_next_tick_callback(cb)
+            with set_curdoc(doc):
+                state.execute(cb, schedule=True)
             return False
 
     def _update_model(
@@ -454,10 +466,11 @@ class Syncable(Renderable):
         if any(e for e in events if e not in self._busy__ignore):
             with edit_readonly(state):
                 state._busy_counter += 1
-        if events and state.curdoc:
-            self._in_process__events[state.curdoc] = events
-        params = self._process_property_change(events)
         try:
+            params = {}
+            if events and state.curdoc:
+                self._in_process__events[state.curdoc] = events
+            params = self._process_property_change(events)
             with edit_readonly(self):
                 self_params = {k: v for k, v in params.items() if '.' not in k}
                 with _syncing(self, list(self_params)):
@@ -472,7 +485,7 @@ class Syncable(Renderable):
                 with edit_readonly(obj):
                     with _syncing(obj, [p]):
                         obj.param.update(**{p: v})
-        except Exception:
+        except Exception as e:
             if len(params) > 1:
                 msg_end = f"changing properties {pformat(params)} \n"
             elif len(params) == 1:
@@ -480,7 +493,7 @@ class Syncable(Renderable):
             else:
                 msg_end = "\n"
             log.exception(f'Callback failed for object named {self.name!r} {msg_end}')
-            raise
+            raise e
         finally:
             if state.curdoc and state.curdoc in self._in_process__events:
                 del self._in_process__events[state.curdoc]
@@ -501,7 +514,16 @@ class Syncable(Renderable):
             with edit_readonly(state):
                 state._busy_counter -= 1
 
-    async def _change_coroutine(self, doc: Document) -> None:
+    async def _change_coroutine(self, doc: Document, event_id: str | None = None) -> None:
+        if event_id is not None:
+            # Determine if change event was already processed
+            callbacks = state._change_callbacks.get(doc, {})
+            if event_id not in callbacks:
+                return
+            del callbacks[event_id]
+            if not callbacks and doc in state._change_callbacks:
+                del state._change_callbacks[doc]
+
         if state._thread_pool:
             future = state._thread_pool.submit(self._change_event, doc)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
@@ -512,7 +534,11 @@ class Syncable(Renderable):
                 except Exception as e:
                     state._handle_exception(e)
 
-    async def _event_coroutine(self, doc: Document, event) -> None:
+    async def _event_coroutine(self, doc: Document, event: Event) -> None:
+        callbacks = state._change_callbacks.get(doc, {})
+        for cb in list(callbacks.values()):
+            await cb()
+
         if state._thread_pool:
             future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
@@ -568,10 +594,10 @@ class Syncable(Renderable):
             model.on_event(event_name, partial(method, doc))
 
     def _server_event(self, doc: Document, event: Event) -> None:
-        if doc.session_context and not state._unblocked(doc):
-            doc.add_next_tick_callback(
-                partial(self._event_coroutine, doc, event) # type: ignore
-            )
+        if doc.session_context and (not state._unblocked(doc) or doc in state._change_callbacks):
+            cb = partial(self._event_coroutine, doc, event)
+            with set_curdoc(doc):
+                state.execute(cb, schedule=True)
         else:
             self._comm_event(doc, event)
 
@@ -591,9 +617,15 @@ class Syncable(Renderable):
             return
 
         if doc.session_context:
-            cb = partial(self._change_coroutine, doc)
+            event_id = uuid.uuid4().hex
+            cb = partial(self._change_coroutine, doc, event_id=event_id)
+            if doc in state._change_callbacks:
+                state._change_callbacks[doc][event_id] = cb
+            else:
+                state._change_callbacks[doc] = {event_id: cb}
             if attr in self._priority_changes:
-                doc.add_next_tick_callback(cb) # type: ignore
+                with set_curdoc(doc):
+                    state.execute(cb, schedule=True)
             else:
                 doc.add_timeout_callback(cb, self._debounce) # type: ignore
         else:
@@ -665,9 +697,9 @@ class Reactive(Syncable, Viewable):
         if 'stylesheets' not in properties:
             return properties
         if doc:
-            state._stylesheets[doc] = cache = state._stylesheets.get(doc, {})
+            state._stylesheets[doc] = css_cache = state._stylesheets.get(doc, {})
         else:
-            cache = {}
+            css_cache = {}
         if doc and 'dist_url' in doc._template_variables:
             dist_url = doc._template_variables['dist_url']
         else:
@@ -676,10 +708,20 @@ class Reactive(Syncable, Viewable):
         for stylesheet in properties['stylesheets']:
             if isinstance(stylesheet, ImportedStyleSheet):
                 url = str(stylesheet.url)
-                if url in cache:
-                    stylesheet = cache[url]
+                if url in css_cache:
+                    cached = css_cache[url]
+                    # Confirm if stylesheet is valid, sometimes
+                    # the URL is seemingly set to None so we
+                    # replace the cached stylesheet if there is
+                    # a unset property error
+                    try:
+                        cached.url  # noqa
+                    except Exception:
+                        css_cache[url] = stylesheet
+                    else:
+                        stylesheet = cached
                 else:
-                    cache[url] = stylesheet
+                    css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
             stylesheets.append(stylesheet)
         properties['stylesheets'] = stylesheets
@@ -1072,7 +1114,8 @@ class SyncableData(Reactive):
                     push(doc, comm)
             else:
                 cb = partial(self._apply_stream, ref, m, stream, rollover)
-                doc.add_next_tick_callback(cb)
+                with set_curdoc(doc):
+                    state.execute(cb, schedule=True)
 
     def _apply_patch(self, ref: str, model: Model, patch: Patches) -> None:
         self._changing[ref] = ['data']
@@ -1094,7 +1137,8 @@ class SyncableData(Reactive):
                     push(doc, comm)
             else:
                 cb = partial(self._apply_patch, ref, m, patch)
-                doc.add_next_tick_callback(cb)
+                with set_curdoc(doc):
+                    state.execute(cb, schedule=True)
 
     def _update_manual(self, *events: param.parameterized.Event) -> None:
         """
@@ -1191,7 +1235,7 @@ class SyncableData(Reactive):
             self._stream(stream_value, rollover)
         elif pd and isinstance(stream_value, pd.Series):
             if isinstance(self._processed, dict):
-                self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)
+                self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)  # type: ignore
                 return
             value_index_start = self._processed.index.max() + 1
             self._processed.loc[value_index_start] = stream_value
@@ -1587,7 +1631,7 @@ class ReactiveCustomBase(Reactive):
                     for ss in css
                 ]
             props['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
+                ImportedStyleSheet(url=ss) for ss in css if ss
             ] + props['stylesheets']
         return props
 
@@ -1602,9 +1646,9 @@ class ReactiveCustomBase(Reactive):
             if ref_str not in m.tags:
                 m.tags.append(ref_str)
 
-    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
+    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> list[str]:
         if not msg:
-            return
+            return []
         prev_changing = self._changing.get(root.ref['id'], [])
         changing = []
         transformed = {}
@@ -1635,7 +1679,7 @@ class ReactiveCustomBase(Reactive):
                 del self._changing[root.ref['id']]
         if isinstance(model, DataModel):
             self._patch_datamodel_ref(model, root.ref['id'])
-
+        return changing
 
 
 class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
@@ -1866,7 +1910,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                     for ss in css
                 ]
             props['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
+                ImportedStyleSheet(url=ss) for ss in css if ss
             ] + props['stylesheets']
         return props
 
@@ -2174,7 +2218,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                 if old.name == f"{root.ref['id']}-{id(v)}":
                     v = old
                 else:
-                    v = create_linked_datamodel(vs, root)
+                    v = create_linked_datamodel(v, root)
                 data_msg[prop] = v
             elif isinstance(v, str):
                 data_msg[prop] = HTML_SANITIZER.clean(v)

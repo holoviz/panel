@@ -247,7 +247,7 @@ def test_plotly_select_data(page, plotly_2d_plot):
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
     expect(plotly_plot).to_have_count(1)
 
-    page.locator('a.modebar-btn[data-val="select"]').click()
+    page.locator('button.modebar-btn[data-val="select"]').click()
 
     bbox = page.locator('.js-plotly-plot .plot-container.plotly').bounding_box()
 

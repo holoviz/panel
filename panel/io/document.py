@@ -27,7 +27,7 @@ from bokeh.models import CustomJS
 from ..config import config
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .model import monkeypatch_events  # noqa: F401 API import
-from .state import curdoc_locked, state
+from .state import state
 
 if TYPE_CHECKING:
     from asyncio.futures import Future
@@ -101,8 +101,10 @@ def _cleanup_doc(doc, destroy=True):
             callback(None)
         except Exception:
             pass
-    if hasattr(doc.callbacks, '_change_callbacks'):
-        doc.callbacks._change_callbacks[None] = {}
+    if not destroy:
+        doc.callbacks._change_callbacks.clear()
+    elif None not in doc.callbacks._change_callbacks:
+        doc.callbacks._change_callbacks[None] = lambda e: e
 
     # Remove views
     from ..viewable import Viewable
@@ -132,7 +134,7 @@ def _cleanup_doc(doc, destroy=True):
     # Clean up templates
     if doc in state._templates:
         tmpl = state._templates[doc]
-        tmpl._documents = {}
+        tmpl._documents = []
         del state._templates[doc]
 
     # Destroy document
@@ -317,7 +319,7 @@ def schedule_write_events(
     _dispatch_write_task(doc, _dispatch_msgs, doc)
 
 def create_doc_if_none_exists(doc: Document | None) -> Document:
-    curdoc = doc or curdoc_locked()
+    curdoc = doc or state.curdoc
     if curdoc is None:
         curdoc = Document()
     elif not isinstance(curdoc, Document):
@@ -529,6 +531,13 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
             except RuntimeError:
                 curdoc.add_next_tick_callback(partial(retrigger_events, curdoc, retriggered_events))
 
+def dispatch_events(events, doc: Document | None = None):
+    doc = doc or state.curdoc
+    if doc is None:
+        return
+    with immediate_dispatch(doc):
+        doc.callbacks._held_events = events
+
 @contextmanager
 def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
     """
@@ -552,10 +561,14 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
     if doc is None:
         yield
         return
+    threaded = state._current_thread != state._thread_id
     held = doc.callbacks.hold_value
     try:
         if policy is None:
             doc.unhold()
+            yield
+        elif threaded:
+            doc.hold(policy)
             yield
         else:
             with unlocked(policy=policy):
@@ -565,10 +578,16 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
     finally:
         if held:
             doc.callbacks._hold = held
+        elif comm is not None:
+            from .notebook import push
+            push(doc, comm)
+        elif not state._connected.get(doc):
+            doc.callbacks._hold = None
+        elif threaded:
+            doc.callbacks._hold = None
+            doc.add_next_tick_callback(doc.unhold)
+            doc.callbacks._hold = policy
         else:
-            if comm is not None:
-                from .notebook import push
-                push(doc, comm)
             doc.unhold()
 
 @contextmanager

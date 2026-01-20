@@ -21,7 +21,9 @@ from packaging.version import Version
 from panel.depends import bind
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
-from panel.tests.util import mpl_available, serve_and_request, wait_until
+from panel.tests.util import (
+    async_wait_until, mpl_available, serve_and_request, wait_until,
+)
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
@@ -317,6 +319,18 @@ def test_tabulator_multi_index(document, comm):
     assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3', 'foo4', 'foo5']))
 
 
+def test_tabulator_multi_index_hide_index(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df.set_index(['A', 'C']), show_index=False)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'B', 'sorter': 'number'},
+        {'field': 'D', 'sorter': 'timestamp'}
+    ]
+
+
 def test_tabulator_multi_index_remote_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df.set_index(['A', 'C']), pagination='remote', page_size=3)
@@ -345,12 +359,87 @@ def test_tabulator_multi_index_columns(document, comm):
     # Create a DataFrame with this MultiIndex as columns
     df = pd.DataFrame(np.random.randn(4, 6), columns=multi_index)
 
-    table = Tabulator(df)
+    formatters = {('A', 'one', 'Y'): NumberFormatter(format='0.0000')}
+    text_align = {('A', 'two', 'X'): 'left'}
+    titles = {}
+    widths = {}
+    frozen_columns = []
+    header_tooltips = {('A', 'one', 'Y'): 'Tooltips 1'}
+    header_align = {('A', 'one', 'X'): 'left'}
+    sortable = {('B', 'three', 'X'): False}
+    title_formatters = {('B', 'three', 'Y'): {'type': 'star', 'stars': 5}}
+
+    table = Tabulator(
+        df,
+        show_index=True,
+        formatters=formatters,
+        text_align=text_align,
+        titles=titles,
+        widths=widths,
+        frozen_columns=frozen_columns,
+        header_tooltips=header_tooltips,
+        header_align=header_align,
+        sortable=sortable,
+        title_formatters=title_formatters,
+    )
 
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index', 'sorter': 'number'},
+        {'field': 'index', 'sorter': 'number', 'headerSort': True},
+        {
+            'title': 'A',
+            'columns': [
+                {
+                    'title': 'one',
+                    'columns': [
+                        {'field': 'A_one_X', 'sorter': 'number', 'headerHozAlign': 'left', 'headerSort': True},
+                        {'field': 'A_one_Y', 'sorter': 'number', 'headerTooltip': 'Tooltips 1', 'headerSort': True},
+                    ],
+                },
+                {'title': 'two', 'columns': [{'field': 'A_two_X', 'sorter': 'number', 'hozAlign': 'left', 'headerSort': True}]},
+            ],
+        },
+        {
+            'title': 'B',
+            'columns': [
+                {'title': 'two', 'columns': [{'field': 'B_two_Y', 'sorter': 'number', 'headerSort': True}]},
+                {
+                    'title': 'three',
+                    'columns': [
+                        {'field': 'B_three_X', 'sorter': 'number', 'headerSort': False},
+                        {'field': 'B_three_Y', 'sorter': 'number', 'titleFormatter': 'star', 'titleFormatterParams': {'stars': 5}, 'headerSort': True},
+                    ],
+                },
+            ],
+        },
+    ]
+
+    assert model.columns[2].field == 'A_one_Y'
+    mformatter = model.columns[2].formatter
+    assert isinstance(mformatter, NumberFormatter)
+    assert mformatter.format == '0.0000'
+
+    for field in ("index", "A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
+
+
+def test_tabulator_multi_index_columns_hide_index(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_index = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create a DataFrame with this MultiIndex as columns
+    df = pd.DataFrame(np.random.randn(4, 6), columns=multi_index)
+
+    table = Tabulator(df, show_index=False)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
         {'title': 'A', 'columns': [
             {'title': 'one', 'columns': [
                 {'field': 'A_one_X', 'sorter': 'number'},
@@ -370,6 +459,108 @@ def test_tabulator_multi_index_columns(document, comm):
             ]},
         ]}
     ]
+    for field in ("A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
+
+
+def test_tabulator_multi_index_multi_index_columns(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_columns = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create multiIndex
+    numbers = [0, 1, 2]
+    colors = ['green', 'purple']
+    multi_index = pd.MultiIndex.from_product([numbers, colors], names=['number', 'color'])
+
+    # Create a DataFrame with MultiIndex as columns and MultiIndex as index
+    df = pd.DataFrame(np.random.randn(6, 6), index=multi_index, columns=multi_columns)
+
+    table = Tabulator(
+        df,
+        show_index=True,
+        titles={
+            ("A",): "Title a",
+            ("A", "two"): "Title two",
+            ("A", "two", "X"): "New title",
+        },
+    )
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'number__', 'sorter': 'number'},
+        {'field': 'color__'},
+        {'title': 'Title a', 'columns': [
+            {'title': 'one', 'columns': [
+                {'field': 'A_one_X', 'sorter': 'number'},
+                {'field': 'A_one_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'Title two', 'columns': [
+                {'field': 'A_two_X', 'sorter': 'number'}
+            ]},
+        ]},
+        {'title': 'B', 'columns': [
+            {'title': 'two', 'columns': [
+                {'field': 'B_two_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'three', 'columns': [
+                {'field': 'B_three_X', 'sorter': 'number'},
+                {'field': 'B_three_Y', 'sorter': 'number'}
+            ]},
+        ]}
+    ]
+    for field in ("number__", "color__", "A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
+
+    assert(model.columns[4].field == "A_two_X")
+    assert(model.columns[4].title == "New title")
+
+def test_tabulator_multi_index_multi_index_columns_hide_index(document, comm):
+    level_1 = ['A', 'A', 'A', 'B', 'B', 'B']
+    level_2 = ['one', 'one', 'two', 'two', 'three', 'three']
+    level_3 = ['X', 'Y', 'X', 'Y', 'X', 'Y']
+
+    # Combine these into a MultiIndex
+    multi_columns = pd.MultiIndex.from_arrays([level_1, level_2, level_3], names=['Level 1', 'Level 2', 'Level 3'])
+
+    # Create multiIndex
+    numbers = [0, 1, 2]
+    colors = ['green', 'purple']
+    multi_index = pd.MultiIndex.from_product([numbers, colors], names=['number', 'color'])
+
+    # Create a DataFrame with MultiIndex as columns and MultiIndex as index
+    df = pd.DataFrame(np.random.randn(6, 6), index=multi_index, columns=multi_columns)
+
+    table = Tabulator(df, show_index=False)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'title': 'A', 'columns': [
+            {'title': 'one', 'columns': [
+                {'field': 'A_one_X', 'sorter': 'number'},
+                {'field': 'A_one_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'two', 'columns': [
+                {'field': 'A_two_X', 'sorter': 'number'}
+            ]},
+        ]},
+        {'title': 'B', 'columns': [
+            {'title': 'two', 'columns': [
+                {'field': 'B_two_Y', 'sorter': 'number'},
+            ]},
+            {'title': 'three', 'columns': [
+                {'field': 'B_three_X', 'sorter': 'number'},
+                {'field': 'B_three_Y', 'sorter': 'number'}
+            ]},
+        ]}
+    ]
+    for field in ("A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
+        assert field in model.source.data
 
 
 def test_tabulator_expanded_content(document, comm):
@@ -399,6 +590,55 @@ def test_tabulator_expanded_content(document, comm):
     assert 2 in model.children
     row2 = model.children[2]
     assert row2.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+
+def resolve_async_row_content_text(model, idx):
+    if idx not in model.children:
+        return False
+    child = model.children[idx]
+    if not getattr(child, "children", None):
+        return False
+    if not hasattr(child.children[0], "text"):
+        return False
+    return child.children[0].text
+
+
+async def test_tabulator_expanded_content_async(document, comm):
+    df = makeMixedDataFrame()
+
+    async def row_content(row):
+        return row.A
+
+    table = Tabulator(df, expanded=[0], row_content=row_content)
+
+    model = table.get_root(document, comm)
+
+    await async_wait_until(lambda: resolve_async_row_content_text(model, 0) == "&lt;pre&gt;0.0&lt;/pre&gt;")
+    assert len(model.children) == 1
+
+
+async def test_tabulator_content_embed_async(document, comm):
+    df = makeMixedDataFrame()
+
+    async def row_content(row):
+        return row.A
+
+    table = Tabulator(df, embed_content=True, row_content=row_content)
+
+    model = table.get_root(document, comm)
+
+    assert len(model.children) == len(df)
+
+    for i, r in df.iterrows():
+        await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A}&lt;/pre&gt;")
+
+    async def row_content(row):
+        return row.A + 1
+
+    table.row_content = row_content
+
+    for i, r in df.iterrows():
+        await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;")
 
 
 def test_tabulator_remote_paginated_expanded_content(document, comm):
@@ -739,7 +979,7 @@ def test_tabulator_header_filters_column_config_list(document, comm):
         {'field': 'index', 'sorter': 'number'},
         {'field': 'A', 'sorter': 'number'},
         {'field': 'B', 'sorter': 'number'},
-        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'in'},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'like'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
     assert model.configuration['selectable'] == True
@@ -749,7 +989,7 @@ def test_tabulator_header_filters_column_config_select_autocomplete_backwards_co
     df = makeMixedDataFrame()
     table = Tabulator(df, header_filters={
         'C': editor,
-        'D': {'type': editor, 'values': True}
+        'D': {'type': editor, 'values': True, 'multiselect': True}
     })
 
     model = table.get_root(document, comm)
@@ -758,8 +998,8 @@ def test_tabulator_header_filters_column_config_select_autocomplete_backwards_co
         {'field': 'index', 'sorter': 'number'},
         {'field': 'A', 'sorter': 'number'},
         {'field': 'B', 'sorter': 'number'},
-        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'in'},
-        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'sorter': 'timestamp', 'headerFilterFunc': 'in'},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'headerFilterFunc': 'like'},
+        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True, 'multiselect': True}, 'sorter': 'timestamp', 'headerFilterFunc': 'in'},
     ]
     assert model.configuration['selectable'] == True
 
@@ -1684,6 +1924,15 @@ def test_tabulator_patch_with_NaT(document, comm):
         np.testing.assert_array_equal(values, expected_array)
         # Not checking that the data in table.value is the same as expected
         # In table.value we have NaT values, in expected np.nan.
+
+@pytest.mark.parametrize('bad_data', [{'col': 'bad'}, {'col': ['bad']}, {'col': [(0, 1, 'bad')]}])
+def test_tabulator_patch_with_bad_dict(bad_data):
+    df = pd.DataFrame(dict(col=[0, 1]))
+
+    table = Tabulator(df)
+
+    with pytest.raises(ValueError, match='wrapped'):
+        table.patch(bad_data)
 
 
 def test_tabulator_stream_series_paginated_not_follow(document, comm):

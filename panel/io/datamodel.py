@@ -6,10 +6,10 @@ from functools import partial
 from typing import Any
 from weakref import WeakKeyDictionary
 
-import bokeh
 import bokeh.core.properties as bp
 import param as pm
 
+from bokeh.core.property.bases import Property
 from bokeh.model import DataModel, Model
 from bokeh.models import ColumnDataSource
 
@@ -17,10 +17,10 @@ from ..reactive import Syncable
 from ..viewable import Child, Children, Viewable
 from .document import unlocked
 from .notebook import push
-from .state import state
+from .state import set_curdoc, state
 
 
-class Parameterized(bokeh.core.property.bases.Property):
+class Parameterized(Property):
     """ Accept a Parameterized object.
 
     This property only exists to support type validation, e.g. for "accepts"
@@ -38,7 +38,7 @@ class Parameterized(bokeh.core.property.bases.Property):
         raise ValueError(msg)
 
 
-class PolarsDataFrame(bokeh.core.property.bases.Property):
+class PolarsDataFrame(Property):
     """ Accept Polars DataFrame values.
 
     This property only exists to support type validation, e.g. for "accepts"
@@ -58,7 +58,7 @@ class PolarsDataFrame(bokeh.core.property.bases.Property):
         raise ValueError(msg)
 
 
-class ParameterizedList(bokeh.core.property.bases.Property):
+class ParameterizedList(Property):
     """ Accept a list of Parameterized objects.
 
     This property only exists to support type validation, e.g. for "accepts"
@@ -140,11 +140,11 @@ PARAM_MAPPING = {
     pm.Event: lambda p, kwargs: bp.Bool(**kwargs),
     pm.Integer: lambda p, kwargs: bp.Int(**kwargs),
     pm.List: list_param_to_ppt,
-    pm.Number: lambda p, kwargs: bp.Float(**kwargs),
-    pm.NumericTuple: lambda p, kwargs: bp.Tuple(*(bp.Float for p in range(p.length)), **kwargs),
+    pm.Number: lambda p, kwargs: bp.Either(bp.Float, bp.Bool, **kwargs),
+    pm.NumericTuple: lambda p, kwargs: bp.Any(**kwargs),
     pm.Range: lambda p, kwargs: bp.Tuple(bp.Float, bp.Float, **kwargs),
     pm.String: lambda p, kwargs: bp.String(**kwargs),
-    pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in range(p.length)), **kwargs),
+    pm.Tuple: lambda p, kwargs: bp.Any(**kwargs),
     Child: lambda p, kwargs: bp.Nullable(bp.Instance(Model), **kwargs),
     Children: lambda p, kwargs: bp.List(bp.Instance(Model), **kwargs),
 }
@@ -271,17 +271,15 @@ def create_linked_datamodel(obj, root=None):
 
             if ref and ref in state._views:
                 _, root_model, doc, comm = state._views[ref]
-                if comm or state._unblocked(doc):
+                if comm or state._unblocked(doc) or not doc.session_context:
                     with unlocked():
                         model.update(**update)
                     if comm and 'embedded' not in root_model.tags:
                         push(doc, comm)
                 else:
                     cb = partial(model.update, **update)
-                    if doc.session_context:
-                        doc.add_next_tick_callback(cb)
-                    else:
-                        cb()
+                    with set_curdoc(doc):
+                        state.execute(cb, schedule=True)
             else:
                 model.update(**update)
         finally:

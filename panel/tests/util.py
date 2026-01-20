@@ -161,6 +161,9 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
     # Hide this function traceback from the pytest output if the test fails
     __tracebackhide__ = True
 
+    if page:
+        page.wait_for_load_state('networkidle')
+
     start = time.time()
 
     def timed_out():
@@ -230,10 +233,13 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
     # Hide this function traceback from the pytest output if the test fails
     __tracebackhide__ = True
 
-    start = time.time()
+    if page:
+        await page.wait_for_load_state('networkidle')
+
+    start = time.monotonic()
 
     def timed_out():
-        elapsed = time.time() - start
+        elapsed = time.monotonic() - start
         elapsed_ms = elapsed * 1000
         return elapsed_ms > timeout
 
@@ -257,7 +263,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
             # None is returned when the function has an assert
             if result is None:
                 return
-            # When the function returns True or False
+            # When the function returns True
             if result:
                 return
             if timed_out():
@@ -313,6 +319,9 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
     else:
         port = server.port
     wait_for_server(port, prefix=prefix)
+    if page:
+        page.wait_for_function("document.readyState === 'complete'", timeout=5000)
+        page.wait_for_load_state('networkidle')
     return port
 
 serve_and_wait.server_implementation = 'tornado'
@@ -321,11 +330,14 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
     port = serve_and_wait(app, page, **kwargs)
-    page.goto(f"http://localhost:{port}{suffix}")
+    page.goto(f"http://localhost:{port}{suffix}", wait_until="domcontentloaded")
 
     if wait:
         wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
 
+    if page and wait:
+        page.wait_for_function("document.readyState === 'complete'", timeout=5000)
+        page.wait_for_load_state('networkidle')
     return msgs, port
 
 
@@ -418,7 +430,7 @@ def wait_for_regex(stdout, regex, count=1, return_output=False):
         nbsr = NBSR(stdout)
     m = None
     output, found = [], []
-    for _ in range(20):
+    for _ in range(30):
         o = nbsr.readline(0.5)
         if not o:
             continue

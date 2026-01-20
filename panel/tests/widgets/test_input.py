@@ -2,6 +2,7 @@ from datetime import date, datetime, time as dt_time
 from pathlib import Path
 
 import numpy as np
+import param
 import pytest
 
 from bokeh.models.widgets import FileInput as BkFileInput
@@ -244,6 +245,20 @@ def test_literal_input(document, comm):
     with pytest.raises(ValueError):
         literal.value = []
 
+def test_literal_input_inheritance():
+    """LiteralInput should be able to be subclassed as done in panel-material-ui."""
+    class DictInput(LiteralInput):
+        """
+        The `DictInput` allows entering a dictionary value using a text input box.
+        """
+
+        type = param.ClassSelector(default=dict, class_=(type, tuple))
+
+    with pytest.raises(ValueError) as ex:
+        DictInput(value="not a dict")
+
+    assert str(ex.value) == "DictInput expected dict type, but value 'not a dict' is of type str."
+
 def test_static_text(document, comm):
 
     text = StaticText(value='ABC', name='Text:')
@@ -468,3 +483,14 @@ def test_file_input_save_one_file(document, comm, tmpdir):
     assert fpath.exists()
     content = fpath.read_text()
     assert content == 'Some text\n'
+
+def test_int_input_placeholder(document, comm):
+
+    int_input = IntInput(placeholder='Foo', name='IntInput')
+
+    widget = int_input.get_root(document, comm=comm)
+
+    assert widget.placeholder == "Foo"
+
+    int_input.placeholder = "Bar"
+    assert widget.placeholder == "Bar"

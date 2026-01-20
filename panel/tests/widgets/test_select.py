@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from panel.layout import GridBox, Row
+from panel.layout import Column, GridBox, Row
 from panel.pane import panel
 from panel.tests.util import mpl_available
 from panel.widgets import (
@@ -127,6 +127,24 @@ def test_autocomplete_unrestricted(document, comm):
 
     select.value = 'bar'
     assert widget.value == 'bar'
+
+def test_autocomplete_restricted_reset_on_new_options(document, comm):
+    opts = {'A': 'a', '1': 1}
+    select = AutocompleteInput(options=opts, value=1, name='Autocomplete', restrict=True)
+
+    widget = select.get_root(document, comm=comm)
+
+    select.options = {'A': 'a', '2': 2}
+    assert widget.value == ''
+
+def test_autocomplete_unrestricted_no_reset_on_new_options(document, comm):
+    opts = {'A': 'a', '1': 1}
+    select = AutocompleteInput(options=opts, value=1, name='Autocomplete', restrict=False)
+
+    widget = select.get_root(document, comm=comm)
+
+    select.options = {'A': 'a', '2': 2}
+    assert widget.value == '1'
 
 @pytest.mark.parametrize('widget', [AutocompleteInput, Select])
 def test_select_parameterized_option_labels(widget):
@@ -824,6 +842,29 @@ def test_nested_select_layout_dynamic_update(document, comm):
 
     select.layout = Row
     assert isinstance(select._composite, Row)
+
+
+def test_nested_select_propagate_layoutable_params(document, comm):
+    select = NestedSelect(
+        options={
+            "gfs": {"tmp": [1000, 500], "pcp": [1000]},
+            "name": {"tmp": [1000, 925, 850, 700, 500], "pcp": [1000]},
+        },
+        sizing_mode="stretch_width",
+        max_width=500,
+        layout={"type": Column, "height": 300},
+        levels=["model", {"name": "var", "height": 100}, {"name": "level", "sizing_mode": "fixed", "width": 150}],
+    )
+    widgets = select._widgets
+    assert widgets[0].max_width == 500
+    assert widgets[0].sizing_mode == "stretch_width"
+    assert widgets[1].max_width == 500
+    assert widgets[1].height == 100
+    assert widgets[1].sizing_mode == "stretch_width"
+    assert widgets[2].max_width == 500
+    assert widgets[2].sizing_mode == "fixed"
+    assert widgets[2].width == 150
+    assert select._composite[0].height == 300
 
 
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])

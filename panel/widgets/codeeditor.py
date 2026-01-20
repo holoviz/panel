@@ -39,6 +39,8 @@ class CodeEditor(Widget):
 
     language = param.String(default='text', doc="Language of the editor")
 
+    indent = param.Integer(default=4, doc="The default indent size.")
+
     on_keyup = param.Boolean(default=True, doc="""
         Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
 
@@ -48,7 +50,9 @@ class CodeEditor(Widget):
     readonly = param.Boolean(default=False, doc="""
         Define if editor content can be modified. Alias for disabled.""")
 
-    theme = param.Selector(default="chrome", objects=list(ace_themes), doc="""
+    soft_tabs = param.Boolean(default=False, doc="Whether to use spaces instead of tabs.")
+
+    theme = param.Selector(default="github_light_default", objects=list(ace_themes), doc="""
         If no value is provided, it defaults to the current theme
         set by pn.config.theme, as specified in the
         CodeEditor.THEME_CONFIGURATION dictionary. If not defined there, it
@@ -63,7 +67,7 @@ class CodeEditor(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
 
-    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"dark": "chaos"}
+    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"dark": "github_dark", "default": "github_light_default"}
 
     def __init__(self, **params):
         if 'readonly' in params:

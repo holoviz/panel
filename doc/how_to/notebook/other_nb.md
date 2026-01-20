@@ -27,7 +27,7 @@ Please note that in Colab rendering for each notebook cell is isolated, which me
 :::
 
 :::{warning}
-The [IpyWidgets](../../reference/panes/IPyWidget) pane does not work in Google Colab. Thus you cannot use IpyWidgets with Panel in Colab.
+The [IPyWidget](../../reference/panes/IPyWidget.ipynb) pane does not work in Google Colab. Thus you cannot use IPyWidgets with Panel in Colab.
 :::
 
 ## PyCharm Notebook
@@ -45,6 +45,14 @@ See also the [How-To Configure VS Code Guide](../editor/vscode_configure).
 ## nteract and other ipywidgets notebooks
 
 In other notebook environments that support rendering ipywidgets interactively, such as nteract, you can use the same underlying ipywidgets support as for vscode: Install ``jupyter_bokeh`` and then use ``pn.extension(comms='ipywidgets')``.
+
+## Marimo
+
+Panel support has been added to Marimo at the end of 2024 through a collaboration between the Panel and Marimo teams, as describe in this PR: [marimo-team/marimo#2719](https://github.com/marimo-team/marimo/pull/2719)
+
+At a high-level it includes serializing Panel components to JSON, setting up bi-directional communications and registering formatters for HoloViz libraries including Panel components, param.rx and HoloViews plots.
+
+For further details on the integration, please consult the PR.
 
 ## Other environments
 

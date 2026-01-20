@@ -23,13 +23,15 @@ export class AcePlotView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {code, theme, language, filename, print_margin, annotations, readonly} = this.model.properties
+    const {code, theme, language, filename, print_margin, annotations, soft_tabs, indent, readonly} = this.model.properties
     this.on_change(code, () => this._update_code_from_model())
     this.on_change(theme, () => this._update_theme())
     this.on_change(language, () => this._update_language())
     this.on_change(filename, () => this._update_filename())
     this.on_change(print_margin, () => this._update_print_margin())
     this.on_change(annotations, () => this._add_annotations())
+    this.on_change(indent, () => this._editor.setOptions({tabSize: this.model.indent}))
+    this.on_change(soft_tabs, () => this._editor.setOptions({useSoftTabs: this.model.soft_tabs}))
     this.on_change(readonly, () => {
       this._editor.setReadOnly(this.model.readonly)
     })
@@ -50,10 +52,12 @@ export class AcePlotView extends HTMLBoxView {
     this._container.textContent = this.model.code
     this._editor = ace.edit(this._container)
     this._editor.renderer.attachToShadowRoot()
-    this._langTools = ace.require("ace/ext/language_tools")
-    this._modelist = ace.require("ace/ext/modelist")
+    this._langTools = (ace as any).require("ace/ext/language_tools")
+    this._modelist = (ace as any).require("ace/ext/modelist")
     this._editor.setOptions({
       enableBasicAutocompletion: true,
+      tabSize: this.model.indent,
+      useSoftTabs: this.model.soft_tabs,
       enableSnippets: true,
       fontFamily: "monospace", //hack for cursor position
     })
@@ -80,7 +84,28 @@ export class AcePlotView extends HTMLBoxView {
 
   _update_code_from_model(): void {
     if (this._editor && this._editor.getValue() != this.model.code) {
-      this._editor.setValue(this.model.code)
+      // Save the current cursor position
+      const cursorPosition = this._editor.getCursorPosition()
+      const scrollTop = this._editor.session.getScrollTop()
+      const scrollLeft = this._editor.session.getScrollLeft()
+
+      // Update the value without selecting all text
+      // The second parameter (-1) keeps cursor where it is
+      this._editor.setValue(this.model.code, -1)
+
+      // Restore cursor position only if it's valid in the new content
+      const newRowCount = this._editor.session.getLength()
+      if (cursorPosition.row < newRowCount) {
+        const newRowLength = this._editor.session.getLine(cursorPosition.row).length
+        const newColumn = Math.min(cursorPosition.column, newRowLength)
+        this._editor.moveCursorToPosition({row: cursorPosition.row, column: newColumn})
+      } else {
+        // If the cursor was beyond the new document length, move to end
+        this._editor.moveCursorToPosition({row: newRowCount - 1, column: this._editor.session.getLine(newRowCount - 1).length})
+      }
+      this._editor.clearSelection()
+      this._editor.session.setScrollTop(scrollTop)
+      this._editor.session.setScrollLeft(scrollLeft)
     }
   }
 
@@ -101,7 +126,9 @@ export class AcePlotView extends HTMLBoxView {
   }
 
   _update_theme(): void {
-    this._editor.setTheme(`ace/theme/${this.model.theme}`)
+    if (this._editor) {
+      this._editor.setTheme(`ace/theme/${this.model.theme}`)
+    }
   }
 
   _update_filename(): void {
@@ -137,10 +164,12 @@ export namespace AcePlot {
     on_keyup: p.Property<boolean>
     language: p.Property<string>
     filename: p.Property<string | null>
+    indent: p.Property<number>
     theme: p.Property<string>
     annotations: p.Property<any[]>
     print_margin: p.Property<boolean>
     readonly: p.Property<boolean>
+    soft_tabs: p.Property<boolean>
   }
 }
 
@@ -158,16 +187,18 @@ export class AcePlot extends HTMLBox {
   static {
     this.prototype.default_view = AcePlotView
 
-    this.define<AcePlot.Props>(({Any, List, Bool, Str, Nullable}) => ({
-      code:         [ Str,       "" ],
-      code_input:   [ Str,       "" ],
-      on_keyup:     [ Bool,       true ],
-      filename:     [ Nullable(Str), null],
-      language:     [ Str,       "" ],
-      theme:        [ Str, "chrome" ],
-      annotations:  [ List(Any),   [] ],
-      readonly:     [ Bool,   false ],
-      print_margin: [ Bool,   false ],
+    this.define<AcePlot.Props>(({Any, Bool, Int, List, Str, Nullable}) => ({
+      annotations:  [ List(Any),      []  ],
+      code:         [ Str,            ""  ],
+      code_input:   [ Str,            ""  ],
+      filename:     [ Nullable(Str), null ],
+      indent:       [ Int,              4 ],
+      language:     [ Str,             "" ],
+      on_keyup:     [ Bool,          true ],
+      print_margin: [ Bool,         false ],
+      theme:        [ Str, "github_light_default" ],
+      readonly:     [ Bool,         false ],
+      soft_tabs:    [ Bool,         false ],
     }))
 
     this.override<AcePlot.Props>({

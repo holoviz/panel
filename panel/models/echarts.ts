@@ -5,6 +5,7 @@ import type {Attrs} from "@bokehjs/core/types"
 
 import {serializeEvent} from "./event-to-object"
 import {HTMLBox, HTMLBoxView} from "./layout"
+import {transformJsPlaceholders} from "./util"
 
 const mouse_events = [
   "click", "dblclick", "mousedown", "mousemove", "mouseup", "mouseover", "mouseout",
@@ -56,7 +57,9 @@ export class EChartsView extends HTMLBoxView {
 
   override render(): void {
     if (this._chart != null) {
-      (window as any).echarts.dispose(this._chart)
+      try {
+        (window as any).echarts.dispose(this._chart)
+      } catch (e) {}
     }
     super.render()
     this.container = div({style: {height: "100%", width: "100%"}})
@@ -80,14 +83,17 @@ export class EChartsView extends HTMLBoxView {
 
   override after_layout(): void {
     super.after_layout()
-    this._chart.resize()
+    if (this._chart != null) {
+      this._chart.resize()
+    }
   }
 
   _plot(): void {
     if ((window as any).echarts == null) {
       return
     }
-    this._chart.setOption(this.model.data, this.model.options)
+    const data = transformJsPlaceholders(this.model.data)
+    this._chart.setOption(data, this.model.options)
   }
 
   _resize(): void {

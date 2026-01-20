@@ -29,6 +29,7 @@ from pyviz_comms import (
 from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
+from .util import _descendents, set_bokeh_validation
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -135,13 +136,16 @@ class _config(_base_config):
     browser_info = param.Boolean(default=True, doc="""
         Whether to request browser info from the frontend.""")
 
+    cache_path = param.Path(default="./cache", check_exists=False, doc="""
+        Path the cache decorator will write to if diskcache is enabled.""")
+
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
 
-    disconnect_notification = param.String(doc="""
+    disconnect_notification = param.String(default="Server connection lost.", doc="""
         The notification to display to the user when the connection
         to the server is dropped.""")
 
@@ -172,7 +176,7 @@ class _config(_base_config):
     loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
 
-    loading_max_height = param.Integer(default=400, doc="""
+    loading_max_height = param.Integer(default=300, doc="""
         Maximum height of the loading indicator.""")
 
     notifications = param.Boolean(default=False, doc="""
@@ -186,13 +190,20 @@ class _config(_base_config):
         The notification to display when the application is ready and
         fully loaded.""")
 
-    reuse_sessions = param.Boolean(default=False, doc="""
+    reconnect = param.Selector(default=False, objects=[True, False, 'prompt'], doc="""
+        Whether to enable automatic re-connect should the server connection
+        be disrupted. Setting "prompt" will not enable automatic re-connect but
+        will pop up a notification asking the user to confirm.""")
+
+    reuse_sessions = param.Selector(default=False, objects=[True, False, 'warm'], doc="""
         Whether to reuse a session for the initial request to speed up
         the initial page render. Note that if the initial page differs
         between sessions, e.g. because it uses query parameters to modify
         the rendered content, then this option will result in the wrong
         content being rendered. Define a session_key_func to ensure that
-        reused sessions are only reused when appropriate.""")
+        reused sessions are only reused when appropriate. If set to 'warm'
+        session reuse is enabled and the session is warmed up as soon as
+        the initial request arrives.""")
 
     session_key_func = param.Callable(default=None, doc="""
         Used in conjunction with the reuse_sessions option, the
@@ -243,6 +254,13 @@ class _config(_base_config):
     _cookie_secret = param.String(default=None, doc="""
         Configure to enable getting/setting secure cookies.""")
 
+    _cookie_path = param.String(default="/", doc="""
+        Path setting that controls the scope of cookies. Specifies the URL path
+        prefix that must exist in the requested URL for the browser to send the
+        Cookie header. The default value '/' allows cookies to be sent to all paths.
+        A more restrictive path like '/app1/' would limit cookies to only be sent
+        to URLs under that path.""")
+
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
 
@@ -272,6 +290,9 @@ class _config(_base_config):
         When set to a non-None value a thread pool will be started.
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
+
+    _index_titles = param.Dict(default={}, doc="""
+        Custom titles to use for Multi Page Apps index page.""")
 
     _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
         Password, dictionary with a mapping from username to password
@@ -320,14 +341,17 @@ class _config(_base_config):
     _theme = param.Selector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
         The theme to apply to components.""")
 
+    _disable_validation = param.Boolean(default=False, doc="""
+        Whether to disable bokeh validation, speeding up applications.""")
+
     # Global parameters that are shared across all sessions
     _globals: ClassVar[set[str]] = {
-        'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
+        'admin_plugins', 'autoreload', 'comms', 'cookie_path', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin'
+        'oauth_optional', 'admin', 'index_titles', 'disable_validation'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -357,12 +381,14 @@ class _config(_base_config):
 
     @param.depends('notifications', watch=True)
     def _setup_notifications(self):
-        from .io.notifications import NotificationArea
-        from .reactive import ReactiveHTMLMetaclass
-        if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
-            ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
+        if state._notification_type is None:
+            from .io.notifications import NotificationArea
+            from .reactive import ReactiveHTMLMetaclass
+            state._notification_type = NotificationArea
+            if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
+                ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
         if not state.curdoc:
-            state._notification = NotificationArea()
+            state._notification = state._notification_type()
 
     @param.depends('disconnect_notification', 'ready_notification', watch=True)
     def _enable_notifications(self):
@@ -432,6 +458,10 @@ class _config(_base_config):
         from .io.admin import log_handler as admin_log_handler
         admin_log_handler.setLevel(self._log_level)
 
+    @param.depends('_disable_validation', watch=True)
+    def _configure_validation(self):
+        set_bokeh_validation(not self.disable_validation)
+
     def __getattribute__(self, attr):
         """
         Ensures that configuration parameters that are defined per
@@ -493,6 +523,10 @@ class _config(_base_config):
             return os.environ.get('PANEL_CONSOLE_OUTPUT', _config._console_output)
 
     @property
+    def disable_validation(self):
+        return self._disable_validation
+
+    @property
     def embed(self):
         return os.environ.get('PANEL_EMBED', _config._embed) in self._truthy
 
@@ -517,6 +551,10 @@ class _config(_base_config):
         return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path)
 
     @property
+    def index_titles(self):
+        return self._index_titles
+
+    @property
     def inline(self):
         return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
 
@@ -527,7 +565,7 @@ class _config(_base_config):
 
     @property
     def npm_cdn(self):
-        return os.environ.get('PANEL_NPM_CDN', _config._npm_cdn)
+        return os.environ.get('PANEL_NPM_CDN', self._npm_cdn)
 
     @property
     def nthreads(self):
@@ -559,6 +597,11 @@ class _config(_base_config):
             'PANEL_COOKIE_SECRET',
             os.environ.get('BOKEH_COOKIE_SECRET', self._cookie_secret)
         )
+
+    @property
+    def cookie_path(self):
+        """The sub path of the domain the cookie applies to."""
+        return os.environ.get('PANEL_COOKIE_PATH', self._cookie_path)
 
     @property
     def oauth_secret(self):
@@ -725,7 +768,7 @@ class panel_extension(_pyviz_extension):
 
         _in_ipython = hasattr(builtins, '__IPYTHON__')
         reactive_exts = {
-            v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
+            v._extension_name: v for v in _descendents(ReactiveHTML, concrete=True)
         }
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
@@ -775,7 +818,7 @@ class panel_extension(_pyviz_extension):
                 except Exception:
                     pass
                 designs = {
-                    p.lower(): t for p, t in param.concrete_descendents(Design).items()
+                    t.__name__.lower(): t for t in _descendents(Design, concrete=True)
                 }
                 if v not in designs:
                     raise ValueError(
@@ -854,7 +897,10 @@ class panel_extension(_pyviz_extension):
                 nb_loaded = True
             else:
                 with param.logging_level('ERROR'):
-                    hv.plotting.Renderer.load_nb(config.inline)
+                    hv.plotting.Renderer.load_nb(
+                        config.inline,
+                        enable_mathjax="mathjax" in panel_extension._loaded_extensions
+                    )
                     nb_loaded = True
 
         # Disable simple ids, old state and multiple tabs in notebooks can cause IDs to clash
@@ -925,8 +971,8 @@ class panel_extension(_pyviz_extension):
 
         from .viewable import Viewable
 
-        descendants = param.concrete_descendents(Viewable)
-        for cls in reversed(list(descendants.values())):
+        descendants = _descendents(Viewable, concrete=True)
+        for cls in reversed(descendants):
             if cls.__doc__ is None:
                 pass
             elif cls.__doc__.startswith('params'):

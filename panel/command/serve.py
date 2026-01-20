@@ -29,6 +29,7 @@ from bokeh.command.util import build_single_handler_applications
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.server.contexts import ApplicationContext
+from bokeh.settings import settings
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
@@ -37,6 +38,7 @@ from ..config import config
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
 from ..io.reload import record_modules, watch
+from ..io.resources import DIST_DIR
 from ..io.rest import REST_PROVIDERS
 from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
@@ -104,6 +106,14 @@ class Serve(_BkServe):
 
     args = (
         tuple((arg, arg_obj) for arg, arg_obj in _BkServe.args if arg != '--dev') + (
+        ('--index-titles', Argument(
+            metavar="KEY=VALUE",
+            nargs='+',
+            help= ("Custom titles to use for Multi Page Apps specified as "
+                   "key=value pairs mapping from the application page slug "
+                   "to the title to show on the Multi Page App index page."
+                   ),
+        )),
         ('--static-dirs', Argument(
             metavar="KEY=VALUE",
             nargs='+',
@@ -114,6 +124,11 @@ class Serve(_BkServe):
             action = 'store',
             type   = str,
             help   = "Password or filepath to use with Basic Authentication."
+        )),
+        ('--cookie-path', Argument(
+            action = 'store',
+            type   = str,
+            help   = "The path the cookies should apply to ."
         )),
         ('--oauth-provider', Argument(
             action = 'store',
@@ -288,8 +303,11 @@ class Serve(_BkServe):
             type    = str
         )),
         ('--reuse-sessions', Argument(
-            action  = 'store_true',
+            action  = 'store',
             help    = "Whether to reuse sessions when serving the initial request.",
+            default = False,
+            const   = True,
+            nargs   = "?"
         )),
         ('--global-loading-spinner', Argument(
             action  = 'store_true',
@@ -310,7 +328,7 @@ class Serve(_BkServe):
                 applications['/'] = applications[f'/{index}']
         return super().customize_applications(args, applications)
 
-    def warm_applications(self, applications, reuse_sessions, error=True, initialize_session=True):
+    def warm_applications(self, applications, reuse_sessions, error=True, initialize_session=True, index=None):
         from ..io.session import generate_session
         for path, app in applications.items():
             try:
@@ -326,6 +344,10 @@ class Serve(_BkServe):
                 else:
                     state._session_key_funcs[path] = lambda r: r.path
                     state._sessions[path] = session
+                    if index and index.endswith('.py'):
+                        index_path, _ = os.path.splitext(os.path.basename(index))
+                        if path == f'/{index_path}':
+                            state._sessions['/'] = session
                     session.block_expiration()
                 state._on_load(None)
             _cleanup_doc(session.document, destroy=not reuse_sessions)
@@ -344,6 +366,10 @@ class Serve(_BkServe):
         # Handle tranquilized functions in the supplied functions
         kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
 
+        if args.ico_path:
+            settings.ico_path.set_value(args.ico_path)
+        else:
+            kwargs["ico_path"] = DIST_DIR / "images" / "favicon.ico"
         static_dirs = parse_vars(args.static_dirs) if args.static_dirs else {}
         patterns += get_static_routes(static_dirs)
 
@@ -374,6 +400,12 @@ class Serve(_BkServe):
                     f"The specified application {index!r} could not be "
                     "found."
                 )
+
+        # Handle custom titles for Multi Page Apps index
+        if args.index_titles:
+            for item in args.index_titles:
+                slug, title = item.split('=', 1)
+                config.index_titles[slug] = title
 
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
@@ -428,10 +460,10 @@ class Serve(_BkServe):
             if config.autoreload:
                 with record_modules(list(applications.values())):
                     self.warm_applications(
-                        applications, args.reuse_sessions, error=False, initialize_session=initialize_session
+                        applications, args.reuse_sessions, error=False, initialize_session=initialize_session, index=kwargs['index']
                     )
             else:
-                self.warm_applications(applications, args.reuse_sessions, initialize_session=initialize_session)
+                self.warm_applications(applications, args.reuse_sessions, initialize_session=initialize_session, index=kwargs['index'])
 
         # Disable Tornado's autoreload
         if args.dev:
@@ -575,6 +607,14 @@ class Serve(_BkServe):
         elif args.cookie_secret:
             config.cookie_secret = args.cookie_secret
 
+        if args.cookie_path and "PANEL_COOKIE_PATH" in os.environ:
+            raise ValueError(
+                "Supply cookie path either using environment "
+                "variable or via explicit argument, not both."
+            )
+        elif args.cookie_path:
+            config.cookie_path = args.cookie_path
+
         # Check only one auth is used.
         if args.oauth_provider and config.oauth_provider:
                 raise ValueError(
@@ -714,6 +754,9 @@ class Serve(_BkServe):
                 )
             elif args.oauth_jwt_user:
                 config.oauth_jwt_user = args.oauth_jwt_user
+
+        if config.cookie_path:
+            kwargs['cookie_path'] = config.cookie_path
 
         if config.cookie_secret:
             kwargs['cookie_secret'] = config.cookie_secret

@@ -5,9 +5,11 @@ import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {ImportedStyleSheet} from "@bokehjs/core/dom"
+import {Enum} from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs} from "@bokehjs/core/types"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
+import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import {isArray} from "@bokehjs/core/util/types"
 import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
 
@@ -102,14 +104,14 @@ export function model_getter(target: ReactiveESMView, name: string) {
       }
     }
   } else if (name === "on") {
-    return (prop: string | string[], callback: any) => {
+    return (prop: string | string[], callback: any, force: boolean = false) => {
       const props = isArray(prop) ? prop : [prop]
       for (let p of props) {
         if (p.startsWith("change:")) {
           p = p.slice("change:".length)
         }
         if (p in model.attributes || p.split(".")[0] in model.data.attributes) {
-          model.watch(target, p, callback)
+          model.watch(target, p, callback, force)
           continue
         } else if (p === "msg:custom") {
           target.on_event(callback)
@@ -170,12 +172,12 @@ export class ReactiveESMView extends HTMLBoxView {
   accessed_children: string[] = []
   compiled_module: any = null
   model_proxy: any
-  render_module: Promise<any> | null = null
   _changing: boolean = false
   _child_callbacks: Map<string, ((new_views: UIElementView[]) => void)[]>
   _child_rendered: Map<UIElementView, boolean> = new Map()
   _event_handlers: ((data: unknown) => void)[] = []
   _lifecycle_handlers: Map<string, ((...args: any[]) => void)[]> =  new Map([
+    ["update_layout", []],
     ["after_layout", []],
     ["after_render", []],
     ["resize", []],
@@ -195,18 +197,6 @@ export class ReactiveESMView extends HTMLBoxView {
       get: model_getter,
       set: model_setter,
     })
-  }
-
-  init_module(): void {
-    if (this.model.compile_error) {
-      return
-    }
-    const code = this._render_code()
-    const render_url = URL.createObjectURL(
-      new Blob([code], {type: "text/javascript"}),
-    )
-    // @ts-ignore
-    this.render_module = importShim(render_url)
   }
 
   override async lazy_initialize(): Promise<void> {
@@ -238,8 +228,13 @@ export class ReactiveESMView extends HTMLBoxView {
       this.container.className = this.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
     })
     const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
-    this.on_change(child_props, () => {
-      this.update_children()
+    for (const cp of child_props) {
+      cp.change.connect(() => this.update_children())
+    }
+    this.on_change([], () => {
+      if (this.model.render_policy !== "manual") {
+        this.render_esm()
+      }
     })
     this.model.on_event(ESMEvent, (event: ESMEvent) => {
       for (const cb of this._event_handlers) {
@@ -253,6 +248,8 @@ export class ReactiveESMView extends HTMLBoxView {
     this._child_callbacks = new Map()
     this.model.disconnect_watchers(this)
   }
+
+  _on_mounted(): void {}
 
   notify_mount(child: string, id: string, remove: boolean): void {
     if (!this._mounted.has(child)) {
@@ -268,6 +265,7 @@ export class ReactiveESMView extends HTMLBoxView {
       children = [children]
     }
     if (children.every((model: UIElement) => this._mounted.get(child)?.has(model.id))) {
+      this._on_mounted()
       for (const cb of this._lifecycle_handlers.get("mounted") || []) {
         cb(child)
       }
@@ -341,31 +339,51 @@ export class ReactiveESMView extends HTMLBoxView {
     if (this.model.compile_error) {
       this.render_error(this.model.compile_error)
     } else {
-      if (this.render_module == null) {
-        this.init_module()
-      }
       this.render_esm()
+    }
+    for (const element_view of this.element_views) {
+      // this.shadow_el is needed for Bokeh < 3.7.0 as this.self_target is not defined
+      // can be removed when our minimum version is Bokeh 3.7.0
+      // https://github.com/holoviz/panel/pull/7948
+      const target = element_view.rendering_target() ?? this.self_target ?? this.shadow_el
+      element_view.render_to(target)
     }
   }
 
-  protected _render_code(): string {
-    return `
-const view = Bokeh.index.find_one_by_id('${this.model.id}')
+  override get is_managed(): boolean {
+    return this.parent instanceof LayoutDOMView && !(this.parent instanceof ReactiveESMView)
+  }
 
-function render() {
-  const output = view.render_fn({
-    view: view, model: view.model_proxy, data: view.model.data, el: view.container
-  })
-
-  Promise.resolve(output).then((out) => {
-    if (out instanceof Element) {
-      view.container.replaceChildren(out)
+  override compute_layout(): void {
+    if (this.is_managed) {
+      super.compute_layout()
+      return
     }
-    view.after_rendered()
-  })
-}
+    this.measure_layout()
+    this.update_bbox()
+    this._compute_layout()
+    this.after_layout();
+    // Override private property
+    (this as any)._layout_computed = true
+  }
 
-export default {render}`
+  protected override _update_bbox(): boolean {
+    const displayed = (() => {
+      // Consider using Element.checkVisibility() in the future.
+      // https://w3c.github.io/csswg-drafts/cssom-view-1/#dom-element-checkvisibility
+      if (!this.el.isConnected) {
+        return false
+      } else if (this.el.offsetParent != null) {
+        return true
+      } else {
+        const {position, display} = getComputedStyle(this.el)
+        return position == "fixed" && display != "none"
+      }
+    })();
+
+    // Override private property
+    (this as any)._is_displayed = displayed
+    return true
   }
 
   after_rendered(): void {
@@ -384,19 +402,23 @@ export default {render}`
   }
 
   render_esm(): void {
-    if (this.model.compiled === null || this.render_module === null) {
+    if (this.model.compiled === null || this.model.render_module === null) {
       return
     }
+    this.container.replaceChildren()
     this.accessed_properties = []
     for (const lf of this._lifecycle_handlers.keys()) {
       (this._lifecycle_handlers.get(lf) || []).splice(0)
     }
     this.model.disconnect_watchers(this)
-    this.render_module.then((mod: any) => mod.default.render())
+    this.model.render_module.then((mod: any) => mod.default.render(this.model.id))
   }
 
   render_children() {
     for (const child of this.model.children) {
+      if (!this.accessed_children.includes(child)) {
+        return
+      }
       const child_model = this.model.data[child]
       const children = isArray(child_model) ? child_model : [child_model]
       for (const subchild of children) {
@@ -411,7 +433,35 @@ export default {render}`
         }
       }
     }
+    this._stale_children = false
     this.after_render()
+  }
+
+  override has_finished(): boolean {
+    if (!super.has_finished()) {
+      return false
+    }
+
+    if (this.is_layout_root && !(this as any)._layout_computed) {
+      return false
+    }
+
+    for (const child_view of this.child_views) {
+      if (!child_view.has_finished() && this._child_rendered.has(child_view)) {
+        return false
+      }
+    }
+
+    return true
+  }
+
+  override invalidate_layout(): void {
+    if (this.is_managed) {
+      super.invalidate_layout()
+      return
+    }
+    this.update_layout()
+    this.compute_layout()
   }
 
   override remove(): void {
@@ -425,8 +475,8 @@ export default {render}`
   }
 
   override after_resize(): void {
-    super.after_resize()
     if (this._rendered && !this._changing) {
+      super.after_resize()
       for (const cb of (this._lifecycle_handlers.get("resize") || [])) {
         cb()
       }
@@ -459,8 +509,10 @@ export default {render}`
     const created_children = new Set(await this.build_child_views())
 
     const all_views = this.child_views
-    for (const child_view of all_views) {
-      child_view.el.remove()
+    if (this.model.render_policy !== "manual") {
+      for (const child_view of all_views) {
+        child_view.el.remove()
+      }
     }
 
     const new_views = new Map()
@@ -493,12 +545,13 @@ export default {render}`
         callback(new_children)
       }
     }
-    if (this._stale_children) {
+
+    if (this._stale_children && this.model.render_policy !== "manual") {
       this.render_esm()
-      this._stale_children = false
+      this._update_children()
+      this.invalidate_layout()
     }
-    this._update_children()
-    this.invalidate_layout()
+    this._stale_children = false
   }
 
   on_child_render(child: string, callback: (new_views: UIElementView[]) => void): void {
@@ -523,6 +576,8 @@ export default {render}`
   }
 }
 
+export const RenderPolicy = Enum("manual", "children")
+
 export namespace ReactiveESM {
   export type Attrs = p.AttrsOf<Props>
 
@@ -534,7 +589,9 @@ export namespace ReactiveESM {
     data: p.Property<any>
     dev: p.Property<boolean>
     esm: p.Property<string>
+    events: p.Property<string[]>
     importmap: p.Property<any>
+    render_policy: p.Property<typeof RenderPolicy["__type__"]>
   }
 }
 
@@ -546,9 +603,11 @@ export class ReactiveESM extends HTMLBox {
   compiled_module: Promise<any> | null = null
   compile_error: Error | null = null
   model_proxy: any
+  render_module: Promise<any> | null = null
   sucrase_transforms: Transform[] = ["typescript"]
   _destroyer: any | null = null
   _esm_watchers: any = {}
+  _event_callbacks: Map<(data: unknown) => void, (data: unknown) => void> = new Map()
 
   constructor(attrs?: Partial<ReactiveESM.Attrs>) {
     super(attrs)
@@ -569,13 +628,7 @@ export class ReactiveESM extends HTMLBox {
     this.connect(this.properties.importmap.change, () => this.recompile())
   }
 
-  watch(view: ReactiveESMView | null, prop: string, cb: any): void {
-    if (prop in this._esm_watchers) {
-      this._esm_watchers[prop].push([view, cb])
-    } else {
-      this._esm_watchers[prop] = [[view, cb]]
-    }
-
+  watch(view: ReactiveESMView | null, prop: string, cb: any, force: boolean = false): void {
     const propPath = prop.split(".")
     let target: any = this.data
     let resolvedProp: string | null = null
@@ -593,11 +646,55 @@ export class ReactiveESM extends HTMLBox {
       resolvedProp = propPath[propPath.length - 1]
     }
 
+    // Handle reset of param.Event properties
+    if (!force && target === this.data && resolvedProp && this.events.includes(resolvedProp)) {
+      const orig_cb = cb
+      cb = () => {
+        if (resolvedProp && this.data[resolvedProp]) {
+          orig_cb()
+          this.data.setv({[resolvedProp]: false})
+        }
+      }
+      this._event_callbacks.set(orig_cb, cb)
+    }
+
     // Attach watcher if property is found
     if (resolvedProp && target) {
+      if (this.children.includes(resolvedProp)) {
+        const orig_cb = cb
+        cb = async () => {
+          if (view) {
+            view._stale_children = true
+          }
+          if (view && view._stale_children) {
+            await new Promise(resolve => {
+              const check = () => {
+                if (!view._stale_children) {
+                  resolve(undefined)
+                } else {
+                  setTimeout(check, 10)
+                }
+              }
+              check()
+            })
+          }
+          orig_cb()
+          if (view && this.render_policy === "manual") {
+            view.render_children();
+            (view as any)._update_children()
+            view.invalidate_layout()
+          }
+        }
+      }
       target.property(resolvedProp).change.connect(cb)
     } else if (prop in this.properties) {
       this.property(prop).change.connect(cb)
+    }
+
+    if (prop in this._esm_watchers) {
+      this._esm_watchers[prop].push([view, cb])
+    } else {
+      this._esm_watchers[prop] = [[view, cb]]
     }
   }
 
@@ -638,6 +735,11 @@ export class ReactiveESM extends HTMLBox {
 
     if (target && target.properties && propPath[propPath.length - 1] in target.properties) {
       resolvedProp = propPath[propPath.length - 1]
+    }
+
+    if (this._event_callbacks.has(cb)) {
+      cb = this._event_callbacks.get(cb)
+      this._event_callbacks.delete(cb)
     }
 
     // Detach watcher if property is found
@@ -693,6 +795,49 @@ export class ReactiveESM extends HTMLBox {
     }
   }
 
+  init_module(): void {
+    if (this.compile_error) {
+      return
+    } else if (MODULE_CACHE.has(this._render_cache_key)) {
+      this.render_module = MODULE_CACHE.get(this._render_cache_key)
+    } else {
+      const code = this._render_code()
+      const render_url = URL.createObjectURL(
+        new Blob([code], {type: "text/javascript"}),
+      )
+      // @ts-ignore
+      this.render_module = importShim(render_url)
+      MODULE_CACHE.set(this._render_cache_key, this.render_module)
+    }
+  }
+
+  protected _render_code(): string {
+    return `
+function render(id) {
+  const view = Bokeh.index.find_one_by_id(id)
+  if (view == null) {
+    return null
+  }
+
+  const output = view.render_fn({
+    view: view, model: view.model_proxy, data: view.model.data, el: view.container
+  })
+
+  Promise.resolve(output).then((out) => {
+    if (out instanceof Element) {
+      view.container.replaceChildren(out)
+    }
+    view.after_rendered()
+  })
+}
+
+export default {render}`
+  }
+
+  protected get _render_cache_key() {
+    return "reactive_esm"
+  }
+
   compile(): string | null {
     if (this.bundle != null) {
       return this.esm
@@ -706,9 +851,14 @@ export class ReactiveESM extends HTMLBox {
         },
       ).code
     } catch (e) {
-      if (e instanceof SyntaxError && this.dev) {
-        this.compile_error = e
-        return null
+      if (e instanceof SyntaxError) {
+        if (this.dev) {
+          this.compile_error = e
+          return null
+        } else {
+          e.message = `${e.message}. See more information with '--dev' flag.`
+          throw e
+        }
       } else {
         throw e
       }
@@ -764,6 +914,7 @@ export class ReactiveESM extends HTMLBox {
         if (initialize) {
           this._run_initializer(initialize)
         }
+        this.init_module()
         return mod
       } catch (e: any) {
         if (this.dev) {
@@ -787,7 +938,9 @@ export class ReactiveESM extends HTMLBox {
       data:        [ Any                     ],
       dev:         [ Bool,             false ],
       esm:         [ Str,                 "" ],
+      events:      [ Array(Str),          [] ],
       importmap:   [ Any,                 {} ],
+      render_policy: [ RenderPolicy, "children"],
     }))
   }
 }

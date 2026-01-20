@@ -70,7 +70,9 @@ class AbstractVTK(Pane):
     orientation_widget = param.Boolean(default=False, doc="""
       Activate/Deactivate the orientation widget display.""")
 
-    interactive_orientation_widget = param.Boolean(default=True, constant=True)
+    interactive_orientation_widget = param.Boolean(default=True, constant=True, doc="""
+        If True the orientation widget is clickable and allows to rotate
+        the scene in one of the orthographic projections.""")
 
     __abstract = True
 
@@ -595,7 +597,9 @@ class VTKVolume(AbstractVTK):
     nan_opacity = param.Number(default=1., bounds=(0., 1.), doc="""
         Opacity applied to nan values in slices""")
 
-    origin = param.Tuple(default=None, length=3, allow_None=True)
+    origin = param.Tuple(default=None, length=3, allow_None=True, doc="""
+        Origin of the volume in the scene coordinates.
+        If None, the origin is set to (0, 0, 0)""")
 
     render_background = param.Color(default='#52576e', doc="""
         Allows to specify the background color of the 3D rendering.

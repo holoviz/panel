@@ -7,6 +7,7 @@ import ast
 import asyncio
 import base64
 import datetime as dt
+import inspect
 import json
 import logging
 import numbers
@@ -25,10 +26,12 @@ from importlib import import_module
 from typing import Any, AnyStr
 
 import bokeh
+import bokeh.util.callback_manager
 import numpy as np
 import param
 
 from bokeh.core.has_props import _default_resolver
+from bokeh.core.property.bases import Property
 from bokeh.model import Model
 from packaging.version import Version
 
@@ -45,6 +48,7 @@ log = logging.getLogger('panel.util')
 
 bokeh_version = Version(Version(bokeh.__version__).base_version)
 BOKEH_GE_3_6 = bokeh_version >= Version('3.6')
+BOKEH_GE_3_8 = bokeh_version >= Version('3.8')
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
@@ -543,3 +547,58 @@ def camel_to_kebab(name):
     kebab_case = re.sub(r'([a-z0-9])([A-Z])', r'\1-\2', name)
     kebab_case = re.sub(r'([A-Z]+)([A-Z][a-z0-9])', r'\1-\2', kebab_case)
     return kebab_case.lower()
+
+
+def _is_abstract(class_: type) -> bool:
+    """Added from Param."""
+    if inspect.isabstract(class_):
+        return True
+    try:
+        return class_.abstract
+    except AttributeError:
+        return False
+
+
+def _descendents(class_: type, concrete: bool = False) -> list[type]:
+    """Added from Param to be used instead of concrete_descendents that clobber
+    class names."""
+    if not isinstance(class_, type):
+        raise TypeError(f"descendents expected a class object, not {type(class_).__name__}")
+    q = [class_]
+    out: list[type] = []
+    while len(q):
+        x = q.pop(0)
+        out.insert(0, x)
+        try:
+            subclasses = x.__subclasses__()
+        except TypeError:
+            # TypeError raised when __subclasses__ is called on unbound methods,
+            # on `type` for example.
+            continue
+        for b in subclasses:
+            if b not in q and b not in out:
+                q.append(b)
+    return [kls for kls in out if not (concrete and _is_abstract(kls))][::-1]
+
+
+_orig_check_callback = bokeh.util.callback_manager._check_callback
+_orig_nargs = bokeh.util.callback_manager._nargs
+
+def set_bokeh_validation(validate: bool):
+    """
+    Sets the bokeh validation mode for properties and callbacks.
+
+    Parameters
+    ----------
+    validate: bool
+        Whether to enable validation.
+    """
+    Property._should_validate = validate
+    if validate:
+        bokeh.util.callback_manager._check_callback = _orig_check_callback
+        bokeh.util.callback_manager._nargs = _orig_nargs
+    else:
+        def _check_callback(callback, fargs, what=None): return
+        def _nargs(fn): return 1
+        bokeh.util.callback_manager._check_callback = _check_callback
+        bokeh.util.callback_manager._nargs = _nargs

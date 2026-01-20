@@ -3,7 +3,7 @@ requires = [
     "hatchling",
     "hatch-vcs",
     "param >=2.1.0",
-    "bokeh >=3.7.0rc1,<3.8.0",
+    "bokeh >=3.7.0,<3.9.0",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
@@ -29,6 +29,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
@@ -37,7 +38,6 @@ classifiers = [
     "Intended Audience :: Information Technology",
     "Intended Audience :: Legal Industry",
     "Intended Audience :: Other Audience",
-    "Intended Audience :: Science/Research",
     "Natural Language :: English",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Visualization",
@@ -48,13 +48,14 @@ classifiers = [
 ]
 
 dependencies = [
-    'bokeh >=3.5.0,<3.8.0',
+    'bokeh >=3.7.0,<3.9.0',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
     'markdown',
     'markdown-it-py',
     'linkify-it-py',
     'mdit-py-plugins',
+    'narwhals >=2',
     'requests',
     'bleach',
     'typing_extensions',
@@ -77,7 +78,7 @@ recommended = [
     'plotly',
 ]
 fastapi = [
-    'bokeh-fastapi >= 0.1.1',
+    'bokeh-fastapi >= 0.1.5,<0.2.0',
     'fastapi[standard]',
 ]
 dev = [
@@ -87,7 +88,7 @@ tests = [
     'psutil' ,
     'pytest',
     'pytest-asyncio',
-    'pytest-rerunfailures',
+    'pytest-rerunfailures <16.0',
     'pytest-xdist',
 ]
 mypy = [
@@ -229,7 +230,22 @@ filterwarnings = [
     "ignore:websockets.legacy is deprecated:DeprecationWarning", # https://github.com/encode/uvicorn/issues/1908
     "ignore:websockets.server.WebSocketServerProtocol is deprecated:DeprecationWarning", # https://github.com/encode/uvicorn/issues/1908
     # 2025-01 `plotly` 6.0 triggers warnings
-    "ignore:\\*scattermapbox\\* is deprecated! Use \\*scattermap\\* instead" # https://github.com/plotly/plotly.py/issues/4997
+    "ignore:\\*scattermapbox\\* is deprecated! Use \\*scattermap\\* instead", # https://github.com/plotly/plotly.py/issues/4997
+    # 2025-06
+    "ignore:Failed to generate report", # OK, CovReportWarning: Failed to generate report: No data to report.
+    "ignore:Couldn't parse", # OK, CoverageWarning: Couldn't parse
+    "ignore:unclosed <socket.socket:ResourceWarning", # Windows Python 3.10 test-example
+    # 2025-10
+    "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::starlette",
+    "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::fastapi",
+    "ignore:Implicitly cleaning up <_TemporaryFileWrapper:ResourceWarning",
+]
+
+[tool.coverage.run]
+disable_warnings = [
+    "module-not-imported",
+    "couldnt-parse",
+    "no-data-collected",
 ]
 
 [tool.mypy]

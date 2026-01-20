@@ -22,14 +22,16 @@ from .._param import Margin
 from ..io.cache import _generate_hash
 from ..io.document import create_doc_if_none_exists, unlocked
 from ..io.notebook import push
-from ..io.state import state
+from ..io.state import set_curdoc, state
 from ..layout.base import (
     Column, ListPanel, NamedListPanel, Panel, Row,
 )
 from ..links import Link
-from ..models import ReactiveHTML as _BkReactiveHTML
+from ..models import (
+    ReactiveESM as _ReactiveESM, ReactiveHTML as _BkReactiveHTML,
+)
 from ..reactive import Reactive
-from ..util import param_reprs
+from ..util import _descendents, param_reprs
 from ..util.checks import is_dataframe, is_series
 from ..util.parameters import get_params_to_inherit
 from ..viewable import (
@@ -249,7 +251,7 @@ class PaneBase(Layoutable):
         if isinstance(obj, Viewable):
             return type(obj)
         descendents = []
-        for p in param.concrete_descendents(PaneBase).values():
+        for p in _descendents(PaneBase, concrete=True):
             if p.priority is None:
                 applies = True
                 try:
@@ -391,6 +393,23 @@ class Pane(PaneBase, Reactive):
                 old_tab = parent.tabs[index]  # type: ignore
                 props = dict(old_tab.properties_with_values(), child=new_model)
                 parent.tabs[index] = _BkTabPanel(**props)  # type: ignore
+            elif isinstance(parent, _ReactiveESM):
+                for child_prop in parent.children:
+                    try:
+                        values = getattr(parent.data, child_prop)
+                    except AttributeError:
+                        # Skip child properties that are not present on parent.data
+                        continue
+                    if isinstance(values, list) and old_model in values:
+                        new_values = list(values)
+                        new_values[values.index(old_model)] = new_model
+                        setattr(parent.data, child_prop, new_values)
+                        break
+                    elif old_model is values:
+                        setattr(parent.data, child_prop, new_model)
+                        break
+                else:
+                    raise ValueError("No child value to replace found.")
             else:
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
@@ -426,17 +445,15 @@ class Pane(PaneBase, Reactive):
             if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
-            if comm or state._unblocked(doc):
+            if comm or state._unblocked(doc) or not doc.session_context:
                 with unlocked():
                     self._update_object(ref, doc, root, parent, comm)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
                 cb = partial(self._update_object, ref, doc, root, parent, comm)
-                if doc.session_context:
-                    doc.add_next_tick_callback(cb)
-                else:
-                    cb()
+                with set_curdoc(doc):
+                    state.execute(cb, schedule=True)
 
     def _update(self, ref: str, model: Model) -> None:
         """
@@ -570,7 +587,7 @@ class ModelPane(Pane):
         if self._bokeh_model is not None and 'stylesheets' in params:
             css = getattr(self._bokeh_model, '__css__', [])
             params['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
+                ImportedStyleSheet(url=ss) for ss in css if ss
             ] + params['stylesheets']
         return super()._process_param_change(params)
 
@@ -640,7 +657,16 @@ class ReplacementPane(Pane):
         })
 
     def _update_inner_layout(self, *events):
-        self._pane.param.update({event.name: event.new for event in events})
+        updates = {}
+        for event in events:
+            value = event.new
+            if event.name in ('css_classes', 'stylesheets'):
+                value = [
+                    v for v in getattr(self._pane, event.name)
+                    if v not in event.old
+                ] + event.new
+            updates[event.name] = value
+        self._pane.param.update(updates)
 
     @classmethod
     def _recursive_update(cls, old: Reactive, new: Reactive):

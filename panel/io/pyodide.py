@@ -6,6 +6,7 @@ import io
 import json
 import os
 import sys
+import time
 import uuid
 
 from collections.abc import Callable
@@ -38,7 +39,7 @@ from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
-resources.RESOURCE_MODE = 'CDN'
+resources.RESOURCE_MODE = 'cdn'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
 
 if TYPE_CHECKING:
@@ -86,6 +87,9 @@ try:
     import fsspec.implementations.http_sync  # noqa
 except Exception:
     pass
+
+DEBOUNCE = 50
+TIMEOUT = 500
 
 #---------------------------------------------------------------------
 # Private API
@@ -244,7 +248,7 @@ def _serialize_buffers(obj, buffers={}):
 def _process_document_events(doc: Document, events: list[Any]):
     serializer = Serializer(references=doc.models.synced_references)
     patch_json = PatchJson(events=serializer.encode(events))
-    doc.models.flush_synced()
+    doc.models.flush_synced(lambda model: not serializer.has_ref(model))
 
     buffer_map = {}
     for buffer in serializer.buffers:
@@ -277,13 +281,49 @@ def _bytes_converter(value, converter, other):
     )
     return {'id': uid}
 
+def to_py(obj):
+    """Convert JS value to Python, replacing any jsnull (even nested) with None."""
+    root = obj.to_py(default_converter=_bytes_converter)
+    seen = {}
+
+    def fix(x):
+        if x is pyodide.ffi.jsnull:
+            return None
+
+        if isinstance(x, (str, bytes, int, float, bool, type(None))):
+            return x
+
+        oid = id(x)
+        if oid in seen:
+            return seen[oid]
+
+        if isinstance(x, dict):
+            out = {}
+            seen[oid] = out
+            for k, v in x.items():
+                out[k] = fix(v)
+            return out
+
+        if isinstance(x, list):
+            out = []
+            seen[oid] = out
+            out.extend(fix(v) for v in x)
+            return out
+
+        return x
+
+    return fix(root)
+
 def _convert_json_patch(json_patch):
     try:
-        patch = json_patch.to_py(default_converter=_bytes_converter)
+        patch = to_py(json_patch)
         serialized = Serialized(content=patch, buffers=list(_current_buffers))
     finally:
         _current_buffers.clear()
     return serialized
+
+# Holds proxied functions so they are not GCed
+_proxies = []
 
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
@@ -298,15 +338,40 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         The Javascript Bokeh Document instance to sync.
     """
 
-    def jssync(event):
+    event_buffer: list[Any] = []
+    blocked: list[float] = []
+    def jssync(event, debounce=DEBOUNCE, timeout=TIMEOUT, append=True):
         setter_id = getattr(event, 'setter_id', None)
         if (setter_id is not None and setter_id == 'python') or _patching:
             return
-        json_patch = jsdoc.create_json_patch(pyodide.ffi.to_js([event]))
+        if event.kind == "ModelChanged":
+            if append:
+                event_buffer.append(event)
+            else:
+                blocked.clear()
+            now = time.monotonic()
+            if blocked and now < blocked[0]:
+                sync_proxy = pyodide.ffi.create_proxy(
+                    lambda: jssync_proxy(event, debounce, timeout, append=False)
+                )
+                _proxies.append(sync_proxy)
+                js.setTimeout(
+                    sync_proxy,
+                    debounce
+                )
+                return
+            events = event_buffer
+            blocked.append(now+TIMEOUT/1000)
+        else:
+            events = [event]
+        json_patch = jsdoc.create_json_patch(pyodide.ffi.to_js(events))
+        events.clear()
         patch = _convert_json_patch(json_patch)
         pydoc.apply_json_patch(patch, setter='js')
 
-    jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
+    jssync_proxy = pyodide.ffi.create_proxy(jssync)
+    _proxies.append(jssync_proxy)
+    jsdoc.on_change(jssync_proxy, pyodide.ffi.to_js(False))
 
     def pysync(event):
         global _patching
@@ -326,6 +391,8 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
 
     try:
         pydoc.unhold()
+        pydoc.on_event('document_ready', functools.partial(state._schedule_on_load, pydoc))
+        state._loaded[pydoc] = state._connected[pydoc] = True
         pydoc.callbacks.trigger_event(DocumentReady())
     except Exception as e:
         print(f'Error raised while processing Document events: {e}')  # noqa: T201
@@ -357,6 +424,7 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
 
     doc.on_change(pysync)
     doc.unhold()
+    doc.on_event('document_ready', functools.partial(state._schedule_on_load, doc))
     doc.callbacks.trigger_event(DocumentReady())
 
 async def _link_model(ref: str, doc: Document) -> None:

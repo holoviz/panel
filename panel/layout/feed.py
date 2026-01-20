@@ -156,11 +156,7 @@ class Feed(Column):
     ):
         # If no previously visible objects are visible now, reset the visible range
         events = self._in_process__events.get(doc, {})
-        if (
-            self._last_synced and
-            'visible_range' not in events and
-            not any(isIn(old_objects[i], self.objects) for i in range(*self._last_synced))
-        ):
+        if self._last_synced and 'visible_range' not in events and not any(isIn(obj, self.objects) for obj in old_objects[slice(*self._last_synced)]):
             with edit_readonly(self):
                 self.visible_range = None
 

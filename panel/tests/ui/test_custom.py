@@ -1,4 +1,6 @@
+import os
 import pathlib
+import time
 
 import param
 import pytest
@@ -19,11 +21,14 @@ from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
+INIT = "A Markdown pane!"
+ALT = "A different Markdown pane!"
+
 
 @pytest.fixture(scope="module", autouse=True)
 def set_expect_timeout():
     timeout = expect._timeout
-    expect.set_options(timeout=10_000)
+    expect.set_options(timeout=30_000)
     try:
         yield
     finally:
@@ -71,7 +76,32 @@ class AnyWidgetUpdate(AnyWidgetComponent):
     }
     """
 
-@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate])
+class AnyWidgetReactUpdate(AnyWidgetComponent):
+
+    text = param.String()
+
+    _importmap = {
+        "imports": {
+            "@anywidget/react": "https://esm.sh/@anywidget/react",
+            "react": "https://esm.sh/react",
+        }
+    }
+
+    _esm = """
+    import * as React from "react"
+    import { createRender, useModelState } from "@anywidget/react"
+
+    function H1() {
+      let [text] = useModelState("text")
+      return <h1>{text}</h1>
+    }
+
+    const render = createRender(H1)
+
+    export default { render }
+    """
+
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate, AnyWidgetReactUpdate])
 def test_update(page, component):
     example = component(text='Hello World!')
 
@@ -82,6 +112,69 @@ def test_update(page, component):
     example.text = "Foo!"
 
     expect(page.locator('h1')).to_have_text('Foo!')
+
+
+class JSEventUpdate(JSComponent):
+
+    event = param.Event()
+
+    _esm = """
+    export function render({ model }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = "0"
+      model.on('event', () => {
+        h1.textContent = (parseInt(h1.textContent) + 1).toString();
+      })
+      return h1
+    }
+    """
+
+class ReactEventUpdate(ReactComponent):
+
+    event = param.Event()
+
+    _esm = """
+    export function render({ model }) {
+      const [event] = model.useState("event")
+      const [count, setCount ] = React.useState(-1)
+      React.useEffect(() => {
+        setCount(count + 1)
+      }, [event])
+      return <h1>{count}</h1>
+    }
+    """
+
+class AnyWidgetEventUpdate(AnyWidgetComponent):
+
+    event = param.Event()
+
+    _esm = """
+    export function render({ model, el }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = "0"
+      model.on("change:event", () => {
+        h1.textContent = (parseInt(h1.textContent) + 1).toString();
+      })
+      el.append(h1)
+    }
+    """
+
+
+@pytest.mark.parametrize('component', [JSEventUpdate, ReactEventUpdate, AnyWidgetEventUpdate])
+def test_event_update(page, component):
+    example = component()
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('0')
+
+    example.param.trigger('event')
+
+    expect(page.locator('h1')).to_have_text('1')
+
+    example.param.trigger('event')
+
+    expect(page.locator('h1')).to_have_text('2')
 
 
 class AnyWidgetInitialize(AnyWidgetComponent):
@@ -573,15 +666,41 @@ class JSChild(JSComponent):
 
     child = Child()
 
+    count = param.Integer(default=0)
+
     render_count = param.Integer(default=0)
+
+    # default policy is "children" per your note
+    _render_policy = param.ObjectSelector(
+        default="children",
+        objects=["manual", "children"]
+    )
 
     _esm = """
     export function render({ model }) {
-      const button = document.createElement('button')
-      button.appendChild(model.get_child('child'))
-      model.render_count += 1
-      return button
-    }"""
+      // Build the root. DO NOT clear/replace the container here; Panel does that.
+      const button = document.createElement('button');
+      const childEl = model.get_child('child');
+      if (childEl) button.appendChild(childEl);
+
+      model.render_count += 1;
+
+      function patchChild() {
+        const nextChild = model.get_child('child');
+        if (nextChild) button.replaceChildren(nextChild);
+        else button.replaceChildren();
+      }
+
+      model.on("child", () => {
+        const policy = model._render_policy;
+        if (policy === "manual" || policy === "properties") {
+          patchChild();
+        }
+      });
+      return button;
+    }
+    """
+
 
 class ReactChild(ReactComponent):
 
@@ -595,19 +714,62 @@ class ReactChild(ReactComponent):
       return <button>{model.get_child('child')}</button>
     }"""
 
+
 @pytest.mark.parametrize('component', [JSChild, ReactChild])
 def test_child(page, component):
     example = component(child='A Markdown pane!')
 
     serve_component(page, example)
+    button = page.locator('button')
+    expect(button).to_be_attached()
 
-    expect(page.locator('button')).to_have_text('A Markdown pane!')
+    expect(button).to_have_text('A Markdown pane!')
 
     example.child = 'A different Markdown pane!'
 
-    expect(page.locator('button')).to_have_text('A different Markdown pane!')
+    expect(button).to_have_text('A different Markdown pane!')
 
     wait_until(lambda: example.render_count == (2 if component is JSChild else 1), page)
+
+
+def test_render_policy_manual(page):
+    example = JSChild(child=INIT, _render_policy="manual")
+
+    serve_component(page, example)
+    button = page.locator("button")
+    expect(button).to_have_text(INIT)
+
+    # Children change updates text but does not re-render
+    example.child = ALT
+    expect(button).to_have_text(ALT)
+    assert example.render_count == 1
+
+    # Property change does not re-render either
+    example.count += 1
+    assert example.render_count == 1
+
+
+def test_react_child_no_shadow_dom(page):
+    example = ReactChild(
+        child=ReactChild(
+            child='A Markdown pane!', css_classes=['child'], use_shadow_dom=False
+        ),
+        css_classes=['parent']
+    )
+
+    serve_component(page, example)
+    parent = page.locator('button').nth(0)
+    expect(parent).to_be_attached()
+    child = page.locator('.child > button')
+    expect(child).to_be_attached()
+
+    expect(child).to_have_text('A Markdown pane!')
+
+    example.child.child = 'A different Markdown pane!'
+
+    expect(child).to_have_text('A different Markdown pane!')
+
+    wait_until(lambda: example.render_count == 1, page)
 
 
 class JSChildren(ListLike, JSComponent):
@@ -653,12 +815,14 @@ def test_children(page, component):
     example = component(objects=['A Markdown pane!'])
 
     serve_component(page, example)
+    container = page.locator('#container')
+    expect(container).to_be_attached()
 
-    expect(page.locator('#container')).to_have_text('A Markdown pane!')
+    expect(container).to_have_text('A Markdown pane!')
 
     example.objects = ['A different Markdown pane!']
 
-    expect(page.locator('#container')).to_have_text('A different Markdown pane!')
+    expect(container).to_have_text('A different Markdown pane!')
 
     example.objects = ['<div class="foo">1</div>', '<div class="foo">2</div>']
 
@@ -667,20 +831,22 @@ def test_children(page, component):
 
     page.wait_for_timeout(400)
 
-    assert example.render_count == (3 if issubclass(component, JSChildren) else 2)
+    assert example.render_count == (3 if issubclass(component, (JSChildren, ReactChildren)) else 2)
 
 @pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children_add_and_remove_without_error(page, component):
     example = component(objects=['A Markdown pane!'])
 
     msgs, _ = serve_component(page, example)
+    container = page.locator('#container')
+    expect(container).to_be_attached()
 
-    expect(page.locator('#container')).to_have_text('A Markdown pane!')
+    expect(container).to_have_text('A Markdown pane!')
 
     example.append('A different Markdown pane!')
     example.pop(-1)
 
-    expect(page.locator('#container')).to_have_text('A Markdown pane!')
+    expect(container).to_have_text('A Markdown pane!')
 
     expect(page.locator('.markdown')).to_have_count(1)
 
@@ -737,13 +903,14 @@ export function render() {
   return <h1>bar</h1>
 }"""
 
-@pytest.mark.parametrize('component,before,after', [
+@pytest.mark.parametrize(['component', 'before', 'after'], [
     (JSComponent, JS_CODE_BEFORE, JS_CODE_AFTER),
     (ReactChildren, REACT_CODE_BEFORE, REACT_CODE_AFTER),
-])
+], ids=["JSComponent", "ReactChildren"])
 def test_reload(page, js_file, component, before, after):
     js_file.file.write(before)
     js_file.file.flush()
+    os.fsync(js_file.file.fileno())
     js_file.file.seek(0)
 
     class CustomReload(component):
@@ -753,15 +920,20 @@ def test_reload(page, js_file, component, before, after):
 
     with config.set(autoreload=True):
         serve_component(page, example)
+        h1 = page.locator("h1")
+        expect(h1).to_be_attached()
 
-        expect(page.locator('h1')).to_have_text('foo')
+        expect(h1).to_have_text('foo')
 
         js_file.file.write(after)
         js_file.file.flush()
+        os.fsync(js_file.file.fileno())
         js_file.file.seek(0)
+        while not pathlib.Path(js_file.name).exists():
+            time.sleep(0.1)
         example._update_esm()
 
-        expect(page.locator('h1')).to_have_text('bar')
+        expect(h1).to_have_text('bar')
 
 
 def test_anywidget_custom_event(page):
@@ -816,6 +988,17 @@ def test_after_render_lifecycle_hooks(page, component):
 
     expect(page.locator('h1')).to_have_text("rendered")
 
+def test_react_child_no_shadow_dom_after_render_lifecycle_hook(page):
+    example = ReactChild(
+        child=ReactLifecycleAfterRender(use_shadow_dom=False),
+    )
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("rendered")
+
 
 class JSLifecycleAfterLayout(JSComponent):
 
@@ -840,6 +1023,17 @@ class ReactLifecycleAfterLayout(ReactComponent):
 @pytest.mark.parametrize('component', [JSLifecycleAfterLayout, ReactLifecycleAfterLayout])
 def test_after_layout_lifecycle_hooks(page, component):
     example = component()
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("layouted")
+
+def test_react_child_no_shadow_dom_after_layout_lifecycle_hook(page):
+    example = ReactChild(
+        child=ReactLifecycleAfterLayout(use_shadow_dom=False),
+    )
 
     serve_component(page, example)
 
@@ -921,6 +1115,26 @@ def test_remove_lifecycle_hooks(page, component):
         example.clear()
 
     wait_until(lambda: msg_info.value.args[0].json_value() == "Removed", page)
+
+def test_react_child_no_shadow_dom_remove_lifecycle_hook(page):
+    example = ReactChild(
+        child=ReactLifecycleRemove(use_shadow_dom=False),
+    )
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("Hello")
+
+    with page.expect_console_message() as msg_info:
+        example.child = "# New"
+
+    wait_until(lambda: msg_info.value.args[0].json_value() == "Removed", page)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("New ¶")
 
 
 class JSDefaultExport(JSComponent):

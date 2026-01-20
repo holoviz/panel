@@ -33,7 +33,8 @@ from panel.tests.util import hv_available, mpl_available
 from panel.theme import Native
 from panel.util.warnings import PanelDeprecationWarning
 from panel.widgets import (
-    Checkbox, DiscreteSlider, FloatSlider, Select,
+    Checkbox, DiscreteSlider, EditableFloatSlider, FloatInput, IntInput,
+    NumberInput, RadioBoxGroup, RadioButtonGroup, Select,
 )
 
 
@@ -162,6 +163,25 @@ def test_holoviews_pane_reflect_responsive(document, comm):
 
 @pytest.mark.usefixtures("hv_bokeh")
 @hv_available
+def test_holoviews_pane_applies_visible(document, comm):
+    curve = hv.Curve([1, 2, 3])
+    pane = HoloViews(curve)
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    pane.visible = False
+
+    assert not row.visible
+    assert not row.children[0].visible
+
+    pane.visible = True
+
+    assert row.visible
+    assert row.children[0].visible
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
 def test_holoviews_pane_reflect_responsive_override(document, comm):
     curve = hv.Curve([1, 2, 3]).opts(responsive=True)
     pane = HoloViews(curve, sizing_mode='fixed')
@@ -257,21 +277,21 @@ def test_holoviews_widgets_from_dynamicmap(document, comm):
 
     assert len(widgets) == len(kdims)
 
-    assert isinstance(widgets[0], FloatSlider)
+    assert isinstance(widgets[0], EditableFloatSlider)
     assert widgets[0].name == 'A'
     assert widgets[0].start == range_dim.range[0]
     assert widgets[0].end == range_dim.range[1]
     assert widgets[0].value == range_dim.range[0]
     assert widgets[0].step == 0.1
 
-    assert isinstance(widgets[1], FloatSlider)
+    assert isinstance(widgets[1], EditableFloatSlider)
     assert widgets[1].name == 'B'
     assert widgets[1].start == range_step_dim.range[0]
     assert widgets[1].end == range_step_dim.range[1]
     assert widgets[1].value == range_step_dim.range[0]
     assert widgets[1].step == range_step_dim.step
 
-    assert isinstance(widgets[2], FloatSlider)
+    assert isinstance(widgets[2], EditableFloatSlider)
     assert widgets[2].name == 'C'
     assert widgets[2].start == range_default_dim.range[0]
     assert widgets[2].end == range_default_dim.range[1]
@@ -291,6 +311,66 @@ def test_holoviews_widgets_from_dynamicmap(document, comm):
     assert isinstance(widgets[5], DiscreteSlider)
     assert widgets[5].name == 'F'
     assert widgets[5].options == {str(v): v for v in value_numeric_dim.values}
+    assert widgets[5].value == value_numeric_dim.default
+
+@hv_available
+def test_holoviews_widgets_from_dynamicmap_overrides(document, comm):
+    range_dim = hv.Dimension('A', range=(0, 10.))
+    range_step_dim = hv.Dimension('B', range=(0, 10.), step=0.2)
+    range_default_dim = hv.Dimension('C', range=(0, 10), default=3)
+    value_dim = hv.Dimension('D', values=['a', 'b', 'c'])
+    value_default_dim = hv.Dimension('E', values=['a', 'b', 'c', 'd'], default='b')
+    value_numeric_dim = hv.Dimension('F', values=[1, 3, 10], default=3)
+
+    kdims = [
+        range_dim, range_step_dim, range_default_dim,
+        value_dim, value_default_dim, value_numeric_dim
+    ]
+
+    dmap = hv.DynamicMap(lambda A, B, C, D, E, F: hv.Curve([]), kdims=kdims)
+    widgets, _ = HoloViews.widgets_from_dimensions(dmap, default_widgets={
+        'discrete': RadioButtonGroup,
+        'discrete_numeric': RadioBoxGroup,
+        'int': NumberInput,
+        'float': NumberInput,
+    })
+
+    assert len(widgets) == len(kdims)
+
+    assert isinstance(widgets[0], FloatInput)
+    assert widgets[0].name == 'A'
+    assert widgets[0].start == range_dim.range[0]
+    assert widgets[0].end == range_dim.range[1]
+    assert widgets[0].value == range_dim.range[0]
+    assert widgets[0].step == 0.1
+
+    assert isinstance(widgets[1], FloatInput)
+    assert widgets[1].name == 'B'
+    assert widgets[1].start == range_step_dim.range[0]
+    assert widgets[1].end == range_step_dim.range[1]
+    assert widgets[1].value == range_step_dim.range[0]
+    assert widgets[1].step == range_step_dim.step
+
+    assert isinstance(widgets[2], IntInput)
+    assert widgets[2].name == 'C'
+    assert widgets[2].start == range_default_dim.range[0]
+    assert widgets[2].end == range_default_dim.range[1]
+    assert widgets[2].value == range_default_dim.default
+    assert widgets[2].step == 1
+
+    assert isinstance(widgets[3], RadioButtonGroup)
+    assert widgets[3].name == 'D'
+    assert widgets[3].options == value_dim.values
+    assert widgets[3].value == value_dim.values[0]
+
+    assert isinstance(widgets[4], RadioButtonGroup)
+    assert widgets[4].name == 'E'
+    assert widgets[4].options == value_default_dim.values
+    assert widgets[4].value == value_default_dim.default
+
+    assert isinstance(widgets[5], RadioBoxGroup)
+    assert widgets[5].name == 'F'
+    assert widgets[5].options == {value_numeric_dim.pprint_value(v): v for v in value_numeric_dim.values}
     assert widgets[5].value == value_numeric_dim.default
 
 

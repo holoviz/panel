@@ -34,7 +34,7 @@ from bokeh.io import curdoc as _curdoc
 from param.parameterized import Event, Parameterized
 from pyviz_comms import CommManager as _CommManager
 
-from ..util import decode_token, parse_timedelta
+from ..util import decode_token, edit_readonly, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -188,6 +188,7 @@ class _state(param.Parameterized):
     _on_session_created_internal: ClassVar[list[Callable[[SessionContext], None]]] = []
     _on_session_destroyed: ClassVar[list[Callable[[SessionContext], None]]] = []
     _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
+    _connected: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
     # Module that was run during setup
     _setup_module = None
@@ -195,6 +196,7 @@ class _state(param.Parameterized):
     # Scheduled callbacks
     _scheduled: ClassVar[dict[str, tuple[TIterator[int] | None, Callable[[], None]]]] = {}
     _periodic: ClassVar[WeakKeyDictionary[Document, list[PeriodicCallback]]] = WeakKeyDictionary()
+    _change_callbacks: ClassVar[WeakKeyDictionary[Document, dict[str, Callable[[], Coroutine[Any, Any, None]]]]] = WeakKeyDictionary()
 
     # Indicators listening to the busy state
     _indicators: ClassVar[list[BooleanIndicator]] = []
@@ -280,6 +282,8 @@ class _state(param.Parameterized):
 
     @property
     def _thread_id(self) -> int | None:
+        if self._is_pyodide:
+            return self._current_thread
         return self._thread_id_.get(self.curdoc) if self.curdoc else None
 
     @_thread_id.setter
@@ -302,12 +306,13 @@ class _state(param.Parameterized):
             doc is self.curdoc and
             self._thread_id in (self._current_thread, None) and
             (not (doc and doc.session_context and getattr(doc.session_context, 'session', None))
-             or self._loaded.get(doc))
+             or self._connected.get(doc))
         )
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
-        self.busy = self._busy_counter >= 1
+        with edit_readonly(self):
+            self.busy = self._busy_counter >= 1
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
@@ -416,7 +421,8 @@ class _state(param.Parameterized):
         doc = doc or self.curdoc
         if not doc:
             return
-        elif doc not in self._onload:
+        self._connected[doc] = True
+        if doc not in self._onload:
             self._loaded[doc] = True
             return
 
@@ -462,11 +468,15 @@ class _state(param.Parameterized):
         except Exception as e:
             self._handle_exception(e)
 
-    def _handle_exception_wrapper(self, callback):
+    def _handle_exception_wrapper(self, callback, doc: Document | None = None):
         @wraps(callback)
         def wrapper(*args, **kw):
             try:
-                return callback(*args, **kw)
+                if doc:
+                    with set_curdoc(doc):
+                        return callback(*args, **kw)
+                else:
+                    return callback(*args, **kw)
             except Exception as e:
                 self._handle_exception(e)
         return wrapper
@@ -591,6 +601,38 @@ class _state(param.Parameterized):
             self._periodic[self.curdoc].append(cb)
         return cb
 
+    def block_expiration(self):
+        """
+        Blocks expiration of the current session, if used as a context manager
+        it will be unblocked afterwards.
+        """
+        if self.curdoc is None or self.curdoc.session_context is None:
+            @contextmanager
+            def noop():
+                yield
+            return noop()
+
+        for session in self.curdoc.session_context.server_context.sessions:
+            session.block_expiration()
+
+        @contextmanager
+        def unblock():
+            try:
+                yield
+            finally:
+                for session in self.curdoc.session_context.server_context.sessions:
+                    session.unblock_expiration()
+        return unblock()
+
+    def unblock_expiration(self):
+        """
+        Unblock the expiration of the current session.
+        """
+        if self.curdoc is None or self.curdoc.session_context is None:
+            return
+        for session in self.curdoc.session_context.server_context.sessions:
+            session.unblock_expiration()
+
     def cancel_task(self, name: str, wait: bool=False):
         """
         Cancel a task scheduled using the `state.schedule_task` method by name.
@@ -663,7 +705,7 @@ class _state(param.Parameterized):
         elif param.parameterized.iscoroutinefunction(callback):
             param.parameterized.async_executor(callback)
         elif doc and doc.session_context and (schedule == True or (schedule == 'auto' and not self._unblocked(doc))):
-            doc.add_next_tick_callback(self._handle_exception_wrapper(callback))
+            doc.add_next_tick_callback(self._handle_exception_wrapper(callback, doc))
         else:
             try:
                 callback()
@@ -732,7 +774,7 @@ class _state(param.Parameterized):
         """
         if self.curdoc is None or self._is_pyodide or self.loaded:
             if self._thread_pool:
-                self.execute(callback, schedule='threaded')
+                self.execute(callback, schedule='thread')
             else:
                 self.execute(callback, schedule=False)
         elif self.curdoc in self._onload:
@@ -809,6 +851,7 @@ class _state(param.Parameterized):
         self._locations.clear()
         self._templates.clear()
         self._views.clear()
+        self._connected.clear()
         self._loaded.clear()
         self.cache.clear()
         self._scheduled.clear()
@@ -930,7 +973,7 @@ class _state(param.Parameterized):
             )
         else:
             from croniter import croniter
-            base = dt.datetime.now() if at is None else at
+            base = dt.datetime.now(dt.timezone.utc) if at is None else at
             diter = croniter(cron, base)
         now = dt.datetime.now().timestamp()
         try:
@@ -1082,7 +1125,10 @@ class _state(param.Parameterized):
     @rel_path.setter
     def rel_path(self, value: str | None):
         if value is None:
-            return
+            if self.curdoc:
+                self._rel_paths.pop(self.curdoc, None)
+            else:
+                self._rel_path = ''
         elif self.curdoc:
             self._rel_paths[self.curdoc] = value
         else:

@@ -2,10 +2,14 @@ import numpy as np
 import pandas as pd
 import param
 
+from bokeh.plotting import figure
+
 from panel.custom import PyComponent, ReactiveESM
+from panel.io.state import state
 from panel.layout import Row
-from panel.pane import Markdown
-from panel.viewable import Viewable
+from panel.pane import Bokeh, Markdown
+from panel.util import edit_readonly
+from panel.viewable import Child, Children
 
 
 class SimplePyComponent(PyComponent):
@@ -48,7 +52,7 @@ def test_py_component_cleanup(document, comm):
 
 class ESMDataFrame(ReactiveESM):
 
-    df = param.DataFrame()
+    df = param.DataFrame(doc="""A DataFrame to be displayed in the ESM.""")
 
 
 def test_reactive_esm_sync_dataframe(document, comm):
@@ -65,11 +69,30 @@ def test_reactive_esm_sync_dataframe(document, comm):
         np.testing.assert_array_equal(values, expected.get(col))
 
 
+class ESMBundle(ReactiveESM):
+
+    _bundle_path = "esm.js"
+
+
+def test_esm_bundle_resource_path():
+    assert ESMBundle._render_esm(compiled=True, server=True) == "./components/panel.tests.test_custom/ESMBundle/_bundle_path/esm.js"
+
+
+def test_esm_bundle_resource_rel_path():
+    with edit_readonly(state):
+        state.rel_path = ".."
+    try:
+        assert ESMBundle._render_esm(compiled=True, server=True) == "../components/panel.tests.test_custom/ESMBundle/_bundle_path/esm.js"
+    finally:
+        with edit_readonly(state):
+            state.rel_path = None
+
+
 class ESMWithChildren(ReactiveESM):
 
-    child = param.ClassSelector(class_=Viewable)
+    child = Child(doc="""A child Viewable to be displayed in the ESM.""")
 
-    children = param.List(item_type=Viewable)
+    children = Children(doc="""Child Viewables to be displayed in the ESM.""")
 
 
 def test_reactive_esm_model_cleanup(document, comm):
@@ -114,6 +137,28 @@ def test_reactive_esm_child_model_cleanup_on_replace(document, comm):
     md2_model, _ = md2._models[ref]
     assert model.data.child is md2_model
 
+def test_reactive_esm_child_pane_replace(document, comm):
+    fig1 = figure()
+    bk = Bokeh(fig1)
+    esm = ESMWithChildren(child=bk)
+
+    model = esm.get_root(document, comm)
+
+    ref = model.ref['id']
+    assert ref in bk._models
+    bk_model1, _ = bk._models[ref]
+    assert bk_model1 is fig1
+    assert model.data.child is fig1
+
+    fig2 = figure()
+    bk.object = fig2
+
+    ref = model.ref['id']
+    assert ref in bk._models
+    bk_model2, _ = bk._models[ref]
+    assert bk_model2 is fig2
+    assert model.data.child is fig2
+
 def test_reactive_esm_children_models_cleanup(document, comm):
     md = Markdown('foo')
     esm = ESMWithChildren(children=[md])
@@ -143,6 +188,28 @@ def test_reactive_esm_children_models_cleanup_on_replace(document, comm):
     assert ref in md2._models
     md2_model, _ = md2._models[ref]
     assert model.data.children == [md2_model]
+
+def test_reactive_esm_children_pane_replace(document, comm):
+    fig1 = figure()
+    bk = Bokeh(fig1)
+    esm = ESMWithChildren(children=[bk])
+
+    model = esm.get_root(document, comm)
+
+    ref = model.ref['id']
+    assert ref in bk._models
+    bk_model1, _ = bk._models[ref]
+    assert bk_model1 is fig1
+    assert model.data.children == [fig1]
+
+    fig2 = figure()
+    bk.object = fig2
+
+    ref = model.ref['id']
+    assert ref in bk._models
+    bk_model2, _ = bk._models[ref]
+    assert bk_model2 is fig2
+    assert model.data.children == [fig2]
 
 class ESMOverride(ReactiveESM):
 

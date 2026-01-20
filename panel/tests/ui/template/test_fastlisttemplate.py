@@ -26,6 +26,7 @@ def test_fast_list_template_no_console_errors(page):
         "Websocket connection 0 is now open",
         "document idle at",
         "items were rendered successfully",
+        "Automatic fallback to software WebGL has been deprecated",
     ]
     assert len([
         msg for msg in msgs if not any(known in msg.text for known in known_messages)

@@ -20,12 +20,13 @@ from bokeh.application.handlers.directory import DirectoryHandler
 from bokeh.application.handlers.document_lifecycle import (
     DocumentLifecycleHandler,
 )
-from bokeh.application.handlers.function import FunctionHandler
 from bokeh.models import CustomJS
 
 from ..config import config
 from .document import _destroy_document
-from .handlers import MarkdownHandler, NotebookHandler, ScriptHandler
+from .handlers import (
+    FunctionHandler, MarkdownHandler, NotebookHandler, ScriptHandler,
+)
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state
@@ -72,9 +73,11 @@ def _eval_panel(
     with set_curdoc(doc):
         if isinstance(panel, (FunctionType, MethodType)):
             panel = panel()
+        if panel is None and config.template:
+            panel = state.template
         if isinstance(panel, BaseTemplate):
             doc = panel._modify_doc(server_id, title, doc, location)
-        else:
+        elif panel is not None:
             doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
         return doc
 
@@ -207,7 +210,7 @@ def build_single_handler_application(path: str | os.PathLike, argv=None) -> Appl
         elif path.endswith(".py"):
             handler = ScriptHandler(filename=path, argv=argv)
         else:
-            raise ValueError(f"Expected a '.py' script or '.ipynb' notebook, got: {path!r}" % path)
+            raise ValueError(f"Expected a '.py' script or '.ipynb' notebook, got: {path!r}")
     else:
         raise ValueError(f"Path for Bokeh server application does not exist: {path}")
 

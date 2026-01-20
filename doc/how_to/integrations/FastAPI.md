@@ -8,7 +8,7 @@ By the end of this guide, you'll be able to run a FastAPI application that serve
 
 ## Setup
 
-Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutorial/) make sure you first have [FastAPI](https://fastapi.tiangolo.com/) and [bokeh-fastapi] installed using:
+Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutorial/) make sure you first have [FastAPI](https://fastapi.tiangolo.com/) and [bokeh-fastapi](https://github.com/bokeh/bokeh-fastapi) installed using:
 
 ::::{tab-set}
 
@@ -48,9 +48,9 @@ Next we will define a simple Panel application that allows you to control the nu
 ```python
 import panel as pn
 
-from panel.io.fastapi import add_panel_app
+from panel.io.fastapi import add_application
 
-@add_panel_app('/panel', app=app, title='My Panel App')
+@add_application('/panel', app=app, title='My Panel App')
 def create_panel_app():
     slider = pn.widgets.IntSlider(name='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
@@ -130,11 +130,11 @@ INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 ```
 
-If you visit `http://127.0.0.1:8000` you will see the Panel application.
+If you visit `http://127.0.0.1:8000/panel` you will see the Panel application.
 
 ## Adding multiple applications
 
-The `add_application` decorator is useful when server an application defined in a function, if you want to serve multiple applications, whether they are existing Panel objects, functions, or paths to Panel application scripts you can use the `add_applications` function instead, e.g.:
+The `add_application` decorator is useful when serving an application defined in a function, if you want to serve multiple applications, whether they are existing Panel objects, functions, or paths to Panel application scripts you can use the `add_applications` function instead, e.g.:
 
 ```python
 import panel as pn

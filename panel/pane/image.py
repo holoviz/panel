@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import param
 
 from ..models import PDF as _BkPDF
-from ..util import isfile, isurl
+from ..util import _descendents, isfile, isurl
 from .markup import HTMLBasePane, escape
 
 if TYPE_CHECKING:
@@ -150,12 +150,16 @@ class ImageBase(FileBase):
         A link URL to make the image clickable and link to some other
         website.""")
 
+    target = param.String(default="_blank", doc="""
+        The target attribute specifies where to open the linked document.
+        It can be `_self` (default), `_blank`, etc.""")
+
     _rerender_params: ClassVar[list[str]] = [
-        'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
+        'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height', 'target'
     ]
 
     _rename: ClassVar[Mapping[str, str | None ]] = {
-        'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None,
+        'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None, "target": None
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -178,7 +182,7 @@ class ImageBase(FileBase):
         object_fit = "contain" if self.fixed_aspect else "fill"
         html = f'<img src="{src}" {alt} style="max-width: 100%; max-height: 100%; object-fit: {object_fit};{width}{height}"></img>'
         if self.link_url:
-            html = f'<a href="{self.link_url}" target="_blank">{html}</a>'
+            html = f'<a href="{self.link_url}" target="{self.target}">{html}</a>'
         if self.caption:
             html = f'<figure>{html}<figcaption>{self.caption}</figcaption></figure>'
         return escape(html)
@@ -251,7 +255,7 @@ class Image(ImageBase):
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         precedences = []
-        for img_cls in param.concrete_descendents(ImageBase).values():
+        for img_cls in _descendents(ImageBase, concrete=True):
             if img_cls is Image:
                 continue
             applies = img_cls.applies(obj)
@@ -268,7 +272,7 @@ class Image(ImageBase):
             k: v for k, v in self.param.values().items()
             if k not in ('name', 'object')
         }
-        for img_cls in param.concrete_descendents(ImageBase).values():
+        for img_cls in _descendents(ImageBase, concrete=True):
             if img_cls is not Image and img_cls.applies(obj):
                 return img_cls(obj, **params)._transform_object(obj)
         return {'object': '<img></img>'}
@@ -344,6 +348,12 @@ class ICO(ImageBase):
     """
 
     filetype: ClassVar[str] = 'ico'
+
+    def _b64(self, data: str | bytes) -> str:
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        b64 = base64.b64encode(data).decode("utf-8")
+        return f"data:image/x-icon;base64,{b64}"
 
     @classmethod
     def _imgshape(cls, data):
@@ -488,6 +498,11 @@ class PDF(FileBase):
 
     _rerender_params: ClassVar[list[str]] = FileBase._rerender_params + ['start_page']
 
+    @classmethod
+    def _imgshape(cls, data):
+        assert data.startswith(b'%PDF-')
+        return 0, 0
+
     def _transform_object(self, obj: Any) -> dict[str, Any]:
         if obj is None:
             return dict(object='<embed></embed>')
@@ -552,3 +567,36 @@ class WebP(ImageBase):
                 w = int.from_bytes(b.read(2), 'little') + 1
                 h = int.from_bytes(b.read(2), 'little') + 1
         return int(w), int(h)
+
+class AVIF(ImageBase):
+    """
+    The `AVIF` pane embeds a .avif image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
+
+    Reference: https://panel.holoviz.org/reference/panes/AVIF.html
+
+    :Example:
+
+    >>> AVIF(
+    ...     'https://assets.holoviz.org/panel/samples/avif_sample.avif',
+    ...     alt_text='A nice tree',
+    ...     link_url='https://en.wikipedia.org/wiki/AVIF',
+    ...     width=500
+    ... )
+    """
+
+    filetype: ClassVar[str] = "avif"
+
+    _extensions: ClassVar[tuple[str, ...]] = ("avif",)
+
+    @classmethod
+    def _imgshape(cls, data: bytes) -> tuple[int, int]:
+        # The width and height position are stored withyin the ispe box, its format is :
+        # ispe + 4 bytes + 4 bytes for width + 4 bytes for height
+
+        ispe = data.find(b"ispe")
+        w = int.from_bytes(data[ispe + 8 : ispe + 12], byteorder="big", signed=False)
+        h = int.from_bytes(data[ispe + 12 : ispe + 16], byteorder="big", signed=False)
+
+        return w, h
