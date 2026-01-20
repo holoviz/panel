@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 
+from collections import defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
@@ -41,28 +42,41 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
     kls_params = parameterized.param.objects(instance=False)
     inst_params = parameterized._param__private.params
     init_inst_params = list(inst_params)
-    updated_ro, updated_co = [], []
+    updated = defaultdict(list)
     for pname, pobj in (kls_params | inst_params).items():
         if pobj.readonly:
+            if not pobj.constant:
+                # The Parameter constructor sets constant to True if readonly
+                # is True. This is to support the rare case where a user
+                # would later on update constant to be False while keeping
+                # readonly True.
+                updated['readonly_not_constant'].append(pname)
+            else:
+                updated['readonly'].append(pname)
             pobj.readonly = False
             pobj.constant = False
-            updated_ro.append(pname)
         elif pobj.constant:
+            updated['constant'].append(pname)
             pobj.constant = False
-            updated_co.append(pname)
     try:
         yield
     finally:
-        for pname in updated_ro:
-            # Some operations trigger a parameter instantiation (copy),
-            # we ensure both the class and instance parameters are reset.
+        # Some operations trigger a parameter instantiation (copy),
+        # for these three cases we ensure both the class and instance parameters
+        # are reset.
+        for pname in updated['readonly_not_constant']:
+            if pname in kls_params and pname not in init_inst_params:
+                type(parameterized).param[pname].readonly = True
+            if pname in inst_params:
+                parameterized.param[pname].readonly = True
+        for pname in updated['readonly']:
             if pname in kls_params and pname not in init_inst_params:
                 type(parameterized).param[pname].readonly = True
                 type(parameterized).param[pname].constant = True
             if pname in inst_params:
                 parameterized.param[pname].readonly = True
                 parameterized.param[pname].constant = True
-        for pname in updated_co:
+        for pname in updated['constant']:
             if pname in kls_params and pname not in init_inst_params:
                 type(parameterized).param[pname].constant = True
             if pname in inst_params:
