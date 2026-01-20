@@ -993,6 +993,9 @@ class _SpinnerBase(_NumericInputBase):
         Defines the multiplication factor applied to step when the page up
         and page down keys are pressed.""")
 
+    placeholder = param.String(default='', doc="""
+        Placeholder when the value is empty.""")
+
     wheel_wait = param.Integer(default=100, doc="""
         Defines the debounce time in ms before updating `value_throttled` when
         the mouse wheel is used to change the input.""")
@@ -1068,9 +1071,6 @@ class IntInput(_SpinnerBase, _IntInputBase):
 
     >>> IntInput(name='Value', value=100, start=0, end=1000, step=10)
     """
-
-    placeholder = param.String(default='', doc="""
-        Placeholder when the value is empty.""")
 
     step = param.Integer(default=1, doc="""
         The step size.""")
