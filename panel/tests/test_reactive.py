@@ -448,6 +448,16 @@ def test_reactive_html_no_id_method_error():
                 pass
     assert "Found <div> node with the `onclick` callback referencing the `_onclick` method." in str(excinfo.value)
 
+def test_reactive_html_no_id_child_error():
+
+    with pytest.raises(ValueError) as excinfo:
+        class Test(ReactiveHTML):
+            child = param.Parameter()
+
+            _template = '<div>${child}</div>'
+
+    assert "Found template text referencing 'child' outside an element with an id." in str(excinfo.value)
+
 def test_reactive_html_dom_events():
 
     class TestDOMEvents(ReactiveHTML):
