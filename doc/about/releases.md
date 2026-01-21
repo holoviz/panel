@@ -1,5 +1,35 @@
 # Releases
 
+## Version 1.8.6
+
+This patch release includes several ESM and React-related fixes, UI behavior improvements, and enhanced robustness in form inputs and file handling. It also bumps key dependencies and improves support for custom deployments. Thanks to @philippjfr, @maximlt, @emunsing, and @hoxbro for their contributions to this release!
+
+### ✨ Enhancements
+
+- Add `placeholder` parameter on `FloatInput` and `IntInput` ([#8360](https://github.com/holoviz/panel/pull/8360))
+- Support for file extensions in `FileDropper.accepted_filetypes` ([#8380](https://github.com/holoviz/panel/pull/8380))
+
+### 🐛 Bug Fixes
+
+- **ESM & React Components**:
+  - Fix errors when renamed parameters are linked on ESM components ([#8357](https://github.com/holoviz/panel/pull/8357))
+  - Fix `rel_path` resolution in ESM components ([#8375](https://github.com/holoviz/panel/pull/8375))
+  - Fix `autoreload` watcher setup for ESM apps ([#8361](https://github.com/holoviz/panel/pull/8361))
+  - Delay removal of `ReactComponent` children until new ones are mounted ([#8358](https://github.com/holoviz/panel/pull/8358))
+- Ensure `PathLike` is accepted for `requirements` in pyodide conversion calls ([#8366](https://github.com/holoviz/panel/pull/8366))
+- Ensure `edit_readonly` resets both class- and instance-level parameters ([#8371](https://github.com/holoviz/panel/pull/8371))
+- Fix `guest` endpoint validation at root path ([#8370](https://github.com/holoviz/panel/pull/8370))
+
+### 📚 Documentation
+
+- Update `Plotly` example to prevent flicker on load ([#8362](https://github.com/holoviz/panel/pull/8362))
+
+### 🧪 Maintenance
+
+- Bump `bokeh` to 3.8.2 in Django example app ([#8376](https://github.com/holoviz/panel/pull/8376))
+- Bump `preact` to 10.26.10 ([#8367](https://github.com/holoviz/panel/pull/8367))
+- Update pre-commit hooks ([#8363](https://github.com/holoviz/panel/pull/8363))
+
 ## Version 1.8.5
 
 This release includes several fixes and enhancements for notebook stability, Tabulator behavior, ESM/ReactiveComponent handling, and Markdown rendering. It also adds documentation updates for FastAPI integration, app conversion guides, and the Panel roadmap.
