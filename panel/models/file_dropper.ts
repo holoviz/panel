@@ -101,6 +101,7 @@ const EXTENSION_TO_MIME_TYPE: Record<string, string> = {
   ".doc": "application/msword",
   ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ".xls": "application/vnd.ms-excel",
+  ".xlsb": "application/vnd.ms-excel.sheet.binary.macroenabled.12",
   ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ".ppt": "application/vnd.ms-powerpoint",
   ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -132,6 +133,48 @@ const EXTENSION_TO_MIME_TYPE: Record<string, string> = {
   ".pkg": "application/octet-stream",
   ".deb": "application/vnd.debian.binary-package",
   ".rpm": "application/x-rpm",
+
+  // Columnar / big data
+  ".parquet": "application/octet-stream",   // browsers do NOT emit application/parquet
+  ".arrow": "application/octet-stream",
+  ".feather": "application/octet-stream",
+  ".orc": "application/octet-stream",
+
+  // Scientific / numerical
+  ".npy": "application/octet-stream",
+  ".npz": "application/octet-stream",
+  ".mat": "application/octet-stream",
+  ".h5": "application/octet-stream",
+  ".hdf5": "application/octet-stream",
+  ".zarr": "application/octet-stream",
+
+  // R ecosystem
+  ".rds": "application/octet-stream",
+  ".rda": "application/octet-stream",
+  ".rdata": "application/octet-stream",
+
+  // Notebooks
+  ".ipynb": "application/json",
+
+  // ML models / artifacts
+  ".pkl": "application/octet-stream",
+  ".pickle": "application/octet-stream",
+  ".joblib": "application/octet-stream",
+  ".onnx": "application/octet-stream",
+  ".pt": "application/octet-stream",
+  ".pth": "application/octet-stream",
+  ".h5model": "application/octet-stream",
+
+  // Vector
+  ".shp": "application/octet-stream",
+  ".shx": "application/octet-stream",
+  ".dbf": "application/octet-stream",
+  ".geojson": "application/geo+json",
+  ".gpkg": "application/octet-stream",
+
+  // Raster
+  ".geotiff": "image/tiff",
+  ".asc": "text/plain",
 };
 
 export class FileDropperView extends InputWidgetView {
