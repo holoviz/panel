@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import inspect
 
+from collections import defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, cast
 
 import param
 
@@ -33,26 +34,53 @@ def get_method_owner(meth):
 # This functionality should be contributed to param
 # See https://github.com/holoviz/param/issues/379
 @contextmanager
-def edit_readonly(parameterized: param.Parameterized) -> Iterator:
+def edit_readonly(parameterized: param.Parameterized) -> Iterator[None]:
     """
     Temporarily set parameters on Parameterized object to readonly=False
     to allow editing them.
     """
-    params = parameterized.param.objects("existing").values()
-    readonlys = [p.readonly for p in params]
-    constants = [p.constant for p in params]
-    for p in params:
-        p.readonly = False
-        p.constant = False
+    kls_params = parameterized.param.objects(instance=False)
+    inst_params = cast(dict[str, param.Parameter], parameterized._param__private.params)
+    init_inst_params = list(inst_params)
+    updated: dict[str, list[str]] = defaultdict(list)
+    for pname, pobj in (kls_params | inst_params).items():
+        if pobj.readonly:
+            if not pobj.constant:
+                # The Parameter constructor sets constant to True if readonly
+                # is True. This is to support the rare case where a user
+                # would later on update constant to be False while keeping
+                # readonly True.
+                updated['readonly_not_constant'].append(pname)
+            else:
+                updated['readonly'].append(pname)
+            pobj.readonly = False
+            pobj.constant = False
+        elif pobj.constant:
+            updated['constant'].append(pname)
+            pobj.constant = False
     try:
         yield
-    except Exception:
-        raise
     finally:
-        for (p, readonly) in zip(params, readonlys):
-            p.readonly = readonly
-        for (p, constant) in zip(params, constants):
-            p.constant = constant
+        # Some operations trigger a parameter instantiation (copy),
+        # for these three cases we ensure both the class and instance parameters
+        # are reset.
+        for pname in updated['readonly_not_constant']:
+            if pname in kls_params and pname not in init_inst_params:
+                type(parameterized).param[pname].readonly = True
+            if pname in inst_params:
+                parameterized.param[pname].readonly = True
+        for pname in updated['readonly']:
+            if pname in kls_params and pname not in init_inst_params:
+                type(parameterized).param[pname].readonly = True
+                type(parameterized).param[pname].constant = True
+            if pname in inst_params:
+                parameterized.param[pname].readonly = True
+                parameterized.param[pname].constant = True
+        for pname in updated['constant']:
+            if pname in kls_params and pname not in init_inst_params:
+                type(parameterized).param[pname].constant = True
+            if pname in inst_params:
+                parameterized.param[pname].constant = True
 
 
 def extract_dependencies(function):
