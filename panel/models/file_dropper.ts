@@ -37,11 +37,123 @@ export class DeleteEvent extends ModelEvent {
   }
 }
 
+// Mapping of file extensions to browser-reported MIME types
+// as it's not yet supported by filepond, see:
+// https://github.com/pqina/filepond-plugin-file-validate-type/issues/13
+const EXTENSION_TO_MIME_TYPE: Record<string, string> = {
+  // Images
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp",
+  ".bmp": "image/bmp",
+  ".ico": "image/x-icon",
+  ".tiff": "image/tiff",
+  ".tif": "image/tiff",
+  ".avif": "image/avif",
+
+  // Video
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".mov": "video/quicktime",
+  ".mkv": "video/x-matroska",
+  ".avi": "video/x-msvideo",
+  ".wmv": "video/x-ms-wmv",
+  ".flv": "video/x-flv",
+
+  // Audio
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".ogg": "audio/ogg",
+  ".oga": "audio/ogg",
+  ".m4a": "audio/mp4",
+  ".aac": "audio/aac",
+  ".flac": "audio/flac",
+
+  // Text / documents
+  ".txt": "text/plain",
+  ".md": "text/markdown",
+  ".rtf": "application/rtf",
+  ".pdf": "application/pdf",
+
+  // Structured data (browser-compatible)
+  ".json": "application/json",
+  ".xml": "text/xml",
+  ".csv": "text/csv",
+  ".tsv": "text/tab-separated-values",
+  ".yaml": "text/yaml",
+  ".yml": "text/yaml",
+
+  // Web / code
+  ".html": "text/html",
+  ".htm": "text/html",
+  ".css": "text/css",
+  ".js": "text/javascript",
+  ".mjs": "text/javascript",
+  ".ts": "application/typescript",
+  ".jsx": "text/jsx",
+  ".tsx": "text/tsx",
+  ".wasm": "application/wasm",
+
+  // Office documents
+  ".doc": "application/msword",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xls": "application/vnd.ms-excel",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".ppt": "application/vnd.ms-powerpoint",
+  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ".odt": "application/vnd.oasis.opendocument.text",
+  ".ods": "application/vnd.oasis.opendocument.spreadsheet",
+  ".odp": "application/vnd.oasis.opendocument.presentation",
+
+  // Archives
+  ".zip": "application/zip",
+  ".tar": "application/x-tar",
+  ".gz": "application/gzip",
+  ".tgz": "application/gzip",
+  ".bz2": "application/x-bzip2",
+  ".xz": "application/x-xz",
+  ".7z": "application/x-7z-compressed",
+  ".rar": "application/vnd.rar",
+
+  // Fonts
+  ".ttf": "font/ttf",
+  ".otf": "font/otf",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+
+  // Executables / binaries
+  ".exe": "application/vnd.microsoft.portable-executable",
+  ".dll": "application/vnd.microsoft.portable-executable",
+  ".bin": "application/octet-stream",
+  ".dmg": "application/x-apple-diskimage",
+  ".pkg": "application/octet-stream",
+  ".deb": "application/vnd.debian.binary-package",
+  ".rpm": "application/x-rpm",
+};
+
 export class FileDropperView extends InputWidgetView {
   declare model: FileDropper
   declare input_el: HTMLInputElement
   _file_pond: any | null = null
   _transfer_in_process: string | null = null
+
+  private extensionsToMimeTypes(types: string[]): string[] {
+    return types.map(type => {
+      // MIME types, including wildcards like "image/*"
+      if (type.includes("/")) {
+        return type
+      }
+      // Guessing it's an extension
+      if (type.startsWith(".")) {
+        const lowerType = type.toLowerCase()
+        return EXTENSION_TO_MIME_TYPE[lowerType] || type
+      }
+      return type
+    })
+  }
 
   override initialize(): void {
     super.initialize()
@@ -61,7 +173,7 @@ export class FileDropperView extends InputWidgetView {
     const {disabled, layout, max_file_size, max_files, max_total_file_size, multiple} = this.model.properties
     this.on_change([disabled, max_file_size, max_files, max_total_file_size, multiple, layout], () => {
       this._file_pond?.setOptions({
-        acceptedFileTypes: this.model.accepted_filetypes,
+        acceptedFileTypes: this.extensionsToMimeTypes(this.model.accepted_filetypes),
         allowMultiple: this.model.multiple,
         disabled: this.model.disabled,
         maxFiles: this.model.max_files,
@@ -91,9 +203,8 @@ export class FileDropperView extends InputWidgetView {
 
   override render(): void {
     super.render()
-
     this._file_pond = (window as any).FilePond.create(this.input_el, {
-      acceptedFileTypes: this.model.accepted_filetypes,
+      acceptedFileTypes: this.extensionsToMimeTypes(this.model.accepted_filetypes),
       allowMultiple: this.model.multiple,
       credits: false,
       disabled: this.model.disabled,
