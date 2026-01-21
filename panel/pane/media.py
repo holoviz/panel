@@ -160,14 +160,14 @@ _VALID_TORCH_DTYPES_FOR_AUDIO = [
 
 _VALID_NUMPY_DTYPES_FOR_AUDIO = [np.int16, np.uint16, np.float32, np.float64]
 
-def _is_1_or_2dim_int_or_float_tensor(obj: Any)->bool:
+def _is_1_or_2dim_int_or_float_tensor(obj: Any) -> bool:
     return (
         isinstance(obj, TensorLike) and
         obj.dim() in (1, 2) and
         str(obj.dtype) in _VALID_TORCH_DTYPES_FOR_AUDIO
     )
 
-def _is_1_or_2dim_int_or_float_ndarray(obj: Any)->bool:
+def _is_1_or_2dim_int_or_float_ndarray(obj: Any) -> bool:
     return (
         isinstance(obj, np.ndarray) and
         obj.ndim in (1, 2) and
