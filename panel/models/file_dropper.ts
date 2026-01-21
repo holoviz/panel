@@ -175,7 +175,7 @@ const EXTENSION_TO_MIME_TYPE: Record<string, string> = {
   // Raster
   ".geotiff": "image/tiff",
   ".asc": "text/plain",
-};
+}
 
 export class FileDropperView extends InputWidgetView {
   declare model: FileDropper
