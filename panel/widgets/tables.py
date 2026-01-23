@@ -97,12 +97,12 @@ def _get_value_from_keys(d:dict, key1, key2, default=None):
     return default
 
 @contextmanager
-def _stringdtype_error(df: pd.DataFrame, column: str):
+def _stringdtype_error(df: pd.DataFrame, column: str, array):
     import pandas as pd
     try:
         yield
     except TypeError:
-        if isinstance(df.dtypes[column], pd.StringDtype):
+        if isinstance(df.dtypes[column], pd.StringDtype) and not all(isinstance(v, str) for v in array):
             raise TypeError(
                 f"Column {column!r} has 'pd.StringDtype' which cannot store non-string "
                 f"values. Convert the column to object dtype using "
@@ -1882,7 +1882,7 @@ class Tabulator(BaseTable):
 
         if self.pagination != 'remote':
             index = self._processed.index.values
-            with _stringdtype_error(self.value, column):
+            with _stringdtype_error(self.value, column, array):
                 self.value.loc[index, column] = array
 
             with pd.option_context('mode.chained_assignment', None):
@@ -1892,7 +1892,7 @@ class Tabulator(BaseTable):
         start = (self.page - 1) * nrows
         end = start+nrows
         index = self._processed.iloc[start:end].index.values
-        with _stringdtype_error(self.value, column):
+        with _stringdtype_error(self.value, column, array):
             self.value.loc[index, column] = array
 
         with pd.option_context('mode.chained_assignment', None):
