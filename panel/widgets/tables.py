@@ -676,6 +676,8 @@ class BaseTable(ReactiveData, Widget):
         if not isinstance(values, (list, np.ndarray)):
             return [str(v) for v in values]
         if isinstance(values, np.ndarray):
+            if not values.flags.writeable:
+                values = values.copy()
             if values.dtype.kind == "b":
                 # Workaround for https://github.com/bokeh/bokeh/issues/12776
                 return values.tolist()
