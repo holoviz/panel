@@ -757,8 +757,7 @@ def test_tabulator_editors_tabulator_list_default(page):
 
 def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumulator):
     # https://github.com/holoviz/panel/issues/5556
-    df = pd.DataFrame({"tags": ['', '', '']}, index=['foo1', 'foo2', 'foo3'],
-    )
+    df = pd.DataFrame({"tags": ['', '', '']}, index=['foo1', 'foo2', 'foo3'], dtype=object)
     tabulator_editors = {
         'tags': {
             'type': 'list',
