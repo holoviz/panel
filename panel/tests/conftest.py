@@ -289,6 +289,7 @@ def df_mixed():
         'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
         'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
     }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+    df["datetime"] = df["datetime"].astype("datetime64[ms]")
     return df
 
 
