@@ -36,7 +36,7 @@ def makeMixedDataFrame():
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
         "B": [0.0, 1.0, 0.0, 1.0, 0.0],
         "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
-        "D": pd.bdate_range("1/1/2009", periods=5),
+        "D": pd.bdate_range("1/1/2009", periods=5).astype("datetime64[ns]"),
     }
     return pd.DataFrame(data)
 

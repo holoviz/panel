@@ -1390,7 +1390,7 @@ class ReactiveData(SyncableData):
                 else:
                     # Timestamps converted from milliseconds to nanoseconds,
                     # to datetime.
-                    converted = (values * 1e6).astype(dtype)  # type: ignore
+                    converted = values.astype("datetime64[ms]").astype(dtype)
         elif dtype.kind == 'O':
             if (all(isinstance(ov, dt.date) for ov in old_values) and
                 not all(isinstance(iv, dt.date) for iv in values)):
