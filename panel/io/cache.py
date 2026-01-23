@@ -218,6 +218,8 @@ _hash_funcs: dict[str | type[Any] | tuple[type, ...] | Callable[[Any], bool], by
     dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode(),
     # Fully qualified type strings
     'numpy.ndarray'              : _numpy_hash,
+    'pandas.DataFrame'           : _pandas_hash,
+    'pandas.Series'              : _pandas_hash,
     'pandas.core.series.Series'  : _pandas_hash,
     'pandas.core.frame.DataFrame': _pandas_hash,
     'pandas.core.indexes.base.Index': _pandas_hash,
