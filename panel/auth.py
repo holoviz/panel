@@ -1199,7 +1199,7 @@ class OAuthProvider(BasicAuthProvider):
 
     async def _scheduled_refresh(self, user, refresh_token, application, request, reschedule=True):
         if not state._active_users.get(user):
-            return
+            return None, None, None
         await self._refresh_access_token(user, refresh_token, application, request)
         if user not in state._oauth_user_overrides:
             return None, None, None
