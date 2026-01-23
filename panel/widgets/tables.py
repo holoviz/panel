@@ -5,6 +5,7 @@ import inspect
 import uuid
 
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import contextmanager
 from functools import partial
 from types import FunctionType, MethodType
 from typing import (
@@ -94,6 +95,20 @@ def _get_value_from_keys(d:dict, key1, key2, default=None):
         warn(msg, DeprecationWarning)
         return d[key2]
     return default
+
+@contextmanager
+def _stringdtype_error(df: pd.DataFrame, column: str, array):
+    import pandas as pd
+    try:
+        yield
+    except TypeError:
+        if isinstance(df.dtypes[column], pd.StringDtype) and not all(isinstance(v, str) for v in array):
+            raise TypeError(
+                f"Column {column!r} has 'pd.StringDtype' which cannot store non-string "
+                f"values. Convert the column to object dtype using "
+                f"`df[{column!r}] = df[{column!r}].astype(object)`."
+            ) from None
+        raise
 
 class BaseTable(ReactiveData, Widget):
 
@@ -676,6 +691,8 @@ class BaseTable(ReactiveData, Widget):
         if not isinstance(values, (list, np.ndarray)):
             return [str(v) for v in values]
         if isinstance(values, np.ndarray):
+            if not values.flags.writeable:
+                values = values.copy()
             if values.dtype.kind == "b":
                 # Workaround for https://github.com/bokeh/bokeh/issues/12776
                 return values.tolist()
@@ -1865,7 +1882,9 @@ class Tabulator(BaseTable):
 
         if self.pagination != 'remote':
             index = self._processed.index.values
-            self.value.loc[index, column] = array
+            with _stringdtype_error(self.value, column, array):
+                self.value.loc[index, column] = array
+
             with pd.option_context('mode.chained_assignment', None):
                 self._processed[column] = array
             return
@@ -1873,7 +1892,8 @@ class Tabulator(BaseTable):
         start = (self.page - 1) * nrows
         end = start+nrows
         index = self._processed.iloc[start:end].index.values
-        self.value.loc[index, column] = array
+        with _stringdtype_error(self.value, column, array):
+            self.value.loc[index, column] = array
 
         with pd.option_context('mode.chained_assignment', None):
             self._processed.loc[index, column] = array

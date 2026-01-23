@@ -133,7 +133,7 @@ data = pd.DataFrame(
 )
 
 fig = figure(
-    x_range=data["Day"],
+    x_range=list(data["Day"]),
     title="Wind Speed by Day",
     y_axis_label="Wind Speed (m/s)",
     # <- insert argument here
@@ -183,7 +183,7 @@ data = pd.DataFrame(
 )
 
 fig = figure(
-    x_range=data["Day"],
+    x_range=list(data["Day"]),
     title="Wind Speed by Day",
     y_axis_label="Wind Speed (m/s)",
     sizing_mode='stretch_both',
@@ -236,7 +236,7 @@ data = pd.DataFrame(
 )
 
 fig = figure(
-    x_range=data["Day"],
+    x_range=list(data["Day"]),
     title="Wind Speed by Day",
     y_axis_label="Wind Speed (m/s)",
     sizing_mode='stretch_both',
@@ -284,7 +284,7 @@ data = pd.DataFrame(
 )
 
 fig = figure(
-    x_range=data["Day"],
+    x_range=list(data["Day"]),
     title="Wind Speed by Day",
     y_axis_label="Wind Speed (m/s)",
     sizing_mode='stretch_both',
