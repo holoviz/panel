@@ -4,6 +4,7 @@ import {Container} from "@bokehjs/core/layout/grid"
 import type * as p from "@bokehjs/core/properties"
 import {GridAlignmentLayout} from "@bokehjs/models/layouts/alignments"
 import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
+import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 
 import {Column, ColumnView} from "./column"
 
@@ -22,6 +23,9 @@ export class CardView extends ColumnView {
 
   button_el: HTMLButtonElement
   header_el: HTMLElement
+  visible_child_views: Map<UIElementView, boolean> = new Map()
+  protected _updating_child_visibility: Set<UIElementView> = new Set()
+  protected _child_visible_callbacks: Map<UIElementView, () => void> = new Map()
 
   readonly collapsed_style = new DOM.InlineStyleSheet()
 
@@ -40,6 +44,10 @@ export class CardView extends ColumnView {
       this.child_views[0].el.style.backgroundColor = header_background
       this.header_el.style.backgroundColor = header_background
     })
+
+    for (const child_view of this.child_views.slice(1)) {
+      this._register_child_view(child_view)
+    }
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -106,11 +114,9 @@ export class CardView extends ColumnView {
       header.r_after_render()
     }
 
-    if (this.model.collapsed) {
-      return
-    }
-
     for (const child_view of this.child_views.slice(1)) {
+      this._register_child_view(child_view)
+      this._apply_child_visible(child_view)
       this.shadow_el.appendChild(child_view.el)
       child_view.render()
       child_view.r_after_render()
@@ -119,6 +125,15 @@ export class CardView extends ColumnView {
 
   override async update_children(): Promise<void> {
     await this.build_child_views()
+    const child_views = new Set(this.child_views.slice(1))
+    for (const child_view of this.visible_child_views.keys()) {
+      if (!child_views.has(child_view)) {
+        this._unregister_child_view(child_view)
+      }
+    }
+    for (const child_view of child_views) {
+      this._register_child_view(child_view)
+    }
     this.render()
     this.invalidate_layout()
   }
@@ -210,14 +225,15 @@ export class CardView extends ColumnView {
 
   _collapse(): void {
     for (const child_view of this.child_views.slice(1)) {
+      this._register_child_view(child_view)
       if (this.model.collapsed) {
         this.shadow_el.removeChild(child_view.el)
-        child_view.model.visible = false
+        this._set_child_visible(child_view, false)
       } else {
         child_view.render()
         child_view.after_render()
         this.shadow_el.appendChild(child_view.el)
-        child_view.model.visible = true
+        this._apply_child_visible(child_view)
       }
     }
     if (this.model.collapsed) {
@@ -230,6 +246,54 @@ export class CardView extends ColumnView {
     }
     this.button_el.children[0].innerHTML = this.model.collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN
     this.invalidate_layout()
+  }
+
+  protected _set_child_visible(child_view: UIElementView, visible: boolean): void {
+    if (child_view.model.visible == visible) {
+      return
+    }
+    this._updating_child_visibility.add(child_view)
+    try {
+      child_view.model.visible = visible
+    } finally {
+      this._updating_child_visibility.delete(child_view)
+    }
+  }
+
+  protected _apply_child_visible(child_view: UIElementView): void {
+    const desired_visible = this.visible_child_views.get(child_view) ?? child_view.model.visible
+    this.visible_child_views.set(child_view, desired_visible)
+    this._set_child_visible(child_view, desired_visible && !this.model.collapsed)
+  }
+
+  protected _register_child_view(child_view: UIElementView): void {
+    if (this.visible_child_views.has(child_view)) {
+      return
+    }
+    this.visible_child_views.set(child_view, child_view.model.visible)
+    const {visible} = child_view.model.properties
+    const callback = () => {
+      if (this._updating_child_visibility.has(child_view)) {
+        return
+      }
+      const desired_visible = child_view.model.visible
+      this.visible_child_views.set(child_view, desired_visible)
+      if (this.model.collapsed && desired_visible) {
+        this._set_child_visible(child_view, false)
+      }
+    }
+    this._child_visible_callbacks.set(child_view, callback)
+    this.on_change(visible, callback)
+  }
+
+  protected _unregister_child_view(child_view: UIElementView): void {
+    const callback = this._child_visible_callbacks.get(child_view)
+    if (callback != null) {
+      child_view.model.properties.visible.change.disconnect(callback)
+      this._child_visible_callbacks.delete(child_view)
+    }
+    this.visible_child_views.delete(child_view)
+    this._updating_child_visibility.delete(child_view)
   }
 
   protected override _create_element(): HTMLElement {
