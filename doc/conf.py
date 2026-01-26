@@ -347,3 +347,6 @@ def setup(app) -> None:
 
 
 grid_item_link_domain = gallery_endpoint
+
+# https://github.com/sphinx-doc/sphinx/issues/14089
+autodoc_use_legacy_class_based = True
