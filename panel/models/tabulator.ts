@@ -570,8 +570,8 @@ export class DataTabulatorView extends HTMLBoxView {
       return
     }
     this.redraw(true, true)
-    this.restore_scroll()
-    this.recompute_page_size()
+    this.restore_scroll();
+    (window as any).requestAnimationFrame(() => this.recompute_page_size())
   }
 
   override stylesheets(): StyleSheetLike[] {
