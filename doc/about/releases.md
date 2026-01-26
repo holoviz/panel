@@ -2,14 +2,14 @@
 
 ## Version 1.8.6
 
-This patch release includes several ESM and React-related fixes, UI behavior improvements, and enhanced robustness in form inputs and file handling. It also bumps key dependencies and improves support for custom deployments. Thanks to @philippjfr, @maximlt, @emunsing, @TheoMathurine, @dalthviz and @hoxbro for their contributions to this release!
+This patch release includes several ESM and React-related fixes, UI behavior improvements, and enhanced robustness in form inputs and file handling. It also bumps key dependencies and improves support for custom deployments. Thanks to @philippjfr, @maximlt, @emunsing, @TheoMathurin, @dalthviz and @hoxbro for their contributions to this release!
 
 ### ✨ Enhancements
 
 - Add `placeholder` parameter on `FloatInput` and `IntInput` ([#8360](https://github.com/holoviz/panel/pull/8360))
 - Support for file extensions in `FileDropper.accepted_filetypes` ([#8380](https://github.com/holoviz/panel/pull/8380))
 - Accept 2D arrays for stereo `Audio` ([#8381](https://github.com/holoviz/panel/pull/8381))
-- Ensure Filedropper.accepted_filetypes supports most extension types ([#8380](https://github.com/holoviz/panel/pull/8380))
+
 
 ### 🐛 Bug Fixes
 
