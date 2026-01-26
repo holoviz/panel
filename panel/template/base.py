@@ -120,7 +120,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         }
         self._render_items: dict[str, tuple[Renderable, list[str]]]  = {}
         self._render_variables: dict[str, Any] = {}
-        if 'design' not in params and self.param.design.default in (None, Design, Native):
+        if (
+            'design' not in params
+            and self.param.design.default in (None, Design, Native)
+            and config.design is not None
+        ):
             params['design'] = config.design
         super().__init__(**{
             p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
