@@ -44,6 +44,7 @@ from ..reactive import ReactiveHTML
 from ..theme.base import (
     THEMES, DefaultTheme, Design, Theme,
 )
+from ..theme.native import Native
 from ..util import isurl
 from ..viewable import (
     MimeRenderMixin, Renderable, ServableMixin, Viewable,
@@ -119,6 +120,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         }
         self._render_items: dict[str, tuple[Renderable, list[str]]]  = {}
         self._render_variables: dict[str, Any] = {}
+        if 'design' not in params and self.param.design.default in (None, Design, Native):
+            params['design'] = config.design
         super().__init__(**{
             p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
         })
