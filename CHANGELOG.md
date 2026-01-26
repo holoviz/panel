@@ -1,5 +1,45 @@
 # Releases
 
+## Version 1.8.6
+
+This patch release includes several ESM and React-related fixes, UI behavior improvements, and enhanced robustness in form inputs and file handling. It also bumps key dependencies and improves support for custom deployments. Thanks to @philippjfr, @maximlt, @emunsing, @TheoMathurin, @dalthviz and @hoxbro for their contributions to this release!
+
+### ✨ Enhancements
+
+- Add `placeholder` parameter on `FloatInput` and `IntInput` ([#8360](https://github.com/holoviz/panel/pull/8360))
+- Support for file extensions in `FileDropper.accepted_filetypes` ([#8380](https://github.com/holoviz/panel/pull/8380))
+- Accept 2D arrays for stereo `Audio` ([#8381](https://github.com/holoviz/panel/pull/8381))
+
+### 🐛 Bug Fixes
+
+- Ensure collapsed `Card` still renders components to avoid child render issues ([#8274](https://github.com/holoviz/panel/pull/8274))
+- **ESM & React Components**:
+  - Fix errors when renamed parameters are linked on ESM components ([#8357](https://github.com/holoviz/panel/pull/8357))
+  - Fix `rel_path` resolution in ESM components ([#8375](https://github.com/holoviz/panel/pull/8375))
+  - Fix `autoreload` watcher setup for ESM apps ([#8361](https://github.com/holoviz/panel/pull/8361))
+  - Delay removal of `ReactComponent` children until new ones are mounted ([#8358](https://github.com/holoviz/panel/pull/8358))
+- Ensure `PathLike` is accepted for `requirements` in pyodide conversion calls ([#8366](https://github.com/holoviz/panel/pull/8366))
+- Ensure `edit_readonly` resets both class- and instance-level parameters ([#8371](https://github.com/holoviz/panel/pull/8371))
+- Fix `guest` endpoint validation at root path ([#8370](https://github.com/holoviz/panel/pull/8370))
+- Don't attempt to refresh access token if there is no active user session ([#8384](https://github.com/holoviz/panel/pull/8384))
+- Ensure OAuth state for user is reset after failing to refresh access token ([#8389](https://github.com/holoviz/panel/pull/8389))
+- Ensure `config.design` value is respected by `Template` ([#8388](https://github.com/holoviz/panel/pull/8388))
+- Improve robustness of `Tabulator.page_size` inference ([#8390](https://github.com/holoviz/panel/pull/8390))
+
+### ⚠️ Compatibility & Deprecations
+
+- Added compatibility for pandas 3.0 ([#8385](https://github.com/holoviz/panel/pull/8385))
+
+### 📚 Documentation
+
+- Update `Plotly` example to prevent flicker on load ([#8362](https://github.com/holoviz/panel/pull/8362))
+
+### 🧪 Maintenance
+
+- Bump `bokeh` to 3.8.2 in Django example app ([#8376](https://github.com/holoviz/panel/pull/8376))
+- Bump `preact` to 10.26.10 ([#8367](https://github.com/holoviz/panel/pull/8367))
+- Update pre-commit hooks ([#8363](https://github.com/holoviz/panel/pull/8363))
+
 ## Version 1.8.5
 
 This release includes several fixes and enhancements for notebook stability, Tabulator behavior, ESM/ReactiveComponent handling, and Markdown rendering. It also adds documentation updates for FastAPI integration, app conversion guides, and the Panel roadmap.
