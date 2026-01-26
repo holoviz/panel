@@ -10,7 +10,6 @@ This patch release includes several ESM and React-related fixes, UI behavior imp
 - Support for file extensions in `FileDropper.accepted_filetypes` ([#8380](https://github.com/holoviz/panel/pull/8380))
 - Accept 2D arrays for stereo `Audio` ([#8381](https://github.com/holoviz/panel/pull/8381))
 
-
 ### 🐛 Bug Fixes
 
 - Ensure collapsed `Card` still renders components to avoid child render issues ([#8274](https://github.com/holoviz/panel/pull/8274))
@@ -23,6 +22,9 @@ This patch release includes several ESM and React-related fixes, UI behavior imp
 - Ensure `edit_readonly` resets both class- and instance-level parameters ([#8371](https://github.com/holoviz/panel/pull/8371))
 - Fix `guest` endpoint validation at root path ([#8370](https://github.com/holoviz/panel/pull/8370))
 - Don't attempt to refresh access token if there is no active user session ([#8384](https://github.com/holoviz/panel/pull/8384))
+- Ensure OAuth state for user is reset after failing to refresh access token ([#8389](https://github.com/holoviz/panel/pull/8389))
+- Ensure `config.design` value is respected by `Template` ([#8388](https://github.com/holoviz/panel/pull/8388))
+- Improve robustness of `Tabulator.page_size` inference ([#8390](https://github.com/holoviz/panel/pull/8390))
 
 ### ⚠️ Compatibility & Deprecations
 
