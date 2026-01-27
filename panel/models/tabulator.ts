@@ -570,8 +570,8 @@ export class DataTabulatorView extends HTMLBoxView {
       return
     }
     this.redraw(true, true)
-    this.restore_scroll();
-    (window as any).requestAnimationFrame(() => this.recompute_page_size())
+    this.restore_scroll()
+    requestAnimationFrame(() => this.recompute_page_size())
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -724,7 +724,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   recompute_page_size(): void {
-    if (!this.model.pagination || this.model.page_size !== null || this._automatic_page_size) {
+    if (!this.model.pagination || (this.model.page_size !== null && !this._automatic_page_size)) {
       return
     }
     this._automatic_page_size = true
@@ -753,7 +753,7 @@ export class DataTabulatorView extends HTMLBoxView {
         const remaining = table_height - height
         page_size += Math.floor(remaining / Math.min(...heights))
         if (responsive) {
-          page_size -= 2
+          page_size -= 1
         }
       }
       this._updating_page_size = true
