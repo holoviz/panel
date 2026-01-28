@@ -156,7 +156,7 @@ class Plotly(ModelPane):
     @param.depends('object', 'link_figure', watch=True)
     def _update_figure(self):
         fig = self.object
-        if (fig is None or isinstance(fig, dict) or fig is self._figure or not self.link_figure):
+        if (fig is None or isinstance(fig, (dict, list, tuple)) or fig is self._figure or not self.link_figure):
             return
 
         # Monkey patch the message stubs used by FigureWidget.
