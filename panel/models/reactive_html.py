@@ -109,19 +109,6 @@ class ReactiveHTMLParser(HTMLParser):
             else:
                 matches.append('${%s}' % var)  # noqa: UP031
 
-        non_model_matches = [
-            match for match in matches
-            if not match[2:-1].strip().startswith('model.')
-        ]
-        if non_model_matches and dom_id is None:
-            match = non_model_matches[0][2:-1].strip()
-            raise ValueError(
-                "DOM node with a linked parameter declaration must declare an id. "
-                f"Found template text referencing '{match}' outside an element with "
-                "an id. Wrap the variable in a tag with an id, e.g. "
-                f"<div id=\"{match}\">${{{match}}}</div>."
-            )
-
         literal_matches = []
         for match in self._literal_re.findall(data):
             match = match[2:-2].strip()
