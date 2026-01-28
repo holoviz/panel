@@ -1,5 +1,19 @@
 # Releases
 
+## Version 1.8.7
+
+This patch release reverts two changes that were made in 1.8.6 that turned out to be more disruptive than expected. Additionally it ensures that Tabulator automatically recalculates page sizes on resize and resolves issues with patched versions of Plotly.
+
+### 🐛 Bug fixes
+
+- Rerun Tabulator page size calculation on resize ([#8395](https://github.com/holoviz/panel/pull/8395))
+- Fix issues with monkey-patched versions of Plotly ([#8397]](https://github.com/holoviz/panel/pull/8397))
+
+### ⏪ Reverted
+
+- Ensure `edit_readonly` resets both class- and instance-level parameters ([#8371](https://github.com/holoviz/panel/pull/8371))
+- Validate ReactiveHTML missing id errors ([#8382](https://github.com/holoviz/panel/pull/8382))
+
 ## Version 1.8.6
 
 This patch release includes several ESM and React-related fixes, UI behavior improvements, and enhanced robustness in form inputs and file handling. It also bumps key dependencies and improves support for custom deployments. Thanks to @philippjfr, @maximlt, @emunsing, @TheoMathurin, @dalthviz and @hoxbro for their contributions to this release!
