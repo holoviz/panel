@@ -782,7 +782,7 @@ class _state(param.Parameterized):
         else:
             self._onload[self.curdoc] = [(callback, threaded)]
 
-    def on_session_created(self, callback: Callable[[SessionContext], None]) -> None:
+    def on_session_created(self, callback: Callable[[BokehSessionContext], None]) -> None:
         """
         Callback that is triggered when a session is created.
         """
@@ -795,7 +795,7 @@ class _state(param.Parameterized):
             )
         self._on_session_created.append(callback)
 
-    def on_session_destroyed(self, callback: Callable[[SessionContext], None]) -> None:
+    def on_session_destroyed(self, callback: Callable[[BokehSessionContext], None]) -> None:
         """
         Callback that is triggered when a session is destroyed.
         """
