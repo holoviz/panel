@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <title>Param Subobjects</title>
+<link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/1.8.7/dist/images/apple-touch-icon.png">    <link rel="icon" href="./favicon.ico" type="">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="name" content="Param Subobjects">
+    <link rel="manifest" href="">
+    <style>
+      html, body {
+	display: flow-root;
+        box-sizing: border-box;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+
+<style type="text/css">
+
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 300px));
+  -webkit-mask-size: auto calc(min(50%, 300px));
+}
+</style>
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./serviceWorker.js').then(reg => {
+    reg.onupdatefound = () => {
+      const installingWorker = reg.installing;
+      installingWorker.onstatechange = () => {
+        if (installingWorker.state === 'installed' &&
+            navigator.serviceWorker.controller) {
+          // Reload page if service worker is replaced
+          location.reload();
+        }
+      }
+    }
+  })
+}
+</script>
+
+<script type="esms-options">{"shimMode": true}</script>
+
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/bootstrap5/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/panel.min.js"></script>
+
+<script type="text/javascript">
+  Bokeh.set_log_level("info");
+</script>    <!-- Template CSS -->
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/loadingspinner.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/markdown.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/listpanel.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/select.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/button.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/loading.css?v=1.8.7">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/bootstrap5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/default.css?v=1.8.7">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/bootstrap_default.css?v=1.8.7">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/bootstraptemplate/bootstrap.css?v=1.8.7">
+    <style type="text/css">
+    
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 300px));
+  -webkit-mask-size: auto calc(min(50%, 300px));
+}
+    </style>
+
+    <style>
+      :root {
+	--header-background: var(--design-primary-color, var(--panel-primary-color));
+	--header-color: var(--design-primary-text-color, var(--panel-on-primary-color));
+	--sidebar-width: 350px;
+      }
+      #header, #header :host {
+	--bs-body-bg: var(--header-background);
+	--bs-body-color: var(--header-color);
+	--design-background-text-color: var(--header-color);
+	--design-background-color: var(--header-background);
+	background-color: var(--header-background);
+	color: var(--header-color);
+      }
+      #sidebar {
+	max-width: var(--sidebar-width) !important;
+	width: var(--sidebar-width);
+      }
+    </style>
+  </head>
+  <body class="pn-loading pn-arc">
+<div class="container-fluid d-flex flex-column vh-100 overflow-hidden" id="container">
+  <nav class="navbar navbar-expand-md navbar-light sticky-top shadow" id="header">
+    <div class="app-header">
+<a class="title" href="" >&nbsp;Param Subobjects</a>    </div>
+    <div id="header-items">
+    </div>
+    <div class="pn-busy-container">
+      <div id="d9552c3d-2ab4-4c1f-b436-f169196a13fd" data-root-id="p1115" style="display: contents;"></div>
+    </div>
+  </nav>
+
+  <div class="row overflow-hidden" id="content">
+
+    <div class="col mh-100 float-left" id="main">
+          <div id="c27672cf-bf6b-4220-9dad-e29df18b2beb" data-root-id="p1117" style="display: contents;"></div>
+          <div id="c9c6dcc3-488e-4d51-ad7b-47af203ab1eb" data-root-id="p1118" style="display: contents;"></div>
+          <div id="d04aa18e-a237-4a39-bce5-b40e1bfa5937" data-root-id="p1119" style="display: contents;"></div>
+    </div>
+  </div>
+
+  <div id="pn-Modal" class="modal fade pn-modal" role="dialog" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content pn-modal-content">
+	<button type="button" id="pn-closeModal" class="btn-close pn-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
+	<div class="modal-body">
+	</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="b52aa7df-3147-4478-955c-f84cd463e937" data-root-id="p1110" style="display: contents;"></div>
+<div id="accd81cd-991e-4ff2-9205-930ab47e10e4" data-root-id="p1112" style="display: contents;"></div>
+<div id="b66d4ff4-3a9f-4ee2-9ef7-9f42c1186e63" data-root-id="p1101" style="display: contents;"></div>
+<div id="d199c45d-0dca-49b1-8e20-eb1bcecfc712" data-root-id="p1113" style="display: contents;"></div>
+
+
+  
+    <script type="text/javascript">
+      const pyodideWorker = new Worker("./subobjects.js");
+      pyodideWorker.busy = false
+      pyodideWorker.queue = []
+      
+      let patching = 0
+      
+      function send_change(jsdoc, event) {
+        if ((event.setter_id != null && event.setter_id == 'py') || (patching > 0)) {
+          return
+        } else if (pyodideWorker.busy && event.model && event.attr) {
+          let events = []
+          for (const old_event of pyodideWorker.queue) {
+            if (!(old_event.model === event.model && old_event.attr === event.attr)) {
+              events.push(old_event)
+            }
+          }
+          events.push(event)
+          pyodideWorker.queue = events
+          return
+        }
+        const patch = jsdoc.create_json_patch([event])
+        pyodideWorker.busy = true
+        pyodideWorker.postMessage({type: 'patch', patch: patch})
+      }
+      
+      pyodideWorker.onmessage = async (event) => {
+        const msg = event.data
+      
+        const body = document.getElementsByTagName('body')[0]
+        const loading_msgs = document.getElementsByClassName('pn-loading-msg')
+        if (msg.type === 'idle') {
+          if (pyodideWorker.queue.length) {
+            const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
+            pyodideWorker.busy = true
+            pyodideWorker.queue = []
+            pyodideWorker.postMessage({type: 'patch', patch: patch})
+          } else {
+            pyodideWorker.busy = false
+          }
+        } else if (msg.type === 'status') {
+          let loading_msg
+          if (loading_msgs.length) {
+            loading_msg = loading_msgs[0]
+          } else if (body.classList.contains('pn-loading')) {
+            loading_msg = document.createElement('div')
+            loading_msg.classList.add('pn-loading-msg')
+            body.appendChild(loading_msg)
+          }
+          if (loading_msg != null) {
+            loading_msg.innerHTML = msg.msg
+          }
+        } else if (msg.type === 'render') {
+          const docs_json = JSON.parse(msg.docs_json)
+          const render_items = JSON.parse(msg.render_items)
+          const root_ids = JSON.parse(msg.root_ids)
+      
+          // Remap roots in message to element IDs
+          const root_els = document.querySelectorAll('[data-root-id]')
+          const data_roots = []
+          for (const el of root_els) {
+             el.innerHTML = ''
+             data_roots.push([el.getAttribute('data-root-id'), el.id])
+          }
+          data_roots.sort((a, b) => a[0]<b[0] ? -1: 1)
+          const roots = {}
+          for (let i=0; i<data_roots.length; i++) {
+            roots[root_ids[i]] = data_roots[i][1]
+          }
+          render_items[0]['roots'] = roots
+          render_items[0]['root_ids'] = root_ids
+      
+          // Clear pre-rendered contents
+          Bokeh.index.roots.map((v) => v.remove())
+      
+          // Embed content
+          const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
+      
+          // Remove loading spinner and message
+          body.classList.remove("pn-loading", "arc")
+          for (const loading_msg of loading_msgs) {
+            loading_msg.remove()
+          }
+      
+          // Setup bi-directional syncing
+          pyodideWorker.jsdoc = jsdoc = [...views.roots.values()][0].model.document
+          jsdoc.on_change(send_change.bind(null, jsdoc), false)
+          pyodideWorker.postMessage({'type': 'rendered'})
+          pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
+        } else if (msg.type === 'patch') {
+          try {
+            patching += 1
+            pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers)
+          } finally {
+            patching -= 1
+          }
+        }
+      };
+    </script>
+    <script type="application/json" id="p1137">
+      {"cb682666-736a-49b4-8e30-ee2ef8154fc0":{"version":"3.8.2","title":"Param Subobjects","config":{"type":"object","name":"DocumentConfig","id":"p1009","attributes":{"reconnect_session":false,"notify_connection_status":false,"notifications":null}},"roots":[{"type":"object","name":"panel.models.location.Location","id":"p1101","attributes":{"name":"location","reload":false}},{"type":"object","name":"panel.models.markup.HTML","id":"p1110","attributes":{"name":"js_area","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"type":"object","name":"ImportedStyleSheet","id":"p1107","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/loading.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1106","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/bootstrap.css"}}],"width":0,"height":0,"margin":0,"sizing_mode":"fixed","align":"start","disable_math":true}},{"type":"object","name":"panel.models.reactive_html.ReactiveHTML","id":"p1112","attributes":{"name":"actions","subscribed_events":{"type":"set","entries":["dom_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1106"}],"margin":0,"align":"start","data":{"type":"object","name":"BootstrapTemplateActions1","id":"p1111","attributes":{"name":"BootstrapTemplateActions00125","tags":["__ref:p1112"]}},"scripts":{"type":"map","entries":[["render",["state.modal = new bootstrap.Modal(document.getElementById(&amp;#x27;pn-Modal&amp;#x27;))"]],["open_modal",["state.modal.show()"]],["close_modal",["state.modal.hide()"]]]}}},{"type":"object","name":"panel.models.browser.BrowserInfo","id":"p1113","attributes":{"name":"browser_info"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1115","attributes":{"name":"busy_indicator","css_classes":["loader","light"],"stylesheets":[":host { --loading-spinner-size: 20px; }","\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"type":"object","name":"ImportedStyleSheet","id":"p1114","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/loadingspinner.css"}},{"id":"p1106"}],"min_width":20,"min_height":20,"margin":[5,10],"align":"start"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1117","attributes":{"name":"main-4508837520","tags":["main"],"css_classes":["markdown"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"type":"object","name":"ImportedStyleSheet","id":"p1116","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/markdown.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1103","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/bootstrap5/css/bootstrap.min.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1104","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/default.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1105","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/bootstrap_default.css"}},{"id":"p1106"}],"margin":[5,10],"align":"start","text":"&amp;lt;p&amp;gt;This example demonstrates how to use the Param library to express nested hierarchies of classes whose parameters can be edited in a GUI, without tying those classes to Panel or any other GUI framework.&amp;lt;/p&amp;gt;\n&amp;lt;p&amp;gt;For this purpose we create a hierarchy of three classes that draw Bokeh plots. At the top level there is a &amp;lt;code&amp;gt;ShapeViewer&amp;lt;/code&amp;gt; that allows selecting between different &amp;lt;code&amp;gt;Shape&amp;lt;/code&amp;gt; classes. The Shape classes include a subobject controlling the &amp;lt;code&amp;gt;Style&amp;lt;/code&amp;gt; (i.e. the &amp;lt;code&amp;gt;color&amp;lt;/code&amp;gt; and &amp;lt;code&amp;gt;line_width&amp;lt;/code&amp;gt;) of the drawn shapes.&amp;lt;/p&amp;gt;\n&amp;lt;p&amp;gt;In each case, &amp;lt;code&amp;gt;param.depends&amp;lt;/code&amp;gt; is used to indicate which parameter that computation depends on, either a parameter of this object (as for  &amp;lt;code&amp;gt;radius&amp;lt;/code&amp;gt; below) or a parameter of a subobject (i.e., a parameter of one of this object&amp;#x27;s parameters, as for &amp;lt;code&amp;gt;style.color&amp;lt;/code&amp;gt; below).&amp;lt;/p&amp;gt;\n"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1118","attributes":{"name":"main-4562064656","tags":["main"],"css_classes":["markdown"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1116"},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"margin":[5,10],"align":"start","text":"&amp;lt;p&amp;gt;Having defined our basic domain model (of shapes in this case), we can now make a generic viewer using Panel without requiring or encoding information about the underlying domain objects.  Here, we define a &amp;lt;code&amp;gt;view&amp;lt;/code&amp;gt; method that will be called whenever any of the possible parameters that a shape might have changes, without necessarily knowing what those are (as for &amp;lt;code&amp;gt;shape.param&amp;lt;/code&amp;gt; below). That way, if someone adds a &amp;lt;code&amp;gt;Line&amp;lt;/code&amp;gt; shape that has no &amp;lt;code&amp;gt;n&amp;lt;/code&amp;gt; parameter but has &amp;lt;code&amp;gt;orientation&amp;lt;/code&amp;gt;, the viewer should continue to work and be responsive. We can also depend on specific parameters (as for &amp;lt;code&amp;gt;shape.radius&amp;lt;/code&amp;gt;) if we wish. Either way, the panel should then reactively update to each of the shape&amp;#x27;s parameters as they are changed in the browser:&amp;lt;/p&amp;gt;\n"}},{"type":"object","name":"Row","id":"p1119","attributes":{"name":"main-4562304464","tags":["main"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"type":"object","name":"ImportedStyleSheet","id":"p1108","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/listpanel.css"}},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1120","attributes":{"name":"Column00155","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1108"},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1121","attributes":{"name":"Shape Settings","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1108"},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"margin":[5,10],"align":"start","children":[{"type":"object","name":"Div","id":"p1122","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"margin":[5,10],"align":"start","text":"&lt;b&gt;Shape Settings&lt;/b&gt;"}},{"type":"object","name":"Row","id":"p1123","attributes":{"name":"Row00154","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1108"},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"width":300,"min_width":300,"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.widgets.CustomSelect","id":"p1125","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"type":"object","name":"ImportedStyleSheet","id":"p1124","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/select.css"}},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"min_width":0,"margin":[5,0,5,10],"sizing_mode":"stretch_width","align":"start","title":"Shape","options":[["&lt;NGon NGon&gt;","NGon"],["&lt;Circle Circle&gt;","Circle"]],"value":"&lt;NGon NGon&gt;"}},{"type":"object","name":"Toggle","id":"p1127","attributes":{"button_type":"primary","css_classes":["solid"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"type":"object","name":"ImportedStyleSheet","id":"p1126","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/button.css"}},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"max_width":20,"max_height":30,"margin":[0,0,5,10],"height_policy":"fit","align":"end","label":"\u22ee"}}]}}]}},{"type":"object","name":"panel.models.layout.Column","id":"p1128","attributes":{"name":"Column00146","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1108"},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"margin":0,"align":"start"}}]}},{"type":"object","name":"panel.models.layout.Column","id":"p1129","attributes":{"name":"Column00156","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1108"},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"min_width":0,"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1130","attributes":{"name":"Column00160","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1108"},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.markup.HTML","id":"p1131","attributes":{"css_classes":["markdown"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1116"},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"margin":[5,10],"align":"start","text":"&amp;lt;h2 id=&amp;quot;ngon-radius10&amp;quot;&amp;gt;NGon (radius=1.0) &amp;lt;a class=&amp;quot;header-anchor&amp;quot; href=&amp;quot;#ngon-radius10&amp;quot;&amp;gt;\u00b6&amp;lt;/a&amp;gt;&amp;lt;/h2&amp;gt;\n"}}]}},{"type":"object","name":"panel.models.layout.Column","id":"p1132","attributes":{"name":"Column00167","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1107"},{"id":"p1108"},{"id":"p1103"},{"id":"p1104"},{"id":"p1105"},{"id":"p1106"}],"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"Figure","id":"p1011","attributes":{"height":400,"sizing_mode":"stretch_width","x_range":{"type":"object","name":"Range1d","id":"p1020","attributes":{"start":-1}},"y_range":{"type":"object","name":"Range1d","id":"p1021","attributes":{"start":-1}},"x_scale":{"type":"object","name":"LinearScale","id":"p1022"},"y_scale":{"type":"object","name":"LinearScale","id":"p1023"},"title":{"type":"object","name":"Title","id":"p1018"},"renderers":[{"type":"object","name":"GlyphRenderer","id":"p1053","attributes":{"data_source":{"type":"object","name":"ColumnDataSource","id":"p1047","attributes":{"selected":{"type":"object","name":"Selection","id":"p1048","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1049"},"data":{"type":"map","entries":[["x",{"type":"ndarray","array":{"type":"bytes","data":"H4sIAAEAAAAC/2NggIDVPhEvqra9tl8Bofezx4gYqy3buAcAQpxI6yAAAAA="},"shape":[4],"dtype":"float64","order":"little"}],["y",{"type":"ndarray","array":{"type":"bytes","data":"H4sIAAEAAAAC/2NgAIEP9n//g8D9/Sxg/oP9DFBxALHVCwMgAAAA"},"shape":[4],"dtype":"float64","order":"little"}]]}}},"view":{"type":"object","name":"CDSView","id":"p1054","attributes":{"filter":{"type":"object","name":"AllIndices","id":"p1055"}}},"glyph":{"type":"object","name":"Line","id":"p1050","attributes":{"x":{"type":"field","field":"x"},"y":{"type":"field","field":"y"},"line_color":"#0f6f0f","line_width":2}},"nonselection_glyph":{"type":"object","name":"Line","id":"p1051","attributes":{"x":{"type":"field","field":"x"},"y":{"type":"field","field":"y"},"line_color":"#1f77b4","line_alpha":0.1}},"muted_glyph":{"type":"object","name":"Line","id":"p1052","attributes":{"x":{"type":"field","field":"x"},"y":{"type":"field","field":"y"},"line_color":"#1f77b4","line_alpha":0.2}}}}],"toolbar":{"type":"object","name":"Toolbar","id":"p1019","attributes":{"tools":[{"type":"object","name":"PanTool","id":"p1034"},{"type":"object","name":"WheelZoomTool","id":"p1035","attributes":{"renderers":"auto"}},{"type":"object","name":"BoxZoomTool","id":"p1036","attributes":{"dimensions":"both","overlay":{"type":"object","name":"BoxAnnotation","id":"p1037","attributes":{"syncable":false,"line_color":"black","line_alpha":1.0,"line_width":2,"line_dash":[4,4],"fill_color":"lightgrey","fill_alpha":0.5,"level":"overlay","visible":false,"left":{"type":"number","value":"nan"},"right":{"type":"number","value":"nan"},"top":{"type":"number","value":"nan"},"bottom":{"type":"number","value":"nan"},"left_units":"canvas","right_units":"canvas","top_units":"canvas","bottom_units":"canvas","handles":{"type":"object","name":"BoxInteractionHandles","id":"p1043","attributes":{"all":{"type":"object","name":"AreaVisuals","id":"p1042","attributes":{"fill_color":"white","hover_fill_color":"lightgray"}}}}}}}},{"type":"object","name":"SaveTool","id":"p1044"},{"type":"object","name":"ResetTool","id":"p1045"},{"type":"object","name":"HelpTool","id":"p1046"}]}},"left":[{"type":"object","name":"LinearAxis","id":"p1029","attributes":{"ticker":{"type":"object","name":"BasicTicker","id":"p1030","attributes":{"mantissas":[1,2,5]}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1031"},"major_label_policy":{"type":"object","name":"AllLabels","id":"p1032"}}}],"below":[{"type":"object","name":"LinearAxis","id":"p1024","attributes":{"ticker":{"type":"object","name":"BasicTicker","id":"p1025","attributes":{"mantissas":[1,2,5]}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1026"},"major_label_policy":{"type":"object","name":"AllLabels","id":"p1027"}}}],"center":[{"type":"object","name":"Grid","id":"p1028","attributes":{"axis":{"id":"p1024"}}},{"type":"object","name":"Grid","id":"p1033","attributes":{"dimension":1,"axis":{"id":"p1029"}}}]}}]}}]}}]}}],"defs":[{"type":"model","name":"ReactiveHTML1"},{"type":"model","name":"FlexBox1","properties":[{"name":"align_content","kind":"Any","default":"flex-start"},{"name":"align_items","kind":"Any","default":"flex-start"},{"name":"flex_direction","kind":"Any","default":"row"},{"name":"flex_wrap","kind":"Any","default":"wrap"},{"name":"gap","kind":"Any","default":""},{"name":"justify_content","kind":"Any","default":"flex-start"}]},{"type":"model","name":"FloatPanel1","properties":[{"name":"config","kind":"Any","default":{"type":"map"}},{"name":"contained","kind":"Any","default":true},{"name":"position","kind":"Any","default":"right-top"},{"name":"offsetx","kind":"Any","default":null},{"name":"offsety","kind":"Any","default":null},{"name":"theme","kind":"Any","default":"primary"},{"name":"status","kind":"Any","default":"normalized"}]},{"type":"model","name":"GridStack1","properties":[{"name":"ncols","kind":"Any","default":null},{"name":"nrows","kind":"Any","default":null},{"name":"allow_resize","kind":"Any","default":true},{"name":"allow_drag","kind":"Any","default":true},{"name":"state","kind":"Any","default":[]}]},{"type":"model","name":"drag1","properties":[{"name":"slider_width","kind":"Any","default":5},{"name":"slider_color","kind":"Any","default":"black"},{"name":"start","kind":"Any","default":0},{"name":"end","kind":"Any","default":100},{"name":"value","kind":"Any","default":50}]},{"type":"model","name":"click1","properties":[{"name":"terminal_output","kind":"Any","default":""},{"name":"debug_name","kind":"Any","default":""},{"name":"clears","kind":"Any","default":0}]},{"type":"model","name":"ReactiveESM1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"JSComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"ReactComponent1","properties":[{"name":"use_shadow_dom","kind":"Any","default":true},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"AnyWidgetComponent1","properties":[{"name":"use_shadow_dom","kind":"Any","default":true},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"FastWrapper1","properties":[{"name":"object","kind":"Any","default":null},{"name":"style","kind":"Any","default":null}]},{"type":"model","name":"NotificationArea1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"max_notifications","kind":"Any","default":5},{"name":"notifications","kind":"Any","default":[]},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0},{"name":"types","kind":"Any","default":[{"type":"map","entries":[["type","warning"],["background","#ffc107"],["icon",{"type":"map","entries":[["className","fas fa-exclamation-triangle"],["tagName","i"],["color","white"]]}]]},{"type":"map","entries":[["type","info"],["background","#007bff"],["icon",{"type":"map","entries":[["className","fas fa-info-circle"],["tagName","i"],["color","white"]]}]]}]}]},{"type":"model","name":"Notification","properties":[{"name":"background","kind":"Any","default":null},{"name":"duration","kind":"Any","default":3000},{"name":"icon","kind":"Any","default":null},{"name":"message","kind":"Any","default":""},{"name":"notification_type","kind":"Any","default":null},{"name":"_rendered","kind":"Any","default":false},{"name":"_destroyed","kind":"Any","default":false}]},{"type":"model","name":"TemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"BootstrapTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"TemplateEditor1","properties":[{"name":"layout","kind":"Any","default":[]}]},{"type":"model","name":"MaterialTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"request_value1","properties":[{"name":"fill","kind":"Any","default":"none"},{"name":"_synced","kind":"Any","default":null},{"name":"_request_sync","kind":"Any","default":0}]}]}}
+    </script>
+    <script type="text/javascript">
+      (function() {
+        const fn = function() {
+          Bokeh.safely(function() {
+            (function(root) {
+              function embed_document(root) {
+              const docs_json = document.getElementById('p1137').textContent;
+              const render_items = [{"docid":"cb682666-736a-49b4-8e30-ee2ef8154fc0","roots":{"p1101":"b66d4ff4-3a9f-4ee2-9ef7-9f42c1186e63","p1110":"b52aa7df-3147-4478-955c-f84cd463e937","p1112":"accd81cd-991e-4ff2-9205-930ab47e10e4","p1113":"d199c45d-0dca-49b1-8e20-eb1bcecfc712","p1115":"d9552c3d-2ab4-4c1f-b436-f169196a13fd","p1117":"c27672cf-bf6b-4220-9dad-e29df18b2beb","p1118":"c9c6dcc3-488e-4d51-ad7b-47af203ab1eb","p1119":"d04aa18e-a237-4a39-bce5-b40e1bfa5937"},"root_ids":["p1101","p1110","p1112","p1113","p1115","p1117","p1118","p1119"]}];
+              root.Bokeh.embed.embed_items(docs_json, render_items);
+              }
+              if (root.Bokeh !== undefined) {
+                embed_document(root);
+              } else {
+                let attempts = 0;
+                const timer = setInterval(function(root) {
+                  if (root.Bokeh !== undefined) {
+                    clearInterval(timer);
+                    embed_document(root);
+                  } else {
+                    attempts++;
+                    if (attempts > 100) {
+                      clearInterval(timer);
+                      console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                    }
+                  }
+                }, 10, root)
+              }
+            })(window);
+          });
+        };
+        if (document.readyState != "loading") fn();
+      else document.addEventListener("DOMContentLoaded", fn, {once: true});
+      })();
+    </script>
+  </body>
+</html>

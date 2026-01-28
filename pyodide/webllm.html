@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en" >
+  <head>
+    <meta charset="utf-8">
+    <title>WebLLM</title>
+<link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/1.8.7/dist/images/apple-touch-icon.png">    <link rel="icon" href="./favicon.ico" type="">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="name" content="WebLLM">
+    <link rel="manifest" href="">
+    <style>
+      html, body {
+	display: flow-root;
+        box-sizing: border-box;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" type="text/css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" type="text/css" />
+
+<style type="text/css">
+
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 300px));
+  -webkit-mask-size: auto calc(min(50%, 300px));
+}
+</style>
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./serviceWorker.js').then(reg => {
+    reg.onupdatefound = () => {
+      const installingWorker = reg.installing;
+      installingWorker.onstatechange = () => {
+        if (installingWorker.state === 'installed' &&
+            navigator.serviceWorker.controller) {
+          // Reload page if service worker is replaced
+          location.reload();
+        }
+      }
+    }
+  })
+}
+</script>
+
+<script type="esms-options">{"shimMode": true}</script>
+
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/material-components-web@7.0.0/dist/material-components-web.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/panel.min.js"></script>
+
+<script type="text/javascript">
+  Bokeh.set_log_level("info");
+</script>    <!-- Template CSS -->
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/loadingspinner.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/listpanel.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/select.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/button.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/progress.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/markdown.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/alerts.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/chat_interface.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/chat_message.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/icon.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/chat_copy_icon.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/chat_reaction_icons.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/loading.css?v=1.8.7">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/material-components-web@7.0.0/dist/material-components-web.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons&display=block">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/default.css?v=1.8.7">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/material_variables.css?v=1.8.7">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/materialtemplate/material.css?v=1.8.7">
+
+<style>
+:root {
+  --header-background: var(--design-primary-color, var(--panel-primary-color));
+  --header-color: var(--design-primary-text-color, var(--panel-on-primary-color));
+  --sidebar-width: 370px;
+}
+#header {
+  --mdc-theme-background: var(--header-background);
+  --mdc-theme-on-background: var(--header-color);
+  --design-background-text-color: var(--header-color);
+  --design-background-color: var(--header-background);
+  background-color: var(--header-background);
+  color: var(--header-color);
+}
+.mdc-drawer {
+  width: var(--sidebar-width) !important;
+}
+.mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing)+.mdc-drawer-app-content {
+  margin-left: var(--sidebar-width) !important;
+}
+</style>
+
+    <style type="text/css">
+    
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 300px));
+  -webkit-mask-size: auto calc(min(50%, 300px));
+}
+    </style>
+
+    <!-- Template JS -->
+    <script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/material-components-web@7.0.0/dist/material-components-web.min.js"></script>
+
+  </head>
+  <body class="pn-loading pn-arc">
+<div class="mdc-typography" id="container">
+  <header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" id="header">
+    <div class="mdc-top-app-bar__row">
+      <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+	<button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button">menu</button>
+	<div class="title-bar">
+          <span class="mdc-top-app-bar__title app-header">
+<a class="title" href="" >&nbsp;WebLLM</a>          </span>
+          <div id="header-items">
+          </div>
+        </div>
+      </section>
+      <div class="pn-busy-container">
+	<div id="f17050c8-2e90-4cfd-80a8-83fee8868895" data-root-id="p1025" style="display: contents;"></div>
+      </div>
+    </div>
+  </header>
+
+  <aside class="mdc-drawer mdc-top-app-bar--fixed-adjust mdc-drawer--dismissible mdc-drawer--open" id="sidebar">
+    <div class="mdc-drawer__content">
+      <div class="mdc-list">
+	<div id="beed64b6-5ec2-4a0f-9d36-24f71ec020fc" data-root-id="p1026" style="display: contents;"></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
+    <main class="main-content" id="main">
+      <div id="f4bd14e1-df57-470c-9094-b1c28682dc8b" data-root-id="p1041" style="display: contents;"></div>
+    </main>
+
+    <div id="pn-Modal" class="mdc-dialog">
+      <div class="mdc-dialog__container">
+	<div class="mdc-dialog__surface" role="alertdialog" aria-modal="true">
+	  <div class="mdc-dialog__content" id="my-dialog-content">
+	  </div>
+	</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var drawer = mdc.drawer.MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
+    var topAppBar = mdc.topAppBar.MDCTopAppBar.attachTo(document.getElementById('header'));
+    topAppBar.setScrollTarget(document.getElementById('main'));
+    topAppBar.listen('MDCTopAppBar:nav', function() {
+      drawer.open = !drawer.open;
+    });
+
+    var modal_el = document.getElementById("pn-Modal");
+    var modal = new mdc.dialog.MDCDialog(modal_el);
+
+    window.onclick = function(event) {
+      if (event.target == modal_el) {
+	modal.close();
+      }
+    }
+  </script>
+
+  <div id="c25e8987-6bbb-4f44-bc8a-c9aa171a695a" data-root-id="p1020" style="display: contents;"></div>
+<div id="f9cd88d7-1c06-4f17-8bb5-8286403bd88c" data-root-id="p1022" style="display: contents;"></div>
+<div id="a2ef315c-6905-408c-8369-f5911ea6058a" data-root-id="p1011" style="display: contents;"></div>
+<div id="d46f2e1d-39f2-44fc-96fd-433db82b54aa" data-root-id="p1023" style="display: contents;"></div>
+
+</div>
+  
+    <script type="text/javascript">
+      const pyodideWorker = new Worker("./webllm.js");
+      pyodideWorker.busy = false
+      pyodideWorker.queue = []
+      
+      let patching = 0
+      
+      function send_change(jsdoc, event) {
+        if ((event.setter_id != null && event.setter_id == 'py') || (patching > 0)) {
+          return
+        } else if (pyodideWorker.busy && event.model && event.attr) {
+          let events = []
+          for (const old_event of pyodideWorker.queue) {
+            if (!(old_event.model === event.model && old_event.attr === event.attr)) {
+              events.push(old_event)
+            }
+          }
+          events.push(event)
+          pyodideWorker.queue = events
+          return
+        }
+        const patch = jsdoc.create_json_patch([event])
+        pyodideWorker.busy = true
+        pyodideWorker.postMessage({type: 'patch', patch: patch})
+      }
+      
+      pyodideWorker.onmessage = async (event) => {
+        const msg = event.data
+      
+        const body = document.getElementsByTagName('body')[0]
+        const loading_msgs = document.getElementsByClassName('pn-loading-msg')
+        if (msg.type === 'idle') {
+          if (pyodideWorker.queue.length) {
+            const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
+            pyodideWorker.busy = true
+            pyodideWorker.queue = []
+            pyodideWorker.postMessage({type: 'patch', patch: patch})
+          } else {
+            pyodideWorker.busy = false
+          }
+        } else if (msg.type === 'status') {
+          let loading_msg
+          if (loading_msgs.length) {
+            loading_msg = loading_msgs[0]
+          } else if (body.classList.contains('pn-loading')) {
+            loading_msg = document.createElement('div')
+            loading_msg.classList.add('pn-loading-msg')
+            body.appendChild(loading_msg)
+          }
+          if (loading_msg != null) {
+            loading_msg.innerHTML = msg.msg
+          }
+        } else if (msg.type === 'render') {
+          const docs_json = JSON.parse(msg.docs_json)
+          const render_items = JSON.parse(msg.render_items)
+          const root_ids = JSON.parse(msg.root_ids)
+      
+          // Remap roots in message to element IDs
+          const root_els = document.querySelectorAll('[data-root-id]')
+          const data_roots = []
+          for (const el of root_els) {
+             el.innerHTML = ''
+             data_roots.push([el.getAttribute('data-root-id'), el.id])
+          }
+          data_roots.sort((a, b) => a[0]<b[0] ? -1: 1)
+          const roots = {}
+          for (let i=0; i<data_roots.length; i++) {
+            roots[root_ids[i]] = data_roots[i][1]
+          }
+          render_items[0]['roots'] = roots
+          render_items[0]['root_ids'] = root_ids
+      
+          // Clear pre-rendered contents
+          Bokeh.index.roots.map((v) => v.remove())
+      
+          // Embed content
+          const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
+      
+          // Remove loading spinner and message
+          body.classList.remove("pn-loading", "arc")
+          for (const loading_msg of loading_msgs) {
+            loading_msg.remove()
+          }
+      
+          // Setup bi-directional syncing
+          pyodideWorker.jsdoc = jsdoc = [...views.roots.values()][0].model.document
+          jsdoc.on_change(send_change.bind(null, jsdoc), false)
+          pyodideWorker.postMessage({'type': 'rendered'})
+          pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
+        } else if (msg.type === 'patch') {
+          try {
+            patching += 1
+            pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers)
+          } finally {
+            patching -= 1
+          }
+        }
+      };
+    </script>
+    <script type="application/json" id="p1088">
+      {"b54b83f8-56d4-423b-b6fc-fc26418b60ba":{"version":"3.8.2","title":"WebLLM","config":{"type":"object","name":"DocumentConfig","id":"p1009","attributes":{"reconnect_session":false,"notify_connection_status":false,"notifications":null}},"roots":[{"type":"object","name":"panel.models.location.Location","id":"p1011","attributes":{"name":"location","search":"?model=SmolLM2-360M-Instruct-q4f16_1-MLC","reload":false}},{"type":"object","name":"panel.models.markup.HTML","id":"p1020","attributes":{"name":"js_area","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"type":"object","name":"ImportedStyleSheet","id":"p1017","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/loading.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1016","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/material.css"}}],"width":0,"height":0,"margin":0,"sizing_mode":"fixed","align":"start","disable_math":true}},{"type":"object","name":"panel.models.reactive_html.ReactiveHTML","id":"p1022","attributes":{"name":"actions","subscribed_events":{"type":"set","entries":["dom_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1016"}],"margin":0,"align":"start","data":{"type":"object","name":"MaterialTemplateActions1","id":"p1021","attributes":{"name":"MaterialTemplateActions00138","tags":["__ref:p1022"]}},"scripts":{"type":"map","entries":[["open_modal",["modal.open();\nsetTimeout(function() {{\n  window.dispatchEvent(new Event(&amp;#x27;resize&amp;#x27;));\n}}, 200);"]],["close_modal",["modal.close()"]]]}}},{"type":"object","name":"panel.models.browser.BrowserInfo","id":"p1023","attributes":{"name":"browser_info"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1025","attributes":{"name":"busy_indicator","css_classes":["loader","light"],"stylesheets":[":host { --loading-spinner-size: 20px; }","\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"type":"object","name":"ImportedStyleSheet","id":"p1024","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/loadingspinner.css"}},{"id":"p1016"}],"min_width":20,"min_height":20,"margin":[5,10],"align":"start"}},{"type":"object","name":"panel.models.layout.Column","id":"p1026","attributes":{"name":"nav-4895453584","tags":["nav"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"type":"object","name":"ImportedStyleSheet","id":"p1018","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/listpanel.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1013","attributes":{"url":"https://cdn.jsdelivr.net/npm/material-components-web@7.0.0/dist/material-components-web.min.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1014","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/default.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1015","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/material_variables.css"}},{"id":"p1016"}],"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1027","attributes":{"name":"Column00129","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.widgets.CustomSelect","id":"p1029","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"type":"object","name":"ImportedStyleSheet","id":"p1028","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/select.css"}},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"width":300,"min_width":0,"margin":[5,10],"sizing_mode":"stretch_width","align":"start","title":"Model","options":[["SmolLM2-360M-Instruct-q4f16_1-MLC","SmolLM2 (130MB)"],["TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC-1k","TinyLlama-1.1B-Chat (675 MB)"],["gemma-2-2b-it-q4f16_1-MLC","Gemma-2b (2GB)"],["Llama-3.2-3B-Instruct-q4f16_1-MLC","Llama-3.2-3B-Instruct (2.2GB)"],["Mistral-7B-Instruct-v0.3-q4f16_1-MLC","Mistral-7b-Instruct (5GB)"]],"value":"SmolLM2-360M-Instruct-q4f16_1-MLC"}},{"type":"object","name":"Slider","id":"p1030","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"min_width":0,"margin":[5,10],"sizing_mode":"stretch_width","align":"start","title":"Temperature","start":0,"end":2,"value":1,"step":0.1}},{"type":"object","name":"panel.models.widgets.Button","id":"p1032","attributes":{"subscribed_events":{"type":"set","entries":["button_click"]},"css_classes":["solid"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"type":"object","name":"ImportedStyleSheet","id":"p1031","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/button.css"}},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"min_width":0,"margin":[5,10],"sizing_mode":"stretch_width","align":"start","label":"Load model"}},{"type":"object","name":"panel.models.widgets.Progress","id":"p1034","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"type":"object","name":"ImportedStyleSheet","id":"p1033","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/progress.css"}},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"visible":false,"width":300,"min_width":0,"margin":[5,10],"sizing_mode":"stretch_width","align":"start","bar_color":"success","value":0}},{"type":"object","name":"panel.models.markup.HTML","id":"p1036","attributes":{"css_classes":["markdown"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"type":"object","name":"ImportedStyleSheet","id":"p1035","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/markdown.css"}},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"visible":false,"margin":[5,10],"align":"start"}}]}},{"type":"object","name":"panel.models.markup.HTML","id":"p1038","attributes":{"css_classes":["markdown","alert","alert-primary"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"type":"object","name":"ImportedStyleSheet","id":"p1037","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/alerts.css"}},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"min_width":0,"margin":[5,10],"sizing_mode":"stretch_width","align":"start","text":"&amp;lt;p&amp;gt;&amp;lt;code&amp;gt;WebLLM&amp;lt;/code&amp;gt; runs large-language models entirely in your browser. When visiting the application the first time the model has to be downloaded and loaded into memory, which may take  some time. Models are ordered by size (and capability), e.g. SmolLLM is very quick to download but produces poor quality output while Mistral-7b will take a while to download but produces much higher quality output.&amp;lt;/p&amp;gt;\n"}},{"type":"object","name":"panel.models.esm.ReactiveESM","id":"p1040","attributes":{"name":"WebLLM","subscribed_events":{"type":"set","entries":["dom_event","data_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"margin":0,"align":"start","class_name":"WebLLM","data":{"type":"object","name":"WebLLM1","id":"p1039","attributes":{"name":"WebLLM00116","tags":["__ref:p1026"]}},"esm":"\nimport * as webllm from \"https://esm.run/@mlc-ai/web-llm\";\n\nconst engines = new Map()\n\nexport async function render({ model }) {\n  model.on(\"msg:custom\", async (event) =&gt; {\n    if (event.type === 'load') {\n      if (!engines.has(model.model)) {\n        const initProgressCallback = (status) =&gt; {\n          model.status = status\n        }\n        const mlc = await webllm.CreateMLCEngine(\n           model.model,\n           {initProgressCallback}\n        )\n        engines.set(model.model, mlc)\n      }\n      model.loaded = true\n    } else if (event.type === 'completion') {\n      const engine = engines.get(model.model)\n      if (engine == null) {\n        model.send_msg({'finish_reason': 'error'})\n      }\n      const chunks = await engine.chat.completions.create({\n        messages: event.messages,\n        temperature: model.temperature ,\n        stream: true,\n      })\n      model.running = true\n      for await (const chunk of chunks) {\n        if (!model.running) {\n          break\n        }\n        model.send_msg(chunk.choices[0])\n      }\n    }\n  })\n}\n","events":["load_model"]}}]}},{"type":"object","name":"Row","id":"p1041","attributes":{"name":"main-4896590928","tags":["main"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"min_width":60,"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.layout.Card","id":"p1042","attributes":{"name":"Card00187","css_classes":["chat-interface"],"styles":{"type":"map","entries":[["padding","0px"]]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"type":"object","name":"ImportedStyleSheet","id":"p1068","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/chat_interface.css"}}],"min_width":60,"margin":5,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"Row","id":"p1082","attributes":{"name":"Row00186","css_classes":["card-header-row"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"min_width":0,"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.markup.HTML","id":"p1083","attributes":{"css_classes":["chat-feed-title"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"margin":[5,0],"align":"start","text":"&amp;amp;#8203;","disable_math":true}}]}},{"type":"object","name":"panel.models.feed.Feed","id":"p1043","attributes":{"name":"Feed00185","subscribed_events":{"type":"set","entries":["scroll_button_click"]},"css_classes":["chat-feed-log","scroll-vertical"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1068"}],"min_width":50,"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"Row","id":"p1044","attributes":{"name":"Row00245","css_classes":["chat-message"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"type":"object","name":"ImportedStyleSheet","id":"p1047","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/chat_message.css"}}],"min_width":50,"max_width":1200,"margin":[5,10],"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1045","attributes":{"name":"Column00224","css_classes":["left"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"height":100,"min_height":100,"max_width":60,"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.markup.HTML","id":"p1046","attributes":{"css_classes":["avatar"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"width":35,"height":35,"margin":[5,10],"sizing_mode":"fixed","align":"start","text":"\u2699\ufe0f","disable_math":true}}]}},{"type":"object","name":"panel.models.layout.Column","id":"p1048","attributes":{"name":"Column00244","css_classes":["right"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"min_width":30,"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"Row","id":"p1049","attributes":{"name":"Row00238","css_classes":["meta"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.markup.HTML","id":"p1050","attributes":{"css_classes":["name"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"height":20,"min_height":20,"margin":[5,10],"align":"start","text":"System","disable_math":true}},{"type":"object","name":"panel.models.markup.HTML","id":"p1051","attributes":{"css_classes":["activity-dot"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"visible":false,"margin":[5,0],"align":"start","text":"\u25cf","disable_math":true}}]}},{"type":"object","name":"panel.models.layout.Column","id":"p1052","attributes":{"name":"Column00239","css_classes":["header"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"min_width":0,"margin":0,"sizing_mode":"stretch_width","align":"start"}},{"type":"object","name":"Row","id":"p1053","attributes":{"name":"Row00233","css_classes":["center"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1054","attributes":{"name":"Column00231","css_classes":["placeholder"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.markup.HTML","id":"p1055","attributes":{"css_classes":["markdown","message"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1035"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"margin":[5,10],"align":"start","text":"&amp;lt;p&amp;gt;Load a model and start chatting.&amp;lt;/p&amp;gt;\n"}}]}}]}},{"type":"object","name":"panel.models.layout.Column","id":"p1056","attributes":{"name":"Column00240","css_classes":["footer"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"min_width":0,"margin":0,"sizing_mode":"stretch_width","align":"start"}},{"type":"object","name":"Row","id":"p1057","attributes":{"name":"Row00243","css_classes":["icons"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"min_width":30,"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.icon.ToggleIcon","id":"p1059","attributes":{"css_classes":["edit-icon"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"type":"object","name":"ImportedStyleSheet","id":"p1058","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/icon.css"}},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"visible":false,"width":15,"height":15,"margin":[5,10],"sizing_mode":"fixed","align":"start","active_icon":"x","icon":"edit"}},{"type":"object","name":"panel.models.reactive_html.ReactiveHTML","id":"p1062","attributes":{"subscribed_events":{"type":"set","entries":["dom_event"]},"css_classes":["edit-icon"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"type":"object","name":"ImportedStyleSheet","id":"p1061","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/chat_copy_icon.css"}},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"width":15,"height":15,"margin":0,"sizing_mode":"fixed","align":"start","attrs":{"type":"map","entries":[["copy-button",[["onclick",[],"{script('request_value')}"]]]]},"callbacks":{"type":"map","entries":[["copy-button",[["onclick","script('request_value')"]]]]},"data":{"type":"object","name":"request_value1","id":"p1060","attributes":{"name":"ChatCopyIcon00220","tags":["__ref:p1041"]}},"html":"\n&amp;lt;div\n    type=&amp;quot;button&amp;quot;\n    id=&amp;quot;copy-button-${id}&amp;quot;\n    onclick=&amp;quot;${script(&amp;#x27;request_value&amp;#x27;)}&amp;quot;\n    style=&amp;quot;cursor: pointer; width: ${model.width}px; height: ${model.height}px;&amp;quot;\n    title=&amp;quot;Copy message to clipboard&amp;quot;\n&amp;gt;\n    &amp;lt;svg xmlns=&amp;quot;http://www.w3.org/2000/svg&amp;quot; class=&amp;quot;icon icon-tabler icon-tabler-copy&amp;quot; id=&amp;quot;copy_icon-${id}&amp;quot;\n        width=&amp;quot;${model.width}&amp;quot; height=&amp;quot;${model.height}&amp;quot; viewBox=&amp;quot;0 0 24 24&amp;quot;\n        stroke-width=&amp;quot;2&amp;quot; stroke=&amp;quot;currentColor&amp;quot; stroke-linecap=&amp;quot;round&amp;quot; stroke-linejoin=&amp;quot;round&amp;quot;\n    &amp;gt;\n        &amp;lt;path stroke=&amp;quot;none&amp;quot; d=&amp;quot;M0 0h24v24H0z&amp;quot; fill=&amp;quot;none&amp;quot;&amp;gt;&amp;lt;/path&amp;gt;\n        &amp;lt;path d=&amp;quot;M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z&amp;quot;&amp;gt;&amp;lt;/path&amp;gt;\n        &amp;lt;path d=&amp;quot;M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2&amp;quot;&amp;gt;&amp;lt;/path&amp;gt;\n    &amp;lt;/svg&amp;gt;\n&amp;lt;/div&amp;gt;\n","nodes":["copy-button","copy_icon"],"scripts":{"type":"map","entries":[["render",["copy_icon.setAttribute(&amp;#x27;fill&amp;#x27;, data.fill)"]],["fill",["copy_icon.setAttribute(&amp;#x27;fill&amp;#x27;, data.fill)"]],["request_value",["data._request_sync += 1;\ndata.fill = &amp;quot;currentColor&amp;quot;;"]],["_synced",["navigator.clipboard.writeText(`${data._synced}`);\ndata.fill = &amp;quot;none&amp;quot;;"]]]}}},{"type":"object","name":"panel.models.layout.Column","id":"p1063","attributes":{"name":"Column00213","css_classes":["reaction-icons"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1047"}],"width":15,"height":15,"min_width":0,"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"Row","id":"p1064","attributes":{"name":"Row00216","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"type":"object","name":"ImportedStyleSheet","id":"p1066","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/chat_reaction_icons.css"}},{"id":"p1047"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.icon.ToggleIcon","id":"p1065","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1058"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"margin":0,"align":"start"}}]}}]}}]}},{"type":"object","name":"panel.models.markup.HTML","id":"p1067","attributes":{"css_classes":["timestamp"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"margin":[5,10],"align":"start","text":"17:13","disable_math":true}}]}}]}}],"auto_scroll_limit":200,"scroll_button_threshold":100,"view_latest":true}},{"type":"object","name":"Row","id":"p1069","attributes":{"name":"Row00190","css_classes":["chat-interface-input-container"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1068"}],"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"Row","id":"p1070","attributes":{"name":"Row00212","css_classes":["chat-interface-input-row"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1018"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"},{"id":"p1068"}],"min_width":0,"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.chatarea_input.ChatAreaInput","id":"p1071","attributes":{"subscribed_events":{"type":"set","entries":["chat_message_event"]},"css_classes":["chat-interface-input-widget"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"width":300,"min_width":0,"margin":[5,10],"sizing_mode":"stretch_width","align":"start","resizable":"height","placeholder":"Send a message","max_length":50000,"rows":1,"auto_grow":true,"max_rows":10}},{"type":"object","name":"panel.models.widgets.Button","id":"p1073","attributes":{"subscribed_events":{"type":"set","entries":["button_click"]},"css_classes":["solid"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1031"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"min_width":0,"max_width":90,"max_height":50,"margin":[0,5,0,0],"sizing_mode":"stretch_width","align":"center","label":"Send","icon":{"type":"object","name":"TablerIcon","id":"p1072","attributes":{"icon_name":"send"}}}},{"type":"object","name":"panel.models.widgets.Button","id":"p1075","attributes":{"subscribed_events":{"type":"set","entries":["button_click"]},"css_classes":["solid"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1031"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"visible":false,"min_width":0,"max_width":90,"max_height":50,"margin":[0,5,0,0],"sizing_mode":"stretch_width","align":"center","label":"Stop","icon":{"type":"object","name":"TablerIcon","id":"p1074","attributes":{"icon_name":"player-stop"}}}},{"type":"object","name":"panel.models.widgets.Button","id":"p1077","attributes":{"subscribed_events":{"type":"set","entries":["button_click"]},"css_classes":["solid"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1031"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"min_width":0,"max_width":90,"max_height":50,"margin":[0,5,0,0],"sizing_mode":"stretch_width","align":"center","label":"Rerun","icon":{"type":"object","name":"TablerIcon","id":"p1076","attributes":{"icon_name":"repeat"}}}},{"type":"object","name":"panel.models.widgets.Button","id":"p1079","attributes":{"subscribed_events":{"type":"set","entries":["button_click"]},"css_classes":["solid"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1031"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"min_width":0,"max_width":90,"max_height":50,"margin":[0,5,0,0],"sizing_mode":"stretch_width","align":"center","label":"Undo","icon":{"type":"object","name":"TablerIcon","id":"p1078","attributes":{"icon_name":"arrow-back"}}}},{"type":"object","name":"panel.models.widgets.Button","id":"p1081","attributes":{"subscribed_events":{"type":"set","entries":["button_click"]},"css_classes":["solid"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1017"},{"id":"p1031"},{"id":"p1013"},{"id":"p1014"},{"id":"p1015"},{"id":"p1016"}],"min_width":0,"max_width":90,"max_height":50,"margin":[0,5,0,0],"sizing_mode":"stretch_width","align":"center","label":"Clear","icon":{"type":"object","name":"TablerIcon","id":"p1080","attributes":{"icon_name":"trash"}}}}]}}]}}],"button_css_classes":["card-button"],"collapsed":false,"collapsible":false,"header_background":"","header_color":"","header_css_classes":["chat-feed-header"],"hide_header":true}}]}}],"defs":[{"type":"model","name":"ReactiveHTML1"},{"type":"model","name":"FlexBox1","properties":[{"name":"align_content","kind":"Any","default":"flex-start"},{"name":"align_items","kind":"Any","default":"flex-start"},{"name":"flex_direction","kind":"Any","default":"row"},{"name":"flex_wrap","kind":"Any","default":"wrap"},{"name":"gap","kind":"Any","default":""},{"name":"justify_content","kind":"Any","default":"flex-start"}]},{"type":"model","name":"FloatPanel1","properties":[{"name":"config","kind":"Any","default":{"type":"map"}},{"name":"contained","kind":"Any","default":true},{"name":"position","kind":"Any","default":"right-top"},{"name":"offsetx","kind":"Any","default":null},{"name":"offsety","kind":"Any","default":null},{"name":"theme","kind":"Any","default":"primary"},{"name":"status","kind":"Any","default":"normalized"}]},{"type":"model","name":"GridStack1","properties":[{"name":"ncols","kind":"Any","default":null},{"name":"nrows","kind":"Any","default":null},{"name":"allow_resize","kind":"Any","default":true},{"name":"allow_drag","kind":"Any","default":true},{"name":"state","kind":"Any","default":[]}]},{"type":"model","name":"drag1","properties":[{"name":"slider_width","kind":"Any","default":5},{"name":"slider_color","kind":"Any","default":"black"},{"name":"start","kind":"Any","default":0},{"name":"end","kind":"Any","default":100},{"name":"value","kind":"Any","default":50}]},{"type":"model","name":"click1","properties":[{"name":"terminal_output","kind":"Any","default":""},{"name":"debug_name","kind":"Any","default":""},{"name":"clears","kind":"Any","default":0}]},{"type":"model","name":"ReactiveESM1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"JSComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"ReactComponent1","properties":[{"name":"use_shadow_dom","kind":"Any","default":true},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"AnyWidgetComponent1","properties":[{"name":"use_shadow_dom","kind":"Any","default":true},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"FastWrapper1","properties":[{"name":"object","kind":"Any","default":null},{"name":"style","kind":"Any","default":null}]},{"type":"model","name":"NotificationArea1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"max_notifications","kind":"Any","default":5},{"name":"notifications","kind":"Any","default":[]},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0},{"name":"types","kind":"Any","default":[{"type":"map","entries":[["type","warning"],["background","#ffc107"],["icon",{"type":"map","entries":[["className","fas fa-exclamation-triangle"],["tagName","i"],["color","white"]]}]]},{"type":"map","entries":[["type","info"],["background","#007bff"],["icon",{"type":"map","entries":[["className","fas fa-info-circle"],["tagName","i"],["color","white"]]}]]}]}]},{"type":"model","name":"Notification","properties":[{"name":"background","kind":"Any","default":null},{"name":"duration","kind":"Any","default":3000},{"name":"icon","kind":"Any","default":null},{"name":"message","kind":"Any","default":""},{"name":"notification_type","kind":"Any","default":null},{"name":"_rendered","kind":"Any","default":false},{"name":"_destroyed","kind":"Any","default":false}]},{"type":"model","name":"TemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"BootstrapTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"TemplateEditor1","properties":[{"name":"layout","kind":"Any","default":[]}]},{"type":"model","name":"MaterialTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"request_value1","properties":[{"name":"fill","kind":"Any","default":"none"},{"name":"_synced","kind":"Any","default":null},{"name":"_request_sync","kind":"Any","default":0}]},{"type":"model","name":"WebLLM1","properties":[{"name":"loaded","kind":"Any","default":false},{"name":"history","kind":"Any","default":3},{"name":"status","kind":"Any","default":{"type":"map","entries":[["text",""],["progress",0]]}},{"name":"load_model","kind":"Any","default":false},{"name":"model","kind":"Any","default":"SmolLM2-360M-Instruct-q4f16_1-MLC"},{"name":"running","kind":"Any","default":false},{"name":"temperature","kind":"Any","default":1},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]}]}}
+    </script>
+    <script type="text/javascript">
+      (function() {
+        const fn = function() {
+          Bokeh.safely(function() {
+            (function(root) {
+              function embed_document(root) {
+              const docs_json = document.getElementById('p1088').textContent;
+              const render_items = [{"docid":"b54b83f8-56d4-423b-b6fc-fc26418b60ba","roots":{"p1011":"a2ef315c-6905-408c-8369-f5911ea6058a","p1020":"c25e8987-6bbb-4f44-bc8a-c9aa171a695a","p1022":"f9cd88d7-1c06-4f17-8bb5-8286403bd88c","p1023":"d46f2e1d-39f2-44fc-96fd-433db82b54aa","p1025":"f17050c8-2e90-4cfd-80a8-83fee8868895","p1026":"beed64b6-5ec2-4a0f-9d36-24f71ec020fc","p1041":"f4bd14e1-df57-470c-9094-b1c28682dc8b"},"root_ids":["p1011","p1020","p1022","p1023","p1025","p1026","p1041"]}];
+              root.Bokeh.embed.embed_items(docs_json, render_items);
+              }
+              if (root.Bokeh !== undefined) {
+                embed_document(root);
+              } else {
+                let attempts = 0;
+                const timer = setInterval(function(root) {
+                  if (root.Bokeh !== undefined) {
+                    clearInterval(timer);
+                    embed_document(root);
+                  } else {
+                    attempts++;
+                    if (attempts > 100) {
+                      clearInterval(timer);
+                      console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                    }
+                  }
+                }, 10, root)
+              }
+            })(window);
+          });
+        };
+        if (document.readyState != "loading") fn();
+      else document.addEventListener("DOMContentLoaded", fn, {once: true});
+      })();
+    </script>
+  </body>
+</html>

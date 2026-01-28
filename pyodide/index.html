@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Panel Applications</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@600&display=swap" rel="stylesheet">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/1.8.7/dist/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.holoviz.org/panel/1.8.7/dist/images/favicon.ico">
+    <link rel="manifest" href="site.webmanifest">
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        font-family: "Kumbh Sans", "Segoe UI", Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: normal;
+        height: 100vh;
+        margin: 0px;
+        overflow: hidden;
+        padding: 0;
+      }
+      .header {
+        box-shadow: 0 .125rem .25rem 0 gray;
+        z-index: 1;
+      }
+      .header-content {
+        display: flex;
+        flex-direction: row;
+        padding: 1.5rem;
+      }
+      #panel-logo {
+        padding-right: 2em;
+        width: 300px;
+      }
+      .gallery-item {
+        border: 0.1px solid gray;
+	box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+        cursor: pointer;
+        text-align: center;
+      }
+      .gallery-item:hover {
+        border: 0.1px solid black;
+	box-shadow: rgba(20, 20, 50, 0.25) 0px 9px 18px -2px, rgba(0, 0, 0, 0.3) 0px 6px 10px -3px;
+      }
+      #search-input {
+	border: 0.1px solid black;
+	box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+	height: 3em;
+        margin: 1.5rem 2rem 0 2rem;
+	padding-left: 1em;
+        width: calc(100% - 6em);
+      }
+      #search-input:focus-visible {
+        border: 0.1px solid black;
+	box-shadow: rgba(20, 20, 50, 0.25) 0px 12px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+	outline: none;
+      }
+      .main {
+	background-color: #f2f2f2;
+	flex-grow: 1;
+	overflow-x: hidden;
+	overflow-y: auto;
+      }
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+        grid-gap: 2rem;
+        list-style: none;
+      }
+      /* Presentational styles */
+      .card {
+	background-color: white;
+        padding: 0px;
+      }
+      .cards-grid {
+        margin: 2rem;
+        padding: 0px;
+      }
+      .avatar {
+        vertical-align: middle;
+        float: right;
+        width: 30px;
+        height: 30px;
+        margin-top: 5px;
+        border-radius: 50%;
+      }
+      .card-action svg {
+        vertical-align: middle;
+        float: right;
+        height: 20px;
+        color: white;
+        margin-top: 10px;
+        margin-right: 10px;
+      }
+      .card-image {
+        height: 175px;
+        width: 100%;
+        margin-top: 25px;
+      }
+      object {
+        height: 175px;
+        max-width: calc(100% - 50px);
+        margin-top: 25px;
+        border-radius: 5px;
+      }
+      .card-content {
+        padding: 10px 10px 10px;
+      }
+      .card-text {
+        height: 100px;
+      }
+      .card-header {
+        height: 2em;
+        text-align: center;
+      }
+      .card-link {
+        text-decoration: none;
+        color: black;
+      }
+      .title-area {
+        display: flex;
+        flex-direction: column;
+        margin: auto 0 auto auto;
+      }
+      #title {
+        font-size: 1.8em;
+        font-weight: bold;
+      }
+      #subtitle {
+        font-size: 1.2em;
+	text-align: right;
+      }
+    </style>
+    <script type="text/javascript">
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./serviceWorker.js');
+      }
+    </script>
+    <script type="text/javascript">
+      function setParamsFromSearch(text){
+        const params = new URLSearchParams(location.search);
+        if (text === "") {
+            params.delete("search")
+        } else {
+            params.set('search', text);
+        }
+        window.history.replaceState({}, '', `${location.pathname}?${params}`);
+      }
+      function hideCards(text) {
+        text = text.toLowerCase();
+        const cards = document.getElementsByTagName("li")
+        for (const card of cards) {
+	  const label = card.children[0].children[0].children[1]
+          if (text === "" || label.innerHTML.toLowerCase().includes(text)) {
+            card.style.display = ""
+          } else {
+            card.style.display = "none"
+          }
+        }
+        setParamsFromSearch(text)
+      }
+      function setSearchFromParams() {
+        const params = new URLSearchParams(window.location.search)
+        if (params.has('search')){
+          const search = params.get('search')
+          const searchEl = document.getElementById("search-input")
+          searchEl.value = search
+          hideCards(search)
+        }
+      }
+      setSearchFromParams()
+    </script>
+  </head>
+  <body>
+    <section class="header">
+      <div class="header-content">
+        <a href="https://panel.holoviz.org">
+          <img id="panel-logo" src="https://cdn.holoviz.org/panel/1.8.7/dist/images/logo_horizontal.png"/>
+        </a>
+        <div class="title-area">
+          <span id="title">Panel Applications</span>
+          <span id="subtitle">Running 40 apps</span>
+        </div>
+      </div>
+    </section>
+    <div class="main">
+    <section class="search">
+      <input id="search-input" placeholder="Search applications..." onInput="hideCards(event.target.value)"></input>
+    </section>
+    <section id="cards">
+      <ul class="cards-grid">
+        <li class="card">
+          <a class="card-link" href="./action_button.html" id="./action_button.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">action button</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./altair_brushing.html" id="./altair_brushing.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">altair brushing</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./bokeh_property_editor.html" id="./bokeh_property_editor.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">bokeh property editor</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./canvas_draw.html" id="./canvas_draw.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">canvas draw</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./deckgl.html" id="./deckgl.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">deckgl</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./deckgl_game_of_life.html" id="./deckgl_game_of_life.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">deckgl game of life</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./dynamic_tabs.html" id="./dynamic_tabs.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">dynamic tabs</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./esm_canvas.html" id="./esm_canvas.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">esm canvas</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./esm_leaflet.html" id="./esm_leaflet.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">esm leaflet</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./esm_material_ui.html" id="./esm_material_ui.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">esm material ui</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./gapminders.html" id="./gapminders.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">gapminders</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./glaciers.html" id="./glaciers.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">glaciers</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./hello_world.html" id="./hello_world.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">hello world</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./holoviews_glyph_link.html" id="./holoviews_glyph_link.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">holoviews glyph link</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./hvplot_explorer.html" id="./hvplot_explorer.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">hvplot explorer</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./iris_kmeans.html" id="./iris_kmeans.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">iris kmeans</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./leaflet.html" id="./leaflet.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">leaflet</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./loading.html" id="./loading.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">loading</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./material_ui.html" id="./material_ui.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">material ui</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./nyc_deckgl.html" id="./nyc_deckgl.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">nyc deckgl</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./penguin_crossfilter.html" id="./penguin_crossfilter.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">penguin crossfilter</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./penguin_kmeans.html" id="./penguin_kmeans.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">penguin kmeans</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./plot_viewer.html" id="./plot_viewer.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">plot viewer</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./plotly.html" id="./plotly.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">plotly</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./portfolio_analyzer.html" id="./portfolio_analyzer.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">portfolio analyzer</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./portfolio_optimizer.html" id="./portfolio_optimizer.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">portfolio optimizer</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./precedence.html" id="./precedence.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">precedence</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./streaming_bokeh.html" id="./streaming_bokeh.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">streaming bokeh</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./streaming_indicator.html" id="./streaming_indicator.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">streaming indicator</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./streaming_perspective.html" id="./streaming_perspective.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">streaming perspective</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./streaming_tabulator.html" id="./streaming_tabulator.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">streaming tabulator</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./streaming_videostream.html" id="./streaming_videostream.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">streaming videostream</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./subobjects.html" id="./subobjects.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">subobjects</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./sync_url.html" id="./sync_url.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">sync url</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./table_viewer.html" id="./table_viewer.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">table viewer</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./vega_link.html" id="./vega_link.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">vega link</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./vue.html" id="./vue.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">vue</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./webllm.html" id="./webllm.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">webllm</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./windturbines.html" id="./windturbines.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">windturbines</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li class="card">
+          <a class="card-link" href="./xgboost_classifier.html" id="./xgboost_classifier.html">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">xgboost classifier</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </section>
+    </div>
+  </body>
+</html>

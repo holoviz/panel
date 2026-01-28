@@ -1,0 +1,10 @@
+:host(.equal-width) {
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  grid-template-columns: unset;
+}
+
+:host(.equal-height) {
+  grid-auto-rows: minmax(0, 1fr);
+  grid-template-rows: unset;
+}

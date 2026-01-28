@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en" >
+  <head>
+    <meta charset="utf-8">
+    <title>Portfolio Analysis</title>
+<link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/1.8.7/dist/images/apple-touch-icon.png">
+    <link rel="icon" href="./favicon.ico" type="">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="name" content="Portfolio Analysis">
+    <link rel="manifest" href="">
+
+
+<!-- Template JS -->
+<script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/react@17/umd/react.production.min.js"></script>
+<script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/react-dom@17/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/babel-standalone@latest/babel.min.js"></script>
+<script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/react-grid-layout@1.3.4/dist/react-grid-layout.min.js"></script>
+<script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/fastbasetemplate/fast_template.js"></script>
+<script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/@microsoft/fast-components@2.30.6/dist/fast-components.js" type="module"></script>
+<script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/fast/js/fast_design.js" type="module"></script>
+
+    <style>
+      html, body {
+	display: flow-root;
+        box-sizing: border-box;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/plotlyplot/maplibre-gl@4.4.1/dist/maplibre-gl.css" type="text/css" />
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/datatabulator/tabulator-tables@6.3.1/dist/css/tabulator_fast.min.css" type="text/css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans" type="text/css" />
+
+<style type="text/css">
+
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 300px));
+  -webkit-mask-size: auto calc(min(50%, 300px));
+}
+</style>
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./serviceWorker.js').then(reg => {
+    reg.onupdatefound = () => {
+      const installingWorker = reg.installing;
+      installingWorker.onstatechange = () => {
+        if (installingWorker.state === 'installed' &&
+            navigator.serviceWorker.controller) {
+          // Reload page if service worker is replaced
+          location.reload();
+        }
+      }
+    }
+  })
+}
+</script>
+
+<script type="esms-options">{"shimMode": true}</script>
+
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/plotlyplot/plotly-3.1.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/datatabulator/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/datatabulator/luxon/build/global/luxon.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/panel.min.js"></script>
+
+<script type="module" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/@microsoft/fast-components@2.30.6/dist/fast-components.js"></script>
+<script type="module" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/fast/js/fast_design.js"></script>
+<script type="text/javascript">
+  Bokeh.set_log_level("info");
+</script>
+<!-- Template CSS -->
+<link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/loadingspinner.css">
+<link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/loading.css?v=1.8.7">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
+<link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/dark.css?v=1.8.7">
+<link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/fastbasetemplate/fast.css?v=1.8.7">
+<link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/fastgridtemplate/fast_grid_template.css?v=1.8.7">
+<style type="text/css">
+
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 300px));
+  -webkit-mask-size: auto calc(min(50%, 300px));
+}
+</style>
+<link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans" />
+
+<style>
+  :root {
+    --background-color: #181818;
+    --body-font: Open Sans, sans-serif;
+    --corner-radius: 3;
+    --header-background: #BB2649;
+    --header-color: #ffffff;
+    --sidebar-width: 330px;
+  }
+  body {
+    color: #ffffff;
+    background-color: var(--background-color);
+    font-family: var(--body-font);
+  }
+  #header a {
+    color: currentColor;
+  }
+  #header-design-provider {
+    --neutral-fill-hover: var(--header-background);
+    --neutral-fill-rest: var(--header-background);
+    --neutral-foreground-rest: var(--header-color);
+    --design-background-text-color: var(--header-color);
+    --design-background-color: var(--header-background);
+    background: var(--header-background);
+    color: var(--header-color);
+  }
+  #sidebar {
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+  }
+</style>
+
+<!-- Fast Script -->
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', (event) => {
+  const header_design = new window.fastDesignProvider("#header-design-provider");
+  const body_design = new window.fastDesignProvider("#body-design-provider");
+  body_design.setAccentColor("#BB2649")
+  body_design.setLuminance(0.1);
+  body_design.setNeutralColor("#000000");
+  header_design.setLuminance("0.23");
+  header_design.setAccentColor("#ffffff");
+  header_design.setNeutralColor("#0072B5");
+});
+</script>
+  </head>
+  <body class="pn-loading pn-arc">
+<fast-design-system-provider id="body-design-provider" use-defaults>
+  <div id="container">
+    <fast-design-system-provider id="header-design-provider">
+      <nav id="header"  >
+	<div class="app-header">
+	  <a class="title" href="" >Portfolio Analysis</a>
+	</div>
+	<div id="header-items">
+        </div>
+        <fast-button id="layout-reset" appearance="neutral" style="height:24px">
+          <svg style="height: 10px;width: 10px" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M212.333 224.333H12c-6.627 0-12-5.373-12-12V12C0 5.373 5.373 0 12 0h48c6.627 0 12 5.373 12 12v78.112C117.773 39.279 184.26 7.47 258.175 8.007c136.906.994 246.448 111.623 246.157 248.532C504.041 393.258 393.12 504 256.333 504c-64.089 0-122.496-24.313-166.51-64.215-5.099-4.622-5.334-12.554-.467-17.42l33.967-33.967c4.474-4.474 11.662-4.717 16.401-.525C170.76 415.336 211.58 432 256.333 432c97.268 0 176-78.716 176-176 0-97.267-78.716-176-176-176-58.496 0-110.28 28.476-142.274 72.333h98.274c6.627 0 12 5.373 12 12v48c0 6.627-5.373 12-12 12z"/></svg>
+        </fast-button>
+        <fast-tooltip anchor="layout-reset" position="bottom">
+          Reset the layout
+        </fast-tooltip>
+	<div class="pn-busy-container" id="busy-container">
+	  <div id="f2c26a43-691e-44be-ad25-818305067c3f" data-root-id="p1022" style="display: contents;"></div>
+	</div>
+	<fast-tooltip anchor="busy-container" position="left">
+	  Busy Indicator
+	</fast-tooltip>
+      </nav>
+    </fast-design-system-provider>
+
+    <div class="row" id="content">
+      <div class="main" id="main">
+	  <div id="responsive-grid"></div>
+      </div>
+      <fast-dialog id="pn-Modal" hidden>
+        <fast-button class="pn-modalclose" id="pn-closeModal">&times;</fast-button>
+	<div class="pn-modal-content">
+        </div>
+      </fast-dialog>
+    </div>
+  </div>
+</fast-design-system-provider>
+
+<script type="text/javascript">
+  
+</script>
+
+<script type="text/javascript">
+  function openNav() {
+    document.getElementById("sidebar").classList.remove("hidden");
+    document.getElementById("sidebar-button").onclick = closeNav;
+  }
+
+  function closeNav() {
+    document.getElementById("sidebar").classList.add("hidden");
+    document.getElementById("sidebar-button").onclick = openNav;
+  }
+
+  var modal = document.getElementById("pn-Modal");
+  var span = document.getElementById("pn-closeModal");
+
+  span.onclick = function() {
+    modal.style.display = "none";
+  }
+
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+
+<script type="text/babel">
+  const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive);
+  const originalLayout = getFromLS("layouts") || {"lg": [{"x": 0, "y": 0, "w": 8, "h": 3, "i": "1", "minW": 0, "minH": 0}, {"x": 8, "y": 0, "w": 4, "h": 3, "i": "2", "minW": 0, "minH": 0}, {"x": 0, "y": 3, "w": 12, "h": 2, "i": "3", "minW": 0, "minH": 0}], "md": [{"x": 0, "y": 0, "w": 8, "h": 3, "i": "1", "minW": 0, "minH": 0}, {"x": 8, "y": 0, "w": 4, "h": 3, "i": "2", "minW": 0, "minH": 0}, {"x": 0, "y": 3, "w": 12, "h": 2, "i": "3", "minW": 0, "minH": 0}]};
+
+  function resize_layout(obj, old_, new_, p, e, element) {
+    window.dispatchEvent(new Event("resize"))
+  }
+
+  function resize_layout_stop(obj, old_, new_, p, e, element) {
+    setTimeout(function(){
+      window.dispatchEvent(new Event("resize"))
+    }, 50);
+  }
+
+  function getFromLS(key) {
+    let ls = {};
+    if (window.localStorage) {
+      try {
+        ls = JSON.parse(window.localStorage.getItem(window.location.origin + window.location.pathname)) || {};
+      } catch (e) {
+        /*Ignore*/
+      }
+    }
+    return ls[key];
+  }
+
+  function saveToLS(key, value) {
+    if (window.localStorage) {
+      window.localStorage.setItem(
+        window.location.origin + window.location.pathname,
+        JSON.stringify({
+          [key]: value
+        })
+      );
+    }
+  }
+
+  class ResponsiveGrid extends React.PureComponent {
+
+    static defaultProps = {
+      onLayoutChange: function() {}
+    }
+
+    constructor(props) {
+      super(props);
+      this.state = {
+	layouts: JSON.parse(JSON.stringify(originalLayout))
+      };
+      this.resetLayout = this.resetLayout.bind(this)
+      document.getElementById('layout-reset').onclick = this.resetLayout
+      this.mounted = false;
+    }
+
+    resetLayout() {
+      this.setState({
+        layouts: {"lg": [{"x": 0, "y": 0, "w": 8, "h": 3, "i": "1", "minW": 0, "minH": 0}, {"x": 8, "y": 0, "w": 4, "h": 3, "i": "2", "minW": 0, "minH": 0}, {"x": 0, "y": 3, "w": 12, "h": 2, "i": "3", "minW": 0, "minH": 0}], "md": [{"x": 0, "y": 0, "w": 8, "h": 3, "i": "1", "minW": 0, "minH": 0}, {"x": 8, "y": 0, "w": 4, "h": 3, "i": "2", "minW": 0, "minH": 0}, {"x": 0, "y": 3, "w": 12, "h": 2, "i": "3", "minW": 0, "minH": 0}]}
+      });
+    }
+
+    onLayoutChange(layout, layouts) {
+      saveToLS("layouts", layouts);
+      this.setState({ layouts });
+    }
+
+    componentDidMount() {
+    }
+
+    render() {
+      return (
+        <ResponsiveGridLayout
+           className={"layout"}
+           cols={ {'lg': 12, 'md': 10, 'sm': 6, 'xs': 4, 'xxs': 2} }
+           breakpoints={ {'lg': 1200, 'md': 996, 'sm': 768, 'xs': 480, 'xxs': 0} }
+	   onResize={resize_layout}
+           onResizeStop={resize_layout_stop}
+           draggableHandle={".drag-handle"}
+           draggableCancel={".bk-root"}
+           rowHeight={ 160 }
+           layouts={this.state.layouts}
+           verticalCompact={false}
+           preventCollision={ true }
+           onLayoutChange={(layout, layouts) => this.onLayoutChange(layout, layouts)}
+         >
+            <div className="card-margin" key="1" style={{borderRadius: '5px'}}>
+              <fast-card class="pn-wrapper">
+                <span className="drag-handle"></span>
+                <span className="fullscreen-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+                    <path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/>
+                  </svg>
+                </span>
+                <div id="f4ef6ef2-f194-4d54-9b68-e70c38742a3b" data-root-id="p1027" style={{display: "contents"}}></div>
+             </fast-card>
+            </div>
+            <div className="card-margin" key="2" style={{borderRadius: '5px'}}>
+              <fast-card class="pn-wrapper">
+                <span className="drag-handle"></span>
+                <span className="fullscreen-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+                    <path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/>
+                  </svg>
+                </span>
+                <div id="d6207343-6f8a-4b2f-b2f4-ba29de5d26f2" data-root-id="p1032" style={{display: "contents"}}></div>
+             </fast-card>
+            </div>
+            <div className="card-margin" key="3" style={{borderRadius: '5px'}}>
+              <fast-card class="pn-wrapper">
+                <span className="drag-handle"></span>
+                <span className="fullscreen-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+                    <path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/>
+                  </svg>
+                </span>
+                <div id="eee5d48a-0b76-4c64-95da-fbd4721556ef" data-root-id="p1083" style={{display: "contents"}}></div>
+             </fast-card>
+            </div>
+        </ResponsiveGridLayout>
+      );
+    }
+  }
+  ReactDOM.render(<ResponsiveGrid />, document.getElementById('responsive-grid'));
+  addFullScreenToggle()
+</script>
+
+<div id="d859818a-9ab7-42ba-8a45-86de586ca545" data-root-id="p1017" style="display: contents;"></div>
+<div id="f01dddd7-95ef-4554-8a82-dd575e645c14" data-root-id="p1019" style="display: contents;"></div>
+<div id="eac1cb32-16cd-403e-8c39-fce6b16f86e6" data-root-id="p1011" style="display: contents;"></div>
+<div id="e9e11cb4-4513-4b1f-878e-97fadd475ab3" data-root-id="p1020" style="display: contents;"></div>
+
+
+  
+    <script type="text/javascript">
+      const pyodideWorker = new Worker("./portfolio_analyzer.js");
+      pyodideWorker.busy = false
+      pyodideWorker.queue = []
+      
+      let patching = 0
+      
+      function send_change(jsdoc, event) {
+        if ((event.setter_id != null && event.setter_id == 'py') || (patching > 0)) {
+          return
+        } else if (pyodideWorker.busy && event.model && event.attr) {
+          let events = []
+          for (const old_event of pyodideWorker.queue) {
+            if (!(old_event.model === event.model && old_event.attr === event.attr)) {
+              events.push(old_event)
+            }
+          }
+          events.push(event)
+          pyodideWorker.queue = events
+          return
+        }
+        const patch = jsdoc.create_json_patch([event])
+        pyodideWorker.busy = true
+        pyodideWorker.postMessage({type: 'patch', patch: patch})
+      }
+      
+      pyodideWorker.onmessage = async (event) => {
+        const msg = event.data
+      
+        const body = document.getElementsByTagName('body')[0]
+        const loading_msgs = document.getElementsByClassName('pn-loading-msg')
+        if (msg.type === 'idle') {
+          if (pyodideWorker.queue.length) {
+            const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
+            pyodideWorker.busy = true
+            pyodideWorker.queue = []
+            pyodideWorker.postMessage({type: 'patch', patch: patch})
+          } else {
+            pyodideWorker.busy = false
+          }
+        } else if (msg.type === 'status') {
+          let loading_msg
+          if (loading_msgs.length) {
+            loading_msg = loading_msgs[0]
+          } else if (body.classList.contains('pn-loading')) {
+            loading_msg = document.createElement('div')
+            loading_msg.classList.add('pn-loading-msg')
+            body.appendChild(loading_msg)
+          }
+          if (loading_msg != null) {
+            loading_msg.innerHTML = msg.msg
+          }
+        } else if (msg.type === 'render') {
+          const docs_json = JSON.parse(msg.docs_json)
+          const render_items = JSON.parse(msg.render_items)
+          const root_ids = JSON.parse(msg.root_ids)
+      
+          // Remap roots in message to element IDs
+          const root_els = document.querySelectorAll('[data-root-id]')
+          const data_roots = []
+          for (const el of root_els) {
+             el.innerHTML = ''
+             data_roots.push([el.getAttribute('data-root-id'), el.id])
+          }
+          data_roots.sort((a, b) => a[0]<b[0] ? -1: 1)
+          const roots = {}
+          for (let i=0; i<data_roots.length; i++) {
+            roots[root_ids[i]] = data_roots[i][1]
+          }
+          render_items[0]['roots'] = roots
+          render_items[0]['root_ids'] = root_ids
+      
+          // Clear pre-rendered contents
+          Bokeh.index.roots.map((v) => v.remove())
+      
+          // Embed content
+          const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
+      
+          // Remove loading spinner and message
+          body.classList.remove("pn-loading", "arc")
+          for (const loading_msg of loading_msgs) {
+            loading_msg.remove()
+          }
+      
+          // Setup bi-directional syncing
+          pyodideWorker.jsdoc = jsdoc = [...views.roots.values()][0].model.document
+          jsdoc.on_change(send_change.bind(null, jsdoc), false)
+          pyodideWorker.postMessage({'type': 'rendered'})
+          pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
+        } else if (msg.type === 'patch') {
+          try {
+            patching += 1
+            pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers)
+          } finally {
+            patching -= 1
+          }
+        }
+      };
+    </script>
+    <script type="application/json" id="p1093">
+      {"b2d9e1bc-5e27-49f6-a17f-67ee3d848973":{"version":"3.8.2","title":"Portfolio Analysis","config":{"type":"object","name":"DocumentConfig","id":"p1009","attributes":{"reconnect_session":false,"notify_connection_status":false,"notifications":null}},"roots":[{"type":"object","name":"panel.models.location.Location","id":"p1011","attributes":{"name":"location","reload":false}},{"type":"object","name":"panel.models.markup.HTML","id":"p1017","attributes":{"name":"js_area","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"type":"object","name":"ImportedStyleSheet","id":"p1015","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/loading.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1086","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/fast.css"}}],"width":0,"height":0,"margin":0,"sizing_mode":"fixed","align":"start","disable_math":true}},{"type":"object","name":"panel.models.reactive_html.ReactiveHTML","id":"p1019","attributes":{"name":"actions","subscribed_events":{"type":"set","entries":["dom_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"id":"p1086"}],"margin":0,"align":"start","data":{"type":"object","name":"TemplateActions1","id":"p1018","attributes":{"name":"TemplateActions00136","tags":["__ref:p1019"]}},"scripts":{"type":"map","entries":[["open_modal",["document.getElementById(&amp;#x27;pn-Modal&amp;#x27;).style.display = &amp;#x27;block&amp;#x27;\nwindow.dispatchEvent(new Event(&amp;#x27;resize&amp;#x27;));"]],["close_modal",["document.getElementById(&amp;#x27;pn-Modal&amp;#x27;).style.display = &amp;#x27;none&amp;#x27;"]]]}}},{"type":"object","name":"panel.models.browser.BrowserInfo","id":"p1020","attributes":{"name":"browser_info"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1022","attributes":{"name":"busy_indicator","css_classes":["loader","light"],"stylesheets":[":host { --loading-spinner-size: 20px; }","\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"type":"object","name":"ImportedStyleSheet","id":"p1021","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/loadingspinner.css"}},{"id":"p1086"}],"min_width":20,"min_height":20,"margin":[5,10],"align":"start"}},{"type":"object","name":"panel.models.plotly.PlotlyPlot","id":"p1027","attributes":{"name":"main-4811341456","tags":["main"],"subscribed_events":{"type":"set","entries":["plotly_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"type":"object","name":"ImportedStyleSheet","id":"p1087","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/plotlyplot/maplibre-gl@4.4.1/dist/maplibre-gl.css"}},{"id":"p1086"},":host { --plotly-icon-color: gray; --plotly-active-icon-color: #f2f5fa; }"],"min_width":0,"min_height":0,"margin":[5,10],"sizing_mode":"stretch_both","align":"start","data":[{"type":"map","entries":[["type","candlestick"]]}],"layout":{"type":"map","entries":[["template",{"type":"map","entries":[["data",{"type":"map","entries":[["barpolar",[{"type":"map","entries":[["marker",{"type":"map","entries":[["line",{"type":"map","entries":[["color","rgb(17,17,17)"],["width",0.5]]}],["pattern",{"type":"map","entries":[["fillmode","overlay"],["size",10],["solidity",0.2]]}]]}],["type","barpolar"]]}]],["bar",[{"type":"map","entries":[["error_x",{"type":"map","entries":[["color","#f2f5fa"]]}],["error_y",{"type":"map","entries":[["color","#f2f5fa"]]}],["marker",{"type":"map","entries":[["line",{"type":"map","entries":[["color","rgb(17,17,17)"],["width",0.5]]}],["pattern",{"type":"map","entries":[["fillmode","overlay"],["size",10],["solidity",0.2]]}]]}],["type","bar"]]}]],["carpet",[{"type":"map","entries":[["aaxis",{"type":"map","entries":[["endlinecolor","#A2B1C6"],["gridcolor","#506784"],["linecolor","#506784"],["minorgridcolor","#506784"],["startlinecolor","#A2B1C6"]]}],["baxis",{"type":"map","entries":[["endlinecolor","#A2B1C6"],["gridcolor","#506784"],["linecolor","#506784"],["minorgridcolor","#506784"],["startlinecolor","#A2B1C6"]]}],["type","carpet"]]}]],["choropleth",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["type","choropleth"]]}]],["contourcarpet",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["type","contourcarpet"]]}]],["contour",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["colorscale",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["type","contour"]]}]],["heatmap",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["colorscale",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["type","heatmap"]]}]],["histogram2dcontour",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["colorscale",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["type","histogram2dcontour"]]}]],["histogram2d",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["colorscale",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["type","histogram2d"]]}]],["histogram",[{"type":"map","entries":[["marker",{"type":"map","entries":[["pattern",{"type":"map","entries":[["fillmode","overlay"],["size",10],["solidity",0.2]]}]]}],["type","histogram"]]}]],["mesh3d",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["type","mesh3d"]]}]],["parcoords",[{"type":"map","entries":[["line",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","parcoords"]]}]],["pie",[{"type":"map","entries":[["automargin",true],["type","pie"]]}]],["scatter3d",[{"type":"map","entries":[["line",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scatter3d"]]}]],["scattercarpet",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scattercarpet"]]}]],["scattergeo",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scattergeo"]]}]],["scattergl",[{"type":"map","entries":[["marker",{"type":"map","entries":[["line",{"type":"map","entries":[["color","#283442"]]}]]}],["type","scattergl"]]}]],["scattermapbox",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scattermapbox"]]}]],["scattermap",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scattermap"]]}]],["scatterpolargl",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scatterpolargl"]]}]],["scatterpolar",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scatterpolar"]]}]],["scatter",[{"type":"map","entries":[["marker",{"type":"map","entries":[["line",{"type":"map","entries":[["color","#283442"]]}]]}],["type","scatter"]]}]],["scatterternary",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scatterternary"]]}]],["surface",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["colorscale",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["type","surface"]]}]],["table",[{"type":"map","entries":[["cells",{"type":"map","entries":[["fill",{"type":"map","entries":[["color","#506784"]]}],["line",{"type":"map","entries":[["color","rgb(17,17,17)"]]}]]}],["header",{"type":"map","entries":[["fill",{"type":"map","entries":[["color","#2a3f5f"]]}],["line",{"type":"map","entries":[["color","rgb(17,17,17)"]]}]]}],["type","table"]]}]]]}],["layout",{"type":"map","entries":[["annotationdefaults",{"type":"map","entries":[["arrowcolor","#f2f5fa"],["arrowhead",0],["arrowwidth",1]]}],["autotypenumbers","strict"],["coloraxis",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["colorscale",{"type":"map","entries":[["diverging",[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]],["sequential",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["sequentialminus",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]]]}],["colorway",["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"]],["font",{"type":"map","entries":[["color","#f2f5fa"]]}],["geo",{"type":"map","entries":[["bgcolor","rgb(17,17,17)"],["lakecolor","rgb(17,17,17)"],["landcolor","rgb(17,17,17)"],["showlakes",true],["showland",true],["subunitcolor","#506784"]]}],["hoverlabel",{"type":"map","entries":[["align","left"]]}],["hovermode","closest"],["mapbox",{"type":"map","entries":[["style","dark"]]}],["paper_bgcolor","rgb(17,17,17)"],["plot_bgcolor","rgb(17,17,17)"],["polar",{"type":"map","entries":[["angularaxis",{"type":"map","entries":[["gridcolor","#506784"],["linecolor","#506784"],["ticks",""]]}],["bgcolor","rgb(17,17,17)"],["radialaxis",{"type":"map","entries":[["gridcolor","#506784"],["linecolor","#506784"],["ticks",""]]}]]}],["scene",{"type":"map","entries":[["xaxis",{"type":"map","entries":[["backgroundcolor","rgb(17,17,17)"],["gridcolor","#506784"],["gridwidth",2],["linecolor","#506784"],["showbackground",true],["ticks",""],["zerolinecolor","#C8D4E3"]]}],["yaxis",{"type":"map","entries":[["backgroundcolor","rgb(17,17,17)"],["gridcolor","#506784"],["gridwidth",2],["linecolor","#506784"],["showbackground",true],["ticks",""],["zerolinecolor","#C8D4E3"]]}],["zaxis",{"type":"map","entries":[["backgroundcolor","rgb(17,17,17)"],["gridcolor","#506784"],["gridwidth",2],["linecolor","#506784"],["showbackground",true],["ticks",""],["zerolinecolor","#C8D4E3"]]}]]}],["shapedefaults",{"type":"map","entries":[["line",{"type":"map","entries":[["color","#f2f5fa"]]}]]}],["sliderdefaults",{"type":"map","entries":[["bgcolor","#C8D4E3"],["bordercolor","rgb(17,17,17)"],["borderwidth",1],["tickwidth",0]]}],["ternary",{"type":"map","entries":[["aaxis",{"type":"map","entries":[["gridcolor","#506784"],["linecolor","#506784"],["ticks",""]]}],["baxis",{"type":"map","entries":[["gridcolor","#506784"],["linecolor","#506784"],["ticks",""]]}],["bgcolor","rgb(17,17,17)"],["caxis",{"type":"map","entries":[["gridcolor","#506784"],["linecolor","#506784"],["ticks",""]]}]]}],["title",{"type":"map","entries":[["x",0.05]]}],["updatemenudefaults",{"type":"map","entries":[["bgcolor","#506784"],["borderwidth",0]]}],["xaxis",{"type":"map","entries":[["automargin",true],["gridcolor","#283442"],["linecolor","#506784"],["ticks",""],["title",{"type":"map","entries":[["standoff",15]]}],["zerolinecolor","#283442"],["zerolinewidth",2]]}],["yaxis",{"type":"map","entries":[["automargin",true],["gridcolor","#283442"],["linecolor","#506784"],["ticks",""],["title",{"type":"map","entries":[["standoff",15]]}],["zerolinecolor","#283442"],["zerolinewidth",2]]}]]}]]}],["title",{"type":"map","entries":[["text","AAPL Apple Daily Price"]]}],["autosize",true]]},"data_sources":[{"type":"object","name":"ColumnDataSource","id":"p1023","attributes":{"selected":{"type":"object","name":"Selection","id":"p1024","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1025"},"data":{"type":"map","entries":[["close",[{"type":"ndarray","array":{"type":"bytes","data":"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"},"shape":[504],"dtype":"float64","order":"little"}]],["high",[{"type":"ndarray","array":{"type":"bytes","data":"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"},"shape":[504],"dtype":"float64","order":"little"}]],["low",[{"type":"ndarray","array":{"type":"bytes","data":"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"},"shape":[504],"dtype":"float64","order":"little"}]],["open",[{"type":"ndarray","array":{"type":"bytes","data":"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"},"shape":[504],"dtype":"float64","order":"little"}]],["x",[{"type":"ndarray","array":["2021-01-28T05:00:00.000000","2021-01-29T05:00:00.000000","2021-02-01T05:00:00.000000","2021-02-02T05:00:00.000000","2021-02-03T05:00:00.000000","2021-02-04T05:00:00.000000","2021-02-05T05:00:00.000000","2021-02-08T05:00:00.000000","2021-02-09T05:00:00.000000","2021-02-10T05:00:00.000000","2021-02-11T05:00:00.000000","2021-02-12T05:00:00.000000","2021-02-16T05:00:00.000000","2021-02-17T05:00:00.000000","2021-02-18T05:00:00.000000","2021-02-19T05:00:00.000000","2021-02-22T05:00:00.000000","2021-02-23T05:00:00.000000","2021-02-24T05:00:00.000000","2021-02-25T05:00:00.000000","2021-02-26T05:00:00.000000","2021-03-01T05:00:00.000000","2021-03-02T05:00:00.000000","2021-03-03T05:00:00.000000","2021-03-04T05:00:00.000000","2021-03-05T05:00:00.000000","2021-03-08T05:00:00.000000","2021-03-09T05:00:00.000000","2021-03-10T05:00:00.000000","2021-03-11T05:00:00.000000","2021-03-12T05:00:00.000000","2021-03-15T04:00:00.000000","2021-03-16T04:00:00.000000","2021-03-17T04:00:00.000000","2021-03-18T04:00:00.000000","2021-03-19T04:00:00.000000","2021-03-22T04:00:00.000000","2021-03-23T04:00:00.000000","2021-03-24T04:00:00.000000","2021-03-25T04:00:00.000000","2021-03-26T04:00:00.000000","2021-03-29T04:00:00.000000","2021-03-30T04:00:00.000000","2021-03-31T04:00:00.000000","2021-04-01T04:00:00.000000","2021-04-05T04:00:00.000000","2021-04-06T04:00:00.000000","2021-04-07T04:00:00.000000","2021-04-08T04:00:00.000000","2021-04-09T04:00:00.000000","2021-04-12T04:00:00.000000","2021-04-13T04:00:00.000000","2021-04-14T04:00:00.000000","2021-04-15T04:00:00.000000","2021-04-16T04:00:00.000000","2021-04-19T04:00:00.000000","2021-04-20T04:00:00.000000","2021-04-21T04:00:00.000000","2021-04-22T04:00:00.000000","2021-04-23T04:00:00.000000","2021-04-26T04:00:00.000000","2021-04-27T04:00:00.000000","2021-04-28T04:00:00.000000","2021-04-29T04:00:00.000000","2021-04-30T04:00:00.000000","2021-05-03T04:00:00.000000","2021-05-04T04:00:00.000000","2021-05-05T04:00:00.000000","2021-05-06T04:00:00.000000","2021-05-07T04:00:00.000000","2021-05-10T04:00:00.000000","2021-05-11T04:00:00.000000","2021-05-12T04:00:00.000000","2021-05-13T04:00:00.000000","2021-05-14T04:00:00.000000","2021-05-17T04:00:00.000000","2021-05-18T04:00:00.000000","2021-05-19T04:00:00.000000","2021-05-20T04:00:00.000000","2021-05-21T04:00:00.000000","2021-05-24T04:00:00.000000","2021-05-25T04:00:00.000000","2021-05-26T04:00:00.000000","2021-05-27T04:00:00.000000","2021-05-28T04:00:00.000000","2021-06-01T04:00:00.000000","2021-06-02T04:00:00.000000","2021-06-03T04:00:00.000000","2021-06-04T04:00:00.000000","2021-06-07T04:00:00.000000","2021-06-08T04:00:00.000000","2021-06-09T04:00:00.000000","2021-06-10T04:00:00.000000","2021-06-11T04:00:00.000000","2021-06-14T04:00:00.000000","2021-06-15T04:00:00.000000","2021-06-16T04:00:00.000000","2021-06-17T04:00:00.000000","2021-06-18T04:00:00.000000","2021-06-21T04:00:00.000000","2021-06-22T04:00:00.000000","2021-06-23T04:00:00.000000","2021-06-24T04:00:00.000000","2021-06-25T04:00:00.000000","2021-06-28T04:00:00.000000","2021-06-29T04:00:00.000000","2021-06-30T04:00:00.000000","2021-07-01T04:00:00.000000","2021-07-02T04:00:00.000000","2021-07-06T04:00:00.000000","2021-07-07T04:00:00.000000","2021-07-08T04:00:00.000000","2021-07-09T04:00:00.000000","2021-07-12T04:00:00.000000","2021-07-13T04:00:00.000000","2021-07-14T04:00:00.000000","2021-07-15T04:00:00.000000","2021-07-16T04:00:00.000000","2021-07-19T04:00:00.000000","2021-07-20T04:00:00.000000","2021-07-21T04:00:00.000000","2021-07-22T04:00:00.000000","2021-07-23T04:00:00.000000","2021-07-26T04:00:00.000000","2021-07-27T04:00:00.000000","2021-07-28T04:00:00.000000","2021-07-29T04:00:00.000000","2021-07-30T04:00:00.000000","2021-08-02T04:00:00.000000","2021-08-03T04:00:00.000000","2021-08-04T04:00:00.000000","2021-08-05T04:00:00.000000","2021-08-06T04:00:00.000000","2021-08-09T04:00:00.000000","2021-08-10T04:00:00.000000","2021-08-11T04:00:00.000000","2021-08-12T04:00:00.000000","2021-08-13T04:00:00.000000","2021-08-16T04:00:00.000000","2021-08-17T04:00:00.000000","2021-08-18T04:00:00.000000","2021-08-19T04:00:00.000000","2021-08-20T04:00:00.000000","2021-08-23T04:00:00.000000","2021-08-24T04:00:00.000000","2021-08-25T04:00:00.000000","2021-08-26T04:00:00.000000","2021-08-27T04:00:00.000000","2021-08-30T04:00:00.000000","2021-08-31T04:00:00.000000","2021-09-01T04:00:00.000000","2021-09-02T04:00:00.000000","2021-09-03T04:00:00.000000","2021-09-07T04:00:00.000000","2021-09-08T04:00:00.000000","2021-09-09T04:00:00.000000","2021-09-10T04:00:00.000000","2021-09-13T04:00:00.000000","2021-09-14T04:00:00.000000","2021-09-15T04:00:00.000000","2021-09-16T04:00:00.000000","2021-09-17T04:00:00.000000","2021-09-20T04:00:00.000000","2021-09-21T04:00:00.000000","2021-09-22T04:00:00.000000","2021-09-23T04:00:00.000000","2021-09-24T04:00:00.000000","2021-09-27T04:00:00.000000","2021-09-28T04:00:00.000000","2021-09-29T04:00:00.000000","2021-09-30T04:00:00.000000","2021-10-01T04:00:00.000000","2021-10-04T04:00:00.000000","2021-10-05T04:00:00.000000","2021-10-06T04:00:00.000000","2021-10-07T04:00:00.000000","2021-10-08T04:00:00.000000","2021-10-11T04:00:00.000000","2021-10-12T04:00:00.000000","2021-10-13T04:00:00.000000","2021-10-14T04:00:00.000000","2021-10-15T04:00:00.000000","2021-10-18T04:00:00.000000","2021-10-19T04:00:00.000000","2021-10-20T04:00:00.000000","2021-10-21T04:00:00.000000","2021-10-22T04:00:00.000000","2021-10-25T04:00:00.000000","2021-10-26T04:00:00.000000","2021-10-27T04:00:00.000000","2021-10-28T04:00:00.000000","2021-10-29T04:00:00.000000","2021-11-01T04:00:00.000000","2021-11-02T04:00:00.000000","2021-11-03T04:00:00.000000","2021-11-04T04:00:00.000000","2021-11-05T04:00:00.000000","2021-11-08T05:00:00.000000","2021-11-09T05:00:00.000000","2021-11-10T05:00:00.000000","2021-11-11T05:00:00.000000","2021-11-12T05:00:00.000000","2021-11-15T05:00:00.000000","2021-11-16T05:00:00.000000","2021-11-17T05:00:00.000000","2021-11-18T05:00:00.000000","2021-11-19T05:00:00.000000","2021-11-22T05:00:00.000000","2021-11-23T05:00:00.000000","2021-11-24T05:00:00.000000","2021-11-26T05:00:00.000000","2021-11-29T05:00:00.000000","2021-11-30T05:00:00.000000","2021-12-01T05:00:00.000000","2021-12-02T05:00:00.000000","2021-12-03T05:00:00.000000","2021-12-06T05:00:00.000000","2021-12-07T05:00:00.000000","2021-12-08T05:00:00.000000","2021-12-09T05:00:00.000000","2021-12-10T05:00:00.000000","2021-12-13T05:00:00.000000","2021-12-14T05:00:00.000000","2021-12-15T05:00:00.000000","2021-12-16T05:00:00.000000","2021-12-17T05:00:00.000000","2021-12-20T05:00:00.000000","2021-12-21T05:00:00.000000","2021-12-22T05:00:00.000000","2021-12-23T05:00:00.000000","2021-12-27T05:00:00.000000","2021-12-28T05:00:00.000000","2021-12-29T05:00:00.000000","2021-12-30T05:00:00.000000","2021-12-31T05:00:00.000000","2022-01-03T05:00:00.000000","2022-01-04T05:00:00.000000","2022-01-05T05:00:00.000000","2022-01-06T05:00:00.000000","2022-01-07T05:00:00.000000","2022-01-10T05:00:00.000000","2022-01-11T05:00:00.000000","2022-01-12T05:00:00.000000","2022-01-13T05:00:00.000000","2022-01-14T05:00:00.000000","2022-01-18T05:00:00.000000","2022-01-19T05:00:00.000000","2022-01-20T05:00:00.000000","2022-01-21T05:00:00.000000","2022-01-24T05:00:00.000000","2022-01-25T05:00:00.000000","2022-01-26T05:00:00.000000","2022-01-27T05:00:00.000000","2022-01-28T05:00:00.000000","2022-01-31T05:00:00.000000","2022-02-01T05:00:00.000000","2022-02-02T05:00:00.000000","2022-02-03T05:00:00.000000","2022-02-04T05:00:00.000000","2022-02-07T05:00:00.000000","2022-02-08T05:00:00.000000","2022-02-09T05:00:00.000000","2022-02-10T05:00:00.000000","2022-02-11T05:00:00.000000","2022-02-14T05:00:00.000000","2022-02-15T05:00:00.000000","2022-02-16T05:00:00.000000","2022-02-17T05:00:00.000000","2022-02-18T05:00:00.000000","2022-02-22T05:00:00.000000","2022-02-23T05:00:00.000000","2022-02-24T05:00:00.000000","2022-02-25T05:00:00.000000","2022-02-28T05:00:00.000000","2022-03-01T05:00:00.000000","2022-03-02T05:00:00.000000","2022-03-03T05:00:00.000000","2022-03-04T05:00:00.000000","2022-03-07T05:00:00.000000","2022-03-08T05:00:00.000000","2022-03-09T05:00:00.000000","2022-03-10T05:00:00.000000","2022-03-11T05:00:00.000000","2022-03-14T04:00:00.000000","2022-03-15T04:00:00.000000","2022-03-16T04:00:00.000000","2022-03-17T04:00:00.000000","2022-03-18T04:00:00.000000","2022-03-21T04:00:00.000000","2022-03-22T04:00:00.000000","2022-03-23T04:00:00.000000","2022-03-24T04:00:00.000000","2022-03-25T04:00:00.000000","2022-03-28T04:00:00.000000","2022-03-29T04:00:00.000000","2022-03-30T04:00:00.000000","2022-03-31T04:00:00.000000","2022-04-01T04:00:00.000000","2022-04-04T04:00:00.000000","2022-04-05T04:00:00.000000","2022-04-06T04:00:00.000000","2022-04-07T04:00:00.000000","2022-04-08T04:00:00.000000","2022-04-11T04:00:00.000000","2022-04-12T04:00:00.000000","2022-04-13T04:00:00.000000","2022-04-14T04:00:00.000000","2022-04-18T04:00:00.000000","2022-04-19T04:00:00.000000","2022-04-20T04:00:00.000000","2022-04-21T04:00:00.000000","2022-04-22T04:00:00.000000","2022-04-25T04:00:00.000000","2022-04-26T04:00:00.000000","2022-04-27T04:00:00.000000","2022-04-28T04:00:00.000000","2022-04-29T04:00:00.000000","2022-05-02T04:00:00.000000","2022-05-03T04:00:00.000000","2022-05-04T04:00:00.000000","2022-05-05T04:00:00.000000","2022-05-06T04:00:00.000000","2022-05-09T04:00:00.000000","2022-05-10T04:00:00.000000","2022-05-11T04:00:00.000000","2022-05-12T04:00:00.000000","2022-05-13T04:00:00.000000","2022-05-16T04:00:00.000000","2022-05-17T04:00:00.000000","2022-05-18T04:00:00.000000","2022-05-19T04:00:00.000000","2022-05-20T04:00:00.000000","2022-05-23T04:00:00.000000","2022-05-24T04:00:00.000000","2022-05-25T04:00:00.000000","2022-05-26T04:00:00.000000","2022-05-27T04:00:00.000000","2022-05-31T04:00:00.000000","2022-06-01T04:00:00.000000","2022-06-02T04:00:00.000000","2022-06-03T04:00:00.000000","2022-06-06T04:00:00.000000","2022-06-07T04:00:00.000000","2022-06-08T04:00:00.000000","2022-06-09T04:00:00.000000","2022-06-10T04:00:00.000000","2022-06-13T04:00:00.000000","2022-06-14T04:00:00.000000","2022-06-15T04:00:00.000000","2022-06-16T04:00:00.000000","2022-06-17T04:00:00.000000","2022-06-21T04:00:00.000000","2022-06-22T04:00:00.000000","2022-06-23T04:00:00.000000","2022-06-24T04:00:00.000000","2022-06-27T04:00:00.000000","2022-06-28T04:00:00.000000","2022-06-29T04:00:00.000000","2022-06-30T04:00:00.000000","2022-07-01T04:00:00.000000","2022-07-05T04:00:00.000000","2022-07-06T04:00:00.000000","2022-07-07T04:00:00.000000","2022-07-08T04:00:00.000000","2022-07-11T04:00:00.000000","2022-07-12T04:00:00.000000","2022-07-13T04:00:00.000000","2022-07-14T04:00:00.000000","2022-07-15T04:00:00.000000","2022-07-18T04:00:00.000000","2022-07-19T04:00:00.000000","2022-07-20T04:00:00.000000","2022-07-21T04:00:00.000000","2022-07-22T04:00:00.000000","2022-07-25T04:00:00.000000","2022-07-26T04:00:00.000000","2022-07-27T04:00:00.000000","2022-07-28T04:00:00.000000","2022-07-29T04:00:00.000000","2022-08-01T04:00:00.000000","2022-08-02T04:00:00.000000","2022-08-03T04:00:00.000000","2022-08-04T04:00:00.000000","2022-08-05T04:00:00.000000","2022-08-08T04:00:00.000000","2022-08-09T04:00:00.000000","2022-08-10T04:00:00.000000","2022-08-11T04:00:00.000000","2022-08-12T04:00:00.000000","2022-08-15T04:00:00.000000","2022-08-16T04:00:00.000000","2022-08-17T04:00:00.000000","2022-08-18T04:00:00.000000","2022-08-19T04:00:00.000000","2022-08-22T04:00:00.000000","2022-08-23T04:00:00.000000","2022-08-24T04:00:00.000000","2022-08-25T04:00:00.000000","2022-08-26T04:00:00.000000","2022-08-29T04:00:00.000000","2022-08-30T04:00:00.000000","2022-08-31T04:00:00.000000","2022-09-01T04:00:00.000000","2022-09-02T04:00:00.000000","2022-09-06T04:00:00.000000","2022-09-07T04:00:00.000000","2022-09-08T04:00:00.000000","2022-09-09T04:00:00.000000","2022-09-12T04:00:00.000000","2022-09-13T04:00:00.000000","2022-09-14T04:00:00.000000","2022-09-15T04:00:00.000000","2022-09-16T04:00:00.000000","2022-09-19T04:00:00.000000","2022-09-20T04:00:00.000000","2022-09-21T04:00:00.000000","2022-09-22T04:00:00.000000","2022-09-23T04:00:00.000000","2022-09-26T04:00:00.000000","2022-09-27T04:00:00.000000","2022-09-28T04:00:00.000000","2022-09-29T04:00:00.000000","2022-09-30T04:00:00.000000","2022-10-03T04:00:00.000000","2022-10-04T04:00:00.000000","2022-10-05T04:00:00.000000","2022-10-06T04:00:00.000000","2022-10-07T04:00:00.000000","2022-10-10T04:00:00.000000","2022-10-11T04:00:00.000000","2022-10-12T04:00:00.000000","2022-10-13T04:00:00.000000","2022-10-14T04:00:00.000000","2022-10-17T04:00:00.000000","2022-10-18T04:00:00.000000","2022-10-19T04:00:00.000000","2022-10-20T04:00:00.000000","2022-10-21T04:00:00.000000","2022-10-24T04:00:00.000000","2022-10-25T04:00:00.000000","2022-10-26T04:00:00.000000","2022-10-27T04:00:00.000000","2022-10-28T04:00:00.000000","2022-10-31T04:00:00.000000","2022-11-01T04:00:00.000000","2022-11-02T04:00:00.000000","2022-11-03T04:00:00.000000","2022-11-04T04:00:00.000000","2022-11-07T05:00:00.000000","2022-11-08T05:00:00.000000","2022-11-09T05:00:00.000000","2022-11-10T05:00:00.000000","2022-11-11T05:00:00.000000","2022-11-14T05:00:00.000000","2022-11-15T05:00:00.000000","2022-11-16T05:00:00.000000","2022-11-17T05:00:00.000000","2022-11-18T05:00:00.000000","2022-11-21T05:00:00.000000","2022-11-22T05:00:00.000000","2022-11-23T05:00:00.000000","2022-11-25T05:00:00.000000","2022-11-28T05:00:00.000000","2022-11-29T05:00:00.000000","2022-11-30T05:00:00.000000","2022-12-01T05:00:00.000000","2022-12-02T05:00:00.000000","2022-12-05T05:00:00.000000","2022-12-06T05:00:00.000000","2022-12-07T05:00:00.000000","2022-12-08T05:00:00.000000","2022-12-09T05:00:00.000000","2022-12-12T05:00:00.000000","2022-12-13T05:00:00.000000","2022-12-14T05:00:00.000000","2022-12-15T05:00:00.000000","2022-12-16T05:00:00.000000","2022-12-19T05:00:00.000000","2022-12-20T05:00:00.000000","2022-12-21T05:00:00.000000","2022-12-22T05:00:00.000000","2022-12-23T05:00:00.000000","2022-12-27T05:00:00.000000","2022-12-28T05:00:00.000000","2022-12-29T05:00:00.000000","2022-12-30T05:00:00.000000","2023-01-03T05:00:00.000000","2023-01-04T05:00:00.000000","2023-01-05T05:00:00.000000","2023-01-06T05:00:00.000000","2023-01-09T05:00:00.000000","2023-01-10T05:00:00.000000","2023-01-11T05:00:00.000000","2023-01-12T05:00:00.000000","2023-01-13T05:00:00.000000","2023-01-17T05:00:00.000000","2023-01-18T05:00:00.000000","2023-01-19T05:00:00.000000","2023-01-20T05:00:00.000000","2023-01-23T05:00:00.000000","2023-01-24T05:00:00.000000","2023-01-25T05:00:00.000000","2023-01-26T05:00:00.000000","2023-01-27T05:00:00.000000"],"shape":[504],"dtype":"object","order":"little"}]]]}}}],"relayout":null,"restyle":null,"viewport_update_throttle":200}},{"type":"object","name":"panel.models.plotly.PlotlyPlot","id":"p1032","attributes":{"name":"main-4810942416","tags":["main"],"subscribed_events":{"type":"set","entries":["plotly_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"type":"object","name":"ImportedStyleSheet","id":"p1088","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/plotlyplot/maplibre-gl@4.4.1/dist/maplibre-gl.css"}},{"id":"p1086"},":host { --plotly-icon-color: gray; --plotly-active-icon-color: #f2f5fa; }"],"min_width":0,"min_height":0,"margin":[5,10],"sizing_mode":"stretch_both","align":"start","data":[{"type":"map","entries":[["domain",{"type":"map","entries":[["x",[0.0,1.0]],["y",[0.0,1.0]]]}],["hole",0.3],["hovertemplate","ticker=%{label}&lt;br&gt;value=%{value}&lt;extra&gt;&lt;/extra&gt;"],["legendgroup",""],["name",""],["showlegend",true],["type","pie"]]}],"layout":{"type":"map","entries":[["template",{"type":"map","entries":[["data",{"type":"map","entries":[["barpolar",[{"type":"map","entries":[["marker",{"type":"map","entries":[["line",{"type":"map","entries":[["color","rgb(17,17,17)"],["width",0.5]]}],["pattern",{"type":"map","entries":[["fillmode","overlay"],["size",10],["solidity",0.2]]}]]}],["type","barpolar"]]}]],["bar",[{"type":"map","entries":[["error_x",{"type":"map","entries":[["color","#f2f5fa"]]}],["error_y",{"type":"map","entries":[["color","#f2f5fa"]]}],["marker",{"type":"map","entries":[["line",{"type":"map","entries":[["color","rgb(17,17,17)"],["width",0.5]]}],["pattern",{"type":"map","entries":[["fillmode","overlay"],["size",10],["solidity",0.2]]}]]}],["type","bar"]]}]],["carpet",[{"type":"map","entries":[["aaxis",{"type":"map","entries":[["endlinecolor","#A2B1C6"],["gridcolor","#506784"],["linecolor","#506784"],["minorgridcolor","#506784"],["startlinecolor","#A2B1C6"]]}],["baxis",{"type":"map","entries":[["endlinecolor","#A2B1C6"],["gridcolor","#506784"],["linecolor","#506784"],["minorgridcolor","#506784"],["startlinecolor","#A2B1C6"]]}],["type","carpet"]]}]],["choropleth",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["type","choropleth"]]}]],["contourcarpet",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["type","contourcarpet"]]}]],["contour",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["colorscale",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["type","contour"]]}]],["heatmap",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["colorscale",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["type","heatmap"]]}]],["histogram2dcontour",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["colorscale",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["type","histogram2dcontour"]]}]],["histogram2d",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["colorscale",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["type","histogram2d"]]}]],["histogram",[{"type":"map","entries":[["marker",{"type":"map","entries":[["pattern",{"type":"map","entries":[["fillmode","overlay"],["size",10],["solidity",0.2]]}]]}],["type","histogram"]]}]],["mesh3d",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["type","mesh3d"]]}]],["parcoords",[{"type":"map","entries":[["line",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","parcoords"]]}]],["pie",[{"type":"map","entries":[["automargin",true],["type","pie"]]}]],["scatter3d",[{"type":"map","entries":[["line",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scatter3d"]]}]],["scattercarpet",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scattercarpet"]]}]],["scattergeo",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scattergeo"]]}]],["scattergl",[{"type":"map","entries":[["marker",{"type":"map","entries":[["line",{"type":"map","entries":[["color","#283442"]]}]]}],["type","scattergl"]]}]],["scattermapbox",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scattermapbox"]]}]],["scattermap",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scattermap"]]}]],["scatterpolargl",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scatterpolargl"]]}]],["scatterpolar",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scatterpolar"]]}]],["scatter",[{"type":"map","entries":[["marker",{"type":"map","entries":[["line",{"type":"map","entries":[["color","#283442"]]}]]}],["type","scatter"]]}]],["scatterternary",[{"type":"map","entries":[["marker",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["type","scatterternary"]]}]],["surface",[{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}],["colorscale",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["type","surface"]]}]],["table",[{"type":"map","entries":[["cells",{"type":"map","entries":[["fill",{"type":"map","entries":[["color","#506784"]]}],["line",{"type":"map","entries":[["color","rgb(17,17,17)"]]}]]}],["header",{"type":"map","entries":[["fill",{"type":"map","entries":[["color","#2a3f5f"]]}],["line",{"type":"map","entries":[["color","rgb(17,17,17)"]]}]]}],["type","table"]]}]]]}],["layout",{"type":"map","entries":[["annotationdefaults",{"type":"map","entries":[["arrowcolor","#f2f5fa"],["arrowhead",0],["arrowwidth",1]]}],["autotypenumbers","strict"],["coloraxis",{"type":"map","entries":[["colorbar",{"type":"map","entries":[["outlinewidth",0],["ticks",""]]}]]}],["colorscale",{"type":"map","entries":[["diverging",[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]],["sequential",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]],["sequentialminus",[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]]]}],["colorway",["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"]],["font",{"type":"map","entries":[["color","#f2f5fa"]]}],["geo",{"type":"map","entries":[["bgcolor","rgb(17,17,17)"],["lakecolor","rgb(17,17,17)"],["landcolor","rgb(17,17,17)"],["showlakes",true],["showland",true],["subunitcolor","#506784"]]}],["hoverlabel",{"type":"map","entries":[["align","left"]]}],["hovermode","closest"],["mapbox",{"type":"map","entries":[["style","dark"]]}],["paper_bgcolor","rgb(17,17,17)"],["plot_bgcolor","rgb(17,17,17)"],["polar",{"type":"map","entries":[["angularaxis",{"type":"map","entries":[["gridcolor","#506784"],["linecolor","#506784"],["ticks",""]]}],["bgcolor","rgb(17,17,17)"],["radialaxis",{"type":"map","entries":[["gridcolor","#506784"],["linecolor","#506784"],["ticks",""]]}]]}],["scene",{"type":"map","entries":[["xaxis",{"type":"map","entries":[["backgroundcolor","rgb(17,17,17)"],["gridcolor","#506784"],["gridwidth",2],["linecolor","#506784"],["showbackground",true],["ticks",""],["zerolinecolor","#C8D4E3"]]}],["yaxis",{"type":"map","entries":[["backgroundcolor","rgb(17,17,17)"],["gridcolor","#506784"],["gridwidth",2],["linecolor","#506784"],["showbackground",true],["ticks",""],["zerolinecolor","#C8D4E3"]]}],["zaxis",{"type":"map","entries":[["backgroundcolor","rgb(17,17,17)"],["gridcolor","#506784"],["gridwidth",2],["linecolor","#506784"],["showbackground",true],["ticks",""],["zerolinecolor","#C8D4E3"]]}]]}],["shapedefaults",{"type":"map","entries":[["line",{"type":"map","entries":[["color","#f2f5fa"]]}]]}],["sliderdefaults",{"type":"map","entries":[["bgcolor","#C8D4E3"],["bordercolor","rgb(17,17,17)"],["borderwidth",1],["tickwidth",0]]}],["ternary",{"type":"map","entries":[["aaxis",{"type":"map","entries":[["gridcolor","#506784"],["linecolor","#506784"],["ticks",""]]}],["baxis",{"type":"map","entries":[["gridcolor","#506784"],["linecolor","#506784"],["ticks",""]]}],["bgcolor","rgb(17,17,17)"],["caxis",{"type":"map","entries":[["gridcolor","#506784"],["linecolor","#506784"],["ticks",""]]}]]}],["title",{"type":"map","entries":[["x",0.05]]}],["updatemenudefaults",{"type":"map","entries":[["bgcolor","#506784"],["borderwidth",0]]}],["xaxis",{"type":"map","entries":[["automargin",true],["gridcolor","#283442"],["linecolor","#506784"],["ticks",""],["title",{"type":"map","entries":[["standoff",15]]}],["zerolinecolor","#283442"],["zerolinewidth",2]]}],["yaxis",{"type":"map","entries":[["automargin",true],["gridcolor","#283442"],["linecolor","#506784"],["ticks",""],["title",{"type":"map","entries":[["standoff",15]]}],["zerolinecolor","#283442"],["zerolinewidth",2]]}]]}]]}],["legend",{"type":"map","entries":[["tracegroupgap",0]]}],["title",{"type":"map","entries":[["text","Portfolio Total $ 78,180"]]}],["autosize",true]]},"data_sources":[{"type":"object","name":"ColumnDataSource","id":"p1028","attributes":{"selected":{"type":"object","name":"Selection","id":"p1029","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1030"},"data":{"type":"map","entries":[["labels",[{"type":"ndarray","array":["AAPL","MSFT","AMZN","GOOGL","TSLA","BRK-B","UNH","JNJ"],"shape":[8],"dtype":"object","order":"little"}]],["values",[{"type":"ndarray","array":{"type":"bytes","data":"H4sIAAEAAAAC/2NgYHgXn3DU4f///+bGyYdB9I//3w87MDIwcDZkbHZgYGD48P/0bhB9q0f2Ekj+e/2fQyC+hrHnLgcAEgL+9EAAAAA="},"shape":[8],"dtype":"float64","order":"little"}]]]}}}],"relayout":null,"restyle":null,"viewport_update_throttle":200}},{"type":"object","name":"panel.models.tabulator.DataTabulator","id":"p1083","attributes":{"name":"main-4789700624","tags":["main"],"subscribed_events":{"type":"set","entries":["cell-click","table-edit","selection-change"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"type":"object","name":"ImportedStyleSheet","id":"p1034","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/font-awesome/css/all.min.css"}},{"id":"p1086"},{"type":"object","name":"ImportedStyleSheet","id":"p1089","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/datatabulator/tabulator-tables@6.3.1/dist/css/tabulator_fast.min.css"}}],"margin":[5,10],"align":"start","configuration":{"type":"map","entries":[["clipboard","copy"],["selectable",1],["columns",[{"type":"map","entries":[["field","ticker"],["editable",false],["frozen",true]]},{"type":"map","entries":[["field","company"],["editable",false],["frozen",true]]},{"type":"map","entries":[["field","info"],["hozAlign","center"],["formatter","html"],["formatterParams",{"type":"map","entries":[["field","html"]]}],["editable",false]]},{"type":"map","entries":[["field","quantity"],["sorter","number"],["editor","number"],["editorParams",{"type":"map","entries":[["min",0],["step",1]]}]]},{"type":"map","entries":[["field","price"],["hozAlign","right"],["formatter","money"],["formatterParams",{"type":"map","entries":[["decimal","."],["thousand",","],["precision",2]]}],["sorter","number"],["editable",false]]},{"type":"map","entries":[["field","value"],["hozAlign","right"],["formatter","money"],["formatterParams",{"type":"map","entries":[["decimal","."],["thousand",","],["precision",0]]}],["sorter","number"],["editable",false]]},{"type":"map","entries":[["field","action"],["hozAlign","center"],["editor","list"],["editorParams",{"type":"map","entries":[["values",{"type":"map","entries":[["buy","buy"],["sell","sell"],["hold","hold"]]}]]}]]},{"type":"map","entries":[["field","notes"],["editor","textarea"],["editorParams",{"type":"map","entries":[["elementAttributes",{"type":"map","entries":[["maxlength","100"]]}],["selectContents",true],["verticalNavigation","editor"],["shiftEnterSubmit",true]]}]]}]],["dataTree",false]]},"columns":[{"type":"object","name":"TableColumn","id":"p1038","attributes":{"field":"ticker","title":"Stock Ticker","width":0,"formatter":{"type":"object","name":"StringFormatter","id":"p1037","attributes":{"null_format":""}},"editor":{"type":"object","name":"CellEditor","id":"p1036"}}},{"type":"object","name":"TableColumn","id":"p1044","attributes":{"field":"company","title":"Company","width":0,"formatter":{"type":"object","name":"StringFormatter","id":"p1043","attributes":{"null_format":""}},"editor":{"type":"object","name":"CellEditor","id":"p1042"}}},{"type":"object","name":"TableColumn","id":"p1050","attributes":{"field":"info","title":"Info","width":0,"formatter":{"type":"object","name":"StringFormatter","id":"p1049","attributes":{"text_align":{"type":"value","value":"center"},"null_format":""}},"editor":{"type":"object","name":"CellEditor","id":"p1048"}}},{"type":"object","name":"TableColumn","id":"p1055","attributes":{"field":"quantity","title":"Shares","width":0,"formatter":{"type":"object","name":"NumberFormatter","id":"p1054","attributes":{"text_align":{"type":"value","value":"right"}}},"editor":{"type":"object","name":"IntEditor","id":"p1053"}}},{"type":"object","name":"TableColumn","id":"p1061","attributes":{"field":"price","title":"Last Close Price","width":0,"formatter":{"type":"object","name":"NumberFormatter","id":"p1060","attributes":{"text_align":{"type":"value","value":"right"},"format":"0,0.0[00000]"}},"editor":{"type":"object","name":"CellEditor","id":"p1059"}}},{"type":"object","name":"TableColumn","id":"p1067","attributes":{"field":"value","title":"Market Value","width":0,"formatter":{"type":"object","name":"NumberFormatter","id":"p1066","attributes":{"text_align":{"type":"value","value":"right"},"format":"0,0.0[00000]"}},"editor":{"type":"object","name":"CellEditor","id":"p1065"}}},{"type":"object","name":"TableColumn","id":"p1072","attributes":{"field":"action","title":"Action","width":0,"formatter":{"type":"object","name":"StringFormatter","id":"p1071","attributes":{"text_align":{"type":"value","value":"center"},"null_format":""}},"editor":{"type":"object","name":"StringEditor","id":"p1070"}}},{"type":"object","name":"TableColumn","id":"p1077","attributes":{"field":"notes","title":"Notes","width":400,"formatter":{"type":"object","name":"StringFormatter","id":"p1076","attributes":{"null_format":""}},"editor":{"type":"object","name":"StringEditor","id":"p1075"}}}],"hidden_columns":["index"],"layout":"fit_data_table","source":{"type":"object","name":"ColumnDataSource","id":"p1080","attributes":{"selected":{"type":"object","name":"Selection","id":"p1081","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1082"},"data":{"type":"map","entries":[["index",{"type":"ndarray","array":{"type":"bytes","data":"H4sIAAEAAAAC/2NgYGBgBGImIGYGYhYgZgViNiBmB2IA3CMHeSAAAAA="},"shape":[8],"dtype":"int32","order":"little"}],["ticker",{"type":"ndarray","array":["AAPL","MSFT","AMZN","GOOGL","TSLA","BRK-B","UNH","JNJ"],"shape":[8],"dtype":"object","order":"little"}],["company",{"type":"ndarray","array":["Apple","Microsoft","Amazon","Alphabet","Tesla","Berkshire Hathaway","United Health Group","Johnson &amp; Johnson"],"shape":[8],"dtype":"object","order":"little"}],["info",{"type":"ndarray","array":["&lt;a href='https://finance.yahoo.com/quote/AAPL' target='_blank'&gt;\n        &lt;div title='Open in Yahoo'&gt;\n&lt;svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" class=\"bi bi-arrow-up-right-square\" viewBox=\"0 0 16 16\"&gt;\n  &lt;path fill-rule=\"evenodd\" d=\"M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm5.854 8.803a.5.5 0 1 1-.708-.707L9.243 6H6.475a.5.5 0 1 1 0-1h3.975a.5.5 0 0 1 .5.5v3.975a.5.5 0 1 1-1 0V6.707l-4.096 4.096z\"/&gt;\n&lt;/svg&gt;\n&lt;/div&gt;&lt;/a&gt;","&lt;a href='https://finance.yahoo.com/quote/MSFT' target='_blank'&gt;\n        &lt;div title='Open in Yahoo'&gt;\n&lt;svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" class=\"bi bi-arrow-up-right-square\" viewBox=\"0 0 16 16\"&gt;\n  &lt;path fill-rule=\"evenodd\" d=\"M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm5.854 8.803a.5.5 0 1 1-.708-.707L9.243 6H6.475a.5.5 0 1 1 0-1h3.975a.5.5 0 0 1 .5.5v3.975a.5.5 0 1 1-1 0V6.707l-4.096 4.096z\"/&gt;\n&lt;/svg&gt;\n&lt;/div&gt;&lt;/a&gt;","&lt;a href='https://finance.yahoo.com/quote/AMZN' target='_blank'&gt;\n        &lt;div title='Open in Yahoo'&gt;\n&lt;svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" class=\"bi bi-arrow-up-right-square\" viewBox=\"0 0 16 16\"&gt;\n  &lt;path fill-rule=\"evenodd\" d=\"M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm5.854 8.803a.5.5 0 1 1-.708-.707L9.243 6H6.475a.5.5 0 1 1 0-1h3.975a.5.5 0 0 1 .5.5v3.975a.5.5 0 1 1-1 0V6.707l-4.096 4.096z\"/&gt;\n&lt;/svg&gt;\n&lt;/div&gt;&lt;/a&gt;","&lt;a href='https://finance.yahoo.com/quote/GOOGL' target='_blank'&gt;\n        &lt;div title='Open in Yahoo'&gt;\n&lt;svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" class=\"bi bi-arrow-up-right-square\" viewBox=\"0 0 16 16\"&gt;\n  &lt;path fill-rule=\"evenodd\" d=\"M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm5.854 8.803a.5.5 0 1 1-.708-.707L9.243 6H6.475a.5.5 0 1 1 0-1h3.975a.5.5 0 0 1 .5.5v3.975a.5.5 0 1 1-1 0V6.707l-4.096 4.096z\"/&gt;\n&lt;/svg&gt;\n&lt;/div&gt;&lt;/a&gt;","&lt;a href='https://finance.yahoo.com/quote/TSLA' target='_blank'&gt;\n        &lt;div title='Open in Yahoo'&gt;\n&lt;svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" class=\"bi bi-arrow-up-right-square\" viewBox=\"0 0 16 16\"&gt;\n  &lt;path fill-rule=\"evenodd\" d=\"M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm5.854 8.803a.5.5 0 1 1-.708-.707L9.243 6H6.475a.5.5 0 1 1 0-1h3.975a.5.5 0 0 1 .5.5v3.975a.5.5 0 1 1-1 0V6.707l-4.096 4.096z\"/&gt;\n&lt;/svg&gt;\n&lt;/div&gt;&lt;/a&gt;","&lt;a href='https://finance.yahoo.com/quote/BRK-B' target='_blank'&gt;\n        &lt;div title='Open in Yahoo'&gt;\n&lt;svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" class=\"bi bi-arrow-up-right-square\" viewBox=\"0 0 16 16\"&gt;\n  &lt;path fill-rule=\"evenodd\" d=\"M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm5.854 8.803a.5.5 0 1 1-.708-.707L9.243 6H6.475a.5.5 0 1 1 0-1h3.975a.5.5 0 0 1 .5.5v3.975a.5.5 0 1 1-1 0V6.707l-4.096 4.096z\"/&gt;\n&lt;/svg&gt;\n&lt;/div&gt;&lt;/a&gt;","&lt;a href='https://finance.yahoo.com/quote/UNH' target='_blank'&gt;\n        &lt;div title='Open in Yahoo'&gt;\n&lt;svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" class=\"bi bi-arrow-up-right-square\" viewBox=\"0 0 16 16\"&gt;\n  &lt;path fill-rule=\"evenodd\" d=\"M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm5.854 8.803a.5.5 0 1 1-.708-.707L9.243 6H6.475a.5.5 0 1 1 0-1h3.975a.5.5 0 0 1 .5.5v3.975a.5.5 0 1 1-1 0V6.707l-4.096 4.096z\"/&gt;\n&lt;/svg&gt;\n&lt;/div&gt;&lt;/a&gt;","&lt;a href='https://finance.yahoo.com/quote/JNJ' target='_blank'&gt;\n        &lt;div title='Open in Yahoo'&gt;\n&lt;svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" class=\"bi bi-arrow-up-right-square\" viewBox=\"0 0 16 16\"&gt;\n  &lt;path fill-rule=\"evenodd\" d=\"M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm5.854 8.803a.5.5 0 1 1-.708-.707L9.243 6H6.475a.5.5 0 1 1 0-1h3.975a.5.5 0 0 1 .5.5v3.975a.5.5 0 1 1-1 0V6.707l-4.096 4.096z\"/&gt;\n&lt;/svg&gt;\n&lt;/div&gt;&lt;/a&gt;"],"shape":[8],"dtype":"object","order":"little"}],["quantity",{"type":"ndarray","array":{"type":"bytes","data":"H4sIAAEAAAAC//NmYGDQAOIUIDaCsm2AWATKBgAvqfQUIAAAAA=="},"shape":[8],"dtype":"int32","order":"little"}],["price",{"type":"ndarray","array":{"type":"bytes","data":"H4sIAAEAAAAC/2NgYGg4ZJvk8P////1yrPkgWj6mP9KBkYFBYd31CAcGBoYDZ2zSQHTCjqBisLozCXUgvkIMe6oDABiMwjBAAAAA"},"shape":[8],"dtype":"float64","order":"little"}],["value",{"type":"ndarray","array":{"type":"bytes","data":"H4sIAAEAAAAC/2NgYHgXn3DU4f///+bGyYdB9I//3w87MDIwcDZkbHZgYGD48P/0bhB9q0f2Ekj+e/2fQyC+hrHnLgcAEgL+9EAAAAA="},"shape":[8],"dtype":"float64","order":"little"}],["action",{"type":"ndarray","array":["buy","sell","hold","hold","hold","hold","hold","hold"],"shape":[8],"dtype":"object","order":"little"}],["notes",{"type":"ndarray","array":["","","","","","","",""],"shape":[8],"dtype":"object","order":"little"}]]}}},"cell_styles":{"type":"map","entries":[["id","c8beba9536d0401c99ad38f556d0278a"],["data",{"type":"map","entries":[[0,{"type":"map","entries":[[7,[["color","#5AD534"]]],[4,[["background-color","#444"]]]]}],[1,{"type":"map","entries":[[7,[["color","#D94467"]]],[4,[["background-color","#444"]]]]}],[2,{"type":"map","entries":[[4,[["background-color","#444"]]]]}],[3,{"type":"map","entries":[[4,[["background-color","#444"]]]]}],[4,{"type":"map","entries":[[4,[["background-color","#444"]]]]}],[5,{"type":"map","entries":[[4,[["background-color","#444"]]]]}],[6,{"type":"map","entries":[[4,[["background-color","#444"]]]]}],[7,{"type":"map","entries":[[4,[["background-color","#444"]]]]}]]}]]},"page":1,"select_mode":1,"selectable_rows":null}}],"defs":[{"type":"model","name":"ReactiveHTML1"},{"type":"model","name":"FlexBox1","properties":[{"name":"align_content","kind":"Any","default":"flex-start"},{"name":"align_items","kind":"Any","default":"flex-start"},{"name":"flex_direction","kind":"Any","default":"row"},{"name":"flex_wrap","kind":"Any","default":"wrap"},{"name":"gap","kind":"Any","default":""},{"name":"justify_content","kind":"Any","default":"flex-start"}]},{"type":"model","name":"FloatPanel1","properties":[{"name":"config","kind":"Any","default":{"type":"map"}},{"name":"contained","kind":"Any","default":true},{"name":"position","kind":"Any","default":"right-top"},{"name":"offsetx","kind":"Any","default":null},{"name":"offsety","kind":"Any","default":null},{"name":"theme","kind":"Any","default":"primary"},{"name":"status","kind":"Any","default":"normalized"}]},{"type":"model","name":"GridStack1","properties":[{"name":"ncols","kind":"Any","default":null},{"name":"nrows","kind":"Any","default":null},{"name":"allow_resize","kind":"Any","default":true},{"name":"allow_drag","kind":"Any","default":true},{"name":"state","kind":"Any","default":[]}]},{"type":"model","name":"drag1","properties":[{"name":"slider_width","kind":"Any","default":5},{"name":"slider_color","kind":"Any","default":"black"},{"name":"start","kind":"Any","default":0},{"name":"end","kind":"Any","default":100},{"name":"value","kind":"Any","default":50}]},{"type":"model","name":"click1","properties":[{"name":"terminal_output","kind":"Any","default":""},{"name":"debug_name","kind":"Any","default":""},{"name":"clears","kind":"Any","default":0}]},{"type":"model","name":"ReactiveESM1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"JSComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"ReactComponent1","properties":[{"name":"use_shadow_dom","kind":"Any","default":true},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"AnyWidgetComponent1","properties":[{"name":"use_shadow_dom","kind":"Any","default":true},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"FastWrapper1","properties":[{"name":"object","kind":"Any","default":null},{"name":"style","kind":"Any","default":null}]},{"type":"model","name":"NotificationArea1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"max_notifications","kind":"Any","default":5},{"name":"notifications","kind":"Any","default":[]},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0},{"name":"types","kind":"Any","default":[{"type":"map","entries":[["type","warning"],["background","#ffc107"],["icon",{"type":"map","entries":[["className","fas fa-exclamation-triangle"],["tagName","i"],["color","white"]]}]]},{"type":"map","entries":[["type","info"],["background","#007bff"],["icon",{"type":"map","entries":[["className","fas fa-info-circle"],["tagName","i"],["color","white"]]}]]}]}]},{"type":"model","name":"Notification","properties":[{"name":"background","kind":"Any","default":null},{"name":"duration","kind":"Any","default":3000},{"name":"icon","kind":"Any","default":null},{"name":"message","kind":"Any","default":""},{"name":"notification_type","kind":"Any","default":null},{"name":"_rendered","kind":"Any","default":false},{"name":"_destroyed","kind":"Any","default":false}]},{"type":"model","name":"TemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"BootstrapTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"TemplateEditor1","properties":[{"name":"layout","kind":"Any","default":[]}]},{"type":"model","name":"MaterialTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"request_value1","properties":[{"name":"fill","kind":"Any","default":"none"},{"name":"_synced","kind":"Any","default":null},{"name":"_request_sync","kind":"Any","default":0}]}]}}
+    </script>
+    <script type="text/javascript">
+      (function() {
+        const fn = function() {
+          Bokeh.safely(function() {
+            (function(root) {
+              function embed_document(root) {
+              const docs_json = document.getElementById('p1093').textContent;
+              const render_items = [{"docid":"b2d9e1bc-5e27-49f6-a17f-67ee3d848973","roots":{"p1011":"eac1cb32-16cd-403e-8c39-fce6b16f86e6","p1017":"d859818a-9ab7-42ba-8a45-86de586ca545","p1019":"f01dddd7-95ef-4554-8a82-dd575e645c14","p1020":"e9e11cb4-4513-4b1f-878e-97fadd475ab3","p1022":"f2c26a43-691e-44be-ad25-818305067c3f","p1027":"f4ef6ef2-f194-4d54-9b68-e70c38742a3b","p1032":"d6207343-6f8a-4b2f-b2f4-ba29de5d26f2","p1083":"eee5d48a-0b76-4c64-95da-fbd4721556ef"},"root_ids":["p1011","p1017","p1019","p1020","p1022","p1027","p1032","p1083"]}];
+              root.Bokeh.embed.embed_items(docs_json, render_items);
+              }
+              if (root.Bokeh !== undefined) {
+                embed_document(root);
+              } else {
+                let attempts = 0;
+                const timer = setInterval(function(root) {
+                  if (root.Bokeh !== undefined) {
+                    clearInterval(timer);
+                    embed_document(root);
+                  } else {
+                    attempts++;
+                    if (attempts > 100) {
+                      clearInterval(timer);
+                      console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                    }
+                  }
+                }, 10, root)
+              }
+            })(window);
+          });
+        };
+        if (document.readyState != "loading") fn();
+      else document.addEventListener("DOMContentLoaded", fn, {once: true});
+      })();
+    </script>
+  </body>
+</html>

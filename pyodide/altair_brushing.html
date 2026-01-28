@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" >
+  <head>
+    <meta charset="utf-8">
+    <title>Altair Brushing Example</title>
+<link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/1.8.7/dist/images/apple-touch-icon.png">    <link rel="icon" href="./favicon.ico" type="">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="name" content="Altair Brushing Example">
+    <link rel="manifest" href="">
+    <style>
+      html, body {
+	display: flow-root;
+        box-sizing: border-box;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans" type="text/css" />
+
+<style type="text/css">
+
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 300px));
+  -webkit-mask-size: auto calc(min(50%, 300px));
+}
+</style>
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./serviceWorker.js').then(reg => {
+    reg.onupdatefound = () => {
+      const installingWorker = reg.installing;
+      installingWorker.onstatechange = () => {
+        if (installingWorker.state === 'installed' &&
+            navigator.serviceWorker.controller) {
+          // Reload page if service worker is replaced
+          location.reload();
+        }
+      }
+    }
+  })
+}
+</script>
+
+<script type="esms-options">{"shimMode": true}</script>
+
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/vegaplot/vega@6.1.2"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/vegaplot/vega-lite@6.3.0"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/vegaplot/vega-embed@7.0.2"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.8.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.8.7/dist/panel.min.js"></script>
+
+<script type="module" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/@microsoft/fast-components@2.30.6/dist/fast-components.js"></script>
+<script type="module" src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/fast/js/fast_design.js"></script>
+<script type="text/javascript">
+  Bokeh.set_log_level("info");
+</script>    <!-- Template CSS -->
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/loadingspinner.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/listpanel.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/markdown.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/dataframe.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/css/loading.css?v=1.8.7">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/default.css?v=1.8.7">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/fastbasetemplate/fast.css?v=1.8.7">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/fastlisttemplate/fast_list_template.css?v=1.8.7">
+
+<style>
+  :root {
+    --background-color: #ffffff;
+    --body-font: Open Sans, sans-serif;
+    --corner-radius: 3;
+    --header-background: #0072B5;
+    --header-color: #ffffff;
+    --sidebar-width: 330px;
+    --right-sidebar-width:  330px;
+  }
+  body {
+    color: #2B2B2B;
+    background-color: var(--background-color);
+    font-family: var(--body-font);
+  }
+  #header a {
+    color: currentColor;
+  }
+  #header-design-provider {
+    --neutral-fill-hover: var(--header-background);
+    --neutral-fill-rest: var(--header-background);
+    --neutral-foreground-rest: var(--header-color);
+    --design-background-text-color: var(--header-color);
+    --design-background-color: var(--header-background);
+    background: var(--header-background);
+    color: var(--header-color);
+  }
+  #sidebar {
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+  }
+  #right-sidebar {
+    min-width: var(--right-sidebar-width);
+    max-width: var(--right-sidebar-width);
+  }
+</style>
+
+    <style type="text/css">
+    
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 300px));
+  -webkit-mask-size: auto calc(min(50%, 300px));
+}
+    </style>
+
+    <!-- Template JS -->
+    <script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/fastbasetemplate/fast_template.js"></script>
+    <script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/@microsoft/fast-components@2.30.6/dist/fast-components.js" type="module"></script>
+    <script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/fast/js/fast_design.js" type="module"></script>
+
+<!-- Fast Script -->
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', (event) => {
+  const header_design = new window.fastDesignProvider("#header-design-provider");
+  const body_design = window.bodyDesign = new window.fastDesignProvider("#body-design-provider");
+  body_design.setLuminance(1.0);
+  body_design.setAccentColor("#0072B5")
+  body_design.setNeutralColor("#000000");
+  header_design.setLuminance("0.23");
+  header_design.setAccentColor("#ffffff");
+  header_design.setNeutralColor("#0072B5");
+});
+</script>
+  </head>
+  <body class="pn-loading pn-arc">
+<fast-design-system-provider id="body-design-provider" use-defaults>
+  <div id="container">
+    <fast-design-system-provider id="header-design-provider">
+      <nav id="header" class="shadow" >
+	<div class="app-header">
+	  <a class="title" href="" >Altair Brushing Example</a>
+	</div>
+	<div id="header-items">
+	</div>
+	<div class="pn-toggle-theme">
+	  <fast-switch id="theme-switch" style="float: right;" onChange="toggleLightDarkTheme('default')" checked>
+	    <span slot="checked-message">
+              <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+	    </span>
+	    <span slot="unchecked-message">
+              <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
+	    </span>
+	  </fast-switch>
+	  <fast-tooltip anchor="theme-switch" position="bottom">
+	    Toggle the Theme
+	  </fast-tooltip>
+	</div>
+	<div class="pn-busy-container" id="busy-container">
+	  <div id="b8e8ed5c-5f94-45be-ad66-f951cca1240a" data-root-id="p1023" style="display: contents;"></div>
+	</div>
+	<fast-tooltip anchor="busy-container" position="left">
+	  Busy Indicator
+	</fast-tooltip>
+      </nav>
+    </fast-design-system-provider>
+
+    <div class="row" id="content">
+
+      <div class="main" id="main">
+        <div class="card-margin stretch_width">
+	  <fast-card class="pn-wrapper">
+	    <span class="fullscreen-button" onclick="toggleFullScreen(this)">
+	      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+		<path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/>
+	      </svg>
+	    </span>
+	    <div id="c01842ad-85fb-4a51-84d5-94b418457c56" data-root-id="p1024" style="display: contents;"></div>
+	  </fast-card>
+	</div>
+        <div class="card-margin None">
+	  <fast-card class="pn-wrapper">
+	    <span class="fullscreen-button" onclick="toggleFullScreen(this)">
+	      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+		<path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/>
+	      </svg>
+	    </span>
+	    <div id="b6f6c1c6-62ed-49d0-be72-12146bbee1f1" data-root-id="p1027" style="display: contents;"></div>
+	  </fast-card>
+	</div>
+      </div>
+      <fast-dialog id="pn-Modal" hidden>
+        <fast-button class="pn-modal-close" id="pn-closeModal">&times;</fast-button>
+        <div class="pn-modal-content">
+	</div>
+      </fast-dialog>
+    </div>
+  </div>
+</fast-design-system-provider>
+
+<script type="text/javascript">
+  
+</script>
+
+<script type="text/javascript">
+  function openNav() {
+    document.getElementById("sidebar").classList.remove("hidden");
+    document.getElementById("sidebar-button").onclick = closeNav;
+  }
+
+  function closeNav() {
+    document.getElementById("sidebar").classList.add("hidden");
+    document.getElementById("sidebar-button").onclick = openNav;
+  }
+
+  function openNavRight() {
+    document.getElementById("right-sidebar").classList.remove("hidden");
+    document.getElementById("right-sidebar-button").onclick = closeNavRight;
+  }
+
+  function closeNavRight() {
+    document.getElementById("right-sidebar").classList.add("hidden");
+    document.getElementById("right-sidebar-button").onclick = openNavRight;
+  }
+
+  var modal = document.getElementById("pn-Modal");
+  var span = document.getElementById("pn-closeModal");
+
+  span.onclick = function() {
+    modal.style.display = "none";
+  }
+
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+
+<div id="df5c0225-bf96-439d-a339-263a5f8e458e" data-root-id="p1018" style="display: contents;"></div>
+<div id="b6740f44-f8f4-4cf2-9d6e-0cbbbeed5b2f" data-root-id="p1020" style="display: contents;"></div>
+<div id="ab404e57-2127-4d1d-b998-9c62af1fe25d" data-root-id="p1011" style="display: contents;"></div>
+<div id="eaf1227e-0b25-4fc2-a994-7ece21ee5c7a" data-root-id="p1021" style="display: contents;"></div>
+
+
+  
+    <script type="text/javascript">
+      const pyodideWorker = new Worker("./altair_brushing.js");
+      pyodideWorker.busy = false
+      pyodideWorker.queue = []
+      
+      let patching = 0
+      
+      function send_change(jsdoc, event) {
+        if ((event.setter_id != null && event.setter_id == 'py') || (patching > 0)) {
+          return
+        } else if (pyodideWorker.busy && event.model && event.attr) {
+          let events = []
+          for (const old_event of pyodideWorker.queue) {
+            if (!(old_event.model === event.model && old_event.attr === event.attr)) {
+              events.push(old_event)
+            }
+          }
+          events.push(event)
+          pyodideWorker.queue = events
+          return
+        }
+        const patch = jsdoc.create_json_patch([event])
+        pyodideWorker.busy = true
+        pyodideWorker.postMessage({type: 'patch', patch: patch})
+      }
+      
+      pyodideWorker.onmessage = async (event) => {
+        const msg = event.data
+      
+        const body = document.getElementsByTagName('body')[0]
+        const loading_msgs = document.getElementsByClassName('pn-loading-msg')
+        if (msg.type === 'idle') {
+          if (pyodideWorker.queue.length) {
+            const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
+            pyodideWorker.busy = true
+            pyodideWorker.queue = []
+            pyodideWorker.postMessage({type: 'patch', patch: patch})
+          } else {
+            pyodideWorker.busy = false
+          }
+        } else if (msg.type === 'status') {
+          let loading_msg
+          if (loading_msgs.length) {
+            loading_msg = loading_msgs[0]
+          } else if (body.classList.contains('pn-loading')) {
+            loading_msg = document.createElement('div')
+            loading_msg.classList.add('pn-loading-msg')
+            body.appendChild(loading_msg)
+          }
+          if (loading_msg != null) {
+            loading_msg.innerHTML = msg.msg
+          }
+        } else if (msg.type === 'render') {
+          const docs_json = JSON.parse(msg.docs_json)
+          const render_items = JSON.parse(msg.render_items)
+          const root_ids = JSON.parse(msg.root_ids)
+      
+          // Remap roots in message to element IDs
+          const root_els = document.querySelectorAll('[data-root-id]')
+          const data_roots = []
+          for (const el of root_els) {
+             el.innerHTML = ''
+             data_roots.push([el.getAttribute('data-root-id'), el.id])
+          }
+          data_roots.sort((a, b) => a[0]<b[0] ? -1: 1)
+          const roots = {}
+          for (let i=0; i<data_roots.length; i++) {
+            roots[root_ids[i]] = data_roots[i][1]
+          }
+          render_items[0]['roots'] = roots
+          render_items[0]['root_ids'] = root_ids
+      
+          // Clear pre-rendered contents
+          Bokeh.index.roots.map((v) => v.remove())
+      
+          // Embed content
+          const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
+      
+          // Remove loading spinner and message
+          body.classList.remove("pn-loading", "arc")
+          for (const loading_msg of loading_msgs) {
+            loading_msg.remove()
+          }
+      
+          // Setup bi-directional syncing
+          pyodideWorker.jsdoc = jsdoc = [...views.roots.values()][0].model.document
+          jsdoc.on_change(send_change.bind(null, jsdoc), false)
+          pyodideWorker.postMessage({'type': 'rendered'})
+          pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
+        } else if (msg.type === 'patch') {
+          try {
+            patching += 1
+            pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers)
+          } finally {
+            patching -= 1
+          }
+        }
+      };
+    </script>
+    <script type="application/json" id="p1037">
+      {"89d1de4b-5ae4-44d4-870d-5a6d110e5612":{"version":"3.8.2","title":"Altair Brushing Example","config":{"type":"object","name":"DocumentConfig","id":"p1009","attributes":{"reconnect_session":false,"notify_connection_status":false,"notifications":null}},"roots":[{"type":"object","name":"panel.models.location.Location","id":"p1011","attributes":{"name":"location","reload":false}},{"type":"object","name":"panel.models.markup.HTML","id":"p1018","attributes":{"name":"js_area","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"type":"object","name":"ImportedStyleSheet","id":"p1015","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/loading.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1014","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/fast.css"}}],"width":0,"height":0,"margin":0,"sizing_mode":"fixed","align":"start","disable_math":true}},{"type":"object","name":"panel.models.reactive_html.ReactiveHTML","id":"p1020","attributes":{"name":"actions","subscribed_events":{"type":"set","entries":["dom_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"id":"p1014"}],"margin":0,"align":"start","data":{"type":"object","name":"TemplateActions1","id":"p1019","attributes":{"name":"TemplateActions00124","tags":["__ref:p1020"]}},"scripts":{"type":"map","entries":[["open_modal",["document.getElementById(&amp;#x27;pn-Modal&amp;#x27;).style.display = &amp;#x27;block&amp;#x27;\nwindow.dispatchEvent(new Event(&amp;#x27;resize&amp;#x27;));"]],["close_modal",["document.getElementById(&amp;#x27;pn-Modal&amp;#x27;).style.display = &amp;#x27;none&amp;#x27;"]]]}}},{"type":"object","name":"panel.models.browser.BrowserInfo","id":"p1021","attributes":{"name":"browser_info"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1023","attributes":{"name":"busy_indicator","css_classes":["loader","light"],"stylesheets":[":host { --loading-spinner-size: 20px; }","\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"type":"object","name":"ImportedStyleSheet","id":"p1022","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/loadingspinner.css"}},{"id":"p1014"}],"min_width":20,"min_height":20,"margin":[5,10],"align":"start"}},{"type":"object","name":"panel.models.layout.Column","id":"p1024","attributes":{"name":"main-4582361296","tags":["main"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"type":"object","name":"ImportedStyleSheet","id":"p1016","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/listpanel.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1013","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/bundled/theme/default.css"}},{"id":"p1014"}],"min_width":0,"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.markup.HTML","id":"p1026","attributes":{"css_classes":["markdown"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"type":"object","name":"ImportedStyleSheet","id":"p1025","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/markdown.css"}},{"id":"p1013"},{"id":"p1014"}],"margin":[5,10],"align":"start","text":"&amp;lt;p&amp;gt;Select points on the plot and watch the linked table update.&amp;lt;/p&amp;gt;\n"}}]}},{"type":"object","name":"Row","id":"p1027","attributes":{"name":"main-4589863824","tags":["main"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"id":"p1016"},{"id":"p1013"},{"id":"p1014"}],"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.vega.VegaPlot","id":"p1031","attributes":{"subscribed_events":{"type":"set","entries":["vega_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"id":"p1013"},{"id":"p1014"}],"margin":[5,10],"align":"start","data":{"type":"map","entries":[["config",{"type":"map","entries":[["view",{"type":"map","entries":[["continuousWidth",300],["continuousHeight",300]]}]]}],["data",{"type":"map","entries":[["name","data-c46e1ab98ba3fb2ca8b5ae3c04ffafea"]]}],["mark",{"type":"map","entries":[["type","point"]]}],["encoding",{"type":"map","entries":[["color",{"type":"map","entries":[["condition",{"type":"map","entries":[["param","brush"],["field","Species"],["type","nominal"]]}],["value","lightgray"]]}],["x",{"type":"map","entries":[["field","Beak Length (mm)"],["scale",{"type":"map","entries":[["zero",false]]}],["type","quantitative"]]}],["y",{"type":"map","entries":[["field","Beak Depth (mm)"],["scale",{"type":"map","entries":[["zero",false]]}],["type","quantitative"]]}]]}],["height",300],["params",[{"type":"map","entries":[["name","brush"],["select",{"type":"map","entries":[["type","interval"]]}]]}]],["width",300],["$schema","https://vega.github.io/schema/vega-lite/v6.1.0.json"],["datasets",{"type":"map"}]]},"data_sources":{"type":"map","entries":[["data-c46e1ab98ba3fb2ca8b5ae3c04ffafea",{"type":"object","name":"ColumnDataSource","id":"p1028","attributes":{"selected":{"type":"object","name":"Selection","id":"p1029","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1030"},"data":{"type":"map","entries":[["Beak Depth (mm)",{"type":"ndarray","array":[18.7,17.4,18.0,null,19.3,20.6,17.8,19.6,18.1,20.2,17.1,17.3,17.6,21.2,21.1,17.8,19.0,20.7,18.4,21.5,18.3,18.7,19.2,18.1,17.2,18.9,18.6,17.9,18.6,18.9,16.7,18.1,17.8,18.9,17.0,21.1,20.0,18.5,19.3,19.1,18.0,18.4,18.5,19.7,16.9,18.8,19.0,18.9,17.9,21.2,17.7,18.9,17.9,19.5,18.1,18.6,17.5,18.8,16.6,19.1,16.9,21.1,17.0,18.2,17.1,18.0,16.2,19.1,16.6,19.4,19.0,18.4,17.2,18.9,17.5,18.5,16.8,19.4,16.1,19.1,17.2,17.6,18.8,19.4,17.8,20.3,19.5,18.6,19.2,18.8,18.0,18.1,17.1,18.1,17.3,18.9,18.6,18.5,16.1,18.5,17.9,20.0,16.0,20.0,18.6,18.9,17.2,20.0,17.0,19.0,16.5,20.3,17.7,19.5,20.7,18.3,17.0,20.5,17.0,18.6,17.2,19.8,17.0,18.5,15.9,19.0,17.6,18.3,17.1,18.0,17.9,19.2,18.5,18.5,17.6,17.5,17.5,20.1,16.5,17.9,17.1,17.2,15.5,17.0,16.8,18.7,18.6,18.4,17.8,18.1,17.1,18.5,17.9,19.5,19.2,18.7,19.8,17.8,18.2,18.2,18.9,19.9,17.8,20.3,17.3,18.1,17.1,19.6,20.0,17.8,18.6,18.2,17.3,17.5,16.6,19.4,17.9,19.0,18.4,19.0,17.8,20.0,16.6,20.8,16.7,18.8,18.6,16.8,18.3,20.7,16.6,19.9,19.5,17.5,19.1,17.0,17.9,18.5,17.9,19.6,18.7,17.3,16.4,19.0,17.3,19.7,17.3,18.8,16.6,19.9,18.8,19.4,19.5,16.5,17.0,19.8,18.1,18.2,19.0,18.7,13.2,16.3,14.1,15.2,14.5,13.5,14.6,15.3,13.4,15.4,13.7,16.1,13.7,14.6,14.6,15.7,13.5,15.2,14.5,15.1,14.3,14.5,14.5,15.8,13.1,15.1,14.3,15.0,14.3,15.3,15.3,14.2,14.5,17.0,14.8,16.3,13.7,17.3,13.6,15.7,13.7,16.0,13.7,15.0,15.9,13.9,13.9,15.9,13.3,15.8,14.2,14.1,14.4,15.0,14.4,15.4,13.9,15.0,14.5,15.3,13.8,14.9,13.9,15.7,14.2,16.8,14.4,16.2,14.2,15.0,15.0,15.6,15.6,14.8,15.0,16.0,14.2,16.3,13.8,16.4,14.5,15.6,14.6,15.9,13.8,17.3,14.4,14.2,14.0,17.0,15.0,17.1,14.5,16.1,14.7,15.7,15.8,14.6,14.4,16.5,15.0,17.0,15.5,15.0,13.8,16.1,14.7,15.8,14.0,15.1,15.2,15.9,15.2,16.3,14.1,16.0,15.7,16.2,13.7,null,14.3,15.7,14.8,16.1],"shape":[344],"dtype":"object","order":"little"}],["Beak Length (mm)",{"type":"ndarray","array":[39.1,39.5,40.3,null,36.7,39.3,38.9,39.2,34.1,42.0,37.8,37.8,41.1,38.6,34.6,36.6,38.7,42.5,34.4,46.0,37.8,37.7,35.9,38.2,38.8,35.3,40.6,40.5,37.9,40.5,39.5,37.2,39.5,40.9,36.4,39.2,38.8,42.2,37.6,39.8,36.5,40.8,36.0,44.1,37.0,39.6,41.1,37.5,36.0,42.3,39.6,40.1,35.0,42.0,34.5,41.4,39.0,40.6,36.5,37.6,35.7,41.3,37.6,41.1,36.4,41.6,35.5,41.1,35.9,41.8,33.5,39.7,39.6,45.8,35.5,42.8,40.9,37.2,36.2,42.1,34.6,42.9,36.7,35.1,37.3,41.3,36.3,36.9,38.3,38.9,35.7,41.1,34.0,39.6,36.2,40.8,38.1,40.3,33.1,43.2,35.0,41.0,37.7,37.8,37.9,39.7,38.6,38.2,38.1,43.2,38.1,45.6,39.7,42.2,39.6,42.7,38.6,37.3,35.7,41.1,36.2,37.7,40.2,41.4,35.2,40.6,38.8,41.5,39.0,44.1,38.5,43.1,36.8,37.5,38.1,41.1,35.6,40.2,37.0,39.7,40.2,40.6,32.1,40.7,37.3,39.0,39.2,36.6,36.0,37.8,36.0,41.5,46.5,50.0,51.3,45.4,52.7,45.2,46.1,51.3,46.0,51.3,46.6,51.7,47.0,52.0,45.9,50.5,50.3,58.0,46.4,49.2,42.4,48.5,43.2,50.6,46.7,52.0,50.5,49.5,46.4,52.8,40.9,54.2,42.5,51.0,49.7,47.5,47.6,52.0,46.9,53.5,49.0,46.2,50.9,45.5,50.9,50.8,50.1,49.0,51.5,49.8,48.1,51.4,45.7,50.7,42.5,52.2,45.2,49.3,50.2,45.6,51.9,46.8,45.7,55.8,43.5,49.6,50.8,50.2,46.1,50.0,48.7,50.0,47.6,46.5,45.4,46.7,43.3,46.8,40.9,49.0,45.5,48.4,45.8,49.3,42.0,49.2,46.2,48.7,50.2,45.1,46.5,46.3,42.9,46.1,44.5,47.8,48.2,50.0,47.3,42.8,45.1,59.6,49.1,48.4,42.6,44.4,44.0,48.7,42.7,49.6,45.3,49.6,50.5,43.6,45.5,50.5,44.9,45.2,46.6,48.5,45.1,50.1,46.5,45.0,43.8,45.5,43.2,50.4,45.3,46.2,45.7,54.3,45.8,49.8,46.2,49.5,43.5,50.7,47.7,46.4,48.2,46.5,46.4,48.6,47.5,51.1,45.2,45.2,49.1,52.5,47.4,50.0,44.9,50.8,43.4,51.3,47.5,52.1,47.5,52.2,45.5,49.5,44.5,50.8,49.4,46.9,48.4,51.1,48.5,55.9,47.2,49.1,47.3,46.8,41.7,53.4,43.3,48.1,50.5,49.8,43.5,51.5,46.2,55.1,44.5,48.8,47.2,null,46.8,50.4,45.2,49.9],"shape":[344],"dtype":"object","order":"little"}],["Body Mass (g)",{"type":"ndarray","array":[3750.0,3800.0,3250.0,null,3450.0,3650.0,3625.0,4675.0,3475.0,4250.0,3300.0,3700.0,3200.0,3800.0,4400.0,3700.0,3450.0,4500.0,3325.0,4200.0,3400.0,3600.0,3800.0,3950.0,3800.0,3800.0,3550.0,3200.0,3150.0,3950.0,3250.0,3900.0,3300.0,3900.0,3325.0,4150.0,3950.0,3550.0,3300.0,4650.0,3150.0,3900.0,3100.0,4400.0,3000.0,4600.0,3425.0,2975.0,3450.0,4150.0,3500.0,4300.0,3450.0,4050.0,2900.0,3700.0,3550.0,3800.0,2850.0,3750.0,3150.0,4400.0,3600.0,4050.0,2850.0,3950.0,3350.0,4100.0,3050.0,4450.0,3600.0,3900.0,3550.0,4150.0,3700.0,4250.0,3700.0,3900.0,3550.0,4000.0,3200.0,4700.0,3800.0,4200.0,3350.0,3550.0,3800.0,3500.0,3950.0,3600.0,3550.0,4300.0,3400.0,4450.0,3300.0,4300.0,3700.0,4350.0,2900.0,4100.0,3725.0,4725.0,3075.0,4250.0,2925.0,3550.0,3750.0,3900.0,3175.0,4775.0,3825.0,4600.0,3200.0,4275.0,3900.0,4075.0,2900.0,3775.0,3350.0,3325.0,3150.0,3500.0,3450.0,3875.0,3050.0,4000.0,3275.0,4300.0,3050.0,4000.0,3325.0,3500.0,3500.0,4475.0,3425.0,3900.0,3175.0,3975.0,3400.0,4250.0,3400.0,3475.0,3050.0,3725.0,3000.0,3650.0,4250.0,3475.0,3450.0,3750.0,3700.0,4000.0,3500.0,3900.0,3650.0,3525.0,3725.0,3950.0,3250.0,3750.0,4150.0,3700.0,3800.0,3775.0,3700.0,4050.0,3575.0,4050.0,3300.0,3700.0,3450.0,4400.0,3600.0,3400.0,2900.0,3800.0,3300.0,4150.0,3400.0,3800.0,3700.0,4550.0,3200.0,4300.0,3350.0,4100.0,3600.0,3900.0,3850.0,4800.0,2700.0,4500.0,3950.0,3650.0,3550.0,3500.0,3675.0,4450.0,3400.0,4300.0,3250.0,3675.0,3325.0,3950.0,3600.0,4050.0,3350.0,3450.0,3250.0,4050.0,3800.0,3525.0,3950.0,3650.0,3650.0,4000.0,3400.0,3775.0,4100.0,3775.0,4500.0,5700.0,4450.0,5700.0,5400.0,4550.0,4800.0,5200.0,4400.0,5150.0,4650.0,5550.0,4650.0,5850.0,4200.0,5850.0,4150.0,6300.0,4800.0,5350.0,5700.0,5000.0,4400.0,5050.0,5000.0,5100.0,4100.0,5650.0,4600.0,5550.0,5250.0,4700.0,5050.0,6050.0,5150.0,5400.0,4950.0,5250.0,4350.0,5350.0,3950.0,5700.0,4300.0,4750.0,5550.0,4900.0,4200.0,5400.0,5100.0,5300.0,4850.0,5300.0,4400.0,5000.0,4900.0,5050.0,4300.0,5000.0,4450.0,5550.0,4200.0,5300.0,4400.0,5650.0,4700.0,5700.0,4650.0,5800.0,4700.0,5550.0,4750.0,5000.0,5100.0,5200.0,4700.0,5800.0,4600.0,6000.0,4750.0,5950.0,4625.0,5450.0,4725.0,5350.0,4750.0,5600.0,4600.0,5300.0,4875.0,5550.0,4950.0,5400.0,4750.0,5650.0,4850.0,5200.0,4925.0,4875.0,4625.0,5250.0,4850.0,5600.0,4975.0,5500.0,4725.0,5500.0,4700.0,5500.0,4575.0,5500.0,5000.0,5950.0,4650.0,5500.0,4375.0,5850.0,4875.0,6000.0,4925.0,null,4850.0,5750.0,5200.0,5400.0],"shape":[344],"dtype":"object","order":"little"}],["Flipper Length (mm)",{"type":"ndarray","array":[181.0,186.0,195.0,null,193.0,190.0,181.0,195.0,193.0,190.0,186.0,180.0,182.0,191.0,198.0,185.0,195.0,197.0,184.0,194.0,174.0,180.0,189.0,185.0,180.0,187.0,183.0,187.0,172.0,180.0,178.0,178.0,188.0,184.0,195.0,196.0,190.0,180.0,181.0,184.0,182.0,195.0,186.0,196.0,185.0,190.0,182.0,179.0,190.0,191.0,186.0,188.0,190.0,200.0,187.0,191.0,186.0,193.0,181.0,194.0,185.0,195.0,185.0,192.0,184.0,192.0,195.0,188.0,190.0,198.0,190.0,190.0,196.0,197.0,190.0,195.0,191.0,184.0,187.0,195.0,189.0,196.0,187.0,193.0,191.0,194.0,190.0,189.0,189.0,190.0,202.0,205.0,185.0,186.0,187.0,208.0,190.0,196.0,178.0,192.0,192.0,203.0,183.0,190.0,193.0,184.0,199.0,190.0,181.0,197.0,198.0,191.0,193.0,197.0,191.0,196.0,188.0,199.0,189.0,189.0,187.0,198.0,176.0,202.0,186.0,199.0,191.0,195.0,191.0,210.0,190.0,197.0,193.0,199.0,187.0,190.0,191.0,200.0,185.0,193.0,193.0,187.0,188.0,190.0,192.0,185.0,190.0,184.0,195.0,193.0,187.0,201.0,192.0,196.0,193.0,188.0,197.0,198.0,178.0,197.0,195.0,198.0,193.0,194.0,185.0,201.0,190.0,201.0,197.0,181.0,190.0,195.0,181.0,191.0,187.0,193.0,195.0,197.0,200.0,200.0,191.0,205.0,187.0,201.0,187.0,203.0,195.0,199.0,195.0,210.0,192.0,205.0,210.0,187.0,196.0,196.0,196.0,201.0,190.0,212.0,187.0,198.0,199.0,201.0,193.0,203.0,187.0,197.0,191.0,203.0,202.0,194.0,206.0,189.0,195.0,207.0,202.0,193.0,210.0,198.0,211.0,230.0,210.0,218.0,215.0,210.0,211.0,219.0,209.0,215.0,214.0,216.0,214.0,213.0,210.0,217.0,210.0,221.0,209.0,222.0,218.0,215.0,213.0,215.0,215.0,215.0,216.0,215.0,210.0,220.0,222.0,209.0,207.0,230.0,220.0,220.0,213.0,219.0,208.0,208.0,208.0,225.0,210.0,216.0,222.0,217.0,210.0,225.0,213.0,215.0,210.0,220.0,210.0,225.0,217.0,220.0,208.0,220.0,208.0,224.0,208.0,221.0,214.0,231.0,219.0,230.0,214.0,229.0,220.0,223.0,216.0,221.0,221.0,217.0,216.0,230.0,209.0,220.0,215.0,223.0,212.0,221.0,212.0,224.0,212.0,228.0,218.0,218.0,212.0,230.0,218.0,228.0,212.0,224.0,214.0,226.0,216.0,222.0,203.0,225.0,219.0,228.0,215.0,228.0,216.0,215.0,210.0,219.0,208.0,209.0,216.0,229.0,213.0,230.0,217.0,230.0,217.0,222.0,214.0,null,215.0,222.0,212.0,213.0],"shape":[344],"dtype":"object","order":"little"}],["Island",{"type":"ndarray","array":["Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Torgersen","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Dream","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe","Biscoe"],"shape":[344],"dtype":"object","order":"little"}],["Sex",{"type":"ndarray","array":["MALE","FEMALE","FEMALE","nan","FEMALE","MALE","FEMALE","MALE","nan","nan","nan","nan","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","nan","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","nan","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","nan","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","MALE","FEMALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","nan","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE","FEMALE","MALE",".","MALE","FEMALE","nan","FEMALE","MALE","FEMALE","MALE"],"shape":[344],"dtype":"object","order":"little"}],["Species",{"type":"ndarray","array":["Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Adelie","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Chinstrap","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo","Gentoo"],"shape":[344],"dtype":"object","order":"little"}]]}}}]]},"events":["brush"],"throttle":{"type":"map","entries":[["brush",10]]}}},{"type":"object","name":"panel.models.layout.Column","id":"p1032","attributes":{"name":"Column00148","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"id":"p1016"},{"id":"p1013"},{"id":"p1014"}],"height":350,"min_height":350,"margin":0,"align":"start","children":[{"type":"object","name":"panel.models.markup.HTML","id":"p1034","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1015"},{"type":"object","name":"ImportedStyleSheet","id":"p1033","attributes":{"url":"https://cdn.holoviz.org/panel/1.8.7/dist/css/dataframe.css"}},{"id":"p1013"},{"id":"p1014"}],"margin":[5,10],"align":"start","text":"&amp;lt;table class=&amp;quot;dataframe panel-df&amp;quot;&amp;gt;\n  &amp;lt;thead&amp;gt;\n    &amp;lt;tr style=&amp;quot;text-align: right;&amp;quot;&amp;gt;\n      &amp;lt;th&amp;gt;&amp;lt;/th&amp;gt;\n      &amp;lt;th&amp;gt;Species&amp;lt;/th&amp;gt;\n      &amp;lt;th&amp;gt;Island&amp;lt;/th&amp;gt;\n      &amp;lt;th&amp;gt;Beak Length (mm)&amp;lt;/th&amp;gt;\n      &amp;lt;th&amp;gt;Beak Depth (mm)&amp;lt;/th&amp;gt;\n      &amp;lt;th&amp;gt;Flipper Length (mm)&amp;lt;/th&amp;gt;\n      &amp;lt;th&amp;gt;Body Mass (g)&amp;lt;/th&amp;gt;\n      &amp;lt;th&amp;gt;Sex&amp;lt;/th&amp;gt;\n    &amp;lt;/tr&amp;gt;\n  &amp;lt;/thead&amp;gt;\n  &amp;lt;tbody&amp;gt;\n  &amp;lt;/tbody&amp;gt;\n&amp;lt;/table&amp;gt;","disable_math":true}}]}}]}}],"defs":[{"type":"model","name":"ReactiveHTML1"},{"type":"model","name":"FlexBox1","properties":[{"name":"align_content","kind":"Any","default":"flex-start"},{"name":"align_items","kind":"Any","default":"flex-start"},{"name":"flex_direction","kind":"Any","default":"row"},{"name":"flex_wrap","kind":"Any","default":"wrap"},{"name":"gap","kind":"Any","default":""},{"name":"justify_content","kind":"Any","default":"flex-start"}]},{"type":"model","name":"FloatPanel1","properties":[{"name":"config","kind":"Any","default":{"type":"map"}},{"name":"contained","kind":"Any","default":true},{"name":"position","kind":"Any","default":"right-top"},{"name":"offsetx","kind":"Any","default":null},{"name":"offsety","kind":"Any","default":null},{"name":"theme","kind":"Any","default":"primary"},{"name":"status","kind":"Any","default":"normalized"}]},{"type":"model","name":"GridStack1","properties":[{"name":"ncols","kind":"Any","default":null},{"name":"nrows","kind":"Any","default":null},{"name":"allow_resize","kind":"Any","default":true},{"name":"allow_drag","kind":"Any","default":true},{"name":"state","kind":"Any","default":[]}]},{"type":"model","name":"drag1","properties":[{"name":"slider_width","kind":"Any","default":5},{"name":"slider_color","kind":"Any","default":"black"},{"name":"start","kind":"Any","default":0},{"name":"end","kind":"Any","default":100},{"name":"value","kind":"Any","default":50}]},{"type":"model","name":"click1","properties":[{"name":"terminal_output","kind":"Any","default":""},{"name":"debug_name","kind":"Any","default":""},{"name":"clears","kind":"Any","default":0}]},{"type":"model","name":"ReactiveESM1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"JSComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"ReactComponent1","properties":[{"name":"use_shadow_dom","kind":"Any","default":true},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"AnyWidgetComponent1","properties":[{"name":"use_shadow_dom","kind":"Any","default":true},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"FastWrapper1","properties":[{"name":"object","kind":"Any","default":null},{"name":"style","kind":"Any","default":null}]},{"type":"model","name":"NotificationArea1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"max_notifications","kind":"Any","default":5},{"name":"notifications","kind":"Any","default":[]},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0},{"name":"types","kind":"Any","default":[{"type":"map","entries":[["type","warning"],["background","#ffc107"],["icon",{"type":"map","entries":[["className","fas fa-exclamation-triangle"],["tagName","i"],["color","white"]]}]]},{"type":"map","entries":[["type","info"],["background","#007bff"],["icon",{"type":"map","entries":[["className","fas fa-info-circle"],["tagName","i"],["color","white"]]}]]}]}]},{"type":"model","name":"Notification","properties":[{"name":"background","kind":"Any","default":null},{"name":"duration","kind":"Any","default":3000},{"name":"icon","kind":"Any","default":null},{"name":"message","kind":"Any","default":""},{"name":"notification_type","kind":"Any","default":null},{"name":"_rendered","kind":"Any","default":false},{"name":"_destroyed","kind":"Any","default":false}]},{"type":"model","name":"TemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"BootstrapTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"TemplateEditor1","properties":[{"name":"layout","kind":"Any","default":[]}]},{"type":"model","name":"MaterialTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"request_value1","properties":[{"name":"fill","kind":"Any","default":"none"},{"name":"_synced","kind":"Any","default":null},{"name":"_request_sync","kind":"Any","default":0}]}]}}
+    </script>
+    <script type="text/javascript">
+      (function() {
+        const fn = function() {
+          Bokeh.safely(function() {
+            (function(root) {
+              function embed_document(root) {
+              const docs_json = document.getElementById('p1037').textContent;
+              const render_items = [{"docid":"89d1de4b-5ae4-44d4-870d-5a6d110e5612","roots":{"p1011":"ab404e57-2127-4d1d-b998-9c62af1fe25d","p1018":"df5c0225-bf96-439d-a339-263a5f8e458e","p1020":"b6740f44-f8f4-4cf2-9d6e-0cbbbeed5b2f","p1021":"eaf1227e-0b25-4fc2-a994-7ece21ee5c7a","p1023":"b8e8ed5c-5f94-45be-ad66-f951cca1240a","p1024":"c01842ad-85fb-4a51-84d5-94b418457c56","p1027":"b6f6c1c6-62ed-49d0-be72-12146bbee1f1"},"root_ids":["p1011","p1018","p1020","p1021","p1023","p1024","p1027"]}];
+              root.Bokeh.embed.embed_items(docs_json, render_items);
+              }
+              if (root.Bokeh !== undefined) {
+                embed_document(root);
+              } else {
+                let attempts = 0;
+                const timer = setInterval(function(root) {
+                  if (root.Bokeh !== undefined) {
+                    clearInterval(timer);
+                    embed_document(root);
+                  } else {
+                    attempts++;
+                    if (attempts > 100) {
+                      clearInterval(timer);
+                      console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                    }
+                  }
+                }, 10, root)
+              }
+            })(window);
+          });
+        };
+        if (document.readyState != "loading") fn();
+      else document.addEventListener("DOMContentLoaded", fn, {once: true});
+      })();
+    </script>
+  </body>
+</html>

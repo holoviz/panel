@@ -1,0 +1,27 @@
+{
+  "name": "Panel v1.8.7",
+  "short_name": "Panel v1.8.7",
+  "start_url": "index.html",
+  "icons": [
+    {
+      "src": "_static/icons/icon-32x32.png",
+      "type": "image/png",
+      "sizes": "32x32"
+    },
+    {
+      "src": "_static/icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "_static/icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "display": "standalone",
+  "scope": "/",
+  "background_color": "#fdfdfd",
+  "theme_color": "#0072B5",
+  "orientation": "any"
+}

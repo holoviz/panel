@@ -1,0 +1,1312 @@
+
+<!DOCTYPE html>
+
+<html data-content_root="../" data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="../site.webmanifest" rel="manifest"/>
+<title>panel.models.vizzu module — Panel v1.8.7</title>
+<script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+<!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+<noscript>
+<style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+</noscript>
+<!-- Loaded before other Sphinx assets -->
+<link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet"/>
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet"/>
+<link href="../_static/pygments.css?v=03e43079" rel="stylesheet" type="text/css"/>
+<link href="../_static/graphviz.css?v=4ae1632d" rel="stylesheet" type="text/css"/>
+<link href="../_static/copybutton.css?v=76b2166b" rel="stylesheet" type="text/css"/>
+<link href="../_static/sphinx-design.min.css?v=95c83b7e" rel="stylesheet" type="text/css"/>
+<link href="../_static/nbsite.css?v=d9d93254" rel="stylesheet" type="text/css"/>
+<link href="../_static/notebook.css?v=19946987" rel="stylesheet" type="text/css"/>
+<link href="../_static/gallery.css?v=0a3248cd" rel="stylesheet" type="text/css"/>
+<link href="../_static/alert.css?v=c26666be" rel="stylesheet" type="text/css"/>
+<link href="../_static/dataframe.css?v=a0f274c1" rel="stylesheet" type="text/css"/>
+<link href="../_static/scroller.css?v=2dcde208" rel="stylesheet" type="text/css"/>
+<link href="../_static/hv-sidebar-dropdown.css?v=3e2b0152" rel="stylesheet" type="text/css"/>
+<link href="../_static/css/custom.css?v=b266fffd" rel="stylesheet" type="text/css"/>
+<!-- So that users can add custom icons -->
+<script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+<!-- Pre-loaded scripts that we'll load fully later -->
+<link as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" rel="preload"/>
+<link as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" rel="preload"/>
+<script src="../_static/documentation_options.js?v=7e97f9bf"></script>
+<script src="../_static/doctools.js?v=9bcbadda"></script>
+<script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+<script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+<script src="../_static/copybutton.js?v=f281be69"></script>
+<script src="../_static/design-tabs.js?v=f930bc37"></script>
+<script src="../_static/ServiceHandler.js"></script>
+<script>
+    window.goatcounter = {
+        path: function(p) { return location.host + p }
+    }
+</script>
+<script async="async" data-goatcounter="https://holoviz.goatcounter.com/count" src="../_static/js/goatcounter.js?v=f53f84b8"></script>
+<script>DOCUMENTATION_OPTIONS.pagename = 'api/panel.models.vizzu';</script>
+<script type="esms-options">{"shimMode": true}</script>
+<script src="https://cdn.holoviz.org/panel/1.8.7/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js"></script>
+<link href="../_static/favicon.ico" rel="icon"/>
+<link href="../genindex.html" rel="index" title="Index"/>
+<link href="../search.html" rel="search" title="Search"/>
+<link href="panel.models.vtk.html" rel="next" title="panel.models.vtk module"/>
+<link href="panel.models.vega.html" rel="prev" title="panel.models.vega module"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="en" name="docsearch:language"/>
+<meta content="1.8.7" name="docsearch:version"/>
+<meta content="2026-01-28" name="docbuild:last-update"/>
+</head>
+<body data-bs-root-margin="0px 0px -60%" data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-default-mode="light" data-offset="180">
+<div class="skip-link d-print-none" id="pst-skip-link"><a href="#main-content">Skip to main content</a></div>
+<div id="pst-scroll-pixel-helper"></div>
+<button class="btn rounded-pill" id="pst-back-to-top" type="button">
+<i class="fa-solid fa-arrow-up"></i>Back to top</button>
+<dialog id="pst-search-dialog">
+<form action="../search.html" class="bd-search d-flex align-items-center" method="get">
+<i class="fa-solid fa-magnifying-glass"></i>
+<input aria-label="Search the docs ..." autocapitalize="off" autocomplete="off" autocorrect="off" class="form-control" name="q" placeholder="Search the docs ..." spellcheck="false" type="search"/>
+<span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+</dialog>
+<div class="pst-async-banner-revealer d-none">
+<aside aria-label="Version warning" class="d-none d-print-none" id="bd-header-version-warning"></aside>
+</div>
+<aside aria-label="Announcement" class="bd-header-announcement">
+<div class="bd-header-announcement__content">Panel 1.8.7 has just been released! Check out the <a href="https://panel.holoviz.org/about/releases.html">release notes</a> and support Panel by giving it a 🌟 on <a href="https://github.com/holoviz/panel">Github</a>.</div>
+</aside>
+<header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+<button aria-label="Site navigation" class="pst-navbar-icon sidebar-toggle primary-toggle">
+<span class="fa-solid fa-bars"></span>
+</button>
+<div class="col-lg-3 navbar-header-items__start">
+<div class="navbar-item">
+<a class="navbar-brand logo" href="../index.html">
+<img alt="Panel v1.8.7 - Home" class="logo__image only-light" src="../_static/logo_horizontal_light_theme.png"/>
+<img alt="Panel v1.8.7 - Home" class="logo__image only-dark pst-js-only" src="../_static/logo_horizontal_dark_theme.png"/>
+</a></div>
+</div>
+<div class="col-lg-9 navbar-header-items">
+<div class="me-auto navbar-header-items__center">
+<div class="navbar-item">
+<nav>
+<ul class="bd-navbar-elements navbar-nav">
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../explanation/index.html">
+    Explanation
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../reference/index.html">
+    Component Gallery
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../how_to/index.html">
+    How-to
+  </a>
+</li>
+<li class="nav-item dropdown">
+<button aria-controls="pst-nav-more-links" aria-expanded="false" class="btn dropdown-toggle nav-item" data-bs-toggle="dropdown" type="button">
+                    More
+                </button>
+<ul class="dropdown-menu" id="pst-nav-more-links">
+<li class="">
+<a class="nav-link dropdown-item nav-internal" href="../gallery/index.html">
+    App Gallery
+  </a>
+</li>
+<li class="">
+<a class="nav-link dropdown-item nav-internal" href="index.html">
+    API Reference
+  </a>
+</li>
+<li class="">
+<a class="nav-link dropdown-item nav-internal" href="../community.html">
+    Community
+  </a>
+</li>
+<li class="">
+<a class="nav-link dropdown-item nav-internal" href="../upgrade.html">
+    Upgrade Guide
+  </a>
+</li>
+<li class="">
+<a class="nav-link dropdown-item nav-internal" href="../FAQ.html">
+    FAQ
+  </a>
+</li>
+<li class="">
+<a class="nav-link dropdown-item nav-internal" href="../about/index.html">
+    About
+  </a>
+</li>
+<li class="">
+<a class="nav-link dropdown-item nav-internal" href="../developer_guide/index.html">
+    Developer Guide
+  </a>
+</li>
+</ul>
+</li>
+</ul>
+</nav></div>
+</div>
+<div class="navbar-header-items__end">
+<div class="navbar-item navbar-persistent--container">
+<button aria-label="Search" class="btn search-button-field search-button__button pst-js-only" data-bs-placement="bottom" data-bs-toggle="tooltip" title="Search">
+<i class="fa-solid fa-magnifying-glass"></i>
+<span class="search-button__default-text">Search</span>
+<span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+</div>
+<div class="navbar-item">
+<button aria-label="Color mode" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" data-bs-placement="bottom" data-bs-title="Color mode" data-bs-toggle="tooltip">
+<i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+<i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+<i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+</button></div>
+<div class="navbar-item"><ul aria-label="Icon Links" class="navbar-icon-links">
+<li class="nav-item">
+<a class="nav-link pst-navbar-icon" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://github.com/holoviz/panel" rel="noopener" target="_blank" title="GitHub"><i aria-hidden="true" class="fa-brands fa-square-github fa-lg"></i>
+<span class="sr-only">GitHub</span></a>
+</li>
+<li class="nav-item">
+<a class="nav-link pst-navbar-icon" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://twitter.com/Panel_Org" rel="noopener" target="_blank" title="Twitter"><i aria-hidden="true" class="fa-brands fa-twitter-square fa-lg"></i>
+<span class="sr-only">Twitter</span></a>
+</li>
+<li class="nav-item">
+<a class="nav-link pst-navbar-icon" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://discourse.holoviz.org/c/panel/5" rel="noopener" target="_blank" title="Discourse"><i aria-hidden="true" class="fa-brands fa-discourse fa-lg"></i>
+<span class="sr-only">Discourse</span></a>
+</li>
+<li class="nav-item">
+<a class="nav-link pst-navbar-icon" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://discord.gg/UXdtYyGVQX" rel="noopener" target="_blank" title="Discord"><i aria-hidden="true" class="fa-brands fa-discord fa-lg"></i>
+<span class="sr-only">Discord</span></a>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="navbar-persistent--mobile">
+<button aria-label="Search" class="btn search-button-field search-button__button pst-js-only" data-bs-placement="bottom" data-bs-toggle="tooltip" title="Search">
+<i class="fa-solid fa-magnifying-glass"></i>
+<span class="search-button__default-text">Search</span>
+<span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+</div>
+<button aria-label="On this page" class="pst-navbar-icon sidebar-toggle secondary-toggle">
+<span class="fa-solid fa-outdent"></span>
+</button>
+</div>
+</header>
+<div class="bd-container">
+<div class="bd-container__inner bd-page-width">
+<dialog id="pst-primary-sidebar-modal"></dialog>
+<div class="bd-sidebar-primary bd-sidebar" id="pst-primary-sidebar">
+<div class="sidebar-header-items sidebar-primary__section">
+<div class="sidebar-header-items__center">
+<div class="navbar-item">
+<nav>
+<ul class="bd-navbar-elements navbar-nav">
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../explanation/index.html">
+    Explanation
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../reference/index.html">
+    Component Gallery
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../how_to/index.html">
+    How-to
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../gallery/index.html">
+    App Gallery
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="index.html">
+    API Reference
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../community.html">
+    Community
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../upgrade.html">
+    Upgrade Guide
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../FAQ.html">
+    FAQ
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../about/index.html">
+    About
+  </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../developer_guide/index.html">
+    Developer Guide
+  </a>
+</li>
+</ul>
+</nav></div>
+</div>
+<div class="sidebar-header-items__end">
+<div class="navbar-item">
+<button aria-label="Color mode" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" data-bs-placement="bottom" data-bs-title="Color mode" data-bs-toggle="tooltip">
+<i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+<i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+<i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+</button></div>
+<div class="navbar-item"><ul aria-label="Icon Links" class="navbar-icon-links">
+<li class="nav-item">
+<a class="nav-link pst-navbar-icon" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://github.com/holoviz/panel" rel="noopener" target="_blank" title="GitHub"><i aria-hidden="true" class="fa-brands fa-square-github fa-lg"></i>
+<span class="sr-only">GitHub</span></a>
+</li>
+<li class="nav-item">
+<a class="nav-link pst-navbar-icon" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://twitter.com/Panel_Org" rel="noopener" target="_blank" title="Twitter"><i aria-hidden="true" class="fa-brands fa-twitter-square fa-lg"></i>
+<span class="sr-only">Twitter</span></a>
+</li>
+<li class="nav-item">
+<a class="nav-link pst-navbar-icon" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://discourse.holoviz.org/c/panel/5" rel="noopener" target="_blank" title="Discourse"><i aria-hidden="true" class="fa-brands fa-discourse fa-lg"></i>
+<span class="sr-only">Discourse</span></a>
+</li>
+<li class="nav-item">
+<a class="nav-link pst-navbar-icon" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://discord.gg/UXdtYyGVQX" rel="noopener" target="_blank" title="Discord"><i aria-hidden="true" class="fa-brands fa-discord fa-lg"></i>
+<span class="sr-only">Discord</span></a>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sidebar-primary-items__start sidebar-primary__section">
+<div class="sidebar-primary-item"><!-- Adapted from sidebar-nav-bs.html (1.15.2) with the following changes
+
+  - Commented out the tag that adds the "Section Navigation" title
+  - Call generate_toctree_html with startdepth=0
+
+Please update this file when required when bumping the max pin of pydata-sphinx-theme.
+-->
+<nav aria-label="Section Navigation" class="bd-docs-nav bd-links">
+<!-- <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p> -->
+<div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">FOR USERS</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../getting_started/index.html">Getting Started</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../getting_started/installation.html"><svg aria-hidden="true" class="sd-octicon sd-octicon-desktop-download sd-mr-1" height="2.0em" version="1.1" viewbox="0 0 24 24" width="2.0em"><path d="M11.25 9.331V.75a.75.75 0 0 1 1.5 0v8.58l1.949-2.11A.75.75 0 1 1 15.8 8.237l-3.25 3.52a.75.75 0 0 1-1.102 0l-3.25-3.52A.75.75 0 1 1 9.3 7.22l1.949 2.111Z"></path><path d="M2.5 3.75v11.5c0 .138.112.25.25.25h18.5a.25.25 0 0 0 .25-.25V3.75a.25.25 0 0 0-.25-.25h-5.5a.75.75 0 0 1 0-1.5h5.5c.966 0 1.75.784 1.75 1.75v11.5A1.75 1.75 0 0 1 21.25 17h-6.204c.171 1.375.805 2.652 1.769 3.757A.752.752 0 0 1 16.25 22h-8.5a.75.75 0 0 1-.566-1.243c.965-1.105 1.599-2.382 1.77-3.757H2.75A1.75 1.75 0 0 1 1 15.25V3.75C1 2.784 1.784 2 2.75 2h5.5a.75.75 0 0 1 0 1.5h-5.5a.25.25 0 0 0-.25.25ZM10.463 17c-.126 1.266-.564 2.445-1.223 3.5h5.52c-.66-1.055-1.098-2.234-1.223-3.5Z"></path></svg> Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting_started/build_app.html"><svg aria-hidden="true" class="sd-octicon sd-octicon-mortar-board sd-mr-1" height="2.0em" version="1.1" viewbox="0 0 24 24" width="2.0em"><path d="M12.292 2.06v-.001l11.25 4.75a.749.749 0 0 1 0 1.382L19 10.108V15a.75.75 0 0 1-.11.391h-.001a2.84 2.84 0 0 1-.392.482c-.249.256-.625.58-1.163.896-1.08.638-2.776 1.23-5.334 1.23-.673 0-1.286-.041-1.846-.113a.75.75 0 0 1 .192-1.487c.492.063 1.042.1 1.654.1 2.317 0 3.746-.533 4.572-1.021.31-.178.596-.397.849-.65l.079-.085V10.74l-5.208 2.2a.75.75 0 0 1-.584 0L5.75 10.424v3.17c.502.129.96.391 1.327.758.579.578.923 1.41.923 2.428v4.5a.761.761 0 0 1-.345.634 2.157 2.157 0 0 1-.21.117 3.923 3.923 0 0 1-.52.213A6.121 6.121 0 0 1 5 22.532a6.092 6.092 0 0 1-1.925-.288 4.065 4.065 0 0 1-.52-.213 1.816 1.816 0 0 1-.22-.124.757.757 0 0 1-.335-.624v-4.5c0-1.02.344-1.85.923-2.43a2.904 2.904 0 0 1 1.327-.757V9.793L.458 8.19a.75.75 0 0 1 0-1.38l11.25-4.75a.75.75 0 0 1 .584 0ZM12 11.436 21.322 7.5 12 3.564 2.678 7.5ZM5 15c-.377 0-.745.141-1.017.413-.265.265-.483.7-.483 1.368v4.022c.299.105.797.228 1.5.228s1.201-.123 1.5-.228V16.78c0-.669-.218-1.103-.483-1.368A1.433 1.433 0 0 0 5 15Z"></path></svg> Build an App</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting_started/core_concepts.html"><svg aria-hidden="true" class="sd-octicon sd-octicon-telescope sd-mr-1" height="2.0em" version="1.1" viewbox="0 0 24 24" width="2.0em"><path d="M.408 15.13a2 2 0 0 1 .59-2.642L17.038 1.33a1.999 1.999 0 0 1 2.85.602l2.828 4.644a2 2 0 0 1-.851 2.847l-17.762 8.43a2 2 0 0 1-2.59-.807Zm5.263-4.066 1.987 3.44 8.712-4.135-2.857-4.76Zm12.06-1.34.001-.001 3.49-1.656a.498.498 0 0 0 .212-.712l-2.826-4.644a.503.503 0 0 0-.713-.151l-3.148 2.19Zm-13.295 2.2L1.854 13.72a.5.5 0 0 0-.147.66l1.105 1.915a.5.5 0 0 0 .648.201l2.838-1.347ZM17.155 22.87a.75.75 0 0 0 .226-1.036l-4-6.239a.75.75 0 0 0-.941-.278l-2.75 1.25a.75.75 0 0 0-.318.274l-3.25 4.989a.75.75 0 0 0 1.256.819l3.131-4.806.51-.232v5.64a.75.75 0 1 0 1.5 0v-6.22l3.6 5.613a.75.75 0 0 0 1.036.226Z"></path></svg> Core Concepts</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorials/index.html">Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorials/basic/index.html">Basic Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/serve.html">Build Hello World App</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/develop_notebook.html">Develop in a Notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/develop_editor.html">Develop in an Editor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/pn_panel.html">Display Content with <code class="docutils literal notranslate"><span class="pre">pn.panel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/panes.html">Display Content with Panes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/indicators_performance.html">Display Performance with Indicators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/layouts.html">Layout Content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/size.html">Control the Size</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/align.html">Aligning Content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/widgets.html">Accept Inputs with Widgets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/pn_bind.html">React to User Input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/pn_rx.html">Reactive Expressions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/templates.html">Utilize Templates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/design.html">Apply a Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/style.html">Enhance the Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/caching.html">Optimize Performance with Caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/indicators_activity.html">Display Activity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/progressive_layouts.html">Update Progressively</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/build_dashboard.html">Build a Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/deploy.html">Deploy a Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/build_report.html">Build a Report</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/build_animation.html">Build Animation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/build_image_classifier.html">Build an Image Classifier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/build_monitoring_dashboard.html">Build a Monitoring Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/build_crossfilter_dashboard.html">Build Crossfiltering Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/build_streaming_dashboard.html">Build Streaming Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/build_chatbot.html">Build a Chat Bot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/basic/build_todo.html">Build a Todo App</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorials/intermediate/index.html">Intermediate Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/parameters.html">Reactive Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/reusable_components.html">Reusable Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/interactivity.html">Interactivity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/structure_data_store.html">Structure with a DataStore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/develop_editor.html">Develop in an Editor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/serve.html">Serve Apps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/advanced_layouts.html">Advanced Layouts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/create_form.html">Create a Form with HoloViz Panel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/build_todo.html">Build a Todo App</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/test_todo.html">Testing the Todo App</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/intermediate/build_server_video_stream.html">Build a Server Side Video Camera Application</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorials/expert/index.html">Expert Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/expert/custom_anywidget_components.html">Creating a <code class="docutils literal notranslate"><span class="pre">MarioButton</span></code> with <code class="docutils literal notranslate"><span class="pre">AnyWidgetComponent</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/expert/custom_js_components.html">Creating a <code class="docutils literal notranslate"><span class="pre">MarioButton</span></code> with <code class="docutils literal notranslate"><span class="pre">JSComponent</span></code></a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../explanation/index.html">Explanation</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../explanation/develop_seamlessly.html">Develop Seamlessly Across Environments</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../explanation/apis.html">APIs</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../explanation/api/index.html">API context</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../explanation/api/param.html">Param in Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../explanation/api/reactivity.html">Reactivity in Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../explanation/api/functions_vs_classes.html">Functions vs. Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../explanation/api/reactive.html">Reactive API</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../explanation/api/parameterized.html">Declarative API</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../explanation/api/callbacks.html">Callbacks</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../explanation/components.html">Components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/components/components_overview.html">Components overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/components/reactive_html_components.html">Custom components</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../explanation/dependencies.html">Dependencies</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/dependencies/param.html">Panel and Param</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/dependencies/bokeh.html">Panel and Bokeh</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../explanation/comparisons.html">Technology comparisons</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/comparisons/compare_dash.html">Panel vs Dash</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/comparisons/compare_ipywidgets.html">Panel vs ipywidgets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/comparisons/compare_voila.html">Panel vs Voila</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/comparisons/compare_streamlit.html">Panel vs Streamlit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/comparisons/compare_js.html">Panel vs JavaScript</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/comparisons/compare_bokeh.html">Panel vs Bokeh</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reference/index.html">Component Gallery</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/panes/index.html">Panes</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/AVIF.html">AVIF</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Alert.html">Alert</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Audio.html">Audio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Bokeh.html">Bokeh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/DataFrame.html">DataFrame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/DeckGL.html">DeckGL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/ECharts.html">ECharts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Folium.html">Folium</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/GIF.html">GIF</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/HTML.html">HTML</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/HoloViews.html">HoloViews</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/IPyWidget.html">IPyWidget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Image.html">Image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/JPG.html">JPG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/JSON.html">JSON</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/LaTeX.html">LaTeX</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Markdown.html">Markdown</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Matplotlib.html">Matplotlib</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/PDF.html">PDF</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/PNG.html">PNG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Param.html">Param</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Perspective.html">Perspective</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Placeholder.html">Placeholder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Plotly.html">Plotly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/ReactiveExpr.html">ReactiveExpr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Reacton.html">Reacton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/SVG.html">SVG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Str.html">Str</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Streamz.html">Streamz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Textual.html">Textual</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/VTK.html">VTK</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/VTKJS.html">VTKJS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/VTKVolume.html">VTKVolume</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Vega.html">Vega</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Video.html">Video</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/Vizzu.html">Vizzu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/panes/WebP.html">WebP</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/widgets/index.html">Widgets</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/ArrayInput.html">ArrayInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/AutocompleteInput.html">AutocompleteInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/Button.html">Button</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/ButtonIcon.html">ButtonIcon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/CheckBoxGroup.html">CheckBoxGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/CheckButtonGroup.html">CheckButtonGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/Checkbox.html">Checkbox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/CodeEditor.html">CodeEditor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/ColorMap.html">ColorMap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/ColorPicker.html">ColorPicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/CrossSelector.html">CrossSelector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DataFrame.html">DataFrame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DatePicker.html">DatePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DateRangePicker.html">DateRangePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DateRangeSlider.html">DateRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DateSlider.html">DateSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DatetimeInput.html">DatetimeInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DatetimePicker.html">DatetimePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DatetimeRangeInput.html">DatetimeRangeInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DatetimeRangePicker.html">DatetimeRangePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DatetimeRangeSlider.html">DatetimeRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DatetimeSlider.html">DatetimeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/Debugger.html">Debugger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DiscretePlayer.html">DiscretePlayer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/DiscreteSlider.html">DiscreteSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/EditableFloatSlider.html">EditableFloatSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/EditableIntSlider.html">EditableIntSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/EditableRangeSlider.html">EditableRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/FileDownload.html">FileDownload</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/FileDropper.html">FileDropper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/FileInput.html">FileInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/FileSelector.html">FileSelector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/FloatInput.html">FloatInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/FloatSlider.html">FloatSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/IntInput.html">IntInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/IntRangeSlider.html">IntRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/IntSlider.html">IntSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/JSONEditor.html">JSONEditor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/LiteralInput.html">LiteralInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/MenuButton.html">MenuButton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/MultiChoice.html">MultiChoice</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/MultiSelect.html">MultiSelect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/NestedSelect.html">NestedSelect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/PasswordInput.html">PasswordInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/Player.html">Player</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/RadioBoxGroup.html">RadioBoxGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/RadioButtonGroup.html">RadioButtonGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/RangeSlider.html">RangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/Select.html">Select</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/SpeechToText.html">SpeechToText</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/StaticText.html">StaticText</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/Switch.html">Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/Tabulator.html">Tabulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/Terminal.html">Terminal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/TextAreaInput.html">TextAreaInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/TextEditor.html">TextEditor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/TextInput.html">TextInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/TextToSpeech.html">TextToSpeech</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/TimePicker.html">TimePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/Toggle.html">Toggle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/ToggleGroup.html">ToggleGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/ToggleIcon.html">ToggleIcon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/widgets/VideoStream.html">VideoStream</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/layouts/index.html">Layouts</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/Accordion.html">Accordion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/Card.html">Card</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/Column.html">Column</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/Divider.html">Divider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/Feed.html">Feed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/FlexBox.html">FlexBox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/FloatPanel.html">FloatPanel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/GridBox.html">GridBox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/GridSpec.html">GridSpec</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/GridStack.html">GridStack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/Modal.html">Modal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/Row.html">Row</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/Swipe.html">Swipe</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/Tabs.html">Tabs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/layouts/WidgetBox.html">WidgetBox</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/chat/index.html">Chat</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/chat/ChatAreaInput.html">ChatAreaInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/chat/ChatFeed.html">ChatFeed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/chat/ChatInterface.html">ChatInterface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/chat/ChatMessage.html">ChatMessage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/chat/ChatStep.html">ChatStep</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/chat/PanelCallbackHandler.html">PanelCallbackHandler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/global/index.html">Global</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/global/Notifications.html">Notifications</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/indicators/index.html">Indicators</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/indicators/BooleanStatus.html">BooleanStatus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/indicators/Dial.html">Dial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/indicators/Gauge.html">Gauge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/indicators/LinearGauge.html">LinearGauge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/indicators/LoadingSpinner.html">LoadingSpinner</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/indicators/Number.html">Number</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/indicators/Progress.html">Progress</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/indicators/TooltipIcon.html">TooltipIcon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/indicators/Tqdm.html">Tqdm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/indicators/Trend.html">Trend</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/templates/index.html">Templates</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/templates/Bootstrap.html">Bootstrap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/templates/EditableTemplate.html">EditableTemplate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/templates/FastGridTemplate.html">FastGridTemplate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/templates/FastListTemplate.html">FastListTemplate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/templates/GoldenLayout.html">GoldenLayout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/templates/Material.html">Material</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/templates/React.html">React</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/templates/Slides.html">Slides</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/templates/Vanilla.html">Vanilla</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/custom_components/index.html">Custom Components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/custom_components/AnyWidgetComponent.html">AnyWidgetComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/custom_components/JSComponent.html">JSComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/custom_components/PyComponent.html">PyComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/custom_components/ReactComponent.html">ReactComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/custom_components/Viewer.html">Viewer</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../how_to/index.html">How-to</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../how_to/prepare_to_develop.html">Prepare to develop</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/notebook/index.html">Develop in a notebook</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/notebook/notebook.html">Display Output in Notebooks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/notebook/jupyterlabpreview.html">Preview Apps in JupyterLab</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/notebook/layout_builder.html">Publish a Notebook as a Dashboard Using the Layout Builder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/notebook/other_nb.html">Develop in other notebook environments</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/editor/index.html">Develop in an editor</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/editor/vscode_configure.html">Configure VS Code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/editor/pycharm_configure.html">Configure PyCharm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/editor/markdown.html">Write apps in Markdown</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../how_to/build_apps.html">Build apps</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/components/index.html">Construct individual components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/components/construct_panes.html">Construct Panes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/components/pane_type.html">Access Pane Type</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/components/widget_values.html">Access and Set Widget Values</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/components/widget_from_values.html">Construct Widgets from Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/components/add_remove.html">Add or Remove Components from Panels</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/styling/index.html">Styling components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/design.html">Apply a Design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/themes.html">Toggling themes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/apply_css.html">Apply CSS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/design_variables.html">Customize a Design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/load_icon.html">Customize Loading Icon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/visibility.html">Control Visibility</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/altair.html">Style Altair Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/echarts.html">Style Echarts Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/matplotlib.html">Style Matplotlib Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/plotly.html">Style Plotly Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/styling/vega.html">Style Vega Plots</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/interactivity/index.html">Interactivity</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/interactivity/bind_function.html">Add interactivity to a function</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/interactivity/bind_generators.html">Add interactivity with generators</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/interactivity/bind_component.html">Add reactivity to components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/interactivity/hvplot_interactive.html">Make interactive data workflows</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/layout/index.html">Arranging components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/layout/spacing.html">Customize Spacing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/layout/align.html">Align Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/layout/size.html">Control Size</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../how_to/use_specialized_uis.html">Use specialized UIs and APIs</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/pipeline/index.html">Build a sequential UI</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/pipeline/simple_pipeline.html">Create a <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/pipeline/complex_pipeline.html">Create a Non-Linear <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/pipeline/pipeline_layout.html">Customize <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> Layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/pipeline/control_flow.html">Control <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> Flow</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/custom_components/index.html">Build custom components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/custom_viewer.html">Combine Existing Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/python/create_custom_widget.html">Build a Widget in Python</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/plot_viewer.html">Plot Viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/table_viewer.html">How to Create Reactive Tables with Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/build.html">Compile and Bundle ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/callbacks.html">ESM component with callback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/custom_panes.html">Create Panes using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/custom_widgets.html">Create Custom Widgets using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/custom_layout.html">Create Custom Layouts using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/dataframe.html">Rendering DataFrames using ESM components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/esm_canvas.html">Build a Custom Canvas Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/esm_leaflet.html">Build a Custom Leaflet Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/esm_material_ui.html">Wrapping Material UI components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_layout.html">Create Layouts With ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_styling.html">Style your ReactiveHTML template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_panes.html">Create Panes with ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_indicators.html">Create Indicators With ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_callbacks.html">ReactiveHTML component with callback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_widgets.html">Widgets with ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_dataframe.html">DataFrames and ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/canvas_draw.html">Build a Custom Canvas Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/leaflet.html">Build a Custom Leaflet Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/vue.html">Wrap a Vue component</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/links/index.html">Explicitly link parameters (Callbacks API)</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/links/links.html">Create High-Level Python Links with <code class="docutils literal notranslate"><span class="pre">.link</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/links/watchers.html">Create Low-Level Python Links Using <code class="docutils literal notranslate"><span class="pre">.watch</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/links/jslinks.html">Link Two Objects in Javascript</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/links/link_plots.html">Link Plot Parameters in Javascript</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/links/jscallbacks.html">Link Many Objects in Javascript</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/param/index.html">Generate UIs from declared parameters (Declarative API)</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/param/uis.html">Generate Widgets from <code class="docutils literal notranslate"><span class="pre">Parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/param/custom.html">Declare Custom Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/param/dependencies.html">Declare parameter dependencies</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/param/subobjects.html">Create nested UIs</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../how_to/manage_session_tasks.html">Manage session tasks</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/callbacks/index.html">Register Session Callbacks</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/callbacks/async.html">Use Asynchronous Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/callbacks/defer_load.html">Defer Bound Functions to Improve the User Experience</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/callbacks/load.html">Defer Long Running Tasks to Improve the User Experience</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/callbacks/session.html">Run Tasks at Session Start or End</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/callbacks/periodic.html">Periodically Run Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/callbacks/schedule.html">Schedule Global Tasks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/callbacks/server.html">Modify Bokeh Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/callbacks/notifications.html">Add notifications on connect and disconnect</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/state/index.html">Access Session State</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/state/url.html">Access and Manipulate the URL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/state/request.html">Access HTTP Request State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/state/busy.html">Access Busyness state</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../how_to/extending_panel.html">Extending Panel</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/custom_components/index.html">Create Custom Components</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/custom_viewer.html">Combine Existing Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/python/create_custom_widget.html">Build a Widget in Python</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/plot_viewer.html">Plot Viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/table_viewer.html">How to Create Reactive Tables with Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/build.html">Compile and Bundle ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/callbacks.html">ESM component with callback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/custom_panes.html">Create Panes using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/custom_widgets.html">Create Custom Widgets using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/custom_layout.html">Create Custom Layouts using ESM Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/esm/dataframe.html">Rendering DataFrames using ESM components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/esm_canvas.html">Build a Custom Canvas Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/esm_leaflet.html">Build a Custom Leaflet Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/esm_material_ui.html">Wrapping Material UI components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_layout.html">Create Layouts With ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_styling.html">Style your ReactiveHTML template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_panes.html">Create Panes with ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_indicators.html">Create Indicators With ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_callbacks.html">ReactiveHTML component with callback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_widgets.html">Widgets with ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/reactive_html/reactive_html_dataframe.html">DataFrames and ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/canvas_draw.html">Build a Custom Canvas Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/leaflet.html">Build a Custom Leaflet Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/custom_components/examples/vue.html">Wrap a Vue component</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../how_to/test_and_debug.html">Test and debug</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/profiling/index.html">Enable profiling and debugging</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/profiling/admin.html">Enable the admin panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/profiling/profile.html">Profile your Application</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/profiling/logs.html">View application logs</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/test/index.html">Set up testing for an application</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/test/pytest.html">Test functionality and performance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/test/uitests.html">Test UI rendering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/test/loadtests.html">Test operating capacity</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../how_to/prepare_to_share.html">Prepare to share</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/templates/index.html">Apply Templates</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/templates/template_set.html">Set a Template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/templates/template_arrange.html">Arrange Components in a Template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/templates/template_modal.html">Toggle Modal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/templates/template_theme.html">Customize Template Theme</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/templates/template_custom.html">Build a Custom Template</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/performance/index.html">Improve Performance</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/performance/reuse_sessions.html">Reuse sessions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/performance/throttling.html">Enable Throttling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/performance/hold.html">Batching Updates with <code class="docutils literal notranslate"><span class="pre">hold</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/caching/index.html">Cache Data</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/caching/manual.html">Manually Cache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/caching/memoization.html">Automatically Cache</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/concurrency/index.html">Improve Scalability</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/concurrency/load_balancing.html">Load balancing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/concurrency/processes.html">Launch multiple processes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/concurrency/threading.html">Enable Automatic Threading</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/concurrency/manual_threading.html">Set Up Manual Threading</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/callbacks/async.html">Use Asynchronous Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/concurrency/sync_to_async.html">Run synchronous functions asynchronously</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/concurrency/dask.html">Scaling with Dask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/best_practices/index.html">Best Practices</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/best_practices/dev_experience.html">Developer Experience</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/best_practices/user_experience.html">User Experience</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/authentication/index.html">Add Authentication</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/authentication/basic.html">Configuring Basic Authentication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/authentication/configuration.html">Configuring OAuth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/authentication/pam.html">Configuring PAM Authentication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/authentication/providers/index.html">OAuth Providers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/authentication/templates.html">Authentication Templates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/authentication/user_info.html">Accessing User information</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/authentication/access_tokens.html">Access Tokens</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/authentication/authorization.html">Authorization callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/authentication/guest_users.html">Allowing Guest Users</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/authentication/trouble_shooting.html">Troubleshooting OAuth</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../how_to/share_your_work.html">Share your work</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/server/index.html">Configure the server</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/server/commandline.html">Launch a server on the command line</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/server/programmatic.html">Launching a server dynamically</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/server/multiple.html">Serving multiple applications</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/server/ssh.html">Connect to a remote server via SSH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/server/reconnect.html">Re-connecting to a Session</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/server/proxy.html">Configuring a reverse proxy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/server/static_files.html">Serving static files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/server/endpoints.html">Add custom endpoints to the Panel Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/server/websockets.html">Configuring WebSocket Communication Settings</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/distribute/index.html">Distribute applications</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/distribute/uv.html">How to Share Panel Scripts with uv</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/integrations/index.html">Integrate with other servers</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/integrations/FastAPI.html">Running Panel apps in FastAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/integrations/FastAPI_Tornado.html">Embedding a Panel Server in FastAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/integrations/flask.html">Integrating Panel with Flask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/integrations/Django.html">Running Panel apps inside Django</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/deployment/index.html">Deploy applications</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/deployment/anaconda_notebooks.html">Anaconda Notebooks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/deployment/aws.html">AWS: Amazon Web Services</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/deployment/azure.html">Microsoft Azure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/deployment/binder.html">MyBinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/deployment/gcp.html">Google Cloud Platform (GCP)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/deployment/heroku.html">Heroku</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/deployment/huggingface.html">Hugging Face</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/deployment/ploomber.html">Ploomber Cloud</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/deployment/pycafe.html">PyCafe Guide</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/deployment/pythonanywhere.html">PythonAnywhere</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/export/index.html">Export apps</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/export/embedding.html">Embedding state</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/export/saving.html">Save App to File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/export/bokeh.html">Access the Bokeh Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/wasm/index.html">Run panel in WebAssembly</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/wasm/standalone.html">Using Panel in Pyodide &amp; PyScript</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/wasm/convert.html">Converting Panel applications</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/wasm/sphinx.html">Embedding in Sphinx documentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/wasm/jupyterlite.html">Setting up JupyterLite</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/desktop_or_mobile/index.html">Convert to desktop or mobile apps</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/desktop_or_mobile/pywebview.html">Create Desktop Apps with pywebview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/desktop_or_mobile/toga.html">Create Cross-Platform Apps with Toga</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../how_to/migrate_to_panel.html">Migrate to Panel</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../how_to/streamlit_migration/index.html">Migrate from Streamlit</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/get_started.html">Serve Apps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/panes.html">Display Objects with Panes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/layouts.html">Layout Objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/widgets.html">Accepting User Inputs with Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/templates.html">Organize and Style with Templates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/activity.html">Show Activity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/interactivity.html">Add Interactivity with <code class="docutils literal notranslate"><span class="pre">pn.bind</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/caching.html">Improve the performance with Caching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/session_state.html">Session State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/chat.html">Create Chat Interfaces</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../how_to/streamlit_migration/multipage_apps.html">Multi Page Apps</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../gallery/index.html">App Gallery</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/altair_brushing.html">Altair Brushing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/deckgl_game_of_life.html">Deckgl Game Of Life</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/gapminders.html">Gapminders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/glaciers.html">Glaciers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/hvplot_explorer.html">Hvplot Explorer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/iris_kmeans.html">Iris Kmeans</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/nyc_deckgl.html">Nyc Deckgl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/penguin_crossfilter.html">Penguin Crossfilter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/penguin_kmeans.html">Penguin Kmeans</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/portfolio_analyzer.html">Portfolio Analyzer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/portfolio_optimizer.html">Portfolio Optimizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/streaming_videostream.html">Streaming Videostream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/vtk_interactive.html">Vtk Interactive</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/vtk_slicer.html">Vtk Slicer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/vtk_warp.html">Vtk Warp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/webllm.html">Webllm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/windturbines.html">Windturbines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/xgboost_classifier.html">Xgboost Classifier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">API Reference</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cheatsheet.html">Cheat Sheet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">Config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state.html">State</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panel.auth.html">panel.auth module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="panel.chat.html">panel.chat package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="panel.chat.feed.html">panel.chat.feed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.chat.icon.html">panel.chat.icon module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.chat.input.html">panel.chat.input module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.chat.interface.html">panel.chat.interface module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.chat.langchain.html">panel.chat.langchain module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.chat.message.html">panel.chat.message module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.chat.step.html">panel.chat.step module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.chat.utils.html">panel.chat.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="panel.command.html">panel.command package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="panel.command.bundle.html">panel.command.bundle module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.command.compile.html">panel.command.compile module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.command.convert.html">panel.command.convert module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.command.oauth_secret.html">panel.command.oauth_secret module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.command.serve.html">panel.command.serve module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="panel.compiler.html">panel.compiler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panel.config.html">panel.config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panel.custom.html">panel.custom module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panel.depends.html">panel.depends module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="panel.io.html">panel.io package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.admin.html">panel.io.admin module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.application.html">panel.io.application module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.browser.html">panel.io.browser module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.cache.html">panel.io.cache module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.callbacks.html">panel.io.callbacks module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.compile.html">panel.io.compile module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.convert.html">panel.io.convert module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.datamodel.html">panel.io.datamodel module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.django.html">panel.io.django module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.document.html">panel.io.document module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.embed.html">panel.io.embed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.fastapi.html">panel.io.fastapi module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.handlers.html">panel.io.handlers module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.ipywidget.html">panel.io.ipywidget module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.jupyter_executor.html">panel.io.jupyter_executor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.jupyter_server_extension.html">panel.io.jupyter_server_extension module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.liveness.html">panel.io.liveness module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.loading.html">panel.io.loading module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.location.html">panel.io.location module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.logging.html">panel.io.logging module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.mime_render.html">panel.io.mime_render module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.model.html">panel.io.model module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.notebook.html">panel.io.notebook module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.notifications.html">panel.io.notifications module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.profile.html">panel.io.profile module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.pyodide.html">panel.io.pyodide module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.reload.html">panel.io.reload module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.resources.html">panel.io.resources module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.rest.html">panel.io.rest module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.save.html">panel.io.save module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.server.html">panel.io.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.session.html">panel.io.session module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.state.html">panel.io.state module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.io.threads.html">panel.io.threads module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="panel.layout.html">panel.layout package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.accordion.html">panel.layout.accordion module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.base.html">panel.layout.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.card.html">panel.layout.card module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.feed.html">panel.layout.feed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.flex.html">panel.layout.flex module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.float.html">panel.layout.float module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.grid.html">panel.layout.grid module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.gridstack.html">panel.layout.gridstack module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.modal.html">panel.layout.modal module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.spacer.html">panel.layout.spacer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.swipe.html">panel.layout.swipe module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.layout.tabs.html">panel.layout.tabs module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="panel.links.html">panel.links module</a></li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="panel.models.html">panel.models package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="panel.models.ace.html">panel.models.ace module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.browser.html">panel.models.browser module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.chatarea_input.html">panel.models.chatarea_input module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.comm_manager.html">panel.models.comm_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.datetime_picker.html">panel.models.datetime_picker module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.datetime_slider.html">panel.models.datetime_slider module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.deckgl.html">panel.models.deckgl module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.echarts.html">panel.models.echarts module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.enums.html">panel.models.enums module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.esm.html">panel.models.esm module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.feed.html">panel.models.feed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.file_dropper.html">panel.models.file_dropper module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.icon.html">panel.models.icon module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.ipywidget.html">panel.models.ipywidget module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.jsoneditor.html">panel.models.jsoneditor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.katex.html">panel.models.katex module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.layout.html">panel.models.layout module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.location.html">panel.models.location module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.markup.html">panel.models.markup module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.mathjax.html">panel.models.mathjax module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.modal.html">panel.models.modal module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.perspective.html">panel.models.perspective module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.plotly.html">panel.models.plotly module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.quill.html">panel.models.quill module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.reactive_html.html">panel.models.reactive_html module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.speech_to_text.html">panel.models.speech_to_text module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.state.html">panel.models.state module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.tabs.html">panel.models.tabs module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.tabulator.html">panel.models.tabulator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.terminal.html">panel.models.terminal module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.text_to_speech.html">panel.models.text_to_speech module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.time_picker.html">panel.models.time_picker module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.trend.html">panel.models.trend module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.vega.html">panel.models.vega module</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">panel.models.vizzu module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.vtk.html">panel.models.vtk module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.models.widgets.html">panel.models.widgets module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="panel.pane.html">panel.pane package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="panel.pane.vtk.html">panel.pane.vtk package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="panel.pane.vtk.enums.html">panel.pane.vtk.enums module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="panel.pane.vtk.synchronizable_deserializer.html">panel.pane.vtk.synchronizable_deserializer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="panel.pane.vtk.synchronizable_serializer.html">panel.pane.vtk.synchronizable_serializer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="panel.pane.vtk.vtk.html">panel.pane.vtk.vtk module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.alert.html">panel.pane.alert module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.base.html">panel.pane.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.deckgl.html">panel.pane.deckgl module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.echarts.html">panel.pane.echarts module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.equation.html">panel.pane.equation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.holoviews.html">panel.pane.holoviews module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.image.html">panel.pane.image module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.ipywidget.html">panel.pane.ipywidget module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.markup.html">panel.pane.markup module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.media.html">panel.pane.media module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.perspective.html">panel.pane.perspective module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.placeholder.html">panel.pane.placeholder module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.plot.html">panel.pane.plot module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.plotly.html">panel.pane.plotly module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.streamz.html">panel.pane.streamz module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.textual.html">panel.pane.textual module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.vega.html">panel.pane.vega module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.pane.vizzu.html">panel.pane.vizzu module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="panel.param.html">panel.param module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panel.pipeline.html">panel.pipeline module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panel.reactive.html">panel.reactive module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="panel.template.html">panel.template package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="panel.template.bootstrap.html">panel.template.bootstrap package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.template.editable.html">panel.template.editable package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="panel.template.fast.html">panel.template.fast package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="panel.template.fast.grid.html">panel.template.fast.grid package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="panel.template.fast.list.html">panel.template.fast.list package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="panel.template.fast.base.html">panel.template.fast.base module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.template.golden.html">panel.template.golden package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.template.material.html">panel.template.material package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.template.react.html">panel.template.react package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.template.slides.html">panel.template.slides package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.template.vanilla.html">panel.template.vanilla package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.template.base.html">panel.template.base module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="panel.theme.html">panel.theme package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="panel.theme.base.html">panel.theme.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.theme.bootstrap.html">panel.theme.bootstrap module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.theme.fast.html">panel.theme.fast module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.theme.material.html">panel.theme.material module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.theme.native.html">panel.theme.native module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="panel.util.html">panel.util package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="panel.util.checks.html">panel.util.checks module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.util.parameters.html">panel.util.parameters module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.util.warnings.html">panel.util.warnings module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="panel.viewable.html">panel.viewable module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="panel.widgets.html">panel.widgets package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.base.html">panel.widgets.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.button.html">panel.widgets.button module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.codeeditor.html">panel.widgets.codeeditor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.debugger.html">panel.widgets.debugger module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.file_selector.html">panel.widgets.file_selector module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.icon.html">panel.widgets.icon module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.indicators.html">panel.widgets.indicators module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.input.html">panel.widgets.input module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.misc.html">panel.widgets.misc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.player.html">panel.widgets.player module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.select.html">panel.widgets.select module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.slider.html">panel.widgets.slider module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.speech_to_text.html">panel.widgets.speech_to_text module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.tables.html">panel.widgets.tables module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.terminal.html">panel.widgets.terminal module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.text_to_speech.html">panel.widgets.text_to_speech module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.texteditor.html">panel.widgets.texteditor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panel.widgets.widget.html">panel.widgets.widget module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../upgrade.html">Upgrade Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../about/index.html">About</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../about/releases.html">Releases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../about/people.html">People</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../about/roadmap.html">Roadmap</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">FOR DEVELOPERS</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/extensions.html">Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/wasm.html">WASM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/custom_models.html">Developing custom models</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+<div class="sidebar-primary-item">
+<div class="hv-sb-dd">
+<div class="btn-group">
+<a class="btn hv-sb-dd-value" href="https://holoviz.org" target="_blank">HoloViz.org<i aria-hidden="true" class="fa fa-external-link hv-icon"></i></a>
+<button aria-expanded="false" class="btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+<span class="visually-hidden"></span>
+</button>
+<ul class="dropdown-menu">
+<li><a class="dropdown-item" href="https://hvplot.holoviz.org" target="_blank" title="Quickly return interactive HoloViews, GeoViews, or Panel objects from Pandas, Xarray, or other data structures">hvPlot<i aria-hidden="true" class="fa fa-external-link hv-icon"></i></a></li>
+<li><a class="dropdown-item" href="https://holoviews.org" target="_blank" title="Declarative objects for instantly visualizable data, building Bokeh plots from convenient high-level specifications">HoloViews<i aria-hidden="true" class="fa fa-external-link hv-icon"></i></a></li>
+<li><a class="dropdown-item" href="https://geoviews.org" target="_blank" title="Visualizable geographic data that that can be mixed and matched with HoloViews objects">GeoViews<i aria-hidden="true" class="fa fa-external-link hv-icon"></i></a></li>
+<li><a class="dropdown-item" href="https://datashader.org" target="_blank" title="Rasterizing huge datasets quickly as fixed-size images">Datashader<i aria-hidden="true" class="fa fa-external-link hv-icon"></i></a></li>
+<li><a class="dropdown-item" href="https://param.holoviz.org" target="_blank" title="Make your Python code clearer and more reliable by declaring Parameters">Param<i aria-hidden="true" class="fa fa-external-link hv-icon"></i></a></li>
+<li><a class="dropdown-item" href="https://lumen.holoviz.org" target="_blank" title="Framework for visual analytics that allows users to build data-driven dashboards from a simple YAML specification">Lumen<i aria-hidden="true" class="fa fa-external-link hv-icon"></i></a></li>
+<li><a class="dropdown-item" href="https://colorcet.holoviz.org" target="_blank" title="A wide range of perceptually uniform continuous colormaps and perceptually based categorical color sets for use with the other libraries">Colorcet<i aria-hidden="true" class="fa fa-external-link hv-icon"></i></a></li>
+<li><hr class="dropdown-divider"/></li>
+<li><a class="dropdown-item" href="https://examples.holoviz.org" target="_blank" title=" Visualization-focused examples using HoloViz for specific topics ">Examples Gallery<i aria-hidden="true" class="fa fa-external-link hv-icon"></i></a></li>
+<li><a class="dropdown-item" href="https://blog.holoviz.org" target="_blank" title="HoloViz blog">Blog<i aria-hidden="true" class="fa fa-external-link hv-icon"></i></a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sidebar-primary-items__end sidebar-primary__section">
+<div class="sidebar-primary-item">
+<div class="flat" data-ea-manual="true" data-ea-publisher="readthedocs" data-ea-type="readthedocs-sidebar" id="ethical-ad-placement">
+</div></div>
+</div>
+</div>
+<main class="bd-main" id="main-content" role="main">
+<div class="bd-content">
+<div class="bd-article-container">
+<div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+<div class="header-article-items__start">
+<div class="header-article-item">
+<nav aria-label="Breadcrumb" class="d-print-none">
+<ul class="bd-breadcrumbs">
+<li class="breadcrumb-item breadcrumb-home">
+<a aria-label="Home" class="nav-link" href="../index.html">
+<i class="fa-solid fa-home"></i>
+</a>
+</li>
+<li class="breadcrumb-item"><a class="nav-link" href="index.html">API Reference</a></li>
+<li class="breadcrumb-item"><a class="nav-link" href="panel.models.html">panel.models package</a></li>
+<li aria-current="page" class="breadcrumb-item active"><span class="ellipsis">panel.models.vizzu module</span></li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+</div>
+<div id="searchbox"></div>
+<article class="bd-article">
+<section id="module-panel.models.vizzu">
+<span id="panel-models-vizzu-module"></span><h1>panel.models.vizzu module<a class="headerlink" href="#module-panel.models.vizzu" title="Link to this heading">#</a></h1>
+<p>Defines custom VizzuChart bokeh model to render Vizzu charts.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="panel.models.vizzu.VizzuChart">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panel.models.vizzu.</span></span><span class="sig-name descname"><span class="pre">VizzuChart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ID</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/holoviz/panel/blob/v1.8.7/panel/models/vizzu.py#L25-L57"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panel.models.vizzu.VizzuChart" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LayoutDOM</span></code></p>
+<p>A Bokeh model that wraps around a Vizzu chart and renders it
+inside a Bokeh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>animation</strong></dt><dd></dd>
+<dt><strong>columns</strong></dt><dd></dd>
+<dt><strong>config</strong></dt><dd></dd>
+<dt><strong>duration</strong></dt><dd></dd>
+<dt><strong>source</strong></dt><dd><p>Local data source to use when rendering glyphs on the plot.</p>
+</dd>
+<dt><strong>style</strong></dt><dd></dd>
+<dt><strong>tooltip</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panel.models.vizzu.VizzuChart.source">
+<span class="sig-name descname"><span class="pre">source</span></span><a class="headerlink" href="#panel.models.vizzu.VizzuChart.source" title="Link to this definition">#</a></dt>
+<dd><p>Local data source to use when rendering glyphs on the plot.</p>
+</dd></dl>
+</dd></dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="panel.models.vizzu.VizzuEvent">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panel.models.vizzu.</span></span><span class="sig-name descname"><span class="pre">VizzuEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/holoviz/panel/blob/v1.8.7/panel/models/vizzu.py#L16-L22"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panel.models.vizzu.VizzuEvent" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ModelEvent</span></code></p>
+</dd></dl>
+</section>
+</article>
+<footer class="prev-next-footer d-print-none">
+<div class="prev-next-area">
+<a class="left-prev" href="panel.models.vega.html" title="previous page">
+<i class="fa-solid fa-angle-left"></i>
+<div class="prev-next-info">
+<p class="prev-next-subtitle">previous</p>
+<p class="prev-next-title">panel.models.vega module</p>
+</div>
+</a>
+<a class="right-next" href="panel.models.vtk.html" title="next page">
+<div class="prev-next-info">
+<p class="prev-next-subtitle">next</p>
+<p class="prev-next-title">panel.models.vtk module</p>
+</div>
+<i class="fa-solid fa-angle-right"></i>
+</a>
+</div>
+</footer>
+</div>
+<dialog id="pst-secondary-sidebar-modal"></dialog>
+<div class="bd-sidebar-secondary bd-toc" id="pst-secondary-sidebar"><div class="sidebar-secondary-items sidebar-secondary__inner">
+<div class="sidebar-secondary-item"><div class="github-star-badge">
+<a href="https://github.com/holoviz/panel">
+<img alt="Support us with a star on GitHub" src="https://img.shields.io/github/stars/holoviz/panel?style=social&amp;label=Star%20on%20%20GitHub%E2%AD%90"/>
+</a>
+</div></div>
+<div class="sidebar-secondary-item">
+<div class="tocsection">
+</div></div>
+<div class="sidebar-secondary-item">
+<div class="page-toc tocsection onthispage" id="pst-page-navigation-heading-2">
+<i class="fa-solid fa-list"></i> On this page
+  </div>
+<nav aria-labelledby="pst-page-navigation-heading-2" class="bd-toc-nav page-toc">
+<ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#panel.models.vizzu.VizzuChart"><code class="docutils literal notranslate"><span class="pre">VizzuChart</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panel.models.vizzu.VizzuChart.source"><code class="docutils literal notranslate"><span class="pre">VizzuChart.source</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#panel.models.vizzu.VizzuEvent"><code class="docutils literal notranslate"><span class="pre">VizzuEvent</span></code></a></li>
+</ul>
+</nav></div>
+</div></div>
+</div>
+<footer class="bd-footer-content">
+</footer>
+</main>
+</div>
+</div>
+<!-- Scripts loaded after <body> so the DOM is not blocked -->
+<script defer="" src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer="" src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+<footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+<div class="footer-items__start">
+<div class="footer-item">
+<p class="copyright">
+    
+      © Copyright 2019-2026 Holoviz contributors.
+      <br/>
+</p>
+</div>
+<div class="footer-item">
+<p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+</p>
+</div>
+</div>
+<div class="footer-items__end">
+<div class="footer-item">
+<p class="theme-version">
+<!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+</div>
+</div>
+</footer>
+</body>
+</html>

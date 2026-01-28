@@ -1,0 +1,149 @@
+body {
+  display: flex;
+  height: 100vh;
+  font-family: 'Lato', sans-serif;
+  margin: 0px;
+}
+
+body,
+.main-area,
+.main-content,
+.lm_goldenlayout {
+  overflow: hidden;
+}
+
+.main-area {
+  flex: auto;
+  overflow: hidden;
+  position: relative;
+  border-color: rgba(64, 64, 64);
+  border-left-width: 1px;
+  border-left-style: solid;
+}
+
+.main-content {
+  height: 100%;
+  overflow: hidden;
+}
+
+#header {
+  position: absolute;
+  height: 64px;
+  z-index: 7;
+  background-color: black;
+  width: 100vw;
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+#sidebar {
+  background-color: rgb(34, 34, 34);
+  color: white;
+}
+
+.sidebar-contents {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.header-contents {
+  overflow: hidden;
+  width: 100%;
+  padding-left: 10px;
+}
+
+.app-header {
+  display: flex;
+  padding-left: 10px;
+}
+
+img.app-logo {
+  padding-right: 10px;
+  font-size: 28px;
+  height: 30px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  max-width: inherit;
+}
+
+.header-adjust {
+  padding-top: 64px;
+}
+
+#app-title {
+  margin-right: 15px;
+  padding-left: 10px;
+}
+
+.title {
+  color: #fff;
+  text-decoration: none;
+  text-decoration-line: none;
+  text-decoration-style: initial;
+  text-decoration-color: initial;
+  font-weight: 400;
+  font-size: 1.5em;
+  line-height: 2em;
+  white-space: nowrap;
+}
+
+p.bk.golden-card-button {
+  display: none;
+}
+
+.lm_content {
+  background-color: var(
+    --design-background-color,
+    var(--panel-background-color)
+  );
+  overflow-y: auto !important;
+}
+
+.lm_item_container {
+  overflow: hidden;
+}
+
+.lm_goldenlayout {
+  overflow: auto;
+}
+
+.pn-modal {
+  overflow-y: scroll;
+  width: 100%;
+  position: absolute;
+  display: none;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.pn-modal-content {
+  background-color: var(--design-surface-color, var(--panel-surface-color));
+  margin: auto;
+  margin-top: 25px;
+  margin-bottom: 25px;
+  padding: 15px 20px 20px 20px;
+  border: 1px solid #888;
+  width: 80% !important;
+}
+
+.pn-modal-close {
+  position: absolute;
+  right: 25px;
+  z-index: 100;
+}
+
+.pn-modal-close:hover,
+.pn-modal-close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pn-busy-container {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  margin-left: auto;
+}
