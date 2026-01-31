@@ -37,4 +37,4 @@ pn.state.schedule_task('task', task, cron='2 4 * * mon,fri')
 ```
 
 ## Related Resources
-- See [crontab.guru](https://crontab.guru/) and the [`croniter` README](https://github.com/kiorky/croniter#introduction) to learn the special syntax supported by `croniter` and about cron expressions generally.
+- See [crontab.guru](https://crontab.guru/) and the [`croniter` README](https://github.com/pallets-eco/croniter#introduction) to learn the special syntax supported by `croniter` and about cron expressions generally.
