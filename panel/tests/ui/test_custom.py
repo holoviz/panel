@@ -82,8 +82,8 @@ class AnyWidgetReactUpdate(AnyWidgetComponent):
 
     _importmap = {
         "imports": {
-            "@anywidget/react": "https://esm.sh/@anywidget/react",
-            "react": "https://esm.sh/react",
+            "@anywidget/react": "https://esm.sh/@anywidget/react?deps=react@18.2.0,react-dom@18.2.0",
+            "react": "https://esm.sh/react@18.2.0",
         }
     }
 
