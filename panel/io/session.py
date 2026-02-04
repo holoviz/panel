@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from bokeh.server.callbacks import SessionCallback
     from tornado.httputil import HTTPServerRequest
 
-from .document import hold
 from .state import state
 
 log = logging.getLogger(__name__)
@@ -86,10 +85,6 @@ def generate_session(application, request=None, payload=None, initialize=True):
 
 class PanelApplicationContext(ApplicationContext):
 
-    def _initialize_document(self, doc: Document):
-        with hold():
-            self._application.initialize_document(doc)
-
     async def create_session_if_needed(
         self, session_id: ID, request: HTTPServerRequest | None = None, token: str | None = None
     ) -> ServerSession:
@@ -134,11 +129,10 @@ class PanelApplicationContext(ApplicationContext):
 
             if state._thread_pool:
                 loop = asyncio.get_running_loop()
-                await loop.run_in_executor(state._thread_pool, self._initialize_document, doc)
+                await loop.run_in_executor(state._thread_pool, self._application.initialize_document, doc)
                 thread_id = threading.get_ident()
                 if thread_id:
                     state._thread_id_[doc] = thread_id
-
             else:
                 self._application.initialize_document(doc)
 
