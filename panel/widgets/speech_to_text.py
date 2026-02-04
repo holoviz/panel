@@ -393,7 +393,7 @@ class SpeechToText(Widget):
         browser.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'grammars': None, '_grammars': 'grammars', 'name': None, 'value': None,
+        'grammars': None, '_grammars': 'grammars', 'label': None, 'value': None,
     }
 
     _widget_type: ClassVar[type[Model]] = _BkSpeechToText

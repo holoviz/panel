@@ -5,6 +5,8 @@ parameters.
 """
 from __future__ import annotations
 
+import warnings
+
 from collections.abc import Callable, Mapping
 from typing import (
     TYPE_CHECKING, Any, ClassVar, TypeVar,
@@ -121,7 +123,11 @@ class Widget(Reactive, WidgetBase):
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
 
-    name = param.String(default='', constant=False)
+    label = param.String(default='', doc="""
+       The label for the widget.""")
+
+    name = param.String(default='', constant=False, doc="""
+       Alias for label.""")
 
     height = param.Integer(default=None, bounds=(0, None))
 
@@ -132,7 +138,7 @@ class Widget(Reactive, WidgetBase):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'label': 'title', 'name': None}
 
     # Whether the widget supports embedding
     _supports_embed: bool = False
@@ -143,8 +149,22 @@ class Widget(Reactive, WidgetBase):
     __abstract = True
 
     def __init__(self, **params: Any):
-        if 'name' not in params:
-            params['name'] = ''
+        if "name" in params and "label" in params:
+            warnings.warn(
+                "Both 'name' and 'label' were provided; using 'label' and ignoring 'name'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            params.pop("name")
+        elif "name" in params:
+            warnings.warn(
+                "'name' is deprecated and will be removed in a future release. Use 'label' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            params["label"] = params.pop("name")
+        elif "label" not in params:
+            params["label"] = ""
         if '_supports_embed' in params:
             self._supports_embed = params.pop('_supports_embed')
         if '_param_pane' in params:
@@ -152,6 +172,14 @@ class Widget(Reactive, WidgetBase):
         else:
             self._param_pane = None
         super().__init__(**params)
+
+    @param.depends("name", watch=True)
+    def _sync__label(self):
+        self.label = self.name
+
+    @param.depends("label", watch=True)
+    def _sync__name(self):
+        self.name = self.label
 
     @property
     def _linked_properties(self) -> tuple[str, ...]:
