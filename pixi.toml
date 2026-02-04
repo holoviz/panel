@@ -236,9 +236,14 @@ pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 pytest-xdist = "*"
+platformdirs = "*"
+jsonschema = "*"
 
 [feature.bokeh37.dependencies]
 bokeh = "3.7.*"
+diskcache = "*"
+platformdirs = "*"
+jsonschema = "*"
 
 [feature.test.dependencies]
 # Optional dependencies - recommended
@@ -263,10 +268,12 @@ ipympl = "*"
 ipyvuetify = "*"
 ipywidgets_bokeh = "*"
 numba = "*"
+platformdirs = "*"
 polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+jsonschema = "*"
 vl-convert-python = "*"
 
 [feature.test-314.dependencies]
@@ -296,6 +303,8 @@ polars = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+jsonschema = "*"
+vl-convert-python = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
@@ -332,6 +341,7 @@ pytest = "*"
 pandas-stubs = "*"
 types-bleach = "*"
 types-croniter = "*"
+types-jsonschema = "*"
 types-Markdown = "*"
 types-psutil = "*"
 types-requests = "*"
