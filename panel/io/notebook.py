@@ -13,6 +13,7 @@ import warnings
 from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import partial
+from html import escape
 from typing import TYPE_CHECKING, Any, Literal
 
 import bokeh
@@ -38,7 +39,7 @@ from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, nb_mime_js,
 )
 
-from ..util import _descendents, escape
+from ..util import _descendents
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (

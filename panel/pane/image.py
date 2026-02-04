@@ -9,6 +9,7 @@ import base64
 import struct
 
 from collections.abc import Mapping
+from html import escape
 from io import BytesIO
 from pathlib import PurePath
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -17,7 +18,7 @@ import param
 
 from ..models import PDF as _BkPDF
 from ..util import _descendents, isfile, isurl
-from .markup import HTMLBasePane, escape
+from .markup import HTMLBasePane
 
 if TYPE_CHECKING:
     from bokeh.model import Model

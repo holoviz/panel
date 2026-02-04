@@ -24,6 +24,7 @@ import sys
 import time
 
 from collections.abc import Mapping
+from html import escape
 from math import pi
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -41,7 +42,7 @@ from ..models import (
 )
 from ..pane.markup import Str
 from ..reactive import SyncableData
-from ..util import PARAM_NAME_PATTERN, escape, updating
+from ..util import PARAM_NAME_PATTERN, updating
 from ..viewable import Viewable
 from .base import Widget
 

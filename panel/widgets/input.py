@@ -10,6 +10,7 @@ import json
 from base64 import b64decode
 from collections.abc import Iterable, Mapping
 from datetime import date, datetime, time as dt_time
+from html import escape
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Type,
 )
@@ -34,9 +35,7 @@ from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
     TextInput as _BkTextInput, TimePicker as _BkTimePicker,
 )
-from ..util import (
-    escape, lazy_load, param_reprs, try_datetime64_to_datetime,
-)
+from ..util import lazy_load, param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
 
 if TYPE_CHECKING:
