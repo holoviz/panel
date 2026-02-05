@@ -1,6 +1,7 @@
 import os
 
 from base64 import b64decode, b64encode
+from html import escape
 from io import BytesIO, StringIO
 from pathlib import Path
 
@@ -11,7 +12,6 @@ from requests.exceptions import MissingSchema
 from panel.pane import (
     AVIF, GIF, ICO, JPG, PDF, PNG, SVG, WebP,
 )
-from panel.pane.markup import escape
 
 AVIF_FILE = 'https://assets.holoviz.org/panel/samples/avif_sample.avif'
 JPG_FILE = 'https://assets.holoviz.org/panel/samples/jpg_sample.jpg'

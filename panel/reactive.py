@@ -19,6 +19,7 @@ import uuid
 from collections import Counter, defaultdict, namedtuple
 from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
+from html import escape
 from pprint import pformat
 from typing import (
     TYPE_CHECKING, Any, ClassVar, TypeAlias,
@@ -48,7 +49,7 @@ from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    HTML_SANITIZER, classproperty, edit_readonly, escape, updating,
+    HTML_SANITIZER, classproperty, edit_readonly, updating,
 )
 from .util.checks import import_available
 from .viewable import (

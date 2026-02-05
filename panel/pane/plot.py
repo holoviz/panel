@@ -9,6 +9,7 @@ import sys
 from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import partial
+from html import escape
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -21,7 +22,6 @@ from bokeh.themes import Theme
 
 from ..io import remove_root, state
 from ..io.notebook import push
-from ..util import escape
 from ..viewable import Layoutable
 from .base import Pane
 from .image import (

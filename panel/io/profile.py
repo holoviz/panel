@@ -10,12 +10,12 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from cProfile import Profile
 from functools import wraps
+from html import escape
 from typing import (
     TYPE_CHECKING, Literal, ParamSpec, TypeVar,
 )
 
 from ..config import config
-from ..util import escape
 from .state import state
 
 if TYPE_CHECKING:

@@ -9,6 +9,7 @@ import json
 import textwrap
 
 from collections.abc import Mapping
+from html import escape
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import param  # type: ignore
@@ -16,7 +17,7 @@ import param  # type: ignore
 from ..config import config
 from ..io.resources import CDN_DIST
 from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
-from ..util import HTML_SANITIZER, escape, prefix_length
+from ..util import HTML_SANITIZER, prefix_length
 from .base import ModelPane
 
 if TYPE_CHECKING:
