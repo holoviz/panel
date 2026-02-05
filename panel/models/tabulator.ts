@@ -520,7 +520,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   override invalidate_render(): void {
-    this.tabulator.destroy()
+    this.tabulator?.destroy()
     this.tabulator = null
     this.rerender_()
   }
@@ -585,10 +585,13 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
+  override remove(): void {
+    this.tabulator?.destroy()
+    super.remove()
+  }
+
   override render(): void {
-    if (this.tabulator != null) {
-      this.tabulator.destroy()
-    }
+    this.tabulator?.destroy()
     super.render()
     this._initializing = true
     this._building = true
