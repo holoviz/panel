@@ -469,7 +469,7 @@ def server_cleanup():
         yield
     finally:
         _PATCHED_CURDOCS.clear()
-        _STATE.document = None
+        _STATE.document = Document()
         state.reset()
         _watched_files.clear()
         _modules.clear()
