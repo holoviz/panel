@@ -312,6 +312,8 @@ def patch_stylesheet(stylesheet, dist_url):
         patched_url = url.replace(CDN_DIST, dist_url)
     elif url.startswith(LOCAL_DIST) and dist_url.lstrip('./').startswith(LOCAL_DIST):
         patched_url = url.replace(LOCAL_DIST, dist_url)
+    elif url.startswith(LOCAL_DIST) and dist_url != LOCAL_DIST:
+        patched_url = url.replace(LOCAL_DIST, dist_url)
     else:
         return
     version_suffix = f'?v={JS_VERSION}'
@@ -415,11 +417,15 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
     bdir = BUNDLE_DIR / name
     shared = list((JS_URLS if file_type == 'javascript' else CSS_URLS).values())
     files = []
+    npm_cdn_prefixes = (config.npm_cdn, 'https://cdn.jsdelivr.net/npm', 'https://unpkg.com')
     for url in raw_files:
         if url.startswith(CDN_DIST):
             filepath = url.replace(f'{CDN_DIST}bundled/', '')
-        elif url.startswith(config.npm_cdn):
-            filepath = url.replace(config.npm_cdn, '')[1:]
+        elif url.startswith(npm_cdn_prefixes):
+            for prefix in npm_cdn_prefixes:
+                if url.startswith(prefix):
+                    filepath = url.replace(prefix, '')[1:]
+                    break
         else:
             filepath = url_path(url)
         test_filepath = filepath.split('?')[0]
