@@ -3,7 +3,6 @@ import pathlib
 from bokeh.models import ImportedStyleSheet
 
 from panel.io.resources import CDN_DIST
-from panel.io.state import state
 from panel.theme.base import BOKEH_DARK, Design, Inherit
 from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
@@ -122,8 +121,6 @@ def test_design_params_url_inherited():
 def test_design_apply(document, comm):
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
-
-    print(">>>", state.curdoc, getattr(state.curdoc, "session_context", None))  # noqa
 
     DesignTest().apply(widget, model)
 
