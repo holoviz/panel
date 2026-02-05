@@ -1185,9 +1185,9 @@ class ChatFeed(ListPanel):
 
             if custom_serializer:
                 content = custom_serializer(message.object)
-                if not isinstance(content, str):
+                if not isinstance(content, (str, list)):
                     raise ValueError(
-                        f"The provided custom_serializer must return a string; "
+                        f"The provided custom_serializer must return a string or list; "
                         f"it returned a {type(content)} type"
                     )
             else:
