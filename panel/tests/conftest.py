@@ -23,7 +23,8 @@ import pytest
 
 from bokeh.client import pull_session
 from bokeh.document import Document
-from bokeh.io.doc import curdoc, set_curdoc as set_bkdoc
+from bokeh.io.doc import _PATCHED_CURDOCS, curdoc, set_curdoc as set_bkdoc
+from bokeh.io.state import _STATE
 from pyviz_comms import Comm
 
 from panel import config, serve
@@ -467,6 +468,8 @@ def server_cleanup():
     try:
         yield
     finally:
+        _PATCHED_CURDOCS.clear()
+        _STATE.document = None
         state.reset()
         _watched_files.clear()
         _modules.clear()
