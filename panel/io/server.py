@@ -72,7 +72,7 @@ from .resources import (
     LOCAL_DIST, Resources, _env, bundle_resources, patch_model_css,
     resolve_custom_path,
 )
-from .session import generate_session
+from .session import PanelApplicationContext, generate_session
 from .state import set_curdoc, state
 from .threads import StoppableThread
 
@@ -356,6 +356,8 @@ class Server(BokehServer):
             state._admin_context.run_unload_hook()
 
 bokeh.server.server.Server = Server  # type: ignore
+bokeh.server.tornado.ApplicationContext = PanelApplicationContext  # type: ignore
+
 
 class LoginUrlMixin:
     """

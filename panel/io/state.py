@@ -981,8 +981,10 @@ class _state(param.Parameterized):
         except StopIteration:
             return
         self._scheduled[key] = (diter, callback)
-        self._ioloop.call_later(
-            delay=call_time_seconds, callback=partial(self._scheduled_cb, key, threaded)
+        state.execute(
+            lambda: self._ioloop.call_later(
+                delay=call_time_seconds, callback=partial(self._scheduled_cb, key, threaded)
+            ), schedule=True
         )
 
     def sync_busy(self, indicator: BooleanIndicator) -> None:
