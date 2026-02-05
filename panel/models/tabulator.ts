@@ -724,7 +724,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   recompute_page_size(): void {
-    if (!this.model.pagination || (this.model.page_size !== null && !this._automatic_page_size)) {
+    if (!this.model.pagination || (this.model.page_size !== null && !this._automatic_page_size) || this._initializing || !this.tabulator) {
       return
     }
     this._automatic_page_size = true
