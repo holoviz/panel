@@ -61,7 +61,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   }
 
   override remove(): void {
-    this.deckGL.finalize()
+    this.deckGL?.finalize()
     super.remove()
   }
 

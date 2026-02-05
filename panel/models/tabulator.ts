@@ -520,7 +520,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   override invalidate_render(): void {
-    this.tabulator.destroy()
+    this.tabulator?.destroy()
     this.tabulator = null
     this.rerender_()
   }
@@ -585,10 +585,13 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
+  override remove(): void {
+    this.tabulator?.destroy()
+    super.remove()
+  }
+
   override render(): void {
-    if (this.tabulator != null) {
-      this.tabulator.destroy()
-    }
+    this.tabulator?.destroy()
     super.render()
     this._initializing = true
     this._building = true
@@ -724,7 +727,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   recompute_page_size(): void {
-    if (!this.model.pagination || (this.model.page_size !== null && !this._automatic_page_size)) {
+    if (!this.model.pagination || (this.model.page_size !== null && !this._automatic_page_size) || this._initializing || !this.tabulator) {
       return
     }
     this._automatic_page_size = true
