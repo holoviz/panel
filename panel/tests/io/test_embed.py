@@ -653,8 +653,7 @@ def test_embed_widget_from_param_instance(document, comm):
     with config.set(embed=True):
         model = panel.get_root(document, comm)
     
-    # embed_state should succeed
+    # embed_state should succeed without raising AttributeError
+    # Returns None when there are no widgets with state to embed
     result = embed_state(panel, model, document)
-    # For instance parameters, result may be None or have state
-    # The important thing is it doesn't raise an error
-    assert result is None or isinstance(result, dict)
+    assert result is None  # No embeddable state for simple widgets without links
