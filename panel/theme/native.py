@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from ..io.resources import CDN_DIST
 from ..viewable import Viewable
-from ..widgets.indicators import Number, String
 from .base import (
     DarkTheme, DefaultTheme, Design, Inherit,
 )
@@ -11,20 +10,13 @@ from .base import (
 class NativeDefaultTheme(DefaultTheme):
     ""
 
+
 class NativeDarkTheme(DarkTheme):
     # Inherits modifiers from DarkTheme (Number and String with 'default_color': 'white')
     pass
 
 
 class Native(Design):
+    modifiers = {Viewable: {"stylesheets": [Inherit, f"{CDN_DIST}bundled/theme/native.css"]}}
 
-    modifiers = {
-        Viewable: {
-            'stylesheets': [Inherit, f'{CDN_DIST}bundled/theme/native.css']
-        }
-    }
-
-    _themes = {
-        'dark': NativeDarkTheme,
-        'default': NativeDefaultTheme
-    }
+    _themes = {"dark": NativeDarkTheme, "default": NativeDefaultTheme}
