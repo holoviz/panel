@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<!--
+  POC 2: Panel Playground - Editor + Live Preview
+  =================================================
+  A simple editor alongside a live Panel preview iframe.
+  Uses a textarea for reliability; can be upgraded to CodeMirror 6.
+  Features:
+  - Side-by-side editor + preview layout
+  - Run button (Ctrl/Cmd+Enter shortcut)
+  - URL-based sharing (gzip + base64 in URL hash)
+  - Example selector
+  - Persistent Pyodide (loads once, reruns are fast)
+
+  Serve with: python -m http.server 8080
+  Open: http://localhost:8080/playground.html
+-->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Panel Playground</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      height: 100vh; display: flex; flex-direction: column;
+      background: #f5f5f5;
+    }
+
+    /* Header */
+    .header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 16px; background: #1a1a2e; color: white;
+      border-bottom: 2px solid #16213e;
+    }
+    .header h1 {
+      font-size: 16px; font-weight: 600;
+      background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .header select, .header button {
+      padding: 6px 12px; border-radius: 6px; border: none;
+      font-size: 13px; cursor: pointer;
+    }
+    .header select { background: #16213e; color: #ddd; }
+    .btn-run {
+      background: #00b894 !important; color: white !important; font-weight: 600;
+    }
+    .btn-run:hover { background: #00a381 !important; }
+    .btn-share {
+      background: #16213e !important; color: #ddd !important;
+    }
+    .btn-share:hover { background: #1a1a4e !important; }
+    .shortcut { font-size: 11px; opacity: 0.7; margin-left: 4px; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #e74c3c; margin-left: auto;
+      transition: background 0.3s;
+    }
+    .status-dot.ready { background: #00b894; }
+    .status-text { font-size: 12px; color: #aaa; }
+
+    /* Main layout */
+    .main {
+      flex: 1; display: flex; overflow: hidden;
+    }
+
+    /* Editor pane */
+    .editor-pane {
+      flex: 1; display: flex; flex-direction: column;
+      min-width: 300px; border-right: 2px solid #ddd;
+    }
+    #editor-container {
+      flex: 1; overflow: auto; display: flex;
+    }
+    #code-editor {
+      flex: 1; width: 100%; border: none; resize: none;
+      font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+      font-size: 14px; line-height: 1.5; padding: 12px 16px;
+      background: #fafafa; color: #1a1a2e; tab-size: 4;
+      outline: none;
+    }
+
+    /* Preview pane */
+    .preview-pane {
+      flex: 1; display: flex; flex-direction: column;
+      min-width: 300px; background: white;
+    }
+    .preview-pane iframe {
+      flex: 1; border: none; width: 100%;
+    }
+
+    /* Resize handle */
+    .resize-handle {
+      width: 4px; cursor: col-resize; background: #ddd;
+      transition: background 0.2s;
+    }
+    .resize-handle:hover { background: #3a7bd5; }
+
+    /* Share toast */
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: white; padding: 10px 20px;
+      border-radius: 8px; font-size: 13px; opacity: 0;
+      transition: opacity 0.3s; pointer-events: none; z-index: 9999;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <!-- Header bar -->
+  <div class="header">
+    <h1>Panel Playground</h1>
+    <select id="examples" onchange="loadExample(this.value)">
+      <option value="">-- Examples --</option>
+      <option value="hello" selected>Hello Panel</option>
+      <option value="slider">Slider Callback</option>
+      <option value="matplotlib">Matplotlib Plot</option>
+      <option value="dataframe">DataFrame View</option>
+      <option value="template">FastList Template</option>
+      <option value="chat">Simple Chat</option>
+    </select>
+    <button class="btn-run" onclick="runCode()">
+      Run <span class="shortcut">Ctrl+Enter</span>
+    </button>
+    <button class="btn-share" onclick="shareCode()">Share</button>
+    <span class="status-text" id="status-text">Loading...</span>
+    <span class="status-dot" id="status-dot"></span>
+  </div>
+
+  <!-- Main editor + preview -->
+  <div class="main">
+    <div class="editor-pane">
+      <div id="editor-container">
+        <textarea id="code-editor" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div class="resize-handle" id="resize-handle"></div>
+    <div class="preview-pane">
+      <iframe id="preview" src="panel_runner.html"></iframe>
+    </div>
+  </div>
+
+  <!-- Share toast -->
+  <div class="toast" id="toast">Link copied to clipboard!</div>
+
+  <script>
+    // ===== EXAMPLES =====
+    const EXAMPLES = {
+      hello: `import panel as pn
+
+pn.extension()
+
+pn.Column(
+    "# Hello Panel Playground!",
+    "Welcome to the **Panel Playground**. Edit this code and press **Run** (or Ctrl+Enter).",
+    pn.widgets.Button(name="Click me!", button_type="primary"),
+).servable()`,
+
+      slider: `import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+amplitude = pn.widgets.FloatSlider(name="Amplitude", start=0, end=10, value=5, step=0.1)
+frequency = pn.widgets.FloatSlider(name="Frequency", start=0.1, end=5, value=1, step=0.1)
+
+def compute(amplitude, frequency):
+    import math
+    x_vals = [i * 0.1 for i in range(100)]
+    y_vals = [amplitude * math.sin(frequency * x) for x in x_vals]
+    table = "| x | y |\\n|---|---|\\n"
+    for x, y in list(zip(x_vals, y_vals))[:10]:
+        table += f"| {x:.1f} | {y:.2f} |\\n"
+    return pn.pane.Markdown(f"""## Sine Wave: A={amplitude:.1f}, f={frequency:.1f}
+
+{table}
+*Showing first 10 of 100 points*""")
+
+pn.Column(
+    "# Interactive Sine Calculator",
+    amplitude,
+    frequency,
+    pn.bind(compute, amplitude, frequency),
+).servable()`,
+
+      matplotlib: `import panel as pn
+import numpy as np
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvas
+
+pn.extension(sizing_mode="stretch_width")
+
+n_points = pn.widgets.IntSlider(name="Points", start=10, end=1000, value=200, step=10)
+color = pn.widgets.ColorPicker(name="Color", value="#3a7bd5")
+
+def make_plot(n, c):
+    fig = Figure(figsize=(8, 4))
+    ax = fig.subplots()
+    FigureCanvas(fig)
+    x = np.linspace(0, 4 * np.pi, n)
+    ax.plot(x, np.sin(x), color=c, linewidth=2)
+    ax.set_title(f"Sine Wave ({n} points)")
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    return fig
+
+pn.Column(
+    "# Matplotlib in Panel",
+    pn.Row(n_points, color),
+    pn.bind(make_plot, n_points, color),
+).servable()`,
+
+      dataframe: `import panel as pn
+import pandas as pd
+import numpy as np
+
+pn.extension("tabulator", sizing_mode="stretch_width")
+
+np.random.seed(42)
+df = pd.DataFrame({
+    "Name": [f"Item {i}" for i in range(20)],
+    "Value": np.random.randn(20).round(3),
+    "Category": np.random.choice(["A", "B", "C"], 20),
+    "Score": np.random.randint(0, 100, 20),
+})
+
+table = pn.widgets.Tabulator(df, page_size=10, pagination="local")
+category = pn.widgets.Select(name="Filter Category", options=["All", "A", "B", "C"], value="All")
+
+def filter_df(cat):
+    if cat == "All":
+        table.value = df
+    else:
+        table.value = df[df["Category"] == cat]
+
+pn.Column(
+    "# DataFrame Explorer",
+    category,
+    pn.bind(filter_df, category),
+    table,
+).servable()`,
+
+      template: `import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+text = pn.widgets.TextInput(name="Your name", placeholder="Enter your name...")
+
+def greeting(name):
+    if name:
+        return pn.pane.Markdown(f"## Hello, {name}! 👋")
+    return pn.pane.Markdown("## Enter your name above")
+
+sidebar_content = pn.Column(
+    "## Settings",
+    text,
+    pn.widgets.Select(name="Theme", options=["Default", "Dark", "Material"]),
+)
+
+main_content = pn.Column(
+    pn.bind(greeting, text),
+    "This example uses **FastListTemplate** for a polished layout.",
+)
+
+pn.template.FastListTemplate(
+    title="Panel Playground",
+    sidebar=[sidebar_content],
+    main=[main_content],
+).servable()`,
+
+      chat: `import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+chat = pn.chat.ChatInterface(
+    callback=lambda contents, user, instance: f"You said: **{contents}**",
+    user="User",
+    show_rerun=False,
+)
+chat.send("Welcome to the Panel Chat! Type a message below.", user="Assistant", respond=False)
+
+chat.servable()`,
+    };
+
+    // ===== EDITOR SETUP =====
+    function initEditor() {
+      const editor = document.getElementById('code-editor');
+      editor.value = EXAMPLES.hello;
+
+      // Ctrl/Cmd+Enter to run
+      editor.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          runCode();
+        }
+        // Tab inserts 4 spaces
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const start = e.target.selectionStart;
+          const end = e.target.selectionEnd;
+          e.target.value = e.target.value.substring(0, start) + '    ' + e.target.value.substring(end);
+          e.target.selectionStart = e.target.selectionEnd = start + 4;
+        }
+      });
+    }
+
+    function getCode() {
+      return document.getElementById('code-editor').value;
+    }
+
+    function setCode(code) {
+      document.getElementById('code-editor').value = code;
+    }
+
+    // ===== SHARING (gzip + base64 URL hash) =====
+    async function compressCode(code) {
+      const stream = new Blob([code]).stream().pipeThrough(new CompressionStream('gzip'));
+      const compressed = await new Response(stream).arrayBuffer();
+      // base64url encode
+      const bytes = new Uint8Array(compressed);
+      let binary = '';
+      bytes.forEach(b => binary += String.fromCharCode(b));
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    async function decompressCode(encoded) {
+      // base64url decode
+      let binary = encoded.replace(/-/g, '+').replace(/_/g, '/');
+      while (binary.length % 4) binary += '=';
+      const raw = atob(binary);
+      const bytes = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+      return await new Response(stream).text();
+    }
+
+    async function shareCode() {
+      const code = getCode();
+      const compressed = await compressCode(code);
+      const url = `${location.origin}${location.pathname}#code=${compressed}`;
+      await navigator.clipboard.writeText(url);
+      // Show toast
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+      // Also update URL without reload
+      history.replaceState(null, '', `#code=${compressed}`);
+    }
+
+    async function loadFromHash() {
+      const hash = location.hash;
+      if (hash.startsWith('#code=')) {
+        try {
+          const encoded = hash.slice(6);
+          const code = await decompressCode(encoded);
+          setCode(code);
+          return true;
+        } catch (e) {
+          console.warn('Failed to decode URL hash:', e);
+        }
+      }
+      return false;
+    }
+
+    // ===== EXAMPLES =====
+    function loadExample(name) {
+      if (name && EXAMPLES[name]) {
+        setCode(EXAMPLES[name]);
+      }
+    }
+
+    // ===== RUN CODE =====
+    function runCode() {
+      const code = getCode();
+      const iframe = document.getElementById('preview');
+      iframe.contentWindow.postMessage({type: 'run', code: code}, '*');
+    }
+
+    // ===== LISTEN FOR IFRAME MESSAGES =====
+    window.addEventListener('message', (event) => {
+      const msg = event.data;
+      if (!msg || !msg.type) return;
+      const dot = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      if (msg.type === 'ready') {
+        dot.classList.add('ready');
+        text.textContent = 'Ready';
+        // Auto-run the initial code
+        runCode();
+      } else if (msg.type === 'rendered') {
+        text.textContent = 'Ready';
+      } else if (msg.type === 'error') {
+        text.textContent = 'Error';
+        dot.classList.remove('ready');
+      }
+    });
+
+    // ===== RESIZE HANDLE =====
+    function initResize() {
+      const handle = document.getElementById('resize-handle');
+      const editorPane = document.querySelector('.editor-pane');
+      const previewPane = document.querySelector('.preview-pane');
+      let isResizing = false;
+
+      handle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        // Prevent iframe from capturing mouse events
+        document.getElementById('preview').style.pointerEvents = 'none';
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const container = document.querySelector('.main');
+        const rect = container.getBoundingClientRect();
+        const fraction = (e.clientX - rect.left) / rect.width;
+        const clamped = Math.max(0.2, Math.min(0.8, fraction));
+        editorPane.style.flex = `${clamped}`;
+        previewPane.style.flex = `${1 - clamped}`;
+      });
+
+      document.addEventListener('mouseup', () => {
+        if (isResizing) {
+          isResizing = false;
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+          document.getElementById('preview').style.pointerEvents = '';
+        }
+      });
+    }
+
+    // ===== INIT =====
+    async function init() {
+      initEditor();
+      initResize();
+      // Load code from URL hash if present
+      const loaded = await loadFromHash();
+      if (loaded) {
+        document.getElementById('examples').value = '';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

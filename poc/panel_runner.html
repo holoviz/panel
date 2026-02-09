@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<!--
+  POC 1: Panel Runner - The Core Primitive
+  =========================================
+  A single HTML file that:
+  1. Loads Pyodide + Bokeh/Panel JS ONCE
+  2. Provides a runPanelCode(code) JS function
+  3. Handles cleanup between runs (fast dynamic reload)
+  4. Can be embedded as an iframe or used standalone
+
+  Usage:
+    - Standalone: Open in browser, use the built-in demo
+    - As iframe: postMessage({type: 'run', code: '...'}) to execute code
+    - JS API: call runPanelCode(code) directly
+
+  Serve with: python -m http.server 8080
+  Open: http://localhost:8080/panel_runner.html
+
+  VERSION CONFIG: Adjust these versions at the top of the script section.
+-->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Panel Runner</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    #output { width: 100%; min-height: 100px; }
+    #status {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #1b5e20; color: white; padding: 8px 16px;
+      font-size: 14px; z-index: 9999; transition: opacity 0.3s;
+    }
+    #status.hidden { opacity: 0; pointer-events: none; }
+    #status.error { background: #b71c1c; }
+    .loading-spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%; border-top-color: white;
+      animation: spin 0.8s linear infinite; margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="status"><span class="loading-spinner"></span>Loading Pyodide runtime...</div>
+  <div id="output"></div>
+
+  <script>
+    // ===== VERSION CONFIGURATION =====
+    // Adjust these to match your Panel/Bokeh release
+    const PYODIDE_VERSION = 'v0.28.2';
+    const PANEL_VERSION = '1.8.7';
+    const BOKEH_VERSION = '3.8.1';
+
+    // CDN URLs
+    const PYODIDE_URL = `https://cdn.jsdelivr.net/pyodide/${PYODIDE_VERSION}/full/pyodide.js`;
+    const BOKEH_JS_URLS = [
+      `https://cdn.bokeh.org/bokeh/release/bokeh-${BOKEH_VERSION}.min.js`,
+      `https://cdn.bokeh.org/bokeh/release/bokeh-gl-${BOKEH_VERSION}.min.js`,
+      `https://cdn.bokeh.org/bokeh/release/bokeh-widgets-${BOKEH_VERSION}.min.js`,
+      `https://cdn.bokeh.org/bokeh/release/bokeh-tables-${BOKEH_VERSION}.min.js`,
+    ];
+    const PANEL_JS_URL = `https://cdn.jsdelivr.net/npm/@holoviz/panel@${PANEL_VERSION}/dist/panel.min.js`;
+    // Note: Bokeh wheel is at CDN root, Panel wheel is under version-specific path
+    const BOKEH_WHL = `https://cdn.holoviz.org/panel/wheels/bokeh-${BOKEH_VERSION}-py3-none-any.whl`;
+    const PANEL_WHL = `https://cdn.holoviz.org/panel/${PANEL_VERSION}/dist/wheels/panel-${PANEL_VERSION}-py3-none-any.whl`;
+
+    // ===== STATE =====
+    let pyodide = null;
+    let installedPackages = new Set(['panel', 'bokeh', 'pyodide-http']);
+    let runCount = 0;
+    let isReady = false;
+
+    // ===== STATUS DISPLAY =====
+    function setStatus(msg, isError = false) {
+      const el = document.getElementById('status');
+      el.innerHTML = isError
+        ? `<span style="margin-right:8px">&#x26A0;</span>${msg}`
+        : `<span class="loading-spinner"></span>${msg}`;
+      el.className = isError ? 'error' : '';
+    }
+
+    function hideStatus() {
+      document.getElementById('status').className = 'hidden';
+    }
+
+    // ===== LOAD JS RESOURCES =====
+    function loadScript(url) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Failed to load ${url}`));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function loadJSResources() {
+      setStatus('Loading Bokeh JS...');
+      // Load Bokeh scripts sequentially (they depend on each other)
+      for (const url of BOKEH_JS_URLS) {
+        await loadScript(url);
+      }
+      setStatus('Loading Panel JS...');
+      await loadScript(PANEL_JS_URL);
+    }
+
+    // ===== INITIALIZE PYODIDE =====
+    async function initPyodide() {
+      // Load Pyodide JS and Bokeh/Panel JS in parallel
+      setStatus('Loading Pyodide runtime...');
+      const [_, __] = await Promise.all([
+        loadScript(PYODIDE_URL).then(async () => {
+          setStatus('Initializing Pyodide...');
+          pyodide = await loadPyodide();
+          setStatus('Installing packages...');
+          await pyodide.loadPackage('micropip');
+          const micropip = pyodide.pyimport('micropip');
+          await micropip.install([BOKEH_WHL, PANEL_WHL, 'pyodide-http']);
+        }),
+        loadJSResources()
+      ]);
+
+      // Initialize Panel in Python
+      setStatus('Initializing Panel...');
+      await pyodide.runPythonAsync(`
+import panel as pn
+from panel.io.pyodide import init_doc
+print("Panel", pn.__version__, "ready")
+      `);
+
+      isReady = true;
+      hideStatus();
+      // Notify parent if in iframe
+      if (window.parent !== window) {
+        window.parent.postMessage({type: 'ready'}, '*');
+      }
+    }
+
+    // ===== DETECT REQUIREMENTS =====
+    async function detectAndInstallRequirements(code) {
+      // Use Panel's own find_requirements to detect imports
+      pyodide.globals.set('__user_code__', code);
+      const newPkgs = await pyodide.runPythonAsync(`
+from panel.io.mime_render import find_requirements
+reqs = find_requirements(__user_code__)
+# Filter out already-installed packages
+import json
+json.dumps(reqs)
+      `);
+      const requirements = JSON.parse(newPkgs);
+      const toInstall = requirements.filter(pkg => !installedPackages.has(pkg));
+
+      if (toInstall.length > 0) {
+        setStatus(`Installing: ${toInstall.join(', ')}...`);
+        const micropip = pyodide.pyimport('micropip');
+        await micropip.install(toInstall);
+        toInstall.forEach(pkg => installedPackages.add(pkg));
+      }
+    }
+
+    // ===== CORE: RUN PANEL CODE =====
+    async function runPanelCode(code) {
+      if (!isReady) {
+        throw new Error('Pyodide not ready yet. Wait for initialization.');
+      }
+
+      runCount++;
+      const currentRun = runCount;
+      setStatus('Running code...');
+
+      try {
+        // 1. Detect and install new requirements
+        await detectAndInstallRequirements(code);
+
+        if (currentRun !== runCount) return; // Superseded by newer run
+
+        // 2. Cleanup previous render
+        setStatus('Preparing...');
+        await pyodide.runPythonAsync(`
+import js
+import json
+from bokeh.io import curdoc
+from bokeh.settings import settings as bk_settings
+from panel.io.pyodide import init_doc
+from panel.io.state import state
+
+# Remove old Bokeh views from JS index
+if hasattr(js.window, 'Bokeh') and hasattr(js.window.Bokeh, 'index'):
+    try:
+        roots = list(js.window.Bokeh.index.roots)
+        for view in roots:
+            try:
+                view.remove()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+# Clear the output container
+output_el = js.document.getElementById('output')
+output_el.innerHTML = ''
+
+# Create fresh Panel document
+init_doc()
+        `);
+
+        if (currentRun !== runCount) return;
+
+        // 3. Determine rendering strategy based on code content
+        const hasServable = code.includes('.servable(');
+        const hasServableTarget = /\.servable\s*\(\s*target\s*=/.test(code);
+
+        // 4. Pass code safely via globals (avoids all escaping issues)
+        setStatus('Executing...');
+        pyodide.globals.set('__panel_user_code__', code);
+
+        if (hasServable && !hasServableTarget) {
+          // Code uses .servable() without target - use write_doc flow
+          await pyodide.runPythonAsync(`
+import asyncio
+import js
+import panel as pn
+from panel.io.pyodide import init_doc, write_doc
+from panel.io.state import state
+
+# Execute user code (passed safely via globals)
+exec(__panel_user_code__)
+
+# Create data-root-id elements for each document root
+doc = state.curdoc
+target = js.document.getElementById('output')
+for root in doc.roots:
+    el = js.document.createElement('div')
+    el.setAttribute('data-root-id', str(root.id))
+    el.id = f'el-{root.id}'
+    target.appendChild(el)
+
+# Render
+await write_doc()
+          `);
+        } else if (hasServableTarget) {
+          // Code uses .servable(target=...) - targets already in DOM
+          await pyodide.runPythonAsync(`
+import asyncio
+import panel as pn
+from panel.io.pyodide import write_doc
+from panel.io.state import state
+
+exec(__panel_user_code__)
+await write_doc()
+          `);
+        } else {
+          // Code doesn't use .servable() - wrap last expression with pn.io.pyodide.write
+          await pyodide.runPythonAsync(`
+import asyncio
+import panel as pn
+from panel.io.pyodide import write
+from panel.io.mime_render import exec_with_return
+
+result = exec_with_return(__panel_user_code__)
+if result is not None:
+    await write('output', result)
+else:
+    import js
+    js.document.getElementById('output').innerHTML = '<p style="color: #666; padding: 16px;">Code executed (no visual output)</p>'
+          `);
+        }
+
+        if (currentRun === runCount) {
+          hideStatus();
+          // Notify parent
+          if (window.parent !== window) {
+            window.parent.postMessage({type: 'rendered'}, '*');
+          }
+        }
+      } catch (error) {
+        if (currentRun === runCount) {
+          const errorMsg = error.message || String(error);
+          setStatus(`Error: ${errorMsg}`, true);
+          const output = document.getElementById('output');
+          output.innerHTML = `<pre style="color:#b71c1c;padding:16px;white-space:pre-wrap;font-size:13px;">${
+            errorMsg.replace(/</g, '&lt;')
+          }</pre>`;
+          // Notify parent
+          if (window.parent !== window) {
+            window.parent.postMessage({type: 'error', error: errorMsg}, '*');
+          }
+        }
+      }
+    }
+
+    // ===== LISTEN FOR MESSAGES (iframe API) =====
+    window.addEventListener('message', async (event) => {
+      const msg = event.data;
+      if (msg && msg.type === 'run' && msg.code) {
+        await runPanelCode(msg.code);
+      }
+    });
+
+    // ===== EXPOSE GLOBAL API =====
+    window.runPanelCode = runPanelCode;
+    window.panelRunnerReady = initPyodide();
+
+    // ===== SELF-TEST (when opened directly) =====
+    if (window.parent === window) {
+      // Not in iframe - run a demo
+      window.panelRunnerReady.then(() => {
+        runPanelCode(`
+import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude', value=5)
+
+def callback(amplitude):
+    return f'## Amplitude: {amplitude:.1f}'
+
+pn.Column(
+    "# Panel Runner - Self Test",
+    "Edit and run code to see it render here.",
+    slider,
+    pn.bind(callback, slider),
+).servable()
+        `);
+      });
+    }
+  </script>
+</body>
+</html>

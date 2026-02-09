@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<!--
+  POC 3: Embeddable Panel Snippet
+  ================================
+  Demonstrates how Panel apps can be embedded in any HTML page with
+  minimal boilerplate. Shows multiple embedding approaches:
+
+  1. Simple static embed (no editor, just renders the app)
+  2. Inline editor + app (compact playground)
+  3. Auto-servable (wraps last expression automatically)
+
+  The key idea: a <script type="panel"> tag or a simple JS API
+  that takes Panel Python code and renders it.
+
+  Serve with: python -m http.server 8080
+  Open: http://localhost:8080/embed.html
+-->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Embeddable Panel Apps</title>
+
+  <!-- CodeMirror 5 for syntax-highlighted Python editor -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/python/python.min.js"></script>
+  <!-- Addons for better editing experience -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/selection/active-line.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/comment/comment.min.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px; margin: 0 auto; padding: 24px;
+      line-height: 1.6; color: #333;
+    }
+    h1 { color: #1a1a2e; }
+    h2 { color: #16213e; margin-top: 40px; }
+    p { margin: 12px 0; }
+    code {
+      background: #f0f0f0; padding: 2px 6px; border-radius: 4px;
+      font-size: 0.9em;
+    }
+    pre {
+      background: #1a1a2e; color: #e0e0e0; padding: 16px;
+      border-radius: 8px; overflow-x: auto; font-size: 13px;
+    }
+
+    /* Panel embed container */
+    .panel-embed {
+      border: 1px solid #ddd; border-radius: 8px;
+      overflow: hidden; margin: 16px 0;
+    }
+    .panel-embed iframe {
+      width: 100%; border: none; min-height: 300px;
+    }
+
+    /* Inline editor style */
+    .panel-editor {
+      border: 1px solid #ddd; border-radius: 8px;
+      overflow: hidden; margin: 16px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .panel-editor-header {
+      background: #282a36; color: #f8f8f2; padding: 8px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 500;
+      border-bottom: 1px solid #44475a;
+    }
+    .panel-editor-header .lang-badge {
+      background: #3b82f6; color: white; padding: 2px 8px;
+      border-radius: 4px; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .panel-editor-header .title {
+      flex: 1;
+    }
+    .panel-editor-header button {
+      background: #50fa7b; color: #282a36; border: none;
+      padding: 5px 16px; border-radius: 4px; cursor: pointer;
+      font-size: 12px; font-weight: 700;
+      transition: background 0.15s;
+    }
+    .panel-editor-header button:hover {
+      background: #69ff94;
+    }
+    .panel-editor-header .shortcut {
+      font-size: 11px; color: #6272a4; margin-left: -4px;
+    }
+
+    /* CodeMirror overrides */
+    .panel-editor .CodeMirror {
+      height: auto;
+      min-height: 120px;
+      max-height: 400px;
+      font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+      font-size: 13.5px;
+      line-height: 1.55;
+      border-bottom: 1px solid #44475a;
+    }
+    .panel-editor .CodeMirror-scroll {
+      min-height: 120px;
+    }
+
+    .panel-editor iframe {
+      width: 100%; border: none; min-height: 250px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Embedding Panel Apps</h1>
+  <p>
+    This page demonstrates how Panel apps can be embedded in any HTML page
+    with minimal boilerplate. Each approach uses a shared Pyodide runtime
+    via <code>panel_runner.html</code> in an iframe.
+  </p>
+
+  <h2>1. Simple App Embed (No Editor)</h2>
+  <p>
+    Embed a Panel app by providing Python code. The iframe loads Pyodide once
+    and renders the app. Users interact with the running app but cannot edit the code.
+  </p>
+  <p>Embedding is as simple as:</p>
+  <pre>&lt;div class="panel-embed"&gt;
+  &lt;iframe id="app1" src="panel_runner.html"&gt;&lt;/iframe&gt;
+&lt;/div&gt;
+&lt;script&gt;
+  panelEmbed('app1', `import panel as pn
+pn.Column("# Hello!", "Panel runs in the browser!").servable()`);
+&lt;/script&gt;</pre>
+
+  <div class="panel-embed">
+    <iframe id="app1" src="panel_runner.html"></iframe>
+  </div>
+
+  <h2>2. Inline Editor + App</h2>
+  <p>
+    A compact playground widget: editable code on top, live app below.
+    Users can modify the code and click Run to see changes.
+  </p>
+
+  <div class="panel-editor" id="editor1">
+    <div class="panel-editor-header">
+      <span class="lang-badge">Python</span>
+      <span class="title">Panel App</span>
+      <button onclick="runEditor('editor1')">Run</button>
+      <span class="shortcut">Ctrl+Enter</span>
+    </div>
+    <textarea id="editor1-code">import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+name = pn.widgets.TextInput(name="Name", placeholder="Type your name...")
+color = pn.widgets.ColorPicker(name="Color", value="#3a7bd5")
+
+def greet(name, color):
+    if not name:
+        return pn.pane.Markdown("*Enter your name above*")
+    return pn.pane.HTML(
+        f'<h2 style="color:{color}">Hello, {name}!</h2>'
+    )
+
+pn.Column(
+    "# Greeting App",
+    pn.Row(name, color),
+    pn.bind(greet, name, color),
+).servable()</textarea>
+    <iframe id="editor1-preview" src="panel_runner.html"></iframe>
+  </div>
+
+  <h2>3. Auto-Servable (Just Return a Value)</h2>
+  <p>
+    If the code doesn't call <code>.servable()</code>, the playground
+    automatically wraps the last expression with <code>pn.panel()</code>.
+    This makes embedding even simpler for quick demos.
+  </p>
+
+  <div class="panel-editor" id="editor2">
+    <div class="panel-editor-header">
+      <span class="lang-badge">Python</span>
+      <span class="title">Auto-display</span>
+      <button onclick="runEditor('editor2')">Run</button>
+      <span class="shortcut">Ctrl+Enter</span>
+    </div>
+    <textarea id="editor2-code">import pandas as pd
+import numpy as np
+
+np.random.seed(42)
+df = pd.DataFrame({
+    "x": np.arange(20),
+    "y": np.cumsum(np.random.randn(20)),
+    "category": np.random.choice(["A", "B"], 20),
+})
+
+# Just return the DataFrame - it will be auto-displayed!
+df</textarea>
+    <iframe id="editor2-preview" src="panel_runner.html"></iframe>
+  </div>
+
+  <h2>4. The Dream: Minimal Boilerplate</h2>
+  <p>
+    The ultimate goal is a web component or simple function that makes embedding
+    trivial. Here's the vision for the API:
+  </p>
+  <pre>&lt;!-- Future: Custom element approach --&gt;
+&lt;panel-app&gt;
+import panel as pn
+pn.Column("# It just works!", "No boilerplate needed.").servable()
+&lt;/panel-app&gt;
+
+&lt;!-- Future: Script tag approach --&gt;
+&lt;script type="panel"&gt;
+import panel as pn
+slider = pn.widgets.FloatSlider(name="Value", start=0, end=10)
+pn.Column(slider, pn.bind(lambda v: f"Value: {v}", slider)).servable()
+&lt;/script&gt;</pre>
+
+  <p>
+    For sites like <strong>Claude.ai artifacts</strong> (which only support JS/React),
+    the embed can be done with a single iframe:
+  </p>
+  <pre>&lt;!-- Works in any context that allows iframes --&gt;
+&lt;iframe
+  src="https://your-cdn.com/panel_runner.html"
+  style="width:100%;height:400px;border:none"
+&gt;&lt;/iframe&gt;
+&lt;script&gt;
+  // Send code to the iframe
+  const iframe = document.querySelector('iframe');
+  iframe.onload = () =&gt; {
+    iframe.contentWindow.postMessage({
+      type: 'run',
+      code: 'import panel as pn\npn.Column("Hello from Claude!").servable()'
+    }, '*');
+  };
+&lt;/script&gt;</pre>
+
+  <script>
+    // ===== CODEMIRROR EDITORS =====
+    const cmEditors = {};
+
+    function createEditor(textareaId) {
+      const textarea = document.getElementById(textareaId);
+      const cm = CodeMirror.fromTextArea(textarea, {
+        mode: 'python',
+        theme: 'dracula',
+        lineNumbers: true,
+        matchBrackets: true,
+        autoCloseBrackets: true,
+        styleActiveLine: true,
+        indentUnit: 4,
+        tabSize: 4,
+        indentWithTabs: false,
+        lineWrapping: false,
+        extraKeys: {
+          'Ctrl-Enter': () => {
+            const editorId = textarea.closest('.panel-editor').id;
+            runEditor(editorId);
+          },
+          'Cmd-Enter': () => {
+            const editorId = textarea.closest('.panel-editor').id;
+            runEditor(editorId);
+          },
+          'Ctrl-/': 'toggleComment',
+          'Cmd-/': 'toggleComment',
+          'Tab': (cm) => {
+            if (cm.somethingSelected()) {
+              cm.indentSelection('add');
+            } else {
+              cm.replaceSelection('    ', 'end');
+            }
+          },
+          'Shift-Tab': (cm) => {
+            cm.indentSelection('subtract');
+          },
+        }
+      });
+      cmEditors[textareaId] = cm;
+      // Refresh after a short delay to ensure layout is settled
+      setTimeout(() => cm.refresh(), 50);
+      return cm;
+    }
+
+    // ===== EMBEDDING API =====
+
+    // Track which iframes are ready
+    const readyIframes = new Set();
+    const pendingCode = new Map();
+
+    // Listen for ready messages from iframes
+    window.addEventListener('message', (event) => {
+      const msg = event.data;
+      if (!msg || msg.type !== 'ready') return;
+
+      // Find which iframe sent the ready message
+      const iframes = document.querySelectorAll('iframe');
+      for (const iframe of iframes) {
+        if (iframe.contentWindow === event.source) {
+          readyIframes.add(iframe.id);
+          // Run pending code if any
+          if (pendingCode.has(iframe.id)) {
+            iframe.contentWindow.postMessage(
+              {type: 'run', code: pendingCode.get(iframe.id)}, '*'
+            );
+            pendingCode.delete(iframe.id);
+          }
+          break;
+        }
+      }
+    });
+
+    /**
+     * Embed a Panel app into an iframe.
+     * If the iframe is not ready yet, the code is queued.
+     */
+    function panelEmbed(iframeId, code) {
+      if (readyIframes.has(iframeId)) {
+        document.getElementById(iframeId).contentWindow.postMessage(
+          {type: 'run', code: code}, '*'
+        );
+      } else {
+        pendingCode.set(iframeId, code);
+      }
+    }
+
+    /**
+     * Run code from an inline editor widget.
+     */
+    function runEditor(editorId) {
+      const textareaId = `${editorId}-code`;
+      // Get code from CodeMirror if available, otherwise from textarea
+      const code = cmEditors[textareaId]
+        ? cmEditors[textareaId].getValue()
+        : document.getElementById(textareaId).value;
+      const iframeId = `${editorId}-preview`;
+      panelEmbed(iframeId, code);
+    }
+
+    // ===== INITIALIZE =====
+
+    // Create CodeMirror editors
+    createEditor('editor1-code');
+    createEditor('editor2-code');
+
+    // App 1: Simple embed
+    panelEmbed('app1', `import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+counter = pn.widgets.IntSlider(name="Counter", start=0, end=100, value=42)
+
+pn.Column(
+    "# Embedded Panel App",
+    "This app is **embedded** with just a few lines of HTML + JS.",
+    counter,
+    pn.bind(lambda v: pn.indicators.Number(
+        name="Value", value=v, format="{value}",
+        colors=[(33, "red"), (66, "gold"), (100, "green")]
+    ), counter),
+).servable()`);
+
+    // Auto-run editors when their iframes are ready
+    pendingCode.set('editor1-preview',
+      cmEditors['editor1-code']
+        ? cmEditors['editor1-code'].getValue()
+        : document.getElementById('editor1-code').value
+    );
+    pendingCode.set('editor2-preview',
+      cmEditors['editor2-code']
+        ? cmEditors['editor2-code'].getValue()
+        : document.getElementById('editor2-code').value
+    );
+  </script>
+</body>
+</html>
