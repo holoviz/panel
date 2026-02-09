@@ -118,10 +118,10 @@ def test_number_dark_theme(document, comm):
     try:
         number = Number(value=42, name='Test')
         model = number.get_root(document, comm)
-        
+
         # Check initial color is white
         assert 'color: white' in model.text
-        
+
         # Update value and check color is still white
         number.value = 100
         assert 'color: white' in model.text
@@ -136,10 +136,10 @@ def test_string_dark_theme(document, comm):
     try:
         string = String(value='Hello', name='Test')
         model = string.get_root(document, comm)
-        
+
         # Check initial color is white
         assert 'color: white' in model.text
-        
+
         # Update value and check color is still white
         string.value = 'World'
         assert 'color: white' in model.text
@@ -154,9 +154,9 @@ def test_number_default_color_override(document, comm):
         # Explicit color should override theme
         number = Number(value=42, default_color='red')
         model = number.get_root(document, comm)
-        
+
         assert 'color: red' in model.text
-        
+
         # Update value and check color is still red
         number.value = 100
         assert 'color: red' in model.text
