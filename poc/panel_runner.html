@@ -13,7 +13,8 @@
     - As iframe: postMessage({type: 'run', code: '...'}) to execute code
     - JS API: call runPanelCode(code) directly
 
-  Serve with: python -m http.server 8080
+  Serve with: python serve.py
+  (Requires COOP/COEP headers for SharedArrayBuffer — see serve.py)
   Open: http://localhost:8080/panel_runner.html
 
   VERSION CONFIG: Adjust these versions at the top of the script section.
@@ -58,7 +59,7 @@
     const PYODIDE_URL = `https://cdn.jsdelivr.net/pyodide/${PYODIDE_VERSION}/full/pyodide.js`;
     const BOKEH_JS_URLS = [
       `https://cdn.bokeh.org/bokeh/release/bokeh-${BOKEH_VERSION}.min.js`,
-      `https://cdn.bokeh.org/bokeh/release/bokeh-gl-${BOKEH_VERSION}.min.js`,
+      // bokeh-gl skipped — WebGL not needed for widget-based apps, saves ~2MB parse/compile
       `https://cdn.bokeh.org/bokeh/release/bokeh-widgets-${BOKEH_VERSION}.min.js`,
       `https://cdn.bokeh.org/bokeh/release/bokeh-tables-${BOKEH_VERSION}.min.js`,
     ];
@@ -91,6 +92,7 @@
       return new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.src = url;
+        script.crossOrigin = 'anonymous';
         script.onload = resolve;
         script.onerror = () => reject(new Error(`Failed to load ${url}`));
         document.head.appendChild(script);
@@ -108,22 +110,33 @@
     }
 
     // ===== INITIALIZE PYODIDE =====
+    // Load sequentially to reduce peak memory (avoids STATUS_ACCESS_VIOLATION).
+    // Bokeh/Panel JS first (smaller, JS engine can GC after compilation),
+    // then Pyodide WASM (large heap allocation).
     async function initPyodide() {
-      // Load Pyodide JS and Bokeh/Panel JS in parallel
-      setStatus('Loading Pyodide runtime...');
-      const [_, __] = await Promise.all([
-        loadScript(PYODIDE_URL).then(async () => {
-          setStatus('Initializing Pyodide...');
-          pyodide = await loadPyodide();
-          setStatus('Installing packages...');
-          await pyodide.loadPackage('micropip');
-          const micropip = pyodide.pyimport('micropip');
-          await micropip.install([BOKEH_WHL, PANEL_WHL, 'pyodide-http']);
-        }),
-        loadJSResources()
-      ]);
+      // Step 1: Load Bokeh + Panel JS
+      await loadJSResources();
 
-      // Initialize Panel in Python
+      // Step 2: Load Pyodide runtime
+      setStatus('Loading Pyodide runtime...');
+      await loadScript(PYODIDE_URL);
+
+      setStatus('Initializing Pyodide...');
+      pyodide = await loadPyodide({ fullStdLib: false });
+
+      // Step 3: Install Python packages (one at a time to reduce peak memory)
+      setStatus('Installing packages...');
+      await pyodide.loadPackage('micropip');
+      pyodide.globals.set('__bokeh_whl__', BOKEH_WHL);
+      pyodide.globals.set('__panel_whl__', PANEL_WHL);
+      await pyodide.runPythonAsync(`
+import micropip
+await micropip.install(__bokeh_whl__)
+await micropip.install(__panel_whl__, reinstall=True, keep_going=True)
+await micropip.install('pyodide-http')
+      `);
+
+      // Step 4: Initialize Panel
       setStatus('Initializing Panel...');
       await pyodide.runPythonAsync(`
 import panel as pn
@@ -158,6 +171,46 @@ json.dumps(reqs)
         const micropip = pyodide.pyimport('micropip');
         await micropip.install(toInstall);
         toInstall.forEach(pkg => installedPackages.add(pkg));
+      }
+    }
+
+    // ===== LOAD EXTENSION JS/CSS =====
+    // After user code executes (registering models via pn.extension()),
+    // query Python for the JS/CSS URLs those extensions need and load them.
+    const loadedExtResources = new Set();
+
+    async function loadExtensionResources() {
+      const resourcesJson = await pyodide.runPythonAsync(`
+import json
+from bokeh.model import Model
+
+js_urls = []
+css_urls = []
+for _cls in Model.model_class_reverse_map.values():
+    for url in getattr(_cls, '__javascript__', []) or []:
+        if url not in js_urls:
+            js_urls.append(url)
+    for url in getattr(_cls, '__css__', []) or []:
+        if url not in css_urls:
+            css_urls.append(url)
+json.dumps({"js": js_urls, "css": css_urls})
+      `);
+      const resources = JSON.parse(resourcesJson);
+
+      for (const url of resources.css) {
+        if (loadedExtResources.has(url)) continue;
+        loadedExtResources.add(url);
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = url;
+        link.crossOrigin = 'anonymous';
+        document.head.appendChild(link);
+      }
+
+      for (const url of resources.js) {
+        if (loadedExtResources.has(url)) continue;
+        loadedExtResources.add(url);
+        await loadScript(url);
       }
     }
 
@@ -218,18 +271,29 @@ init_doc()
         pyodide.globals.set('__panel_user_code__', code);
 
         if (hasServable && !hasServableTarget) {
-          // Code uses .servable() without target - use write_doc flow
+          // .servable() flow: exec → load extension JS → render
+          // Phase 1: Execute user code (registers models, calls pn.extension())
           await pyodide.runPythonAsync(`
-import asyncio
 import js
 import panel as pn
-from panel.io.pyodide import init_doc, write_doc
 from panel.io.state import state
 
-# Execute user code (passed safely via globals)
 exec(__panel_user_code__)
+          `);
 
-# Create data-root-id elements for each document root
+          if (currentRun !== runCount) return;
+
+          // Phase 2: Load extension JS/CSS (e.g. Tabulator, Plotly)
+          await loadExtensionResources();
+
+          if (currentRun !== runCount) return;
+
+          // Phase 3: Create DOM targets and render
+          await pyodide.runPythonAsync(`
+import js
+from panel.io.pyodide import write_doc
+from panel.io.state import state
+
 doc = state.curdoc
 target = js.document.getElementById('output')
 for root in doc.roots:
@@ -238,33 +302,55 @@ for root in doc.roots:
     el.id = f'el-{root.id}'
     target.appendChild(el)
 
-# Render
 await write_doc()
           `);
         } else if (hasServableTarget) {
-          // Code uses .servable(target=...) - targets already in DOM
+          // .servable(target=...) — targets specified in the code
+          // Phase 1: Execute
           await pyodide.runPythonAsync(`
-import asyncio
 import panel as pn
-from panel.io.pyodide import write_doc
 from panel.io.state import state
 
 exec(__panel_user_code__)
+          `);
+
+          if (currentRun !== runCount) return;
+
+          // Phase 2: Load extension JS/CSS
+          await loadExtensionResources();
+
+          if (currentRun !== runCount) return;
+
+          // Phase 3: Render
+          await pyodide.runPythonAsync(`
+from panel.io.pyodide import write_doc
 await write_doc()
           `);
         } else {
-          // Code doesn't use .servable() - wrap last expression with pn.io.pyodide.write
+          // No .servable() — exec_with_return + write
+          // Phase 1: Execute and capture result
           await pyodide.runPythonAsync(`
-import asyncio
 import panel as pn
-from panel.io.pyodide import write
 from panel.io.mime_render import exec_with_return
 
-result = exec_with_return(__panel_user_code__)
-if result is not None:
-    await write('output', result)
+__exec_result__ = exec_with_return(__panel_user_code__)
+          `);
+
+          if (currentRun !== runCount) return;
+
+          // Phase 2: Load extension JS/CSS
+          await loadExtensionResources();
+
+          if (currentRun !== runCount) return;
+
+          // Phase 3: Render
+          await pyodide.runPythonAsync(`
+import js
+from panel.io.pyodide import write
+
+if __exec_result__ is not None:
+    await write('output', __exec_result__)
 else:
-    import js
     js.document.getElementById('output').innerHTML = '<p style="color: #666; padding: 16px;">Code executed (no visual output)</p>'
           `);
         }

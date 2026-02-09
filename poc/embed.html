@@ -12,7 +12,8 @@
   The key idea: a <script type="panel"> tag or a simple JS API
   that takes Panel Python code and renders it.
 
-  Serve with: python -m http.server 8080
+  Serve with: python serve.py
+  (Requires COOP/COEP headers for SharedArrayBuffer — see serve.py)
   Open: http://localhost:8080/embed.html
 -->
 <html>
@@ -22,15 +23,15 @@
   <title>Embeddable Panel Apps</title>
 
   <!-- CodeMirror 5 for syntax-highlighted Python editor -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/python/python.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css" crossorigin="anonymous">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/python/python.min.js" crossorigin="anonymous"></script>
   <!-- Addons for better editing experience -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/selection/active-line.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/comment/comment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/selection/active-line.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/comment/comment.min.js" crossorigin="anonymous"></script>
 
   <style>
     body {
@@ -169,7 +170,7 @@ pn.Column(
     pn.Row(name, color),
     pn.bind(greet, name, color),
 ).servable()</textarea>
-    <iframe id="editor1-preview" src="panel_runner.html"></iframe>
+    <iframe id="editor1-preview"></iframe>
   </div>
 
   <h2>3. Auto-Servable (Just Return a Value)</h2>
@@ -198,7 +199,7 @@ df = pd.DataFrame({
 
 # Just return the DataFrame - it will be auto-displayed!
 df</textarea>
-    <iframe id="editor2-preview" src="panel_runner.html"></iframe>
+    <iframe id="editor2-preview"></iframe>
   </div>
 
   <h2>4. The Dream: Minimal Boilerplate</h2>
@@ -291,6 +292,19 @@ pn.Column(slider, pn.bind(lambda v: f"Value: {v}", slider)).servable()
     const readyIframes = new Set();
     const pendingCode = new Map();
 
+    // Sequential iframe loading: each iframe loads only after the previous
+    // one is ready, to avoid 3 simultaneous Pyodide instances (~1.5GB peak).
+    const iframeLoadOrder = ['app1', 'editor1-preview', 'editor2-preview'];
+    let nextIframeIdx = 1; // app1 already has src set in HTML
+
+    function loadNextIframe() {
+      if (nextIframeIdx < iframeLoadOrder.length) {
+        const id = iframeLoadOrder[nextIframeIdx];
+        nextIframeIdx++;
+        document.getElementById(id).src = 'panel_runner.html';
+      }
+    }
+
     // Listen for ready messages from iframes
     window.addEventListener('message', (event) => {
       const msg = event.data;
@@ -308,6 +322,8 @@ pn.Column(slider, pn.bind(lambda v: f"Value: {v}", slider)).servable()
             );
             pendingCode.delete(iframe.id);
           }
+          // Load the next iframe now that this one is ready
+          loadNextIframe();
           break;
         }
       }
