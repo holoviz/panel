@@ -754,6 +754,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             design = self.design or Native
             self._design = self._instantiate_design(design, config.theme)
+        # Register the design's hook if not already registered
+        if self._design and self._design._apply_hooks not in self._hooks:
+            self._hooks.append(self._design._apply_hooks)
 
     def _update_loading(self, *_) -> None:
         if self.loading:

@@ -1,7 +1,8 @@
 import pytest
 
+from panel import config
 from panel.widgets.indicators import (
-    Dial, Gauge, Number, Tqdm,
+    Dial, Gauge, Number, String, Tqdm,
 )
 
 
@@ -108,3 +109,56 @@ def test_tqdm_color():
     for _ in tqdm(range(2)):
         pass
     assert tqdm.text_pane.styles["color"]=="green"
+
+
+def test_number_dark_theme(document, comm):
+    """Test that Number indicator uses white color in dark theme"""
+    # Test with config.theme set to dark
+    config.theme = 'dark'
+    try:
+        number = Number(value=42, name='Test')
+        model = number.get_root(document, comm)
+        
+        # Check initial color is white
+        assert 'color: white' in model.text
+        
+        # Update value and check color is still white
+        number.value = 100
+        assert 'color: white' in model.text
+    finally:
+        config.theme = 'default'
+
+
+def test_string_dark_theme(document, comm):
+    """Test that String indicator uses white color in dark theme"""
+    # Test with config.theme set to dark
+    config.theme = 'dark'
+    try:
+        string = String(value='Hello', name='Test')
+        model = string.get_root(document, comm)
+        
+        # Check initial color is white
+        assert 'color: white' in model.text
+        
+        # Update value and check color is still white
+        string.value = 'World'
+        assert 'color: white' in model.text
+    finally:
+        config.theme = 'default'
+
+
+def test_number_default_color_override(document, comm):
+    """Test that explicit default_color overrides theme"""
+    config.theme = 'dark'
+    try:
+        # Explicit color should override theme
+        number = Number(value=42, default_color='red')
+        model = number.get_root(document, comm)
+        
+        assert 'color: red' in model.text
+        
+        # Update value and check color is still red
+        number.value = 100
+        assert 'color: red' in model.text
+    finally:
+        config.theme = 'default'
