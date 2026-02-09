@@ -61,6 +61,7 @@ except ImportError:
 RED   = "#d9534f"
 GREEN = "#5cb85c"
 BLUE  = "#428bca"
+DARK_THEME_TEXT_COLOR = "white"  # Default text color for indicators in dark theme
 
 class Indicator(Widget):
     """
@@ -366,7 +367,7 @@ class Number(ValueIndicator):
             params["sizing_mode"] = None
         # Apply theme-specific default color if not explicitly set
         if 'default_color' not in params and config.theme == 'dark':
-            params['default_color'] = 'white'
+            params['default_color'] = DARK_THEME_TEXT_COLOR
         super().__init__(**params)
 
     def _process_param_change(self, msg):
@@ -425,7 +426,7 @@ class String(ValueIndicator):
             params["sizing_mode"] = None
         # Apply theme-specific default color if not explicitly set
         if 'default_color' not in params and config.theme == 'dark':
-            params['default_color'] = 'white'
+            params['default_color'] = DARK_THEME_TEXT_COLOR
         super().__init__(**params)
 
     def _process_param_change(self, msg):
