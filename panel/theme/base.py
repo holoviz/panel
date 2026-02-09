@@ -279,12 +279,6 @@ class Design(param.Parameterized, ResourceComponent):
         if 'stylesheets' in modifiers:
             params['stylesheets'] = modifiers['stylesheets'] + viewable.stylesheets
 
-        # Sync modifier values with the Viewable for parameters that are processed per render
-        # This ensures that subsequent parameter changes use the themed values
-        for k, v in params.items():
-            if k != 'stylesheets' and hasattr(viewable.param, k):
-                setattr(viewable, k, v)
-
         if isinstance(viewable, PyComponent):
             props = viewable._view__._process_param_change(params)
         else:
@@ -463,17 +457,4 @@ config.param.design.class_ = Design
 THEMES = {
     'default': DefaultTheme,
     'dark': DarkTheme
-}
-
-# Add modifiers to DarkTheme for Number and String indicators
-# These imports are done here to avoid circular imports
-from ..widgets.indicators import Number, String  # noqa: E402
-
-DarkTheme.modifiers = {
-    Number: {
-        'default_color': 'white'
-    },
-    String: {
-        'default_color': 'white'
-    }
 }

@@ -34,6 +34,7 @@ import param
 from bokeh.models import ColumnDataSource, FixedTicker, Tooltip
 
 from .._param import Align
+from ..config import config
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
 from ..models import (
@@ -363,6 +364,9 @@ class Number(ValueIndicator):
     def __init__(self, **params):
         if "sizing_mode" not in params:
             params["sizing_mode"] = None
+        # Apply theme-specific default color if not explicitly set
+        if 'default_color' not in params and config.theme == 'dark':
+            params['default_color'] = 'white'
         super().__init__(**params)
 
     def _process_param_change(self, msg):
@@ -419,6 +423,9 @@ class String(ValueIndicator):
     def __init__(self, **params):
         if "sizing_mode" not in params:
             params["sizing_mode"] = None
+        # Apply theme-specific default color if not explicitly set
+        if 'default_color' not in params and config.theme == 'dark':
+            params['default_color'] = 'white'
         super().__init__(**params)
 
     def _process_param_change(self, msg):
