@@ -3,15 +3,8 @@
   POC: Single-Pyodide Embed
   =========================
   Same demos as embed.html but with ONE Pyodide instance instead of 3 iframes.
-  This avoids the ~1.5GB memory usage (3 x 300-500MB) that causes
-  STATUS_ACCESS_VIOLATION crashes.
-
-  Key difference: Instead of 3 <iframe src="panel_runner.html">, we have
-  3 <div class="panel-target"> containers and a single Pyodide runtime
-  that renders into each via Panel's write() / write_doc().
-
-  IMPORTANT: Must be served with COOP/COEP headers for SharedArrayBuffer
-  support, otherwise Pyodide crashes with STATUS_ACCESS_VIOLATION.
+  Uses <script type="panel"> / <script type="panel-editor"> tags
+  auto-discovered by panel-embed.js.
 
   Serve with: python serve.py
   Open: http://localhost:8080/embed_single.html
@@ -21,18 +14,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Embeddable Panel Apps (Single Pyodide)</title>
-
-  <!-- CodeMirror 5 for syntax-highlighted Python editor -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css" crossorigin="anonymous">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/python/python.min.js" crossorigin="anonymous"></script>
-  <!-- Addons for better editing experience -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/selection/active-line.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/comment/comment.min.js" crossorigin="anonymous"></script>
-
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -50,102 +31,9 @@
       background: #1a1a2e; color: #e0e0e0; padding: 16px;
       border-radius: 8px; overflow-x: auto; font-size: 13px;
     }
-
-    /* Panel target container (replaces iframe) */
-    .panel-target {
-      width: 100%; min-height: 100px;
-      border: 1px solid #eee; border-radius: 0 0 8px 8px;
-      padding: 8px; box-sizing: border-box;
-    }
-
-    /* Panel embed container (no-editor variant) */
-    .panel-embed {
-      border: 1px solid #ddd; border-radius: 8px;
-      overflow: hidden; margin: 16px 0;
-    }
-    .panel-embed .panel-target {
-      border: none; border-radius: 0;
-    }
-
-    /* Inline editor style */
-    .panel-editor {
-      border: 1px solid #ddd; border-radius: 8px;
-      overflow: hidden; margin: 16px 0;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    .panel-editor-header {
-      background: #282a36; color: #f8f8f2; padding: 8px 14px;
-      display: flex; align-items: center; gap: 10px;
-      font-size: 13px; font-weight: 500;
-      border-bottom: 1px solid #44475a;
-    }
-    .panel-editor-header .lang-badge {
-      background: #3b82f6; color: white; padding: 2px 8px;
-      border-radius: 4px; font-size: 11px; font-weight: 600;
-      letter-spacing: 0.5px; text-transform: uppercase;
-    }
-    .panel-editor-header .title {
-      flex: 1;
-    }
-    .panel-editor-header button {
-      background: #50fa7b; color: #282a36; border: none;
-      padding: 5px 16px; border-radius: 4px; cursor: pointer;
-      font-size: 12px; font-weight: 700;
-      transition: background 0.15s;
-    }
-    .panel-editor-header button:hover {
-      background: #69ff94;
-    }
-    .panel-editor-header button:disabled {
-      background: #6272a4; color: #44475a; cursor: not-allowed;
-    }
-    .panel-editor-header .shortcut {
-      font-size: 11px; color: #6272a4; margin-left: -4px;
-    }
-
-    /* CodeMirror overrides */
-    .panel-editor .CodeMirror {
-      height: auto;
-      min-height: 120px;
-      max-height: 400px;
-      font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
-      font-size: 13.5px;
-      line-height: 1.55;
-      border-bottom: 1px solid #44475a;
-    }
-    .panel-editor .CodeMirror-scroll {
-      min-height: 120px;
-    }
-
-    /* Status bar */
-    #global-status {
-      position: fixed; top: 0; left: 0; right: 0;
-      background: #1b5e20; color: white; padding: 8px 16px;
-      font-size: 14px; z-index: 9999; transition: opacity 0.3s;
-    }
-    #global-status.hidden { opacity: 0; pointer-events: none; }
-    #global-status.error { background: #b71c1c; }
-    .loading-spinner {
-      display: inline-block; width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 50%; border-top-color: white;
-      animation: spin 0.8s linear infinite; margin-right: 8px;
-      vertical-align: middle;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Per-app status overlay */
-    .app-status {
-      padding: 12px 16px; color: #666; font-size: 13px;
-    }
-    .app-status.error {
-      color: #b71c1c;
-    }
   </style>
 </head>
 <body>
-  <div id="global-status"><span class="loading-spinner"></span>Loading Pyodide runtime...</div>
-
   <h1>Embedding Panel Apps (Single Pyodide)</h1>
   <p>
     This page demonstrates the same demos as <code>embed.html</code>, but uses a
@@ -164,11 +52,23 @@
     renders the app into a target div. Users interact with the running app but cannot edit the code.
   </p>
 
-  <div class="panel-embed">
-    <div id="app1" class="panel-target">
-      <div class="app-status">Waiting for Pyodide...</div>
-    </div>
-  </div>
+  <script type="panel">
+import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+counter = pn.widgets.IntSlider(name="Counter", start=0, end=100, value=42)
+
+pn.Column(
+    "# Embedded Panel App",
+    "This app is **embedded** with just a few lines of HTML + JS.",
+    counter,
+    pn.bind(lambda v: pn.indicators.Number(
+        name="Value", value=v, format="{value}",
+        colors=[(33, "red"), (66, "gold"), (100, "green")]
+    ), counter),
+).servable()
+  </script>
 
   <h2>2. Inline Editor + App</h2>
   <p>
@@ -176,14 +76,8 @@
     Users can modify the code and click Run to see changes.
   </p>
 
-  <div class="panel-editor" id="editor1">
-    <div class="panel-editor-header">
-      <span class="lang-badge">Python</span>
-      <span class="title">Panel App</span>
-      <button onclick="runEditor('editor1')" id="editor1-run-btn">Run</button>
-      <span class="shortcut">Ctrl+Enter</span>
-    </div>
-    <textarea id="editor1-code">import panel as pn
+  <script type="panel-editor" data-title="Panel App">
+import panel as pn
 
 pn.extension(sizing_mode="stretch_width")
 
@@ -201,11 +95,8 @@ pn.Column(
     "# Greeting App",
     pn.Row(name, color),
     pn.bind(greet, name, color),
-).servable()</textarea>
-    <div id="editor1-preview" class="panel-target">
-      <div class="app-status">Waiting for Pyodide...</div>
-    </div>
-  </div>
+).servable()
+  </script>
 
   <h2>3. Auto-Servable (Just Return a Value)</h2>
   <p>
@@ -214,14 +105,8 @@ pn.Column(
     This makes embedding even simpler for quick demos.
   </p>
 
-  <div class="panel-editor" id="editor2">
-    <div class="panel-editor-header">
-      <span class="lang-badge">Python</span>
-      <span class="title">Auto-display</span>
-      <button onclick="runEditor('editor2')" id="editor2-run-btn">Run</button>
-      <span class="shortcut">Ctrl+Enter</span>
-    </div>
-    <textarea id="editor2-code">import pandas as pd
+  <script type="panel-editor" data-title="Auto-display">
+import pandas as pd
 import numpy as np
 
 np.random.seed(42)
@@ -232,454 +117,85 @@ df = pd.DataFrame({
 })
 
 # Just return the DataFrame - it will be auto-displayed!
-df</textarea>
-    <div id="editor2-preview" class="panel-target">
-      <div class="app-status">Waiting for Pyodide...</div>
-    </div>
-  </div>
+df
+  </script>
 
-  <script>
-    // ===== VERSION CONFIGURATION =====
-    const PYODIDE_VERSION = 'v0.28.2';
-    const PANEL_VERSION = '1.8.7';
-    const BOKEH_VERSION = '3.8.1';
+  <h2>4. Code Below Layout</h2>
+  <p>
+    Using <code>data-layout="code-below"</code>, the preview appears above the editor.
+    Great for documentation where you want the result to be the first thing readers see.
+  </p>
 
-    // CDN URLs
-    const PYODIDE_URL = `https://cdn.jsdelivr.net/pyodide/${PYODIDE_VERSION}/full/pyodide.js`;
-    const BOKEH_JS_URLS = [
-      `https://cdn.bokeh.org/bokeh/release/bokeh-${BOKEH_VERSION}.min.js`,
-      // bokeh-gl skipped — WebGL not needed for widget-based apps, saves ~2MB parse/compile
-      `https://cdn.bokeh.org/bokeh/release/bokeh-widgets-${BOKEH_VERSION}.min.js`,
-      `https://cdn.bokeh.org/bokeh/release/bokeh-tables-${BOKEH_VERSION}.min.js`,
-    ];
-    const PANEL_JS_URL = `https://cdn.jsdelivr.net/npm/@holoviz/panel@${PANEL_VERSION}/dist/panel.min.js`;
-    const BOKEH_WHL = `https://cdn.holoviz.org/panel/wheels/bokeh-${BOKEH_VERSION}-py3-none-any.whl`;
-    const PANEL_WHL = `https://cdn.holoviz.org/panel/${PANEL_VERSION}/dist/wheels/panel-${PANEL_VERSION}-py3-none-any.whl`;
-
-    // ===== STATE =====
-    let pyodide = null;
-    let installedPackages = new Set(['panel', 'bokeh', 'pyodide-http']);
-    let isReady = false;
-    // Track running state per target to prevent concurrent runs
-    const runningApps = new Set();
-
-    // ===== GLOBAL STATUS =====
-    function setGlobalStatus(msg, isError = false) {
-      const el = document.getElementById('global-status');
-      el.innerHTML = isError
-        ? `<span style="margin-right:8px">&#x26A0;</span>${msg}`
-        : `<span class="loading-spinner"></span>${msg}`;
-      el.className = isError ? 'error' : '';
-    }
-
-    function hideGlobalStatus() {
-      document.getElementById('global-status').className = 'hidden';
-    }
-
-    // ===== LOAD JS RESOURCES =====
-    function loadScript(url) {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = url;
-        script.crossOrigin = 'anonymous';
-        script.onload = resolve;
-        script.onerror = () => reject(new Error(`Failed to load ${url}`));
-        document.head.appendChild(script);
-      });
-    }
-
-    async function loadJSResources() {
-      setGlobalStatus('Loading Bokeh JS...');
-      for (const url of BOKEH_JS_URLS) {
-        await loadScript(url);
-      }
-      setGlobalStatus('Loading Panel JS...');
-      await loadScript(PANEL_JS_URL);
-    }
-
-    // ===== INITIALIZE PYODIDE =====
-    // Load sequentially to reduce peak memory (avoids STATUS_ACCESS_VIOLATION).
-    // Bokeh/Panel JS first (smaller, JS engine can GC after compilation),
-    // then Pyodide WASM (large heap allocation).
-    async function initPyodide() {
-      // Step 1: Load Bokeh + Panel JS
-      await loadJSResources();
-
-      // Step 2: Load Pyodide runtime
-      setGlobalStatus('Loading Pyodide runtime...');
-      await loadScript(PYODIDE_URL);
-
-      setGlobalStatus('Initializing Pyodide...');
-      pyodide = await loadPyodide({ fullStdLib: false });
-
-      // Step 3: Install Python packages (one at a time to reduce peak memory)
-      setGlobalStatus('Installing packages...');
-      await pyodide.loadPackage('micropip');
-      pyodide.globals.set('__bokeh_whl__', BOKEH_WHL);
-      pyodide.globals.set('__panel_whl__', PANEL_WHL);
-      await pyodide.runPythonAsync(`
-import micropip
-await micropip.install(__bokeh_whl__)
-await micropip.install(__panel_whl__, reinstall=True, keep_going=True)
-await micropip.install('pyodide-http')
-      `);
-
-      // Step 4: Initialize Panel
-      setGlobalStatus('Initializing Panel...');
-      await pyodide.runPythonAsync(`
+  <script type="panel-editor" data-layout="code-below" data-title="Code Below Demo">
 import panel as pn
-from panel.io.pyodide import init_doc
-print("Panel", pn.__version__, "ready")
-      `);
-
-      isReady = true;
-      hideGlobalStatus();
-    }
-
-    // ===== DETECT REQUIREMENTS =====
-    async function detectAndInstallRequirements(code) {
-      pyodide.globals.set('__user_code__', code);
-      const newPkgs = await pyodide.runPythonAsync(`
-from panel.io.mime_render import find_requirements
-reqs = find_requirements(__user_code__)
-import json
-json.dumps(reqs)
-      `);
-      const requirements = JSON.parse(newPkgs);
-      const toInstall = requirements.filter(pkg => !installedPackages.has(pkg));
-
-      if (toInstall.length > 0) {
-        setGlobalStatus(`Installing: ${toInstall.join(', ')}...`);
-        const micropip = pyodide.pyimport('micropip');
-        await micropip.install(toInstall);
-        toInstall.forEach(pkg => installedPackages.add(pkg));
-        hideGlobalStatus();
-      }
-    }
-
-    // ===== LOAD EXTENSION JS/CSS =====
-    // After user code executes (registering models via pn.extension()),
-    // query Python for the JS/CSS URLs those extensions need and load them.
-    const loadedExtResources = new Set();
-
-    async function loadExtensionResources() {
-      const resourcesJson = await pyodide.runPythonAsync(`
-import json
-from bokeh.model import Model
-
-js_urls = []
-css_urls = []
-for _cls in Model.model_class_reverse_map.values():
-    for url in getattr(_cls, '__javascript__', []) or []:
-        if url not in js_urls:
-            js_urls.append(url)
-    for url in getattr(_cls, '__css__', []) or []:
-        if url not in css_urls:
-            css_urls.append(url)
-json.dumps({"js": js_urls, "css": css_urls})
-      `);
-      const resources = JSON.parse(resourcesJson);
-
-      // Load CSS
-      for (const url of resources.css) {
-        if (loadedExtResources.has(url)) continue;
-        loadedExtResources.add(url);
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = url;
-        link.crossOrigin = 'anonymous';
-        document.head.appendChild(link);
-      }
-
-      // Load JS sequentially (some may depend on others)
-      for (const url of resources.js) {
-        if (loadedExtResources.has(url)) continue;
-        loadedExtResources.add(url);
-        await loadScript(url);
-      }
-    }
-
-    // ===== CLEANUP: Remove Bokeh views scoped to a container =====
-    function cleanupContainer(targetId) {
-      const targetEl = document.getElementById(targetId);
-      if (!targetEl) return;
-
-      // Remove Bokeh views whose root element lives inside this container
-      if (window.Bokeh && window.Bokeh.index && window.Bokeh.index.roots) {
-        try {
-          const roots = Array.from(window.Bokeh.index.roots);
-          for (const view of roots) {
-            try {
-              if (view.el && targetEl.contains(view.el)) {
-                view.remove();
-              }
-            } catch (e) {
-              // Ignore individual view removal errors
-            }
-          }
-        } catch (e) {
-          // Ignore if Bokeh.index is in unexpected state
-        }
-      }
-
-      // Clear the container DOM
-      targetEl.innerHTML = '';
-    }
-
-    // ===== CORE: RUN PANEL APP INTO A TARGET DIV =====
-    async function runPanelApp(targetId, code) {
-      if (!isReady) {
-        throw new Error('Pyodide not ready yet.');
-      }
-
-      // Prevent concurrent runs on the same target
-      if (runningApps.has(targetId)) return;
-      runningApps.add(targetId);
-
-      const targetEl = document.getElementById(targetId);
-      targetEl.innerHTML = '<div class="app-status"><span class="loading-spinner"></span>Running...</div>';
-
-      try {
-        // 1. Detect and install requirements
-        await detectAndInstallRequirements(code);
-
-        // 2. Cleanup previous render in this container only
-        cleanupContainer(targetId);
-
-        // 3. Determine rendering strategy
-        const hasServable = code.includes('.servable(');
-        const hasServableTarget = /\.servable\s*\(\s*target\s*=/.test(code);
-
-        // 4. Pass code and target ID to Python via globals
-        pyodide.globals.set('__panel_user_code__', code);
-        pyodide.globals.set('__panel_target_id__', targetId);
-
-        if (hasServable && !hasServableTarget) {
-          // .servable() flow: init_doc -> exec -> load extension JS -> render
-          // Phase 1: Execute user code (registers models, calls pn.extension())
-          await pyodide.runPythonAsync(`
-import js
-import panel as pn
-from bokeh.io.doc import set_curdoc
-from bokeh.document import Document
-from bokeh.settings import settings as bk_settings
-from panel.io.document import MockSessionContext
-from panel.io.state import state
-
-# Isolated namespace for this app
-__ns__ = {"__builtins__": __builtins__}
-exec("import panel as pn", __ns__)
-
-# Create fresh document for this app
-bk_settings.simple_ids.set_value(False)
-doc = Document()
-set_curdoc(doc)
-doc.hold()
-doc._session_context = lambda: MockSessionContext(document=doc)
-state.curdoc = doc
-
-# Execute user code in isolated namespace with the fresh doc
-exec(__panel_user_code__, __ns__)
-          `);
-
-          // Phase 2: Load extension JS/CSS (e.g. Tabulator, Plotly)
-          await loadExtensionResources();
-
-          // Phase 3: Create DOM targets and render
-          await pyodide.runPythonAsync(`
-import js
-from panel.io.pyodide import _doc_json, _link_docs, sync_location
-from panel.io.state import state
-
-doc = state.curdoc
-
-# Create data-root-id divs inside the target container
-target_el = js.document.getElementById(__panel_target_id__)
-target_el.innerHTML = ''
-for root in doc.roots:
-    el = js.document.createElement('div')
-    el.setAttribute('data-root-id', str(root.id))
-    el.id = f'el-{root.id}'
-    target_el.appendChild(el)
-
-# Scoped write_doc: query data-root-id elements within the target container only
-root_els = target_el.querySelectorAll('[data-root-id]')
-for el in root_els:
-    el.innerHTML = ''
-docs_json, render_items, root_ids = _doc_json(doc, root_els)
-doc._session_context = None
-
-views = await js.window.Bokeh.embed.embed_items(
-    js.JSON.parse(docs_json), js.JSON.parse(render_items)
-)
-jsdoc = list(views[0].roots)[0].model.document
-_link_docs(doc, jsdoc)
-sync_location()
-          `);
-        } else if (hasServableTarget) {
-          // .servable(target=...) — targets are already specified in the code
-          // Phase 1: Execute
-          await pyodide.runPythonAsync(`
-import panel as pn
-from bokeh.io.doc import set_curdoc
-from bokeh.document import Document
-from bokeh.settings import settings as bk_settings
-from panel.io.document import MockSessionContext
-from panel.io.state import state
-
-__ns__ = {"__builtins__": __builtins__}
-exec("import panel as pn", __ns__)
-
-bk_settings.simple_ids.set_value(False)
-doc = Document()
-set_curdoc(doc)
-doc.hold()
-doc._session_context = lambda: MockSessionContext(document=doc)
-state.curdoc = doc
-
-exec(__panel_user_code__, __ns__)
-          `);
-
-          // Phase 2: Load extension JS/CSS
-          await loadExtensionResources();
-
-          // Phase 3: Render
-          await pyodide.runPythonAsync(`
-from panel.io.pyodide import write_doc
-await write_doc()
-          `);
-        } else {
-          // No .servable() — use exec_with_return + write(targetId, result)
-          // Phase 1: Execute and capture result
-          await pyodide.runPythonAsync(`
-import panel as pn
-from panel.io.mime_render import exec_with_return
-
-__ns__ = {"__builtins__": __builtins__}
-__exec_result__ = exec_with_return(__panel_user_code__, __ns__)
-          `);
-
-          // Phase 2: Load extension JS/CSS
-          await loadExtensionResources();
-
-          // Phase 3: Render
-          await pyodide.runPythonAsync(`
-import js
-from panel.io.pyodide import write
-
-if __exec_result__ is not None:
-    await write(__panel_target_id__, __exec_result__)
-else:
-    target_el = js.document.getElementById(__panel_target_id__)
-    target_el.innerHTML = '<p style="color: #666; padding: 16px;">Code executed (no visual output)</p>'
-          `);
-        }
-      } catch (error) {
-        const errorMsg = error.message || String(error);
-        const targetEl = document.getElementById(targetId);
-        targetEl.innerHTML = `<pre style="color:#b71c1c;padding:16px;white-space:pre-wrap;font-size:13px;">${
-          errorMsg.replace(/</g, '&lt;')
-        }</pre>`;
-      } finally {
-        runningApps.delete(targetId);
-      }
-    }
-
-    // ===== CODEMIRROR EDITORS =====
-    const cmEditors = {};
-
-    function createEditor(textareaId) {
-      const textarea = document.getElementById(textareaId);
-      const cm = CodeMirror.fromTextArea(textarea, {
-        mode: 'python',
-        theme: 'dracula',
-        lineNumbers: true,
-        matchBrackets: true,
-        autoCloseBrackets: true,
-        styleActiveLine: true,
-        indentUnit: 4,
-        tabSize: 4,
-        indentWithTabs: false,
-        lineWrapping: false,
-        extraKeys: {
-          'Ctrl-Enter': () => {
-            const editorId = textarea.closest('.panel-editor').id;
-            runEditor(editorId);
-          },
-          'Cmd-Enter': () => {
-            const editorId = textarea.closest('.panel-editor').id;
-            runEditor(editorId);
-          },
-          'Ctrl-/': 'toggleComment',
-          'Cmd-/': 'toggleComment',
-          'Tab': (cm) => {
-            if (cm.somethingSelected()) {
-              cm.indentSelection('add');
-            } else {
-              cm.replaceSelection('    ', 'end');
-            }
-          },
-          'Shift-Tab': (cm) => {
-            cm.indentSelection('subtract');
-          },
-        }
-      });
-      cmEditors[textareaId] = cm;
-      setTimeout(() => cm.refresh(), 50);
-      return cm;
-    }
-
-    // ===== EDITOR RUN =====
-    function runEditor(editorId) {
-      const textareaId = `${editorId}-code`;
-      const code = cmEditors[textareaId]
-        ? cmEditors[textareaId].getValue()
-        : document.getElementById(textareaId).value;
-      const targetId = `${editorId}-preview`;
-      runPanelApp(targetId, code);
-    }
-
-    // ===== INITIALIZE =====
-
-    // Create CodeMirror editors
-    createEditor('editor1-code');
-    createEditor('editor2-code');
-
-    // Boot Pyodide, then run all apps sequentially
-    initPyodide().then(async () => {
-      // App 1: Simple embed (no editor)
-      await runPanelApp('app1', `import panel as pn
 
 pn.extension(sizing_mode="stretch_width")
 
-counter = pn.widgets.IntSlider(name="Counter", start=0, end=100, value=42)
+pn.Column(
+    "# Code is Below!",
+    "The editor is below the preview in this layout.",
+    pn.widgets.Button(name="Click me!", button_type="primary"),
+).servable()
+  </script>
+
+  <h2>5. Collapsible Code (Hidden by Default)</h2>
+  <p>
+    Using <code>data-code="hidden"</code>, the code section starts collapsed.
+    Click the <code>&lt;&gt; Code</code> button to expand it. This is the MUI-style
+    pattern where the app is the primary focus.
+  </p>
+
+  <script type="panel-editor" data-code="hidden" data-title="Collapsible Demo">
+import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+pn.widgets.Button(name="Click me!", button_type="primary").servable()
+  </script>
+
+  <h2>6. Collapsible + Code Below</h2>
+  <p>
+    Combining <code>data-code="hidden"</code> with <code>data-layout="code-below"</code>.
+    The toggle button sits between the preview and the collapsible code section below.
+  </p>
+
+  <script type="panel-editor" data-code="hidden" data-layout="code-below" data-title="MUI Style">
+import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+slider = pn.widgets.IntSlider(name="Value", start=0, end=100, value=42)
 
 pn.Column(
-    "# Embedded Panel App",
-    "This app is **embedded** with just a few lines of HTML + JS.",
-    counter,
+    "# MUI-Style Demo",
+    slider,
     pn.bind(lambda v: pn.indicators.Number(
         name="Value", value=v, format="{value}",
         colors=[(33, "red"), (66, "gold"), (100, "green")]
-    ), counter),
-).servable()`);
-
-      // App 2: Editor with greeting app
-      await runPanelApp('editor1-preview',
-        cmEditors['editor1-code']
-          ? cmEditors['editor1-code'].getValue()
-          : document.getElementById('editor1-code').value
-      );
-
-      // App 3: Auto-servable DataFrame
-      await runPanelApp('editor2-preview',
-        cmEditors['editor2-code']
-          ? cmEditors['editor2-code'].getValue()
-          : document.getElementById('editor2-code').value
-      );
-    }).catch(err => {
-      setGlobalStatus(`Fatal: ${err.message || err}`, true);
-    });
+    ), slider),
+).servable()
   </script>
+
+  <h2>7. External Source (<code>src</code> attribute)</h2>
+  <p>
+    Load Python code from a URL using the <code>src</code> attribute.
+    Works with both <code>&lt;script type="panel"&gt;</code> and
+    <code>&lt;script type="panel-editor"&gt;</code>.
+  </p>
+
+  <h3>App from external file:</h3>
+  <script type="panel" src="examples/hello.py"></script>
+
+  <h3>Editor with external file:</h3>
+  <script type="panel-editor" src="examples/slider.py" data-title="External Slider"></script>
+
+  <h2>8. All Features Composed</h2>
+  <p>
+    External source + collapsible code + code-below layout — all combined.
+  </p>
+
+  <script type="panel-editor" src="examples/slider.py" data-code="hidden" data-layout="code-below" data-title="Composed Demo"></script>
+
+  <script src="panel-embed.js"></script>
 </body>
 </html>

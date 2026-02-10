@@ -50,6 +50,7 @@ repos:
     rev: v9.37.0
     hooks:
       - id: eslint
+        files: ^panel/
         args: ['-c', 'panel/.eslintrc.js', 'panel/*.ts', 'panel/models/**/*.ts', '--fix']
         additional_dependencies:
           - 'eslint@8.57.0'

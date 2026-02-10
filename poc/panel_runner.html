@@ -1,23 +1,15 @@
 <!DOCTYPE html>
 <!--
-  POC 1: Panel Runner - The Core Primitive
-  =========================================
-  A single HTML file that:
-  1. Loads Pyodide + Bokeh/Panel JS ONCE
-  2. Provides a runPanelCode(code) JS function
-  3. Handles cleanup between runs (fast dynamic reload)
-  4. Can be embedded as an iframe or used standalone
+  Panel Runner — The Core Primitive
+  ==================================
+  Loads Pyodide + Bokeh/Panel JS once and executes Panel Python code.
+  Used as an iframe by embed.html and playground.html, or standalone.
 
-  Usage:
-    - Standalone: Open in browser, use the built-in demo
-    - As iframe: postMessage({type: 'run', code: '...'}) to execute code
-    - JS API: call runPanelCode(code) directly
+  - As iframe: receives postMessage({type: 'run', code: '...'})
+  - Standalone: runs a self-test demo
 
   Serve with: python serve.py
-  (Requires COOP/COEP headers for SharedArrayBuffer — see serve.py)
   Open: http://localhost:8080/panel_runner.html
-
-  VERSION CONFIG: Adjust these versions at the top of the script section.
 -->
 <html>
 <head>
@@ -27,390 +19,48 @@
   <style>
     body { margin: 0; font-family: system-ui, sans-serif; }
     #output { width: 100%; min-height: 100px; }
-    #status {
-      position: fixed; top: 0; left: 0; right: 0;
-      background: #1b5e20; color: white; padding: 8px 16px;
-      font-size: 14px; z-index: 9999; transition: opacity 0.3s;
-    }
-    #status.hidden { opacity: 0; pointer-events: none; }
-    #status.error { background: #b71c1c; }
-    .loading-spinner {
-      display: inline-block; width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 50%; border-top-color: white;
-      animation: spin 0.8s linear infinite; margin-right: 8px;
-      vertical-align: middle;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <div id="status"><span class="loading-spinner"></span>Loading Pyodide runtime...</div>
   <div id="output"></div>
-
+  <script src="panel-embed.js"></script>
   <script>
-    // ===== VERSION CONFIGURATION =====
-    // Adjust these to match your Panel/Bokeh release
-    const PYODIDE_VERSION = 'v0.28.2';
-    const PANEL_VERSION = '1.8.7';
-    const BOKEH_VERSION = '3.8.1';
-
-    // CDN URLs
-    const PYODIDE_URL = `https://cdn.jsdelivr.net/pyodide/${PYODIDE_VERSION}/full/pyodide.js`;
-    const BOKEH_JS_URLS = [
-      `https://cdn.bokeh.org/bokeh/release/bokeh-${BOKEH_VERSION}.min.js`,
-      // bokeh-gl skipped — WebGL not needed for widget-based apps, saves ~2MB parse/compile
-      `https://cdn.bokeh.org/bokeh/release/bokeh-widgets-${BOKEH_VERSION}.min.js`,
-      `https://cdn.bokeh.org/bokeh/release/bokeh-tables-${BOKEH_VERSION}.min.js`,
-    ];
-    const PANEL_JS_URL = `https://cdn.jsdelivr.net/npm/@holoviz/panel@${PANEL_VERSION}/dist/panel.min.js`;
-    // Note: Bokeh wheel is at CDN root, Panel wheel is under version-specific path
-    const BOKEH_WHL = `https://cdn.holoviz.org/panel/wheels/bokeh-${BOKEH_VERSION}-py3-none-any.whl`;
-    const PANEL_WHL = `https://cdn.holoviz.org/panel/${PANEL_VERSION}/dist/wheels/panel-${PANEL_VERSION}-py3-none-any.whl`;
-
-    // ===== STATE =====
-    let pyodide = null;
-    let installedPackages = new Set(['panel', 'bokeh', 'pyodide-http']);
-    let runCount = 0;
-    let isReady = false;
-
-    // ===== STATUS DISPLAY =====
-    function setStatus(msg, isError = false) {
-      const el = document.getElementById('status');
-      el.innerHTML = isError
-        ? `<span style="margin-right:8px">&#x26A0;</span>${msg}`
-        : `<span class="loading-spinner"></span>${msg}`;
-      el.className = isError ? 'error' : '';
-    }
-
-    function hideStatus() {
-      document.getElementById('status').className = 'hidden';
-    }
-
-    // ===== LOAD JS RESOURCES =====
-    function loadScript(url) {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = url;
-        script.crossOrigin = 'anonymous';
-        script.onload = resolve;
-        script.onerror = () => reject(new Error(`Failed to load ${url}`));
-        document.head.appendChild(script);
-      });
-    }
-
-    async function loadJSResources() {
-      setStatus('Loading Bokeh JS...');
-      // Load Bokeh scripts sequentially (they depend on each other)
-      for (const url of BOKEH_JS_URLS) {
-        await loadScript(url);
-      }
-      setStatus('Loading Panel JS...');
-      await loadScript(PANEL_JS_URL);
-    }
-
-    // ===== INITIALIZE PYODIDE =====
-    // Load sequentially to reduce peak memory (avoids STATUS_ACCESS_VIOLATION).
-    // Bokeh/Panel JS first (smaller, JS engine can GC after compilation),
-    // then Pyodide WASM (large heap allocation).
-    async function initPyodide() {
-      // Step 1: Load Bokeh + Panel JS
-      await loadJSResources();
-
-      // Step 2: Load Pyodide runtime
-      setStatus('Loading Pyodide runtime...');
-      await loadScript(PYODIDE_URL);
-
-      setStatus('Initializing Pyodide...');
-      pyodide = await loadPyodide({ fullStdLib: false });
-
-      // Step 3: Install Python packages (one at a time to reduce peak memory)
-      setStatus('Installing packages...');
-      await pyodide.loadPackage('micropip');
-      pyodide.globals.set('__bokeh_whl__', BOKEH_WHL);
-      pyodide.globals.set('__panel_whl__', PANEL_WHL);
-      await pyodide.runPythonAsync(`
-import micropip
-await micropip.install(__bokeh_whl__)
-await micropip.install(__panel_whl__, reinstall=True, keep_going=True)
-await micropip.install('pyodide-http')
-      `);
-
-      // Step 4: Initialize Panel
-      setStatus('Initializing Panel...');
-      await pyodide.runPythonAsync(`
-import panel as pn
-from panel.io.pyodide import init_doc
-print("Panel", pn.__version__, "ready")
-      `);
-
-      isReady = true;
-      hideStatus();
-      // Notify parent if in iframe
+    // Initialize Pyodide via panel-embed.js shared runtime
+    var readyPromise = PanelEmbed.init().then(function () {
+      // Notify parent iframe that we're ready
       if (window.parent !== window) {
-        window.parent.postMessage({type: 'ready'}, '*');
-      }
-    }
-
-    // ===== DETECT REQUIREMENTS =====
-    async function detectAndInstallRequirements(code) {
-      // Use Panel's own find_requirements to detect imports
-      pyodide.globals.set('__user_code__', code);
-      const newPkgs = await pyodide.runPythonAsync(`
-from panel.io.mime_render import find_requirements
-reqs = find_requirements(__user_code__)
-# Filter out already-installed packages
-import json
-json.dumps(reqs)
-      `);
-      const requirements = JSON.parse(newPkgs);
-      const toInstall = requirements.filter(pkg => !installedPackages.has(pkg));
-
-      if (toInstall.length > 0) {
-        setStatus(`Installing: ${toInstall.join(', ')}...`);
-        const micropip = pyodide.pyimport('micropip');
-        await micropip.install(toInstall);
-        toInstall.forEach(pkg => installedPackages.add(pkg));
-      }
-    }
-
-    // ===== LOAD EXTENSION JS/CSS =====
-    // After user code executes (registering models via pn.extension()),
-    // query Python for the JS/CSS URLs those extensions need and load them.
-    const loadedExtResources = new Set();
-
-    async function loadExtensionResources() {
-      const resourcesJson = await pyodide.runPythonAsync(`
-import json
-from bokeh.model import Model
-
-js_urls = []
-css_urls = []
-for _cls in Model.model_class_reverse_map.values():
-    for url in getattr(_cls, '__javascript__', []) or []:
-        if url not in js_urls:
-            js_urls.append(url)
-    for url in getattr(_cls, '__css__', []) or []:
-        if url not in css_urls:
-            css_urls.append(url)
-json.dumps({"js": js_urls, "css": css_urls})
-      `);
-      const resources = JSON.parse(resourcesJson);
-
-      for (const url of resources.css) {
-        if (loadedExtResources.has(url)) continue;
-        loadedExtResources.add(url);
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = url;
-        link.crossOrigin = 'anonymous';
-        document.head.appendChild(link);
-      }
-
-      for (const url of resources.js) {
-        if (loadedExtResources.has(url)) continue;
-        loadedExtResources.add(url);
-        await loadScript(url);
-      }
-    }
-
-    // ===== CORE: RUN PANEL CODE =====
-    async function runPanelCode(code) {
-      if (!isReady) {
-        throw new Error('Pyodide not ready yet. Wait for initialization.');
-      }
-
-      runCount++;
-      const currentRun = runCount;
-      setStatus('Running code...');
-
-      try {
-        // 1. Detect and install new requirements
-        await detectAndInstallRequirements(code);
-
-        if (currentRun !== runCount) return; // Superseded by newer run
-
-        // 2. Cleanup previous render
-        setStatus('Preparing...');
-        await pyodide.runPythonAsync(`
-import js
-import json
-from bokeh.io import curdoc
-from bokeh.settings import settings as bk_settings
-from panel.io.pyodide import init_doc
-from panel.io.state import state
-
-# Remove old Bokeh views from JS index
-if hasattr(js.window, 'Bokeh') and hasattr(js.window.Bokeh, 'index'):
-    try:
-        roots = list(js.window.Bokeh.index.roots)
-        for view in roots:
-            try:
-                view.remove()
-            except Exception:
-                pass
-    except Exception:
-        pass
-
-# Clear the output container
-output_el = js.document.getElementById('output')
-output_el.innerHTML = ''
-
-# Create fresh Panel document
-init_doc()
-        `);
-
-        if (currentRun !== runCount) return;
-
-        // 3. Determine rendering strategy based on code content
-        const hasServable = code.includes('.servable(');
-        const hasServableTarget = /\.servable\s*\(\s*target\s*=/.test(code);
-
-        // 4. Pass code safely via globals (avoids all escaping issues)
-        setStatus('Executing...');
-        pyodide.globals.set('__panel_user_code__', code);
-
-        if (hasServable && !hasServableTarget) {
-          // .servable() flow: exec → load extension JS → render
-          // Phase 1: Execute user code (registers models, calls pn.extension())
-          await pyodide.runPythonAsync(`
-import js
-import panel as pn
-from panel.io.state import state
-
-exec(__panel_user_code__)
-          `);
-
-          if (currentRun !== runCount) return;
-
-          // Phase 2: Load extension JS/CSS (e.g. Tabulator, Plotly)
-          await loadExtensionResources();
-
-          if (currentRun !== runCount) return;
-
-          // Phase 3: Create DOM targets and render
-          await pyodide.runPythonAsync(`
-import js
-from panel.io.pyodide import write_doc
-from panel.io.state import state
-
-doc = state.curdoc
-target = js.document.getElementById('output')
-for root in doc.roots:
-    el = js.document.createElement('div')
-    el.setAttribute('data-root-id', str(root.id))
-    el.id = f'el-{root.id}'
-    target.appendChild(el)
-
-await write_doc()
-          `);
-        } else if (hasServableTarget) {
-          // .servable(target=...) — targets specified in the code
-          // Phase 1: Execute
-          await pyodide.runPythonAsync(`
-import panel as pn
-from panel.io.state import state
-
-exec(__panel_user_code__)
-          `);
-
-          if (currentRun !== runCount) return;
-
-          // Phase 2: Load extension JS/CSS
-          await loadExtensionResources();
-
-          if (currentRun !== runCount) return;
-
-          // Phase 3: Render
-          await pyodide.runPythonAsync(`
-from panel.io.pyodide import write_doc
-await write_doc()
-          `);
-        } else {
-          // No .servable() — exec_with_return + write
-          // Phase 1: Execute and capture result
-          await pyodide.runPythonAsync(`
-import panel as pn
-from panel.io.mime_render import exec_with_return
-
-__exec_result__ = exec_with_return(__panel_user_code__)
-          `);
-
-          if (currentRun !== runCount) return;
-
-          // Phase 2: Load extension JS/CSS
-          await loadExtensionResources();
-
-          if (currentRun !== runCount) return;
-
-          // Phase 3: Render
-          await pyodide.runPythonAsync(`
-import js
-from panel.io.pyodide import write
-
-if __exec_result__ is not None:
-    await write('output', __exec_result__)
-else:
-    js.document.getElementById('output').innerHTML = '<p style="color: #666; padding: 16px;">Code executed (no visual output)</p>'
-          `);
-        }
-
-        if (currentRun === runCount) {
-          hideStatus();
-          // Notify parent
-          if (window.parent !== window) {
-            window.parent.postMessage({type: 'rendered'}, '*');
-          }
-        }
-      } catch (error) {
-        if (currentRun === runCount) {
-          const errorMsg = error.message || String(error);
-          setStatus(`Error: ${errorMsg}`, true);
-          const output = document.getElementById('output');
-          output.innerHTML = `<pre style="color:#b71c1c;padding:16px;white-space:pre-wrap;font-size:13px;">${
-            errorMsg.replace(/</g, '&lt;')
-          }</pre>`;
-          // Notify parent
-          if (window.parent !== window) {
-            window.parent.postMessage({type: 'error', error: errorMsg}, '*');
-          }
-        }
-      }
-    }
-
-    // ===== LISTEN FOR MESSAGES (iframe API) =====
-    window.addEventListener('message', async (event) => {
-      const msg = event.data;
-      if (msg && msg.type === 'run' && msg.code) {
-        await runPanelCode(msg.code);
+        window.parent.postMessage({ type: 'ready' }, '*');
       }
     });
 
-    // ===== EXPOSE GLOBAL API =====
-    window.runPanelCode = runPanelCode;
-    window.panelRunnerReady = initPyodide();
+    // Listen for postMessage from parent (iframe API)
+    window.addEventListener('message', async function (event) {
+      var msg = event.data;
+      if (msg && msg.type === 'run' && msg.code) {
+        await PanelEmbed._runRunnerApp(msg.code);
+      }
+    });
 
-    // ===== SELF-TEST (when opened directly) =====
+    // Expose global API for direct use
+    window.runPanelCode = PanelEmbed._runRunnerApp;
+    window.panelRunnerReady = readyPromise;
+
+    // Self-test when opened directly (not in iframe)
     if (window.parent === window) {
-      // Not in iframe - run a demo
-      window.panelRunnerReady.then(() => {
-        runPanelCode(`
-import panel as pn
-
-pn.extension(sizing_mode="stretch_width")
-
-slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude', value=5)
-
-def callback(amplitude):
-    return f'## Amplitude: {amplitude:.1f}'
-
-pn.Column(
-    "# Panel Runner - Self Test",
-    "Edit and run code to see it render here.",
-    slider,
-    pn.bind(callback, slider),
-).servable()
-        `);
+      readyPromise.then(function () {
+        PanelEmbed._runRunnerApp(
+          'import panel as pn\n\n' +
+          'pn.extension(sizing_mode="stretch_width")\n\n' +
+          "slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude', value=5)\n\n" +
+          'def callback(amplitude):\n' +
+          "    return f'## Amplitude: {amplitude:.1f}'\n\n" +
+          'pn.Column(\n' +
+          '    "# Panel Runner - Self Test",\n' +
+          '    "Edit and run code to see it render here.",\n' +
+          '    slider,\n' +
+          '    pn.bind(callback, slider),\n' +
+          ').servable()'
+        );
       });
     }
   </script>
