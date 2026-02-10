@@ -27,6 +27,12 @@
     return; // Stop IIFE — page will reload momentarily
   }
 
+  // ===== Script base URL (for resolving sibling resources like panel-runner.html) =====
+  var _scriptBaseUrl = (function () {
+    var src = (document.currentScript || {}).src || '';
+    return src ? src.substring(0, src.lastIndexOf('/') + 1) : '';
+  })();
+
   // ===== Config =====
   const defaults = {
     pyodideVersion: 'v0.28.2',
@@ -448,7 +454,7 @@
     }
   }
 
-  // ===== Runner Executor (for panel_runner.html — no namespace isolation) =====
+  // ===== Runner Executor (for panel-runner.html — no namespace isolation) =====
   var runCount = 0;
 
   async function runRunnerApp(code) {
@@ -663,8 +669,8 @@
     iframeLoading = true;
     var id = iframeLoadQueue.shift();
     var iframe = document.getElementById(id);
-    if (iframe && !iframe.src.includes('panel_runner.html')) {
-      iframe.src = 'panel_runner.html';
+    if (iframe && !iframe.src.includes('panel-runner.html')) {
+      iframe.src = _scriptBaseUrl + 'panel-runner.html';
     }
     // Will be called again when this iframe sends 'ready'
     iframeLoading = false;
@@ -1074,7 +1080,7 @@
     previewPane.className = 'pnl-pg-preview-pane';
     var previewIframe = document.createElement('iframe');
     previewIframe.id = uid('pg-preview');
-    previewIframe.src = 'panel_runner.html';
+    previewIframe.src = _scriptBaseUrl + 'panel-runner.html';
     previewPane.appendChild(previewIframe);
 
     main.appendChild(editorPane);
@@ -1375,7 +1381,7 @@
           } else {
             pendingIframeCode.set(first.id, first.code);
             var firstIframe = document.getElementById(first.id);
-            if (firstIframe) firstIframe.src = 'panel_runner.html';
+            if (firstIframe) firstIframe.src = _scriptBaseUrl + 'panel-runner.html';
           }
 
           for (var k = 1; k < allIframeItems.length; k++) {
@@ -1467,7 +1473,7 @@
     editor: editorMode,
     playground: playgroundMode,
 
-    // Internal — exposed for panel_runner.html
+    // Internal — exposed for panel-runner.html
     _setStatus: setStatus,
     _hideStatus: hideStatus,
     _initPyodide: initPyodide,

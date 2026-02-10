@@ -98,13 +98,13 @@ The key insight is separating concerns:
 
 The implementation supports two distinct execution models, selected per-embed:
 
-**1. Iframe mode** (`data-iframe` attribute or playground) — each app gets its own `panel_runner.html` iframe with a dedicated Pyodide instance. Communication via `postMessage`. Good for sandboxing and template support but uses ~300-500 MB per iframe.
+**1. Iframe mode** (`data-iframe` attribute or playground) — each app gets its own `panel-runner.html` iframe with a dedicated Pyodide instance. Communication via `postMessage`. Good for sandboxing and template support but uses ~300-500 MB per iframe.
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  Host Page (embed.html / playground.html)        │
+│  Host Page (embed-iframe.html / playground.html)  │
 │  ┌──────────────┐  ┌──────────────────────────┐  │
-│  │ Code Editor  │  │ iframe (panel_runner.html)│  │
+│  │ Code Editor  │  │ iframe (panel-runner.html)│  │
 │  │ (CodeMirror) │──│                          │  │
 │  │              │  │ ┌──────────────────────┐  │  │
 │  │              │  │ │ Pyodide (persistent) │  │  │
@@ -124,7 +124,7 @@ The implementation supports two distinct execution models, selected per-embed:
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  Host Page (embed_single.html)                       │
+│  Host Page (embed-inline.html)                       │
 │                                                      │
 │  ┌────────────────────────────────────────────────┐  │
 │  │ Shared Pyodide Runtime (singleton)             │  │
@@ -215,7 +215,7 @@ The runner detects which strategy to use based on code analysis:
 
 ### Purpose
 
-`panel-embed.js` is a single self-contained IIFE (~1460 lines) that provides the entire embedding infrastructure. It requires no build step, no npm dependencies, and auto-injects all necessary CSS on first use. Every POC file (`panel_runner.html`, `playground.html`, `embed.html`, `embed_single.html`) delegates to this library rather than duplicating logic.
+`panel-embed.js` is a single self-contained IIFE (~1460 lines) that provides the entire embedding infrastructure. It requires no build step, no npm dependencies, and auto-injects all necessary CSS on first use. Every POC file (`panel-runner.html`, `playground.html`, `embed-iframe.html`, `embed-inline.html`) delegates to this library rather than duplicating logic.
 
 ### Module Structure
 
@@ -231,7 +231,7 @@ The IIFE is organized into internal modules:
 | **Extension Resources** | `loadExtensionResources()` | Introspects `Model.model_class_reverse_map` for `__javascript__`/`__css__` URLs and dynamically loads them |
 | **Cleanup** | `cleanupContainer()` | Removes Bokeh views scoped to a target container and clears its DOM |
 | **App Executor** | `runApp(targetId, code)` | 3-branch execution with namespace isolation for inline mode |
-| **Runner Executor** | `runRunnerApp(code)` | Full-page execution for `panel_runner.html` (no namespace isolation, uses `init_doc()`) |
+| **Runner Executor** | `runRunnerApp(code)` | Full-page execution for `panel-runner.html` (no namespace isolation, uses `init_doc()`) |
 | **CodeMirror Manager** | `loadCodeMirror()`, `createCMEditor()` | Lazy-loads CodeMirror 5 from CDN with Dracula theme, Python mode, and bracket matching |
 | **Iframe Mode** | `initIframeListeners()`, `loadNextIframe()`, `sendToIframe()` | Sequential iframe loading with `postMessage` ready/run protocol |
 | **Sharing** | `compressCode()`, `decompressCode()` | gzip + base64url encoding/decoding for URL hash sharing |
@@ -252,7 +252,7 @@ exec("import panel as pn", __ns__)
 exec(user_code, __ns__)
 ```
 
-This ensures that `slider` defined in App 1 doesn't conflict with `slider` in App 2. The runner executor (`panel_runner.html`) does **not** use namespace isolation since it runs one app at a time in its own iframe.
+This ensures that `slider` defined in App 1 doesn't conflict with `slider` in App 2. The runner executor (`panel-runner.html`) does **not** use namespace isolation since it runs one app at a time in its own iframe.
 
 ### Extension Resource Loading
 
@@ -423,7 +423,7 @@ PanelEmbed.playground('main', {
 
 ## POC Implementations
 
-### POC 1: `poc/panel_runner.html` — The Core Primitive
+### POC 1: `src/panel-runner.html` — The Core Primitive
 
 **What it is:** A minimal HTML page that loads `panel-embed.js`, initializes Pyodide via `PanelEmbed.init()`, and provides a `runPanelCode()` function (delegating to `PanelEmbed._runRunnerApp()`).
 
@@ -456,7 +456,7 @@ window.addEventListener('message', async function (event) {
 window.runPanelCode = PanelEmbed._runRunnerApp;
 ```
 
-### POC 2: `poc/playground.html` — Editor + Live Preview
+### POC 2: `demos/playground.html` — Editor + Live Preview
 
 **What it is:** A full-page side-by-side code editor + live preview, similar to shinylive or stlite. Delegates entirely to `PanelEmbed.playground()`.
 
@@ -479,9 +479,9 @@ PanelEmbed.playground('main', {
 });
 ```
 
-### POC 3: `poc/embed.html` — Embeddable Snippets (Iframe Mode)
+### POC 3: `demos/embed-iframe.html` — Embeddable Snippets (Iframe Mode)
 
-**What it is:** Demonstrates embedding Panel apps in any HTML page using declarative `<script type="panel" data-iframe>` and `<script type="panel-editor" data-iframe>` tags. Each app runs in its own `panel_runner.html` iframe with sequential loading.
+**What it is:** Demonstrates embedding Panel apps in any HTML page using declarative `<script type="panel" data-iframe>` and `<script type="panel-editor" data-iframe>` tags. Each app runs in its own `panel-runner.html` iframe with sequential loading.
 
 **Demos included:**
 1. Simple app embed (no editor) — `<script type="panel" data-iframe>`
@@ -501,16 +501,16 @@ pn.Column("# Hello!").servable()
 </script>
 ```
 
-### POC 4: `poc/embed_single.html` — Embeddable Snippets (Single Pyodide)
+### POC 4: `demos/embed-inline.html` — Embeddable Snippets (Single Pyodide)
 
-**What it is:** Same demos as `embed.html` but using a **single Pyodide instance** instead of separate iframes. Uses `<script type="panel">` and `<script type="panel-editor">` tags (no `data-iframe` attribute). All apps render into `<div>` targets with namespace isolation.
+**What it is:** Same demos as `embed-iframe.html` but using a **single Pyodide instance** instead of separate iframes. Uses `<script type="panel">` and `<script type="panel-editor">` tags (no `data-iframe` attribute). All apps render into `<div>` targets with namespace isolation.
 
 **Advantages over iframe mode:**
 - Memory: ~300-500 MB total vs ~300-500 MB **per iframe**
 - Avoids browser crashes from multiple Pyodide instances
 - Faster sequential loading (no iframe overhead)
 
-**Additional demos beyond `embed.html`:**
+**Additional demos beyond `embed-iframe.html`:**
 - Collapsible + code-below combined (`data-code="hidden" data-layout="code-below"`)
 - All features composed (external source + collapsible + code-below)
 
@@ -529,9 +529,9 @@ Note: The only difference from the iframe version is the absence of the `data-if
 
 | File | Purpose |
 |------|---------|
-| `poc/serve.py` | HTTP server with `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: credentialless` headers. Required for `SharedArrayBuffer` support which Pyodide needs for efficient WASM memory management. |
-| `poc/examples/hello.py` | Simple Panel app for `src` attribute demos (Column with heading, text, and slider) |
-| `poc/examples/slider.py` | FloatSlider demo with bound Markdown output for `src` attribute demos |
+| `serve.py` | HTTP server with `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: credentialless` headers. Required for `SharedArrayBuffer` support which Pyodide needs for efficient WASM memory management. |
+| `examples/hello.py` | Simple Panel app for `src` attribute demos (Column with heading, text, and slider) |
+| `examples/slider.py` | FloatSlider demo with bound Markdown output for `src` attribute demos |
 
 ---
 
@@ -555,7 +555,7 @@ Note: The only difference from the iframe version is the absence of the `data-if
 
 | Phase | Feature | Status |
 |-------|---------|--------|
-| **1** | Core runner — `panel_runner.html` with persistent Pyodide + clean state reset | **Done** |
+| **1** | Core runner — `panel-runner.html` with persistent Pyodide + clean state reset | **Done** |
 | **2** | Editor playground — side-by-side editor + preview with sharing | **Done** |
 | **3** | Dynamic JS loading — auto-load extension JS (tabulator, plotly, etc.) | **Done** (via `loadExtensionResources()`) |
 | **4** | Declarative embedding — minimal-boilerplate `<script type="panel">` tags | **Done** (implemented as `<script type="panel">` / `<script type="panel-editor">` instead of the originally planned `<panel-playground>` custom elements) |
@@ -635,15 +635,15 @@ python serve.py
 # Custom port: python serve.py 9000
 
 # Then open in browser:
-# POC 1 (core runner):                http://localhost:8080/panel_runner.html
-# POC 2 (playground):                 http://localhost:8080/playground.html
-# POC 3 (iframe embeds):              http://localhost:8080/embed.html
-# POC 4 (single-Pyodide embeds):      http://localhost:8080/embed_single.html
+# POC 1 (core runner):                http://localhost:8080/src/panel-runner.html
+# POC 2 (playground):                 http://localhost:8080/demos/playground.html
+# POC 3 (iframe embeds):              http://localhost:8080/demos/embed-iframe.html
+# POC 4 (single-Pyodide embeds):      http://localhost:8080/demos/embed-inline.html
 ```
 
 **Important**: Use `serve.py` instead of `python -m http.server` — it adds `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: credentialless` headers required for `SharedArrayBuffer`. Without these headers, Pyodide uses a fallback that roughly doubles memory usage and may cause browser crashes.
 
-**External example files** in `poc/examples/`:
+**External example files** in `examples/`:
 - `hello.py` — simple Column app (used by `src` attribute demos)
 - `slider.py` — FloatSlider with bound output (used by `src` attribute demos)
 

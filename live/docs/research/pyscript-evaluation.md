@@ -13,7 +13,7 @@ PyScript provides a well-designed plugin system and convenient `<py-editor>` com
 
 ## What Was Tested
 
-Three POC files were created in `/home/jovyan/repos/private/panel/poc/pyscript-poc/`:
+Three POC files were created in `/home/jovyan/repos/private/panel/live/poc/pyscript/`:
 
 | File | What it tests |
 |------|--------------|
@@ -235,11 +235,11 @@ This hybrid saves ~50 lines but adds the full dependency risk. Not recommended.
 ## POC File Inventory
 
 ```
-/home/jovyan/repos/private/panel/poc/pyscript-poc/
+/home/jovyan/repos/private/panel/live/poc/pyscript/
   basic-app.html              # Panel app via <script type="py"> (works)
   editor-app.html             # Three approaches: py-editor, main-thread, custom textarea
   panel-pyscript-plugin.js    # PyScript plugin for Panel initialization (reference impl)
 
-/home/jovyan/repos/private/panel/poc/research/
+/home/jovyan/repos/private/panel/live/docs/research/
   pyscript-evaluation.md      # This document
 ```

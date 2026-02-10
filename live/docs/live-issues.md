@@ -1,6 +1,6 @@
 # Panel Live - Issues & Roadmap
 
-Outstanding issues for the Panel Live feature. See also `playground_dream.md` for vision and `playground_analysis.md` for architecture notes.
+Outstanding issues for the Panel Live feature. See also `live-dream.md` for vision and `live-analysis.md` for architecture notes.
 
 **Priority levels:**
 
@@ -9,7 +9,7 @@ Outstanding issues for the Panel Live feature. See also `playground_dream.md` fo
 - **P2 - Important**: Needed for a polished, competitive product.
 - **P3 - Nice-to-have**: Future enhancements and stretch goals.
 
-**Current state:** 28 issues total. 3 resolved, 10 partially addressed, 15 completely open, 1 needs investigation. The POC is a working prototype (`poc/panel-embed.js`, 1479 lines) with two execution modes (iframe and inline), a declarative `<script type="panel">` API, CodeMirror editor, and URL-based sharing.
+**Current state:** 28 issues total. 3 resolved, 10 partially addressed, 15 completely open, 1 needs investigation. The POC is a working prototype (`src/panel-embed.js`, 1479 lines) with two execution modes (iframe and inline), a declarative `<script type="panel">` API, CodeMirror editor, and URL-based sharing.
 
 ---
 
@@ -71,14 +71,40 @@ These issues must be resolved first as they shape everything else.
 
 **Why it matters:** **Every competitor uses web workers** (stlite, gradio-lite, shinylive, PyScript). This is table stakes for a credible product. Without workers, embedding in documentation or content pages degrades the entire page experience.
 
-**Current state:** No web worker usage. Panel already has `panel/_templates/pyodide_worker.js` and `pyodide_handler.js` for worker support, which could be leveraged.
+**Current state:** No web worker usage in panel-live. However, **Panel already has a complete, production-proven web worker implementation** used by `panel convert --to pyodide-worker` (the default target). This should be adapted rather than built from scratch.
 
-**Suggested approach:**
+**Existing Panel worker architecture** (2 template files, ~190 lines total):
 
-1. Run Pyodide in a dedicated Web Worker (like all competitors)
-2. Use `postMessage` / `MessageChannel` for communication (or evaluate PyScript's `coincident` library)
-3. Consider SharedWorker support for multiple apps on one page (stlite and gradio-lite both offer this, reducing memory from ~300-500MB per app to ~300-500MB total)
-4. Fall back gracefully where SharedWorker isn't supported
+- `panel/_templates/pyodide_worker.js` — Runs Pyodide in a Web Worker. Loads packages, executes user code, returns serialized Bokeh document JSON via `postMessage`. Never touches the DOM.
+- `panel/_templates/pyodide_handler.js` — Main thread handler. Creates the Worker, receives the rendered document, calls `Bokeh.embed.embed_items()` to do all DOM work, then sets up bi-directional sync via Bokeh's JSON patch protocol.
+
+**Message protocol (proven pattern):**
+
+```
+Worker → Main:  {type: 'status', msg}         Loading progress
+Worker → Main:  {type: 'render', docs_json, render_items, root_ids}   Initial render
+Worker → Main:  {type: 'patch', patch, buffers}   Python-side changes
+Worker → Main:  {type: 'idle'}                 Ready for next patch
+Main → Worker:  {type: 'rendered'}             DOM is ready, link docs
+Main → Worker:  {type: 'patch', patch}         User interaction (widget change)
+Main → Worker:  {type: 'location', location}   URL/location sync
+```
+
+**Key design insight — how Panel solves "Pyodide needs DOM access":**
+
+Pyodide in the worker **never touches the DOM**. Instead:
+1. Worker runs Python code → generates Bokeh document JSON (`_doc_json()`)
+2. Worker sends serialized JSON to main thread via `postMessage`
+3. Main thread calls `Bokeh.embed.embed_items()` for all DOM rendering
+4. Bi-directional sync uses `_link_docs_worker(doc, sendPatch)` (Python side) and `jsdoc.on_change(send_change)` (JS side) to relay JSON patches between the worker's Python doc and the main thread's Bokeh JS doc
+5. Event queue with busy/idle handshake prevents race conditions
+
+**Adaptation plan for panel-live:**
+
+1. Adapt `pyodide_worker.js` to work dynamically (current version uses build-time template variables `{{ code }}`, `{{ env_spec }}`, etc. — panel-live needs to send code at runtime via `postMessage`)
+2. Adapt `pyodide_handler.js` to target arbitrary containers (current version assumes full-page rendering with `document.querySelectorAll('[data-root-id]')`)
+3. Support re-running code (current worker is one-shot; panel-live editor/playground needs to re-execute)
+4. Consider SharedWorker for multiple apps on one page (reduces memory from ~300-500MB per app to ~300-500MB total)
 
 **Acceptance criteria:** Pyodide loads and runs Python in a web worker. Main thread stays responsive (no jank). Loading spinner/progress animates smoothly during load.
 
@@ -92,7 +118,7 @@ These issues must be resolved first as they shape everything else.
 
 **Why it matters:** A crashing browser is a showstopper. Users cannot evaluate or trust the product.
 
-**Current state:** `serve.py` adds COOP/COEP headers for SharedArrayBuffer (reduces Pyodide memory ~50%). `playground_analysis.md` documents that without these headers, Pyodide doubles memory usage. But crashes still occur.
+**Current state:** `serve.py` adds COOP/COEP headers for SharedArrayBuffer (reduces Pyodide memory ~50%). `live-analysis.md` documents that without these headers, Pyodide doubles memory usage. But crashes still occur.
 
 **Likely causes:**
 
@@ -112,47 +138,39 @@ These issues must be resolved first as they shape everything else.
 
 ---
 
-### P1 - Evaluate PyScript as Foundation
+### ~~P1 - Evaluate PyScript as Foundation~~ [RESOLVED — REJECTED]
 
-**Problem:** The current POC reimplements much of what PyScript already provides: Pyodide loading, code execution, editor UI (`py-editor`), worker management, plugin system. Should Panel build on PyScript instead?
+**Decision:** PyScript will **not** be used as a foundation or dependency.
 
-**Why it matters:** Building on PyScript could eliminate significant maintenance burden (worker coordination via `coincident`, editor via `py-editor`, plugin hooks for Panel initialization, offline support, filesystem access). But it introduces an external dependency with a history of API instability.
+**Reasons:**
 
-**Pros:**
+1. **Extra dependency risk** — PyScript must be version-compatible with both Pyodide and Panel. Three-way version coupling is fragile and hard to maintain.
+2. **Stability concerns** — PyScript has historically been unstable, with breaking API changes across releases.
+3. **Not needed** — The web component POC (`poc/webcomponent/panel-live.js`) proves that everything works without PyScript: Pyodide loading, code execution, editor (CodeMirror), extension resource loading, and Panel rendering.
+4. **Panel already has worker support** — `panel/_templates/pyodide_worker.js` provides a proven web worker pattern, eliminating PyScript's `coincident` as a motivation.
 
-- Plugin system with lifecycle hooks (`onReady`, `onBeforeRun`, `onAfterRun`, `codeBeforeRun`, `codeAfterRun`) could provide the panel/panel-editor/panel-playground experience
-- `py-editor` already provides editor, run button, Ctrl+Enter, output targeting
-- Worker support, offline mode, filesystem, media access already implemented
-- MicroPython support (170KB, instant startup) for lightweight use cases
-
-**Cons:**
-
-- External dependency; historically unstable API (though more stable since 2025)
-- Panel-specific needs (`.servable()` handling, Bokeh model registry, extension resource loading) still need custom code
-- Less control over loading UX and branding
-
-**Next step:** Develop a **separate POC** (distinct from the current POC) that implements a basic Panel app using PyScript's plugin system. This should be a parallel investigation to evaluate feasibility, performance, and API coupling risks.
-
-**Acceptance criteria:** Separate PyScript-based POC that implements a basic Panel app. Document feasibility, performance comparison, and API coupling risks.
+**POC evaluation completed** — see `docs/research/pyscript-evaluation.md` and `poc/pyscript/` for the full investigation. The POC confirmed that PyScript adds a layer of abstraction with no meaningful value for Panel's use case.
 
 ---
 
 ### P1 - Folder and File Structure [CONFIRMED]
 
-**Problem:** Everything lives in a flat `poc/` directory with no module organization. The monolithic `panel-embed.js` (1479 lines IIFE) is hard to maintain, test, or tree-shake.
+**Problem:** The monolithic `panel-embed.js` (1479 lines IIFE) is hard to maintain, test, or tree-shake.
 
 **Why it matters:** A proper structure is needed before adding features, tests, or build tooling. Technical debt compounds fast.
 
 **Current structure:**
 
 ```text
-poc/
-  panel-embed.js      # 1479-line monolith
-  panel_runner.html    # iframe runner
-  playground.html      # full-page playground
-  embed.html           # iframe demos
-  embed_single.html    # inline demos
+live/
   serve.py             # dev server
+  src/
+    panel-embed.js     # 1479-line monolith
+    panel-runner.html  # iframe runner
+  demos/
+    playground.html    # full-page playground
+    embed-iframe.html  # iframe demos
+    embed-inline.html  # inline demos
   examples/            # 2 example .py files
 ```
 
@@ -205,21 +223,13 @@ panel/live/            # in panel repo, under panel-live name
 
 Issues that affect reliability of the current implementation.
 
-### P0 - Does Not Work with panel-material-ui
+### ~~P0 - Does Not Work with panel-material-ui~~ [RESOLVED]
 
-**Problem:** A "shim" error appears in the browser console when creating apps that use panel-material-ui. The feature is broken for a key Panel extension.
+**Problem:** A "shim" error appeared in the browser console when creating apps that use panel-material-ui.
 
-**Why it matters:** panel-material-ui is the future of Panel's widget ecosystem. If the playground can't run material-ui apps, it's a major gap.
+**Resolution:** Confirmed working in `poc/webcomponent/test-playground.html` — `pmui.Button(label="Click Me")` renders successfully. The original issue may have been related to an older panel-material-ui version or missing extension resource loading. The web component POC's `loadExtensionResources()` correctly loads PMU's JS/CSS dependencies.
 
-**Current state:** Not investigated. Need to reproduce outside of playground code to determine if it's a Pyodide/panel-material-ui issue or a playground issue.
-
-**Suggested approach:**
-
-1. Create minimal reproduction: plain HTML + Pyodide + panel-material-ui (no playground code)
-2. If it reproduces without playground code: file issue on panel-material-ui or Pyodide
-3. If playground-specific: investigate `loadExtensionResources()` and how it handles material-ui's dependencies
-
-**Acceptance criteria:** Root cause identified. If playground bug: fixed. If upstream: issue filed with minimal reproduction.
+**Status:** No longer a blocker. Keep an eye on more complex PMU widgets (e.g., DataGrid, Select) but basic functionality is confirmed.
 
 ---
 
@@ -291,7 +301,7 @@ Issues that affect reliability of the current implementation.
 
 ### P2 - postMessage Security
 
-**Problem:** `window.addEventListener('message', ...)` in both `panel_runner.html` and `panel-embed.js` does not validate `event.origin`. Any page could send messages to the runner iframe.
+**Problem:** `window.addEventListener('message', ...)` in both `panel-runner.html` and `panel-embed.js` does not validate `event.origin`. Any page could send messages to the runner iframe.
 
 **Why it matters:** Security vulnerability. A malicious page could inject arbitrary Python code into the runner iframe if it knows the message format.
 
@@ -303,7 +313,7 @@ Issues that affect reliability of the current implementation.
 
 ### P2 - Memory Leak on Re-run (Hypothesis)
 
-**Problem:** `playground_analysis.md` documents that Pyodide proxy functions may accumulate across runs. No cleanup mechanism exists. **Note:** This is currently a hypothesis that needs testing, not a confirmed bug.
+**Problem:** `live-analysis.md` documents that Pyodide proxy functions may accumulate across runs. No cleanup mechanism exists. **Note:** This is currently a hypothesis that needs testing, not a confirmed bug.
 
 **Why it matters:** In playground/editor mode, users re-run frequently. If memory does grow with each run, it would eventually degrade performance or crash.
 
@@ -614,7 +624,7 @@ Features needed for a competitive product.
 
 **Problem:** No Sphinx extension exists. The current `nbsite` pyodide directive is limited (one instance per page, no template support, code not editable).
 
-**Why it matters:** Panel's documentation uses Sphinx. Interactive examples in docs are a primary motivator for this entire feature (see `playground_dream.md`). Shinylive has excellent Quarto+Sphinx integration.
+**Why it matters:** Panel's documentation uses Sphinx. Interactive examples in docs are a primary motivator for this entire feature (see `live-dream.md`). Shinylive has excellent Quarto+Sphinx integration.
 
 **Suggested approach:**
 
@@ -815,7 +825,7 @@ These are stretch goals for after MVP.
 
 **Problem:** No access to browser media devices from Python code.
 
-**Why it matters:** Enables ML demos (image classification, audio processing) directly in the browser. See `playground_dream.md` Pyodide Pane section.
+**Why it matters:** Enables ML demos (image classification, audio processing) directly in the browser. See `live-dream.md` Pyodide Pane section.
 
 **Acceptance criteria:** Python code can access camera/microphone streams via Pyodide.
 

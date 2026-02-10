@@ -2,12 +2,12 @@
 <!--
   POC: Embeddable Panel Snippet (Iframe Mode)
   ============================================
-  Same demos as embed_single.html but using iframes via panel_runner.html.
+  Same demos as embed-inline.html but using iframes via src/panel-runner.html.
   Each app runs in its own iframe with sequential loading to avoid memory spikes.
   Uses <script type="panel" data-iframe> / <script type="panel-editor" data-iframe>.
 
-  Serve with: python serve.py
-  Open: http://localhost:8080/embed.html
+  Serve with: python ../serve.py
+  Open: http://localhost:8080/demos/embed-iframe.html
 -->
 <html>
 <head>
@@ -38,7 +38,7 @@
   <p>
     This page demonstrates how Panel apps can be embedded in any HTML page
     with minimal boilerplate. Each approach uses a shared Pyodide runtime
-    via <code>panel_runner.html</code> in an iframe.
+    via <code>panel-runner.html</code> in an iframe.
   </p>
 
   <h2>1. Simple App Embed (No Editor)</h2>
@@ -155,9 +155,9 @@ pn.widgets.Button(name="Click me!", button_type="primary").servable()
     Load Python code from a URL using <code>src</code> with iframe mode.
   </p>
 
-  <script type="panel" src="examples/hello.py" data-iframe></script>
+  <script type="panel" src="../examples/hello.py" data-iframe></script>
 
-  <script type="panel-editor" src="examples/slider.py" data-title="External Slider" data-iframe></script>
+  <script type="panel-editor" src="../examples/slider.py" data-title="External Slider" data-iframe></script>
 
   <h2>7. The Dream: Minimal Boilerplate</h2>
   <p>
@@ -184,8 +184,8 @@ pn.Column("# Hello").servable()
 &lt;/script&gt;
 
 &lt;!-- Load from external file --&gt;
-&lt;script type="panel" src="examples/hello.py"&gt;&lt;/script&gt;</pre>
+&lt;script type="panel" src="../examples/hello.py"&gt;&lt;/script&gt;</pre>
 
-  <script src="panel-embed.js"></script>
+  <script src="../src/panel-embed.js"></script>
 </body>
 </html>

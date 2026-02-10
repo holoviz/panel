@@ -5,8 +5,8 @@
   Side-by-side editor + live Panel preview using PanelEmbed.playground().
   Features: examples dropdown, Run button (Ctrl+Enter), URL sharing, resize handle.
 
-  Serve with: python serve.py
-  Open: http://localhost:8080/playground.html
+  Serve with: python ../serve.py
+  Open: http://localhost:8080/demos/playground.html
 -->
 <html>
 <head>
@@ -21,7 +21,7 @@
 </head>
 <body>
   <div id="main"></div>
-  <script src="panel-embed.js"></script>
+  <script src="../src/panel-embed.js"></script>
   <script>
     PanelEmbed.playground('main', {
       code: 'import panel as pn\n\npn.extension()\n\npn.Column(\n    "# Hello Panel Playground!",\n    "Welcome to the **Panel Playground**. Edit this code and press **Run** (or Ctrl+Enter).",\n    pn.widgets.Button(name="Click me!", button_type="primary"),\n).servable()',

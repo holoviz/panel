@@ -2,7 +2,7 @@
 
 **Analyst:** Software Architect, panel-live-cat1 team
 **Date:** 2026-02-10
-**Scope:** Full analysis of `/home/jovyan/repos/private/panel/poc/` codebase
+**Scope:** Full analysis of `/home/jovyan/repos/private/panel/live/` codebase
 
 ---
 
@@ -10,7 +10,7 @@
 
 ### Code Structure
 
-The POC is a **single-file IIFE** (Immediately Invoked Function Expression) at `poc/panel-embed.js` (1479 lines). It exposes a single global `window.PanelEmbed` object. There is no module system, no build step, and no imports. All dependencies (Pyodide, Bokeh, Panel, CodeMirror) are loaded dynamically from CDNs at runtime.
+The POC is a **single-file IIFE** (Immediately Invoked Function Expression) at `live/src/panel-embed.js` (1479 lines). It exposes a single global `window.PanelEmbed` object. There is no module system, no build step, and no imports. All dependencies (Pyodide, Bokeh, Panel, CodeMirror) are loaded dynamically from CDNs at runtime.
 
 ### Main Components
 
@@ -60,7 +60,7 @@ panel-embed.js (IIFE, 1479 lines)
                               |                   |
                     +---------+          +--------+--------+
                     |                    |                  |
-              initPyodide()      panel_runner.html    postMessage
+              initPyodide()      panel-runner.html    postMessage
                     |           (loads panel-embed.js   relay
                     |            in iframe context)
                     |                    |
@@ -80,15 +80,15 @@ panel-embed.js (IIFE, 1479 lines)
 ### Supporting Files
 
 ```text
-panel_runner.html    -- Minimal HTML that loads panel-embed.js and initializes Pyodide
+panel-runner.html    -- Minimal HTML that loads panel-embed.js and initializes Pyodide
                         in an iframe. Receives code via postMessage, runs via
                         PanelEmbed._runRunnerApp(). Self-test when opened directly.
 
 playground.html      -- Full-page playground using PanelEmbed.playground() imperative API.
                         Defines examples inline as JS object literals.
 
-embed.html           -- Demo page: iframe-mode apps and editors using declarative API.
-embed_single.html    -- Demo page: inline-mode (single Pyodide) using declarative API.
+embed-iframe.html    -- Demo page: iframe-mode apps and editors using declarative API.
+embed-inline.html    -- Demo page: inline-mode (single Pyodide) using declarative API.
 
 serve.py             -- 27-line dev server: SimpleHTTPRequestHandler + COOP/COEP headers.
 
@@ -204,7 +204,7 @@ PanelEmbed.playground('main', {
 });
 ```
 
-#### Internal APIs (exposed for panel_runner.html)
+#### Internal APIs (exposed for panel-runner.html)
 ```js
 PanelEmbed._setStatus(msg, isError)
 PanelEmbed._hideStatus()
@@ -348,11 +348,11 @@ initIframeListeners(): registers window 'message' listener
   |
   v
 Sequential iframe loading (to avoid memory spikes):
-  First iframe: set src="panel_runner.html", store code in pendingIframeCode
+  First iframe: set src="panel-runner.html", store code in pendingIframeCode
   Remaining: push to iframeLoadQueue
   |
   v
-panel_runner.html loads in iframe:
+panel-runner.html loads in iframe:
   1. Loads panel-embed.js (full IIFE again, inside iframe)
   2. Calls PanelEmbed.init() -> initPyodide() (inside iframe context)
   3. On ready: postMessage({type: 'ready'}) to parent
@@ -386,7 +386,7 @@ playgroundMode() builds full DOM:
   - Header with title, examples dropdown, Run button, Share button, status dot
   - Editor pane: raw <textarea> (NOT CodeMirror)
   - Resize handle
-  - Preview pane: iframe with src="panel_runner.html"
+  - Preview pane: iframe with src="panel-runner.html"
   |
   v
 Load from URL hash (#code=...) if present:
@@ -616,12 +616,12 @@ The declarative API scanner:
 | Line 483 | `'output'` (string) | Hardcoded target ID in runRunnerApp |
 | Line 573 | `CM_VERSION = '5.65.18'` | Hardcoded CodeMirror version |
 | Line 574 | cdnjs.cloudflare.com | Blocked by tracking prevention |
-| Line 667 | `'panel_runner.html'` | Hardcoded runner URL (relative) |
-| Line 1077 | `'panel_runner.html'` | Same hardcoded runner URL in playground |
+| Line 667 | `'panel-runner.html'` | Hardcoded runner URL (relative) |
+| Line 1077 | `'panel-runner.html'` | Same hardcoded runner URL in playground |
 
 ### 6.2 Tight Couplings
 
-1. **panel_runner.html <-> panel-embed.js**: Runner loads the full IIFE and accesses internal `_` prefixed APIs (`_runRunnerApp`, `_initPyodide`, `_setStatus`, etc.). No versioning or compatibility check.
+1. **panel-runner.html <-> panel-embed.js**: Runner loads the full IIFE and accesses internal `_` prefixed APIs (`_runRunnerApp`, `_initPyodide`, `_setStatus`, etc.). No versioning or compatibility check.
 
 2. **Python string templates <-> Panel internals**: Lines 346-391, 395-418, 422-439, 466-548 contain Python code as JS strings that depend on exact Panel API signatures (`_doc_json`, `_link_docs`, `write_doc`, `write`, `exec_with_return`, `MockSessionContext`, `init_doc`). Any Panel refactor breaks this.
 
@@ -643,7 +643,7 @@ The declarative API scanner:
 
 ### 6.4 Security Issues
 
-1. **postMessage without origin validation** (lines 637-658, line 37 of panel_runner.html): Any page can send `{type: 'run', code: '...'}` to the runner iframe. The iframe will execute arbitrary Python code. While Pyodide sandboxes most system access, this is still a security concern for pages embedding sensitive data.
+1. **postMessage without origin validation** (lines 637-658, line 37 of panel-runner.html): Any page can send `{type: 'run', code: '...'}` to the runner iframe. The iframe will execute arbitrary Python code. While Pyodide sandboxes most system access, this is still a security concern for pages embedding sensitive data.
 
 2. **No Content Security Policy**: No CSP headers or meta tags. The code dynamically creates script tags from CDN URLs.
 
@@ -676,8 +676,8 @@ function loadNextIframe() {
   iframeLoading = true;         // Set loading flag
   var id = iframeLoadQueue.shift();
   var iframe = document.getElementById(id);
-  if (iframe && !iframe.src.includes('panel_runner.html')) {
-    iframe.src = 'panel_runner.html';
+  if (iframe && !iframe.src.includes('panel-runner.html')) {
+    iframe.src = 'panel-runner.html';
   }
   iframeLoading = false;        // BUG: immediately unset, defeating the guard
 }

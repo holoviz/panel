@@ -274,7 +274,7 @@ These headers make the page "cross-origin isolated," which:
 #### What Happens Without Them
 
 - **`SharedArrayBuffer` is unavailable**: Pyodide falls back to regular `ArrayBuffer`
-- **Memory impact**: Without SAB, Pyodide's WebAssembly memory cannot be shared between threads, and memory growth requires copying the entire buffer. The `playground_analysis.md` documents that this roughly doubles memory usage.
+- **Memory impact**: Without SAB, Pyodide's WebAssembly memory cannot be shared between threads, and memory growth requires copying the entire buffer. The `live-analysis.md` documents that this roughly doubles memory usage.
 - **Functionality impact**: Pyodide still works, but uses more memory and cannot support interrupt/cancellation of running code
 - **`credentialless` vs `require-corp`**: `credentialless` is less restrictive -- it allows loading cross-origin resources that don't require credentials. The Panel `serve.py` already uses `credentialless`, which is the better choice for embedding scenarios.
 

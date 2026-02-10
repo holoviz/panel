@@ -3,13 +3,13 @@
   Panel Runner — The Core Primitive
   ==================================
   Loads Pyodide + Bokeh/Panel JS once and executes Panel Python code.
-  Used as an iframe by embed.html and playground.html, or standalone.
+  Used as an iframe by demos/embed-iframe.html and demos/playground.html, or standalone.
 
   - As iframe: receives postMessage({type: 'run', code: '...'})
   - Standalone: runs a self-test demo
 
-  Serve with: python serve.py
-  Open: http://localhost:8080/panel_runner.html
+  Serve with: python ../serve.py
+  Open: http://localhost:8080/src/panel-runner.html
 -->
 <html>
 <head>

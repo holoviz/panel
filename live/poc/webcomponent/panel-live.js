@@ -20,6 +20,8 @@
  *   </panel-live>
  */
 
+console.log('[panel-live] panel-live.js loaded');
+
 // ============================================================
 // Cleanup stale service workers (JupyterLite/JupyterHub can
 // register workers that intercept fetches and cause crashes)
@@ -86,6 +88,65 @@ function loadCSS(url) {
   link.href = url;
   link.crossOrigin = 'anonymous';
   document.head.appendChild(link);
+}
+
+// ============================================================
+// CodeMirror (line numbers + Python syntax highlighting)
+// ============================================================
+
+let _cmLoaded = false;
+let _cmLoadPromise = null;
+const CM_VERSION = '5.65.18';
+const CM_CDN = `https://cdnjs.cloudflare.com/ajax/libs/codemirror/${CM_VERSION}`;
+
+function loadCodeMirror() {
+  if (_cmLoadPromise) return _cmLoadPromise;
+  _cmLoadPromise = (async () => {
+    if (_cmLoaded) return;
+    loadCSS(CM_CDN + '/codemirror.min.css');
+    loadCSS(CM_CDN + '/theme/dracula.min.css');
+    await loadScript(CM_CDN + '/codemirror.min.js');
+    await loadScript(CM_CDN + '/mode/python/python.min.js');
+    await loadScript(CM_CDN + '/addon/edit/matchbrackets.min.js');
+    await loadScript(CM_CDN + '/addon/edit/closebrackets.min.js');
+    await loadScript(CM_CDN + '/addon/selection/active-line.min.js');
+    await loadScript(CM_CDN + '/addon/comment/comment.min.js');
+    _cmLoaded = true;
+    console.log('[panel-live] CodeMirror loaded');
+  })();
+  return _cmLoadPromise;
+}
+
+function createCMEditor(textarea, theme, onRun) {
+  const cmTheme = theme === 'light' ? 'default' : 'dracula';
+  const cm = CodeMirror.fromTextArea(textarea, {
+    mode: 'python',
+    theme: cmTheme,
+    lineNumbers: true,
+    matchBrackets: true,
+    autoCloseBrackets: true,
+    styleActiveLine: true,
+    indentUnit: 4,
+    tabSize: 4,
+    indentWithTabs: false,
+    lineWrapping: false,
+    extraKeys: {
+      'Ctrl-Enter': () => { if (onRun) onRun(); },
+      'Cmd-Enter': () => { if (onRun) onRun(); },
+      'Ctrl-/': 'toggleComment',
+      'Cmd-/': 'toggleComment',
+      'Tab': (cm) => {
+        if (cm.somethingSelected()) {
+          cm.indentSelection('add');
+        } else {
+          cm.replaceSelection('    ', 'end');
+        }
+      },
+      'Shift-Tab': (cm) => { cm.indentSelection('subtract'); },
+    }
+  });
+  setTimeout(() => cm.refresh(), 50);
+  return cm;
 }
 
 async function loadJSResources() {
@@ -223,6 +284,8 @@ async function runPanelCode(targetEl, code, statusCallback) {
 
     const hasServable = code.includes('.servable(');
     const hasServableTarget = /\.servable\s*\(\s*target\s*=/.test(code);
+    const branch = hasServable && !hasServableTarget ? 'servable' : hasServableTarget ? 'servable(target=)' : 'expression';
+    console.log('[panel-live] Executing code via %s branch (target=%s)', branch, targetId);
 
     _pyodide.globals.set('__panel_user_code__', code);
     _pyodide.globals.set('__panel_target_id__', targetId);
@@ -316,6 +379,7 @@ async function runPanelCode(targetEl, code, statusCallback) {
       );
     }
   } catch (error) {
+    console.error('[panel-live] runPanelCode error:', error);
     targetEl.innerHTML = '<pre style="color:#b71c1c;background:#ffebee;padding:16px;border-radius:4px;white-space:pre-wrap;font-size:13px;margin:0;">' +
       (error.message || String(error)).replace(/</g, '&lt;') + '</pre>';
   }
@@ -521,6 +585,7 @@ const PANEL_LIVE_STYLES = `
     flex: 1;
     resize: none;
     min-height: 300px;
+    max-height: none;
   }
 
   /* Editor mode (stacked) */
@@ -562,6 +627,40 @@ const PANEL_LIVE_STYLES = `
   panel-live[fullscreen] .pl-playground > .pl-preview-pane {
     overflow: auto;
   }
+
+  /* Vertical resize handle on playground container */
+  .pl-container.pl-resizable {
+    resize: vertical;
+    overflow: hidden;
+    min-height: 300px;
+  }
+  panel-live[fullscreen] .pl-container.pl-resizable {
+    resize: none;
+  }
+
+  /* Maximize button */
+  .pl-btn.maximize-btn { font-size: 15px; line-height: 1; padding: 4px 8px; }
+
+  /* CodeMirror overrides */
+  .pl-container .CodeMirror {
+    height: auto;
+    min-height: 180px;
+    max-height: 500px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    border: none;
+  }
+  .pl-playground > .pl-editor-pane .CodeMirror {
+    height: 100%;
+    max-height: none;
+    min-height: 300px;
+  }
+  panel-live[fullscreen] .pl-playground > .pl-editor-pane .CodeMirror {
+    min-height: 0;
+  }
+  /* Hide the raw textarea when CodeMirror is active */
+  .pl-editor-area.pl-cm-active { display: none; }
 
   /* Examples dropdown */
   .pl-examples-select {
@@ -634,6 +733,7 @@ class PanelLive extends HTMLElement {
 
   connectedCallback() {
     if (!this._rendered) {
+      console.log('[panel-live] <panel-live> connected, mode=%s theme=%s', this.mode, this.theme);
       // Defer: connectedCallback fires when the opening tag is parsed,
       // BEFORE the browser has parsed children. We need children to
       // exist so _extractCode() can read the text content.
@@ -722,6 +822,11 @@ class PanelLive extends HTMLElement {
     if (hashCode && this.mode === 'playground') {
       this._code = hashCode;
     }
+
+    console.log('[panel-live] Code extracted (%d chars), files=%s, src=%s',
+      (this._code || '').length,
+      this._files ? Object.keys(this._files).join(', ') : 'none',
+      this._srcUrl || 'none');
   }
 
   // --- Styles (injected once into document head) ---
@@ -791,18 +896,12 @@ class PanelLive extends HTMLElement {
     const statusEl = container.querySelector('.pl-status');
     const outputEl = container.querySelector('.pl-output');
 
-    // Tab key support
-    textarea.addEventListener('keydown', e => {
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        const start = textarea.selectionStart;
-        textarea.value = textarea.value.substring(0, start) + '    ' + textarea.value.substring(textarea.selectionEnd);
-        textarea.selectionStart = textarea.selectionEnd = start + 4;
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
+    // Replace textarea with CodeMirror
+    loadCodeMirror().then(() => {
+      this._cm = createCMEditor(textarea, theme, () => {
         this._runFromEditor(textarea, outputEl, statusEl);
-      }
+      });
+      textarea.classList.add('pl-cm-active');
     });
 
     runBtn.addEventListener('click', () => {
@@ -818,7 +917,7 @@ class PanelLive extends HTMLElement {
     const layoutClass = layout === 'vertical' ? 'vertical' : '';
     const outputId = uid();
     const container = document.createElement('div');
-    container.className = 'pl-container';
+    container.className = 'pl-container pl-resizable';
 
     // Build header buttons
     let examplesHtml = '';
@@ -838,6 +937,7 @@ class PanelLive extends HTMLElement {
             <span class="pl-title"></span>
             <button class="pl-btn secondary share-btn">Share<span class="pl-toast">Link copied!</span></button>
             <button class="pl-btn secondary reset-btn">Reset</button>
+            <button class="pl-btn secondary maximize-btn" title="Toggle fullscreen">&#x26F6;</button>
             <button class="pl-btn run-btn">Run</button>
           </div>
           <textarea class="pl-editor-area ${themeClass}" spellcheck="false">${this._escapeHtml(this._code)}</textarea>
@@ -862,18 +962,12 @@ class PanelLive extends HTMLElement {
     const editorPane = container.querySelector('.pl-editor-pane');
     const previewPane = container.querySelector('.pl-preview-pane');
 
-    // Tab key + Ctrl+Enter
-    textarea.addEventListener('keydown', e => {
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        const start = textarea.selectionStart;
-        textarea.value = textarea.value.substring(0, start) + '    ' + textarea.value.substring(textarea.selectionEnd);
-        textarea.selectionStart = textarea.selectionEnd = start + 4;
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
+    // Replace textarea with CodeMirror
+    loadCodeMirror().then(() => {
+      this._cm = createCMEditor(textarea, theme, () => {
         this._runFromEditor(textarea, outputEl, statusEl);
-      }
+      });
+      textarea.classList.add('pl-cm-active');
     });
 
     runBtn.addEventListener('click', () => {
@@ -881,12 +975,17 @@ class PanelLive extends HTMLElement {
     });
 
     resetBtn.addEventListener('click', () => {
-      textarea.value = this._code;
+      if (this._cm) {
+        this._cm.setValue(this._code);
+      } else {
+        textarea.value = this._code;
+      }
     });
 
     // Share button: encode code in URL hash and copy to clipboard
     shareBtn.addEventListener('click', () => {
-      setCodeInHash(textarea.value);
+      const code = this._cm ? this._cm.getValue() : textarea.value;
+      setCodeInHash(code);
       const url = location.href;
       navigator.clipboard.writeText(url).then(() => {
         const toast = shareBtn.querySelector('.pl-toast');
@@ -901,12 +1000,35 @@ class PanelLive extends HTMLElement {
         const idx = parseInt(examplesSelect.value, 10);
         const example = this._examples[idx];
         if (example) {
-          textarea.value = example.code;
+          if (this._cm) {
+            this._cm.setValue(example.code);
+          } else {
+            textarea.value = example.code;
+          }
           this._runFromEditor(textarea, outputEl, statusEl);
         }
         examplesSelect.selectedIndex = 0; // reset to "Examples..."
       });
     }
+
+    // Maximize (fullscreen toggle)
+    const maximizeBtn = container.querySelector('.maximize-btn');
+    const self = this;
+    maximizeBtn.addEventListener('click', () => {
+      if (self.hasAttribute('fullscreen')) {
+        self.removeAttribute('fullscreen');
+      } else {
+        self.setAttribute('fullscreen', '');
+      }
+      // CodeMirror needs a refresh after layout change
+      if (self._cm) setTimeout(() => self._cm.refresh(), 50);
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && self.hasAttribute('fullscreen')) {
+        self.removeAttribute('fullscreen');
+        if (self._cm) setTimeout(() => self._cm.refresh(), 50);
+      }
+    });
 
     // Draggable split handle
     this._initDragHandle(dragHandle, editorPane, previewPane, layout);
@@ -976,14 +1098,19 @@ class PanelLive extends HTMLElement {
       try {
         // Fetch src if needed
         if (this._srcUrl && !this._code.trim()) {
+          console.log('[panel-live] Fetching source from %s', this._srcUrl);
           statusCallback('Fetching source...');
           const resp = await fetch(this._srcUrl);
           if (!resp.ok) throw new Error(`Failed to fetch ${this._srcUrl}: ${resp.status}`);
           code = await resp.text();
           this._code = code;
-          // Update textarea if in editor/playground mode
-          const textarea = this.querySelector('.pl-editor-area');
-          if (textarea) textarea.value = code;
+          // Update editor if in editor/playground mode
+          if (this._cm) {
+            this._cm.setValue(code);
+          } else {
+            const textarea = this.querySelector('.pl-editor-area');
+            if (textarea) textarea.value = code;
+          }
         }
 
         await initPyodide(statusCallback);
@@ -1007,10 +1134,13 @@ class PanelLive extends HTMLElement {
           }
         }
 
+        console.log('[panel-live] Running app (mode=%s, %d chars)', this.mode, (code || '').length);
         statusCallback('Running app...');
         await runPanelCode(outputEl, code, statusCallback);
+        console.log('[panel-live] App rendered successfully (mode=%s)', this.mode);
         if (statusEl) statusEl.classList.add('hidden');
       } catch (error) {
+        console.error('[panel-live] Error in _initAndRun:', error);
         outputEl.innerHTML = '<pre style="color:#b71c1c;background:#ffebee;padding:16px;border-radius:4px;white-space:pre-wrap;font-size:13px;margin:0;">' +
           (error.message || String(error)).replace(/</g, '&lt;') + '</pre>';
         if (statusEl) statusEl.classList.add('hidden');
@@ -1023,11 +1153,14 @@ class PanelLive extends HTMLElement {
     this._running = true;
     statusEl.classList.remove('hidden');
     statusEl.innerHTML = '<span class="pl-spinner"></span> Running...';
-    const code = textarea.value;
+    const code = this._cm ? this._cm.getValue() : textarea.value;
+    console.log('[panel-live] Run from editor (%d chars)', code.length);
     try {
       await runPanelCode(outputEl, code, msg => { statusEl.textContent = msg; });
+      console.log('[panel-live] Editor run completed');
       statusEl.classList.add('hidden');
     } catch (error) {
+      console.error('[panel-live] Error in editor run:', error);
       outputEl.innerHTML = '<pre style="color:#b71c1c;background:#ffebee;padding:16px;border-radius:4px;white-space:pre-wrap;font-size:13px;margin:0;">' +
         (error.message || String(error)).replace(/</g, '&lt;') + '</pre>';
       statusEl.classList.add('hidden');
@@ -1041,6 +1174,7 @@ class PanelLive extends HTMLElement {
 }
 
 customElements.define('panel-live', PanelLive);
+console.log('[panel-live] <panel-live> custom element registered');
 
 // ============================================================
 // Public API: PanelLive.configure() and PanelLive.mount()
