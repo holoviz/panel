@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Live Web Component POC</title>
+  <script src="panel-live.js"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #fafafa;
+      color: #1a1a2e;
+    }
+    h1 { font-size: 24px; }
+    h2 { font-size: 18px; margin-top: 40px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+    .info {
+      background: #e3f2fd;
+      border-left: 4px solid #1976d2;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 14px;
+      border-radius: 0 4px 4px 0;
+    }
+    code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+    .demo-section { margin-bottom: 48px; }
+  </style>
+</head>
+<body>
+
+  <h1>Panel Live — Web Component POC</h1>
+
+  <div class="info">
+    This page demonstrates the <code>&lt;panel-live&gt;</code> web component in 3 modes:
+    <strong>app</strong>, <strong>editor</strong>, and <strong>playground</strong>.
+    Pyodide is loaded once and shared across all instances. Apps execute sequentially.
+  </div>
+
+  <!-- ========== MODE: APP ========== -->
+  <div class="demo-section">
+    <h2>1. App Mode</h2>
+    <p>Renders the Panel app with no editor. Usage: <code>&lt;panel-live&gt;...code...&lt;/panel-live&gt;</code></p>
+
+    <panel-live>
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+
+slider = pn.widgets.FloatSlider(name="Value", start=0, end=10, step=0.1, value=5)
+text = pn.pane.Markdown(f"## Value: {slider.value:.1f}")
+
+def update(event):
+    text.object = f"## Value: {event.new:.1f}"
+
+slider.param.watch(update, "value")
+
+pn.Column(
+    "# App Mode Demo",
+    "Move the slider — reactive updates with no editor visible:",
+    slider,
+    text,
+).servable()
+    </panel-live>
+  </div>
+
+  <!-- ========== MODE: EDITOR ========== -->
+  <div class="demo-section">
+    <h2>2. Editor Mode</h2>
+    <p>Editable code above the output. Usage: <code>&lt;panel-live mode="editor"&gt;</code></p>
+
+    <panel-live mode="editor" theme="dark">
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+
+items = [f"Item {i}" for i in range(1, 6)]
+select = pn.widgets.Select(name="Choose", options=items, value=items[0])
+output = pn.pane.Markdown(f"Selected: **{select.value}**")
+
+def on_select(event):
+    output.object = f"Selected: **{event.new}**"
+
+select.param.watch(on_select, "value")
+
+pn.Column(
+    "# Editor Mode Demo",
+    "Try editing this code and pressing Run:",
+    select,
+    output,
+).servable()
+    </panel-live>
+  </div>
+
+  <!-- ========== MODE: PLAYGROUND ========== -->
+  <div class="demo-section">
+    <h2>3. Playground Mode</h2>
+    <p>Side-by-side editor and preview. Usage: <code>&lt;panel-live mode="playground" layout="horizontal"&gt;</code></p>
+
+    <panel-live mode="playground" layout="horizontal" theme="dark">
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+
+name_input = pn.widgets.TextInput(name="Your Name", value="World")
+size = pn.widgets.IntSlider(name="Font Size", start=12, end=72, value=24)
+
+def greeting(name, size):
+    return f'<h1 style="font-size:{size}px">Hello, {name}!</h1>'
+
+output = pn.pane.HTML(
+    greeting(name_input.value, size.value),
+    sizing_mode="stretch_width",
+)
+
+def update(event):
+    output.object = greeting(name_input.value, size.value)
+
+name_input.param.watch(update, "value")
+size.param.watch(update, "value")
+
+pn.Column(
+    "# Playground Demo",
+    name_input,
+    size,
+    output,
+).servable()
+    </panel-live>
+  </div>
+
+</body>
+</html>

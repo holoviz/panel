@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel + PyScript POC - Editor App</title>
+
+  <!--
+    mini-coi.js: Required for py-editor since it runs in a web worker.
+    Workers need SharedArrayBuffer, which requires Cross-Origin-Isolation headers.
+    mini-coi uses a service worker to inject these headers when the server
+    doesn't provide them (e.g., file:// or static hosting).
+  -->
+  <script src="https://pyscript.net/releases/2026.2.1/mini-coi.js"></script>
+
+  <!-- Bokeh JS (must load before Panel JS) -->
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.8.2.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.8.2.min.js" crossorigin="anonymous"></script>
+  <!-- Panel JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@holoviz/panel@1.8.7/dist/panel.min.js" crossorigin="anonymous"></script>
+
+  <!-- PyScript -->
+  <link rel="stylesheet" href="https://pyscript.net/releases/2026.2.1/core.css">
+  <script type="module" src="https://pyscript.net/releases/2026.2.1/core.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #fafafa;
+      color: #1a1a2e;
+    }
+    h1 { font-size: 24px; }
+    .info {
+      background: #e3f2fd;
+      border-left: 4px solid #1976d2;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 14px;
+      border-radius: 0 4px 4px 0;
+    }
+    .warning {
+      background: #fff3e0;
+      border-left: 4px solid #f57c00;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 14px;
+      border-radius: 0 4px 4px 0;
+    }
+    #panel-output {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      background: white;
+      min-height: 200px;
+      margin-top: 16px;
+    }
+    h2 { font-size: 18px; margin-top: 32px; }
+
+    /* Make the py-editor run button always visible */
+    .py-editor-run-button { opacity: 1 !important; }
+  </style>
+</head>
+<body>
+  <h1>Panel + PyScript POC: Editor App</h1>
+
+  <div class="info">
+    This demonstrates PyScript's <code>&lt;py-editor&gt;</code> component for
+    editable Panel code. Users can modify the code and press the Run button
+    (or Ctrl+Enter) to re-execute.
+  </div>
+
+  <div class="warning">
+    <strong>Known limitation:</strong> py-editor runs code in a web worker,
+    which is isolated from the main thread. Panel's <code>.servable()</code>
+    relies on main-thread DOM access and Bokeh's rendering pipeline.
+    This means py-editor cannot directly render Panel widgets via .servable().
+    Below we show two approaches: one using py-editor with pyscript.display()
+    for simple output, and one using a main-thread script for full Panel rendering.
+  </div>
+
+  <!-- ========================================================
+       APPROACH 1: py-editor with limited output (worker-based)
+       ======================================================== -->
+  <h2>Approach 1: py-editor (Worker) - Text Output Only</h2>
+  <p>
+    This editor runs in a worker. It can compute and print results, but
+    cannot render interactive Panel widgets because the worker has no
+    direct DOM access for Bokeh's rendering pipeline.
+  </p>
+
+  <!--
+    Setup editor: invisible, runs before the visible editor.
+    Installs Panel in the shared worker environment.
+  -->
+  <script type="py-editor" env="panel-env" setup
+    config='{
+      "interpreter": "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.mjs",
+      "packages": ["micropip", "pyodide-http"]
+    }'
+  >
+# Setup: install Panel from wheels (micropip resolves dependencies)
+import micropip
+await micropip.install(
+    "https://cdn.holoviz.org/panel/wheels/bokeh-3.8.2-py3-none-any.whl",
+    reinstall=True, keep_going=True
+)
+await micropip.install(
+    "https://cdn.holoviz.org/panel/1.8.7/dist/wheels/panel-1.8.7-py3-none-any.whl",
+    reinstall=True, keep_going=True
+)
+import panel as pn
+print(f"Panel {pn.__version__} loaded in worker")
+  </script>
+
+  <!-- Visible editor sharing the same env -->
+  <script type="py-editor" env="panel-env">
+# Panel code in a worker - can compute but not render widgets
+import panel as pn
+
+slider_val = 5.0
+text = f"Amplitude: {slider_val}"
+
+# We can create Panel objects and inspect them
+col = pn.Column(
+    f"# Panel in Worker",
+    f"Slider value would be: {slider_val}",
+    pn.pane.Markdown(f"## {text}"),
+)
+
+# But we can only print/display text, not render interactive widgets
+print(f"Created Panel Column with {len(col)} children")
+print(f"Panel version: {pn.__version__}")
+print(f"Column repr: {col}")
+print()
+print("NOTE: Interactive widgets require main-thread rendering.")
+print("See Approach 2 below for full Panel widget support.")
+  </script>
+
+  <!-- ========================================================
+       APPROACH 2: Main-thread script with editable textarea
+       ======================================================== -->
+  <h2>Approach 2: Main-Thread Rendering (Full Panel Support)</h2>
+  <p>
+    For full Panel interactivity, we run on the main thread. This approach
+    uses a regular <code>&lt;script type="py"&gt;</code> tag. The code
+    is not editable via py-editor, but it demonstrates that Panel
+    rendering works correctly with PyScript's main-thread execution.
+  </p>
+
+  <div id="panel-output">Loading Panel app...</div>
+
+  <script type="py"
+    config='{
+      "interpreter": "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.mjs",
+      "packages": ["micropip", "pyodide-http"]
+    }'
+  >
+# Full Panel app with interactive widgets - runs on main thread
+import micropip
+await micropip.install(
+    "https://cdn.holoviz.org/panel/wheels/bokeh-3.8.2-py3-none-any.whl",
+    reinstall=True, keep_going=True
+)
+await micropip.install(
+    "https://cdn.holoviz.org/panel/1.8.7/dist/wheels/panel-1.8.7-py3-none-any.whl",
+    reinstall=True, keep_going=True
+)
+
+import panel as pn
+import js
+from bokeh.io.doc import set_curdoc
+from bokeh.document import Document
+from bokeh.settings import settings as bk_settings
+from panel.io.document import MockSessionContext
+from panel.io.state import state
+from panel.io.pyodide import _doc_json, _link_docs, sync_location
+
+# Document setup
+bk_settings.simple_ids.set_value(False)
+doc = Document()
+set_curdoc(doc)
+doc.hold()
+doc._session_context = lambda: MockSessionContext(document=doc)
+state.curdoc = doc
+
+# --- User app code ---
+pn.extension(sizing_mode="stretch_width")
+
+slider = pn.widgets.FloatSlider(
+    name="Amplitude", start=0, end=10, step=0.1, value=5
+)
+
+def make_text(amplitude):
+    return f"## Current value: {amplitude:.1f}"
+
+output = pn.pane.Markdown(make_text(slider.value))
+
+def on_change(event):
+    output.object = make_text(event.new)
+
+slider.param.watch(on_change, "value")
+
+pn.Column(
+    "# Interactive Panel App",
+    "This runs on the main thread with full widget interactivity:",
+    slider,
+    output,
+    pn.pane.Markdown("---"),
+    pn.pane.Markdown("*Rendered via PyScript main-thread execution*"),
+).servable()
+
+# --- Render into target ---
+target_id = "panel-output"
+target_el = js.document.getElementById(target_id)
+target_el.innerHTML = ""
+
+for root in doc.roots:
+    el = js.document.createElement("div")
+    el.setAttribute("data-root-id", str(root.id))
+    el.id = f"el-{root.id}"
+    target_el.appendChild(el)
+
+root_els = target_el.querySelectorAll("[data-root-id]")
+for el in root_els:
+    el.innerHTML = ""
+
+docs_json, render_items, root_ids = _doc_json(doc, root_els)
+doc._session_context = None
+
+views = await js.window.Bokeh.embed.embed_items(
+    js.JSON.parse(docs_json), js.JSON.parse(render_items)
+)
+jsdoc = list(views[0].roots)[0].model.document
+_link_docs(doc, jsdoc)
+sync_location()
+  </script>
+
+  <!-- ========================================================
+       APPROACH 3: Custom editable textarea + main-thread execution
+       ======================================================== -->
+  <h2>Approach 3: Custom Editor (Textarea + Main-Thread Eval)</h2>
+  <p>
+    Since py-editor runs in a worker (incompatible with Panel rendering),
+    we can build a simple editor using a textarea that sends code to
+    PyScript's main-thread interpreter. This is what panel-embed.js does
+    with CodeMirror, but here we demonstrate the minimal viable version.
+  </p>
+
+  <div class="warning">
+    This approach bypasses py-editor entirely and builds a custom editor.
+    It proves that even with PyScript, we still need custom editor
+    infrastructure for Panel's rendering requirements.
+  </div>
+
+  <div style="border:1px solid #ddd;border-radius:8px;overflow:hidden;margin-top:16px;">
+    <div style="background:#282a36;color:#f8f8f2;padding:8px 14px;display:flex;align-items:center;gap:10px;font-size:13px">
+      <span style="background:#3b82f6;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">PYTHON</span>
+      <span style="flex:1">Custom Editor</span>
+      <button id="custom-run-btn" style="background:#50fa7b;color:#282a36;border:none;padding:5px 16px;border-radius:4px;cursor:pointer;font-weight:700">Run</button>
+    </div>
+    <textarea id="custom-editor" spellcheck="false" style="width:100%;min-height:200px;border:none;resize:vertical;font-family:'JetBrains Mono','Fira Code',monospace;font-size:14px;line-height:1.5;padding:12px 16px;background:#282a36;color:#f8f8f2;tab-size:4;outline:none;box-sizing:border-box">
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+
+items = [f"Item {i}" for i in range(1, 6)]
+select = pn.widgets.Select(name="Choose", options=items, value=items[0])
+output = pn.pane.Markdown(f"Selected: **{select.value}**")
+
+def on_select(event):
+    output.object = f"Selected: **{event.new}**"
+
+select.param.watch(on_select, "value")
+
+pn.Column(
+    "# Custom Editor Demo",
+    select,
+    output,
+).servable()
+    </textarea>
+    <div id="custom-output" style="padding:16px;min-height:150px;background:white">
+      <em>Click "Run" to execute the code above</em>
+    </div>
+  </div>
+
+  <script>
+    // Wire up the custom editor's Run button.
+    // This sends the textarea code to a new main-thread PyScript execution.
+    // NOTE: This is a demonstration of the challenge - we cannot easily
+    // re-run Panel code in PyScript without managing document lifecycle.
+    document.getElementById("custom-run-btn").addEventListener("click", () => {
+      const code = document.getElementById("custom-editor").value;
+      const output = document.getElementById("custom-output");
+      output.innerHTML = "<em>Re-execution requires reloading Pyodide state...</em>" +
+        "<br><br>In practice, this is where panel-embed.js's runApp() logic is needed: " +
+        "reset the Bokeh document, re-exec user code, re-render. " +
+        "PyScript does not provide this lifecycle management.";
+    });
+  </script>
+</body>
+</html>

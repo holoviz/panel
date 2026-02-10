@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Live Playground</title>
+  <script src="panel-live.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+  </style>
+</head>
+<body>
+
+  <panel-live mode="playground" layout="horizontal" theme="dark" fullscreen>
+
+    <panel-example name="Slider">
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+
+slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
+
+def callback(new):
+    return f'Amplitude is: {new}'
+
+pn.Row(slider, pn.bind(callback, slider)).servable()
+    </panel-example>
+
+    <panel-example name="Select Widget">
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+
+items = [f"Item {i}" for i in range(1, 6)]
+select = pn.widgets.Select(name="Choose", options=items, value=items[0])
+output = pn.pane.Markdown(f"Selected: **{select.value}**")
+
+def on_select(event):
+    output.object = f"Selected: **{event.new}**"
+
+select.param.watch(on_select, "value")
+
+pn.Column("# Select Demo", select, output).servable()
+    </panel-example>
+
+    <panel-example name="Reactive Greeting">
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+
+name_input = pn.widgets.TextInput(name="Your Name", value="World")
+size = pn.widgets.IntSlider(name="Font Size", start=12, end=72, value=32)
+
+def greeting(name, sz):
+    tag = f"font-size:{sz}px"
+    return pn.pane.Markdown(f"# Hello, {name}!", styles={"font-size": f"{sz}px"})
+
+output = pn.panel(pn.bind(greeting, name_input, size))
+
+pn.Column(name_input, size, output).servable()
+    </panel-example>
+
+    <panel-example name="Checkbox + Toggle">
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+
+checkbox = pn.widgets.Checkbox(name="Enable feature", value=False)
+toggle = pn.widgets.Toggle(name="Dark mode", value=False)
+
+status = pn.pane.Markdown("Feature: **Off** | Dark mode: **Off**")
+
+def update(event):
+    feat = "On" if checkbox.value else "Off"
+    dark = "On" if toggle.value else "Off"
+    status.object = f"Feature: **{feat}** | Dark mode: **{dark}**"
+
+checkbox.param.watch(update, "value")
+toggle.param.watch(update, "value")
+
+pn.Column("# Settings", checkbox, toggle, status).servable()
+    </panel-example>
+
+    <panel-example name="DataFrame">
+import panel as pn
+pn.extension("tabulator", sizing_mode="stretch_width")
+
+import pandas as pd
+
+df = pd.DataFrame({
+    "Name": ["Alice", "Bob", "Charlie", "Diana"],
+    "Score": [92, 87, 95, 78],
+    "Grade": ["A", "B+", "A", "C+"],
+})
+
+table = pn.widgets.Tabulator(df, page_size=10)
+pn.Column("# Student Grades", table).servable()
+    </panel-example>
+
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+
+slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
+
+def callback(new):
+    return f'Amplitude is: {new}'
+
+pn.Row(slider, pn.bind(callback, slider)).servable()
+  </panel-live>
+
+</body>
+</html>

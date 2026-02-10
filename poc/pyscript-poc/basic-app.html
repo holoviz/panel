@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel + PyScript POC - Basic App</title>
+
+  <!-- Bokeh JS (must load before Panel JS, must load before Pyodide) -->
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.8.2.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.8.2.min.js" crossorigin="anonymous"></script>
+  <!-- Panel JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@holoviz/panel@1.8.7/dist/panel.min.js" crossorigin="anonymous"></script>
+
+  <!-- PyScript -->
+  <link rel="stylesheet" href="https://pyscript.net/releases/2026.2.1/core.css">
+  <script type="module" src="https://pyscript.net/releases/2026.2.1/core.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #fafafa;
+      color: #1a1a2e;
+    }
+    h1 { font-size: 24px; }
+    .info {
+      background: #e3f2fd;
+      border-left: 4px solid #1976d2;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 14px;
+      border-radius: 0 4px 4px 0;
+    }
+    #panel-app {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      background: white;
+      min-height: 200px;
+    }
+    #status-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #1b5e20;
+      color: white;
+      padding: 8px 16px;
+      font-size: 14px;
+      z-index: 9999;
+      transition: opacity 0.3s;
+    }
+    #status-bar.hidden { opacity: 0; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div id="status-bar" class="hidden"></div>
+
+  <h1>Panel + PyScript POC: Basic App</h1>
+
+  <div class="info">
+    This demonstrates running a Panel app via PyScript. The approach uses
+    PyScript's <code>&lt;script type="py"&gt;</code> tag with inline Panel
+    initialization code. Bokeh/Panel JS is loaded in the &lt;head&gt;, and
+    Panel Python packages are installed via micropip in a setup step.
+  </div>
+
+  <!-- Target container for the Panel app -->
+  <div id="panel-app">Loading...</div>
+
+  <!--
+    PyScript config: install Panel from optimized wheels.
+    We use JSON config inline for simplicity.
+  -->
+  <script type="py"
+    config='{
+      "interpreter": "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.mjs",
+      "packages": ["micropip", "pyodide-http"]
+    }'
+  >
+# --- Panel initialization boilerplate ---
+# This is the code that a PyScript plugin would ideally handle automatically.
+# Install Panel from optimized wheels (micropip resolves transitive dependencies)
+import micropip
+await micropip.install(
+    "https://cdn.holoviz.org/panel/wheels/bokeh-3.8.2-py3-none-any.whl",
+    reinstall=True, keep_going=True
+)
+await micropip.install(
+    "https://cdn.holoviz.org/panel/1.8.7/dist/wheels/panel-1.8.7-py3-none-any.whl",
+    reinstall=True, keep_going=True
+)
+
+import panel as pn
+from bokeh.io.doc import set_curdoc
+from bokeh.document import Document
+from bokeh.settings import settings as bk_settings
+from panel.io.document import MockSessionContext
+from panel.io.state import state
+from panel.io.pyodide import _doc_json, _link_docs, sync_location
+import js
+
+# Set up Bokeh document context (needed for .servable())
+bk_settings.simple_ids.set_value(False)
+doc = Document()
+set_curdoc(doc)
+doc.hold()
+doc._session_context = lambda: MockSessionContext(document=doc)
+state.curdoc = doc
+
+# ============================================================
+# USER CODE STARTS HERE - This is the actual Panel app
+# ============================================================
+pn.extension(sizing_mode="stretch_width")
+
+slider = pn.widgets.FloatSlider(
+    name="Amplitude", start=0, end=10, step=0.1, value=5
+)
+text = pn.pane.Markdown(f"## Amplitude: {slider.value}")
+
+def update_text(event):
+    text.object = f"## Amplitude: {event.new}"
+
+slider.param.watch(update_text, "value")
+
+pn.Column(
+    "# Panel + PyScript Demo",
+    "Move the slider to see reactive updates:",
+    slider,
+    text,
+).servable()
+# ============================================================
+# USER CODE ENDS HERE
+# ============================================================
+
+# --- Render servable objects into the target div ---
+target_id = "panel-app"
+target_el = js.document.getElementById(target_id)
+target_el.innerHTML = ""
+
+for root in doc.roots:
+    el = js.document.createElement("div")
+    el.setAttribute("data-root-id", str(root.id))
+    el.id = f"el-{root.id}"
+    target_el.appendChild(el)
+
+root_els = target_el.querySelectorAll("[data-root-id]")
+for el in root_els:
+    el.innerHTML = ""
+
+docs_json, render_items, root_ids = _doc_json(doc, root_els)
+doc._session_context = None
+
+views = await js.window.Bokeh.embed.embed_items(
+    js.JSON.parse(docs_json), js.JSON.parse(render_items)
+)
+jsdoc = list(views[0].roots)[0].model.document
+_link_docs(doc, jsdoc)
+sync_location()
+
+js.document.getElementById("status-bar").classList.add("hidden")
+  </script>
+</body>
+</html>

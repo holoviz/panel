@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Live — Minimal Test</title>
+  <script src="panel-live.js"></script>
+  <style>
+    body { font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+  </style>
+</head>
+<body>
+  <h1>Minimal Test — Single App</h1>
+  <p>One <code>&lt;panel-live&gt;</code> element to isolate loading issues.</p>
+
+  <panel-live>
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
+def callback(new):
+    return f'Amplitude is: {new}'
+pn.Row(slider, pn.bind(callback, slider)).servable()
+  </panel-live>
+</body>
+</html>

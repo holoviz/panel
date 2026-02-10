@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <script src="./mini-coi.js" scope="./"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.8.2.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.8.2.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@holoviz/panel@1.8.7/dist/panel.min.js"></script>
+
+    <link rel="stylesheet" href="https://pyscript.net/releases/2025.8.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2025.8.1/core.js"></script>
+  </head>
+  <body>
+    <script type="py-editor" config='{"interpreter": "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.mjs", "packages": ["https://cdn.holoviz.org/panel/1.8.7/dist/wheels/bokeh-3.8.2-py3-none-any.whl", "https://cdn.holoviz.org/panel/1.8.7/dist/wheels/panel-1.8.7-py3-none-any.whl", "param", "pyyaml", "numpy", "xyzservices", "jinja2", "packaging"]}'>
+      import panel as pn
+
+      pn.extension(sizing_mode="stretch_width")
+
+      slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
+
+      def callback(new):
+         return f'Amplitude is: {new}'
+
+      pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
+    </script>
+    <div id="simple_app"></div>
+  </body>
+</html>

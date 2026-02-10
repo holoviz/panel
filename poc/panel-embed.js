@@ -10,11 +10,28 @@
 (function () {
   'use strict';
 
+  // ===== Cleanup stale service workers =====
+  // JupyterLite (and other tools) may register service workers (e.g.
+  // PyodideServiceWorker.js) on the same origin. A stale worker intercepts
+  // every fetch and throws on 404s (missing favicon, etc.). Unregistering
+  // alone is not enough — the worker keeps controlling the page until all
+  // clients close. So we unregister and force one reload to escape it.
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      var hadWorker = regs.length > 0;
+      regs.forEach(function (r) { r.unregister(); });
+      if (hadWorker) {
+        location.reload();
+      }
+    });
+    return; // Stop IIFE — page will reload momentarily
+  }
+
   // ===== Config =====
   const defaults = {
     pyodideVersion: 'v0.28.2',
     panelVersion: '1.8.7',
-    bokehVersion: '3.8.1',
+    bokehVersion: '3.8.2',
   };
 
   let config = { ...defaults };
