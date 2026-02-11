@@ -1,0 +1,491 @@
+/* ---- Base ---- */
+panel-live {
+  display: block;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 0; /* hide raw text nodes (code content) before render */
+  overflow: hidden;
+}
+panel-live:not(:defined) {
+  display: none;
+}
+panel-live > :not(.pl-container) {
+  display: none !important; /* hide stray DOM elements parsed from inline code */
+}
+panel-live > .pl-container {
+  display: flex !important; /* restore — overrides the :not() rule above */
+  flex-direction: column;
+  font-size: 1rem; /* restore normal sizing for rendered UI */
+}
+
+/* Hide source children — they're extracted by _extractCode(), not rendered directly */
+panel-file,
+panel-requirements,
+panel-example {
+  display: none;
+}
+
+/* ---- Theme presets via data-resolved-theme ---- */
+panel-live[data-resolved-theme='light'] {
+  --pl-border: #e0e0e0;
+  --pl-radius: 6px;
+  --pl-bg: #ffffff;
+  --pl-font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --pl-header-bg: #f5f5f5;
+  --pl-header-color: #333333;
+  --pl-pill-bg: #3b82f6;
+  --pl-pill-color: #ffffff;
+  --pl-editor-bg: #fafafa;
+  --pl-editor-color: #1a1a2e;
+  --pl-editor-font-size: 14px;
+  --pl-editor-line-height: 1.6;
+  --pl-btn-bg: #4caf50;
+  --pl-btn-color: #ffffff;
+  --pl-output-bg: #ffffff;
+  --pl-output-min-height: 100px;
+  --pl-status-color: #555555;
+  --pl-status-spinner: #1976d2;
+  --pl-error-color: #b71c1c;
+  --pl-error-bg: #ffebee;
+  --pl-handle-bg: #e0e0e0;
+  --pl-handle-hover-bg: #3b82f6;
+}
+panel-live[data-resolved-theme='dark'] {
+  --pl-border: #44475a;
+  --pl-radius: 6px;
+  --pl-bg: #1e1e2e;
+  --pl-font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --pl-header-bg: #1e1e2e;
+  --pl-header-color: #cdd6f4;
+  --pl-pill-bg: #3b82f6;
+  --pl-pill-color: #ffffff;
+  --pl-editor-bg: #1e1e2e;
+  --pl-editor-color: #cdd6f4;
+  --pl-editor-font-size: 14px;
+  --pl-editor-line-height: 1.6;
+  --pl-btn-bg: #a6e3a1;
+  --pl-btn-color: #1e1e2e;
+  --pl-output-bg: #ffffff;
+  --pl-output-min-height: 100px;
+  --pl-status-color: #a0a0a0;
+  --pl-status-spinner: #64b5f6;
+  --pl-error-color: #ef9a9a;
+  --pl-error-bg: #3e1e1e;
+  --pl-handle-bg: #44475a;
+  --pl-handle-hover-bg: #3b82f6;
+}
+
+/* ---- Container ---- */
+.pl-container {
+  border: 1px solid var(--pl-border, #e0e0e0);
+  border-radius: var(--pl-radius, 6px);
+  overflow: hidden;
+  background: var(--pl-bg, #fff);
+}
+
+/* ---- Status bar ---- */
+.pl-status {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--pl-status-color, #555);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pl-status.hidden {
+  display: none;
+}
+.pl-status.error {
+  color: var(--pl-error-color, #b71c1c);
+  background: var(--pl-error-bg, #ffebee);
+}
+.pl-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ddd;
+  border-top-color: var(--pl-status-spinner, #1976d2);
+  border-radius: 50%;
+  animation: pl-spin 0.7s linear infinite;
+}
+@keyframes pl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Output area ---- */
+.pl-output {
+  min-height: var(--pl-output-min-height, 100px);
+  background: var(--pl-output-bg, #ffffff);
+  padding: 0;
+}
+
+/* ---- Editor header ---- */
+.pl-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--pl-header-bg, #1e1e2e);
+  color: var(--pl-header-color, #cdd6f4);
+  font-size: 13px;
+}
+.pl-lang {
+  background: var(--pl-pill-bg, #3b82f6);
+  color: var(--pl-pill-color, #ffffff);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.pl-title {
+  flex: 1;
+  font-weight: 500;
+}
+.pl-shortcut {
+  opacity: 0.5;
+  font-size: 11px;
+}
+
+/* ---- Buttons ---- */
+.pl-btn {
+  background: var(--pl-btn-bg, #a6e3a1);
+  color: var(--pl-btn-color, #1e1e2e);
+  border: none;
+  padding: 4px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.pl-btn:hover {
+  filter: brightness(1.1);
+}
+.pl-btn.secondary {
+  background: transparent;
+  color: var(--pl-header-color, #cdd6f4);
+  border: 1px solid currentColor;
+  font-weight: 400;
+  opacity: 0.7;
+}
+.pl-btn.secondary:hover {
+  opacity: 1;
+}
+
+/* ---- Editor textarea ---- */
+.pl-editor-area {
+  width: 100%;
+  min-height: 180px;
+  max-height: 500px;
+  border: none;
+  resize: vertical;
+  font-family: var(
+    --pl-font-mono,
+    'JetBrains Mono',
+    'Fira Code',
+    'Cascadia Code',
+    monospace
+  );
+  font-size: var(--pl-editor-font-size, 14px);
+  line-height: var(--pl-editor-line-height, 1.6);
+  padding: 12px 16px;
+  tab-size: 4;
+  outline: none;
+  box-sizing: border-box;
+  background: var(--pl-editor-bg, #1e1e2e);
+  color: var(--pl-editor-color, #cdd6f4);
+}
+
+/* ---- Playground layout ---- */
+.pl-playground {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.pl-playground.vertical {
+  flex-direction: column;
+}
+.pl-playground > .pl-editor-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pl-playground > .pl-preview-pane {
+  flex: 1;
+  min-width: 0;
+  border-left: 1px solid var(--pl-border, #e0e0e0);
+  background: var(--pl-output-bg, #ffffff);
+  display: flex;
+  flex-direction: column;
+}
+.pl-playground > .pl-preview-pane > .pl-output {
+  flex: 1;
+  height: 0; /* explicit value so Bokeh's height:100% children resolve */
+  overflow: auto;
+}
+.pl-playground.vertical > .pl-preview-pane {
+  border-left: none;
+  border-top: 1px solid var(--pl-border, #e0e0e0);
+}
+.pl-playground > .pl-editor-pane .pl-editor-area {
+  flex: 1;
+  resize: none;
+  min-height: 300px;
+  max-height: none;
+}
+/* Collapsed editor pane in horizontal split — shrink to toggle button width */
+.pl-playground > .pl-editor-pane.pl-pane-collapsed {
+  flex: 0 0 auto;
+}
+.pl-playground
+  > .pl-editor-pane.pl-pane-collapsed
+  > .pl-code-section.pl-collapsed {
+  display: none;
+}
+
+/* ---- Editor mode (stacked) ---- */
+.pl-editor-stacked .pl-output {
+  border-top: 1px solid var(--pl-border, #e0e0e0);
+}
+
+/* ---- Code visibility ---- */
+.pl-code-section {
+  overflow: hidden;
+}
+.pl-code-section.pl-collapsed {
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease;
+}
+.pl-code-section.pl-expanded {
+  max-height: 4000px;
+  opacity: 1;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease;
+}
+.pl-code-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 4px 8px;
+  background: var(--pl-header-bg, #f5f5f5);
+  border-top: 1px solid var(--pl-border, #e0e0e0);
+  border-bottom: 1px solid var(--pl-border, #e0e0e0);
+}
+.pl-code-toggle button {
+  background: none;
+  border: 1px solid var(--pl-border, #ccc);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--pl-header-color, #555);
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+.pl-code-toggle button:hover {
+  filter: brightness(0.9);
+}
+
+/* ---- Fullscreen playground ---- */
+panel-live[fullscreen] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  margin: 0;
+  border-radius: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+panel-live[fullscreen] .pl-container {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+}
+panel-live[fullscreen] .pl-playground > .pl-editor-pane {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+panel-live[fullscreen] .pl-playground > .pl-editor-pane .pl-editor-header {
+  flex-shrink: 0;
+}
+panel-live[fullscreen] .pl-playground > .pl-editor-pane .pl-editor-area {
+  min-height: 0;
+  flex: 1;
+}
+panel-live[fullscreen] .pl-playground > .pl-preview-pane {
+  overflow: auto;
+}
+
+/* ---- Vertical resize handle on playground container ---- */
+.pl-container.pl-resizable {
+  resize: vertical;
+  overflow: hidden;
+  min-height: 300px;
+}
+panel-live[fullscreen] .pl-container.pl-resizable {
+  resize: none;
+}
+
+/* ---- Maximize button ---- */
+.pl-btn.maximize-btn {
+  font-size: 15px;
+  line-height: 1;
+  padding: 4px 8px;
+}
+
+/* ---- CodeMirror overrides ---- */
+.pl-container .CodeMirror {
+  height: auto;
+  min-height: 180px;
+  max-height: 500px;
+  font-family: var(
+    --pl-font-mono,
+    'JetBrains Mono',
+    'Fira Code',
+    'Cascadia Code',
+    'Consolas',
+    monospace
+  );
+  font-size: var(--pl-editor-font-size, 14px);
+  line-height: var(--pl-editor-line-height, 1.6);
+  border: none;
+}
+.pl-playground > .pl-editor-pane .CodeMirror {
+  height: 100%;
+  max-height: none;
+  min-height: 300px;
+}
+panel-live[fullscreen] .pl-playground > .pl-editor-pane .CodeMirror {
+  min-height: 0;
+}
+/* Hide the raw textarea when CodeMirror is active */
+.pl-editor-area.pl-cm-active {
+  display: none;
+}
+
+/* ---- Examples dropdown ---- */
+.pl-examples-select {
+  background: transparent;
+  color: inherit;
+  border: 1px solid currentColor;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.7;
+  max-width: 180px;
+  outline: none;
+}
+.pl-examples-select:hover {
+  opacity: 1;
+}
+.pl-examples-select option {
+  color: #1a1a2e;
+  background: #fff;
+}
+
+/* ---- Share button feedback ---- */
+.pl-btn.share-btn {
+  position: relative;
+}
+.pl-toast {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.pl-toast.show {
+  opacity: 1;
+}
+
+/* ---- Draggable split handle ---- */
+.pl-drag-handle {
+  width: 6px;
+  cursor: col-resize;
+  background: var(--pl-handle-bg, #e0e0e0);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.pl-drag-handle:hover,
+.pl-drag-handle.dragging {
+  background: var(--pl-handle-hover-bg, #3b82f6);
+}
+.pl-playground.vertical > .pl-drag-handle {
+  width: auto;
+  height: 6px;
+  cursor: row-resize;
+}
+
+/* ---- code-position="last" — flip pane order via CSS order ---- */
+.pl-playground.code-last > .pl-preview-pane {
+  order: 1;
+  border-left: none;
+}
+.pl-playground.code-last > .pl-drag-handle {
+  order: 2;
+}
+.pl-playground.code-last > .pl-editor-pane {
+  order: 3;
+}
+.pl-playground.code-last > .pl-preview-pane {
+  border-right: 1px solid var(--pl-border, #e0e0e0);
+}
+.pl-playground.vertical.code-last > .pl-preview-pane {
+  border-right: none;
+  border-top: none;
+  border-bottom: 1px solid var(--pl-border, #e0e0e0);
+}
+.pl-playground.vertical.code-last > .pl-editor-pane {
+  border-top: none;
+}
+
+/* Editor stacked: code-position="last" */
+.pl-editor-stacked.code-last > .pl-status {
+  order: 1;
+}
+.pl-editor-stacked.code-last > .pl-output {
+  order: 2;
+  border-top: none;
+  border-bottom: 1px solid var(--pl-border, #e0e0e0);
+}
+.pl-editor-stacked.code-last > .pl-editor-header {
+  order: 3;
+}
+.pl-editor-stacked.code-last > .CodeMirror {
+  order: 4;
+}
+.pl-editor-stacked.code-last > .pl-code-section {
+  order: 3;
+}
+.pl-editor-stacked.code-last > .pl-code-toggle {
+  order: 5;
+}
+.pl-editor-stacked.code-last > textarea.pl-editor-area {
+  order: 4;
+}

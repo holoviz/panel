@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Live API Explorer</title>
+  <link rel="stylesheet" href="panel-live.css">
+  <script src="panel-live.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      background: #f8f9fa;
+      color: #1a1a2e;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ---- Header ---- */
+    .page-header {
+      padding: 12px 20px;
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 18px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .page-header span { color: #3b82f6; }
+
+    /* ---- Main layout ---- */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ---- Sidebar ---- */
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      border-right: 1px solid #e0e0e0;
+      background: #fff;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .sidebar h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin: 20px 0 8px;
+    }
+    .sidebar h3:first-child { margin-top: 0; }
+
+    .control-group {
+      margin-bottom: 12px;
+    }
+    .control-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 2px;
+      background: #f0f0f0;
+      border-radius: 6px;
+      padding: 2px;
+    }
+    .radio-group label {
+      flex: 1;
+      text-align: center;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+    }
+    .radio-group input { display: none; }
+    .radio-group input:checked + span {
+      background: #3b82f6;
+      color: #fff;
+      border-radius: 4px;
+      display: block;
+      padding: 5px 8px;
+      margin: -5px -8px;
+    }
+    .radio-group label.disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .sidebar input[type="text"],
+    .sidebar select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .sidebar select { cursor: pointer; }
+    .sidebar input[type="text"]:focus,
+    .sidebar select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+    }
+    .sidebar select:disabled,
+    .sidebar input[type="text"]:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+    .checkbox-row input { margin: 0; cursor: pointer; }
+
+    /* CSS variable rows */
+    .css-var-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .css-var-row code {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 11px;
+      color: #555;
+    }
+    .css-var-row input[type="color"] {
+      width: 28px;
+      height: 24px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 1px;
+      cursor: pointer;
+      background: none;
+    }
+    .css-var-row input[type="range"] {
+      width: 80px;
+    }
+    .css-var-row .range-val {
+      font-size: 11px;
+      color: #888;
+      min-width: 36px;
+      text-align: right;
+    }
+    .css-var-row .clear-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: #aaa;
+      padding: 0 2px;
+      line-height: 1;
+    }
+    .css-var-row .clear-btn:hover { color: #e53935; }
+
+    details summary {
+      cursor: pointer;
+      font-size: 12px;
+      color: #3b82f6;
+      margin: 8px 0 6px;
+      user-select: none;
+    }
+    details summary:hover { text-decoration: underline; }
+
+    .btn-reset {
+      width: 100%;
+      padding: 8px;
+      margin-top: 16px;
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      transition: background 0.15s;
+    }
+    .btn-reset:hover { background: #e8e8e8; }
+
+    /* ---- Content area ---- */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .preview-area {
+      flex: 1;
+      padding: 16px;
+      overflow: auto;
+      min-height: 0;
+    }
+    .preview-area panel-live {
+      height: 100%;
+      min-height: 400px;
+    }
+    /* Make the inner container fill the panel-live element and let the
+       output area expand to cover any gap left by CodeMirror's initial
+       height calculation. Without this, the dark --pl-bg container
+       background bleeds through as a visible strip in dark theme. */
+    .preview-area .pl-container {
+      height: 100%;
+    }
+    .preview-area .pl-output {
+      flex: 1;
+    }
+
+    /* ---- Drag divider between preview and generated HTML ---- */
+    .content-divider {
+      height: 6px;
+      flex-shrink: 0;
+      cursor: row-resize;
+      background: #e0e0e0;
+      transition: background 0.15s;
+    }
+    .content-divider:hover, .content-divider.dragging {
+      background: #3b82f6;
+    }
+
+    /* ---- Generated HTML section ---- */
+    .generated-section {
+      background: #fff;
+      flex-shrink: 0;
+      height: 200px;
+      min-height: 60px;
+      display: flex;
+      flex-direction: column;
+    }
+    .generated-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-bottom: 1px solid #eee;
+      flex-shrink: 0;
+    }
+    .btn-copy {
+      padding: 4px 12px;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .btn-copy:hover { filter: brightness(1.1); }
+    .btn-copy.copied { background: #22c55e; }
+    .generated-code {
+      overflow: auto;
+      flex: 1;
+      min-height: 0;
+    }
+    .generated-code pre {
+      margin: 0;
+      padding: 12px 16px;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      color: #333;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 900px) {
+      body { overflow: auto; height: auto; }
+      .main-layout { flex-direction: column; }
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        max-height: 50vh;
+      }
+      .preview-area { min-height: 400px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-header"><span>Panel Live</span> API Explorer</div>
+
+  <div class="main-layout">
+    <!-- ============ SIDEBAR ============ -->
+    <div class="sidebar">
+
+      <h3>Attributes</h3>
+
+      <!-- Mode -->
+      <div class="control-group">
+        <label>Mode</label>
+        <div class="radio-group" id="ctrl-mode">
+          <label><input type="radio" name="mode" value="app"><span>app</span></label>
+          <label><input type="radio" name="mode" value="editor"><span>editor</span></label>
+          <label><input type="radio" name="mode" value="playground" checked><span>playground</span></label>
+        </div>
+      </div>
+
+      <!-- Theme -->
+      <div class="control-group">
+        <label>Theme</label>
+        <div class="radio-group" id="ctrl-theme">
+          <label><input type="radio" name="theme" value="auto" checked><span>auto</span></label>
+          <label><input type="radio" name="theme" value="light"><span>light</span></label>
+          <label><input type="radio" name="theme" value="dark"><span>dark</span></label>
+        </div>
+      </div>
+
+      <!-- Layout -->
+      <div class="control-group">
+        <label>Layout</label>
+        <div class="radio-group" id="ctrl-layout">
+          <label><input type="radio" name="layout" value="horizontal" checked><span>horizontal</span></label>
+          <label><input type="radio" name="layout" value="vertical"><span>vertical</span></label>
+        </div>
+      </div>
+
+      <!-- Code Position -->
+      <div class="control-group">
+        <label>Code Position</label>
+        <div class="radio-group" id="ctrl-codepos">
+          <label><input type="radio" name="codepos" value="first" checked><span>first</span></label>
+          <label><input type="radio" name="codepos" value="last"><span>last</span></label>
+        </div>
+      </div>
+
+      <!-- Label -->
+      <div class="control-group">
+        <label>Label</label>
+        <input type="text" id="ctrl-label" value="Python">
+      </div>
+
+      <!-- Height -->
+      <div class="control-group">
+        <label>Height</label>
+        <input type="text" id="ctrl-height" placeholder="e.g. 500px">
+      </div>
+
+      <!-- Auto-run -->
+      <div class="control-group">
+        <div class="checkbox-row">
+          <input type="checkbox" id="ctrl-autorun" checked>
+          <label for="ctrl-autorun" style="margin:0;font-weight:500;">Auto-run on load</label>
+        </div>
+      </div>
+
+      <!-- Code visibility -->
+      <div class="control-group">
+        <label>Code Visibility</label>
+        <select id="ctrl-codevis">
+          <option value="visible" selected>visible</option>
+          <option value="hidden">hidden</option>
+          <option value="collapsed">collapsed</option>
+        </select>
+      </div>
+
+      <h3>Example Code</h3>
+      <div class="control-group">
+        <select id="ctrl-example">
+          <option value="hello">Hello World</option>
+          <option value="slider" selected>Interactive Slider</option>
+          <option value="form">Form Widgets</option>
+          <option value="dataframe">DataFrame</option>
+          <option value="kpi-dashboard">KPI Dashboard</option>
+          <option value="interactive-plot">Interactive Plot</option>
+          <option value="mini-calculator">Mini Calculator</option>
+          <option value="color-palette">Color Palette</option>
+          <option value="markdown-preview">Markdown Preview</option>
+          <option value="tabs-layout">Tabs Layout</option>
+          <option value="unit-converter">Unit Converter</option>
+          <option value="data-explorer">Data Explorer</option>
+          <option value="echart-viz">ECharts Radar</option>
+          <option value="stock-ticker">Stock Ticker</option>
+        </select>
+      </div>
+
+      <h3>CSS Overrides (Featured)</h3>
+      <div id="css-featured"></div>
+
+      <details id="css-advanced-details">
+        <summary>Advanced CSS Overrides</summary>
+        <div id="css-advanced"></div>
+      </details>
+
+      <button class="btn-reset" id="btn-reset">Reset All</button>
+    </div>
+
+    <!-- ============ CONTENT ============ -->
+    <div class="content-area">
+      <div class="preview-area">
+        <panel-live id="explorer-target" mode="playground" auto-run="false">
+import panel as pn
+slider = pn.widgets.IntSlider(name="Value", start=0, end=100, value=50)
+output = pn.pane.Markdown(pn.bind(lambda v: f"## Value: {v}", slider))
+pn.Column(slider, output).servable()
+        </panel-live>
+      </div>
+
+      <div class="content-divider" id="content-divider"></div>
+
+      <div class="generated-section">
+        <div class="generated-header">
+          Generated HTML
+          <button class="btn-copy" id="btn-copy">Copy</button>
+        </div>
+        <div class="generated-code">
+          <pre><code id="generated-output"></code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function() {
+  // ============================================================
+  // Example snippets
+  // ============================================================
+  const EXAMPLES = {
+    hello: `import panel as pn
+pn.panel("# Hello, World!\\nClick the button below.").servable()`,
+
+    slider: `import panel as pn
+slider = pn.widgets.IntSlider(name="Value", start=0, end=100, value=50)
+output = pn.pane.Markdown(pn.bind(lambda v: f"## Value: {v}", slider))
+pn.Column(slider, output).servable()`,
+
+    form: `import panel as pn
+name_input = pn.widgets.TextInput(name="Your Name", value="World")
+color = pn.widgets.ColorPicker(name="Pick a Color", value="#3b82f6")
+
+def greeting(name, color):
+    return f'<h2 style="color:{color}">Hello, {name}!</h2>'
+
+output = pn.pane.HTML(pn.bind(greeting, name_input, color))
+pn.Column(name_input, color, output).servable()`,
+
+    dataframe: `import panel as pn
+import pandas as pd
+import numpy as np
+
+np.random.seed(42)
+df = pd.DataFrame({
+    "Name": ["Alice", "Bob", "Charlie", "Diana", "Eve"],
+    "Score": np.random.randint(60, 100, 5),
+    "Grade": ["A", "B", "A", "B+", "A-"],
+})
+pn.widgets.Tabulator(df, sizing_mode="stretch_width").servable()`,
+
+    'kpi-dashboard': `import panel as pn
+
+pn.extension("echarts", sizing_mode="stretch_width")
+
+kpi1 = pn.indicators.Number(name="Revenue", value=128500, format="\${value:,.0f}", font_size="28pt", title_size="12pt")
+kpi2 = pn.indicators.Number(name="Users", value=8420, format="{value:,}", font_size="28pt", title_size="12pt")
+kpi3 = pn.indicators.Number(name="Conversion", value=3.4, format="{value}%", font_size="28pt", title_size="12pt")
+
+gauge = pn.indicators.Gauge(name="Target", value=72, bounds=(0, 100), format="{value}%", colors=[(0.4, "#e74c3c"), (0.7, "#f1c40f"), (1, "#2ecc71")])
+
+trend_data = {"x": list(range(12)), "y": [12, 15, 13, 17, 20, 18, 22, 25, 23, 28, 30, 32]}
+trend = pn.indicators.Trend(
+    name="Monthly Growth", data=trend_data,
+    width=300, height=100,
+    plot_color="#3b82f6",
+)
+
+pn.Column(
+    "# KPI Dashboard",
+    pn.Row(kpi1, kpi2, kpi3),
+    pn.Row(gauge, trend),
+).servable()`,
+
+    'interactive-plot': `import panel as pn
+import numpy as np
+from bokeh.plotting import figure
+
+pn.extension(sizing_mode="stretch_width")
+
+n_points = pn.widgets.IntSlider(name="Points", start=10, end=500, value=100)
+spread = pn.widgets.FloatSlider(name="Spread", start=0.1, end=5.0, step=0.1, value=1.0)
+
+def make_plot(n, s):
+    np.random.seed(42)
+    x = np.random.randn(n)
+    y = x * 0.5 + np.random.randn(n) * s
+    colors = ["#3b82f6" if v > 0 else "#ef4444" for v in y]
+    p = figure(title=f"{n} points (spread={s:.1f})", height=350, tools="pan,wheel_zoom,reset")
+    p.scatter(x, y, size=6, color=colors, alpha=0.7)
+    return p
+
+pn.Column(
+    "# Interactive Scatter Plot",
+    pn.Row(n_points, spread),
+    pn.pane.Bokeh(pn.bind(make_plot, n_points, spread)),
+).servable()`,
+
+    'mini-calculator': `import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+a = pn.widgets.FloatInput(name="A", value=10, step=1)
+b = pn.widgets.FloatInput(name="B", value=3, step=1)
+op = pn.widgets.Select(name="Operator", options=["+", "-", "*", "/"], value="+")
+
+def compute(a, op, b):
+    ops = {"+": a + b, "-": a - b, "*": a * b, "/": a / b if b != 0 else float("inf")}
+    result = ops[op]
+    return pn.pane.Markdown(f"## {a} {op} {b} = **{result:.4g}**")
+
+pn.Column(
+    pn.Card(
+        pn.Row(a, op, b),
+        pn.bind(compute, a, op, b),
+        title="Mini Calculator",
+    ),
+).servable()`,
+
+    'color-palette': `import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+picker = pn.widgets.ColorPicker(name="Base Color", value="#3b82f6")
+steps = pn.widgets.RadioButtonGroup(name="Shades", options=["5", "7", "9"], value="7")
+
+def hex_to_rgb(h):
+    h = h.lstrip("#")
+    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+def generate_palette(color, n):
+    r, g, b = hex_to_rgb(color)
+    n = int(n)
+    swatches = ""
+    for i in range(n):
+        f = i / (n - 1) if n > 1 else 0.5
+        cr = int(255 + (r - 255) * f)
+        cg = int(255 + (g - 255) * f)
+        cb = int(255 + (b - 255) * f)
+        hx = f"#{cr:02x}{cg:02x}{cb:02x}"
+        text_col = "#fff" if (cr * 0.299 + cg * 0.587 + cb * 0.114) < 150 else "#000"
+        swatches += (
+            f'<div style="background:{hx};color:{text_col};padding:12px 16px;'
+            f'border-radius:6px;text-align:center;font-size:13px;font-family:monospace;">'
+            f'{hx}</div>'
+        )
+    return pn.pane.HTML(
+        f'<div style="display:grid;grid-template-columns:repeat({n},1fr);gap:6px;">{swatches}</div>'
+    )
+
+pn.Column(
+    "# Color Palette Generator",
+    pn.Row(picker, steps),
+    pn.bind(generate_palette, picker, steps),
+).servable()`,
+
+    'markdown-preview': `import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+SAMPLE = """# Hello Markdown
+
+This is a **live preview** editor.
+
+- Item one
+- Item two
+- Item three
+
+> Blockquotes work too!
+
+\\\`inline code\\\` and:
+
+\\\`\\\`\\\`python
+print("Hello, world!")
+\\\`\\\`\\\`
+"""
+
+editor = pn.widgets.TextAreaInput(name="Markdown Source", value=SAMPLE, height=350)
+
+pn.Row(
+    pn.Card(editor, title="Editor", width=450),
+    pn.Card(pn.bind(lambda md: pn.pane.Markdown(md), editor), title="Preview"),
+).servable()`,
+
+    'tabs-layout': `import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+def card(label, color):
+    return pn.pane.HTML(
+        f'<div style="background:{color};color:#fff;padding:20px;border-radius:8px;'
+        f'text-align:center;font-weight:600;">{label}</div>'
+    )
+
+column_tab = pn.Column(card("A", "#3b82f6"), card("B", "#ef4444"), card("C", "#22c55e"))
+row_tab = pn.Row(card("X", "#8b5cf6"), card("Y", "#f59e0b"), card("Z", "#06b6d4"))
+
+flexbox_tab = pn.FlexBox(
+    *(card(f"Item {i+1}", f"hsl({i*45}, 70%, 55%)") for i in range(6)),
+    flex_wrap="wrap", min_height=150,
+)
+
+grid_tab = pn.GridBox(
+    card("1", "#e11d48"), card("2", "#7c3aed"), card("3", "#0891b2"),
+    card("4", "#059669"), card("5", "#d97706"), card("6", "#dc2626"),
+    ncols=3,
+)
+
+pn.Column(
+    "# Layout Showcase",
+    pn.Tabs(
+        ("Column", column_tab),
+        ("Row", row_tab),
+        ("FlexBox", flexbox_tab),
+        ("GridBox", grid_tab),
+    ),
+).servable()`,
+
+    'unit-converter': `import panel as pn
+
+pn.extension(sizing_mode="stretch_width")
+
+CONVERSIONS = {
+    "Length": {"Meters": 1, "Kilometers": 0.001, "Miles": 0.000621371, "Feet": 3.28084, "Inches": 39.3701},
+    "Weight": {"Kilograms": 1, "Grams": 1000, "Pounds": 2.20462, "Ounces": 35.274},
+    "Temperature": {"Celsius": None, "Fahrenheit": None, "Kelvin": None},
+}
+
+category = pn.widgets.Select(name="Category", options=list(CONVERSIONS.keys()), value="Length")
+from_unit = pn.widgets.Select(name="From", options=list(CONVERSIONS["Length"].keys()))
+to_unit = pn.widgets.Select(name="To", options=list(CONVERSIONS["Length"].keys()), value="Feet")
+value_in = pn.widgets.FloatInput(name="Value", value=1.0, step=0.1)
+
+def update_units(event):
+    units = list(CONVERSIONS[category.value].keys())
+    from_unit.options = units
+    to_unit.options = units
+    from_unit.value = units[0]
+    to_unit.value = units[1] if len(units) > 1 else units[0]
+
+category.param.watch(update_units, "value")
+
+def convert(val, cat, fr, to):
+    if cat == "Temperature":
+        c = val if fr == "Celsius" else (val - 32) * 5 / 9 if fr == "Fahrenheit" else val - 273.15
+        out = c if to == "Celsius" else c * 9 / 5 + 32 if to == "Fahrenheit" else c + 273.15
+    else:
+        base = val / CONVERSIONS[cat][fr]
+        out = base * CONVERSIONS[cat][to]
+    return pn.pane.Markdown(f"### {val:.4g} {fr} = **{out:.4g} {to}**")
+
+pn.Column(
+    "# Unit Converter",
+    pn.Row(category, value_in),
+    pn.Row(from_unit, to_unit),
+    pn.bind(convert, value_in, category, from_unit, to_unit),
+).servable()`,
+
+    'data-explorer': `import panel as pn
+import pandas as pd
+import numpy as np
+
+pn.extension("tabulator", sizing_mode="stretch_width")
+
+np.random.seed(42)
+N = 50
+df = pd.DataFrame({
+    "Name": [f"Item-{i+1:03d}" for i in range(N)],
+    "Category": np.random.choice(["Alpha", "Beta", "Gamma", "Delta"], N),
+    "Value": np.round(np.random.uniform(10, 100, N), 2),
+    "Score": np.random.randint(1, 11, N),
+})
+
+cat_filter = pn.widgets.MultiChoice(name="Categories", options=sorted(df["Category"].unique().tolist()), value=[])
+range_filter = pn.widgets.RangeSlider(name="Value Range", start=10, end=100, value=(10, 100), step=1)
+
+def filtered_view(cats, vrange):
+    out = df.copy()
+    if cats:
+        out = out[out["Category"].isin(cats)]
+    out = out[(out["Value"] >= vrange[0]) & (out["Value"] <= vrange[1])]
+    stats = f"**{len(out)} rows** | Mean value: {out['Value'].mean():.1f} | Mean score: {out['Score'].mean():.1f}"
+    return pn.Column(
+        pn.pane.Markdown(stats),
+        pn.widgets.Tabulator(out, height=300, sizing_mode="stretch_width"),
+    )
+
+pn.Column(
+    "# Data Explorer",
+    pn.Row(cat_filter, range_filter),
+    pn.bind(filtered_view, cat_filter, range_filter),
+).servable()`,
+
+    'echart-viz': `import panel as pn
+
+pn.extension("echarts", sizing_mode="stretch_width")
+
+speed = pn.widgets.IntSlider(name="Speed", start=0, end=100, value=70)
+reliability = pn.widgets.IntSlider(name="Reliability", start=0, end=100, value=85)
+comfort = pn.widgets.IntSlider(name="Comfort", start=0, end=100, value=60)
+safety = pn.widgets.IntSlider(name="Safety", start=0, end=100, value=90)
+efficiency = pn.widgets.IntSlider(name="Efficiency", start=0, end=100, value=75)
+
+def radar_chart(sp, re, co, sa, ef):
+    return pn.pane.ECharts({
+        "radar": {"indicator": [
+            {"name": "Speed", "max": 100}, {"name": "Reliability", "max": 100},
+            {"name": "Comfort", "max": 100}, {"name": "Safety", "max": 100},
+            {"name": "Efficiency", "max": 100},
+        ]},
+        "series": [{"type": "radar", "data": [{"value": [sp, re, co, sa, ef], "name": "Score",
+            "areaStyle": {"opacity": 0.3}}]}],
+    }, height=400)
+
+pn.Column(
+    "# Radar Chart",
+    pn.Row(speed, reliability, comfort, safety, efficiency),
+    pn.bind(radar_chart, speed, reliability, comfort, safety, efficiency),
+).servable()`,
+
+    'stock-ticker': `import panel as pn
+import numpy as np
+from bokeh.plotting import figure
+from bokeh.models import NumeralTickFormatter
+from datetime import datetime, timedelta
+
+pn.extension(sizing_mode="stretch_width")
+
+ticker = pn.widgets.Select(name="Ticker", options=["ACME", "GLOBEX", "INITECH", "HOOLI"], value="ACME")
+
+def make_chart(symbol):
+    np.random.seed(hash(symbol) % 2**31)
+    days = 90
+    dates = [datetime(2025, 1, 1) + timedelta(days=i) for i in range(days)]
+    returns = np.random.randn(days) * 0.02
+    price = 100 * np.exp(np.cumsum(returns))
+    base = np.full(days, price.min() * 0.98)
+
+    p = figure(title=f"{symbol} — 90 Day Price", x_axis_type="datetime", height=350, tools="pan,wheel_zoom,reset")
+    p.varea(x=dates, y1=base, y2=price, fill_alpha=0.25, fill_color="#3b82f6")
+    p.line(dates, price, line_width=2, color="#3b82f6")
+    p.yaxis.formatter = NumeralTickFormatter(format="$0.00")
+    return p
+
+pn.Column(
+    "# Stock Ticker",
+    ticker,
+    pn.pane.Bokeh(pn.bind(make_chart, ticker)),
+).servable()`,
+  };
+
+  // ============================================================
+  // CSS variable definitions
+  // ============================================================
+  const FEATURED_VARS = [
+    { prop: '--pl-bg',               label: 'Background',       type: 'color', default: '#ffffff' },
+    { prop: '--pl-header-bg',        label: 'Header BG',        type: 'color', default: '#f5f5f5' },
+    { prop: '--pl-header-color',     label: 'Header Color',     type: 'color', default: '#333333' },
+    { prop: '--pl-btn-bg',           label: 'Button BG',        type: 'color', default: '#4caf50' },
+    { prop: '--pl-btn-color',        label: 'Button Color',     type: 'color', default: '#ffffff' },
+    { prop: '--pl-border',           label: 'Border Color',     type: 'color', default: '#e0e0e0' },
+    { prop: '--pl-radius',           label: 'Border Radius',    type: 'range', default: 6, min: 0, max: 24, unit: 'px' },
+    { prop: '--pl-editor-font-size', label: 'Editor Font Size', type: 'range', default: 14, min: 10, max: 24, unit: 'px' },
+  ];
+
+  const ADVANCED_VARS = [
+    { prop: '--pl-pill-bg',            label: 'Pill BG',           type: 'color', default: '#3b82f6' },
+    { prop: '--pl-pill-color',         label: 'Pill Color',        type: 'color', default: '#ffffff' },
+    { prop: '--pl-editor-bg',          label: 'Editor BG',         type: 'color', default: '#fafafa' },
+    { prop: '--pl-editor-color',       label: 'Editor Color',      type: 'color', default: '#1a1a2e' },
+    { prop: '--pl-output-bg',          label: 'Output BG',         type: 'color', default: '#ffffff' },
+    { prop: '--pl-status-color',       label: 'Status Color',      type: 'color', default: '#555555' },
+    { prop: '--pl-status-spinner',     label: 'Spinner Color',     type: 'color', default: '#1976d2' },
+    { prop: '--pl-error-color',        label: 'Error Color',       type: 'color', default: '#b71c1c' },
+    { prop: '--pl-error-bg',           label: 'Error BG',          type: 'color', default: '#ffebee' },
+    { prop: '--pl-handle-bg',          label: 'Handle BG',         type: 'color', default: '#e0e0e0' },
+    { prop: '--pl-handle-hover-bg',    label: 'Handle Hover BG',   type: 'color', default: '#3b82f6' },
+    { prop: '--pl-output-min-height',  label: 'Output Min Height', type: 'range', default: 100, min: 50, max: 500, unit: 'px' },
+    { prop: '--pl-editor-line-height', label: 'Editor Line Height',type: 'range', default: 1.6, min: 1.0, max: 2.4, step: 0.1, unit: '' },
+  ];
+
+  // ============================================================
+  // State
+  // ============================================================
+  const defaults = {
+    mode: 'playground',
+    theme: 'auto',
+    layout: 'horizontal',
+    codePosition: 'first',
+    label: 'Python',
+    height: '',
+    autoRun: true,
+    codeVisibility: 'visible',
+    example: 'slider',
+    cssOverrides: {},  // prop -> value
+  };
+
+  let state = JSON.parse(JSON.stringify(defaults));
+
+  let el = document.getElementById('explorer-target');
+
+  // ============================================================
+  // Build CSS variable controls
+  // ============================================================
+  function buildCssControls(vars, container) {
+    vars.forEach(v => {
+      const row = document.createElement('div');
+      row.className = 'css-var-row';
+      row.dataset.prop = v.prop;
+
+      const codeEl = document.createElement('code');
+      codeEl.textContent = v.label;
+      codeEl.title = v.prop;
+      row.appendChild(codeEl);
+
+      if (v.type === 'color') {
+        const input = document.createElement('input');
+        input.type = 'color';
+        input.value = v.default;
+        input.dataset.default = v.default;
+        input.dataset.prop = v.prop;
+        input.addEventListener('input', () => {
+          state.cssOverrides[v.prop] = input.value;
+          applyState();
+        });
+        row.appendChild(input);
+      } else if (v.type === 'range') {
+        const input = document.createElement('input');
+        input.type = 'range';
+        input.min = v.min;
+        input.max = v.max;
+        input.step = v.step || 1;
+        input.value = v.default;
+        input.dataset.default = v.default;
+        input.dataset.prop = v.prop;
+        input.dataset.unit = v.unit;
+
+        const valSpan = document.createElement('span');
+        valSpan.className = 'range-val';
+        valSpan.textContent = v.default + (v.unit || '');
+
+        input.addEventListener('input', () => {
+          valSpan.textContent = input.value + (v.unit || '');
+          state.cssOverrides[v.prop] = input.value + (v.unit || '');
+          applyState();
+        });
+
+        row.appendChild(input);
+        row.appendChild(valSpan);
+      }
+
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'clear-btn';
+      clearBtn.title = 'Reset to default';
+      clearBtn.innerHTML = '&times;';
+      clearBtn.addEventListener('click', () => {
+        delete state.cssOverrides[v.prop];
+        const input = row.querySelector('input');
+        input.value = v.default;
+        const valSpan = row.querySelector('.range-val');
+        if (valSpan) valSpan.textContent = v.default + (v.unit || '');
+        applyState();
+      });
+      row.appendChild(clearBtn);
+
+      container.appendChild(row);
+    });
+  }
+
+  buildCssControls(FEATURED_VARS, document.getElementById('css-featured'));
+  buildCssControls(ADVANCED_VARS, document.getElementById('css-advanced'));
+
+  // ============================================================
+  // Control wiring
+  // ============================================================
+
+  // Radio groups
+  function wireRadio(name, stateKey) {
+    document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+      input.addEventListener('change', () => {
+        state[stateKey] = input.value;
+        updateControlStates();
+        applyState();
+      });
+    });
+  }
+  wireRadio('mode', 'mode');
+  wireRadio('theme', 'theme');
+  wireRadio('layout', 'layout');
+  wireRadio('codepos', 'codePosition');
+
+  // Label — commit on Enter or blur, not every keystroke
+  function wireTextCommit(id, onCommit) {
+    const input = document.getElementById(id);
+    input.addEventListener('change', onCommit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    });
+  }
+  wireTextCommit('ctrl-label', (e) => {
+    state.label = e.target.value || 'Python';
+    applyState();
+  });
+
+  // Height — commit on Enter or blur, not every keystroke
+  wireTextCommit('ctrl-height', (e) => {
+    state.height = e.target.value;
+    applyState();
+  });
+
+  // Auto-run
+  document.getElementById('ctrl-autorun').addEventListener('change', (e) => {
+    state.autoRun = e.target.checked;
+    applyState();
+  });
+
+  // Code visibility
+  document.getElementById('ctrl-codevis').addEventListener('change', (e) => {
+    state.codeVisibility = e.target.value;
+    applyState();
+  });
+
+  // Example selector
+  document.getElementById('ctrl-example').addEventListener('change', (e) => {
+    state.example = e.target.value;
+    applyState(true);
+  });
+
+  // Reset All
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    state = JSON.parse(JSON.stringify(defaults));
+    syncControlsFromState();
+    applyState(true);
+  });
+
+  // Copy button
+  document.getElementById('btn-copy').addEventListener('click', () => {
+    const code = document.getElementById('generated-output').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.getElementById('btn-copy');
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 1500);
+    });
+  });
+
+  // ============================================================
+  // Enable/disable controls based on mode
+  // ============================================================
+  function updateControlStates() {
+    const mode = state.mode;
+
+    // Layout applies to editor and playground
+    document.querySelectorAll('#ctrl-layout label').forEach(label => {
+      if (mode === 'app') {
+        label.classList.add('disabled');
+      } else {
+        label.classList.remove('disabled');
+      }
+    });
+
+    // Code position disabled in app mode (no code visible)
+    document.querySelectorAll('#ctrl-codepos label').forEach(label => {
+      if (mode === 'app') {
+        label.classList.add('disabled');
+      } else {
+        label.classList.remove('disabled');
+      }
+    });
+
+    // Code visibility disabled in app mode (no editor)
+    const codevisSelect = document.getElementById('ctrl-codevis');
+    codevisSelect.disabled = (mode === 'app');
+  }
+
+  // ============================================================
+  // Apply state to <panel-live> element
+  // ============================================================
+  let _applyTimer = null;
+
+  function applyState(changeCode) {
+    // Debounce for fast interactions
+    clearTimeout(_applyTimer);
+    _applyTimer = setTimeout(() => _applyStateNow(changeCode), 50);
+  }
+
+  function _applyStateNow(changeCode) {
+    // Save current code before destroying the element
+    let savedCode;
+    try { savedCode = el.getCode(); } catch (e) { savedCode = null; }
+    if (!savedCode || changeCode) {
+      savedCode = EXAMPLES[state.example] || EXAMPLES.slider;
+    }
+
+    // Replace the element entirely instead of setting attributes one-by-one.
+    // Each setAttribute on a live element triggers attributeChangedCallback →
+    // _render(). When auto-run flips to true mid-batch, _initAndRun starts an
+    // async execution referencing an output element that a subsequent _render()
+    // destroys, causing a JsNull/getElementById crash in Pyodide.
+    const parent = el.parentElement;
+    el.remove();
+
+    const newEl = document.createElement('panel-live');
+    newEl.id = 'explorer-target';
+    newEl.setAttribute('mode', state.mode);
+    newEl.setAttribute('theme', state.theme);
+    newEl.setAttribute('layout', state.layout);
+    newEl.setAttribute('code-position', state.codePosition);
+    newEl.setAttribute('label', state.label);
+    newEl.setAttribute('auto-run', state.autoRun ? 'true' : 'false');
+    newEl.setAttribute('code-visibility', state.codeVisibility);
+    if (state.height) newEl.setAttribute('height', state.height);
+
+    // Set code as text content (read by _extractCode in connectedCallback)
+    newEl.textContent = savedCode;
+
+    // Apply CSS overrides before insertion so the first render uses them
+    Object.entries(state.cssOverrides).forEach(([prop, value]) => {
+      newEl.style.setProperty(prop, value);
+    });
+
+    parent.appendChild(newEl);
+    el = newEl;
+
+    updateGeneratedHtml();
+  }
+
+  // ============================================================
+  // Sync UI controls from state (for Reset All)
+  // ============================================================
+  function syncControlsFromState() {
+    // Radios
+    const modeRadio = document.querySelector(`input[name="mode"][value="${state.mode}"]`);
+    if (modeRadio) modeRadio.checked = true;
+    const themeRadio = document.querySelector(`input[name="theme"][value="${state.theme}"]`);
+    if (themeRadio) themeRadio.checked = true;
+    const layoutRadio = document.querySelector(`input[name="layout"][value="${state.layout}"]`);
+    if (layoutRadio) layoutRadio.checked = true;
+    const codePosRadio = document.querySelector(`input[name="codepos"][value="${state.codePosition}"]`);
+    if (codePosRadio) codePosRadio.checked = true;
+
+    // Inputs
+    document.getElementById('ctrl-label').value = state.label;
+    document.getElementById('ctrl-height').value = state.height;
+    document.getElementById('ctrl-autorun').checked = state.autoRun;
+    document.getElementById('ctrl-codevis').value = state.codeVisibility;
+    document.getElementById('ctrl-example').value = state.example;
+
+    // CSS var controls — reset to defaults
+    [...FEATURED_VARS, ...ADVANCED_VARS].forEach(v => {
+      const input = document.querySelector(`.css-var-row[data-prop="${v.prop}"] input`);
+      if (input) {
+        input.value = v.default;
+        const valSpan = input.parentElement.querySelector('.range-val');
+        if (valSpan) valSpan.textContent = v.default + (v.unit || '');
+      }
+    });
+
+    updateControlStates();
+  }
+
+  // ============================================================
+  // Generated HTML output
+  // ============================================================
+  function updateGeneratedHtml() {
+    const attrDefaults = {
+      mode: 'app',
+      theme: 'auto',
+      layout: 'horizontal',
+      label: 'Python',
+      'auto-run': 'true',
+      'code-visibility': 'visible',
+    };
+
+    const attrs = [];
+
+    // Only include non-default attributes
+    if (state.mode !== attrDefaults.mode) {
+      attrs.push(`mode="${state.mode}"`);
+    }
+    if (state.theme !== attrDefaults.theme) {
+      attrs.push(`theme="${state.theme}"`);
+    }
+    const isNonDefaultLayout = (state.mode === 'playground' && state.layout !== 'horizontal')
+                            || (state.mode === 'editor' && state.layout !== 'vertical');
+    if (isNonDefaultLayout) {
+      attrs.push(`layout="${state.layout}"`);
+    }
+    if (state.mode !== 'app' && state.codePosition !== 'first') {
+      attrs.push(`code-position="${state.codePosition}"`);
+    }
+    if (state.label !== attrDefaults.label) {
+      attrs.push(`label="${escHtml(state.label)}"`);
+    }
+    if (state.height) {
+      attrs.push(`height="${escHtml(state.height)}"`);
+    }
+    if (!state.autoRun) {
+      attrs.push(`auto-run="false"`);
+    }
+    if (state.mode !== 'app' && state.codeVisibility !== attrDefaults['code-visibility']) {
+      attrs.push(`code-visibility="${state.codeVisibility}"`);
+    }
+
+    const attrStr = attrs.length ? ' ' + attrs.join(' ') : '';
+    const code = EXAMPLES[state.example] || EXAMPLES.slider;
+    const indent = '  ';
+
+    // Build CSS overrides block if any
+    let cssBlock = '';
+    const overrideEntries = Object.entries(state.cssOverrides);
+    if (overrideEntries.length > 0) {
+      const rules = overrideEntries.map(([p, v]) => `  ${p}: ${v};`).join('\n');
+      cssBlock = `<style>\n  panel-live {\n${rules}\n  }\n</style>\n\n`;
+    }
+
+    const html =
+      `<!-- Load panel-live -->\n` +
+      `<link rel="stylesheet" href="https://cdn.holoviz.org/panel-live/latest/panel-live.css">\n` +
+      `<script src="https://cdn.holoviz.org/panel-live/latest/panel-live.js"><\/script>\n\n` +
+      cssBlock +
+      `<panel-live${attrStr}>\n` +
+      code.split('\n').map(line => indent + line).join('\n') + '\n' +
+      `</panel-live>`;
+
+    document.getElementById('generated-output').textContent = html;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ============================================================
+  // Draggable divider between preview and generated HTML
+  // ============================================================
+  (function initContentDivider() {
+    const handle = document.getElementById('content-divider');
+    const previewArea = document.querySelector('.preview-area');
+    const generatedSection = document.querySelector('.generated-section');
+    const contentArea = document.querySelector('.content-area');
+    let dragging = false;
+    let startY = 0;
+    let startGenHeight = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      dragging = true;
+      handle.classList.add('dragging');
+      startY = e.clientY;
+      startGenHeight = generatedSection.offsetHeight;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(e) {
+      if (!dragging) return;
+      const delta = startY - e.clientY;
+      const totalHeight = contentArea.offsetHeight;
+      const handleHeight = handle.offsetHeight;
+      const minGen = 60;
+      const minPreview = 150;
+      const maxGen = totalHeight - handleHeight - minPreview;
+      const newGenHeight = Math.max(minGen, Math.min(maxGen, startGenHeight + delta));
+      generatedSection.style.height = newGenHeight + 'px';
+      // Let preview-area keep flex:1 so it fills the remainder
+    }
+
+    function onMouseUp() {
+      dragging = false;
+      handle.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+  })();
+
+  // ============================================================
+  // Initial setup
+  // ============================================================
+  updateControlStates();
+  updateGeneratedHtml();
+
+})();
+</script>
+
+</body>
+</html>

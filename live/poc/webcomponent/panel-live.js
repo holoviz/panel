@@ -1,7 +1,10 @@
 /**
- * panel-live.js — Web Component POC for Panel Live
+ * panel-live.js — Web Component for Panel Live
  *
- * Defines <panel-live>, <panel-file>, and <panel-requirements> custom elements.
+ * Defines <panel-live>, <panel-file>, <panel-requirements>, and <panel-example>
+ * custom elements plus the PanelLive imperative JS API.
+ *
+ * See docs/api-design.md for the full API specification.
  *
  * Usage:
  *   <script src="panel-live.js"></script>
@@ -10,12 +13,12 @@
  *     pn.panel("Hello").servable()
  *   </panel-live>
  *
- *   <panel-live mode="editor" theme="light">
+ *   <panel-live mode="editor" theme="dark">
  *     import panel as pn
  *     pn.widgets.FloatSlider(name="X").servable()
  *   </panel-live>
  *
- *   <panel-live mode="playground" layout="horizontal">
+ *   <panel-live mode="playground" layout="horizontal" theme="auto">
  *     ...
  *   </panel-live>
  */
@@ -35,27 +38,36 @@ if (navigator.serviceWorker && navigator.serviceWorker.controller) {
 }
 
 // ============================================================
-// Configuration
+// Configuration (merged: built-in defaults < window global < configure())
 // ============================================================
 
-const PANEL_LIVE_CONFIG = {
+const _defaults = {
   pyodideVersion: 'v0.28.2',
   panelVersion: '1.8.7',
   bokehVersion: '3.8.2',
+  pyodideCdn: 'https://cdn.jsdelivr.net/pyodide/',
+  panelCdn: 'https://cdn.holoviz.org/panel/',
+  bokehCdn: 'https://cdn.bokeh.org/bokeh/release/',
 };
 
+const _config = Object.assign(
+  {},
+  _defaults,
+  typeof window !== 'undefined' && window.PANEL_LIVE_CONFIG ? window.PANEL_LIVE_CONFIG : {}
+);
+
 function cdnUrls() {
-  const { pyodideVersion, panelVersion, bokehVersion } = PANEL_LIVE_CONFIG;
+  const { pyodideVersion, panelVersion, bokehVersion, pyodideCdn, panelCdn, bokehCdn } = _config;
   return {
-    pyodide: `https://cdn.jsdelivr.net/pyodide/${pyodideVersion}/full/pyodide.js`,
+    pyodide: `${pyodideCdn}${pyodideVersion}/full/pyodide.js`,
     bokehJs: [
-      `https://cdn.bokeh.org/bokeh/release/bokeh-${bokehVersion}.js`,
-      `https://cdn.bokeh.org/bokeh/release/bokeh-widgets-${bokehVersion}.min.js`,
-      `https://cdn.bokeh.org/bokeh/release/bokeh-tables-${bokehVersion}.min.js`,
+      `${bokehCdn}bokeh-${bokehVersion}.js`,
+      `${bokehCdn}bokeh-widgets-${bokehVersion}.min.js`,
+      `${bokehCdn}bokeh-tables-${bokehVersion}.min.js`,
     ],
     panelJs: `https://cdn.jsdelivr.net/npm/@holoviz/panel@${panelVersion}/dist/panel.min.js`,
-    bokehWhl: `https://cdn.holoviz.org/panel/${panelVersion}/dist/wheels/bokeh-${bokehVersion}-py3-none-any.whl`,
-    panelWhl: `https://cdn.holoviz.org/panel/${panelVersion}/dist/wheels/panel-${panelVersion}-py3-none-any.whl`,
+    bokehWhl: `${panelCdn}${panelVersion}/dist/wheels/bokeh-${bokehVersion}-py3-none-any.whl`,
+    panelWhl: `${panelCdn}${panelVersion}/dist/wheels/panel-${panelVersion}-py3-none-any.whl`,
   };
 }
 
@@ -117,8 +129,8 @@ function loadCodeMirror() {
   return _cmLoadPromise;
 }
 
-function createCMEditor(textarea, theme, onRun) {
-  const cmTheme = theme === 'light' ? 'default' : 'dracula';
+function createCMEditor(textarea, resolvedTheme, onRun) {
+  const cmTheme = resolvedTheme === 'light' ? 'default' : 'dracula';
   const cm = CodeMirror.fromTextArea(textarea, {
     mode: 'python',
     theme: cmTheme,
@@ -380,8 +392,9 @@ async function runPanelCode(targetEl, code, statusCallback) {
     }
   } catch (error) {
     console.error('[panel-live] runPanelCode error:', error);
-    targetEl.innerHTML = '<pre style="color:#b71c1c;background:#ffebee;padding:16px;border-radius:4px;white-space:pre-wrap;font-size:13px;margin:0;">' +
+    targetEl.innerHTML = '<pre style="color:var(--pl-error-color,#b71c1c);background:var(--pl-error-bg,#ffebee);padding:16px;border-radius:4px;white-space:pre-wrap;font-size:13px;margin:0;">' +
       (error.message || String(error)).replace(/</g, '&lt;') + '</pre>';
+    throw error; // re-throw so callers can handle
   }
 }
 
@@ -393,13 +406,36 @@ let _idCounter = 0;
 function uid() { return 'pl-' + (++_idCounter); }
 
 // ============================================================
-// <panel-file> and <panel-requirements> (data-only elements)
+// Theme resolution
+// ============================================================
+
+const _darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+
+function resolveTheme(themeAttr) {
+  if (themeAttr === 'light' || themeAttr === 'dark') return themeAttr;
+  // "auto" or missing — detect from system
+  return _darkMQ.matches ? 'dark' : 'light';
+}
+
+// ============================================================
+// <panel-file>, <panel-requirements>, <panel-example>
 // ============================================================
 
 class PanelFile extends HTMLElement {
   get name() { return this.getAttribute('name') || 'app.py'; }
   get entrypoint() { return this.hasAttribute('entrypoint'); }
+  get src() { return this.getAttribute('src') || null; }
   get code() { return this.textContent; }
+
+  /** Fetch content from src if set, otherwise return inline text */
+  async resolveCode() {
+    if (this.src) {
+      const resp = await fetch(this.src);
+      if (!resp.ok) throw new Error(`Failed to fetch ${this.src}: ${resp.status}`);
+      return await resp.text();
+    }
+    return this.textContent;
+  }
 }
 
 class PanelRequirements extends HTMLElement {
@@ -408,7 +444,18 @@ class PanelRequirements extends HTMLElement {
 
 class PanelExample extends HTMLElement {
   get label() { return this.getAttribute('name') || 'Example'; }
+  get src() { return this.getAttribute('src') || null; }
   get code() { return this.textContent; }
+
+  /** Fetch content from src if set, otherwise return inline text */
+  async resolveCode() {
+    if (this.src) {
+      const resp = await fetch(this.src);
+      if (!resp.ok) throw new Error(`Failed to fetch ${this.src}: ${resp.status}`);
+      return await resp.text();
+    }
+    return this.textContent.trim();
+  }
 }
 
 customElements.define('panel-file', PanelFile);
@@ -448,278 +495,10 @@ function setCodeInHash(code) {
 // <panel-live> — Main Custom Element
 // ============================================================
 
-let _stylesInjected = false;
-
-const PANEL_LIVE_STYLES = `
-  panel-live {
-    display: block;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-  panel-live:not(:defined) { display: none; }
-
-  .pl-container {
-    border: 1px solid var(--pl-border, #e0e0e0);
-    border-radius: var(--pl-radius, 6px);
-    overflow: hidden;
-    background: var(--pl-bg, #fff);
-  }
-
-  /* Status bar */
-  .pl-status {
-    padding: 12px 16px;
-    font-size: 14px;
-    color: var(--pl-status-color, #555);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .pl-status.hidden { display: none; }
-  .pl-status.error { color: #b71c1c; background: #ffebee; }
-  .pl-spinner {
-    width: 16px; height: 16px;
-    border: 2px solid #ddd;
-    border-top-color: #1976d2;
-    border-radius: 50%;
-    animation: pl-spin 0.7s linear infinite;
-  }
-  @keyframes pl-spin { to { transform: rotate(360deg); } }
-
-  /* Output area */
-  .pl-output {
-    min-height: 100px;
-    padding: 0;
-  }
-
-  /* Editor header */
-  .pl-editor-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    background: var(--pl-header-bg, #1e1e2e);
-    color: var(--pl-header-color, #cdd6f4);
-    font-size: 13px;
-  }
-  .pl-editor-header.light {
-    background: var(--pl-header-bg, #f5f5f5);
-    color: var(--pl-header-color, #333);
-  }
-  .pl-lang {
-    background: #3b82f6;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-  .pl-title { flex: 1; font-weight: 500; }
-  .pl-shortcut { opacity: 0.5; font-size: 11px; }
-  .pl-btn {
-    background: var(--pl-btn-bg, #a6e3a1);
-    color: var(--pl-btn-color, #1e1e2e);
-    border: none;
-    padding: 4px 14px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 13px;
-  }
-  .pl-btn:hover { filter: brightness(1.1); }
-  .pl-btn.secondary {
-    background: transparent;
-    color: var(--pl-header-color, #cdd6f4);
-    border: 1px solid currentColor;
-    font-weight: 400;
-    opacity: 0.7;
-  }
-  .pl-btn.secondary:hover { opacity: 1; }
-
-  /* Editor textarea */
-  .pl-editor-area {
-    width: 100%;
-    min-height: 180px;
-    max-height: 500px;
-    border: none;
-    resize: vertical;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-    font-size: 14px;
-    line-height: 1.6;
-    padding: 12px 16px;
-    tab-size: 4;
-    outline: none;
-    box-sizing: border-box;
-  }
-  .pl-editor-area.dark {
-    background: var(--pl-editor-bg, #1e1e2e);
-    color: var(--pl-editor-color, #cdd6f4);
-  }
-  .pl-editor-area.light {
-    background: var(--pl-editor-bg, #fafafa);
-    color: var(--pl-editor-color, #1a1a2e);
-  }
-
-  /* Playground layout */
-  .pl-playground {
-    display: flex;
-  }
-  .pl-playground.vertical {
-    flex-direction: column;
-  }
-  .pl-playground > .pl-editor-pane {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-  .pl-playground > .pl-preview-pane {
-    flex: 1;
-    min-width: 0;
-    border-left: 1px solid var(--pl-border, #e0e0e0);
-  }
-  .pl-playground.vertical > .pl-preview-pane {
-    border-left: none;
-    border-top: 1px solid var(--pl-border, #e0e0e0);
-  }
-  .pl-playground > .pl-editor-pane .pl-editor-area {
-    flex: 1;
-    resize: none;
-    min-height: 300px;
-    max-height: none;
-  }
-
-  /* Editor mode (stacked) */
-  .pl-editor-stacked .pl-output {
-    border-top: 1px solid var(--pl-border, #e0e0e0);
-  }
-
-  /* Fullscreen playground */
-  panel-live[fullscreen] {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 10000;
-    margin: 0;
-    border-radius: 0;
-  }
-  panel-live[fullscreen] .pl-container {
-    height: 100vh;
-    border: none;
-    border-radius: 0;
-    display: flex;
-    flex-direction: column;
-  }
-  panel-live[fullscreen] .pl-playground {
-    flex: 1;
-    min-height: 0;
-  }
-  panel-live[fullscreen] .pl-playground > .pl-editor-pane {
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  panel-live[fullscreen] .pl-playground > .pl-editor-pane .pl-editor-header {
-    flex-shrink: 0;
-  }
-  panel-live[fullscreen] .pl-playground > .pl-editor-pane .pl-editor-area {
-    min-height: 0;
-    flex: 1;
-  }
-  panel-live[fullscreen] .pl-playground > .pl-preview-pane {
-    overflow: auto;
-  }
-
-  /* Vertical resize handle on playground container */
-  .pl-container.pl-resizable {
-    resize: vertical;
-    overflow: hidden;
-    min-height: 300px;
-  }
-  panel-live[fullscreen] .pl-container.pl-resizable {
-    resize: none;
-  }
-
-  /* Maximize button */
-  .pl-btn.maximize-btn { font-size: 15px; line-height: 1; padding: 4px 8px; }
-
-  /* CodeMirror overrides */
-  .pl-container .CodeMirror {
-    height: auto;
-    min-height: 180px;
-    max-height: 500px;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 14px;
-    line-height: 1.6;
-    border: none;
-  }
-  .pl-playground > .pl-editor-pane .CodeMirror {
-    height: 100%;
-    max-height: none;
-    min-height: 300px;
-  }
-  panel-live[fullscreen] .pl-playground > .pl-editor-pane .CodeMirror {
-    min-height: 0;
-  }
-  /* Hide the raw textarea when CodeMirror is active */
-  .pl-editor-area.pl-cm-active { display: none; }
-
-  /* Examples dropdown */
-  .pl-examples-select {
-    background: transparent;
-    color: inherit;
-    border: 1px solid currentColor;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    opacity: 0.7;
-    max-width: 180px;
-    outline: none;
-  }
-  .pl-examples-select:hover { opacity: 1; }
-  .pl-examples-select option { color: #1a1a2e; background: #fff; }
-
-  /* Share button feedback */
-  .pl-btn.share-btn { position: relative; }
-  .pl-toast {
-    position: absolute;
-    bottom: calc(100% + 6px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: #fff;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 400;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-  .pl-toast.show { opacity: 1; }
-
-  /* Draggable split handle */
-  .pl-drag-handle {
-    width: 6px;
-    cursor: col-resize;
-    background: var(--pl-border, #e0e0e0);
-    flex-shrink: 0;
-    transition: background 0.15s;
-  }
-  .pl-drag-handle:hover, .pl-drag-handle.dragging {
-    background: #3b82f6;
-  }
-  .pl-playground.vertical > .pl-drag-handle {
-    width: auto;
-    height: 6px;
-    cursor: row-resize;
-  }
-`;
-
 class PanelLive extends HTMLElement {
 
   static get observedAttributes() {
-    return ['mode', 'theme', 'layout', 'src'];
+    return ['mode', 'theme', 'layout', 'src', 'height', 'auto-run', 'label', 'code-visibility', 'code-position'];
   }
 
   constructor() {
@@ -729,17 +508,26 @@ class PanelLive extends HTMLElement {
     // Shadow DOM would hide the output containers from Bokeh's renderer.
     this._rendered = false;
     this._running = false;
+    this._status = 'idle';
+    this._cm = null;
+    this._textarea = null;
+    this._outputEl = null;
+    this._statusEl = null;
+    this._resolvedTheme = null;
+    this._themeListener = null;
   }
 
   connectedCallback() {
     if (!this._rendered) {
       console.log('[panel-live] <panel-live> connected, mode=%s theme=%s', this.mode, this.theme);
-      // Defer: connectedCallback fires when the opening tag is parsed,
+      // Resolve theme immediately and set data attribute for CSS
+      this._setupTheme();
+      // Defer render: connectedCallback fires when the opening tag is parsed,
       // BEFORE the browser has parsed children. We need children to
       // exist so _extractCode() can read the text content.
-      requestAnimationFrame(() => {
-        this._extractCode();
-        this._injectStyles();
+      requestAnimationFrame(async () => {
+        await this._extractCode();
+        this._hideSourceNodes();
         this._render();
         this._rendered = true;
       });
@@ -747,42 +535,110 @@ class PanelLive extends HTMLElement {
   }
 
   disconnectedCallback() {
-    // Future: terminate worker, cleanup Bokeh docs
+    // Remove theme media query listener
+    if (this._themeListener) {
+      _darkMQ.removeEventListener('change', this._themeListener);
+      this._themeListener = null;
+    }
   }
 
   attributeChangedCallback(name, oldVal, newVal) {
     if (oldVal === newVal || !this._rendered) return;
+    if (name === 'theme') {
+      this._setupTheme();
+    }
     this._render();
   }
 
-  // --- Properties ---
+  // --- Properties (matching API spec attributes) ---
 
   get mode() { return this.getAttribute('mode') || 'app'; }
   set mode(v) { this.setAttribute('mode', v); }
 
-  get theme() { return this.getAttribute('theme') || 'dark'; }
+  get theme() { return this.getAttribute('theme') || 'auto'; }
   set theme(v) { this.setAttribute('theme', v); }
 
-  get layout() { return this.getAttribute('layout') || 'horizontal'; }
+  get layout() {
+    const v = this.getAttribute('layout');
+    if (v) return v;
+    return this.mode === 'editor' ? 'vertical' : 'horizontal';
+  }
   set layout(v) { this.setAttribute('layout', v); }
+
+  get label() { return this.getAttribute('label') || 'Python'; }
+  set label(v) { this.setAttribute('label', v); }
+
+  get codeVisibility() { return this.getAttribute('code-visibility') || 'visible'; }
+  set codeVisibility(v) { this.setAttribute('code-visibility', v); }
+
+  get codePosition() { return this.getAttribute('code-position') || 'first'; }
+  set codePosition(v) { this.setAttribute('code-position', v); }
+
+  get autoRun() { return !this.hasAttribute('auto-run') || this.getAttribute('auto-run') !== 'false'; }
+  set autoRun(v) { this.setAttribute('auto-run', v ? 'true' : 'false'); }
+
+  get status() { return this._status; }
+
+  // --- Theme resolution ---
+
+  _setupTheme() {
+    // Remove old listener
+    if (this._themeListener) {
+      _darkMQ.removeEventListener('change', this._themeListener);
+      this._themeListener = null;
+    }
+    this._resolvedTheme = resolveTheme(this.theme);
+    this.setAttribute('data-resolved-theme', this._resolvedTheme);
+
+    // If auto, listen for system theme changes
+    if (this.theme === 'auto') {
+      this._themeListener = (e) => {
+        this._resolvedTheme = e.matches ? 'dark' : 'light';
+        this.setAttribute('data-resolved-theme', this._resolvedTheme);
+      };
+      _darkMQ.addEventListener('change', this._themeListener);
+    }
+  }
+
+  // --- Event helpers ---
+
+  _emit(name, detail) {
+    this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
+  }
+
+  _setStatus(status, message) {
+    this._status = status;
+    this._emit('pl-status', { status, message });
+  }
+
+  // --- Hide source text nodes (after extraction) ---
+
+  _hideSourceNodes() {
+    // Clear raw text nodes so they don't render visibly in Light DOM.
+    // Child custom elements (<panel-example> etc.) are hidden via CSS.
+    for (const node of Array.from(this.childNodes)) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        node.textContent = '';
+      }
+    }
+  }
 
   // --- Code extraction ---
 
-  _extractCode() {
+  async _extractCode() {
     // Check for <panel-file> children
     const files = this.querySelectorAll('panel-file');
     if (files.length > 0) {
       this._files = {};
       let entrypoint = null;
       for (const f of files) {
-        this._files[f.name] = f.code;
+        this._files[f.name] = await f.resolveCode();
         if (f.entrypoint || !entrypoint) entrypoint = f.name;
       }
       this._entrypoint = entrypoint;
       this._code = this._files[this._entrypoint];
     } else {
       // Direct text content (ignoring child elements)
-      // We need to get text that's not inside child elements
       let code = '';
       for (const node of this.childNodes) {
         if (node.nodeType === Node.TEXT_NODE) {
@@ -798,7 +654,7 @@ class PanelLive extends HTMLElement {
     if (examples.length > 0) {
       this._examples = [];
       for (const ex of examples) {
-        this._examples.push({ label: ex.label, code: ex.code.trim() });
+        this._examples.push({ label: ex.label, code: await ex.resolveCode() });
       }
       // If no direct text content, use first example as default
       if (!this._code) {
@@ -806,6 +662,23 @@ class PanelLive extends HTMLElement {
       }
     } else {
       this._examples = null;
+    }
+
+    // Check for examples-src attribute (JSON URL)
+    const examplesSrc = this.getAttribute('examples-src');
+    if (examplesSrc && !this._examples) {
+      try {
+        const resp = await fetch(examplesSrc);
+        if (resp.ok) {
+          const data = await resp.json();
+          this._examples = Array.isArray(data) ? data : [];
+          if (!this._code && this._examples.length > 0) {
+            this._code = this._examples[0].code || '';
+          }
+        }
+      } catch (e) {
+        console.warn('[panel-live] Failed to load examples from', examplesSrc, e);
+      }
     }
 
     // Check for <panel-requirements>
@@ -829,38 +702,34 @@ class PanelLive extends HTMLElement {
       this._srcUrl || 'none');
   }
 
-  // --- Styles (injected once into document head) ---
-
-  _injectStyles() {
-    if (_stylesInjected) return;
-    const style = document.createElement('style');
-    style.textContent = PANEL_LIVE_STYLES;
-    document.head.appendChild(style);
-    _stylesInjected = true;
-  }
 
   // --- Rendering ---
 
   _render() {
     const mode = this.mode;
-    const theme = this.theme;
     const layout = this.layout;
+    const rt = this._resolvedTheme || resolveTheme(this.theme);
 
     // Clear previous render (light DOM children that we added)
-    while (this.firstChild) this.removeChild(this.firstChild);
+    // Preserve original source children by checking for our container
+    const container = this.querySelector('.pl-container');
+    if (container) container.remove();
 
     if (mode === 'app') {
-      this._renderAppMode(theme);
+      this._renderAppMode(rt);
     } else if (mode === 'editor') {
-      this._renderEditorMode(theme);
+      this._renderEditorMode(rt, layout);
     } else if (mode === 'playground') {
-      this._renderPlaygroundMode(theme, layout);
+      this._renderPlaygroundMode(rt, layout);
     }
   }
 
-  _renderAppMode(theme) {
+  _renderAppMode(rt) {
     const container = document.createElement('div');
     container.className = 'pl-container';
+    const h = this.getAttribute('height');
+    if (h) container.style.height = h;
+
     container.innerHTML = `
       <div class="pl-status"><span class="pl-spinner"></span> Initializing...</div>
       <div class="pl-output" id="${uid()}"></div>
@@ -869,25 +738,185 @@ class PanelLive extends HTMLElement {
 
     const statusEl = container.querySelector('.pl-status');
     const outputEl = container.querySelector('.pl-output');
+    this._outputEl = outputEl;
+    this._statusEl = statusEl;
 
-    this._initAndRun(outputEl, this._code, msg => { statusEl.textContent = msg; }, statusEl);
+    if (this.autoRun) {
+      this._initAndRun(outputEl, this._code, msg => { statusEl.textContent = msg; }, statusEl);
+    } else {
+      statusEl.textContent = 'Ready (auto-run disabled)';
+    }
   }
 
-  _renderEditorMode(theme) {
-    const themeClass = theme === 'light' ? 'light' : 'dark';
+  _renderEditorMode(rt, layout) {
+    if (layout === 'horizontal') {
+      return this._renderEditorHorizontal(rt);
+    }
     const outputId = uid();
+    const pillLabel = this.label;
+    const codeVis = this.codeVisibility;
     const container = document.createElement('div');
-    container.className = 'pl-container pl-editor-stacked';
-    container.innerHTML = `
-      <div class="pl-editor-header ${themeClass}">
-        <span class="pl-lang">Panel</span>
-        <span class="pl-title">Panel Live</span>
+    container.className = 'pl-container pl-editor-stacked' + (this.codePosition === 'last' ? ' code-last' : '');
+    const h = this.getAttribute('height');
+    if (h) container.style.height = h;
+
+    // Build code section (header + textarea)
+    let codeHtml = `
+      <div class="pl-editor-header">
+        <span class="pl-lang">${this._escapeHtml(pillLabel)}</span>
+        <span class="pl-title"></span>
         <span class="pl-shortcut">Ctrl+Enter to run</span>
         <button class="pl-btn run-btn">Run</button>
       </div>
-      <textarea class="pl-editor-area ${themeClass}" spellcheck="false">${this._escapeHtml(this._code)}</textarea>
-      <div class="pl-status"><span class="pl-spinner"></span> Initializing...</div>
-      <div class="pl-output" id="${outputId}"></div>
+      <textarea class="pl-editor-area" spellcheck="false">${this._escapeHtml(this._code)}</textarea>
+    `;
+
+    if (codeVis === 'hidden') {
+      // No editor, no toggle — output only (but textarea is kept for getCode/setCode)
+      container.innerHTML = `
+        <textarea class="pl-editor-area" style="display:none" spellcheck="false">${this._escapeHtml(this._code)}</textarea>
+        <div class="pl-status"><span class="pl-spinner"></span> Initializing...</div>
+        <div class="pl-output" id="${outputId}"></div>
+      `;
+    } else if (codeVis === 'collapsed') {
+      container.innerHTML = `
+        <div class="pl-code-section pl-collapsed">
+          ${codeHtml}
+        </div>
+        <div class="pl-code-toggle"><button>&lt;&gt; Code</button></div>
+        <div class="pl-status"><span class="pl-spinner"></span> Initializing...</div>
+        <div class="pl-output" id="${outputId}"></div>
+      `;
+    } else {
+      container.innerHTML = `
+        ${codeHtml}
+        <div class="pl-status"><span class="pl-spinner"></span> Initializing...</div>
+        <div class="pl-output" id="${outputId}"></div>
+      `;
+    }
+
+    this.appendChild(container);
+
+    const textarea = container.querySelector('.pl-editor-area');
+    const runBtn = container.querySelector('.run-btn');
+    const statusEl = container.querySelector('.pl-status');
+    const outputEl = container.querySelector('.pl-output');
+    this._textarea = textarea;
+    this._outputEl = outputEl;
+    this._statusEl = statusEl;
+
+    // Wire code toggle
+    const toggleBtn = container.querySelector('.pl-code-toggle button');
+    if (toggleBtn) {
+      const codeSection = container.querySelector('.pl-code-section');
+      toggleBtn.addEventListener('click', () => {
+        const isCollapsed = codeSection.classList.contains('pl-collapsed');
+        if (isCollapsed) {
+          codeSection.classList.remove('pl-collapsed');
+          codeSection.classList.add('pl-expanded');
+          if (this._cm) setTimeout(() => this._cm.refresh(), 50);
+        } else {
+          codeSection.classList.remove('pl-expanded');
+          codeSection.classList.add('pl-collapsed');
+        }
+      });
+    }
+
+    // Replace textarea with CodeMirror (skip for hidden — no visible editor)
+    if (codeVis !== 'hidden') {
+      loadCodeMirror().then(() => {
+        this._cm = createCMEditor(textarea, rt, () => {
+          this._runFromEditor(textarea, outputEl, statusEl);
+        });
+        textarea.classList.add('pl-cm-active');
+      });
+    }
+
+    if (runBtn) {
+      runBtn.addEventListener('click', () => {
+        this._runFromEditor(textarea, outputEl, statusEl);
+      });
+    }
+
+    // Auto-run on load
+    if (this.autoRun) {
+      this._initAndRun(outputEl, this._code, msg => { statusEl.textContent = msg; }, statusEl);
+    } else {
+      statusEl.textContent = 'Ready (auto-run disabled)';
+    }
+  }
+
+  _renderEditorHorizontal(rt) {
+    const outputId = uid();
+    const pillLabel = this.label;
+    const codeVis = this.codeVisibility;
+    const codePosClass = this.codePosition === 'last' ? ' code-last' : '';
+    const container = document.createElement('div');
+    container.className = 'pl-container pl-resizable';
+    const h = this.getAttribute('height');
+    if (h) { container.style.height = h; container.style.minHeight = h; }
+
+    if (codeVis === 'hidden') {
+      // No editor, just output
+      container.innerHTML = `
+        <textarea class="pl-editor-area" style="display:none">${this._escapeHtml(this._code)}</textarea>
+        <div class="pl-status"><span class="pl-spinner"></span> Initializing...</div>
+        <div class="pl-output" id="${outputId}"></div>
+      `;
+      this.appendChild(container);
+
+      const statusEl = container.querySelector('.pl-status');
+      const outputEl = container.querySelector('.pl-output');
+      this._textarea = container.querySelector('.pl-editor-area');
+      this._outputEl = outputEl;
+      this._statusEl = statusEl;
+
+      if (this.autoRun) {
+        this._initAndRun(outputEl, this._code, msg => { statusEl.textContent = msg; }, statusEl);
+      } else {
+        statusEl.textContent = 'Ready (auto-run disabled)';
+      }
+      return;
+    }
+
+    // Build editor pane content based on code-visibility
+    let editorContent;
+    if (codeVis === 'collapsed') {
+      editorContent = `
+        <div class="pl-code-section pl-collapsed">
+          <div class="pl-editor-header">
+            <span class="pl-lang">${this._escapeHtml(pillLabel)}</span>
+            <span class="pl-title"></span>
+            <span class="pl-shortcut">Ctrl+Enter to run</span>
+            <button class="pl-btn run-btn">Run</button>
+          </div>
+          <textarea class="pl-editor-area" spellcheck="false">${this._escapeHtml(this._code)}</textarea>
+        </div>
+        <div class="pl-code-toggle"><button>&lt;&gt; Code</button></div>
+      `;
+    } else {
+      editorContent = `
+        <div class="pl-editor-header">
+          <span class="pl-lang">${this._escapeHtml(pillLabel)}</span>
+          <span class="pl-title"></span>
+          <span class="pl-shortcut">Ctrl+Enter to run</span>
+          <button class="pl-btn run-btn">Run</button>
+        </div>
+        <textarea class="pl-editor-area" spellcheck="false">${this._escapeHtml(this._code)}</textarea>
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="pl-playground${codePosClass}">
+        <div class="pl-editor-pane${codeVis === 'collapsed' ? ' pl-pane-collapsed' : ''}">
+          ${editorContent}
+        </div>
+        <div class="pl-drag-handle"></div>
+        <div class="pl-preview-pane">
+          <div class="pl-status"><span class="pl-spinner"></span> Initializing...</div>
+          <div class="pl-output" id="${outputId}"></div>
+        </div>
+      </div>
     `;
     this.appendChild(container);
 
@@ -895,29 +924,66 @@ class PanelLive extends HTMLElement {
     const runBtn = container.querySelector('.run-btn');
     const statusEl = container.querySelector('.pl-status');
     const outputEl = container.querySelector('.pl-output');
+    const dragHandle = container.querySelector('.pl-drag-handle');
+    const editorPane = container.querySelector('.pl-editor-pane');
+    const previewPane = container.querySelector('.pl-preview-pane');
+    this._textarea = textarea;
+    this._outputEl = outputEl;
+    this._statusEl = statusEl;
+
+    // Wire code toggle
+    const toggleBtn = container.querySelector('.pl-code-toggle button');
+    if (toggleBtn) {
+      const codeSection = container.querySelector('.pl-code-section');
+      toggleBtn.addEventListener('click', () => {
+        const isCollapsed = codeSection.classList.contains('pl-collapsed');
+        if (isCollapsed) {
+          codeSection.classList.remove('pl-collapsed');
+          codeSection.classList.add('pl-expanded');
+          editorPane.classList.remove('pl-pane-collapsed');
+          if (this._cm) setTimeout(() => this._cm.refresh(), 50);
+        } else {
+          codeSection.classList.remove('pl-expanded');
+          codeSection.classList.add('pl-collapsed');
+          editorPane.classList.add('pl-pane-collapsed');
+        }
+      });
+    }
 
     // Replace textarea with CodeMirror
     loadCodeMirror().then(() => {
-      this._cm = createCMEditor(textarea, theme, () => {
+      this._cm = createCMEditor(textarea, rt, () => {
         this._runFromEditor(textarea, outputEl, statusEl);
       });
       textarea.classList.add('pl-cm-active');
     });
 
-    runBtn.addEventListener('click', () => {
-      this._runFromEditor(textarea, outputEl, statusEl);
-    });
+    if (runBtn) {
+      runBtn.addEventListener('click', () => {
+        this._runFromEditor(textarea, outputEl, statusEl);
+      });
+    }
+
+    // Draggable split handle
+    this._initDragHandle(dragHandle, editorPane, previewPane, 'horizontal');
 
     // Auto-run on load
-    this._initAndRun(outputEl, this._code, msg => { statusEl.textContent = msg; }, statusEl);
+    if (this.autoRun) {
+      this._initAndRun(outputEl, this._code, msg => { statusEl.textContent = msg; }, statusEl);
+    } else {
+      statusEl.textContent = 'Ready (auto-run disabled)';
+    }
   }
 
-  _renderPlaygroundMode(theme, layout) {
-    const themeClass = theme === 'light' ? 'light' : 'dark';
+  _renderPlaygroundMode(rt, layout) {
     const layoutClass = layout === 'vertical' ? 'vertical' : '';
+    const codePosClass = this.codePosition === 'last' ? ' code-last' : '';
     const outputId = uid();
+    const pillLabel = this.label;
     const container = document.createElement('div');
     container.className = 'pl-container pl-resizable';
+    const h = this.getAttribute('height');
+    if (h) { container.style.height = h; container.style.minHeight = h; }
 
     // Build header buttons
     let examplesHtml = '';
@@ -929,10 +995,10 @@ class PanelLive extends HTMLElement {
     }
 
     container.innerHTML = `
-      <div class="pl-playground ${layoutClass}">
+      <div class="pl-playground ${layoutClass}${codePosClass}">
         <div class="pl-editor-pane">
-          <div class="pl-editor-header ${themeClass}">
-            <span class="pl-lang">Panel</span>
+          <div class="pl-editor-header">
+            <span class="pl-lang">${this._escapeHtml(pillLabel)}</span>
             ${examplesHtml}
             <span class="pl-title"></span>
             <button class="pl-btn secondary share-btn">Share<span class="pl-toast">Link copied!</span></button>
@@ -940,7 +1006,7 @@ class PanelLive extends HTMLElement {
             <button class="pl-btn secondary maximize-btn" title="Toggle fullscreen">&#x26F6;</button>
             <button class="pl-btn run-btn">Run</button>
           </div>
-          <textarea class="pl-editor-area ${themeClass}" spellcheck="false">${this._escapeHtml(this._code)}</textarea>
+          <textarea class="pl-editor-area" spellcheck="false">${this._escapeHtml(this._code)}</textarea>
         </div>
         <div class="pl-drag-handle"></div>
         <div class="pl-preview-pane">
@@ -961,10 +1027,13 @@ class PanelLive extends HTMLElement {
     const dragHandle = container.querySelector('.pl-drag-handle');
     const editorPane = container.querySelector('.pl-editor-pane');
     const previewPane = container.querySelector('.pl-preview-pane');
+    this._textarea = textarea;
+    this._outputEl = outputEl;
+    this._statusEl = statusEl;
 
     // Replace textarea with CodeMirror
     loadCodeMirror().then(() => {
-      this._cm = createCMEditor(textarea, theme, () => {
+      this._cm = createCMEditor(textarea, rt, () => {
         this._runFromEditor(textarea, outputEl, statusEl);
       });
       textarea.classList.add('pl-cm-active');
@@ -1013,20 +1082,18 @@ class PanelLive extends HTMLElement {
 
     // Maximize (fullscreen toggle)
     const maximizeBtn = container.querySelector('.maximize-btn');
-    const self = this;
     maximizeBtn.addEventListener('click', () => {
-      if (self.hasAttribute('fullscreen')) {
-        self.removeAttribute('fullscreen');
+      if (this.hasAttribute('fullscreen')) {
+        this.removeAttribute('fullscreen');
       } else {
-        self.setAttribute('fullscreen', '');
+        this.setAttribute('fullscreen', '');
       }
-      // CodeMirror needs a refresh after layout change
-      if (self._cm) setTimeout(() => self._cm.refresh(), 50);
+      if (this._cm) setTimeout(() => this._cm.refresh(), 50);
     });
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && self.hasAttribute('fullscreen')) {
-        self.removeAttribute('fullscreen');
-        if (self._cm) setTimeout(() => self._cm.refresh(), 50);
+      if (e.key === 'Escape' && this.hasAttribute('fullscreen')) {
+        this.removeAttribute('fullscreen');
+        if (this._cm) setTimeout(() => this._cm.refresh(), 50);
       }
     });
 
@@ -1034,11 +1101,16 @@ class PanelLive extends HTMLElement {
     this._initDragHandle(dragHandle, editorPane, previewPane, layout);
 
     // Auto-run on load
-    this._initAndRun(outputEl, this._code, msg => { statusEl.textContent = msg; }, statusEl);
+    if (this.autoRun) {
+      this._initAndRun(outputEl, this._code, msg => { statusEl.textContent = msg; }, statusEl);
+    } else {
+      statusEl.textContent = 'Ready (auto-run disabled)';
+    }
   }
 
   _initDragHandle(handle, editorPane, previewPane, layout) {
     const isVertical = layout === 'vertical';
+    const isReversed = handle.parentElement.classList.contains('code-last');
     let dragging = false;
     let startPos = 0;
     let startEditorSize = 0;
@@ -1058,7 +1130,6 @@ class PanelLive extends HTMLElement {
         startEditorSize = editorPane.offsetWidth;
         totalSize = playground.offsetWidth;
       }
-      // Remove flex:1 and set explicit sizes
       editorPane.style.flex = 'none';
       previewPane.style.flex = 'none';
       document.addEventListener('mousemove', onMouseMove);
@@ -1067,7 +1138,8 @@ class PanelLive extends HTMLElement {
 
     const onMouseMove = (e) => {
       if (!dragging) return;
-      const delta = isVertical ? e.clientY - startPos : e.clientX - startPos;
+      let delta = isVertical ? e.clientY - startPos : e.clientX - startPos;
+      if (isReversed) delta = -delta;
       const handleSize = isVertical ? handle.offsetHeight : handle.offsetWidth;
       const newEditorSize = Math.max(100, Math.min(totalSize - handleSize - 100, startEditorSize + delta));
       const newPreviewSize = totalSize - handleSize - newEditorSize;
@@ -1093,9 +1165,10 @@ class PanelLive extends HTMLElement {
   // --- Execution ---
 
   async _initAndRun(outputEl, code, statusCallback, statusEl) {
-    // Enqueue to serialize: Pyodide global state (state.curdoc) can't handle concurrent runs
     return enqueueExecution(async () => {
       try {
+        this._setStatus('loading', 'Initializing...');
+
         // Fetch src if needed
         if (this._srcUrl && !this._code.trim()) {
           console.log('[panel-live] Fetching source from %s', this._srcUrl);
@@ -1104,7 +1177,6 @@ class PanelLive extends HTMLElement {
           if (!resp.ok) throw new Error(`Failed to fetch ${this._srcUrl}: ${resp.status}`);
           code = await resp.text();
           this._code = code;
-          // Update editor if in editor/playground mode
           if (this._cm) {
             this._cm.setValue(code);
           } else {
@@ -1135,15 +1207,23 @@ class PanelLive extends HTMLElement {
         }
 
         console.log('[panel-live] Running app (mode=%s, %d chars)', this.mode, (code || '').length);
+        this._setStatus('running', 'Running app...');
+        this._emit('pl-run-start');
         statusCallback('Running app...');
         await runPanelCode(outputEl, code, statusCallback);
         console.log('[panel-live] App rendered successfully (mode=%s)', this.mode);
         if (statusEl) statusEl.classList.add('hidden');
+        this._setStatus('ready', 'App rendered');
+        this._emit('pl-ready');
+        this._emit('pl-run-end');
       } catch (error) {
         console.error('[panel-live] Error in _initAndRun:', error);
-        outputEl.innerHTML = '<pre style="color:#b71c1c;background:#ffebee;padding:16px;border-radius:4px;white-space:pre-wrap;font-size:13px;margin:0;">' +
+        outputEl.innerHTML = '<pre style="color:var(--pl-error-color,#b71c1c);background:var(--pl-error-bg,#ffebee);padding:16px;border-radius:4px;white-space:pre-wrap;font-size:13px;margin:0;">' +
           (error.message || String(error)).replace(/</g, '&lt;') + '</pre>';
         if (statusEl) statusEl.classList.add('hidden');
+        this._setStatus('error', error.message || String(error));
+        this._emit('pl-error', { error: error.message || String(error), traceback: String(error) });
+        this._emit('pl-run-end');
       }
     });
   }
@@ -1155,17 +1235,49 @@ class PanelLive extends HTMLElement {
     statusEl.innerHTML = '<span class="pl-spinner"></span> Running...';
     const code = this._cm ? this._cm.getValue() : textarea.value;
     console.log('[panel-live] Run from editor (%d chars)', code.length);
+    this._setStatus('running', 'Running...');
+    this._emit('pl-run-start');
     try {
       await runPanelCode(outputEl, code, msg => { statusEl.textContent = msg; });
       console.log('[panel-live] Editor run completed');
       statusEl.classList.add('hidden');
+      this._setStatus('ready', 'Run completed');
+      this._emit('pl-ready');
     } catch (error) {
       console.error('[panel-live] Error in editor run:', error);
-      outputEl.innerHTML = '<pre style="color:#b71c1c;background:#ffebee;padding:16px;border-radius:4px;white-space:pre-wrap;font-size:13px;margin:0;">' +
+      outputEl.innerHTML = '<pre style="color:var(--pl-error-color,#b71c1c);background:var(--pl-error-bg,#ffebee);padding:16px;border-radius:4px;white-space:pre-wrap;font-size:13px;margin:0;">' +
         (error.message || String(error)).replace(/</g, '&lt;') + '</pre>';
       statusEl.classList.add('hidden');
+      this._setStatus('error', error.message || String(error));
+      this._emit('pl-error', { error: error.message || String(error), traceback: String(error) });
     }
+    this._emit('pl-run-end');
     this._running = false;
+  }
+
+  // --- Public methods (used by PanelLiveController) ---
+
+  run() {
+    if (this._outputEl && this._statusEl) {
+      const textarea = this._textarea || this.querySelector('.pl-editor-area');
+      if (textarea) {
+        this._runFromEditor(textarea, this._outputEl, this._statusEl);
+      }
+    }
+  }
+
+  getCode() {
+    if (this._cm) return this._cm.getValue();
+    if (this._textarea) return this._textarea.value;
+    return this._code || '';
+  }
+
+  setCode(code) {
+    if (this._cm) {
+      this._cm.setValue(code);
+    } else if (this._textarea) {
+      this._textarea.value = code;
+    }
   }
 
   _escapeHtml(text) {
@@ -1177,19 +1289,76 @@ customElements.define('panel-live', PanelLive);
 console.log('[panel-live] <panel-live> custom element registered');
 
 // ============================================================
-// Public API: PanelLive.configure() and PanelLive.mount()
+// PanelLiveController (returned by PanelLive.mount())
+// ============================================================
+
+class PanelLiveController {
+  constructor(element) {
+    this._element = element;
+  }
+
+  /** The underlying <panel-live> DOM element */
+  get element() { return this._element; }
+
+  /** Execute current code (editor/playground) */
+  run() { this._element.run(); }
+
+  /** Get current code string */
+  getCode() { return this._element.getCode(); }
+
+  /** Set code (updates editor) */
+  setCode(code) { this._element.setCode(code); }
+
+  /** Current status: 'idle' | 'loading' | 'running' | 'ready' | 'error' */
+  get status() { return this._element.status; }
+
+  /** Remove element and cleanup */
+  destroy() {
+    this._element.remove();
+    this._element = null;
+  }
+}
+
+// ============================================================
+// Public API: window.PanelLive
 // ============================================================
 
 window.PanelLive = {
+  /**
+   * Set global configuration defaults. Must be called before first
+   * init()/mount() or <panel-live> connectedCallback.
+   */
   configure(overrides) {
-    Object.assign(PANEL_LIVE_CONFIG, overrides);
+    Object.assign(_config, overrides);
   },
 
+  /**
+   * Pre-warm Pyodide singleton. Idempotent (returns same promise on repeat calls).
+   * @param {Object} [options]
+   * @param {Function} [options.onStatus] - Status callback
+   * @returns {Promise<void>}
+   */
+  async init(options) {
+    const onStatus = (options && options.onStatus) || (msg => console.log('[PanelLive]', msg));
+    await initPyodide(onStatus);
+  },
+
+  /**
+   * Programmatic creation. Returns a controller for runtime interaction.
+   * @param {Object} options
+   * @param {string|HTMLElement} target - CSS selector or DOM element
+   * @returns {Promise<PanelLiveController>}
+   */
   async mount(options, target) {
     const el = document.createElement('panel-live');
     if (options.mode) el.setAttribute('mode', options.mode);
     if (options.theme) el.setAttribute('theme', options.theme);
     if (options.layout) el.setAttribute('layout', options.layout);
+    if (options.height) el.setAttribute('height', options.height);
+    if (options.label) el.setAttribute('label', options.label);
+    if (options.codeVisibility) el.setAttribute('code-visibility', options.codeVisibility);
+    if (options.fullscreen) el.setAttribute('fullscreen', '');
+    if (options.autoRun === false) el.setAttribute('auto-run', 'false');
 
     if (options.files) {
       for (const [name, content] of Object.entries(options.files)) {
@@ -1207,16 +1376,32 @@ window.PanelLive = {
 
     if (options.requirements) {
       const reqEl = document.createElement('panel-requirements');
-      reqEl.textContent = options.requirements.join('\n');
+      reqEl.textContent = Array.isArray(options.requirements)
+        ? options.requirements.join('\n')
+        : options.requirements;
       el.appendChild(reqEl);
     }
 
-    if (typeof target === 'string') target = document.getElementById(target);
-    target.appendChild(el);
-    return el;
-  },
+    if (options.examples) {
+      for (const ex of options.examples) {
+        const exEl = document.createElement('panel-example');
+        exEl.setAttribute('name', ex.name || 'Example');
+        if (ex.src) {
+          exEl.setAttribute('src', ex.src);
+        } else if (ex.code) {
+          exEl.textContent = ex.code;
+        }
+        el.appendChild(exEl);
+      }
+    }
 
-  async init() {
-    return initPyodide(msg => console.log('[PanelLive]', msg));
-  }
+    // Resolve target
+    if (typeof target === 'string') {
+      target = document.querySelector(target);
+    }
+    if (!target) throw new Error('PanelLive.mount(): target not found');
+    target.appendChild(el);
+
+    return new PanelLiveController(el);
+  },
 };

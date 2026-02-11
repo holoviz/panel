@@ -9,7 +9,7 @@ Outstanding issues for the Panel Live feature. See also `live-dream.md` for visi
 - **P2 - Important**: Needed for a polished, competitive product.
 - **P3 - Nice-to-have**: Future enhancements and stretch goals.
 
-**Current state:** 28 issues total. 3 resolved, 10 partially addressed, 15 completely open, 1 needs investigation. The POC is a working prototype (`src/panel-embed.js`, 1479 lines) with two execution modes (iframe and inline), a declarative `<script type="panel">` API, CodeMirror editor, and URL-based sharing.
+**Current state:** 28 issues total. 17 resolved, 2 partially resolved, 9 open. The web component POC (`poc/webcomponent/panel-live.js`) implements the `<panel-live>` custom element with 3 modes (app, editor, playground), declarative + imperative API, CSS custom properties theming (`--pl-*` variables with light/dark presets), CodeMirror 5 editor, multi-file support (`<panel-file>`), explicit requirements (`<panel-requirements>`), and an interactive API explorer. CSS is in a separate `panel-live.css` file. Pyodide runs inline on the main thread (no iframe mode, no web worker yet).
 
 ---
 
@@ -17,27 +17,28 @@ Outstanding issues for the Panel Live feature. See also `live-dream.md` for visi
 
 These issues must be resolved first as they shape everything else.
 
-### P0 - Design Extensible User/Developer-Facing API
+### P0 - Design Extensible User/Developer-Facing API [RESOLVED]
 
-**Problem:** The current POC's API (`<script type="panel">`, `<script type="panel-editor">`, `<script type="panel-playground">`) works for single-file, default-config apps. But the API must be designed now to naturally accommodate multi-file support, explicit requirements, layout options, themes, and other configuration without breaking changes later.
+**Decision:** The API uses a single `<panel-live>` custom element (Light DOM) with `mode="app|editor|playground"` attribute. Full specification in `docs/api-design.md`.
 
-**Why it matters:** This is the most important near-term priority. Getting the API right means features like multi-file support, requirements specification, layout options, and theming can be added incrementally without breaking existing users. Getting it wrong means painful migrations or ugly workarounds.
+**Key design decisions:**
 
-**Design considerations:**
+1. **`<panel-live>` custom element** — not `<script type="panel">`; attributes configure behavior naturally; 3 of 4 competitors use custom elements
+2. **Light DOM** — required because Bokeh's `embed_items()` uses `document.getElementById()` which can't reach into Shadow DOM
+3. **Single element, mode as attribute** — `mode="app|editor|playground"` is simpler than 3 separate tag types
+4. **Dual API** — declarative HTML for simple cases, imperative JS (`PanelLive.mount()`) for framework integration
+5. **`theme="auto"` default** — respects `prefers-color-scheme` media query; overridable with `"dark"` or `"light"`
 
-- How do users specify additional files? (child elements, attributes, config block)
-- How do users declare requirements? (attribute, child element, config file)
-- How do layout/theme/config options compose? (attributes vs config object vs CSS variables)
-- Should there be a JSON/YAML config block approach (like PyScript's `<py-config>`) for complex configuration?
-- How does the JS API (`PanelLive.configure()`) relate to the HTML attribute API?
-- Should there be a single `<script type="panel">` tag with mode/display configured via attributes (e.g., `mode="editor"`, `mode="playground"`) rather than separate script types? This could simplify the API and make mode-switching more natural. (See also: Interactive API Explorer issue)
-- How is the language/pill label configured? (attribute, config, default to 'PYTHON')
-- How are example apps provided? (inline child elements, JSON URL via attribute like `examples-src`, or both)
-- How are runtime versions (Pyodide, Python, Panel, Bokeh) exposed to users? How does version switching interact with the runtime lifecycle (full restart, hot-swap)?
+**What's specified:**
 
-**Acceptance criteria:** Documented API design that shows how current features work AND how future features (multi-file, requirements, layout, themes) will extend the API without breaking changes. Design reviewed and approved.
+- HTML attributes: `mode`, `theme`, `layout`, `src`, `fullscreen`, `height`, `auto-run`, `label`, `examples-src`, `code-visibility`
+- Child elements: `<panel-file>` (multi-file), `<panel-requirements>` (pip specifiers), `<panel-example>` (playground examples) — all with `src` attribute support
+- JS API: `PanelLive.configure()`, `.init()`, `.mount()` returning `PanelLiveController`
+- CSS custom properties: `--pl-*` variables for full theming with light/dark presets
+- Events: `pl-status`, `pl-ready`, `pl-error`, `pl-run-start`, `pl-run-end`
+- Future: `worker` attribute reserved for transparent web worker support via adapter pattern
 
-**Blocks:** Multi-file Support, Requirements / Package Specification, Playground Layout Options, Customizable Styling.
+**Unblocks:** Multi-file Support, Requirements / Package Specification, Playground Layout Options, Customizable Styling.
 
 ---
 
@@ -57,11 +58,13 @@ These issues must be resolved first as they shape everything else.
 
 ---
 
-### P0 - Determine Repository [RESOLVED]
+### P0 - Determine Repository [RESOLVED — UPDATED]
 
-**Decision:** The code stays in the **panel repo**. This simplifies version coupling (Bokeh JS version must match Bokeh Python wheel exactly) and keeps everything in one CI pipeline.
+**Decision (updated):** The code will live in a **separate `panel-live` repo** under the `panel-extensions` GitHub organization (`https://github.com/panel-extensions/panel-live`). The repo will be scaffolded using the `copier-template-panel-extension` template, producing a Python package (`panel-live`) that can provide Sphinx and MkDocs extensions.
 
-**Hosting:** The live site will use a separate GitHub Pages repo following the existing panelite pattern: `holoviz-dev/panel-live` (analogous to `holoviz-dev/panelite`).
+**Previous decision:** The code was initially planned to stay in the panel repo for version coupling simplicity. The separate repo approach was chosen to keep panel-live independently releasable and to leverage the panel-extensions ecosystem.
+
+**Hosting:** The live site will use GitHub Pages from the `panel-extensions/panel-live` repo or a separate `holoviz-dev/panel-live` deployment.
 
 ---
 
@@ -122,17 +125,19 @@ Pyodide in the worker **never touches the DOM**. Instead:
 
 **Likely causes:**
 
-- Multiple Pyodide instances in iframe mode (each ~300-500MB)
-- Main thread memory pressure without web workers
+- Main thread memory pressure without web workers (single Pyodide instance, but still ~300-500MB)
 - Missing COOP/COEP headers when served behind proxies that strip them
+- Versions of panel, bokeh and pyodide that do not work well together
+
+**Browser-specific observation:** Firefox seldom crashes (if at all), while Edge/Chrome crash frequently. This suggests a Chromium-specific memory management issue, possibly related to V8's handling of large WASM heaps or SharedArrayBuffer allocation.
 
 **Suggested approach:**
 
-1. Reproduce and document exact crash conditions (browser, OS, number of apps, iframe vs inline mode)
+1. Reproduce and document exact crash conditions (browser, OS, number of apps) — especially Chrome/Edge vs Firefox comparison
 2. Add memory monitoring / logging before crash point
 3. Web Worker support (P0 above) should significantly reduce main thread memory pressure
-4. Limit concurrent Pyodide instances; already sequential for iframes but consider a hard cap
-5. Investigate SharedArrayBuffer availability and fallback behavior
+4. Investigate SharedArrayBuffer availability and fallback behavior
+5. Profile Chromium-specific WASM heap behavior
 
 **Acceptance criteria:** No browser crashes on reference hardware (8GB RAM machine) with up to 3 concurrent apps. Known limitations documented.
 
@@ -174,20 +179,18 @@ live/
   examples/            # 2 example .py files
 ```
 
-**Confirmed structure:**
+**Confirmed structure (updated — no iframe mode):**
 
 ```text
-panel/live/            # in panel repo, under panel-live name
+panel-live/            # separate repo under panel-extensions org
   src/
     index.js           # entry point
     pyodide-loader.js  # Pyodide initialization
-    app-runner.js      # code execution (inline + iframe)
+    app-runner.js      # code execution (inline only, no iframe)
     editor.js          # CodeMirror integration
     playground.js      # side-by-side editor+preview
     styles.css         # extracted CSS
     utils.js           # shared utilities
-  templates/
-    runner.html        # iframe runner
   examples/
     *.py
   tests/
@@ -196,26 +199,17 @@ panel/live/            # in panel repo, under panel-live name
   build config
 ```
 
+**Note:** The iframe runner (`panel-runner.html`, `runner.html`) has been removed from the architecture. The refactored `panel-live.js` uses inline-only execution where Pyodide runs on the main thread and Bokeh renders directly into the output container. Future web worker support will use `postMessage` for serialized document exchange, not iframes.
+
 **Acceptance criteria:** Code split into logical modules. Build step produces a single distributable bundle. No functionality regression.
 
 **Blocked by:** Settle on Name (resolved).
 
 ---
 
-### P1 - Separate CSS [CONFIRMED]
+### ~~P1 - Separate CSS~~ [RESOLVED]
 
-**Problem:** ~80 CSS rules are injected inline via `injectStyles()` as a joined string array in JavaScript. Hard to maintain, no syntax highlighting, no CSS tooling support.
-
-**Why it matters:** Both stlite and gradio-lite load separate CSS files. This is standard practice. The current approach prevents CSS linting, autoprefixing, and makes theming harder.
-
-**Confirmed approach:**
-
-1. Extract CSS to a separate `.css` file (`panel-live.css`)
-2. Build step bundles or inlines as needed
-3. Users load via `<link rel="stylesheet" href="panel-live.css">`
-4. Use CSS custom properties (variables) for theming (connects to "Customize Styling" issue)
-
-**Acceptance criteria:** CSS in a separate source file. Build produces both standalone CSS and a JS bundle that can optionally auto-inject it.
+**Resolution:** CSS extracted from `panel-live.js` into a standalone `panel-live.css` file (372 lines). The JS file no longer contains or auto-injects any CSS. HTML pages load the stylesheet explicitly via `<link rel="stylesheet" href="panel-live.css">` before the script tag. This enables CSS syntax highlighting, linting, autoprefixing, and clean separation of concerns. CSS custom properties (`--pl-*`) with light/dark theme presets are preserved.
 
 ---
 
@@ -233,39 +227,26 @@ Issues that affect reliability of the current implementation.
 
 ---
 
-### P1 - Cannot Select Code with Mouse
+### ~~P1 - Cannot Select Code with Mouse~~ [RESOLVED]
 
-**Problem:** In the panel-editor mode, it's not possible to use the mouse to select code, making it hard to copy.
-
-**Why it matters:** Basic editor usability. Users expect to be able to select and copy code.
-
-**Likely cause:** CSS `pointer-events`, `user-select`, or CodeMirror configuration issue. Could also be an overlay/z-index problem.
-
-**Suggested approach:**
-
-1. Test in multiple browsers to confirm
-2. Inspect CodeMirror container CSS for `user-select: none` or `pointer-events: none`
-3. Check for overlapping transparent elements capturing mouse events
-
-**Acceptance criteria:** Users can select code with mouse in all editor modes. Works in Chrome, Firefox, Safari, Edge.
+**Resolution:** The web component rewrite uses standard CodeMirror 5 integration with no CSS blocking selection (`user-select`, `pointer-events`). Code selection works in all modes (editor and playground). The original issue was caused by overlapping transparent elements in the old `panel-embed.js` architecture.
 
 ---
 
-### P1 - Handle Python Errors Properly
+### P1 - Handle Python Errors Properly [PARTIALLY RESOLVED]
 
 **Problem:** Python exceptions go to the browser console but aren't communicated well to the user. Tracebacks are raw and unformatted.
 
 **Why it matters:** Users (especially beginners) need clear, visible error messages to debug their code. This is critical for the editor/playground use case.
 
-**Current state:** Partially addressed - `runApp()` catches top-level errors and displays them inline with red styling. But tracebacks are unformatted, and errors in async code or callbacks may still go only to console.
+**Current state:** Errors now display inline in the output area with themed styling (`--pl-error-color`, `--pl-error-bg`), HTML-escaped, in a `<pre>` block. All 3 modes (app, editor, playground) handle errors identically via `runPanelCode()`. Top-level execution errors and import errors are caught and displayed.
 
-**Suggested approach:**
+**Remaining work (downgraded to P2):**
 
-1. Format Python tracebacks with syntax highlighting (filename, line number, error type)
-2. Display errors in a dedicated error panel below the code editor (like PyScript's `py-editor` or Jupyter's error output)
-3. Capture `sys.stderr` and `console.error` from the Pyodide context
-4. For playground mode: show errors in a collapsible panel that doesn't replace the app output
-5. Include a "Copy error" button for bug reporting
+1. Structured traceback formatting with syntax highlighting (filename, line number, error type)
+2. Collapsible error panel in playground mode (errors currently replace the app output)
+3. "Copy error" button for bug reporting
+4. Capture `sys.stderr` and `console.error` from the Pyodide context for async/callback errors
 
 **Acceptance criteria:** All Python errors visible to the user in a formatted error panel. Tracebacks show file, line number, and error message clearly.
 
@@ -301,13 +282,13 @@ Issues that affect reliability of the current implementation.
 
 ### P2 - postMessage Security
 
-**Problem:** `window.addEventListener('message', ...)` in both `panel-runner.html` and `panel-embed.js` does not validate `event.origin`. Any page could send messages to the runner iframe.
+**Problem:** The old `panel-embed.js` used `window.addEventListener('message', ...)` in `panel-runner.html` without validating `event.origin`.
 
-**Why it matters:** Security vulnerability. A malicious page could inject arbitrary Python code into the runner iframe if it knows the message format.
+**Current state:** The refactored `panel-live.js` has no iframe mode and no `postMessage` handlers — Pyodide runs inline on the main thread. This issue is **largely mitigated** by the architecture change. However, it will become relevant again when web worker support is added (workers use `postMessage` for communication).
 
-**Suggested approach:** Validate `event.origin` against the expected parent origin. Use a nonce or token for message authentication.
+**Future consideration:** When implementing web worker support, ensure the worker↔main thread `postMessage` protocol validates message structure and uses a nonce or token. Since workers are same-origin by design, cross-origin attacks are less of a concern than with iframes.
 
-**Acceptance criteria:** postMessage handlers validate origin. Documented security model.
+**Acceptance criteria:** Any future `postMessage` handlers validate message structure. Documented security model.
 
 ---
 
@@ -331,62 +312,21 @@ Issues that affect reliability of the current implementation.
 
 Features needed for a competitive product.
 
-### P1 - Interactive API Explorer Page
+### ~~P1 - Interactive API Explorer Page~~ [RESOLVED]
 
-**Problem:** There is no interactive page where users (and developers) can explore the panel-live API hands-on - switching between app/editor/playground display modes, changing themes, toggling layout options, adjusting configuration, etc. in real time.
-
-**Why it matters:** An interactive explorer serves two purposes: (1) it's the best way for users to discover and understand what panel-live can do, and (2) it directly informs API design decisions. For example, if users can interactively switch from app display to editor to playground, this raises the question of whether the API should use a single `<script type="panel">` tag with a `mode` attribute (e.g., `mode="app"`, `mode="editor"`, `mode="playground"`) rather than separate script types. Building this explorer early will pressure-test the API before it's locked in.
-
-**Suggested approach:**
-
-1. Create an interactive page (itself built with panel-live) that lets users:
-   - Switch between display modes (app, editor, playground)
-   - Change themes (light, dark, custom)
-   - Toggle layout (horizontal, vertical)
-   - Configure options (requirements, height, etc.)
-   - See the corresponding HTML markup update live
-2. Use this as a testbed for API design decisions
-3. Eventually publish as part of the documentation / examples gallery
-
-**Acceptance criteria:** Interactive page where users can explore all API options and see both the rendered result and the HTML markup needed to reproduce it.
-
-**Related to:** API Design (P0), Documentation (P1).
+**Resolution:** `poc/webcomponent/api-explorer.html` provides a full interactive explorer. Users can switch between all 3 display modes (app, editor, playground), change themes (auto, light, dark), toggle layout (horizontal, vertical), configure code-position (first, last), label, height, auto-run, and code-visibility (visible, hidden, collapsed). A sidebar with 14 example snippets, featured CSS variable controls (color pickers, range sliders), and advanced CSS overrides lets users configure every aspect. The generated HTML panel updates live, showing the exact markup needed to reproduce the current configuration, with a Copy button.
 
 ---
 
-### P2 - Multi-file Support
+### ~~P2 - Multi-file Support~~ [RESOLVED]
 
-**Problem:** Only single-file apps are supported. Users cannot import from helper modules or use multi-file project structures.
-
-**Why it matters:** Every competitor supports multi-file apps (stlite via `files` config, gradio-lite via `<gradio-file>`, shinylive via multiple file blocks, PyScript via multiple scripts). Real-world apps often split code across modules.
-
-**Note:** Implementation deferred, but the API design (P0 above) must accommodate this feature.
-
-**Suggested approach:**
-
-- Support declaring additional files (e.g., `<script type="panel-file" name="utils.py">` or a config attribute)
-- Write files to the Pyodide virtual filesystem before executing the entrypoint
-- One file marked as entrypoint
-
-**Acceptance criteria:** Users can define multiple Python files and import between them. At least one demo shows a multi-file app.
+**Resolution:** The `<panel-file>` custom element supports multi-file apps. Each `<panel-file name="utils.py">` child declares a file; one is marked `entrypoint` (or the first is used by default). Files also support `src` attribute for loading from external URLs. At runtime, `_extractCode()` resolves all file contents and `_initAndRun()` writes non-entrypoint files to Pyodide's virtual filesystem via `pathlib.Path().write_text()` before executing the entrypoint. The imperative `PanelLive.mount({files: {...}})` API also supports multi-file apps.
 
 ---
 
-### P2 - Requirements / Package Specification
+### ~~P2 - Requirements / Package Specification~~ [RESOLVED]
 
-**Problem:** The POC auto-detects packages via `find_requirements()` but provides no way for users to explicitly specify requirements or pin versions.
-
-**Why it matters:** Auto-detection is fragile (misses dynamic imports, conditional imports, packages with different import vs pip names). Every competitor provides explicit requirements support. Users need control over their dependencies.
-
-**Note:** Implementation deferred, but the API design (P0 above) must accommodate this feature.
-
-**Suggested approach:**
-
-- Support a requirements attribute or child element (e.g., `<script type="panel" requirements="pandas==2.0,plotly">` or `<script type="panel-requirements">`)
-- Keep auto-detection as a fallback
-- Show package installation progress
-
-**Acceptance criteria:** Users can explicitly declare requirements. Installation progress visible. Auto-detection still works as fallback.
+**Resolution:** The `<panel-requirements>` custom element allows explicit package specification (one package per line, pip specifier format, comments supported). `installExplicitRequirements()` installs them via micropip before code execution, with progress shown in the status bar. Auto-detection via `find_requirements()` remains as a fallback for all code execution. The imperative API also supports `PanelLive.mount({requirements: [...]})`. Both explicit and auto-detected packages are tracked in `_installedPackages` to avoid reinstallation.
 
 ---
 
@@ -402,78 +342,41 @@ Features needed for a competitive product.
 
 ---
 
-### P1 - Loading Progress (All Modes)
+### ~~P1 - Loading Progress (All Modes)~~ [RESOLVED]
 
-**Problem:** Loading progress varies between modes. Inline mode shows "Waiting for Pyodide..." text. Iframe mode shows a progress bar. Playground mode has its own approach. No percentage or stage information.
-
-**Why it matters:** Pyodide takes 5-15 seconds to load. Users need to know something is happening and how long to wait.
-
-**Suggested approach:**
-
-1. Consistent loading UI across all modes: spinner + stage text + optional progress bar
-2. Stages: "Loading Pyodide..." -> "Installing packages..." -> "Running app..."
-3. Animate smoothly (requires web worker so main thread isn't blocked)
-
-**Acceptance criteria:** All three modes show consistent, animated loading progress with stage information.
+**Resolution:** All 3 modes now use identical loading UI: a `.pl-status` bar with `.pl-spinner` CSS animation and stage text. Loading stages progress through: "Loading Bokeh & Panel JS..." → "Loading Pyodide..." → "Initializing Pyodide..." → "Loading micropip..." → "Installing Bokeh + Panel wheels..." → "Initializing Panel..." → "Running app...". The same `initPyodide()` + `_initAndRun()` code path is used for all modes, ensuring consistent behavior. Note: animation may still stutter when the main thread is blocked during Pyodide initialization (web worker support will fully resolve this).
 
 ---
 
-### P2 - Choose and Configure Editor Theme
+### P2 - Choose and Configure Editor Theme [PARTIALLY RESOLVED]
 
-**Problem:** The editor uses CodeMirror's Dracula theme (dark/neon). No way to change it. May not suit all environments (corporate, light-mode sites).
+**Current state:** The `theme` attribute (`"auto"`, `"light"`, `"dark"`) switches between CodeMirror's default light theme and Dracula for dark. `theme="auto"` respects `prefers-color-scheme` media query. The resolved theme is applied to both the editor and the surrounding UI via `data-resolved-theme` attribute and `--pl-*` CSS variables.
 
-**Why it matters:** The editor is embedded in third-party pages. A dark neon theme clashing with a light corporate site looks unprofessional.
+**Remaining work:**
 
-**Suggested approach:**
-
-1. Default to a neutral theme (e.g., `one-light` for light, `one-dark` for dark)
-2. Support `theme` attribute: `<script type="panel-editor" theme="dracula">`
-3. Auto-detect light/dark from `prefers-color-scheme` or host page
-4. Ship 2-3 built-in themes (light, dark, high-contrast)
+1. Additional built-in editor themes beyond default/Dracula (e.g., `one-light`, `one-dark`, `solarized`)
+2. High-contrast theme for accessibility
+3. Configurable editor theme independent of UI theme (e.g., dark UI with light editor)
 
 **Acceptance criteria:** Default theme looks professional in both light and dark contexts. Users can switch themes via attribute.
 
 ---
 
-### P2 - Align Styles Across Modes
+### ~~P2 - Align Styles Across Modes~~ [RESOLVED]
 
-**Problem:** Styling is inconsistent between "panel" (app only), "panel-editor" (code + app), and "panel-playground" (side-by-side) modes.
-
-**Why it matters:** Inconsistent styling feels unpolished and makes it harder to switch between modes.
-
-**Current state:** `injectStyles()` provides some shared styling, but it's hardcoded with no systematic design system.
-
-**Acceptance criteria:** Consistent visual language (borders, spacing, colors, fonts) across all three modes. Documented in a style guide.
+**Resolution:** The refactored `panel-live.js` uses a unified CSS variable system (`--pl-*`) with light/dark theme presets. All 3 modes share the same component classes (`.pl-container`, `.pl-status`, `.pl-btn`, `.pl-editor-header`, `.pl-output`). Styles live in a separate `panel-live.css` file loaded via `<link>` tag. The `theme` attribute and `data-resolved-theme` ensure consistent theming across modes.
 
 ---
 
-### P2 - Customizable Styling / Branding
+### ~~P2 - Customizable Styling / Branding~~ [RESOLVED]
 
-**Problem:** No CSS variables, no theming API, no way to brand the embedded components. `PanelLive.configure()` only handles versions, not styling.
-
-**Why it matters:** Organizations embedding Panel apps want them to match their brand. Documentation sites want the editor to match their theme.
-
-**Suggested approach:**
-
-1. CSS custom properties for all configurable values (colors, fonts, spacing, border radius)
-2. Sensible defaults that work out of the box
-3. Optional `PanelLive.configure({ theme: { primaryColor: '#007bff' } })` for programmatic theming
-4. Dark mode support via `prefers-color-scheme` media query
-5. The header language pill label (currently says "PANEL") should default to "PYTHON" and be configurable via an attribute (e.g., `label="Panel"`) or CSS custom property
-
-**Acceptance criteria:** Users can customize primary color, background, font, border-radius, and header pill label via CSS variables or attributes. Dark mode supported.
+**Resolution:** Full `--pl-*` CSS variable system is implemented, covering all configurable values: colors (`--pl-bg`, `--pl-text`, `--pl-accent`, `--pl-border`, `--pl-error-color`, `--pl-error-bg`, `--pl-output-bg`), spacing (`--pl-radius`), and more. Light and dark theme presets are built in, with `theme="auto"` detecting `prefers-color-scheme`. The `label` attribute configures the header pill text (defaults to "PYTHON"). Users can override any `--pl-*` variable in their own CSS to brand the component.
 
 ---
 
-### P2 - Playground Layout Options
+### ~~P2 - Playground Layout Options~~ [RESOLVED]
 
-**Problem:** The playground is always side-by-side (code left, preview right). No horizontal layout (code top, preview bottom) or other options.
-
-**Why it matters:** Gradio-lite supports `layout="horizontal"|"vertical"`. Different contexts call for different layouts (narrow pages need vertical, wide pages need horizontal).
-
-**Suggested approach:** Support `layout` attribute with `horizontal` (side-by-side, current default) and `vertical` (code above, preview below). Auto-detect based on container width as a bonus.
-
-**Acceptance criteria:** Both horizontal and vertical layouts work. Responsive behavior on narrow screens.
+**Resolution:** The `layout` attribute is implemented with `"horizontal"` (side-by-side, default) and `"vertical"` (code above, preview below) options. The layout is applied via CSS flex-direction on the `.pl-playground` container. Auto-detection based on container width is not yet implemented but could be added as a future enhancement.
 
 ---
 
@@ -520,15 +423,9 @@ Features needed for a competitive product.
 
 ---
 
-### P3 - Dark Theme Support
+### ~~P3 - Dark Theme Support~~ [RESOLVED]
 
-**Problem:** No dark/light theme toggle for the embedded app output area.
-
-**Why it matters:** Pages using dark mode expect embedded content to match.
-
-**Suggested approach:** Support `theme="dark"|"light"|"auto"` attribute. "auto" detects from `prefers-color-scheme`.
-
-**Acceptance criteria:** Dark and light themes for the app container. Auto-detection works.
+**Resolution:** `theme="auto"|"light"|"dark"` attribute is implemented. `"auto"` (default) detects from `prefers-color-scheme` media query. The resolved theme is stored in `data-resolved-theme` attribute, which drives `--pl-*` CSS variable presets for dark and light modes. The editor uses Dracula theme in dark mode and CodeMirror default in light mode. Note: Panel app output area always uses a white background (`--pl-output-bg: #ffffff`) because Panel apps render with light theme by default.
 
 ---
 
@@ -591,32 +488,27 @@ Features needed for a competitive product.
 
 ---
 
-### P1 - Examples Gallery
+### P1 - Examples Gallery [PARTIALLY RESOLVED]
 
-**Problem:** Only 8 examples exist (6 inline in HTML + 2 external .py files). Need a comprehensive, curated collection.
+**Problem:** Need a comprehensive, curated collection of examples covering common use cases.
 
 **Why it matters:** Examples are the primary way users discover capabilities. Competitors (shinylive, streamlit playground) have extensive example galleries.
 
-**Suggested examples:**
+**Current state:** 12 standalone `.py` files in `examples/` (hello, slider, kpi-dashboard, interactive-plot, mini-calculator, color-palette, markdown-preview, tabs-layout, unit-converter, data-explorer, echart-viz, stock-ticker) plus 2 inline-only examples (form, dataframe) in the API explorer — 14 total. The API explorer dropdown includes all 14. Examples cover: indicators/gauges, Bokeh plots, widgets/forms, color generation, Markdown, layout types (Tabs/FlexBox/GridBox), unit conversion with `watch`, Tabulator with filters, ECharts radar, and Bokeh area charts.
 
-- Basic: Hello World, Slider, Text Input, Button
-- Data: DataFrame display, Tabulator, CSV upload
-- Visualization: Matplotlib, hvPlot, Plotly, HoloViews
-- Layout: Templates, Columns, Tabs
-- Advanced: Chat interface, Streaming, File download
-- ML: Transformers.js integration, image classification
-- Extensions: panel-material-ui (once working)
+**Infrastructure complete:**
+- `<panel-example>` elements with `src` attribute support ✅
+- `examples-src` attribute for JSON URL loading ✅
+- `<panel-example>` inline code support ✅
+- API explorer dropdown wired to all examples ✅
 
-**Loading examples from external sources:**
+**Remaining work:**
 
-- Examples should be loadable from a JSON URL (e.g., `<panel-live examples-src="examples.json">`) to support external/shared example collections without requiring inline `<panel-example>` children. The JSON format should define example name, description, code, and optional metadata.
-- Individual `<panel-example>` elements should support a `src` attribute pointing to an external Python file (e.g., `<panel-example name="Demo" src="examples/demo.py">`), allowing example code to live in separate files rather than inline HTML.
+- 3+ more examples to reach 15+ target (suggested: hvPlot, Plotly, chat/streaming, ML demo, panel-material-ui)
+- Default example set when no `<panel-example>` or `examples-src` configured
+- Standalone examples gallery page (separate from api-explorer)
 
-**Default examples when none provided:**
-
-- The playground mode must provide a default curated set of examples when no `<panel-example>` children or `examples-src` attribute are configured. These defaults serve as both a getting-started guide and a demo of capabilities, showing off common patterns (basic widgets, plots, layouts, etc.).
-
-**Acceptance criteria:** 15+ curated examples covering common use cases. Each example works reliably and loads in <15 seconds. Examples can be provided inline, via JSON URL, or via `src` attribute on individual `<panel-example>` elements. Sensible defaults appear when no examples are configured.
+**Acceptance criteria:** 15+ curated examples covering common use cases. Each example works reliably and loads in <15 seconds. Sensible defaults appear when no examples are configured.
 
 ---
 
@@ -698,7 +590,7 @@ Features needed for a competitive product.
 
 1. Playwright end-to-end tests: load page, verify app renders, test editor interaction, test re-run
 2. Unit tests for JS utilities (code parsing, requirements detection, namespace isolation)
-3. Test all three modes (app, editor, playground) in both execution models (iframe, inline)
+3. Test all three modes (app, editor, playground) — inline execution only (no iframe mode)
 4. Test error handling scenarios
 
 **Acceptance criteria:** Playwright test suite covering core user flows. Tests run in CI. >80% coverage of critical paths.
@@ -771,15 +663,9 @@ Features needed for a competitive product.
 
 ---
 
-### P1 - Duplicate Execution Logic
+### ~~P1 - Duplicate Execution Logic~~ [RESOLVED]
 
-**Problem:** `runApp()` (inline mode) and `runRunnerApp()` (iframe/runner mode) have near-identical 3-branch execution logic (servable, servable+target, no-servable) with subtle differences. Code duplication risk.
-
-**Why it matters:** Bug fixes or feature additions must be applied twice and may diverge.
-
-**Suggested approach:** Extract shared execution logic into a common function. Parameterize differences (namespace isolation, cleanup, error handling) rather than duplicating.
-
-**Acceptance criteria:** Single execution code path with mode-specific configuration. No duplicated logic.
+**Resolution:** The web component rewrite has a single `runPanelCode()` function with a 3-branch execution strategy (servable, servable+target, expression). There is no iframe mode, so no duplication between inline/iframe code paths. All 3 display modes (app, editor, playground) use the same `_initAndRun()` → `runPanelCode()` path.
 
 ---
 
@@ -844,10 +730,9 @@ These are stretch goals for after MVP.
 ## Dependency Graph
 
 ```text
-API Design ──────────────┬──> Multi-file Support
-                         ├──> Requirements / Package Spec
-                         ├──> Playground Layout Options
-                         └──> Customizable Styling
+API Design [RESOLVED] ──┬──> Multi-file Support [RESOLVED]
+                         └──> Requirements / Package Spec [RESOLVED]
+                         (Playground Layout [RESOLVED], Customizable Styling [RESOLVED])
 
 Folder/File Structure ───┬──> Build System ──┬──> Distribution ──┬──> Sphinx Extension
                          │                   ├──> Automated Testing  ├──> MkDocs Extension
@@ -857,35 +742,40 @@ Folder/File Structure ───┬──> Build System ──┬──> Distribu
 Web Worker Support ──────┬──> Keep Page Responsive
                          └──> Browser Crash (partial fix)
 
-Evaluate PyScript ───────┬──> Web Worker Support (if adopting PyScript)
-                         └──> Editor features (if using py-editor)
+Evaluate PyScript [RESOLVED — REJECTED]
 
-Separate CSS ────────────┬──> Customize Styling
-                         └──> Align Styles
+Separate CSS [RESOLVED] ──> (Customize Styling [RESOLVED], Align Styles [RESOLVED])
+
+Interactive API Explorer [RESOLVED]
+Examples Gallery [PARTIALLY RESOLVED]
 
 CodeMirror 6 Upgrade ────┬──> Tracking Prevention (bundle CM6)
-                         ├──> Mouse Selection (likely fixed)
-                         └──> Editor Theme Config
+                         └──> Editor Theme Config [PARTIALLY RESOLVED]
+                         (Mouse Selection [RESOLVED])
+
+Duplicate Execution [RESOLVED]
+Loading Progress [RESOLVED]
+Dark Theme [RESOLVED]
 
 Distribution ────────────┬──> Documentation ──> Links
 ```
 
 ## Suggested Execution Order
 
-**Phase 1 - Decisions & Foundations (weeks 1-2):**
-API Design, Interactive API Explorer (testbed for API decisions), Evaluate PyScript (separate POC)
+**Phase 1 - Decisions & Foundations [COMPLETE]:**
+~~API Design~~ [DONE], ~~Evaluate PyScript~~ [REJECTED], ~~Name~~ [DONE], ~~Repository~~ [DONE], ~~panel-material-ui~~ [DONE], ~~Mouse Selection~~ [DONE], ~~Loading Progress~~ [DONE], ~~Align Styles~~ [DONE], ~~Customizable Styling~~ [DONE], ~~Dark Theme~~ [DONE], ~~Playground Layout~~ [DONE], ~~Duplicate Execution~~ [DONE]
 
-**Phase 2 - Core Architecture (weeks 3-6):**
-Web Worker Support, Folder/File Structure, Separate CSS, Build System, CodeMirror 6 Upgrade, Fix Browser Crash, Fix panel-material-ui
+**Phase 2 - Core Architecture:**
+Web Worker Support, Folder/File Structure, ~~Separate CSS~~ [DONE], Build System, CodeMirror 6 Upgrade, Fix Browser Crash (especially Chrome/Edge), ~~Interactive API Explorer~~ [DONE]
 
-**Phase 3 - Developer Experience (weeks 7-10):**
-Handle Python Errors, Copy Code, Loading Progress, Mouse Selection fix, Editor Theme, Duplicate Execution Logic cleanup, Python string concatenation cleanup
+**Phase 3 - Developer Experience:**
+Handle Python Errors (remaining: structured tracebacks, collapsible panel, copy button), Copy Code, Editor Theme (remaining: additional themes, high-contrast), Python string concatenation cleanup
 
-**Phase 4 - Polish & Release (weeks 11-14):**
-Automated Testing, Distribution, Documentation, Examples Gallery, Align Styles, Customizable Styling, Pixi Commands, GitHub Actions CI/CD, postMessage Security, Memory Leak investigation, Error Boundaries
+**Phase 4 - Polish & Release:**
+Automated Testing, Distribution, Documentation, Examples Gallery (remaining: 3+ more examples, defaults, gallery page), Pixi Commands, GitHub Actions CI/CD, postMessage Security (for future worker support), Memory Leak investigation, Error Boundaries
 
-**Phase 5 - Ecosystem & Deferred Features (weeks 15+):**
-Sphinx Extension, MkDocs Extension, Links, Multi-file Support, Requirements Specification, Layout Options, URL Sharing improvements, Dark Theme, Offline Support
+**Phase 5 - Ecosystem & Deferred Features:**
+Sphinx Extension, MkDocs Extension, Links, ~~Multi-file Support~~ [DONE], ~~Requirements Specification~~ [DONE], Version Info / Switching, URL Sharing improvements, Zero-Install Deployment, Offline Support
 
 **Phase 6 - Future:**
 React wrapper, Desktop version, Filesystem, Media access, Notebook experience
