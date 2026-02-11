@@ -81,6 +81,11 @@ def test_resources_server():
         'static/js/bokeh-mathjax.min.js'
     ]
 
+def test_resources_cdn_no_es_module_shims():
+    resources = Resources(mode='cdn', minified=True)
+    with config.set(es_module_shims=False):
+        assert not any('es-module-shims' in f for f in resources.js_files)
+
 def test_resources_config_css_files(document):
     resources = Resources(mode='cdn')
     with set_curdoc(document):

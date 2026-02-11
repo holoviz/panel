@@ -344,6 +344,11 @@ class _config(_base_config):
     _disable_validation = param.Boolean(default=False, doc="""
         Whether to disable bokeh validation, speeding up applications.""")
 
+    _es_module_shims = param.Boolean(default=True, doc="""
+        Whether to load the es-module-shims polyfill. Set to False
+        if you only target browsers with native import map support
+        (Chrome 89+, Firefox 108+, Safari 16.4+).""")
+
     # Global parameters that are shared across all sessions
     _globals: ClassVar[set[str]] = {
         'admin_plugins', 'autoreload', 'comms', 'cookie_path', 'cookie_secret',
@@ -351,7 +356,8 @@ class _config(_base_config):
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin', 'index_titles', 'disable_validation'
+        'oauth_optional', 'admin', 'index_titles', 'disable_validation',
+        'es_module_shims'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -525,6 +531,10 @@ class _config(_base_config):
     @property
     def disable_validation(self):
         return self._disable_validation
+
+    @property
+    def es_module_shims(self):
+        return os.environ.get('PANEL_ES_MODULE_SHIMS', self._es_module_shims) in self._truthy
 
     @property
     def embed(self):

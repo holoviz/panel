@@ -180,6 +180,14 @@ Where to save json files for embedded state.
 
 Default: './' | Type: String
 
+### `es_module_shims` (`PANEL_ES_MODULE_SHIMS`)
+
+Whether to load the es-module-shims polyfill. Set to False
+if you only target browsers with native import map support
+(Chrome 89+, Firefox 108+, Safari 16.4+).
+
+Default: True | Type: Boolean
+
 ### `exception_handler`
 
 General exception handler for events.

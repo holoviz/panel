@@ -58,7 +58,10 @@ class ReactiveESM(HTMLBox):
 
     @classproperty
     def __javascript__(cls):
-        return bundled_files(cls)
+        files = bundled_files(cls)
+        if not config.es_module_shims:
+            files = [f for f in files if 'es-module-shims' not in f]
+        return files
 
 
 class ReactComponent(ReactiveESM):
