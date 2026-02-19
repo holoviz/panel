@@ -25,7 +25,7 @@ from typing import (
 import bokeh.embed.wrappers
 
 from bokeh.embed.bundle import (
-    CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle,
+    CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle, _any,
     _bundle_extensions, _use_mathjax, bundle_models, extension_dirs,
 )
 from bokeh.model import Model
@@ -37,6 +37,7 @@ from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
+from ..models.markup import HTML as PanelHTML
 from ..util import _descendents, isurl, url_path
 from .state import state
 
@@ -449,6 +450,11 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
             files.append(url)
     return files
 
+def _panel_use_mathjax(roots) -> bool:
+    """Whether any model in roots is a Panel HTML model (may need MathJax)."""
+    return _any(roots, lambda obj: isinstance(obj, PanelHTML))
+
+
 def bundle_resources(
     roots,
     resources: BkResources,
@@ -471,7 +477,11 @@ def bundle_resources(
     if isinstance(enable_mathjax, bool):
         use_mathjax = enable_mathjax
     elif roots:
-        use_mathjax = _use_mathjax(roots) or 'mathjax' in ext._loaded_extensions
+        use_mathjax = (
+            _use_mathjax(roots) or
+            _panel_use_mathjax(roots) or
+            'mathjax' in ext._loaded_extensions
+        )
     else:
         use_mathjax = 'mathjax' in ext._loaded_extensions
 
