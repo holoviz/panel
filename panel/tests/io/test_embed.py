@@ -548,6 +548,26 @@ def test_embed_merged_sliders(document, comm):
     ]
 
 
+def test_embed_selects_with_same_name_not_merged(document, comm):
+    s1 = Select(name='test', options=['A', 'B'])
+    t1 = StaticText()
+    s1.param.watch(lambda event: setattr(t1, 'value', event.new), 'value')
+
+    s2 = Select(name='test', options=['1', '2'])
+    t2 = StaticText()
+    s2.param.watch(lambda event: setattr(t2, 'value', event.new), 'value')
+
+    panel = Row(s1, s2, t1, t2)
+    with config.set(embed=True):
+      model = panel.get_root(document, comm)
+    state_model = embed_state(panel, model, document)
+
+    assert state_model is not None
+    assert set(state_model.state) == {'A', 'B'}
+    assert set(state_model.state['A']) == {'1', '2'}
+    assert set(state_model.state['B']) == {'1', '2'}
+
+
 def test_save_embed_bytesio():
     checkbox = Checkbox()
     string = Str()
