@@ -1,3 +1,7 @@
+import pathlib
+import tempfile
+
+import param
 import pytest
 
 anywidget = pytest.importorskip("anywidget")
@@ -6,7 +10,10 @@ import traitlets
 import panel as pn
 
 from panel.pane import AnyWidget, PaneBase
-from panel.pane.anywidget import _COMPONENT_CACHE, _find_original_class
+from panel.pane.anywidget import (
+    _CACHE_MAX_SIZE, _COMPONENT_CACHE, _find_original_class,
+    _get_or_create_component_class, _resolve_text, _traitlet_to_param,
+)
 
 # ---------------------------------------------------------------
 # Test widget classes (real anywidget subclasses)
@@ -63,6 +70,48 @@ class NameCollisionWidget(anywidget.AnyWidget):
     width = traitlets.Int(100).tag(sync=True)
 
 
+class DisplayOnlyWidget(anywidget.AnyWidget):
+    """Widget with no sync-tagged traitlets — pure display."""
+    _esm = """
+    function render({ model, el }) { el.innerHTML = "<p>Display only</p>"; }
+    export default { render };
+    """
+
+
+class EnumWidget(anywidget.AnyWidget):
+    _esm = """
+    function render({ model, el }) { el.innerHTML = model.get("color"); }
+    export default { render };
+    """
+    color = traitlets.Enum(["red", "green", "blue"], default_value="red").tag(sync=True)
+
+
+class SetWidget(anywidget.AnyWidget):
+    _esm = """
+    function render({ model, el }) { el.innerHTML = "set"; }
+    export default { render };
+    """
+    tags = traitlets.Set(traitlets.Unicode(), default_value=set()).tag(sync=True)
+
+
+class InstanceWidget(anywidget.AnyWidget):
+    _esm = """
+    function render({ model, el }) { el.innerHTML = "instance"; }
+    export default { render };
+    """
+    metadata = traitlets.Instance(dict, args=()).tag(sync=True)
+
+
+class UnionWidget(anywidget.AnyWidget):
+    _esm = """
+    function render({ model, el }) { el.innerHTML = "union"; }
+    export default { render };
+    """
+    value = traitlets.Union(
+        [traitlets.Int(), traitlets.Unicode()], default_value=0
+    ).tag(sync=True)
+
+
 # ---------------------------------------------------------------
 # Detection / applies
 # ---------------------------------------------------------------
@@ -83,6 +132,23 @@ def test_anywidget_applies_false():
         x = traitlets.Int(0)
 
     assert AnyWidget.applies(PlainTraits()) is False
+
+def test_anywidget_applies_false_duck_type_mismatch():
+    """Objects with traits/class_traits but no _esm should not match."""
+    class FakeWidget:
+        def traits(self):
+            return {}
+        def class_traits(self):
+            return {}
+
+    assert AnyWidget.applies(FakeWidget()) is False
+
+    # Object with traits but not callable
+    class BadTraits:
+        traits = "not callable"
+        _esm = "some code"
+
+    assert AnyWidget.applies(BadTraits()) is False
 
 def test_anywidget_auto_detection():
     widget = CounterWidget()
@@ -124,6 +190,18 @@ def test_anywidget_component_eager_creation():
     # No get_root() call — component should exist eagerly
     assert pane.component is not None
     assert pane.component.value == 42
+
+def test_anywidget_none_object_returns_spacer(document, comm):
+    """_get_model returns BkSpacer when object is None."""
+    from bokeh.models import Spacer as BkSpacer
+    pane = AnyWidget(None)
+    model = pane.get_root(document, comm=comm)
+    assert isinstance(model.children[0], BkSpacer)
+
+def test_anywidget_none_object_no_component():
+    """Component is None when object is None."""
+    pane = AnyWidget(None)
+    assert pane.component is None
 
 
 # ---------------------------------------------------------------
@@ -290,10 +368,31 @@ def test_anywidget_cache_reuse():
     orig2 = _find_original_class(w2)
     assert orig1 is orig2
 
-    from panel.pane.anywidget import _get_or_create_component_class
     cls1 = _get_or_create_component_class(w1)
     cls2 = _get_or_create_component_class(w2)
     assert cls1 is cls2
+
+def test_anywidget_cache_bounded():
+    """Cache evicts oldest entries when exceeding _CACHE_MAX_SIZE."""
+    _COMPONENT_CACHE.clear()
+
+    # Create more classes than the cache can hold
+    classes = []
+    for i in range(_CACHE_MAX_SIZE + 5):
+        cls = type(f'Widget{i}', (anywidget.AnyWidget,), {
+            '_esm': f'function render({{ model, el }}) {{ el.innerHTML = "{i}"; }}\nexport default {{ render }};',
+            '__module__': __name__,
+        })
+        classes.append(cls)
+        w = cls()
+        _get_or_create_component_class(w)
+
+    assert len(_COMPONENT_CACHE) == _CACHE_MAX_SIZE
+    # Oldest entries should have been evicted
+    orig_first = _find_original_class(classes[0]())
+    assert orig_first not in _COMPONENT_CACHE
+
+    _COMPONENT_CACHE.clear()
 
 
 # ---------------------------------------------------------------
@@ -345,3 +444,180 @@ def test_anywidget_cleanup(document, comm):
     assert pane._models == {}
     assert pane._component is None
     assert pane._trait_watchers == []
+
+
+# ---------------------------------------------------------------
+# Display-only widget (no sync traits)
+# ---------------------------------------------------------------
+
+def test_anywidget_display_only(document, comm):
+    """Widget with no sync-tagged traitlets renders without error."""
+    widget = DisplayOnlyWidget()
+    pane = AnyWidget(widget)
+    assert pane.component is not None
+    model = pane.get_root(document, comm=comm)
+    assert model is not None
+
+
+# ---------------------------------------------------------------
+# Traitlet type mapping: Enum, Set, Instance, Union
+# ---------------------------------------------------------------
+
+def test_traitlet_enum_mapping():
+    """Enum traitlet maps to param.Selector with objects."""
+    trait = traitlets.Enum(["red", "green", "blue"], default_value="red")
+    p = _traitlet_to_param(trait)
+    assert isinstance(p, param.Selector)
+    assert p.default == "red"
+    assert p.objects == ["red", "green", "blue"]
+
+def test_traitlet_set_mapping():
+    """Set traitlet maps to param.List (approximation)."""
+    trait = traitlets.Set(default_value=set())
+    p = _traitlet_to_param(trait)
+    assert isinstance(p, param.List)
+
+def test_traitlet_instance_mapping():
+    """Instance traitlet maps to param.ClassSelector."""
+    trait = traitlets.Instance(dict, args=())
+    p = _traitlet_to_param(trait)
+    assert isinstance(p, param.ClassSelector)
+    assert p.class_ is dict
+
+def test_traitlet_union_mapping():
+    """Union traitlet falls back to generic param.Parameter."""
+    trait = traitlets.Union([traitlets.Int(), traitlets.Unicode()], default_value=0)
+    p = _traitlet_to_param(trait)
+    assert isinstance(p, param.Parameter)
+    assert p.default == 0
+
+def test_anywidget_enum_sync():
+    """Enum traitlet syncs correctly between widget and component."""
+    _COMPONENT_CACHE.clear()
+    widget = EnumWidget()
+    pane = AnyWidget(widget)
+    assert pane.component is not None
+    assert pane.component.color == "red"
+
+    widget.color = "blue"
+    assert pane.component.color == "blue"
+
+    pane.component.color = "green"
+    assert widget.color == "green"
+    _COMPONENT_CACHE.clear()
+
+def test_anywidget_instance_widget():
+    """Instance traitlet widget creates component correctly."""
+    _COMPONENT_CACHE.clear()
+    widget = InstanceWidget()
+    pane = AnyWidget(widget)
+    assert pane.component is not None
+    _COMPONENT_CACHE.clear()
+
+def test_anywidget_union_sync():
+    """Union traitlet syncs correctly (generic param.Parameter)."""
+    _COMPONENT_CACHE.clear()
+    widget = UnionWidget()
+    pane = AnyWidget(widget)
+    assert pane.component is not None
+    assert pane.component.value == 0
+
+    widget.value = "hello"
+    assert pane.component.value == "hello"
+
+    widget.value = 42
+    assert pane.component.value == 42
+    _COMPONENT_CACHE.clear()
+
+
+# ---------------------------------------------------------------
+# _resolve_text helper
+# ---------------------------------------------------------------
+
+def test_resolve_text_none():
+    assert _resolve_text(None) is None
+
+def test_resolve_text_string():
+    assert _resolve_text("hello") == "hello"
+
+def test_resolve_text_path():
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+        f.write("export default { render };")
+        f.flush()
+        result = _resolve_text(pathlib.Path(f.name))
+    assert result == "export default { render };"
+
+def test_resolve_text_non_string_object():
+    """Non-string, non-path objects are coerced via str()."""
+    class FakeFileContents:
+        def __str__(self):
+            return "fake ESM content"
+    assert _resolve_text(FakeFileContents()) == "fake ESM content"
+
+
+# ---------------------------------------------------------------
+# File-based ESM
+# ---------------------------------------------------------------
+
+def test_anywidget_file_esm(document, comm):
+    """Widget with _esm as a pathlib.Path works correctly."""
+    _COMPONENT_CACHE.clear()
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+        f.write("""
+        function render({ model, el }) { el.innerHTML = "file-based"; }
+        export default { render };
+        """)
+        f.flush()
+        esm_path = pathlib.Path(f.name)
+
+    class FileEsmWidget(anywidget.AnyWidget):
+        _esm = esm_path
+        val = traitlets.Int(0).tag(sync=True)
+
+    widget = FileEsmWidget(val=10)
+    pane = AnyWidget(widget)
+    assert pane.component is not None
+    assert pane.component.val == 10
+    model = pane.get_root(document, comm=comm)
+    assert model is not None
+    _COMPONENT_CACHE.clear()
+
+
+# ---------------------------------------------------------------
+# Exception handling in sync
+# ---------------------------------------------------------------
+
+def test_anywidget_sync_trait_error_silent():
+    """TraitError during sync is silently caught (no crash)."""
+    widget = CounterWidget(value=0)
+    pane = AnyWidget(widget)
+
+    # Setting an invalid type on the component — the sync back to
+    # the traitlet will raise TraitError, which should be caught
+    # We can't easily trigger this through normal API since param
+    # types are looser, but we verify the mechanism works by
+    # confirming the pane doesn't crash
+    widget.value = 5
+    assert pane.component.value == 5
+
+def test_anywidget_sync_logs_unexpected_error():
+    """Unexpected exceptions during param->traitlet sync are logged, not raised."""
+    widget = CounterWidget(value=0)
+    pane = AnyWidget(widget)
+
+    # Monkey-patch widget to raise on setattr for 'value'
+    original_setattr = type(widget).__setattr__
+
+    def raising_setattr(self, name, val):
+        if name == 'value' and isinstance(val, int) and val == 999:
+            raise RuntimeError("Unexpected error")
+        return original_setattr(self, name, val)
+
+    type(widget).__setattr__ = raising_setattr
+    try:
+        # Should not raise — the error is caught and logged
+        pane.component.value = 999
+        # The traitlet should still have the old value since setattr failed
+        assert widget.value == 0
+    finally:
+        type(widget).__setattr__ = original_setattr

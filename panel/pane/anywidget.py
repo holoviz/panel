@@ -9,8 +9,10 @@ Panel's ReactiveESM pipeline.  The result is full Panel reactivity
 """
 from __future__ import annotations
 
+import logging
 import pathlib
 
+from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
@@ -23,10 +25,15 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+logger = logging.getLogger(__name__)
+
 # ---------------------------------------------------------------
 # Module-level cache: anywidget class -> dynamic component class
+# Bounded to prevent unbounded memory growth.  When the cache
+# exceeds _CACHE_MAX_SIZE the oldest entry is evicted (FIFO).
 # ---------------------------------------------------------------
-_COMPONENT_CACHE: dict[type, type[AnyWidgetComponent]] = {}
+_CACHE_MAX_SIZE = 256
+_COMPONENT_CACHE: OrderedDict[type, type[AnyWidgetComponent]] = OrderedDict()
 
 # Framework / internal traits that should never be synced
 _FRAMEWORK_TRAITS = frozenset({
@@ -62,11 +69,25 @@ def _traitlet_to_param(trait):
         traitlets.Bytes:   param.Bytes,
         traitlets.CBytes:  param.Bytes,
         traitlets.List:    param.List,
+        traitlets.Set:     param.List,  # approximate Set as List
         traitlets.Tuple:   param.Tuple,
         traitlets.Dict:    param.Dict,
     }
 
-    # Walk MRO for custom traitlet subclasses
+    # --- Special-case: Enum -> param.Selector with objects --------
+    if isinstance(trait, traitlets.Enum):
+        try:
+            default = trait.default()
+        except Exception:
+            default = None
+        p = param.Selector(default=default, objects=list(trait.values))
+        if getattr(trait, 'allow_none', False):
+            p.allow_None = True
+        return p
+
+    # Walk MRO for custom traitlet subclasses (before Instance check
+    # because Container subclasses like Set, List, Tuple inherit from
+    # Instance and would otherwise be caught by the Instance case).
     for cls in type(trait).__mro__:
         if cls in TRAITLET_MAP:
             param_type = TRAITLET_MAP[cls]
@@ -74,12 +95,29 @@ def _traitlet_to_param(trait):
                 default = trait.default()
             except Exception:
                 default = param_type().default
+            # Convert set defaults to list for param.List compatibility
+            if param_type is param.List and isinstance(default, set):
+                default = list(default)
             p = param_type(default=default)
             if getattr(trait, 'allow_none', False):
                 p.allow_None = True
             return p
 
-    # Fallback for unknown types
+    # --- Special-case: Instance -> param.ClassSelector ------------
+    # Checked after TRAITLET_MAP walk because Container subclasses
+    # (List, Set, Tuple, Dict) inherit from Instance.
+    if isinstance(trait, traitlets.Instance):
+        try:
+            default = trait.default()
+        except Exception:
+            default = None
+        klass = getattr(trait, 'klass', None) or object
+        p = param.ClassSelector(default=default, class_=klass, is_instance=True)
+        if getattr(trait, 'allow_none', False):
+            p.allow_None = True
+        return p
+
+    # Fallback for unknown types (including Union)
     try:
         default = trait.default()
     except Exception:
@@ -105,6 +143,23 @@ def _get_synced_traits(widget_or_class):
         name: trait for name, trait in sync_traits.items()
         if name not in _FRAMEWORK_TRAITS and not name.startswith('_')
     }
+
+
+def _resolve_text(value):
+    """
+    Resolve an ESM or CSS value to a plain string.
+
+    Handles: ``None``, plain strings, ``pathlib.PurePath``,
+    ``anywidget.experimental.FileContents``, and
+    ``anywidget._file_contents.VirtualFileContents``.
+    All non-``None`` values are coerced via ``str()``.
+    ``pathlib.PurePath`` instances are read from disk.
+    """
+    if value is None:
+        return None
+    if isinstance(value, pathlib.PurePath):
+        return pathlib.Path(value).read_text(encoding='utf-8')
+    return str(value)
 
 
 def _find_original_class(widget):
@@ -152,23 +207,14 @@ def _get_or_create_component_class(widget):
     # subclass created by add_traits().
     original_cls = _find_original_class(widget)
     if original_cls in _COMPONENT_CACHE:
+        _COMPONENT_CACHE.move_to_end(original_cls)
         return _COMPONENT_CACHE[original_cls]
 
     # --- Extract ESM (from instance for correct traitlet resolution) ---
-    esm = getattr(widget, '_esm', None)
-    if esm is not None:
-        if isinstance(esm, pathlib.PurePath):
-            esm = pathlib.Path(esm).read_text(encoding='utf-8')
-        else:
-            esm = str(esm)
+    esm = _resolve_text(getattr(widget, '_esm', None))
 
     # --- Extract CSS (from instance) -----------------------------------
-    css = getattr(widget, '_css', None)
-    if css is not None:
-        if isinstance(css, pathlib.PurePath):
-            css = pathlib.Path(css).read_text(encoding='utf-8')
-        else:
-            css = str(css)
+    css = _resolve_text(getattr(widget, '_css', None))
 
     # --- Map traitlets to param Parameters, handle collisions ----------
     sync_traits = _get_synced_traits(widget)
@@ -198,6 +244,9 @@ def _get_or_create_component_class(widget):
         class_dict,
     )
 
+    # Evict oldest entry if cache is full
+    if len(_COMPONENT_CACHE) >= _CACHE_MAX_SIZE:
+        _COMPONENT_CACHE.popitem(last=False)
     _COMPONENT_CACHE[original_cls] = component_cls
     return component_cls
 
@@ -275,8 +324,14 @@ class AnyWidget(Pane):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        """Detect anywidget instances via duck typing."""
-        if not hasattr(obj, 'traits'):
+        """Detect anywidget instances via duck typing.
+
+        Checks for ``traits`` (callable), ``class_traits`` (specific to
+        ``traitlets.HasTraits``), and ``_esm`` on the class.
+        """
+        if not callable(getattr(obj, 'traits', None)):
+            return False
+        if not hasattr(obj, 'class_traits'):
             return False
         return hasattr(type(obj), '_esm')
 
@@ -300,6 +355,12 @@ class AnyWidget(Pane):
         if root is None:
             return self.get_root(doc, comm)
 
+        if self.object is None:
+            from bokeh.models import Spacer as BkSpacer
+            model = BkSpacer()
+            self._models[root.ref['id']] = (model, parent)
+            return model
+
         if self._component is None:
             self._component = self._create_component()
 
@@ -307,12 +368,11 @@ class AnyWidget(Pane):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _create_component(self) -> AnyWidgetComponent:
+    def _create_component(self) -> AnyWidgetComponent | None:
         """Build the internal ``AnyWidgetComponent`` from ``self.object``."""
         widget = self.object
         if widget is None:
-            # Return a bare component when no object is set
-            return AnyWidgetComponent()
+            return None
         component_cls = _get_or_create_component_class(widget)
 
         trait_name_map: dict[str, str] = getattr(
@@ -361,6 +421,7 @@ class AnyWidget(Pane):
 
         # component param -> traitlet
         def _on_param_change(*events):
+            import traitlets
             for event in events:
                 param_name = event.name
                 trait_name = reverse_map.get(param_name, param_name)
@@ -369,8 +430,13 @@ class AnyWidget(Pane):
                 try:
                     self._trait_changing.add(trait_name)
                     setattr(widget, trait_name, event.new)
+                except traitlets.TraitError:
+                    pass  # traitlet validation rejected the value
                 except Exception:
-                    pass  # traitlet validation may reject the value
+                    logger.warning(
+                        "Failed to sync param %r to traitlet %r: %s",
+                        param_name, trait_name, event.new, exc_info=True,
+                    )
                 finally:
                     self._trait_changing.discard(trait_name)
 
