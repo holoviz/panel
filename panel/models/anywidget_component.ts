@@ -32,9 +32,10 @@ class AnyWidgetModelAdapter {
   get _trait_name_map(): Record<string, string> {
     if (this._cached_trait_name_map === null) {
       const constants = this.model.data?.attributes?.esm_constants
-      this._cached_trait_name_map = (constants && constants._trait_name_map) ? constants._trait_name_map : {}
+      const map = (constants && constants._trait_name_map) ? constants._trait_name_map : {}
+      this._cached_trait_name_map = map as Record<string, string>
     }
-    return this._cached_trait_name_map
+    return this._cached_trait_name_map!
   }
 
   // Reverse map: param name → traitlet name.
@@ -47,7 +48,7 @@ class AnyWidgetModelAdapter {
       }
       this._cached_param_name_map = m
     }
-    return this._cached_param_name_map
+    return this._cached_param_name_map!
   }
 
   // Translate a traitlet name (used by ESM) to the param name (used by Bokeh model)
@@ -142,7 +143,7 @@ class AnyWidgetModelAdapter {
       // receive undefined and throw a TypeError, which prevents Vega signal
       // listeners from being registered and breaks selection sync.
       const wrapped = () => {
-        const value = this.get(trait_name)
+        const value = this.get(prop)
         if (value !== undefined) {
           cb(value)
         }
@@ -269,11 +270,21 @@ function render(id) {
   const view = Bokeh.index.find_one_by_id(id)
   if (!view) { return }
 
+  // Expose adapter as view.model for widgets that expect the anywidget protocol
+  // (e.g., Mosaic, which accesses view.model.send() directly).
+  // Store the Bokeh model reference and replace it with the adapter.
+  const original_model = view.model
+  view.model = view.adapter
+
   const out = Promise.resolve(view.render_fn({
-    view, model: view.adapter, data: view.model.data, el: view.container
+    view, model: view.adapter, data: original_model.data, el: view.container
   }) || null)
   view.destroyer = out
   out.then(() => view.after_rendered())
+    .finally(() => {
+      // Restore the original Bokeh model after render completes
+      view.model = original_model
+    })
 }
 
 export default {render}`
