@@ -89,16 +89,48 @@ def _serialize_instance(obj):
     return obj
 
 
-def _deep_serialize(obj, _seen=None):
+_MAX_SERIALIZE_DEPTH = 10
+
+
+def _is_dataframe(obj):
+    """Check if *obj* is a pandas or polars DataFrame (without importing)."""
+    cls = type(obj)
+    name = cls.__qualname__
+    if name != 'DataFrame':
+        return False
+    mod = cls.__module__ or ''
+    return mod == 'pandas' or mod.startswith(('pandas.', 'polars.'))
+
+
+def _dataframe_to_records(obj):
+    """Convert a pandas/polars DataFrame to list-of-dicts (records) format."""
+    if hasattr(obj, 'to_dicts'):  # polars
+        return obj.to_dicts()
+    if hasattr(obj, 'to_dict'):   # pandas
+        return obj.to_dict(orient='records')
+    return repr(obj)
+
+
+def _deep_serialize(obj, _seen=None, _depth=0):
     """
     Recursively serialize non-JSON-safe values in *obj*.
 
     Walks dicts and lists to ensure all leaf values are JSON-serializable.
     Non-JSON-safe leaf objects are converted via ``_serialize_instance``.
-    A *_seen* set prevents infinite recursion from circular references.
+    A *_seen* set prevents infinite recursion from circular references,
+    and *_depth* prevents unbounded expansion of complex object trees
+    (e.g. logging.Logger, which contains handlers, managers, locks, etc.).
+
+    Pandas DataFrames are converted to records (list-of-dicts) format
+    to match what most anywidget ESM modules expect.
     """
     if obj is None or isinstance(obj, (bool, int, float, str, bytes)):
         return obj
+    # Pandas DataFrames: convert to records (list-of-dicts) for ESM consumption
+    if _is_dataframe(obj):
+        return _dataframe_to_records(obj)
+    if _depth >= _MAX_SERIALIZE_DEPTH:
+        return None  # prevent unbounded expansion
     if _seen is None:
         _seen = set()
     obj_id = id(obj)
@@ -106,16 +138,23 @@ def _deep_serialize(obj, _seen=None):
         return None  # break circular reference
     _seen.add(obj_id)
     if isinstance(obj, dict):
-        return {k: _deep_serialize(v, _seen) for k, v in obj.items()}
+        result = {}
+        for k, v in obj.items():
+            # JSON dict keys must be strings; stringify non-string keys
+            # (e.g. Logger objects used as keys in logging.Manager.loggerDict)
+            if not isinstance(k, str):
+                k = repr(k)
+            result[k] = _deep_serialize(v, _seen, _depth + 1)
+        return result
     if isinstance(obj, (list, tuple)):
-        result = [_deep_serialize(v, _seen) for v in obj]
+        result = [_deep_serialize(v, _seen, _depth + 1) for v in obj]
         return type(obj)(result) if isinstance(obj, tuple) else result
     # Non-JSON-safe leaf: try to serialize, then recurse on result
     serialized = _serialize_instance(obj)
     if serialized is obj:
         # _serialize_instance couldn't convert it; stringify as fallback
         return repr(obj)
-    return _deep_serialize(serialized, _seen)
+    return _deep_serialize(serialized, _seen, _depth + 1)
 
 
 def _deserialize_instance(klass, value):
@@ -221,6 +260,12 @@ def _traitlet_to_param(trait):
     try:
         default = trait.default()
     except Exception:
+        default = None
+    # Ensure the default is JSON-safe so it can be used as a Bokeh
+    # property default in the DataModel class definition (which is
+    # serialized as part of document `defs`).  Non-safe objects like
+    # logging.Logger would crash Bokeh's serializer.
+    if not _is_json_safe(default):
         default = None
     p = param.Parameter(default=default)
     if getattr(trait, 'allow_none', False):
@@ -479,6 +524,14 @@ class AnyWidget(Pane):
         self._models[root.ref['id']] = (model, parent)
         return model
 
+    # Layout params forwarded from the AnyWidget pane to the inner component
+    _LAYOUT_PARAMS: ClassVar[tuple[str, ...]] = (
+        'align', 'aspect_ratio', 'css_classes', 'design', 'height',
+        'min_width', 'min_height', 'max_width', 'max_height', 'margin',
+        'styles', 'stylesheets', 'width', 'width_policy', 'height_policy',
+        'sizing_mode', 'visible',
+    )
+
     def _create_component(self) -> AnyWidgetComponent | None:
         """Build the internal ``AnyWidgetComponent`` from ``self.object``."""
         widget = self.object
@@ -499,10 +552,19 @@ class AnyWidget(Pane):
                 value = _deep_serialize(getattr(widget, trait_name))
                 init_values[param_name] = value
 
+        # Forward layout params from the pane to the component
+        for lp in self._LAYOUT_PARAMS:
+            pane_val = getattr(self, lp, None)
+            default_val = self.param[lp].default if lp in self.param else None
+            if pane_val != default_val and lp in component_cls.param:
+                init_values[lp] = pane_val
+
         component = component_cls(**init_values)
 
         # Wire bidirectional sync
         self._setup_trait_sync(widget, component, sync_traits, trait_name_map)
+        # Wire custom message routing (model.send / model.on("msg:custom"))
+        self._setup_msg_routing(widget, component)
         return component
 
     # ------------------------------------------------------------------
@@ -573,6 +635,59 @@ class AnyWidget(Pane):
         if param_names:
             watcher = component.param.watch(_on_param_change, param_names)
             self._trait_watchers.append(('param', component, watcher))
+
+    # ------------------------------------------------------------------
+    # Custom message routing:  ESM <-> Python widget
+    # ------------------------------------------------------------------
+    # Some anywidgets (e.g. Mosaic) use a message-passing protocol where
+    # the ESM sends queries to the Python backend via model.send() and
+    # Python responds via widget.send().  Panel's ReactiveESM pipeline
+    # handles this via DataEvent (ESM→Python) and ESMEvent (Python→ESM),
+    # but the dynamic component's _handle_msg is a no-op and the widget's
+    # send() tries to use the (non-existent) ipywidgets comm.
+    #
+    # This method bridges both directions:
+    #   ESM → Python:  component.on_msg  →  widget._handle_custom_msg
+    #   Python → ESM:  widget.send       →  component._send_msg
+    #
+    # Binary buffers (e.g. Mosaic's Arrow IPC query results) are
+    # base64-encoded into the JSON message under `_b64_buffers` and
+    # decoded back to DataView objects by the TS adapter.
+
+    def _setup_msg_routing(self, widget, component):
+        # ESM → Python: forward DataEvent messages to the widget
+        # on_msg callbacks receive the full DataEvent object;
+        # extract .data to pass to the widget's handler.
+        def _on_component_msg(event):
+            data = getattr(event, 'data', event)
+            if hasattr(widget, '_handle_custom_msg'):
+                widget._handle_custom_msg(data, [])
+
+        component.on_msg(_on_component_msg)
+
+        # Python → ESM: override widget.send() to route through Panel
+        #
+        # Panel's ESMEvent carries JSON only — no native binary channel.
+        # When the widget sends binary buffers (e.g. Mosaic's Arrow IPC
+        # query results), we base64-encode them into the JSON message
+        # under the key `_b64_buffers`.  The TS adapter's msg:custom
+        # wrapper decodes them back to DataView objects before passing
+        # them to the ESM callback.
+        def _send_override(content, buffers=None):
+            if buffers:
+                import base64
+                encoded = []
+                for buf in buffers:
+                    if isinstance(buf, memoryview):
+                        buf = bytes(buf)
+                    encoded.append(base64.b64encode(buf).decode('ascii'))
+                if isinstance(content, dict):
+                    content = {**content, '_b64_buffers': encoded}
+                else:
+                    content = {'_data': content, '_b64_buffers': encoded}
+            component._send_msg(content)
+
+        widget.send = _send_override
 
     def _teardown_trait_sync(self):
         """Remove all traitlet observers and param watchers."""

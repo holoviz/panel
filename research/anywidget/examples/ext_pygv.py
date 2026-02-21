@@ -44,7 +44,7 @@ browser = pygv.browse()
 # 2. Wrap with Panel's AnyWidget pane
 # ---------------------------------------------------------------------------
 
-anywidget_pane = pn.pane.AnyWidget(browser, height=400, sizing_mode="stretch_width")
+anywidget_pane = pn.pane.AnyWidget(browser, height=700, sizing_mode="stretch_width", styles={"border": "1px solid #ccc", "border-radius": "4px"})
 
 # ---------------------------------------------------------------------------
 # 3. Panel controls for genome navigation

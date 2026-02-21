@@ -74,7 +74,7 @@ mosaic_widget = MosaicWidget(
     data={"sample_data": df},
 )
 
-anywidget_pane = pn.pane.AnyWidget(mosaic_widget)
+anywidget_pane = pn.pane.AnyWidget(mosaic_widget, height=500, width=500, styles={"border": "1px solid #ccc", "border-radius": "4px"})
 
 # ---------------------------------------------------------------------------
 # 4. Wire up Panel controls for bidirectional sync
@@ -99,15 +99,16 @@ component.param.watch(on_params_change, ["params"])
 
 # Button to update the spec from Python
 def update_to_bar_chart(event):
-    """Switch the visualization to a bar chart."""
+    """Switch the visualization to a bar chart (value by category)."""
     bar_spec = {
         "plot": [
             {
                 "mark": "barY",
                 "data": {"from": "sample_data"},
                 "x": "category",
-                "y": {"aggregate": "count"},
+                "y": "value",
                 "fill": "category",
+                "r": 5,
             }
         ],
         "width": 500,

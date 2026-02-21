@@ -111,10 +111,10 @@ y_selector.param.watch(update_chart, "value")
 
 # Chart -> Panel: display selections and params synced back from the browser
 selections_display = pn.pane.JSON(
-    {}, name="Vega-Lite Selections", depth=3, height=150,
+    {}, name="Vega-Lite Selections", depth=4, height=150,
 )
 params_display = pn.pane.JSON(
-    {}, name="Vega-Lite Params", depth=3, height=150,
+    {}, name="Vega-Lite Params", depth=4, height=150,
 )
 
 # Show filtered data from brush selection
@@ -130,7 +130,10 @@ def on_selections_change(*events):
         # Filter source data by brush selection bounds
         if sel:
             # Extract the first selection's bounds (interval selection)
-            for _sel_name, sel_data in sel.items():
+            for _, sel_data in sel.items():
+                sel_data = sel_data.get("value")
+                if not sel_data:
+                    continue
                 filtered = source
                 if "Horsepower" in sel_data:
                     hp_range = sel_data["Horsepower"]
@@ -184,10 +187,16 @@ controls = pn.Column(
     pn.pane.Markdown("### Controls"),
     x_selector,
     y_selector,
-    pn.pane.Markdown("### Brush Selection (from chart)"),
-    selection_count,
-    pn.pane.Markdown("### Params (from chart)"),
-    params_display,
+    pn.Row(
+        pn.Column(
+            pn.pane.Markdown("### Brush Selection (from chart)"),
+            selections_display,
+        ),
+        pn.Column(
+            pn.pane.Markdown("### Named Parameters (from chart)"),
+            params_display,
+        ),
+    ),
     width=350,
 )
 

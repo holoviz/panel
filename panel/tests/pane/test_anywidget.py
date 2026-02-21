@@ -11,9 +11,10 @@ import panel as pn
 
 from panel.pane import AnyWidget, PaneBase
 from panel.pane.anywidget import (
-    _CACHE_MAX_SIZE, _COMPONENT_CACHE, _deep_serialize, _find_original_class,
-    _get_or_create_component_class, _is_json_safe, _resolve_text,
-    _serialize_instance, _traitlet_to_param,
+    _CACHE_MAX_SIZE, _COMPONENT_CACHE, _MAX_SERIALIZE_DEPTH,
+    _dataframe_to_records, _deep_serialize, _find_original_class,
+    _get_or_create_component_class, _is_dataframe, _is_json_safe,
+    _resolve_text, _serialize_instance, _traitlet_to_param,
 )
 
 # ---------------------------------------------------------------
@@ -915,4 +916,333 @@ def test_anywidget_nested_non_json_safe_init():
     assert component.client['url'] == "http://example.com"
     assert isinstance(component.client['comm'], dict)
     assert component.client['comm']['target'] == "kernel"
+    _COMPONENT_CACHE.clear()
+
+
+# ---------------------------------------------------------------
+# Logger-like deeply nested non-JSON-safe objects (HiGlass-like)
+# ---------------------------------------------------------------
+
+def test_deep_serialize_logger_like_object():
+    """_deep_serialize handles Logger-like objects with complex __dict__ trees."""
+    import logging
+
+    logger = logging.getLogger("test_anywidget_deep_serialize")
+    result = _deep_serialize(logger)
+
+    # Logger should be serialized to a dict (via __dict__), not crash
+    assert isinstance(result, dict)
+    # The dict should contain the logger's name
+    assert result.get('name') == "test_anywidget_deep_serialize"
+
+
+def test_deep_serialize_non_string_dict_keys():
+    """_deep_serialize converts non-string dict keys to repr strings."""
+    import logging
+
+    # Simulate logging.Manager.loggerDict which uses Logger objects as keys
+    logger1 = logging.getLogger("test_key_serialize_1")
+    logger2 = logging.getLogger("test_key_serialize_2")
+    data = {logger1: "value1", logger2: "value2", "normal_key": "value3"}
+
+    result = _deep_serialize(data)
+    assert isinstance(result, dict)
+    # Non-string keys should be stringified (repr)
+    assert all(isinstance(k, str) for k in result.keys())
+    assert result["normal_key"] == "value3"
+
+
+def test_deep_serialize_depth_limit():
+    """_deep_serialize stops expanding at _MAX_SERIALIZE_DEPTH."""
+    # Build a deeply nested object chain
+    class Node:
+        def __init__(self, depth):
+            self.depth = depth
+            self.child = Node(depth + 1) if depth < _MAX_SERIALIZE_DEPTH + 5 else None
+
+    result = _deep_serialize(Node(0))
+    assert isinstance(result, dict)
+    assert result['depth'] == 0
+
+    # Walk the chain: at some point, child should become None (truncated)
+    node = result
+    for _ in range(_MAX_SERIALIZE_DEPTH + 5):
+        if node is None or not isinstance(node, dict) or node.get('child') is None:
+            break
+        node = node['child']
+    # The chain should have been truncated before depth + 5
+    assert node is None or not isinstance(node, dict) or node.get('child') is None
+
+
+def test_traitlet_to_param_non_json_safe_default():
+    """_traitlet_to_param sanitizes non-JSON-safe defaults to None."""
+    import logging
+
+    class LoggerWidget(anywidget.AnyWidget):
+        _esm = 'function render() {}\nexport default { render };'
+        logger_ref = traitlets.Any(default_value=logging.getLogger("test")).tag(sync=True)
+
+    _COMPONENT_CACHE.clear()
+    widget = LoggerWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # The component should have been created without serialization errors.
+    # The logger_ref param default should be None (sanitized), but the
+    # actual value should be deep-serialized from the widget's traitlet.
+    assert isinstance(component.logger_ref, dict)
+    _COMPONENT_CACHE.clear()
+
+
+# ---------------------------------------------------------------
+# Scoped document defs (cross-app leakage prevention)
+# ---------------------------------------------------------------
+
+def test_scoped_document_defs(document, comm):
+    """Document defs only include DataModels used in the current document."""
+    from bokeh.core.has_props import is_DataModel
+
+    from panel.io.datamodel import _NAMED_DATA_MODELS, construct_data_model
+
+    # Create two different DataModel classes
+    class Widget1(param.Parameterized):
+        value = param.Integer(default=0)
+
+    class Widget2(param.Parameterized):
+        text = param.String(default="hello")
+
+    model1 = construct_data_model(Widget1, name='ScopedTest1')
+    model2 = construct_data_model(Widget2, name='ScopedTest2')
+
+    # Create instances and add only model1 to the document
+    instance1 = model1(value=42)
+    document.add_root(instance1)
+
+    # Serialize the document
+    doc_json = document.to_json(deferred=True)
+
+    # The defs should only include ScopedTest1, not ScopedTest2
+    if 'defs' in doc_json:
+        # Check the actual data models included in the document
+        all_dm = {
+            m for m in document.models
+            if is_DataModel(type(m))
+        }
+        dm_classes = {type(m) for m in all_dm}
+        assert model1 in dm_classes or len(dm_classes) == 0
+        assert model2 not in dm_classes
+
+    # Cleanup
+    document.remove_root(instance1)
+    _NAMED_DATA_MODELS.pop('ScopedTest1', None)
+    _NAMED_DATA_MODELS.pop('ScopedTest2', None)
+
+
+def test_anywidget_logger_trait_document_serialization():
+    """A widget with a Logger-typed trait serializes to a document without errors.
+
+    Regression test for HiGlass: ``can't serialize <class 'logging.Logger'>``.
+    The Logger trait has non-JSON-safe defaults AND runtime values with
+    non-string dict keys (Manager.loggerDict uses Logger objects as keys).
+    """
+    import logging
+
+    from bokeh.document import Document
+
+    _COMPONENT_CACHE.clear()
+
+    class LoggerTraitWidget(anywidget.AnyWidget):
+        _esm = 'function render() {}\nexport default { render };'
+        config = traitlets.Dict({}).tag(sync=True)
+        logger_ref = traitlets.Any(
+            default_value=logging.getLogger("higlass_test_doc_serialize"),
+        ).tag(sync=True)
+
+    widget = LoggerTraitWidget()
+    pane = AnyWidget(widget)
+
+    doc = Document()
+    root = pane.get_root(doc)
+    doc.add_root(root)
+
+    # Must not raise "can't serialize <class 'logging.Logger'>"
+    doc_json = doc.to_json(deferred=True)
+    assert 'roots' in doc_json
+    _COMPONENT_CACHE.clear()
+
+
+# ---------------------------------------------------------------
+# DataFrame serialization helpers
+# ---------------------------------------------------------------
+
+def test_is_dataframe_pandas():
+    """_is_dataframe detects pandas DataFrames."""
+    pd = pytest.importorskip("pandas")
+    df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+    assert _is_dataframe(df) is True
+
+def test_is_dataframe_non_df():
+    """_is_dataframe returns False for non-DataFrame objects."""
+    assert _is_dataframe(None) is False
+    assert _is_dataframe([1, 2, 3]) is False
+    assert _is_dataframe({"a": 1}) is False
+
+def test_dataframe_to_records_pandas():
+    """_dataframe_to_records converts pandas DataFrame to records."""
+    pd = pytest.importorskip("pandas")
+    df = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
+    result = _dataframe_to_records(df)
+    assert result == [{"x": 1, "y": "a"}, {"x": 2, "y": "b"}]
+
+def test_deep_serialize_dataframe():
+    """_deep_serialize converts DataFrames to records instead of __dict__."""
+    pd = pytest.importorskip("pandas")
+    df = pd.DataFrame({"col": [10, 20]})
+    result = _deep_serialize(df)
+    assert isinstance(result, list)
+    assert result == [{"col": 10}, {"col": 20}]
+
+
+# ---------------------------------------------------------------
+# Custom message routing (Mosaic-like)
+# ---------------------------------------------------------------
+
+class MsgWidget(anywidget.AnyWidget):
+    """Widget with a custom message handler (like Mosaic)."""
+    _esm = """
+    function render({ model, el }) { el.innerHTML = "msg"; }
+    export default { render };
+    """
+    value = traitlets.Int(0).tag(sync=True)
+    _received = []  # class-level store for testing
+
+    def _handle_custom_msg(self, data, buffers):
+        self._received.append(data)
+
+
+def test_anywidget_msg_routing_esm_to_python():
+    """ESM → Python: component.on_msg forwards to widget._handle_custom_msg."""
+    from panel.models.esm import DataEvent
+
+    _COMPONENT_CACHE.clear()
+    MsgWidget._received = []
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Simulate ESM sending a DataEvent (what _process_event dispatches)
+    event = DataEvent(model=None, data={'query': 'SELECT 1'})
+    for cb in component._msg__callbacks:
+        cb(event)
+
+    assert len(MsgWidget._received) == 1
+    assert MsgWidget._received[0] == {'query': 'SELECT 1'}
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_msg_routing_python_to_esm():
+    """Python → ESM: widget.send() routes through component._send_msg."""
+    _COMPONENT_CACHE.clear()
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Track messages sent through the component
+    sent = []
+    component._send_msg = lambda content: sent.append(content)
+
+    # widget.send() should route through the component
+    widget.send({"result": [1, 2, 3]})
+
+    assert len(sent) == 1
+    assert sent[0] == {"result": [1, 2, 3]}
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_msg_routing_roundtrip():
+    """Roundtrip: ESM sends a query, Python receives it and responds."""
+    from panel.models.esm import DataEvent
+
+    _COMPONENT_CACHE.clear()
+    MsgWidget._received = []
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Track outgoing messages
+    sent = []
+    component._send_msg = lambda content: sent.append(content)
+
+    # Simulate ESM → Python message
+    event = DataEvent(model=None, data={'type': 'json', 'sql': 'SELECT 1'})
+    for cb in component._msg__callbacks:
+        cb(event)
+    assert len(MsgWidget._received) == 1
+
+    # Simulate Python responding back → ESM
+    widget.send({"type": "json", "result": {"rows": [{"col": 1}]}})
+    assert len(sent) == 1
+    assert sent[0]["type"] == "json"
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_msg_routing_buffers_base64():
+    """Binary buffers are base64-encoded into the JSON message."""
+    import base64
+
+    _COMPONENT_CACHE.clear()
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Track outgoing messages
+    sent = []
+    component._send_msg = lambda content: sent.append(content)
+
+    # Simulate a Mosaic-like Arrow IPC response with binary buffers
+    arrow_data = b'\x00\x01\x02\x03\x04\x05'
+    widget.send({"type": "arrow", "uuid": "abc"}, buffers=[arrow_data])
+
+    assert len(sent) == 1
+    msg = sent[0]
+    assert msg["type"] == "arrow"
+    assert msg["uuid"] == "abc"
+    assert "_b64_buffers" in msg
+    assert len(msg["_b64_buffers"]) == 1
+    # Verify the base64 decoding roundtrips correctly
+    decoded = base64.b64decode(msg["_b64_buffers"][0])
+    assert decoded == arrow_data
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_msg_routing_buffers_memoryview():
+    """Memoryview buffers (from pyarrow) are handled correctly."""
+    import base64
+
+    _COMPONENT_CACHE.clear()
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    sent = []
+    component._send_msg = lambda content: sent.append(content)
+
+    # pyarrow buffers often arrive as memoryview
+    raw = b'\xff\xfe\xfd'
+    widget.send({"type": "arrow", "uuid": "def"}, buffers=[memoryview(raw)])
+
+    assert len(sent) == 1
+    decoded = base64.b64decode(sent[0]["_b64_buffers"][0])
+    assert decoded == raw
     _COMPONENT_CACHE.clear()

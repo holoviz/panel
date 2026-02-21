@@ -49,7 +49,9 @@ def on_duration_change(event):
     component.duration = event.new
 
 def on_size_change(event):
-    component.size = event.new
+    # 'size' collides with Panel's Layoutable.size, so the traitlet
+    # is mapped to 'w_size' via the collision-renaming mechanism.
+    component.w_size = event.new
 
 gain_slider.param.watch(on_gain_change, "value")
 duration_slider.param.watch(on_duration_change, "value")
@@ -57,6 +59,10 @@ size_slider.param.watch(on_size_change, "value")
 
 # Play button — triggers animation and increments counter
 def play_mario(event):
+    # Toggle animate off then on to ensure a change event fires
+    # even if animate is already True from a previous click.
+    if component.animate:
+        component.animate = False
     component.animate = True
     play_count.value += 1
 

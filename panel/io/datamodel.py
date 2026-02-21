@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import threading
 
 from functools import partial
 from typing import Any
@@ -9,7 +10,9 @@ from weakref import WeakKeyDictionary
 import bokeh.core.properties as bp
 import param as pm
 
+from bokeh.core.has_props import _default_resolver, is_DataModel
 from bokeh.core.property.bases import Property
+from bokeh.document.document import Document
 from bokeh.model import DataModel, Model
 from bokeh.models import ColumnDataSource
 
@@ -306,3 +309,47 @@ def create_linked_datamodel(obj, root=None):
     obj.param.watch(cb_param, list(set(properties) & set(obj.param)))
 
     return model
+
+
+# ---------------------------------------------------------------
+# Monkey-patch Document._document_json to scope DataModel defs
+# ---------------------------------------------------------------
+# Bokeh's default implementation includes ALL registered DataModel
+# subclasses in every document's ``defs``, even those not used by
+# any model instance in the current document.  This causes:
+# 1. Cross-app contamination when ``panel serve`` serves multiple
+#    apps from the same process (definitions from app A leak into
+#    app B's document).
+# 2. "attempted to redefine attribute" errors on the browser when
+#    a session is re-pulled and the same definitions are sent again.
+# The patch below restricts ``defs`` to only the DataModel classes
+# that have instances in the current document.
+
+_original_to_json = Document.to_json
+_doc_json_lock = threading.Lock()
+
+
+def _scoped_to_json(self, *, deferred=True):
+    """Only include DataModel definitions for models used in this document."""
+    used_dm_classes = set()
+    for model in self.models:
+        if is_DataModel(type(model)):
+            used_dm_classes.add(type(model))
+
+    with _doc_json_lock:
+        all_known = dict(_default_resolver._known_models)
+        unused_keys = [
+            qname for qname, cls in all_known.items()
+            if is_DataModel(cls) and cls not in used_dm_classes
+        ]
+        for key in unused_keys:
+            del _default_resolver._known_models[key]
+        try:
+            return _original_to_json(self, deferred=deferred)
+        finally:
+            _default_resolver._known_models.update(
+                {k: all_known[k] for k in unused_keys}
+            )
+
+
+Document.to_json = _scoped_to_json
