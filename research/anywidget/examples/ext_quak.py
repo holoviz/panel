@@ -18,26 +18,13 @@ Required packages:
     pip install quak pandas
 
 Run with:
-    panel serve research/anywidget/examples/quak_example.py
+    panel serve research/anywidget/examples/ext_quak.py
 """
 
+import pandas as pd
+import quak
+
 import panel as pn
-
-try:
-    import quak
-except ImportError as e:
-    raise ImportError(
-        "This example requires quak. "
-        "Please install it with: pip install quak"
-    ) from e
-
-try:
-    import pandas as pd
-except ImportError as e:
-    raise ImportError(
-        "This example requires pandas. "
-        "Please install it with: pip install pandas"
-    ) from e
 
 pn.extension()
 
@@ -71,12 +58,10 @@ sql_display = pn.pane.Markdown(
     sizing_mode="stretch_width",
 )
 
-
 def on_sql_change(*events):
     for event in events:
         if event.name == "sql":
             sql_display.object = f"```sql\n{event.new or 'SELECT * FROM df'}\n```"
-
 
 component.param.watch(on_sql_change, ["sql"])
 

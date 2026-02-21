@@ -13,18 +13,12 @@ Required package:
     pip install wigglystuff
 
 Run with:
-    panel serve research/anywidget/examples/wigglystuff_example.py
+    panel serve research/anywidget/examples/ext_wigglystuff.py
 """
 
-import panel as pn
+from wigglystuff import TangleSlider
 
-try:
-    from wigglystuff import TangleSlider
-except ImportError as e:
-    raise ImportError(
-        "This example requires wigglystuff. "
-        "Please install it with: pip install wigglystuff"
-    ) from e
+import panel as pn
 
 pn.extension()
 

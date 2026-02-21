@@ -19,21 +19,15 @@ Required packages:
     pip install mosaic-widget pandas
 
 Run with:
-    panel serve research/anywidget/examples/mosaic_example.py
+    panel serve research/anywidget/examples/ext_mosaic.py
 """
-
-import panel as pn
-
-try:
-    from mosaic_widget import MosaicWidget
-except ImportError as e:
-    raise ImportError(
-        "This example requires mosaic-widget. "
-        "Please install it with: pip install mosaic-widget"
-    ) from e
 
 import numpy as np
 import pandas as pd
+
+from mosaic_widget import MosaicWidget
+
+import panel as pn
 
 pn.extension()
 

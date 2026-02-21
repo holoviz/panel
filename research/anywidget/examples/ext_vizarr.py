@@ -23,26 +23,13 @@ Required packages:
     pip install vizarr zarr
 
 Run with:
-    panel serve research/anywidget/examples/vizarr_example.py
+    panel serve research/anywidget/examples/ext_vizarr.py
 """
 
+import vizarr
+import zarr
+
 import panel as pn
-
-try:
-    import vizarr
-except ImportError as e:
-    raise ImportError(
-        "This example requires vizarr. "
-        "Please install it with: pip install vizarr"
-    ) from e
-
-try:
-    import zarr
-except ImportError as e:
-    raise ImportError(
-        "This example requires zarr. "
-        "Please install it with: pip install zarr"
-    ) from e
 
 pn.extension()
 

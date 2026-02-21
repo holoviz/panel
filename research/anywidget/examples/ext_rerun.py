@@ -19,18 +19,12 @@ Required packages:
     pip install "rerun-sdk[notebook]"
 
 Run with:
-    panel serve research/anywidget/examples/rerun_example.py
+    panel serve research/anywidget/examples/ext_rerun.py
 """
 
-import panel as pn
+import rerun as rr  # noqa: F401
 
-try:
-    import rerun as rr  # noqa: F401
-except ImportError as e:
-    raise ImportError(
-        "This example requires rerun-sdk with notebook support. "
-        'Please install it with: pip install "rerun-sdk[notebook]"'
-    ) from e
+import panel as pn
 
 pn.extension()
 

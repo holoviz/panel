@@ -16,34 +16,22 @@ Required packages:
     pip install pyobsplot pandas
 
 Run with:
-    panel serve research/anywidget/examples/pyobsplot_example.py
+    panel serve research/anywidget/examples/ext_pyobsplot.py
 """
 
+import random
+
+import pandas as pd  # noqa: F401
+
+from pyobsplot import Plot
+
 import panel as pn
-
-try:
-    from pyobsplot import Plot
-except ImportError as e:
-    raise ImportError(
-        "This example requires pyobsplot. "
-        "Please install it with: pip install pyobsplot"
-    ) from e
-
-try:
-    import pandas as pd
-except ImportError as e:
-    raise ImportError(
-        "This example requires pandas. "
-        "Please install it with: pip install pandas"
-    ) from e
 
 pn.extension()
 
 # ---------------------------------------------------------------------------
 # 1. Create sample data
 # ---------------------------------------------------------------------------
-
-import random
 
 random.seed(42)
 
@@ -56,7 +44,6 @@ data = pd.DataFrame({
 # ---------------------------------------------------------------------------
 # 2. Create an Observable Plot widget
 # ---------------------------------------------------------------------------
-
 
 def make_spec(mark_type="dot", color_col="category", show_grid=True):
     """Build an Observable Plot spec dictionary."""
@@ -78,7 +65,6 @@ def make_spec(mark_type="dot", color_col="category", show_grid=True):
         "color": {"legend": True},
         "marks": marks,
     }
-
 
 # Create the initial plot widget (returns ObsplotWidget)
 plot_widget = Plot.plot(make_spec())
@@ -110,7 +96,6 @@ grid_toggle = pn.widgets.Toggle(
     width=200,
 )
 
-
 def update_plot(*events):
     """Update the plot spec when any control changes."""
     new_spec = make_spec(
@@ -119,7 +104,6 @@ def update_plot(*events):
         show_grid=grid_toggle.value,
     )
     anywidget_pane.component.spec = new_spec
-
 
 mark_select.param.watch(update_plot, "value")
 color_select.param.watch(update_plot, "value")

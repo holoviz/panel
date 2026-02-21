@@ -9,18 +9,12 @@ Required package:
     pip install ipymario
 
 Run with:
-    panel serve research/anywidget/examples/ipymario_example.py
+    panel serve research/anywidget/examples/ext_ipymario.py
 """
 
-import panel as pn
+from ipymario import Widget
 
-try:
-    from ipymario import Widget
-except ImportError as e:
-    raise ImportError(
-        "This example requires ipymario. "
-        "Please install it with: pip install ipymario"
-    ) from e
+import panel as pn
 
 pn.extension()
 
@@ -28,7 +22,8 @@ pn.extension()
 mario_widget = Widget()
 
 # Wrap it with Panel's AnyWidget pane
-anywidget_pane = pn.pane.AnyWidget(mario_widget)
+# ipymario renders a small 16x16 sprite canvas — set explicit sizing
+anywidget_pane = pn.pane.AnyWidget(mario_widget, min_height=200, sizing_mode="stretch_width")
 
 # Layout
 header = pn.pane.Markdown("""

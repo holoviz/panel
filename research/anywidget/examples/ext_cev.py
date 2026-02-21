@@ -20,7 +20,7 @@ Required package:
     pip install cev
 
 Run with:
-    panel serve research/anywidget/examples/cev_example.py
+    panel serve research/anywidget/examples/ext_cev.py
 """
 
 import panel as pn

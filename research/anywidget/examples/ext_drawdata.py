@@ -15,18 +15,12 @@ Required package:
     pip install drawdata
 
 Run with:
-    panel serve research/anywidget/examples/drawdata_example.py
+    panel serve research/anywidget/examples/ext_drawdata.py
 """
 
-import panel as pn
+from drawdata import ScatterWidget
 
-try:
-    from drawdata import ScatterWidget
-except ImportError as e:
-    raise ImportError(
-        "This example requires drawdata. "
-        "Please install it with: pip install drawdata"
-    ) from e
+import panel as pn
 
 pn.extension()
 

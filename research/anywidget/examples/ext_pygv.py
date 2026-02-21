@@ -18,18 +18,12 @@ Required package:
     pip install pygv
 
 Run with:
-    panel serve research/anywidget/examples/pygv_example.py
+    panel serve research/anywidget/examples/ext_pygv.py
 """
 
-import panel as pn
+import pygv
 
-try:
-    import pygv
-except ImportError as e:
-    raise ImportError(
-        "This example requires pygv. "
-        "Please install it with: pip install pygv"
-    ) from e
+import panel as pn
 
 pn.extension()
 

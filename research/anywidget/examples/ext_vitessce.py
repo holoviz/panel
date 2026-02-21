@@ -24,18 +24,12 @@ Required package:
     pip install vitessce
 
 Run with:
-    panel serve research/anywidget/examples/vitessce_example.py
+    panel serve research/anywidget/examples/ext_vitessce.py
 """
 
-import panel as pn
+from vitessce import ViewType as vt, VitessceConfig
 
-try:
-    from vitessce import ViewType as vt, VitessceConfig
-except ImportError as e:
-    raise ImportError(
-        "This example requires vitessce. "
-        "Please install it with: pip install vitessce"
-    ) from e
+import panel as pn
 
 pn.extension()
 

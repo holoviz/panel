@@ -24,18 +24,12 @@ Required package:
     pip install ipyaladin
 
 Run with:
-    panel serve research/anywidget/examples/ipyaladin_example.py
+    panel serve research/anywidget/examples/ext_ipyaladin.py
 """
 
-import panel as pn
+from ipyaladin import Aladin
 
-try:
-    from ipyaladin import Aladin
-except ImportError as e:
-    raise ImportError(
-        "This example requires ipyaladin. "
-        "Please install it with: pip install ipyaladin"
-    ) from e
+import panel as pn
 
 pn.extension()
 
@@ -132,7 +126,6 @@ def on_component_change(*events):
         elif event.name == "_target":
             # Target may change to coords — just update display
             pass
-
 
 # Watch available traits
 try:

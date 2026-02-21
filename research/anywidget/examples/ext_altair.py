@@ -16,60 +16,39 @@ Required packages:
     pip install altair vega_datasets
 
 Run with:
-    panel serve research/anywidget/examples/altair_example.py
+    panel serve research/anywidget/examples/ext_altair.py
 """
 
+import altair as alt
+
+from altair import JupyterChart
+from vega_datasets import data as vega_data
+
 import panel as pn
-
-try:
-    import altair as alt
-
-    from altair import JupyterChart
-except ImportError as e:
-    raise ImportError(
-        "This example requires altair >= 5.1. "
-        "Please install it with: pip install altair vega_datasets"
-    ) from e
-
-try:
-    from vega_datasets import data as vega_data
-except ImportError as e:
-    raise ImportError(
-        "This example requires vega_datasets. "
-        "Please install it with: pip install vega_datasets"
-    ) from e
 
 pn.extension()
 
 # ---------------------------------------------------------------------------
-# 1. Create an Altair chart with interactive parameters
+# 1. Create an Altair chart with brush selection for bidirectional sync
 # ---------------------------------------------------------------------------
 
 source = vega_data.cars()
 
-# Create a variable parameter for the x-axis field
-x_field = alt.param(
-    name="x_field",
-    value="Horsepower",
-)
+# Create an interval selection (brush) to demonstrate bidirectional sync
+brush = alt.selection_interval()
 
-y_field = alt.param(
-    name="y_field",
-    value="Miles_per_Gallon",
-)
-
-# Build the chart — a simple scatter with color encoding
+# Build the chart with brush selection and conditional color
 chart = (
     alt.Chart(source)
     .mark_circle(size=60)
     .encode(
-        x=alt.X("Horsepower:Q", title="Horsepower"),
-        y=alt.Y("Miles_per_Gallon:Q", title="Miles per Gallon"),
-        color="Origin:N",
+        x=alt.X("Horsepower:Q"),
+        y=alt.Y("Miles_per_Gallon:Q"),
+        color=alt.condition(brush, "Origin:N", alt.value("lightgray")),
         tooltip=["Name", "Origin", "Horsepower", "Miles_per_Gallon"],
     )
-    .properties(width=500, height=350, title="Cars Dataset — Altair JupyterChart")
-    .interactive()
+    .properties(width=500, height=350, title="Cars Dataset — Brush to Select")
+    .add_params(brush)
 )
 
 # Create the JupyterChart widget
@@ -80,30 +59,13 @@ jupyter_chart = JupyterChart(chart)
 # ---------------------------------------------------------------------------
 
 anywidget_pane = pn.pane.AnyWidget(jupyter_chart)
-
-# ---------------------------------------------------------------------------
-# 3. Add Panel controls for bidirectional interaction
-# ---------------------------------------------------------------------------
-
 component = anywidget_pane.component
 
-# Display the current spec as JSON (read-only — useful for debugging)
-spec_display = pn.pane.JSON(
-    jupyter_chart.spec if jupyter_chart.spec else {},
-    name="Vega-Lite Spec",
-    depth=2,
-    height=200,
-)
+# ---------------------------------------------------------------------------
+# 3. Bidirectional sync: Panel dropdowns -> chart, selections -> Panel
+# ---------------------------------------------------------------------------
 
-# Watch for spec changes from the component
-def on_spec_change(*events):
-    for event in events:
-        if event.name == "spec":
-            spec_display.object = event.new if event.new else {}
-
-component.param.watch(on_spec_change, ["spec"])
-
-# Create a new chart on dropdown change
+# Panel -> Chart: rebuild chart on dropdown change
 field_options = [
     "Horsepower", "Miles_per_Gallon", "Weight_in_lbs",
     "Displacement", "Acceleration",
@@ -115,64 +77,74 @@ x_selector = pn.widgets.Select(
 y_selector = pn.widgets.Select(
     name="Y Axis", options=field_options, value="Miles_per_Gallon", width=200
 )
-mark_selector = pn.widgets.Select(
-    name="Mark Type",
-    options=["circle", "square", "point"],
-    value="circle",
-    width=200,
-)
 
 def update_chart(*events):
     """Rebuild the chart with new field selections and push to the widget."""
     x = x_selector.value
     y = y_selector.value
-    mark = mark_selector.value
-
-    mark_method = getattr(alt.Chart(source), f"mark_{mark}")
     new_chart = (
-        mark_method(size=60)
+        alt.Chart(source)
+        .mark_circle(size=60)
         .encode(
             x=alt.X(f"{x}:Q", title=x.replace("_", " ")),
             y=alt.Y(f"{y}:Q", title=y.replace("_", " ")),
-            color="Origin:N",
+            color=alt.condition(brush, "Origin:N", alt.value("lightgray")),
             tooltip=["Name", "Origin", x, y],
         )
-        .properties(width=500, height=350, title="Cars Dataset — Altair JupyterChart")
-        .interactive()
+        .properties(width=500, height=350, title="Cars Dataset — Brush to Select")
+        .add_params(brush)
     )
-    # Update the spec on the component — this syncs to the browser
     component.spec = new_chart.to_dict()
 
 x_selector.param.watch(update_chart, "value")
 y_selector.param.watch(update_chart, "value")
-mark_selector.param.watch(update_chart, "value")
 
+# Chart -> Panel: display selections synced back from the browser
+selections_display = pn.pane.JSON(
+    {}, name="Vega-Lite Selections", depth=3, height=150,
+)
+params_display = pn.pane.JSON(
+    {}, name="Vega-Lite Params", depth=3, height=150,
+)
+
+def on_selections_change(*events):
+    for event in events:
+        selections_display.object = event.new if event.new else {}
+
+def on_params_change(*events):
+    for event in events:
+        params_display.object = event.new if event.new else {}
+
+component.param.watch(on_selections_change, ["_vl_selections"])
+component.param.watch(on_params_change, ["_params"])
 
 # ---------------------------------------------------------------------------
 # 4. Layout
 # ---------------------------------------------------------------------------
 
-ANYWIDGET_LOGO = "https://raw.githubusercontent.com/manzt/anywidget/main/docs/public/favicon.svg"
 ALTAIR_LOGO = "https://altair-viz.github.io/_static/altair-logo-light.png"
 
 header = pn.pane.Markdown("""
-# Altair JupyterChart — AnyWidget Pane Demo
+# Altair JupyterChart — Bidirectional Sync Demo
 
 This example renders **Altair's JupyterChart** (an anywidget) natively
-in Panel using the `AnyWidget` pane. The chart is fully interactive —
-pan, zoom, and hover tooltips work out of the box.
+in Panel using the `AnyWidget` pane.
 
-Use the dropdowns to change the axes and mark type. The chart updates
-by pushing a new Vega-Lite spec to the widget via `component.spec`.
+**Bidirectional sync:**
+- **Panel -> Chart**: Use the dropdowns to change axes. The chart updates
+  by pushing a new Vega-Lite spec via `component.spec`.
+- **Chart -> Panel**: Brush-select points on the chart. The selection
+  coordinates sync back to Python via `component._vl_selections`.
 """, sizing_mode="stretch_width")
 
 controls = pn.Column(
     pn.pane.Markdown("### Controls"),
     x_selector,
     y_selector,
-    mark_selector,
-    pn.pane.Markdown("### Vega-Lite Spec (live)"),
-    spec_display,
+    pn.pane.Markdown("### Selections (from chart)"),
+    selections_display,
+    pn.pane.Markdown("### Params (from chart)"),
+    params_display,
     width=350,
 )
 

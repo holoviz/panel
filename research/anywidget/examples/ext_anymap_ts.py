@@ -12,18 +12,12 @@ transmit, resulting in `Error: Lost websocket connection` in the browser.
 A lightweight map example (`leaflet_map.py`) is provided as an alternative
 that demonstrates the same map interaction patterns without the heavy bundle.
 
-Run with: panel serve research/anywidget/examples/anymap_ts_example.py
+Run with: panel serve research/anywidget/examples/ext_anymap_ts.py
 """
 
-import panel as pn
+from anymap_ts import MapLibreMap  # noqa: F401
 
-try:
-    from anymap_ts import MapLibreMap
-except ImportError as e:
-    raise ImportError(
-        "This example requires anymap-ts. "
-        "Please install it with: pip install anymap-ts"
-    ) from e
+import panel as pn
 
 pn.extension()
 

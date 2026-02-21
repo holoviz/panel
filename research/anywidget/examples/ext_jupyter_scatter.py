@@ -23,21 +23,14 @@ Required packages:
     pip install jupyter-scatter pandas numpy
 
 Run with:
-    panel serve research/anywidget/examples/jupyter_scatter_example.py
+    panel serve research/anywidget/examples/ext_jupyter_scatter.py
 """
 
-import panel as pn
-
-try:
-    import jscatter
-except ImportError as e:
-    raise ImportError(
-        "This example requires jupyter-scatter. "
-        "Please install it with: pip install jupyter-scatter"
-    ) from e
-
+import jscatter
 import numpy as np
 import pandas as pd
+
+import panel as pn
 
 pn.extension()
 

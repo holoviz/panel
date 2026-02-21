@@ -16,18 +16,12 @@ Required package:
     pip install tldraw
 
 Run with:
-    panel serve research/anywidget/examples/tldraw_example.py
+    panel serve research/anywidget/examples/ext_tldraw.py
 """
 
-import panel as pn
+from tldraw import TldrawWidget
 
-try:
-    from tldraw import TldrawWidget
-except ImportError as e:
-    raise ImportError(
-        "This example requires tldraw. "
-        "Please install it with: pip install tldraw"
-    ) from e
+import panel as pn
 
 pn.extension()
 

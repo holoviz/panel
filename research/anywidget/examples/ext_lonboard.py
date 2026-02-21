@@ -21,18 +21,12 @@ Required packages:
     pip install lonboard geopandas
 
 Run with:
-    panel serve research/anywidget/examples/lonboard_example.py
+    panel serve research/anywidget/examples/ext_lonboard.py
 """
 
-import panel as pn
+import lonboard  # noqa: F401
 
-try:
-    import lonboard  # noqa: F401
-except ImportError as e:
-    raise ImportError(
-        "This example requires lonboard. "
-        "Please install it with: pip install lonboard geopandas"
-    ) from e
+import panel as pn
 
 pn.extension()
 

@@ -424,10 +424,28 @@ jupyterlite-pyodide-kernel = "*"
 python-build = "*"
 
 [feature.anywidget-examples.dependencies]
+altair = "*"
 anywidget = "*"
-drawdata = "*"
-wigglystuff = "*"
 anymap-ts = "*"
+drawdata = "*"
+ipyaladin = "*"
+lonboard = "*"
+pyobsplot = "*"
+quak = "*"
+rerun-sdk = "*"
+vega_datasets = "*"
+wigglystuff = "*"
+
+[feature.anywidget-examples.pypi-dependencies]
+cev = "*"
+higlass-python = "*"
+ipymario = "*"
+jscatter = "*"
+tldraw = "*"
+mosaic-widget = "*"
+pygv = "*"
+vitessce = "*"
+vizarr = "*"
 
 [feature.anywidget-examples.tasks]
 anywidget-serve = 'panel serve research/anywidget/examples/*.py'

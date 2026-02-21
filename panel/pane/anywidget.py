@@ -134,6 +134,10 @@ def _get_synced_traits(widget_or_class):
 
     Works with both an anywidget *class* (``class_traits``) and
     an anywidget *instance* (``traits``).
+
+    Note: underscore-prefixed traits that are explicitly tagged
+    ``sync=True`` are included (e.g. Altair's ``_vl_selections``,
+    ``_params``).  Only traits in ``_FRAMEWORK_TRAITS`` are excluded.
     """
     if isinstance(widget_or_class, type):
         sync_traits = widget_or_class.class_traits(sync=True)
@@ -141,7 +145,7 @@ def _get_synced_traits(widget_or_class):
         sync_traits = widget_or_class.traits(sync=True)
     return {
         name: trait for name, trait in sync_traits.items()
-        if name not in _FRAMEWORK_TRAITS and not name.startswith('_')
+        if name not in _FRAMEWORK_TRAITS
     }
 
 

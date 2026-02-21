@@ -112,6 +112,18 @@ class UnionWidget(anywidget.AnyWidget):
     ).tag(sync=True)
 
 
+class UnderscoreSyncWidget(anywidget.AnyWidget):
+    """Widget with underscore-prefixed sync traits (like Altair's _params)."""
+    _esm = """
+    function render({ model, el }) {
+        el.innerHTML = JSON.stringify(model.get("_internal_state"));
+    }
+    export default { render };
+    """
+    value = traitlets.Int(0).tag(sync=True)
+    _internal_state = traitlets.Dict(default_value={}).tag(sync=True)
+
+
 # ---------------------------------------------------------------
 # Detection / applies
 # ---------------------------------------------------------------
@@ -621,3 +633,23 @@ def test_anywidget_sync_logs_unexpected_error():
         assert widget.value == 0
     finally:
         type(widget).__setattr__ = original_setattr
+
+def test_anywidget_underscore_sync_traits():
+    """Underscore-prefixed sync traits are included (e.g. Altair _params)."""
+    _COMPONENT_CACHE.clear()
+    widget = UnderscoreSyncWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # _internal_state should be synced (not filtered out)
+    assert hasattr(component, '_internal_state')
+    assert component._internal_state == {}
+
+    # Bidirectional sync works for underscore-prefixed traits
+    widget._internal_state = {"key": "value"}
+    assert component._internal_state == {"key": "value"}
+
+    component._internal_state = {"updated": True}
+    assert widget._internal_state == {"updated": True}
+    _COMPONENT_CACHE.clear()

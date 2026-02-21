@@ -25,18 +25,12 @@ Required package:
     pip install higlass-python
 
 Run with:
-    panel serve research/anywidget/examples/higlass_example.py
+    panel serve research/anywidget/examples/ext_higlass.py
 """
 
-import panel as pn
+import higlass as hg
 
-try:
-    import higlass as hg
-except ImportError as e:
-    raise ImportError(
-        "This example requires higlass-python. "
-        "Please install it with: pip install higlass-python"
-    ) from e
+import panel as pn
 
 pn.extension()
 
@@ -78,12 +72,10 @@ component = anywidget_pane.component
 # Display the current location (read-only from widget)
 location_display = pn.pane.JSON({}, name="Current Location", width=400)
 
-
 def on_location_change(*events):
     for event in events:
         if event.name == "location":
             location_display.object = {"location": event.new} if event.new else {}
-
 
 # Watch the location trait (updated when user navigates)
 if hasattr(component.param, 'location'):
