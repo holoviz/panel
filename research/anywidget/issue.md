@@ -72,15 +72,15 @@ pn.Column(pane, slider).servable()
 ## POC
 
 A working proof-of-concept is available on the `enhancement/any-widget` branch with:
-- Core implementation: `panel/pane/anywidget.py`
-- 18 passing unit tests: `panel/tests/pane/test_anywidget.py`
-- 12 example scripts: `research/anywidget/examples/`
+- Core implementation: `panel/pane/anywidget.py` (~495 lines)
+- 40 passing unit tests: `panel/tests/pane/test_anywidget.py`
+- 26 example scripts: `research/anywidget/examples/` (8 inline ESM + 18 third-party)
+- Reference notebook: `examples/reference/panes/AnyWidget.ipynb`
 
 ## Known Limitations (POC)
 
 | Limitation | Description | Severity |
 |---|---|---|
 | Binary traits | `traitlets.Bytes` not JSON-serializable (e.g., `ipymario`) | Medium — needs base64 encode/decode |
-| Large ESM bundles | Widgets with >5MB ESM (e.g., `anymap-ts`) exceed WebSocket limits | Low — library should use CDN imports |
+| Large ESM bundles | Widgets with >5MB ESM (e.g., `anymap-ts`, `rerun`) exceed WebSocket limits | Low — library should use CDN imports |
 | Missing change handlers | Some widgets don't implement `model.on("change:...")` (e.g., `wigglystuff`) | Low — library bug, not Panel's |
-| Unmapped trait types | `Enum`, `Instance`, `Union`, `Set` fall back to `param.Parameter` | Low — functional, just less typed |

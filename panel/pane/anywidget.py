@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------
 # Module-level cache: anywidget class -> dynamic component class
 # Bounded to prevent unbounded memory growth.  When the cache
-# exceeds _CACHE_MAX_SIZE the oldest entry is evicted (FIFO).
+# exceeds _CACHE_MAX_SIZE the least-recently-used entry is evicted.
 # ---------------------------------------------------------------
 _CACHE_MAX_SIZE = 256
 _COMPONENT_CACHE: OrderedDict[type, type[AnyWidgetComponent]] = OrderedDict()

@@ -130,11 +130,16 @@ pn.bind(some_func, config.param.threshold)
     - `issue_wigglystuff.md` — missing `model.on("change:amount")` handler, external changes don't update display, includes suggested fix
     - `issue_anymap_ts.md` — 17MB ESM bundle causes WebSocket disconnection, suggests CDN loading
 - [x] Create Panel AnyWidget Pane feature request with working POC example.
-- [ ] Edge cases & hardening: file-based `_esm` paths, `FileContents`/`VirtualFileContents`,
-      unmapped traitlet types (`Enum`, `Instance`, `Union`, `Set`), display-only widgets,
-      error handling for failed traitlet conversion.
-- [ ] Third-party anywidget smoke tests: `ipymario`, `drawdata`, `anywidget-maplibre`, `lonboard`.
-- [ ] Add an example to research/anywidget/examples for each anywidget in https://anywidget.dev/en/community/#widgets-gallery. We will use that for manual testing and edge cases.
+- [x] Edge cases & hardening: file-based `_esm` paths, `FileContents`/`VirtualFileContents`,
+      `Enum` -> `param.Selector`, `Instance` -> `param.ClassSelector`, `Set` -> `param.List`,
+      `Union` -> `param.Parameter`, display-only widgets, error handling for traitlet conversion,
+      underscore-prefixed sync traits (Altair `_vl_selections`/`_params`).
+      - 40 tests passing, TRAITLET_MAP MRO walk before Instance check, set-to-list default conversion,
+        _FRAMEWORK_TRAITS as only exclusion filter (not underscore prefix).
+- [x] Add an example to research/anywidget/examples for each anywidget in https://anywidget.dev/en/community/#widgets-gallery.
+      - 18 third-party `ext_*` examples + 8 inline ESM examples (26 total)
+      - All third-party deps added to pixi.toml `anywidget-examples` feature (conda + pypi)
+- [ ] Third-party anywidget smoke tests: manual testing via `panel serve`
 - [ ] Document AnyWidget pane (how-to guide, pane gallery entry).
 
 After each iteration let me review and let us refine the iteration together before moving to the next.
