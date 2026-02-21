@@ -38,16 +38,25 @@ pn.extension()
 # ---------------------------------------------------------------------------
 
 aladin = Aladin(
-    target="M42",       # Orion Nebula
-    fov=1.0,             # 1 degree field of view
-    survey="https://alaskybis.unistra.fr/DSS/DSSColor",
+    target="159.2135528 -58.6241989",
+    survey="https://alasky.u-strasbg.fr/Planets/Mars_Viking_MDIM21",
+    fov=10,
+    height=800,
 )
 
 # ---------------------------------------------------------------------------
 # 2. Wrap with AnyWidget pane
 # ---------------------------------------------------------------------------
 
-anywidget_pane = pn.pane.AnyWidget(aladin, height=500)
+# NOTE: Width/height on the AnyWidget pane do NOT propagate to the inner
+# component's Bokeh model. Instead, set sizing on the component directly.
+anywidget_pane = pn.pane.AnyWidget(aladin, sizing_mode="stretch_width")
+
+# Set explicit height on the component so the Aladin Lite container gets a
+# non-zero size.  Aladin's own _height trait controls the inner canvas height,
+# but the outer Panel container also needs explicit dimensions.
+anywidget_pane.component.height = 500
+anywidget_pane.component.sizing_mode = "stretch_width"
 
 # ---------------------------------------------------------------------------
 # 3. Panel controls for navigation and survey selection

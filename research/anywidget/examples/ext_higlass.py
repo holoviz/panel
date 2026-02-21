@@ -54,14 +54,16 @@ view = hg.view(
     track,
 )
 
-# The view object is a HiGlassWidget (anywidget.AnyWidget subclass)
-# It has synced traitlets: _viewconf (Dict), location (List), _options (Dict)
+# The view object is a pydantic BaseModel, not an anywidget.
+# Call .widget() to get the actual HiGlassWidget (anywidget.AnyWidget subclass)
+# with synced traitlets: _viewconf (Dict), location (List), _options (Dict)
+higlass_widget = view.widget()
 
 # ---------------------------------------------------------------------------
 # 2. Wrap with Panel's AnyWidget pane
 # ---------------------------------------------------------------------------
 
-anywidget_pane = pn.pane.AnyWidget(view, height=500, sizing_mode="stretch_width")
+anywidget_pane = pn.pane.AnyWidget(higlass_widget, height=500, sizing_mode="stretch_width")
 
 # ---------------------------------------------------------------------------
 # 3. Wire Panel controls for bidirectional sync

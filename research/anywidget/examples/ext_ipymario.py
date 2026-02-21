@@ -1,9 +1,10 @@
 """
-ipymario Example - Known Limitation
-====================================
+ipymario Example — Server Communication Demo
+==============================================
 
-This example demonstrates the ipymario library and explains why it doesn't
-fully render in Panel's AnyWidget pane due to binary trait serialization.
+This example demonstrates the ipymario library rendered natively in Panel
+with bidirectional sync. A Panel button triggers the Mario animation, and
+a counter tracks interactions on the server side.
 
 Required package:
     pip install ipymario
@@ -19,87 +20,96 @@ import panel as pn
 pn.extension()
 
 # Create the ipymario Widget
-mario_widget = Widget()
+mario_widget = Widget(size=200)
 
-# Wrap it with Panel's AnyWidget pane
-# ipymario renders a small 16x16 sprite canvas — set explicit sizing
-anywidget_pane = pn.pane.AnyWidget(mario_widget, min_height=200, sizing_mode="stretch_width")
+# Wrap with Panel's AnyWidget pane
+anywidget_pane = pn.pane.AnyWidget(mario_widget, width=400, height=400)
+component = anywidget_pane.component
 
+# ---------------------------------------------------------------------------
+# Server-side counter: track animation triggers
+# ---------------------------------------------------------------------------
+
+play_count = pn.widgets.IntInput(name="Play Count", value=0, disabled=True, width=100)
+gain_slider = pn.widgets.FloatSlider(
+    name="Volume (gain)", start=0.0, end=1.0, value=0.5, step=0.05, width=250
+)
+duration_slider = pn.widgets.FloatSlider(
+    name="Duration", start=0.01, end=0.5, value=0.1, step=0.01, width=250
+)
+size_slider = pn.widgets.IntSlider(
+    name="Mario Size", start=50, end=500, value=200, step=25, width=250
+)
+
+# Sync gain/duration/size bidirectionally
+def on_gain_change(event):
+    component.gain = event.new
+
+def on_duration_change(event):
+    component.duration = event.new
+
+def on_size_change(event):
+    component.size = event.new
+
+gain_slider.param.watch(on_gain_change, "value")
+duration_slider.param.watch(on_duration_change, "value")
+size_slider.param.watch(on_size_change, "value")
+
+# Play button — triggers animation and increments counter
+def play_mario(event):
+    component.animate = True
+    play_count.value += 1
+
+play_button = pn.widgets.Button(
+    name="Play Mario!", button_type="success", width=200
+)
+play_button.on_click(play_mario)
+
+# ---------------------------------------------------------------------------
 # Layout
+# ---------------------------------------------------------------------------
+
 header = pn.pane.Markdown("""
-# ipymario — Binary Traitlet Limitation in AnyWidget Pane
+# ipymario — Server Communication Demo
 
-## About ipymario
+This example renders **ipymario** (an anywidget) natively in Panel with
+bidirectional sync between the widget and Panel controls.
 
-**ipymario** is a third-party anywidget from the anywidget community that plays
-the iconic Mario chime. It's a fun example of what anywidgets can do!
+## How It Works
 
-## The Limitation: Binary Trait Serialization
+- **Play Button:** Triggers the Mario animation via `component.animate = True`
+  and increments a server-side counter
+- **Volume / Duration / Size:** Panel sliders sync to the widget traitlets
+  (`gain`, `duration`, `size`)
 
-ipymario uses a `traitlets.Bytes` trait called `_box` to store a 16x16 RGBA
-Mario sprite (binary data). Panel's `AnyWidget` pane serializes traitlets as
-JSON strings, but the ESM widget code expects a typed array with a `.buffer`
-property.
+## Server Communication
 
-### ipymario Traits
-
-| Trait | Type | Status |
-|-------|------|--------|
-| `gain` | Float | Works with Panel |
-| `duration` | Float | Works with Panel |
-| `size` | Int | Works with Panel |
-| `animate` | Bool | Works with Panel |
-| `_box` | **Bytes** | Panel can't serialize binary data |
-
-### Browser Error
-
-You'll see: `TypeError: Cannot read properties of undefined (reading 'buffer')`
-
-This happens because `_box` is sent as a JSON string, but ipymario's ESM expects
-`_box.buffer` (an ArrayBuffer from a typed array).
-
-## Can It Be Fixed?
-
-**Yes, but it requires changes to Panel's AnyWidgetComponent TypeScript model.**
-
-The fix would involve:
-1. **Detect `Bytes`/`param.Bytes` parameters** in the component class
-2. **Encode as base64** when serializing Python -> JSON (in `_process_param_change`)
-3. **Decode in the TS model** from base64 string back to `ArrayBuffer`/`DataView`
-4. **Reverse for browser -> Python**: encode `ArrayBuffer` as base64, decode in Python
-
-### Difficulty: Medium
-
-- The Python side is straightforward: base64 encode/decode in `_process_param_change`
-  and `_process_events` methods
-- The TypeScript side needs modification to `anywidget_component.ts`:
-  the `get()` method should detect base64-encoded bytes and return a `DataView`,
-  and `set()` should convert `ArrayBuffer` back to base64
-- Scope: ~50-100 lines of code across 2-3 files
-- Risk: low — isolated to Bytes-type params, no impact on existing widgets
-
-### Workaround
-
-For now, anywidgets that rely on `Bytes` traitlets won't render correctly.
-Use `ipywidgets_bokeh` bridge for these widgets, or wait for the binary
-serialization enhancement.
-
-## What You'll See
-
-The widget below will attempt to render, but you'll see an error in
-the browser console because `_box` (the sprite data) isn't properly serialized.
+The play counter demonstrates server-side state tracking. Each click:
+1. Sets `component.animate = True` (syncs to browser, triggers animation)
+2. Increments the Python counter (server-side state)
 """)
 
-widget_section = pn.pane.Markdown("""
-### Rendered Widget (with Known Limitation)
-
-The widget below will display, but interaction may be limited due to
-the binary trait issue described above.
-""")
+controls = pn.Column(
+    pn.pane.Markdown("### Controls"),
+    play_button,
+    pn.pane.Markdown("### Server Counter"),
+    play_count,
+    pn.pane.Markdown("### Widget Settings"),
+    gain_slider,
+    duration_slider,
+    size_slider,
+    width=350,
+)
 
 pn.Column(
     header,
-    pn.layout.Divider(),
-    widget_section,
-    anywidget_pane,
+    pn.Row(
+        pn.Column(
+            pn.pane.Markdown("### Mario Widget"),
+            anywidget_pane,
+        ),
+        controls,
+    ),
+    sizing_mode="stretch_width",
+    max_width=900,
 ).servable()

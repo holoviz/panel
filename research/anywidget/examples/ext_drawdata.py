@@ -39,14 +39,6 @@ brushsize_slider = pn.widgets.IntSlider(
     width=300
 )
 
-n_classes_slider = pn.widgets.IntSlider(
-    name="Number of Classes",
-    start=2,
-    end=10,
-    value=scatter_widget.n_classes,
-    width=300
-)
-
 # Pane to display the drawn data
 data_display = pn.pane.JSON(
     scatter_widget.data if scatter_widget.data else {},
@@ -59,19 +51,16 @@ component = anywidget_pane.component
 
 # Panel -> Widget (through component params):
 brushsize_slider.param.watch(lambda e: setattr(component, 'brushsize', e.new), "value")
-n_classes_slider.param.watch(lambda e: setattr(component, 'n_classes', e.new), "value")
 
 # Widget -> Panel (through component param.watch):
 def on_component_change(*events):
     for event in events:
         if event.name == "brushsize":
             brushsize_slider.value = event.new
-        elif event.name == "n_classes":
-            n_classes_slider.value = event.new
         elif event.name == "data":
             data_display.object = event.new if event.new else {}
 
-component.param.watch(on_component_change, ["brushsize", "n_classes", "data"])
+component.param.watch(on_component_change, ["brushsize", "data"])
 
 # Layout
 header = pn.pane.Markdown("""
@@ -97,7 +86,6 @@ from being fully connected. Data sync (Widget -> Panel) may also be affected.
 
 **Bidirectional Controls:**
 - **Brush Size:** Adjust the brush size using the slider (1-50 pixels). Changes sync both ways between the slider and the widget.
-- **Number of Classes:** Set the number of data classes using the slider (2-10). Changes sync both ways.
 
 **Data Display:** The drawn data is displayed in real-time as you draw. The JSON view shows:
 - `x`: x-coordinates of drawn points
@@ -114,7 +102,6 @@ from being fully connected. Data sync (Widget -> Panel) may also be affected.
 controls = pn.Column(
     pn.pane.Markdown("## Controls"),
     brushsize_slider,
-    n_classes_slider,
     width=350
 )
 

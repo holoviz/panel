@@ -11,8 +11,9 @@ import panel as pn
 
 from panel.pane import AnyWidget, PaneBase
 from panel.pane.anywidget import (
-    _CACHE_MAX_SIZE, _COMPONENT_CACHE, _find_original_class,
-    _get_or_create_component_class, _resolve_text, _traitlet_to_param,
+    _CACHE_MAX_SIZE, _COMPONENT_CACHE, _deep_serialize, _find_original_class,
+    _get_or_create_component_class, _is_json_safe, _resolve_text,
+    _serialize_instance, _traitlet_to_param,
 )
 
 # ---------------------------------------------------------------
@@ -122,6 +123,35 @@ class UnderscoreSyncWidget(anywidget.AnyWidget):
     """
     value = traitlets.Int(0).tag(sync=True)
     _internal_state = traitlets.Dict(default_value={}).tag(sync=True)
+
+
+class NonJsonSafeWidget(anywidget.AnyWidget):
+    """Widget with an Any-typed traitlet holding a non-JSON-safe object (like HiGlass)."""
+    _esm = """
+    function render({ model, el }) { el.innerHTML = "non-json"; }
+    export default { render };
+    """
+    client = traitlets.Any(default_value=None).tag(sync=True)
+    value = traitlets.Int(0).tag(sync=True)
+
+
+class ValidatorWidget(anywidget.AnyWidget):
+    """Widget with a traitlet validator that transforms values (like pyobsplot)."""
+    _esm = """
+    function render({ model, el }) {
+        el.innerHTML = JSON.stringify(model.get("spec"));
+    }
+    export default { render };
+    """
+    spec = traitlets.Dict(default_value={}).tag(sync=True)
+
+    @traitlets.validate('spec')
+    def _validate_spec(self, proposal):
+        raw = proposal['value']
+        # Simulate pyobsplot-style transform: wrap in {data: ..., processed: True}
+        if raw and 'processed' not in raw:
+            return {'data': raw, 'processed': True}
+        return raw
 
 
 # ---------------------------------------------------------------
@@ -490,11 +520,10 @@ def test_traitlet_set_mapping():
     assert isinstance(p, param.List)
 
 def test_traitlet_instance_mapping():
-    """Instance traitlet maps to param.ClassSelector."""
+    """Instance traitlet maps to param.Dict (serialized for Bokeh)."""
     trait = traitlets.Instance(dict, args=())
     p = _traitlet_to_param(trait)
-    assert isinstance(p, param.ClassSelector)
-    assert p.class_ is dict
+    assert isinstance(p, param.Dict)
 
 def test_traitlet_union_mapping():
     """Union traitlet falls back to generic param.Parameter."""
@@ -652,4 +681,238 @@ def test_anywidget_underscore_sync_traits():
 
     component._internal_state = {"updated": True}
     assert widget._internal_state == {"updated": True}
+    _COMPONENT_CACHE.clear()
+
+def test_anywidget_validator_transform_sync():
+    """Traitlet validators that transform values sync the validated value back."""
+    _COMPONENT_CACHE.clear()
+    widget = ValidatorWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Set a raw spec from the component side (simulates Panel control change)
+    component.spec = {"marks": ["dot"], "grid": True}
+
+    # The traitlet validator should have transformed it
+    expected = {"data": {"marks": ["dot"], "grid": True}, "processed": True}
+    assert widget.spec == expected
+
+    # The component should have received the validated (transformed) value back
+    assert component.spec == expected
+    _COMPONENT_CACHE.clear()
+
+
+# ---------------------------------------------------------------
+# _is_json_safe helper
+# ---------------------------------------------------------------
+
+def test_is_json_safe_primitives():
+    """JSON-safe primitives are recognized."""
+    assert _is_json_safe(None) is True
+    assert _is_json_safe(True) is True
+    assert _is_json_safe(42) is True
+    assert _is_json_safe(3.14) is True
+    assert _is_json_safe("hello") is True
+    assert _is_json_safe(b"bytes") is True
+    assert _is_json_safe([1, 2, 3]) is True
+    assert _is_json_safe((1, 2)) is True
+    assert _is_json_safe({"a": 1}) is True
+
+def test_is_json_safe_non_primitives():
+    """Non-JSON-safe objects are detected."""
+    class CustomObj:
+        pass
+    assert _is_json_safe(CustomObj()) is False
+    assert _is_json_safe(object()) is False
+
+
+# ---------------------------------------------------------------
+# Non-JSON-safe traitlet serialization (HiGlass-like)
+# ---------------------------------------------------------------
+
+def test_anywidget_non_json_safe_serialize():
+    """Non-JSON-safe Any-typed traitlet values are serialized to dicts."""
+    _COMPONENT_CACHE.clear()
+
+    class FakeClient:
+        def __init__(self):
+            self.url = "http://example.com"
+            self.port = 8080
+
+    widget = NonJsonSafeWidget()
+    widget.client = FakeClient()
+
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # The non-JSON-safe object should have been serialized to a dict
+    assert isinstance(component.client, dict)
+    assert component.client['url'] == "http://example.com"
+    assert component.client['port'] == 8080
+    _COMPONENT_CACHE.clear()
+
+def test_anywidget_non_json_safe_traitlet_change():
+    """Non-JSON-safe values arriving via traitlet change are serialized."""
+    _COMPONENT_CACHE.clear()
+
+    class FakeClient:
+        def __init__(self, name="default"):
+            self.name = name
+
+    widget = NonJsonSafeWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Simulate a traitlet change with a non-JSON-safe value
+    widget.client = FakeClient("updated")
+    assert isinstance(component.client, dict)
+    assert component.client['name'] == "updated"
+    _COMPONENT_CACHE.clear()
+
+
+# ---------------------------------------------------------------
+# _trait_name_map in esm_constants
+# ---------------------------------------------------------------
+
+def test_anywidget_trait_name_map_in_constants():
+    """_trait_name_map is exposed via _constants for the TS adapter."""
+    _COMPONENT_CACHE.clear()
+    widget = NameCollisionWidget()
+    component_cls = _get_or_create_component_class(widget)
+
+    # _constants should include the trait_name_map
+    assert hasattr(component_cls, '_constants')
+    constants = component_cls._constants
+    assert '_trait_name_map' in constants
+    # 'name' and 'width' collide, so they should be mapped
+    assert constants['_trait_name_map']['name'] == 'w_name'
+    assert constants['_trait_name_map']['width'] == 'w_width'
+    _COMPONENT_CACHE.clear()
+
+
+# ---------------------------------------------------------------
+# construct_data_model reuse (Jupyter Scatter-like)
+# ---------------------------------------------------------------
+
+def test_construct_data_model_reuse():
+    """construct_data_model reuses existing model from Bokeh registry."""
+    from panel.io.datamodel import construct_data_model
+
+    class TempWidget(param.Parameterized):
+        value = param.Integer(default=0)
+
+    # First call creates the model
+    model1 = construct_data_model(TempWidget, name='TestReuse1')
+
+    # Second call with the same name should return the same class
+    model2 = construct_data_model(TempWidget, name='TestReuse1')
+
+    assert model1 is model2
+
+
+# ---------------------------------------------------------------
+# _serialize_instance for non-Instance traits
+# ---------------------------------------------------------------
+
+def test_serialize_instance_custom_object():
+    """_serialize_instance converts objects with __dict__ to dicts."""
+    class Config:
+        def __init__(self):
+            self.host = "localhost"
+            self.port = 9000
+
+    result = _serialize_instance(Config())
+    assert isinstance(result, dict)
+    assert result['host'] == "localhost"
+    assert result['port'] == 9000
+
+def test_serialize_instance_passthrough():
+    """_serialize_instance passes through JSON-safe types."""
+    assert _serialize_instance(None) is None
+    assert _serialize_instance(42) == 42
+    assert _serialize_instance("hello") == "hello"
+    assert _serialize_instance([1, 2]) == [1, 2]
+    assert _serialize_instance({"a": 1}) == {"a": 1}
+
+
+# ---------------------------------------------------------------
+# _deep_serialize (nested non-JSON-safe objects)
+# ---------------------------------------------------------------
+
+def test_deep_serialize_nested_objects():
+    """_deep_serialize recursively converts nested non-JSON-safe objects."""
+    class Inner:
+        def __init__(self):
+            self.value = 42
+
+    class Outer:
+        def __init__(self):
+            self.inner = Inner()
+            self.name = "test"
+
+    result = _deep_serialize(Outer())
+    assert isinstance(result, dict)
+    assert result['name'] == "test"
+    assert isinstance(result['inner'], dict)
+    assert result['inner']['value'] == 42
+
+def test_deep_serialize_dict_with_non_json_safe_values():
+    """_deep_serialize handles dicts containing non-JSON-safe leaf values."""
+    class FakeComm:
+        def __init__(self):
+            self.target = "test_target"
+
+    data = {"key": "value", "comm": FakeComm(), "count": 5}
+    result = _deep_serialize(data)
+    assert isinstance(result, dict)
+    assert result['key'] == "value"
+    assert result['count'] == 5
+    assert isinstance(result['comm'], dict)
+    assert result['comm']['target'] == "test_target"
+
+def test_deep_serialize_primitives_passthrough():
+    """_deep_serialize passes primitives through unchanged."""
+    assert _deep_serialize(None) is None
+    assert _deep_serialize(42) == 42
+    assert _deep_serialize("hello") == "hello"
+    assert _deep_serialize(True) is True
+    assert _deep_serialize([1, 2, 3]) == [1, 2, 3]
+    assert _deep_serialize({"a": 1}) == {"a": 1}
+
+def test_deep_serialize_circular_reference():
+    """_deep_serialize handles circular references without infinite loop."""
+    d = {"key": "value"}
+    d["self"] = d
+    result = _deep_serialize(d)
+    assert result['key'] == "value"
+    assert result['self'] is None  # circular ref broken
+
+def test_anywidget_nested_non_json_safe_init():
+    """Widget with nested non-JSON-safe values in init is serialized recursively."""
+    _COMPONENT_CACHE.clear()
+
+    class FakeComm:
+        def __init__(self):
+            self.target = "kernel"
+
+    class FakeClient:
+        def __init__(self):
+            self.comm = FakeComm()
+            self.url = "http://example.com"
+
+    widget = NonJsonSafeWidget()
+    widget.client = FakeClient()
+
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Should be fully serialized, including nested FakeComm
+    assert isinstance(component.client, dict)
+    assert component.client['url'] == "http://example.com"
+    assert isinstance(component.client['comm'], dict)
+    assert component.client['comm']['target'] == "kernel"
     _COMPONENT_CACHE.clear()

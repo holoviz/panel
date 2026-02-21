@@ -13,6 +13,8 @@ Key traitlets:
     - _configs (List): Image layer configurations
     - view_state (Dict): Current viewer state (zoom, position, etc.)
     - height (Unicode): Viewer height as CSS string (default "500px")
+      NOTE: vizarr's `height` trait (Unicode) collides with Panel's `height`
+      param (Integer). The AnyWidget pane renames it to `w_height`.
 
 KNOWN LIMITATION: vizarr requires zarr stores (local or remote) with
 image data. This example uses a public OME-NGFF sample from the
@@ -55,13 +57,25 @@ except Exception:
 # 2. Wrap with AnyWidget pane
 # ---------------------------------------------------------------------------
 
-anywidget_pane = pn.pane.AnyWidget(viewer)
+# NOTE: vizarr's "height" trait (Unicode, e.g. "600px") collides with Panel's
+# integer "height" param. The AnyWidget pane renames it to "w_height" on the
+# component. However, vizarr's ESM calls model.get("height") on the JS side,
+# which currently does NOT resolve to "w_height" — this is a known framework
+# limitation (the trait_name_map is not exposed to the TypeScript adapter).
+# As a workaround, set explicit sizing on the component so the container
+# element has non-zero dimensions.
+anywidget_pane = pn.pane.AnyWidget(viewer, sizing_mode="stretch_width")
 
 # ---------------------------------------------------------------------------
 # 3. Panel controls for viewer height
 # ---------------------------------------------------------------------------
 
 component = anywidget_pane.component
+
+# Set explicit height on the component so the Bokeh container element has
+# a non-zero height. This uses Panel's integer height (pixels).
+component.height = 600
+component.sizing_mode = "stretch_width"
 
 height_select = pn.widgets.Select(
     name="Viewer Height",
@@ -71,7 +85,7 @@ height_select = pn.widgets.Select(
 )
 
 height_select.param.watch(
-    lambda e: setattr(component, "height", e.new), "value"
+    lambda e: setattr(component, "w_height", e.new), "value"
 )
 
 # Display view state reactively

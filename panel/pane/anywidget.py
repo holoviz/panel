@@ -50,6 +50,106 @@ _FRAMEWORK_TRAITS = frozenset({
 # Traitlet -> param helpers
 # ---------------------------------------------------------------
 
+def _is_json_safe(value):
+    """Check if a value can be safely serialized by Bokeh (JSON-compatible)."""
+    return value is None or isinstance(value, (bool, int, float, str, bytes, list, tuple, dict))
+
+
+def _serialize_instance(obj):
+    """
+    Attempt to serialize a non-serializable Instance value to a dict.
+
+    Supports dataclasses, msgspec Structs, pydantic models, attrs classes,
+    and objects with ``__dict__``.  Returns the original object unchanged
+    if none of the strategies apply.
+    """
+    if obj is None or isinstance(obj, (dict, int, float, str, bool, list)):
+        return obj
+    import dataclasses
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        return dataclasses.asdict(obj)
+    try:
+        import msgspec
+        if isinstance(obj, msgspec.Struct):
+            return msgspec.to_builtins(obj)
+    except ImportError:
+        pass
+    if hasattr(obj, 'model_dump'):
+        return obj.model_dump()
+    if hasattr(obj, 'dict') and callable(obj.dict):
+        return obj.dict()
+    if hasattr(obj, '__attrs_attrs__'):
+        try:
+            import attr
+            return attr.asdict(obj)
+        except ImportError:
+            pass
+    if hasattr(obj, '__dict__'):
+        return dict(obj.__dict__)
+    return obj
+
+
+def _deep_serialize(obj, _seen=None):
+    """
+    Recursively serialize non-JSON-safe values in *obj*.
+
+    Walks dicts and lists to ensure all leaf values are JSON-serializable.
+    Non-JSON-safe leaf objects are converted via ``_serialize_instance``.
+    A *_seen* set prevents infinite recursion from circular references.
+    """
+    if obj is None or isinstance(obj, (bool, int, float, str, bytes)):
+        return obj
+    if _seen is None:
+        _seen = set()
+    obj_id = id(obj)
+    if obj_id in _seen:
+        return None  # break circular reference
+    _seen.add(obj_id)
+    if isinstance(obj, dict):
+        return {k: _deep_serialize(v, _seen) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        result = [_deep_serialize(v, _seen) for v in obj]
+        return type(obj)(result) if isinstance(obj, tuple) else result
+    # Non-JSON-safe leaf: try to serialize, then recurse on result
+    serialized = _serialize_instance(obj)
+    if serialized is obj:
+        # _serialize_instance couldn't convert it; stringify as fallback
+        return repr(obj)
+    return _deep_serialize(serialized, _seen)
+
+
+def _deserialize_instance(klass, value):
+    """
+    Attempt to reconstruct an Instance of *klass* from a dict *value*.
+
+    Tries ``from_dict`` (classmethod), ``msgspec.convert``, and direct
+    ``klass(**value)`` construction.  Returns the raw value if conversion
+    fails.
+    """
+    if value is None or not isinstance(value, dict):
+        return value
+    if hasattr(klass, 'from_dict') and callable(klass.from_dict):
+        try:
+            return klass.from_dict(value)
+        except Exception:
+            pass
+    try:
+        import msgspec
+        if issubclass(klass, msgspec.Struct):
+            return msgspec.convert(value, type=klass)
+    except (ImportError, TypeError):
+        pass
+    if hasattr(klass, 'model_validate'):
+        try:
+            return klass.model_validate(value)
+        except Exception:
+            pass
+    try:
+        return klass(**value)
+    except Exception:
+        return value
+
+
 def _traitlet_to_param(trait):
     """Convert a single traitlet to a ``param.Parameter``."""
     import traitlets
@@ -103,16 +203,16 @@ def _traitlet_to_param(trait):
                 p.allow_None = True
             return p
 
-    # --- Special-case: Instance -> param.ClassSelector ------------
-    # Checked after TRAITLET_MAP walk because Container subclasses
-    # (List, Set, Tuple, Dict) inherit from Instance.
+    # --- Special-case: Instance -> param.Dict ---------------------
+    # Bokeh cannot serialize arbitrary Python objects, so Instance
+    # traits are mapped to param.Dict.  The sync layer converts
+    # between the Instance type and dict as needed.
     if isinstance(trait, traitlets.Instance):
         try:
-            default = trait.default()
+            default = _serialize_instance(trait.default())
         except Exception:
             default = None
-        klass = getattr(trait, 'klass', None) or object
-        p = param.ClassSelector(default=default, class_=klass, is_instance=True)
+        p = param.Dict(default=default if isinstance(default, (dict, type(None))) else None)
         if getattr(trait, 'allow_none', False):
             p.allow_None = True
         return p
@@ -221,20 +321,27 @@ def _get_or_create_component_class(widget):
     css = _resolve_text(getattr(widget, '_css', None))
 
     # --- Map traitlets to param Parameters, handle collisions ----------
+    import traitlets
+
     sync_traits = _get_synced_traits(widget)
     collision_names = set(AnyWidgetComponent.param)
 
     params: dict[str, param.Parameter] = {}
     trait_name_map: dict[str, str] = {}  # traitlet name -> param name
+    instance_traits: dict[str, type] = {}  # param name -> Instance klass
     for name, trait in sync_traits.items():
         param_name = f'w_{name}' if name in collision_names else name
         params[param_name] = _traitlet_to_param(trait)
         trait_name_map[name] = param_name
+        if isinstance(trait, traitlets.Instance):
+            instance_traits[param_name] = getattr(trait, 'klass', None) or object
 
     # --- Build class dict ----------------------------------------------
     class_dict: dict[str, Any] = {
         '_esm': esm or '',
         '_trait_name_map': trait_name_map,
+        '_instance_traits': instance_traits,
+        '_constants': {'_trait_name_map': trait_name_map},
         **params,
     }
     if css:
@@ -389,7 +496,8 @@ class AnyWidget(Pane):
         for trait_name in sync_traits:
             param_name = trait_name_map.get(trait_name, trait_name)
             if param_name in component_cls.param:
-                init_values[param_name] = getattr(widget, trait_name)
+                value = _deep_serialize(getattr(widget, trait_name))
+                init_values[param_name] = value
 
         component = component_cls(**init_values)
 
@@ -404,6 +512,9 @@ class AnyWidget(Pane):
     def _setup_trait_sync(self, widget, component, sync_traits, trait_name_map):
         trait_names = list(sync_traits.keys())
         reverse_map = {v: k for k, v in trait_name_map.items()}
+        instance_traits: dict[str, type] = getattr(
+            type(component), '_instance_traits', {}
+        )
 
         # traitlet -> component param
         def _on_traitlet_change(change):
@@ -414,7 +525,8 @@ class AnyWidget(Pane):
             try:
                 self._trait_changing.add(name)
                 if param_name in component.param:
-                    component.param.update(**{param_name: change['new']})
+                    value = _deep_serialize(change['new'])
+                    component.param.update(**{param_name: value})
             finally:
                 self._trait_changing.discard(name)
 
@@ -433,7 +545,17 @@ class AnyWidget(Pane):
                     continue
                 try:
                     self._trait_changing.add(trait_name)
-                    setattr(widget, trait_name, event.new)
+                    value = event.new
+                    if param_name in instance_traits:
+                        value = _deserialize_instance(
+                            instance_traits[param_name], value,
+                        )
+                    setattr(widget, trait_name, value)
+                    # If a traitlet validator transformed the value,
+                    # sync the validated value back to the component param
+                    actual = _deep_serialize(getattr(widget, trait_name))
+                    if actual is not event.new and param_name in component.param:
+                        component.param.update(**{param_name: actual})
                 except traitlets.TraitError:
                     pass  # traitlet validation rejected the value
                 except Exception:

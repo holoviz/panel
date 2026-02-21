@@ -15,7 +15,11 @@ traitlets for appearance (color, size, opacity), interaction (selection,
 hovering, lasso), camera state, and data encoding. The high-level
 `jscatter.Scatter` class wraps this widget with a convenient API.
 
-NOTE: The `jscatter.Scatter` class is a wrapper, not the anywidget itself.
+NOTE: If both `jscatter` (scientific computing) and `jupyter-scatter` are
+installed, the top-level `jscatter` namespace may be shadowed. Import from
+`jscatter.jscatter` to ensure the correct `Scatter` class is used.
+
+NOTE: The `Scatter` class is a wrapper, not the anywidget itself.
 The actual anywidget is `scatter.widget` (a `JupyterScatter` instance).
 We must pass `scatter.widget` to pn.pane.AnyWidget(), not `scatter`.
 
@@ -26,9 +30,10 @@ Run with:
     panel serve research/anywidget/examples/ext_jupyter_scatter.py
 """
 
-import jscatter
 import numpy as np
 import pandas as pd
+
+from jscatter.jscatter import Scatter
 
 import panel as pn
 
@@ -61,7 +66,7 @@ df = pd.concat(clusters, ignore_index=True)
 # 2. Create the Scatter plot and extract the anywidget
 # ---------------------------------------------------------------------------
 
-scatter = jscatter.Scatter(
+scatter = Scatter(
     data=df,
     x="x",
     y="y",

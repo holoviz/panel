@@ -60,6 +60,11 @@ vitessce_widget = vc.widget(height=500, theme="light")
 # 2. Wrap with Panel's AnyWidget pane
 # ---------------------------------------------------------------------------
 
+# NOTE: Vitessce's "height" trait (Int) collides with Panel's "height" param.
+# The AnyWidget pane renames it to "w_height" on the component. The Vitessce
+# ESM calls model.get("height") on the JS side, which does NOT resolve to
+# "w_height" — this is a known framework limitation.  Set explicit sizing
+# on the component to ensure the container has non-zero dimensions.
 anywidget_pane = pn.pane.AnyWidget(vitessce_widget, sizing_mode="stretch_width")
 
 # ---------------------------------------------------------------------------
@@ -67,6 +72,10 @@ anywidget_pane = pn.pane.AnyWidget(vitessce_widget, sizing_mode="stretch_width")
 # ---------------------------------------------------------------------------
 
 component = anywidget_pane.component
+
+# Set explicit height on the component to give the container non-zero dimensions
+component.height = 500
+component.sizing_mode = "stretch_width"
 
 # Height control
 height_slider = pn.widgets.IntSlider(
@@ -86,10 +95,15 @@ theme_select = pn.widgets.Select(
 )
 
 # Panel -> Widget sync
-if hasattr(component.param, 'height'):
-    height_slider.param.watch(
-        lambda e: setattr(component, 'height', e.new), "value"
-    )
+# NOTE: Vitessce's "height" trait is renamed to "w_height" due to collision
+# with Panel's Layoutable.height.  We also update the Panel component height
+# so the container resizes along with the Vitessce viewer.
+def on_height_change(e):
+    if hasattr(component.param, 'w_height'):
+        component.w_height = e.new
+    component.height = e.new  # Also resize the container
+
+height_slider.param.watch(on_height_change, "value")
 
 if hasattr(component.param, 'theme'):
     theme_select.param.watch(
@@ -99,12 +113,12 @@ if hasattr(component.param, 'theme'):
 # Widget -> Panel sync
 def on_component_change(*events):
     for event in events:
-        if event.name == "height":
+        if event.name == "w_height":
             height_slider.value = event.new
         elif event.name == "theme":
             theme_select.value = event.new
 
-watch_params = [p for p in ["height", "theme"] if hasattr(component.param, p)]
+watch_params = [p for p in ["w_height", "theme"] if hasattr(component.param, p)]
 if watch_params:
     component.param.watch(on_component_change, watch_params)
 

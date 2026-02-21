@@ -79,6 +79,11 @@ class ParameterizedList(Property):
 
 _DATA_MODELS: WeakKeyDictionary[type[pm.Parameterized], type[DataModel]] = WeakKeyDictionary()
 
+# Cache of dynamically created DataModel classes by name.
+# Prevents "attempted to redefine attribute" errors from Bokeh
+# when the same model definition is sent to the browser on reconnect.
+_NAMED_DATA_MODELS: dict[str, type[DataModel]] = {}
+
 # The Bokeh Color property has `_default_help` set which causes
 # an error to be raise when Nullable is called on it. This converter
 # overrides the Bokeh _help to set it to None and avoid the error.
@@ -210,7 +215,15 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}, extras={
             ptype = PARAM_MAPPING.get(ptype)(None, {})
         properties[pname] = ptype
     name = name or parameterized.name
-    return type(name, (DataModel,), properties)
+    # Reuse an existing DataModel if one with the same name is already
+    # registered.  This prevents "attempted to redefine attribute" errors
+    # from Bokeh when a browser session reconnects and the same dynamic
+    # model definition is sent again (e.g. AnyWidget components).
+    if name in _NAMED_DATA_MODELS:
+        return _NAMED_DATA_MODELS[name]
+    model_cls = type(name, (DataModel,), properties)
+    _NAMED_DATA_MODELS[name] = model_cls
+    return model_cls
 
 
 def create_linked_datamodel(obj, root=None):
