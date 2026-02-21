@@ -258,10 +258,16 @@ class AnyWidget(Pane):
     _updates: ClassVar[bool] = False
 
     def __init__(self, object=None, **params):
-        self._trait_changing: list[str] = []
+        self._trait_changing: set[str] = set()
         self._trait_watchers: list = []
         self._component: AnyWidgetComponent | None = None
         super().__init__(object=object, **params)
+        # Eagerly create the component so that ``pane.component`` is
+        # available immediately for ``param.bind``, ``param.depends``,
+        # ``.param.watch``, and ``.rx`` patterns — no need to wait
+        # until the first render.
+        if self.object is not None and self._component is None:
+            self._component = self._create_component()
 
     # ------------------------------------------------------------------
     # Detection
@@ -342,12 +348,11 @@ class AnyWidget(Pane):
                 return
             param_name = trait_name_map.get(name, name)
             try:
-                self._trait_changing.append(name)
+                self._trait_changing.add(name)
                 if param_name in component.param:
                     component.param.update(**{param_name: change['new']})
             finally:
-                if name in self._trait_changing:
-                    self._trait_changing.remove(name)
+                self._trait_changing.discard(name)
 
         widget.observe(_on_traitlet_change, names=trait_names)
         self._trait_watchers.append(
@@ -362,13 +367,12 @@ class AnyWidget(Pane):
                 if trait_name in self._trait_changing:
                     continue
                 try:
-                    self._trait_changing.append(trait_name)
+                    self._trait_changing.add(trait_name)
                     setattr(widget, trait_name, event.new)
                 except Exception:
                     pass  # traitlet validation may reject the value
                 finally:
-                    if trait_name in self._trait_changing:
-                        self._trait_changing.remove(trait_name)
+                    self._trait_changing.discard(trait_name)
 
         param_names = [
             trait_name_map.get(n, n) for n in trait_names
@@ -401,6 +405,9 @@ class AnyWidget(Pane):
         # Tear down old component before the base class re-renders
         self._teardown_trait_sync()
         self._component = None
+        # Eagerly recreate the component for the new object
+        if self.object is not None:
+            self._component = self._create_component()
         super()._update_pane(*events)
 
     # ------------------------------------------------------------------

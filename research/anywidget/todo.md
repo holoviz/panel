@@ -65,21 +65,87 @@ pn.bind(some_func, config.param.threshold)
     - 8 research tracks completed: traitlet mapping, detection, architecture, sync, pane design, ESM handling, UX reactivity, external issues
     - Key decision: dynamic `AnyWidgetComponent` subclass approach, priority=0.8, duck-typing detection
     - Shadow DOM default off, `w_` prefix for name collisions, `.component` for param reactivity
-- [ ] **Develop simple POC** that can be manually tested to demonstrate feasibility.
-    - Create `panel/pane/anywidget.py` with core pane implementation
-    - Register in `panel/pane/__init__.py`
-    - Create `examples/reference/panes/AnyWidget.ipynb` with manual test examples
-    - Verify: inline ESM anywidget renders, bidirectional sync works, `pn.panel()` auto-detection works
-    - Verify: `pane.component` exposes param reactivity (`.param.watch`, `pn.bind`)
-    - Test with simple counter widget (no external deps required)
-    - Scope: working code, not production-quality. Skip edge cases, advanced features, full test suite.
+- [x] **Develop simple POC** that can be manually tested to demonstrate feasibility.
+    - Created `panel/pane/anywidget.py` with core pane implementation
+    - Registered in `panel/pane/__init__.py` (import + `__all__`)
+    - Created `examples/reference/panes/AnyWidget.ipynb` with manual test examples
+    - Created `research/anywidget/examples/anywidget_poc_test.py` smoke test (panel serve)
+    - Added `AnyWidget` to `SKIP_PANES` in `panel/tests/pane/test_base.py`
+    - Verified: inline ESM anywidget renders in browser (screenshot + console logs via MCP)
+    - Verified: bidirectional sync works (traitlet <-> component param)
+    - Verified: `pn.panel()` auto-detection works (priority 0.8 > IPyWidget 0.6)
+    - Verified: `pane.component` exposes param reactivity
+    - Verified: all 199 existing pane base tests pass (0 regressions)
+    - Key bug fixed: `anywidget.AnyWidget.__init__` calls `add_traits()` which converts
+      `_esm` from a string to a traitlet descriptor on a dynamic subclass. Fixed by reading
+      ESM/CSS from the **instance** (not class) and caching by the original user-defined class.
+- [x] **Add proper test suite** (`panel/tests/pane/test_anywidget.py`)
+    - 18 unit tests passing: applies/auto-detection (5), model creation (2), initial values (1),
+      bidirectional sync (5 — includes observe callback test), CSS extraction (1),
+      name collision (1), cache reuse (1), object replacement (1), cleanup (1)
+    - All tests use real `anywidget.AnyWidget` subclasses with inline ESM (no mocks)
+    - Run with: `pixi run -e test-312 -- pytest panel/tests/pane/test_anywidget.py -x -v -p no:playwright`
+    - UI tests (Playwright) deferred to later iteration
+- [x] **Add examples to `research/anywidget/examples/`**
+    - 10 standalone `panel serve`-able examples created, each with explaining text,
+      clear labels distinguishing anywidget vs Panel components, and run instructions.
+    - **Inline ESM examples** (no extra deps, always runnable):
+        1. `counter.py` — basic Int traitlet + button click + IntSlider bidirectional sync
+        2. `slider.py` — HTML range input + Panel IntSlider + Markdown display, bidirectional sync
+        3. `styled_card.py` — CSS styling via `_css` + Unicode traitlets + TextInput sync
+        4. `multi_trait.py` — all common traitlet types (Int, Unicode, Bool, List, Dict) with Panel controls
+        5. `todo_list.py` — List traitlet with add/remove from both browser and Python side
+        6. `canvas_draw.py` — canvas drawing with List traitlet for strokes, Clear button from Python
+        7. `toggle_theme.py` — Bool traitlet toggling light/dark CSS themes + Panel Checkbox
+        8. `leaflet_map.py` — Leaflet.js map loaded from CDN, click/zoom/center bidirectional sync
+    - **Third-party anywidget examples** (require `pip install`, graceful ImportError handling):
+        9. `drawdata_example.py` — `drawdata.ScatterWidget()` — documents `circle_brush` init error (drawdata bug)
+        10. `ipymario_example.py` — `ipymario.Widget()` — documents Bytes traitlet limitation + fix difficulty
+        11. `wigglystuff_example.py` — `wigglystuff.TangleSlider()` — documents one-way sync limitation (no `model.on("change:amount")`)
+        12. `anymap_ts_example.py` — `anymap_ts.MapLibreMap()` — documents large ESM bundle limitation (~17MB), not rendered
+    - **GitHub issue draft**: `issue_anymap_ts.md` — suggests ESM bundle size reduction to anymap-ts maintainer
+    - **Screenshots taken** for all examples via `panel_inspect_app`, saved to `research/anywidget/screenshots/`
+    - **Feedback round 2 fixes:**
+        - `canvas_draw.py`: Fixed ESM to use immutable array updates (`[...strokes, newStroke]`) so change detection works for Clear
+        - `slider.py`: Added Panel IntSlider for bidirectional sync test (same pattern as working counter)
+        - `wigglystuff_example.py`: Documented one-way sync limitation (library ESM has no `model.on("change:amount")`), centered TangleSlider
+        - `drawdata_example.py`: Documented `circle_brush` initialization error as drawdata library bug
+        - `ipymario_example.py`: Added fix difficulty analysis (medium, ~50-100 lines, base64 encode/decode)
+        - `anymap_ts_example.py`: Replaced with documentation page (no render attempt), added `leaflet_map.py` alternative
+    - **Known limitations documented:**
+        - `ipymario`: Binary `traitlets.Bytes` trait (`_box`) not serializable as JSON — renders blank. Fix: medium difficulty (base64 encode/decode)
+        - `anymap_ts`: ~17MB ESM bundle causes WebSocket disconnection — not rendered. Fix: library must reduce bundle size
+        - `wigglystuff`: TangleSlider ESM has no `model.on("change:amount")` handler — one-way sync only (library limitation)
+        - `drawdata`: `circle_brush` initialization error in ESM — breaks bidirectional sync (library bug)
+- [x] **Eager component creation + param API**
+    - Made `pane.component` available immediately after construction (no render needed)
+    - Enables `param.watch`, `pn.bind`, and `.rx` patterns on `pane.component`
+    - Updated all 10 examples to use `pane.component.param.watch()` and `pn.bind(func, component.param.x)` instead of `widget.observe()`
+    - Added 2 new tests: `test_anywidget_component_eager_creation`, `test_anywidget_sync_before_render`
+    - All 20 tests passing
+- [x] **Third-party issue drafts** (for filing upstream)
+    - `issue_drawdata.md` — `circle_brush` ReferenceError breaks widget init, prevents bidirectional sync
+    - `issue_wigglystuff.md` — missing `model.on("change:amount")` handler, external changes don't update display, includes suggested fix
+    - `issue_anymap_ts.md` — 17MB ESM bundle causes WebSocket disconnection, suggests CDN loading
 - [ ] Create Panel AnyWidget Pane feature request with working POC example.
-- [ ] Implement in full. Add sufficient tests.
-- [ ] Document AnyWidget pane.
-- [ ] Clean up.
+- [ ] Edge cases & hardening: file-based `_esm` paths, `FileContents`/`VirtualFileContents`,
+      unmapped traitlet types (`Enum`, `Instance`, `Union`, `Set`), display-only widgets,
+      error handling for failed traitlet conversion.
+- [ ] Third-party anywidget smoke tests: `ipymario`, `drawdata`, `anywidget-maplibre`, `lonboard`.
+- [ ] Add an example to research/anywidget/examples for each anywidget in https://anywidget.dev/en/community/#widgets-gallery. We will use that for manual testing and edge cases.
+- [ ] Document AnyWidget pane (how-to guide, pane gallery entry).
 
 After each iteration let me review and let us refine the iteration together before moving to the next.
 Update this document, research documents, etc. after each iteration.
+Clean up core dump files
+
+## Maybe Later
+
+DON'T DO THIS. LET A HUMAN DO THIS!
+
+- [ ] Jupyter Notebook Testing of all examples in https://anywidget.dev/en/community/#widgets-gallery
+- [ ] VS Code Notebook Testing
+- [ ] Clean up (`research/`,).
 
 ## Acceptance Criteria
 
@@ -116,3 +182,7 @@ Update this document, research documents, etc. after each iteration.
 - https://anywidget.dev/en/community/#widgets-gallery - community widgets to test against
 - https://pypi.org/project/ipywidgets-bokeh/ - current Panel ipywidgets bridge (reliability issues, not actively maintained)
 - https://github.com/marimo-team/marimo - reactive notebook with strong anywidget support (reference for integration patterns)
+
+## 3rd party issues
+
+- https://github.com/opengeos/anymap-ts/issues/92

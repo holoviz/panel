@@ -117,6 +117,14 @@ def test_anywidget_component_created(document, comm):
     pane.get_root(document, comm=comm)
     assert pane.component is not None
 
+def test_anywidget_component_eager_creation():
+    """Component is available immediately after construction, before render."""
+    widget = CounterWidget(value=42)
+    pane = AnyWidget(widget)
+    # No get_root() call — component should exist eagerly
+    assert pane.component is not None
+    assert pane.component.value == 42
+
 
 # ---------------------------------------------------------------
 # Initial values
@@ -133,6 +141,23 @@ def test_anywidget_component_initial_values(document, comm):
 # Bidirectional sync
 # ---------------------------------------------------------------
 
+def test_anywidget_sync_before_render():
+    """Bidirectional sync works before any render call, using eager component."""
+    widget = CounterWidget(value=0)
+    pane = AnyWidget(widget)
+
+    # param.watch on the component (no get_root needed)
+    observed = []
+    pane.component.param.watch(lambda e: observed.append(e.new), ['value'])
+
+    widget.value = 5
+    assert pane.component.value == 5
+    assert observed == [5]
+
+    # Reverse direction
+    pane.component.value = 10
+    assert widget.value == 10
+
 def test_anywidget_sync_traitlet_to_component(document, comm):
     widget = CounterWidget()
     pane = AnyWidget(widget)
@@ -148,6 +173,24 @@ def test_anywidget_sync_component_to_traitlet(document, comm):
 
     pane.component.value = 99
     assert widget.value == 99
+
+def test_anywidget_sync_component_to_traitlet_observe(document, comm):
+    """Verify that traitlet observe callbacks fire when the component
+    changes a value (simulates the browser-click -> slider update pattern
+    from the POC demo)."""
+    widget = CounterWidget()
+    pane = AnyWidget(widget)
+    pane.get_root(document, comm=comm)
+
+    observed = []
+    widget.observe(lambda change: observed.append(change['new']), names=['value'])
+
+    pane.component.value = 10
+    assert widget.value == 10
+    assert observed == [10]
+
+    pane.component.value = 20
+    assert observed == [10, 20]
 
 def test_anywidget_sync_no_loop(document, comm):
     widget = CounterWidget()

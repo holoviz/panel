@@ -63,6 +63,10 @@ no-default-feature = true
 features = ["py311", "required", "example", "doc"]
 no-default-feature = true
 
+[environments.anywidget]
+features = ["py312", "required", "anywidget-examples"]
+no-default-feature = true
+
 [environments.build]
 features = ["py311", "required", "build"]
 no-default-feature = true
@@ -418,6 +422,15 @@ jupyterlab-myst = "*"
 jupyterlite-core = "<0.7.0"
 jupyterlite-pyodide-kernel = "*"
 python-build = "*"
+
+[feature.anywidget-examples.dependencies]
+anywidget = "*"
+drawdata = "*"
+wigglystuff = "*"
+anymap-ts = "*"
+
+[feature.anywidget-examples.tasks]
+anywidget-serve = 'panel serve research/anywidget/examples/*.py'
 
 [feature.lite.tasks]
 lite-build = "bash scripts/jupyterlite/build.sh"
