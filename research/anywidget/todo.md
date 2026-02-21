@@ -2,6 +2,8 @@
 
 Add a new `AnyWidget` pane (`panel/pane/anywidget.py`) that renders instantiated anywidget objects natively through Panel's ESM/ReactiveESM infrastructure, **bypassing `ipywidgets_bokeh` entirely**.
 
+Draft PR in https://github.com/holoviz/panel/pull/8428
+
 ## Context
 
 Panel currently has two anywidget-related mechanisms:
@@ -127,7 +129,7 @@ pn.bind(some_func, config.param.threshold)
     - `issue_drawdata.md` — `circle_brush` ReferenceError breaks widget init, prevents bidirectional sync
     - `issue_wigglystuff.md` — missing `model.on("change:amount")` handler, external changes don't update display, includes suggested fix
     - `issue_anymap_ts.md` — 17MB ESM bundle causes WebSocket disconnection, suggests CDN loading
-- [ ] Create Panel AnyWidget Pane feature request with working POC example.
+- [x] Create Panel AnyWidget Pane feature request with working POC example.
 - [ ] Edge cases & hardening: file-based `_esm` paths, `FileContents`/`VirtualFileContents`,
       unmapped traitlet types (`Enum`, `Instance`, `Union`, `Set`), display-only widgets,
       error handling for failed traitlet conversion.
@@ -186,3 +188,5 @@ DON'T DO THIS. LET A HUMAN DO THIS!
 ## 3rd party issues
 
 - https://github.com/opengeos/anymap-ts/issues/92
+- https://github.com/koaning/drawdata/issues/34
+- https://github.com/koaning/wigglystuff/issues/135

@@ -6,6 +6,8 @@
 
 ## Reproduction
 
+CANNOT RUN BEFORE RELEASE OF PANEL UPCOMING ANYWIDGET PANE. SEE https://github.com/holoviz/panel/pull/8428
+
 ### Minimal reproducible example (Panel)
 
 ```bash

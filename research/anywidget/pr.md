@@ -43,6 +43,26 @@ pixi run -e test-312 -- panel serve research/anywidget/examples/counter.py
 ## Research & Examples
 
 The `research/anywidget/` directory contains:
+
 - 8 research documents covering architecture, sync, detection, ESM handling, etc.
 - 12 runnable example scripts (8 inline ESM + 4 third-party)
 - 3 upstream issue drafts for third-party widget bugs discovered during testing
+
+This should be removed before merging. But its highly valuable to have while implementing.
+
+Run the examples with
+
+```bash
+pixi run -e anywidget panel serve research/anywidget/examples/*.py
+```
+
+## Todo
+
+- [ ] Edge cases & hardening: file-based `_esm` paths, `FileContents`/`VirtualFileContents`,
+      unmapped traitlet types (`Enum`, `Instance`, `Union`, `Set`), display-only widgets,
+      error handling for failed traitlet conversion.
+- [ ] Third-party anywidget smoke tests: `ipymario`, `drawdata`, `anywidget-maplibre`, `lonboard`.
+- [ ] Add an example to research/anywidget/examples for each anywidget in https://anywidget.dev/en/community/#widgets-gallery. We will use that for manual testing and edge cases.
+- [ ] Document AnyWidget pane (how-to guide, pane gallery entry).
+- [ ] Jupyter Notebook Testing of all examples in https://anywidget.dev/en/community/#widgets-gallery
+- [ ] VS Code Notebook Testing
