@@ -136,6 +136,10 @@ class Location(Syncable):
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
+    @param.depends("pathname", watch=True)
+    def _sync_pathname(self):
+        state.rel_path = '/'.join(['..'] * self.pathname.strip('/').count('/'))
+
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
