@@ -655,7 +655,7 @@ class Param(Pane):
                 updates['value'] = change.new
 
             # Ensure we only de-duplicate value events since only
-            # the widget value can be controlled from the frontend 
+            # the widget value can be controlled from the frontend
             value_update = 'value' in updates or 'value_throttled' in updates
             try:
                 if value_update:
