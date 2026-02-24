@@ -319,6 +319,10 @@ export class ReactiveESMView extends HTMLBoxView {
     this.container.appendChild(error_div)
   }
 
+  get use_shadow_dom(): boolean {
+    return this.model.use_shadow_dom
+  }
+
   override render(): void {
     this.empty()
     this._update_stylesheets()
@@ -335,7 +339,19 @@ export class ReactiveESMView extends HTMLBoxView {
     this.container = div()
     this.container.className = this.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
     set_size(this.container, this.model, false)
-    this.shadow_el.append(this.container)
+    let render_root: Element | ShadowRoot
+    if (this.use_shadow_dom) {
+      render_root = this.shadow_el
+    } else {
+      // Light DOM rendering: clear any previous Light DOM children of the
+      // shadow host (the shadow root itself is unaffected by replaceChildren),
+      // then add a <slot> to shadow_el so the Light DOM children are projected
+      // and visible in the rendered output.
+      this.el.replaceChildren()
+      this.shadow_el.appendChild(document.createElement("slot"))
+      render_root = this.el
+    }
+    render_root.append(this.container)
     if (this.model.compile_error) {
       this.render_error(this.model.compile_error)
     } else {
@@ -345,7 +361,7 @@ export class ReactiveESMView extends HTMLBoxView {
       // this.shadow_el is needed for Bokeh < 3.7.0 as this.self_target is not defined
       // can be removed when our minimum version is Bokeh 3.7.0
       // https://github.com/holoviz/panel/pull/7948
-      const target = element_view.rendering_target() ?? this.self_target ?? this.shadow_el
+      const target = element_view.rendering_target() ?? this.self_target ?? render_root
       element_view.render_to(target)
     }
   }
@@ -592,6 +608,7 @@ export namespace ReactiveESM {
     events: p.Property<string[]>
     importmap: p.Property<any>
     render_policy: p.Property<typeof RenderPolicy["__type__"]>
+    use_shadow_dom: p.Property<boolean>
   }
 }
 
@@ -941,6 +958,7 @@ export default {render}`
       events:      [ Array(Str),          [] ],
       importmap:   [ Any,                 {} ],
       render_policy: [ RenderPolicy, "children"],
+      use_shadow_dom: [ Bool,            true ],
     }))
   }
 }

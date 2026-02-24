@@ -4,7 +4,7 @@ import param
 
 from bokeh.plotting import figure
 
-from panel.custom import PyComponent, ReactiveESM
+from panel.custom import JSComponent, PyComponent, ReactiveESM
 from panel.io.state import state
 from panel.layout import Row
 from panel.pane import Bokeh, Markdown
@@ -225,3 +225,24 @@ def test_esm_parameter_override(document, comm):
     esm.width = 84
 
     assert model.width == 84
+
+
+class JSComponentWithShadowRoot(JSComponent):
+    _esm = "export function render() {}"
+
+
+class JSComponentNoShadowRoot(JSComponent):
+    __shadow_root__ = False
+    _esm = "export function render() {}"
+
+
+def test_jscomponent_shadow_root_default(document, comm):
+    component = JSComponentWithShadowRoot()
+    model = component.get_root(document, comm)
+    assert model.use_shadow_dom is True
+
+
+def test_jscomponent_shadow_root_disabled(document, comm):
+    component = JSComponentNoShadowRoot()
+    model = component.get_root(document, comm)
+    assert model.use_shadow_dom is False

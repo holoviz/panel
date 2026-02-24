@@ -107,7 +107,7 @@ export class ReactComponentView extends ReactiveESMView {
     }
   }
 
-  get use_shadow_dom(): boolean {
+  override get use_shadow_dom(): boolean {
     return this.model.use_shadow_dom || !(this.parent instanceof ReactComponentView)
   }
 
@@ -304,7 +304,6 @@ export namespace ReactComponent {
 
   export type Props = ReactiveESM.Props & {
     root_node: p.Property<string | null>
-    use_shadow_dom: p.Property<boolean>
   }
 }
 
@@ -675,9 +674,8 @@ ${compiled}`
 
   static {
     this.prototype.default_view = ReactComponentView
-    this.define<ReactComponent.Props>(({Bool, Nullable, Str}) => ({
+    this.define<ReactComponent.Props>(({Nullable, Str}) => ({
       root_node:  [ Nullable(Str), null ],
-      use_shadow_dom:   [ Bool,    true ],
     }))
 
     this.override<ReactComponent.Props>({

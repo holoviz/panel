@@ -52,6 +52,8 @@ class ReactiveESM(HTMLBox):
 
     render_policy = bp.Enum('manual', 'children', default="children")
 
+    use_shadow_dom = bp.Bool(True)
+
     __javascript_raw__ = [
         f"{config.npm_cdn}/es-module-shims@^1.10.0/dist/es-module-shims.min.js"
     ]
@@ -69,8 +71,6 @@ class ReactComponent(ReactiveESM):
     render_policy = bp.Override(default="manual") # type: ignore
 
     root_node = bp.Nullable(bp.String)
-
-    use_shadow_dom = bp.Bool(True)
 
 
 class AnyWidgetComponent(ReactComponent):

@@ -774,7 +774,14 @@ class JSComponent(ReactiveESM):
         CounterButton().servable()
     '''
 
+    __shadow_root__: ClassVar[bool] = True
+
     __abstract = True
+
+    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+        props = super()._get_properties(doc)
+        props['use_shadow_dom'] = type(self).__shadow_root__
+        return props
 
 
 class ReactComponent(ReactiveESM):
