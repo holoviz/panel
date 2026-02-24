@@ -49,6 +49,25 @@ def test_menu_button(document, comm):
     assert events == ['b']
 
 
+def test_button_on_click_kwarg(document, comm):
+    events = []
+    button = Button(name='Button', on_click=lambda e: events.append(e))
+    button.get_root(document, comm=comm)
+    button._process_event(None)
+    assert len(events) == 1
+
+
+def test_menu_button_on_click_kwarg(document, comm):
+    events = []
+    menu_button = MenuButton(
+        items=[('Option A', 'a')],
+        on_click=lambda e: events.append(e)
+    )
+    widget = menu_button.get_root(document, comm=comm)
+    menu_button._process_event(MenuItemClick(widget, 'a'))
+    assert len(events) == 1
+
+
 def test_button_jscallback_clicks(document, comm):
     button = Button(name='Button')
     code = 'console.log("Clicked!")'
