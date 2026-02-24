@@ -343,10 +343,6 @@ export class ReactiveESMView extends HTMLBoxView {
     if (this.use_shadow_dom) {
       render_root = this.shadow_el
     } else {
-      // Light DOM rendering: clear any previous Light DOM children of the
-      // shadow host (the shadow root itself is unaffected by replaceChildren),
-      // then add a <slot> to shadow_el so the Light DOM children are projected
-      // and visible in the rendered output.
       this.el.replaceChildren()
       this.shadow_el.appendChild(document.createElement("slot"))
       render_root = this.el
