@@ -562,13 +562,14 @@ def hold(
     comm: Comm
         The Comm to dispatch events on when the context manager exits.
     freeze: bool
-        Whether to freeze the Document model references for the
-        duration of the hold. When True, defers expensive model graph
-        recomputation (``doc.models.recompute()``) until the hold
-        exits, which can significantly speed up batch updates that
-        modify many models. Safe to nest with the per-model
-        ``freeze_doc`` calls used internally, since Bokeh's freeze
-        mechanism is reference-counted.
+        **Experimental.** Whether to freeze the Document model
+        references for the duration of the hold. When True, defers
+        expensive model graph recomputation
+        (``doc.models.recompute()``) until the hold exits, which can
+        significantly speed up batch updates that modify many models.
+        Safe to nest with the per-model ``freeze_doc`` calls used
+        internally, since Bokeh's freeze mechanism is
+        reference-counted.
     """
     doc = doc or state.curdoc
     if doc is None:
