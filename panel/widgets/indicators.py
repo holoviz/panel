@@ -331,7 +331,7 @@ class Number(ValueIndicator):
     >>> Number(name='Rate', value=72, format='{value}%', colors=[(80, 'green'), (100, 'red')]
     """
 
-    default_color = param.String(default='black', doc="""
+    default_color = param.String(default='currentcolor', doc="""
         The color of the Number indicator if no colors are provided""")
 
     colors = param.List(default=None, doc="""
@@ -396,8 +396,8 @@ class String(ValueIndicator):
     The String indicator renders a string with a title.
     """
 
-    default_color = param.String(default='black', doc="""
-        The color of the Number indicator if no colors are provided""")
+    default_color = param.String(default='currentcolor', doc="""
+        The color of the indicator if no colors are provided""")
 
     font_size = param.String(default='54pt', doc="""
         The size of number itself.""")
