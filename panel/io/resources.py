@@ -452,6 +452,7 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
 
 def _panel_use_mathjax(roots) -> bool:
     """Whether any model in roots is a Panel HTML model (may need MathJax)."""
+    from ..models.markup import HTML as PanelHTML
     return _any(roots, lambda obj: isinstance(obj, PanelHTML))
 
 
