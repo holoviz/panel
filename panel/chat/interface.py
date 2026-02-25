@@ -115,6 +115,10 @@ class ChatInterface(ChatFeed):
     user = param.String(default="User", doc="""
         Name of the ChatInterface user.""")
 
+    placeholder = param.String(default="Send a message", doc="""
+        The placeholder text for the default input widget. Has no
+        effect if custom ``widgets`` are provided.""")
+
     widgets = param.ClassSelector(class_=(WidgetBase, list), allow_refs=False, doc="""
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
@@ -168,7 +172,8 @@ class ChatInterface(ChatFeed):
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
         if widgets is None:
-            params["widgets"] = [self._input_type(placeholder="Send a message")]
+            placeholder = params.get("placeholder", self.placeholder)
+            params["widgets"] = [self._input_type(placeholder=placeholder)]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)

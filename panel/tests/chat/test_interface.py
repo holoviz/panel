@@ -59,6 +59,18 @@ class TestChatInterface:
         assert isinstance(chat_interface._widgets["FileInput"], FileInput)
         assert chat_interface.active == 0
 
+    def test_placeholder_default(self, chat_interface):
+        assert chat_interface.active_widget.placeholder == "Send a message"
+
+    def test_placeholder_custom(self):
+        chat_interface = ChatInterface(placeholder="Ask anything...")
+        assert chat_interface.active_widget.placeholder == "Ask anything..."
+
+    def test_placeholder_ignored_with_custom_widgets(self):
+        widget = TextInput(name="Text", placeholder="Custom")
+        chat_interface = ChatInterface(widgets=[widget], placeholder="Ignored")
+        assert chat_interface.active_widget.placeholder == "Custom"
+
     def test_active_in_constructor(self):
         widgets = [TextInput(name="Text"), FileInput()]
         chat_interface = ChatInterface(widgets=widgets, active=1)
