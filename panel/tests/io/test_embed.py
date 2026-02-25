@@ -559,7 +559,7 @@ def test_embed_selects_with_same_name_not_merged(document, comm):
 
     panel = Row(s1, s2, t1, t2)
     with config.set(embed=True):
-      model = panel.get_root(document, comm)
+        model = panel.get_root(document, comm)
     state_model = embed_state(panel, model, document)
 
     assert state_model is not None
