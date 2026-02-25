@@ -188,6 +188,7 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
             p for p in Reactive.param
             if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)
         ]
+        mcs._data_model__initialized = not (state.curdoc and state.curdoc.session_context)
         mcs._data_model = construct_data_model(
             mcs, name=model_name, ignore=ignored, extras={'esm_constants': param.Dict}
         )
@@ -494,7 +495,13 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         else:
             bundle_hash = None
         data_props['esm_constants'] = self._constants
+        if cls._data_model__initialized:
+            defs = []
+        else:
+            defs = [cls._data_model]
+            cls._data_model__initialized = True
         props.update({
+            '_defs': defs,
             'bundle': bundle_hash,
             'css_bundle': css_bundle,
             'class_name': cls.__name__,
