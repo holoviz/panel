@@ -147,11 +147,14 @@ class Location(Syncable):
         if not (state._servers and session_context and session_context.server_context):
             return
         for server, _, _ in state._servers.values():
-            if server.port == self.port:
+            server_port = server.port if hasattr(server, 'port') else server.config.port
+            breakpoint()
+            if self.port == server_port:
                 break
         else:
             return
-        state.rel_path = '/'.join(['..'] * self.pathname.replace(server.prefix, '').strip('/').count('/'))
+        prefix = getattr(server, 'prefix', '')
+        state.rel_path = '/'.join(['..'] * self.pathname.replace(prefix, '').strip('/').count('/'))
 
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,
