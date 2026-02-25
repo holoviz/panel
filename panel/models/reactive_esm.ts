@@ -582,6 +582,7 @@ export namespace ReactiveESM {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = HTMLBox.Props & {
+    _defs: p.Property<any[]>
     css_bundle: p.Property<string | null>
     bundle: p.Property<string | null>
     children: p.Property<any>
@@ -931,6 +932,7 @@ export default {render}`
   static {
     this.prototype.default_view = ReactiveESMView
     this.define<ReactiveESM.Props>(({Any, Array, Bool, Nullable, Str}) => ({
+      _defs:       [ Array(Any),          [] ],
       css_bundle:  [ Nullable(Str),     null ],
       bundle:      [ Nullable(Str),     null ],
       children:    [ Array(Str),          [] ],

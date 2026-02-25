@@ -32,6 +32,8 @@ class ESMEvent(DataEvent):
 
 class ReactiveESM(HTMLBox):
 
+    _defs = bp.List(bp.Any)
+
     css_bundle = bp.Nullable(bp.String)
 
     bundle = bp.Nullable(bp.String)

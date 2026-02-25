@@ -10,11 +10,11 @@ def test_number_none(document, comm):
 
     model = number.get_root(document, comm)
 
-    assert model.text.endswith("&lt;div style=&quot;font-size: 54pt; color: black&quot;&gt;-&lt;/div&gt;")
+    assert model.text.endswith("&lt;div style=&quot;font-size: 54pt; color: currentcolor&quot;&gt;-&lt;/div&gt;")
 
     number.nan_format = 'nan'
 
-    assert model.text.endswith("&lt;div style=&quot;font-size: 54pt; color: black&quot;&gt;nan&lt;/div&gt;")
+    assert model.text.endswith("&lt;div style=&quot;font-size: 54pt; color: currentcolor&quot;&gt;nan&lt;/div&gt;")
 
 
 def test_number_thresholds(document, comm):

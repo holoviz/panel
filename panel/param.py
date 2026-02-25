@@ -654,8 +654,12 @@ class Param(Pane):
             else:
                 updates['value'] = change.new
 
+            # Ensure we only de-duplicate value events since only
+            # the widget value can be controlled from the frontend
+            value_update = 'value' in updates or 'value_throttled' in updates
             try:
-                updating.append(p_key)
+                if value_update:
+                    updating.append(p_key)
                 if change.type == 'triggered':
                     with discard_events(widget):
                         widget.param.update(**updates)
@@ -666,7 +670,8 @@ class Param(Pane):
                 else:
                     widget.param.update(**updates)
             finally:
-                updating.remove(p_key)
+                if value_update:
+                    updating.remove(p_key)
 
         # Set up links to parameterized object
         watchers.append(parameterized.param.watch(link, p_name, 'constant'))
