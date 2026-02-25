@@ -386,7 +386,7 @@ class Pipeline(Viewer):
             self.next_button.disabled = True
         else:
             ready = kwargs.get('ready_parameter', self.ready_parameter)
-            disabled = (not getattr(stage, ready)) if ready in stage.param else False
+            disabled = (not getattr(self._state, ready)) if ready in self._state.param else False
             self.next_button.disabled = disabled
 
     def _get_error_button(self, e):
