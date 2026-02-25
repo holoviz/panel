@@ -148,7 +148,6 @@ class Location(Syncable):
             return
         for server, _, _ in state._servers.values():
             server_port = server.port if hasattr(server, 'port') else server.config.port
-            breakpoint()
             if self.port == server_port:
                 break
         else:
