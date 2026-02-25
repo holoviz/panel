@@ -138,7 +138,20 @@ class Location(Syncable):
 
     @param.depends("pathname", watch=True)
     def _sync_pathname(self):
-        state.rel_path = '/'.join(['..'] * self.pathname.strip('/').count('/'))
+        """
+        When in a server context and the pathname is overridden dynamically
+        we need to keep the state.rel_path in sync to ensure that resources
+        are resolved relative to the new URL.
+        """
+        session_context = state.curdoc.session_context
+        if not (state._servers and session_context and session_context.server_context):
+            return
+        for server, _, _ in state._servers.values():
+            if server.port == self.port:
+                break
+        else:
+            return
+        state.rel_path = '/'.join(['..'] * self.pathname.replace(server.prefix, '').strip('/').count('/'))
 
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,
