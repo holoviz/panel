@@ -37,7 +37,6 @@ from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
-from ..models.markup import HTML as PanelHTML
 from ..util import _descendents, isurl, url_path
 from .state import state
 
