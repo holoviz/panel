@@ -380,7 +380,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
             return
         json_patch, buffer_map = _process_document_events(pydoc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
-        buffer_map = pyodide.ffi.to_js(buffer_map)
+        buffer_map = js.Map.new(pyodide.ffi.to_js(buffer_map))
         _patching = True
         try:
             jsdoc.apply_json_patch(json_patch, buffer_map)
