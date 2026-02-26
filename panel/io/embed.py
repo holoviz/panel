@@ -93,6 +93,13 @@ def param_to_jslink(model, widget):
     from ..widgets import LiteralInput, Widget
 
     param_pane = widget._param_pane
+
+    # If param_pane is a class (not an instance), it means the widget was created
+    # via Widget.from_param() as a class method. In this case, we cannot access
+    # instance attributes like _widgets, so we skip JS link conversion.
+    if isinstance(param_pane, type):
+        return
+
     pobj = param_pane.object
     pname = [k for k, v in param_pane._widgets.items() if v is widget]
     watchers = [
