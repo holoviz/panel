@@ -202,7 +202,7 @@ export class CardView extends ColumnView {
   _toggle_button(e: MouseEvent): void {
     const is_panel_widget = (el: EventTarget): boolean =>
       el instanceof HTMLInputElement || (
-      el instanceof HTMLElement &&
+        el instanceof HTMLElement &&
 	Array.from(el.classList).some((c) => c.startsWith("bk-panel-models-widgets-")))
 
     for (const el of e.composedPath()) {
