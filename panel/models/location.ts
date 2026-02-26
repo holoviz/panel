@@ -54,7 +54,7 @@ export class LocationView extends View {
     this._idle_connected = true
 
     const doc = this.model.document as any
-    if (!doc || !doc.idle) {
+    if (doc.is_idle) {
       this._idle_ready = true
       return
     }
