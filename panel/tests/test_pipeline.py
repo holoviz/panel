@@ -411,3 +411,37 @@ def test_pipeline_repr():
 
     pipeline.add_stage('Stage 2', Stage2)
     assert repr(pipeline) == 'Pipeline:\n    [0] Stage 1: Stage1()\n    [1] Stage 2: Stage2()'
+
+
+def test_pipeline_ready_parameter_preserved_on_back_navigation():
+    """
+    Regression test for https://github.com/holoviz/panel/issues/8378.
+
+    When navigating back to a stage whose ready_parameter is already True,
+    the 'next' button should remain enabled (not disabled).
+    Previously, _update_button read from the stage class (always default=False)
+    instead of the live instance (self._state), causing the button to be
+    incorrectly disabled until the parameter was set to True a second time.
+    """
+    pipeline = Pipeline(ready_parameter='ready')
+    pipeline.add_stage('Stage 1', Stage1)
+    pipeline.add_stage('Stage 2', Stage2)
+
+    # Initially disabled because ready=False
+    assert pipeline.next_button.disabled
+
+    # Set ready=True → button enables
+    pipeline._state.ready = True
+    assert not pipeline.next_button.disabled
+
+    # Advance to Stage 2
+    pipeline._next()
+    assert isinstance(pipeline._state, Stage2)
+
+    # Go back to Stage 1 — ready is still True on the instance
+    pipeline._previous()
+    assert isinstance(pipeline._state, Stage1)
+    assert pipeline._state.ready is True
+
+    # The next button must be enabled immediately (not disabled)
+    assert not pipeline.next_button.disabled

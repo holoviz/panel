@@ -6,6 +6,9 @@ export class LocationView extends View {
   declare model: Location
 
   _hash_listener: any
+  private _idle_ready = false
+  private _pending_url: string | null = null
+  private _idle_connected = false
 
   override initialize(): void {
     super.initialize()
@@ -44,28 +47,60 @@ export class LocationView extends View {
     window.removeEventListener("hashchange", this._hash_listener)
   }
 
-  update(change: string): void {
-    if (!this.model.reload || (change === "reload")) {
-      window.history.pushState(
-        {},
-        "",
-        `${this.model.pathname}${this.model.search}${this.model.hash}`,
-      )
-      this.model.href = window.location.href
-      if (change === "reload") {
-        window.location.reload()
-      }
-    } else {
-      if (change == "pathname") {
-        window.location.pathname = (this.model.pathname)
-      }
-      if (change == "search") {
-        window.location.search = (this.model.search)
-      }
-      if (change == "hash") {
-        window.location.hash = (this.model.hash)
-      }
+  private _ensure_idle_gate(): void {
+    if (this._idle_connected) {
+      return
     }
+    this._idle_connected = true
+
+    const doc = this.model.document as any
+    if (doc.is_idle) {
+      this._idle_ready = true
+      return
+    }
+
+    doc.idle.connect(() => {
+      this._idle_ready = true
+      if (this._pending_url != null) {
+        const url = this._pending_url
+        this._pending_url = null
+        window.history.pushState({}, "", url)
+        this.model.href = window.location.href
+      }
+    })
+  }
+
+  private _set_url_gated(url: string): void {
+    this._ensure_idle_gate()
+    if (this._idle_ready) {
+      window.history.pushState({}, "", url)
+      this.model.href = window.location.href
+    } else {
+      this._pending_url = url
+    }
+  }
+
+  update(change: string): void {
+    const url = `${this.model.pathname}${this.model.search}${this.model.hash}`
+
+    if (change === "reload") {
+      window.history.pushState({}, "", url)
+      this.model.href = window.location.href
+      window.location.reload()
+      return
+    }
+
+    if (!this.model.reload) {
+      this._set_url_gated(url)
+      return
+    }
+
+    if (change === "hash") {
+      window.location.hash = this.model.hash
+      return
+    }
+
+    window.location.href = url
   }
 }
 

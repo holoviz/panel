@@ -63,6 +63,25 @@ def test_video_muted(document, comm):
 
     assert model.muted
 
+def test_video_url_with_query_params(document, comm):
+    url = 'https://www.videoserver.com/watch?v=/path/to/video.mp4'
+    video = Video(url)
+    model = video.get_root(document, comm=comm)
+
+    assert model.value == url
+
+def test_video_applies_url_with_query_params():
+    url = 'https://www.videoserver.com/watch?v=/path/to/video.mp4'
+    assert Video.applies(url)
+
+def test_video_applies_url_without_format():
+    url = 'https://www.videoserver.com/watch?v=12345'
+    assert not Video.applies(url)
+
+def test_video_applies_url_with_format_prefix_in_query():
+    url = 'https://www.videoserver.com/watch?v=file.mp4extra'
+    assert not Video.applies(url)
+
 def test_local_audio(document, comm):
     audio = Audio(str(ASSETS / 'mp3.mp3'))
     model = audio.get_root(document, comm=comm)
