@@ -184,6 +184,20 @@ class Callback(param.Parameterized):
         else:
             self.registry[source] = [self]
 
+    def unwatch(self) -> None:
+        """
+        Unregisters the Callback, preventing it from being applied
+        to future renders. Note that if the callback has already been
+        applied to a rendered model, it will not be removed from that
+        model automatically.
+        """
+        source = self.source
+        if source is None:
+            return
+        callbacks = self.registry.get(source, [])
+        if self in callbacks:
+            callbacks.remove(self)
+
     @classmethod
     def register_callback(cls, callback: type[CallbackGenerator]) -> None:
         """
