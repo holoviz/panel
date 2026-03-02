@@ -800,7 +800,14 @@ class Reactive(Syncable, Viewable):
                     if callbacks:
                         callbacks[event.name](target, event)
                     else:
-                        setattr(target, links[event.name], event.new)
+                        _is_hv_stream = (
+                            'holoviews' in sys.modules and
+                            isinstance(target, sys.modules['holoviews'].streams.Stream)
+                        )
+                        if _is_hv_stream:
+                            target.event(**{links[event.name]: event.new})
+                        else:
+                            setattr(target, links[event.name], event.new)
                 finally:
                     _updating.pop(_updating.index(event.name))
         params = list(callbacks) if callbacks else list(links)
