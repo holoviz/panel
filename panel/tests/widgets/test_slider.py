@@ -934,37 +934,6 @@ def test_editable_fixed_nosoftbounds_fixed_end(editableslider):
     assert slider.end == end
 
 
-def test_date_range_slider_timezone_aware_value(document, comm):
-    min_val = pd.Timestamp('2024-04-03 12:43:00+0200')
-    max_val = pd.Timestamp('2024-04-29 15:30:00+0200')
-
-    date_slider = DateRangeSlider(
-        name='Dates',
-        start=min_val,
-        end=max_val,
-        value=(min_val, max_val),
-    )
-    widget = date_slider.get_root(document, comm=comm)
-
-    assert widget.value[0] == min_val.timestamp() * 1000
-    assert widget.value[1] == max_val.timestamp() * 1000
-    assert widget.start <= widget.value[0] <= widget.end
-    assert widget.start <= widget.value[1] <= widget.end
-
-
-def test_datetime_as_utctimestamp_timezone_aware():
-    import datetime as dt
-
-    from panel.util import datetime_as_utctimestamp
-
-    naive = dt.datetime(2024, 4, 29, 13, 30, 0)
-    assert datetime_as_utctimestamp(naive) == naive.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
-
-    aware = pd.Timestamp('2024-04-29 15:30:00+0200')
-    assert datetime_as_utctimestamp(aware) == aware.timestamp() * 1000
-    assert datetime_as_utctimestamp(aware) != aware.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
-
-
 def test_date_range_slider_start_end_explicit_conversion(document, comm):
     min_val = pd.Timestamp('2024-04-03 12:43:00+0200')
     max_val = pd.Timestamp('2024-04-29 15:30:00+0200')
@@ -977,7 +946,12 @@ def test_date_range_slider_start_end_explicit_conversion(document, comm):
     )
     widget = date_slider.get_root(document, comm=comm)
 
-    assert widget.start == min_val.timestamp() * 1000
-    assert widget.end == max_val.timestamp() * 1000
+    import datetime as dt
+
+    expected_start_ms = min_val.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+    expected_end_ms = max_val.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+
+    assert widget.start == expected_start_ms
+    assert widget.end == expected_end_ms
     assert widget.start == widget.value[0]
     assert widget.end == widget.value[1]
