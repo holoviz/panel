@@ -16,7 +16,7 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.10
     hooks:
-      - id: ruff
+      - id: ruff-check
         files: panel/
   - repo: https://github.com/pycqa/isort
     rev: 7.0.0
@@ -47,15 +47,16 @@ repos:
       - id: oxipng
         stages: [manual]
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.37.0
+    rev: v9.39.1
     hooks:
       - id: eslint
-        args: ['-c', 'panel/.eslintrc.js', 'panel/*.ts', 'panel/models/**/*.ts', '--fix']
+        args: ['--config', 'panel/eslint.config.js', 'panel/*.ts', 'panel/models/**/*.ts', '--fix']
         additional_dependencies:
-          - 'eslint@8.57.0'
-          - '@stylistic/eslint-plugin@1.6.3'
-          - '@typescript-eslint/eslint-plugin@7.2.0'
-          - '@typescript-eslint/parser@7.2.0'
+          - 'eslint@9.39.1'
+          - '@stylistic/eslint-plugin@5.9.0'
+          - '@typescript-eslint/eslint-plugin@8.56.1'
+          - '@typescript-eslint/parser@8.56.1'
+          - 'typescript-eslint@8.56.1'
 ci:
   autofix_prs: false
   autoupdate_schedule: quarterly
