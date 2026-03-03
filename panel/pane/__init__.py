@@ -30,6 +30,7 @@ For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
 from .alert import Alert  # noqa
+from .anywidget import AnyWidget  # noqa
 from .base import Pane, PaneBase, panel  # noqa
 from .deckgl import DeckGL  # noqa
 from .echarts import ECharts  # noqa
@@ -61,6 +62,7 @@ from ..param import (  # noqa  # isort: skip
 
 __all__ = (
     "Alert",
+    "AnyWidget",
     "Audio",
     "AVIF",
     "Bokeh",

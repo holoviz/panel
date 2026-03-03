@@ -955,6 +955,15 @@ class AnyWidgetComponent(ReactComponent):
         """
         self._send_msg(msg)
 
+    def _process_property_change(self, msg: dict[str, Any]) -> dict[str, Any]:
+        msg = super()._process_property_change(msg)
+        # JSON has no tuple type — lists arriving from JS must be converted
+        # to tuples for param.Tuple parameters (e.g. lonboard selected_bounds).
+        for k, v in msg.items():
+            if isinstance(v, list) and isinstance(self.param[k], param.Tuple):
+                msg[k] = tuple(v)
+        return msg
+
     def _get_properties(self, doc: Document | None) -> dict[str, Any]:
         props = super()._get_properties(doc)
         del props['use_shadow_dom']

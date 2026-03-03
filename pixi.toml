@@ -63,6 +63,10 @@ no-default-feature = true
 features = ["py311", "required", "example", "doc"]
 no-default-feature = true
 
+[environments.anywidget]
+features = ["py312", "required", "test-core", "test", "test-ui", "anywidget-examples"]
+no-default-feature = true
+
 [environments.build]
 features = ["py311", "required", "build"]
 no-default-feature = true
@@ -418,6 +422,12 @@ jupyterlab-myst = "*"
 jupyterlite-core = "<0.7.0"
 jupyterlite-pyodide-kernel = "*"
 python-build = "*"
+
+[feature.anywidget-examples.dependencies]
+anywidget = "*"
+
+[feature.anywidget-examples.tasks]
+anywidget-serve = 'echo "Third-party anywidget examples have been migrated to the gallery repo"'
 
 [feature.lite.tasks]
 lite-build = "bash scripts/jupyterlite/build.sh"

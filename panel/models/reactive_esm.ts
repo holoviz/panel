@@ -892,7 +892,13 @@ export default {render}`
       } else {
         url = URL.createObjectURL(new Blob([this.compiled], {type: "text/javascript"}))
       }
-      esm_module = (window as any).importShim(url)
+      // For bundled URLs, try native import() first (no es-module-shims parsing).
+      // If it fails, fall back to importShim for ESM with import maps.
+      if (this.bundle === "url") {
+        esm_module = import(url).catch(() => (window as any).importShim(url))
+      } else {
+        esm_module = (window as any).importShim(url)
+      }
     }
     this.compiled_module = (esm_module as Promise<any>).then((mod: any) => {
       if (resolve) {

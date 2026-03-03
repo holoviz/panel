@@ -1,0 +1,1 @@
+var i=Object.defineProperty;var r=(t,e)=>{for(var o in e)i(t,o,{get:e[o],enumerable:!0})};var n={};r(n,{initialize:()=>c,render:()=>u});function c({model:t}){t.count=1}function u({model:t}){let e=document.createElement("h1");return e.textContent=`${t.count}`,e}var f={JSInitialize:n};export{f as default};

@@ -9,8 +9,8 @@ from panel.io.loading import LOADING_INDICATOR_CSS_CLASS
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
-    Bokeh, HoloViews, Interactive, IPyWidget, Markdown, PaneBase, RGGPlot,
-    Vega,
+    AnyWidget, Bokeh, HoloViews, Interactive, IPyWidget, Markdown, PaneBase,
+    RGGPlot, Vega,
 )
 from panel.param import (
     Param, ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
@@ -19,7 +19,7 @@ from panel.tests.util import check_layoutable_properties
 from panel.util import _descendents
 
 SKIP_PANES = (
-    Bokeh, ChatMessage, HoloViews, Interactive, IPyWidget, Param,
+    AnyWidget, Bokeh, ChatMessage, HoloViews, Interactive, IPyWidget, Param,
     ParamFunction, ParamMethod, ParamRef, RGGPlot, ReactiveExpr, Vega,
     interactive
 )
