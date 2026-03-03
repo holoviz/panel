@@ -4,7 +4,7 @@ Playwright test for the weas-widget anywidget example.
 weas-widget (Web Environment for Atomistic Structure) provides interactive
 3D visualization of molecular and crystal structures. WeasWidget is an
 ipywidgets HBox container; the actual anywidget is the first child
-(``weas.children[0]``, a BaseWidget). Panel's AnyWidget pane wraps the
+(``was.children[0]``, a BaseWidget). Panel's AnyWidget pane wraps the
 BaseWidget directly.
 
 Tests:
@@ -55,21 +55,20 @@ def _filter_weas_errors(msgs):
 def _make_weas_widget():
     """Create a WeasWidget with a simple water molecule and extract the BaseWidget."""
     from ase.build import molecule
-
     from weas_widget import WeasWidget
 
     atoms = molecule("H2O")
-    weas = WeasWidget(from_ase=atoms, guiConfig={"enabled": False})
+    was = WeasWidget(from_ase=atoms, guiConfig={"enabled": False})
     # WeasWidget is an HBox; the actual anywidget is the first child
-    base_widget = weas.children[0]
-    return base_widget, weas
+    base_widget = was.children[0]
+    return base_widget, was
 
 
 def _make_pane():
     """Create a Panel AnyWidget pane wrapping a weas-widget BaseWidget."""
-    base_widget, weas = _make_weas_widget()
+    base_widget, was = _make_weas_widget()
     pane = pn.pane.AnyWidget(base_widget, height=500, sizing_mode="stretch_width")
-    return pane, base_widget, weas
+    return pane, base_widget, was
 
 
 def test_weaswidget_renders(page):
@@ -78,7 +77,7 @@ def test_weaswidget_renders(page):
     Note: The 3D WebGL viewer may not fully render in headless mode,
     but we verify the Bokeh model attaches to the DOM without crashing.
     """
-    pane, base_widget, weas = _make_pane()
+    pane, base_widget, was = _make_pane()
 
     msgs, _ = serve_component(page, pane)
 
@@ -97,7 +96,7 @@ def test_weaswidget_renders(page):
 
 def test_weaswidget_component_has_expected_params(page):
     """The wrapped component exposes modelStyle, colorType, atomLabelType params."""
-    pane, base_widget, weas = _make_pane()
+    pane, base_widget, was = _make_pane()
 
     msgs, _ = serve_component(page, pane)
 
@@ -128,7 +127,7 @@ def test_weaswidget_component_has_expected_params(page):
 
 def test_weaswidget_python_changes_model_style(page):
     """Changing modelStyle from Python updates the widget (Python -> browser sync)."""
-    pane, base_widget, weas = _make_pane()
+    pane, base_widget, was = _make_pane()
 
     msgs, _ = serve_component(page, pane)
 
@@ -158,7 +157,7 @@ def test_weaswidget_python_changes_model_style(page):
 
 def test_weaswidget_python_changes_color_type(page):
     """Changing colorType from Python updates the widget (Python -> browser sync)."""
-    pane, base_widget, weas = _make_pane()
+    pane, base_widget, was = _make_pane()
 
     msgs, _ = serve_component(page, pane)
 

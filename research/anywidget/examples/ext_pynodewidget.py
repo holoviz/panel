@@ -29,13 +29,8 @@ Trait name collisions
 
 from pynodewidget import GridBuilder, NodeFlowWidget
 from pynodewidget.models import (
-    BaseHandle,
-    BoolField,
-    HeaderComponent,
-    LabeledHandle,
-    NumberField,
-    SelectField,
-    TextField,
+    BaseHandle, BoolField, HeaderComponent, LabeledHandle, NumberField,
+    SelectField, TextField,
 )
 
 import panel as pn

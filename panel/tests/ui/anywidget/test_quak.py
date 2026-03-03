@@ -23,10 +23,7 @@ import panel as pn
 
 from panel.tests.util import serve_component, wait_until
 
-from .conftest import (
-    assert_no_console_errors,
-    wait_for_anywidget,
-)
+from .conftest import assert_no_console_errors, wait_for_anywidget
 
 pytestmark = pytest.mark.ui
 

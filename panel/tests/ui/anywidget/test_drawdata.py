@@ -28,7 +28,6 @@ pytest.importorskip("drawdata")
 pytest.importorskip("playwright")
 
 from drawdata import BarWidget, ScatterWidget
-
 from playwright.sync_api import expect
 
 import panel as pn

@@ -12,9 +12,10 @@ import panel as pn
 from panel.pane import AnyWidget, PaneBase
 from panel.pane.anywidget import (
     _CACHE_MAX_SIZE, _COMPONENT_CACHE, _MAX_SERIALIZE_DEPTH,
-    _dataframe_to_records, _deep_serialize, _find_original_class,
-    _get_or_create_component_class, _is_dataframe, _is_json_safe,
-    _resolve_text, _serialize_instance, _traitlet_to_param,
+    _collect_child_widgets, _dataframe_to_records, _deep_serialize,
+    _find_original_class, _get_or_create_component_class, _is_dataframe,
+    _is_json_safe, _is_widget_serialization, _resolve_text,
+    _serialize_child_state, _serialize_instance, _traitlet_to_param,
 )
 
 # ---------------------------------------------------------------
@@ -1659,3 +1660,181 @@ def test_anywidget_initialize_msg_custom_queuing():
     assert hasattr(component, 'last_msg')
     assert component.last_msg == ""
     _COMPONENT_CACHE.clear()
+
+
+# ---------------------------------------------------------------
+# Compound widget (child widget) support
+# ---------------------------------------------------------------
+
+ipywidgets = pytest.importorskip("ipywidgets")
+
+
+class ChildWidget(ipywidgets.DOMWidget):
+    """Mock child widget with sync-tagged traits."""
+    _model_name = traitlets.Unicode('ChildWidgetModel').tag(sync=True)
+    _model_module = traitlets.Unicode('test').tag(sync=True)
+    _view_name = traitlets.Unicode('ChildWidgetView').tag(sync=True)
+    _view_module = traitlets.Unicode('test').tag(sync=True)
+    color = traitlets.Unicode('red').tag(sync=True)
+    table = traitlets.Bytes(b'').tag(sync=True)
+
+
+class ParentCompound(anywidget.AnyWidget):
+    """Mock compound widget with widget_serialization traits."""
+    _esm = """
+    function render({ model, el }) {
+        el.innerHTML = "compound";
+    }
+    export default { render };
+    """
+    layer = traitlets.Instance(ipywidgets.Widget, allow_none=True).tag(
+        sync=True, **ipywidgets.widget_serialization,
+    )
+    layers = traitlets.List(traitlets.Instance(ipywidgets.Widget)).tag(
+        sync=True, **ipywidgets.widget_serialization,
+    )
+    value = traitlets.Int(0).tag(sync=True)
+
+
+class TestCollectChildWidgets:
+
+    def test_single_child(self):
+        _COMPONENT_CACHE.clear()
+        child = ChildWidget()
+        parent = ParentCompound(layer=child, layers=[])
+        result = _collect_child_widgets(parent)
+        assert child.model_id in result
+        assert result[child.model_id] is child
+        _COMPONENT_CACHE.clear()
+
+    def test_list_of_children(self):
+        _COMPONENT_CACHE.clear()
+        c1 = ChildWidget()
+        c2 = ChildWidget()
+        parent = ParentCompound(layers=[c1, c2])
+        result = _collect_child_widgets(parent)
+        assert c1.model_id in result
+        assert c2.model_id in result
+        _COMPONENT_CACHE.clear()
+
+    def test_no_widget_serialization(self):
+        """Leaf widgets (no widget_serialization traits) return empty dict."""
+        _COMPONENT_CACHE.clear()
+        widget = CounterWidget()
+        result = _collect_child_widgets(widget)
+        assert result == {}
+        _COMPONENT_CACHE.clear()
+
+    def test_recursive_grandchildren(self):
+        """Grandchild widgets are discovered recursively."""
+        _COMPONENT_CACHE.clear()
+        grandchild = ChildWidget()
+        # Create an intermediate compound widget with a child
+        intermediate = ParentCompound(layer=grandchild, layers=[])
+        # Outer parent has intermediate as its layer
+        outer = ParentCompound(layer=intermediate, layers=[])
+        result = _collect_child_widgets(outer)
+        # Should find both intermediate and grandchild
+        assert intermediate.model_id in result
+        assert grandchild.model_id in result
+        _COMPONENT_CACHE.clear()
+
+    def test_circular_reference_safety(self):
+        """Circular widget references don't cause infinite recursion."""
+        _COMPONENT_CACHE.clear()
+        parent = ParentCompound(layers=[])
+        # Manually create a circular reference (parent references itself)
+        parent.layer = parent
+        result = _collect_child_widgets(parent)
+        # Should not hang; parent itself should be collected once
+        assert parent.model_id in result
+        _COMPONENT_CACHE.clear()
+
+
+class TestSerializeChildState:
+
+    def test_basic_serialization(self):
+        _COMPONENT_CACHE.clear()
+        child = ChildWidget(color='blue')
+        state = _serialize_child_state(child)
+        assert state['color'] == 'blue'
+        _COMPONENT_CACHE.clear()
+
+    def test_binary_data(self):
+        _COMPONENT_CACHE.clear()
+        child = ChildWidget(table=b'\x00\x01\x02')
+        state = _serialize_child_state(child)
+        # Binary data should be base64-encoded with _pnl_bytes marker
+        # (handled by _deep_serialize at depth > 0 via _serialize_trait)
+        # At depth 0, bytes are passed through for Bokeh's bp.Bytes
+        assert state['table'] == b'\x00\x01\x02' or isinstance(state['table'], dict)
+        _COMPONENT_CACHE.clear()
+
+
+class TestCompoundWidgetConstantsPopulation:
+
+    def test_child_models_in_constants(self):
+        _COMPONENT_CACHE.clear()
+        child = ChildWidget(color='green')
+        parent = ParentCompound(layer=child, layers=[])
+        pane = AnyWidget(parent)
+        component = pane.component
+        assert component is not None
+        constants = component._constants
+        assert '_child_models' in constants
+        assert child.model_id in constants['_child_models']
+        child_state = constants['_child_models'][child.model_id]['state']
+        assert child_state['color'] == 'green'
+        _COMPONENT_CACHE.clear()
+
+    def test_leaf_widget_has_no_child_models(self):
+        _COMPONENT_CACHE.clear()
+        widget = CounterWidget()
+        pane = AnyWidget(widget)
+        component = pane.component
+        assert component is not None
+        constants = component._constants
+        assert '_child_models' not in constants
+        _COMPONENT_CACHE.clear()
+
+
+class TestCompoundWidgetCleanup:
+
+    def test_clears_child_widgets(self):
+        _COMPONENT_CACHE.clear()
+        child = ChildWidget()
+        parent = ParentCompound(layer=child, layers=[])
+        pane = AnyWidget(parent)
+        assert len(pane._child_widgets) > 0
+        pane._teardown_trait_sync()
+        assert pane._child_widgets == {}
+        _COMPONENT_CACHE.clear()
+
+    def test_restores_child_send(self):
+        import types
+
+        _COMPONENT_CACHE.clear()
+        child = ChildWidget()
+        parent = ParentCompound(layer=child, layers=[])
+        pane = AnyWidget(parent)
+
+        # After setup, child.send should be overridden
+        assert not isinstance(child.send, types.MethodType)
+        assert callable(child.send)
+
+        pane._teardown_trait_sync()
+
+        # After cleanup, child.send should be restored
+        assert isinstance(child.send, types.MethodType)
+        _COMPONENT_CACHE.clear()
+
+
+class TestIsWidgetSerialization:
+
+    def test_widget_serialization_trait(self):
+        trait = ParentCompound.class_traits()['layer']
+        assert _is_widget_serialization(trait) is True
+
+    def test_non_widget_serialization_trait(self):
+        trait = ParentCompound.class_traits()['value']
+        assert _is_widget_serialization(trait) is False

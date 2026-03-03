@@ -35,25 +35,12 @@ import pytest
 pytest.importorskip("wigglystuff")
 pytest.importorskip("playwright")
 
-from wigglystuff import (
-    ColorPicker,
-    CopyToClipboard,
-    DiffViewer,
-    EdgeDraw,
-    Matrix,
-    Paint,
-    ProgressBar,
-    ScatterWidget,
-    Slider2D,
-    SortableList,
-    SplineDraw,
-    TangleChoice,
-    TangleSelect,
-    TangleSlider,
-    TextCompare,
-)
-
 from playwright.sync_api import expect
+from wigglystuff import (
+    ColorPicker, CopyToClipboard, DiffViewer, EdgeDraw, Matrix, Paint,
+    ProgressBar, ScatterWidget, Slider2D, SortableList, SplineDraw,
+    TangleChoice, TangleSelect, TangleSlider, TextCompare,
+)
 
 import panel as pn
 

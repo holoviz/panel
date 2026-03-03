@@ -35,10 +35,7 @@ Run with:
 """
 
 from vitessce import (
-    CoordinationType as ct,
-    FileType as ft,
-    ViewType as vt,
-    VitessceConfig,
+    CoordinationType as ct, FileType as ft, ViewType as vt, VitessceConfig,
 )
 
 import panel as pn

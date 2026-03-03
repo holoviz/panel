@@ -12,6 +12,7 @@ pytest.importorskip("widget_bandsplot")
 pytest.importorskip("playwright")
 
 import numpy as np
+
 from playwright.sync_api import expect
 
 import panel as pn

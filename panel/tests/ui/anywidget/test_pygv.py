@@ -59,6 +59,7 @@ def _filter_pygv_errors(msgs):
 def _make_pygv_browser():
     """Create a pygv Browser with a simple genome config."""
     import pygv
+
     from pygv._config import Config
 
     config = Config(genome="hg38", locus="chr17:7,571,720-7,590,868")
@@ -123,6 +124,7 @@ def test_pygv_widget_replace_navigates(page):
     the entire AnyWidget pane object with a fresh Browser instance.
     """
     import pygv
+
     from pygv._config import Config
 
     initial_config = Config(genome="hg38", locus="chr17:7,571,720-7,590,868")

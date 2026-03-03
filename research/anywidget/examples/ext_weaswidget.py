@@ -36,7 +36,6 @@ Trait name collisions:
 """
 
 from ase.build import molecule
-
 from weas_widget import WeasWidget
 
 import panel as pn
@@ -66,9 +65,9 @@ LABEL_TYPES = ["None", "Symbol", "Index"]
 # Create the initial widget
 # ---------------------------------------------------------------------------
 atoms = molecule("H2O")
-weas = WeasWidget(from_ase=atoms, guiConfig={"enabled": False})
+was = WeasWidget(from_ase=atoms, guiConfig={"enabled": False})
 # WeasWidget is an HBox; the actual anywidget is the first child (BaseWidget)
-base_widget = weas.children[0]
+base_widget = was.children[0]
 
 # Wrap with Panel's AnyWidget pane
 anywidget_pane = pn.pane.AnyWidget(base_widget, height=500, sizing_mode="stretch_width")

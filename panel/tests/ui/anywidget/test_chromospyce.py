@@ -14,6 +14,7 @@ pytest.importorskip("chromospyce")
 pytest.importorskip("playwright")
 
 import numpy as np
+
 from playwright.sync_api import expect
 
 import panel as pn
@@ -21,9 +22,7 @@ import panel as pn
 from panel.tests.util import serve_component, wait_until
 
 from .conftest import (
-    assert_no_console_errors,
-    console_errors,
-    wait_for_anywidget,
+    assert_no_console_errors, console_errors, wait_for_anywidget,
 )
 
 pytestmark = [

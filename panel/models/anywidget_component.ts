@@ -28,6 +28,230 @@ import {DataEvent, ReactiveESM, ReactiveESMView} from "./reactive_esm"
 //    widgets like **vizarr**, **Vitessce**, and **ipyaladin**.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Deferred<T> — Promise with exposed resolve/reject
+// ---------------------------------------------------------------------------
+
+class Deferred<T> {
+  promise: Promise<T>
+  resolve!: (value: T) => void
+  reject!: (reason?: any) => void
+
+  constructor() {
+    this.promise = new Promise<T>((resolve, reject) => {
+      this.resolve = resolve
+      this.reject = reject
+    })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ModelRegistry — page-scoped registry for child widget models
+// ---------------------------------------------------------------------------
+// Enables get_model(id) to be called before or after child model registration.
+// If get_model is called first, a pending Deferred is created and resolved
+// when register() is called later.
+
+class ModelRegistry {
+  private _deferreds: Map<string, Deferred<any>> = new Map()
+  private _resolved: Map<string, any> = new Map()
+
+  get(id: string): Promise<any> {
+    const existing = this._resolved.get(id)
+    if (existing) {
+      return Promise.resolve(existing)
+    }
+    let deferred = this._deferreds.get(id)
+    if (!deferred) {
+      deferred = new Deferred<any>()
+      this._deferreds.set(id, deferred)
+      // Timeout after 10 seconds to avoid hanging indefinitely
+      setTimeout(() => {
+        if (!this._resolved.has(id)) {
+          deferred!.reject(new Error(`[Panel AnyWidget] get_model('${id}') timed out after 10s`))
+          this._deferreds.delete(id)
+        }
+      }, 10000)
+    }
+    return deferred.promise
+  }
+
+  register(id: string, adapter: any): void {
+    this._resolved.set(id, adapter)
+    const deferred = this._deferreds.get(id)
+    if (deferred) {
+      deferred.resolve(adapter)
+      this._deferreds.delete(id)
+    }
+  }
+
+  delete(id: string): void {
+    this._resolved.delete(id)
+    this._deferreds.delete(id)
+  }
+
+  get_resolved(id: string): any | null {
+    return this._resolved.get(id) || null
+  }
+}
+
+const MODEL_REGISTRY = new ModelRegistry()
+
+// ---------------------------------------------------------------------------
+// ChildModelAdapter — lightweight model for child widgets
+// ---------------------------------------------------------------------------
+// Implements the anywidget/ipywidgets model interface for child widgets
+// referenced via IPY_MODEL_ strings in compound widgets (lonboard, higlass).
+
+class ChildModelAdapter {
+  model_id: string
+  private _state: Record<string, any>
+  private _parent: AnyWidgetModelAdapter
+  private _listeners: Map<string, Array<{cb: (...args: any[]) => void, context?: any}>>
+  private _dirty: Set<string>
+  // Cached widget_manager object — must be stable (same reference) across accesses
+  // because React hooks use it in useEffect dependency arrays with Object.is comparison.
+  widget_manager: {get_model: (model_id: string) => Promise<any>}
+
+  constructor(model_id: string, state: Record<string, any>, parent: AnyWidgetModelAdapter) {
+    this.model_id = model_id
+    this._state = {...state}
+    this._parent = parent
+    this._listeners = new Map()
+    this._dirty = new Set()
+    this.widget_manager = {
+      get_model: (mid: string) => MODEL_REGISTRY.get(mid),
+    }
+  }
+
+  get(name: string): any {
+    let value = this._state[name]
+    value = this._parent._decode_binary(value)
+    return value
+  }
+
+  set(name: string, value: any): void {
+    this._state[name] = value
+    this._dirty.add(name)
+  }
+
+  save_changes(): void {
+    if (this._dirty.size === 0) { return }
+    const changes: Record<string, any> = {}
+    for (const key of this._dirty) {
+      let value = this._state[key]
+      // Convert DataView/TypedArray back to ArrayBuffer for transport
+      if (value instanceof DataView) {
+        value = value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength)
+      } else if (ArrayBuffer.isView(value) && !(value instanceof DataView)) {
+        value = value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength)
+      }
+      changes[key] = value
+    }
+    this._dirty.clear()
+    // Route through parent's DataEvent
+    this._parent.model.trigger_event(new DataEvent({
+      _child_save_changes: {model_id: this.model_id, changes},
+    }))
+  }
+
+  on(event: string, cb: (...args: any[]) => void, context?: any): void {
+    let listeners = this._listeners.get(event)
+    if (!listeners) {
+      listeners = []
+      this._listeners.set(event, listeners)
+    }
+    listeners.push({cb, context})
+  }
+
+  off(event?: string | null, cb?: ((...args: any[]) => void) | null): void {
+    if (!event) {
+      this._listeners.clear()
+      return
+    }
+    if (!cb) {
+      this._listeners.delete(event)
+      return
+    }
+    const listeners = this._listeners.get(event)
+    if (listeners) {
+      const filtered = listeners.filter(entry => entry.cb !== cb)
+      if (filtered.length > 0) {
+        this._listeners.set(event, filtered)
+      } else {
+        this._listeners.delete(event)
+      }
+    }
+  }
+
+  send(data: any, _callbacks?: any, buffers?: any[]): void {
+    // Base64-encode binary buffers for JSON transport
+    let payload: any = data
+    if (buffers && buffers.length > 0) {
+      const encoded: string[] = []
+      for (const buf of buffers) {
+        let bytes: Uint8Array
+        if (buf instanceof ArrayBuffer) {
+          bytes = new Uint8Array(buf)
+        } else if (buf instanceof DataView) {
+          bytes = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
+        } else if (buf instanceof Uint8Array) {
+          bytes = buf
+        } else if (ArrayBuffer.isView(buf)) {
+          bytes = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
+        } else {
+          bytes = new Uint8Array(buf as ArrayBuffer)
+        }
+        let binary = ""
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i])
+        }
+        encoded.push(btoa(binary))
+      }
+      if (typeof data === "object" && data !== null) {
+        payload = {...data, _b64_buffers: encoded}
+      } else {
+        payload = {_data: data, _b64_buffers: encoded}
+      }
+    }
+    // Route through parent DataEvent with child model ID
+    this._parent.model.trigger_event(new DataEvent({
+      _child_model_id: this.model_id,
+      ...((typeof payload === "object" && payload !== null) ? payload : {_data: payload}),
+    }))
+  }
+
+  // Called by event routing when Python sends a state update for this child
+  _update_state(key: string, value: any): void {
+    this._state[key] = value
+    // Fire change:key listeners
+    const specific = this._listeners.get(`change:${key}`)
+    if (specific) {
+      const decoded = this.get(key)  // decode binary if needed
+      for (const {cb, context} of specific) {
+        try { cb.call(context, decoded) } catch (e) { console.error("Error in child change callback:", e) }
+      }
+    }
+    // Fire generic "change" listeners
+    const generic = this._listeners.get("change")
+    if (generic) {
+      for (const {cb, context} of generic) {
+        try { cb.call(context) } catch (e) { console.error("Error in child generic change callback:", e) }
+      }
+    }
+  }
+
+  // Called by event routing when Python sends a custom message for this child
+  _emit_custom_msg(content: any, buffers: DataView[]): void {
+    const listeners = this._listeners.get("msg:custom")
+    if (listeners) {
+      for (const {cb, context} of listeners) {
+        try { cb.call(context, content, buffers) } catch (e) { console.error("Error in child msg:custom callback:", e) }
+      }
+    }
+  }
+}
+
 class AnyWidgetModelAdapter {
   declare model: AnyWidgetComponent
   declare model_changes: any
@@ -42,6 +266,14 @@ class AnyWidgetModelAdapter {
   // Cached name maps (built lazily from esm_constants._trait_name_map)
   _cached_trait_name_map: Record<string, string> | null
   _cached_param_name_map: Record<string, string> | null
+  // Cached widget_manager object — must be stable (same reference) across accesses
+  // because React hooks use it in useEffect dependency arrays with Object.is comparison.
+  widget_manager: {get_model: (model_id: string) => Promise<any>}
+  // Cached widget_serialization values — must return the SAME reference for the
+  // same trait on repeated get() calls.  React's useSyncExternalStore compares
+  // getSnapshot() results with Object.is; returning a new array/object each time
+  // triggers an infinite re-render loop (e.g. lonboard controls/layers).
+  _cached_ws_values: Record<string, any>
 
   constructor(model: AnyWidgetComponent) {
     this.view = null
@@ -52,6 +284,10 @@ class AnyWidgetModelAdapter {
     this._generic_change_cbs = new Set()
     this._cached_trait_name_map = null
     this._cached_param_name_map = null
+    this._cached_ws_values = {}
+    this.widget_manager = {
+      get_model: (model_id: string) => MODEL_REGISTRY.get(model_id),
+    }
   }
 
   // ---- Trait ↔ param name translation ------------------------------------
@@ -115,6 +351,29 @@ class AnyWidgetModelAdapter {
       value = this.model.attributes[param_name]
     }
 
+    // For widget_serialization traits (compound widgets like lonboard, higlass),
+    // the values are stored as "IPY_MODEL_<id>" strings in esm_constants.
+    // Return them as-is — the widget's own JS code will parse the strings
+    // (e.g. value.slice("IPY_MODEL_".length)) and call widget_manager.get_model()
+    // to resolve child models.
+    //
+    // CRITICAL: Return the SAME cached reference on repeated calls.  Lonboard
+    // uses React's useSyncExternalStore whose getSnapshot() compares with
+    // Object.is.  A new array/object reference would trigger an infinite
+    // re-render → useEffect → get() → new reference → re-render loop.
+    if (value === undefined || value === null) {
+      const constants = this.model.data?.attributes?.esm_constants
+      if (constants && constants._widget_serialization_values) {
+        const raw = constants._widget_serialization_values[name]
+        if (raw !== undefined) {
+          if (!(name in this._cached_ws_values)) {
+            this._cached_ws_values[name] = raw
+          }
+          return this._cached_ws_values[name]
+        }
+      }
+    }
+
     if (value instanceof ArrayBuffer) {
       value = new DataView(value)
     }
@@ -149,14 +408,27 @@ class AnyWidgetModelAdapter {
       }
       return new DataView(bytes.buffer)
     }
+    // IMPORTANT: Preserve reference identity when no decoding is needed.
+    // React's useSyncExternalStore compares getSnapshot() results with
+    // Object.is — a new array/object reference triggers infinite re-renders
+    // (e.g. lonboard selected_bounds after bbox selection).
     if (Array.isArray(value)) {
-      return value.map((v: any) => this._decode_binary(v))
+      let changed = false
+      const mapped = value.map((v: any) => {
+        const decoded = this._decode_binary(v)
+        if (decoded !== v) { changed = true }
+        return decoded
+      })
+      return changed ? mapped : value
     }
+    let changed = false
     const result: Record<string, any> = {}
     for (const [k, v] of Object.entries(value)) {
-      result[k] = this._decode_binary(v)
+      const decoded = this._decode_binary(v)
+      result[k] = decoded
+      if (decoded !== v) { changed = true }
     }
-    return result
+    return changed ? result : value
   }
 
   set(name: string, value: any) {
@@ -304,6 +576,12 @@ class AnyWidgetModelAdapter {
       //   "Cannot read properties of undefined (reading '0')"
       // because it accesses buffers[0] to read Arrow IPC data.
       const wrapped = (data: any) => {
+        // Skip child-directed messages to prevent them leaking to the
+        // parent ESM's msg:custom handler.  These are routed to child
+        // models separately via the view's event routing.
+        if (data && (data._child_state_update || data._child_msg_custom)) {
+          return
+        }
         let buffers: DataView[] = []
         if (data && data._b64_buffers) {
           const encoded: string[] = data._b64_buffers
@@ -391,25 +669,6 @@ class AnyWidgetModelAdapter {
     })
   }
 
-  // ---- widget_manager stub ------------------------------------------------
-  // The native anywidget protocol exposes model.widget_manager for compound
-  // widgets that need to look up other widget models.  Panel doesn't have
-  // a Jupyter widget manager, so we provide a stub that warns on use.
-  get widget_manager(): any {
-    return {
-      get_model: (model_id: string) => {
-        console.warn(
-          `[Panel AnyWidget] widget_manager.get_model('${model_id}') ` +
-          `is not supported. Compound widgets using IPY_MODEL_ references ` +
-          `require Jupyter's widget manager.`,
-        )
-        return Promise.reject(
-          new Error("widget_manager not available in Panel"),
-        )
-      },
-    }
-  }
-
   // off() supports the full anywidget protocol:
   //   off()              — remove ALL listeners (cleanup)
   //   off("change")      — remove all generic change listeners
@@ -486,6 +745,8 @@ export class AnyWidgetComponentView extends ReactiveESMView {
   declare model: AnyWidgetComponent
   adapter: AnyWidgetAdapter
   destroyer: Promise<((props: any) => void) | null>
+  // Track child model IDs registered by this view for cleanup
+  _child_model_ids: string[] = []
 
   override initialize(): void {
     super.initialize()
@@ -499,9 +760,62 @@ export class AnyWidgetComponentView extends ReactiveESMView {
       }
       this.model._pending_msg_handlers = null
     }
+    // Initialize child models from esm_constants._child_models
+    const constants = this.model.data?.attributes?.esm_constants
+    if (constants && constants._child_models) {
+      for (const [model_id, info] of Object.entries(constants._child_models as Record<string, any>)) {
+        const child = new ChildModelAdapter(model_id, info.state || {}, this.adapter)
+        MODEL_REGISTRY.register(model_id, child)
+        this._child_model_ids.push(model_id)
+      }
+    }
+  }
+
+  override connect_signals(): void {
+    super.connect_signals()
+    // Route child-directed ESMEvent messages to the appropriate child model
+    this.on_event((data: any) => {
+      if (!data || typeof data !== "object") { return }
+      // Child state update: {_child_state_update: {model_id, key, value}}
+      if (data._child_state_update) {
+        const {model_id, key, value} = data._child_state_update
+        const child = MODEL_REGISTRY.get_resolved(model_id)
+        if (child && child._update_state) {
+          child._update_state(key, value)
+        }
+        return
+      }
+      // Child custom message: {_child_msg_custom: {model_id, content, _b64_buffers?}}
+      if (data._child_msg_custom) {
+        const {model_id, content} = data._child_msg_custom
+        const child = MODEL_REGISTRY.get_resolved(model_id)
+        if (child && child._emit_custom_msg) {
+          // Decode base64 buffers if present
+          let buffers: DataView[] = []
+          if (data._child_msg_custom._b64_buffers) {
+            const encoded: string[] = data._child_msg_custom._b64_buffers
+            buffers = encoded.map((b64: string) => {
+              const binary = atob(b64)
+              const bytes = new Uint8Array(binary.length)
+              for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i)
+              }
+              return new DataView(bytes.buffer)
+            })
+          }
+          child._emit_custom_msg(content, buffers)
+        }
+        return
+      }
+    })
   }
 
   override remove(): void {
+    // Clean up child models from the registry before removing the view
+    for (const id of this._child_model_ids) {
+      MODEL_REGISTRY.delete(id)
+    }
+    this._child_model_ids = []
     super.remove()
     if (this.destroyer) {
       this.destroyer.then((d: any) => d({model: this.adapter, el: this.container}))

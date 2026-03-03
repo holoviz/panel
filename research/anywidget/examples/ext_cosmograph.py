@@ -43,6 +43,7 @@ Run with:
 """
 
 import pandas as pd
+
 from cosmograph_widget import Cosmograph
 
 import panel as pn

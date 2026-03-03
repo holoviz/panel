@@ -23,9 +23,8 @@ import pytest
 pytest.importorskip("widget_periodictable")
 pytest.importorskip("playwright")
 
-from widget_periodictable import PTableWidget
-
 from playwright.sync_api import expect
+from widget_periodictable import PTableWidget
 
 import panel as pn
 

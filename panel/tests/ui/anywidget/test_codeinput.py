@@ -16,9 +16,8 @@ import pytest
 pytest.importorskip("widget_code_input")
 pytest.importorskip("playwright")
 
-from widget_code_input import WidgetCodeInput
-
 from playwright.sync_api import expect
+from widget_code_input import WidgetCodeInput
 
 import panel as pn
 

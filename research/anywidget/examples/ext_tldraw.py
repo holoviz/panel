@@ -41,19 +41,10 @@ import struct
 import zlib
 
 from tldraw import (
-    FlowerPlot,
-    MakeReal,
-    ReactiveColorPicker,
-    TldrawDebug,
-    TldrawImage,
-    TldrawImageArray,
-    TldrawMakeStaticPNG,
-    TldrawMakeStaticSVG,
-    TldrawMakeStaticTldraw,
-    TldrawMakeStaticToMarkdown,
-    TldrawSetImage,
-    TldrawWidget,
-    TldrawWidgetCoordinates,
+    FlowerPlot, MakeReal, ReactiveColorPicker, TldrawDebug, TldrawImage,
+    TldrawImageArray, TldrawMakeStaticPNG, TldrawMakeStaticSVG,
+    TldrawMakeStaticTldraw, TldrawMakeStaticToMarkdown, TldrawSetImage,
+    TldrawWidget, TldrawWidgetCoordinates,
 )
 
 import panel as pn

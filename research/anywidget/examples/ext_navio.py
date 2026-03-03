@@ -29,6 +29,7 @@ Run with:
 """
 
 import pandas as pd
+
 from navio_jupyter import navio
 
 import panel as pn

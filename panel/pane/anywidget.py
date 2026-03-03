@@ -72,6 +72,81 @@ _BOKEH_RESERVED = frozenset({
 
 
 # ---------------------------------------------------------------
+# Compound widget (child widget) helpers
+# ---------------------------------------------------------------
+
+def _is_widget_serialization(trait):
+    """Check if a trait uses ipywidgets widget_serialization (widget references)."""
+    try:
+        from ipywidgets.widgets.widget import _widget_to_json
+    except ImportError:
+        return False
+    to_json_fn = trait.metadata.get('to_json')
+    return to_json_fn is _widget_to_json
+
+
+def _collect_child_widgets(widget):
+    """
+    Recursively discover all child widgets referenced via widget_serialization.
+
+    Returns ``{model_id: widget_instance}`` dict.  Handles single widgets,
+    lists/tuples, and dicts.  Uses identity-based ``_seen`` set for cycle
+    detection.
+    """
+    try:
+        from ipywidgets import Widget as IPyWidget
+    except ImportError:
+        return {}
+
+    result = {}
+    _seen = set()
+
+    def _collect_from_value(value):
+        if value is None:
+            return
+        if isinstance(value, IPyWidget):
+            wid = id(value)
+            if wid in _seen:
+                return
+            _seen.add(wid)
+            model_id = value.model_id
+            result[model_id] = value
+            # Recurse into the child's own widget_serialization traits
+            _collect_from_widget(value)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                _collect_from_value(item)
+        elif isinstance(value, dict):
+            for item in value.values():
+                _collect_from_value(item)
+
+    def _collect_from_widget(w):
+        sync_traits = _get_synced_traits(w)
+        for trait_name, trait in sync_traits.items():
+            if _is_widget_serialization(trait):
+                val = getattr(w, trait_name, None)
+                _collect_from_value(val)
+
+    _collect_from_widget(widget)
+    return result
+
+
+def _serialize_child_state(child_widget):
+    """
+    Serialize a child widget's sync-tagged traits for transport.
+
+    Uses ``_serialize_trait()`` so binary data gets ``_pnl_bytes`` markers.
+    Returns ``{trait_name: serialized_value}`` dict.
+    """
+    sync_traits = _get_synced_traits(child_widget)
+    state = {}
+    for trait_name in sync_traits:
+        value = getattr(child_widget, trait_name, None)
+        state[trait_name] = _serialize_trait(child_widget, trait_name, value)
+    return state
+
+
+# ---------------------------------------------------------------
 # Traitlet -> param helpers
 # ---------------------------------------------------------------
 
@@ -328,7 +403,15 @@ def _traitlet_to_param(trait):
             # Convert set defaults to list for param.List compatibility
             if param_type is param.List and isinstance(default, set):
                 default = list(default)
-            p = param_type(default=default)
+            # param.Tuple requires a length when default is None;
+            # infer length from the traitlet's _traits list (e.g.
+            # lonboard selected_bounds has 4 floats).
+            if param_type is param.Tuple and default is None:
+                trait_items = getattr(trait, '_traits', None)
+                length = len(trait_items) if trait_items else 0
+                p = param_type(default=default, length=length)
+            else:
+                p = param_type(default=default)
             if getattr(trait, 'allow_none', False):
                 p.allow_None = True
             return p
@@ -467,6 +550,13 @@ def _get_or_create_component_class(widget):
     instance_traits: dict[str, type] = {}  # param name -> Instance klass
     renamed_traits: list[str] = []
     for name, trait in sync_traits.items():
+        # Skip widget_serialization traits — they reference child widgets
+        # and are handled via _child_models constants, not param properties.
+        # Their Instance defaults contain ipywidgets objects (Comm, etc.)
+        # that Bokeh cannot serialize as DataModel property defaults.
+        if _is_widget_serialization(trait):
+            trait_name_map[name] = name
+            continue
         if name in collision_names:
             param_name = f'w_{name}'
             renamed_traits.append(f'{name!r} -> {param_name!r}')
@@ -568,6 +658,7 @@ class AnyWidget(Pane):
     def __init__(self, object=None, **params):
         self._trait_changing: set[str] = set()
         self._trait_watchers: list = []
+        self._child_widgets: dict = {}
         self._component: AnyWidgetComponent | None = None
         super().__init__(object=object, **params)
         # Eagerly create the component so that ``pane.component`` is
@@ -671,7 +762,12 @@ class AnyWidget(Pane):
         # Read current traitlet values for initialisation
         sync_traits = _get_synced_traits(widget)
         init_values: dict[str, Any] = {}
-        for trait_name in sync_traits:
+        for trait_name, trait in sync_traits.items():
+            # Skip widget_serialization traits — their serialized form
+            # is "IPY_MODEL_<id>" which can't be stored in param.Dict.
+            # Child widget state is communicated via _constants._child_models.
+            if _is_widget_serialization(trait):
+                continue
             param_name = trait_name_map.get(trait_name, trait_name)
             if param_name in component_cls.param:
                 value = _serialize_trait(
@@ -705,6 +801,38 @@ class AnyWidget(Pane):
         self._setup_trait_sync(widget, component, sync_traits, trait_name_map)
         # Wire custom message routing (model.send / model.on("msg:custom"))
         self._setup_msg_routing(widget, component)
+
+        # Detect and register child widgets for compound widgets
+        child_widgets = _collect_child_widgets(widget)
+        if child_widgets:
+            self._child_widgets = child_widgets
+            child_models = {
+                mid: {'state': _serialize_child_state(c)}
+                for mid, c in child_widgets.items()
+            }
+            # Serialize widget_serialization trait values so the JS adapter
+            # can return resolved child model objects from get().
+            # In ipywidgets, model.get("controls") returns actual model
+            # objects (not "IPY_MODEL_xxx" strings).  We serialize the
+            # IPY_MODEL strings here and resolve them to ChildModelAdapters
+            # in AnyWidgetModelAdapter.get() on the JS side.
+            widget_ser_values = {}
+            for tname, trait in sync_traits.items():
+                if _is_widget_serialization(trait):
+                    widget_ser_values[tname] = _serialize_trait(
+                        widget, tname, getattr(widget, tname),
+                    )
+            # Set _constants on the instance (not class) to avoid
+            # cross-contamination between different compound widget
+            # instances sharing the same dynamic class.
+            component._constants = {
+                **getattr(type(component), '_constants', {}),
+                '_child_models': child_models,
+                '_widget_serialization_values': widget_ser_values,
+            }
+            self._setup_child_sync(child_widgets, component)
+            self._setup_child_msg_routing(child_widgets, component)
+
         return component
 
     # ------------------------------------------------------------------
@@ -712,7 +840,12 @@ class AnyWidget(Pane):
     # ------------------------------------------------------------------
 
     def _setup_trait_sync(self, widget, component, sync_traits, trait_name_map):
-        trait_names = list(sync_traits.keys())
+        # Exclude widget_serialization traits — child widget state is
+        # synced separately via _setup_child_sync / _child_models constants.
+        trait_names = [
+            name for name, trait in sync_traits.items()
+            if not _is_widget_serialization(trait)
+        ]
         reverse_map = {v: k for k, v in trait_name_map.items()}
         instance_traits: dict[str, type] = getattr(
             type(component), '_instance_traits', {}
@@ -818,6 +951,12 @@ class AnyWidget(Pane):
         # (by the TS adapter's send()) and decoded back to bytes here.
         def _on_component_msg(event):
             data = getattr(event, 'data', event)
+            # Skip child-directed DataEvents — these are handled by
+            # _setup_child_msg_routing instead.
+            if isinstance(data, dict) and (
+                '_child_model_id' in data or '_child_save_changes' in data
+            ):
+                return
             if hasattr(widget, '_handle_custom_msg'):
                 buffers = []
                 if isinstance(data, dict) and '_b64_buffers' in data:
@@ -857,6 +996,123 @@ class AnyWidget(Pane):
         self._original_widget_send = getattr(widget, 'send', None)
         widget.send = _send_override
 
+    # ------------------------------------------------------------------
+    # Compound widget: child trait sync
+    # ------------------------------------------------------------------
+
+    def _setup_child_sync(self, child_widgets, component):
+        """Observe child widget traits and forward changes to the JS side."""
+        for model_id, child in child_widgets.items():
+            sync_traits = _get_synced_traits(child)
+            trait_names = list(sync_traits.keys())
+            if not trait_names:
+                continue
+
+            def _on_child_change(change, _mid=model_id, _child=child):
+                value = _serialize_trait(
+                    _child, change['name'],
+                    change['new'],
+                )
+                component._send_msg({
+                    '_child_state_update': {
+                        'model_id': _mid,
+                        'key': change['name'],
+                        'value': value,
+                    },
+                })
+
+            child.observe(_on_child_change, names=trait_names)
+            self._trait_watchers.append(
+                ('traitlet', child, _on_child_change, trait_names)
+            )
+
+    # ------------------------------------------------------------------
+    # Compound widget: child custom message routing
+    # ------------------------------------------------------------------
+
+    def _setup_child_msg_routing(self, child_widgets, component):
+        """Route custom messages between child widgets and JS child adapters."""
+        # JS → Python: handle child-directed DataEvents
+        def _on_child_msg(event):
+            data = getattr(event, 'data', event)
+            if not isinstance(data, dict):
+                return
+
+            # Child save_changes: {_child_save_changes: {model_id, changes}}
+            if '_child_save_changes' in data:
+                info = data['_child_save_changes']
+                mid = info.get('model_id')
+                changes = info.get('changes', {})
+                child = child_widgets.get(mid)
+                if child:
+                    for key, value in changes.items():
+                        try:
+                            setattr(child, key, value)
+                        except Exception:
+                            logger.warning(
+                                "Failed to set child %s.%s", mid, key,
+                                exc_info=True,
+                            )
+                return
+
+            # Child custom msg: {_child_model_id: id, ...data}
+            if '_child_model_id' in data:
+                mid = data['_child_model_id']
+                child = child_widgets.get(mid)
+                if child and hasattr(child, '_handle_custom_msg'):
+                    msg_data = {
+                        k: v for k, v in data.items()
+                        if k != '_child_model_id'
+                    }
+                    buffers = []
+                    if '_b64_buffers' in msg_data:
+                        import base64
+                        for b64 in msg_data['_b64_buffers']:
+                            buffers.append(base64.b64decode(b64))
+                        msg_data = {
+                            k: v for k, v in msg_data.items()
+                            if k != '_b64_buffers'
+                        }
+                        if '_data' in msg_data and len(msg_data) == 1:
+                            msg_data = msg_data['_data']
+                    child._handle_custom_msg(msg_data, buffers)
+
+        component.on_msg(_on_child_msg)
+
+        # Python → JS: override each child's send() to route through
+        # the parent component's _send_msg with child model ID.
+        for model_id, child in child_widgets.items():
+            original_send = getattr(child, 'send', None)
+            self._trait_watchers.append(
+                ('child_send', child, original_send, model_id)
+            )
+
+            def _child_send_override(
+                content, buffers=None, _mid=model_id,
+            ):
+                if buffers:
+                    import base64
+                    encoded = []
+                    for buf in buffers:
+                        if isinstance(buf, memoryview):
+                            buf = bytes(buf)
+                        encoded.append(
+                            base64.b64encode(buf).decode('ascii')
+                        )
+                    if isinstance(content, dict):
+                        content = {**content, '_b64_buffers': encoded}
+                    else:
+                        content = {'_data': content, '_b64_buffers': encoded}
+
+                component._send_msg({
+                    '_child_msg_custom': {
+                        'model_id': _mid,
+                        'content': content,
+                    },
+                })
+
+            child.send = _child_send_override
+
     def _teardown_trait_sync(self):
         """Remove all traitlet observers and param watchers."""
         # Restore original widget.send if we overrode it
@@ -873,10 +1129,15 @@ class AnyWidget(Pane):
                 elif entry[0] == 'param':
                     _, component, watcher = entry
                     component.param.unwatch(watcher)
+                elif entry[0] == 'child_send':
+                    _, child, original_send, _model_id = entry
+                    if original_send is not None:
+                        child.send = original_send
             except Exception:
                 pass
         self._trait_watchers.clear()
         self._trait_changing.clear()
+        self._child_widgets.clear()
 
     # ------------------------------------------------------------------
     # Re-render on object change

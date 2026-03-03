@@ -61,10 +61,7 @@ def _filter_vitessce_errors(msgs):
 
 def _make_vitessce_widget():
     """Create a minimal Vitessce widget with a simple configuration."""
-    from vitessce import (
-        VitessceConfig,
-        ViewType as vt,
-    )
+    from vitessce import ViewType as vt, VitessceConfig
 
     vc = VitessceConfig(
         schema_version="1.0.15",

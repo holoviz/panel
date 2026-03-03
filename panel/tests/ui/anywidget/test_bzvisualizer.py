@@ -21,9 +21,7 @@ import panel as pn
 from panel.tests.util import serve_component, wait_until
 
 from .conftest import (
-    assert_no_console_errors,
-    console_errors,
-    wait_for_anywidget,
+    assert_no_console_errors, console_errors, wait_for_anywidget,
 )
 
 pytestmark = [

@@ -28,8 +28,8 @@ Testing instructions:
 
 import pandas as pd
 
-from itables.widget import ITable
 from itables.sample_dfs import get_countries
+from itables.widget import ITable
 
 import panel as pn
 

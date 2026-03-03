@@ -12,6 +12,7 @@ pytest.importorskip("cosmograph_widget")
 pytest.importorskip("playwright")
 
 import pandas as pd
+
 from playwright.sync_api import expect
 
 import panel as pn

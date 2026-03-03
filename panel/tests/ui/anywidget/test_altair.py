@@ -13,9 +13,8 @@ alt = pytest.importorskip("altair")
 pytest.importorskip("vega_datasets")
 pytest.importorskip("playwright")
 
-from vega_datasets import data as vega_data
-
 from playwright.sync_api import expect
+from vega_datasets import data as vega_data
 
 import panel as pn
 
