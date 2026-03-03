@@ -336,8 +336,8 @@ def test_slider_color_preserved_in_accordion(page, widget_cls):
 
     page.locator(".noUi-target").first.wait_for(state="visible")
 
-    initial_color = page.evaluate(
-        "() => getComputedStyle(document.querySelector('.noUi-connect')).backgroundColor"
+    initial_color = page.locator(".noUi-connect").first.evaluate(
+        "el => getComputedStyle(el).backgroundColor"
     )
 
     page.locator(".card-header").first.click()
@@ -346,8 +346,8 @@ def test_slider_color_preserved_in_accordion(page, widget_cls):
     page.locator(".card-header").first.click()
     page.locator(".noUi-target").first.wait_for(state="visible")
 
-    restored_color = page.evaluate(
-        "() => getComputedStyle(document.querySelector('.noUi-connect')).backgroundColor"
+    restored_color = page.locator(".noUi-connect").first.evaluate(
+        "el => getComputedStyle(el).backgroundColor"
     )
 
     assert initial_color == restored_color, (
