@@ -45,6 +45,31 @@ _FRAMEWORK_TRAITS = frozenset({
     'comm', 'keys', 'layout', 'log', 'tabbable', 'tooltip',
 })
 
+# BokehJS reserved attribute names that cannot be used as DataModel properties.
+# These exist on the HasProps/Model/Signalable prototype chain in BokehJS and
+# cause "attempted to redefine attribute 'ClassName.name'" errors if a dynamic
+# DataModel tries to define a property with the same name.  Traitlets with
+# these names are renamed to w_<name> (same as Panel layout param collisions).
+_BOKEH_RESERVED = frozenset({
+    # Signalable mixin
+    'connect', 'disconnect',
+    # HasProps class
+    'assert_initialized', 'attach_document', 'attributes', 'changed_for',
+    'clone', 'connect_signals', 'constructor', 'define', 'destroy',
+    'detach_document', 'dirty_attributes', 'disconnect_signals',
+    'finalize', 'get', 'initialize', 'initialize_props', 'internal',
+    'is_syncable', 'mixins', 'on_change', 'override', 'override_options',
+    'patch_to', 'property', 'ref', 'references', 'set', 'setv',
+    'stream_to', 'super', 'toString', 'type',
+    # Model class
+    'get_one', 'on_event', 'select', 'select_one', 'trigger_event',
+    # Bokeh model properties
+    'js_event_callbacks', 'js_property_callbacks', 'name',
+    'subscribed_events', 'syncable', 'tags',
+    # Python-level Model methods
+    'document', 'id', 'trigger', 'update',
+})
+
 
 # ---------------------------------------------------------------
 # Traitlet -> param helpers
@@ -123,9 +148,42 @@ def _deep_serialize(obj, _seen=None, _depth=0):
 
     Pandas DataFrames are converted to records (list-of-dicts) format
     to match what most anywidget ESM modules expect.
+
+    Binary values (memoryview, bytes, bytearray) are base64-encoded with
+    a ``_pnl_bytes`` marker so the TS adapter can decode them back to
+    DataView objects.  numpy ndarrays are converted to plain lists.
     """
-    if obj is None or isinstance(obj, (bool, int, float, str, bytes)):
+    if obj is None or isinstance(obj, (bool, int, float, str)):
         return obj
+    # bytes at the top level (_depth == 0) are passed through for Bokeh's
+    # native bp.Bytes serializer to handle (e.g. standalone param.Bytes
+    # properties).  However, bytes *nested* inside dicts/lists (_depth > 0)
+    # must be base64-encoded because Bokeh's serializer wraps them in its
+    # own Buffer structure, which BokehJS deserializes as an empty object
+    # when nested inside a Dict property — breaking widgets like pyobsplot
+    # that expect raw binary data (Arrow IPC).
+    #
+    # memoryview values (produced by ipywidgets to_json serializers like
+    # jupyter-scatter's array_to_binary) are always base64-encoded
+    # regardless of depth.
+    if isinstance(obj, memoryview):
+        import base64
+        return {'_pnl_bytes': base64.b64encode(bytes(obj)).decode('ascii')}
+    if isinstance(obj, bytes):
+        if _depth > 0:
+            import base64
+            return {'_pnl_bytes': base64.b64encode(obj).decode('ascii')}
+        return obj
+    # numpy arrays: convert to lists for JSON serialization.
+    # If the trait has a to_json serializer (handled by _serialize_trait),
+    # the array will already have been converted to {view: memoryview, ...}
+    # before reaching here.  This branch handles the fallback case.
+    try:
+        import numpy as np
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+    except ImportError:
+        pass
     # Pandas DataFrames: convert to records (list-of-dicts) for ESM consumption
     if _is_dataframe(obj):
         return _dataframe_to_records(obj)
@@ -155,6 +213,32 @@ def _deep_serialize(obj, _seen=None, _depth=0):
         # _serialize_instance couldn't convert it; stringify as fallback
         return repr(obj)
     return _deep_serialize(serialized, _seen, _depth + 1)
+
+
+def _serialize_trait(widget, trait_name, value):
+    """
+    Serialize a traitlet value for JSON transport.
+
+    If the traitlet has a ``to_json`` metadata entry (ipywidgets custom
+    serialization protocol), use it to produce the canonical serialized
+    form before passing through ``_deep_serialize``.  This is essential
+    for traits that use binary serialization (e.g. jupyter-scatter's
+    ``points`` trait which uses ``array_to_binary`` to produce
+    ``{view: memoryview, dtype: str, shape: tuple}``).
+
+    The resulting memoryview values are base64-encoded by ``_deep_serialize``
+    with a ``_pnl_bytes`` marker, which the TypeScript adapter decodes back
+    to DataView objects on the browser side.
+    """
+    trait_obj = widget.traits().get(trait_name)
+    if trait_obj:
+        to_json_fn = trait_obj.metadata.get('to_json')
+        if to_json_fn and callable(to_json_fn):
+            try:
+                value = to_json_fn(value, widget)
+            except Exception:
+                pass
+    return _deep_serialize(value)
 
 
 def _deserialize_instance(klass, value):
@@ -219,8 +303,15 @@ def _traitlet_to_param(trait):
             default = trait.default()
         except Exception:
             default = None
-        p = param.Selector(default=default, objects=list(trait.values))
-        if getattr(trait, 'allow_none', False):
+        # traitlets.Undefined is returned for Enum traits without explicit
+        # defaults (e.g. xarray-fancy-repr's _obj_type).  It is not a valid
+        # Selector value, so fall back to None and allow_None.
+        if default is traitlets.Undefined:
+            default = None
+        objects = list(trait.values)
+        allow_none = getattr(trait, 'allow_none', False) or default is None
+        p = param.Selector(default=default, objects=objects)
+        if allow_none:
             p.allow_None = True
         return p
 
@@ -369,17 +460,29 @@ def _get_or_create_component_class(widget):
     import traitlets
 
     sync_traits = _get_synced_traits(widget)
-    collision_names = set(AnyWidgetComponent.param)
+    collision_names = set(AnyWidgetComponent.param) | _BOKEH_RESERVED
 
     params: dict[str, param.Parameter] = {}
     trait_name_map: dict[str, str] = {}  # traitlet name -> param name
     instance_traits: dict[str, type] = {}  # param name -> Instance klass
+    renamed_traits: list[str] = []
     for name, trait in sync_traits.items():
-        param_name = f'w_{name}' if name in collision_names else name
+        if name in collision_names:
+            param_name = f'w_{name}'
+            renamed_traits.append(f'{name!r} -> {param_name!r}')
+        else:
+            param_name = name
         params[param_name] = _traitlet_to_param(trait)
         trait_name_map[name] = param_name
         if isinstance(trait, traitlets.Instance):
             instance_traits[param_name] = getattr(trait, 'klass', None) or object
+    if renamed_traits:
+        logger.info(
+            "AnyWidget %s: renamed traits to avoid collisions: %s. "
+            "Access via pane.component.w_<name> or check "
+            "pane.component._trait_name_map for full mapping.",
+            original_cls.__name__, ', '.join(renamed_traits),
+        )
 
     # --- Build class dict ----------------------------------------------
     class_dict: dict[str, Any] = {
@@ -500,6 +603,26 @@ class AnyWidget(Pane):
         """The internal ``AnyWidgetComponent`` for param reactivity."""
         return self._component
 
+    @property
+    def trait_name_map(self) -> dict[str, str]:
+        """Mapping from original traitlet names to component param names.
+
+        When a traitlet name collides with a Panel layout parameter or
+        a BokehJS reserved attribute name, it is renamed with a ``w_``
+        prefix.  This property exposes the mapping so users can discover
+        how traits were renamed.
+
+        Returns
+        -------
+        dict[str, str]
+            ``{traitlet_name: param_name}`` — e.g. ``{"width": "w_width"}``.
+            Only includes traits that were renamed.
+        """
+        if self._component is None:
+            return {}
+        full_map = getattr(type(self._component), '_trait_name_map', {})
+        return {k: v for k, v in full_map.items() if k != v}
+
     # ------------------------------------------------------------------
     # Model lifecycle
     # ------------------------------------------------------------------
@@ -513,14 +636,16 @@ class AnyWidget(Pane):
 
         if self.object is None:
             from bokeh.models import Spacer as BkSpacer
-            model = BkSpacer()
+            model: Model = BkSpacer()
             self._models[root.ref['id']] = (model, parent)
             return model
 
         if self._component is None:
             self._component = self._create_component()
 
-        model = self._component._get_model(doc, root, parent, comm)
+        component = self._component
+        assert component is not None
+        model = component._get_model(doc, root, parent, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -549,7 +674,9 @@ class AnyWidget(Pane):
         for trait_name in sync_traits:
             param_name = trait_name_map.get(trait_name, trait_name)
             if param_name in component_cls.param:
-                value = _deep_serialize(getattr(widget, trait_name))
+                value = _serialize_trait(
+                    widget, trait_name, getattr(widget, trait_name),
+                )
                 init_values[param_name] = value
 
         # Forward layout params from the pane to the component
@@ -558,6 +685,19 @@ class AnyWidget(Pane):
             default_val = self.param[lp].default if lp in self.param else None
             if pane_val != default_val and lp in component_cls.param:
                 init_values[lp] = pane_val
+
+        # When the widget has height/width traits that were renamed due
+        # to collision with Layoutable (e.g. height -> w_height), forward
+        # their numeric values to the Layoutable height/width so the DOM
+        # container gets actual pixel dimensions.  Without this, widgets
+        # like jupyter-scatter crash because the canvas is 0px when
+        # createScatterplot tries to compute the projection matrix.
+        for dim in ('height', 'width'):
+            param_name = trait_name_map.get(dim)
+            if param_name and param_name != dim and dim not in init_values:
+                value = init_values.get(param_name)
+                if isinstance(value, (int, float)) and value > 0:
+                    init_values[dim] = int(value)
 
         component = component_cls(**init_values)
 
@@ -578,6 +718,15 @@ class AnyWidget(Pane):
             type(component), '_instance_traits', {}
         )
 
+        # Build set of renamed dimension traits whose numeric values should
+        # be forwarded to the Layoutable height/width so the DOM container
+        # always has actual pixel dimensions (see _create_component).
+        _dim_forwarding: dict[str, str] = {}  # param_name -> layout dim
+        for dim in ('height', 'width'):
+            pn = trait_name_map.get(dim)
+            if pn and pn != dim:
+                _dim_forwarding[pn] = dim
+
         # traitlet -> component param
         def _on_traitlet_change(change):
             name = change['name']
@@ -587,8 +736,13 @@ class AnyWidget(Pane):
             try:
                 self._trait_changing.add(name)
                 if param_name in component.param:
-                    value = _deep_serialize(change['new'])
-                    component.param.update(**{param_name: value})
+                    value = _serialize_trait(widget, name, change['new'])
+                    updates = {param_name: value}
+                    # Also forward renamed height/width to Layoutable
+                    layout_dim = _dim_forwarding.get(param_name)
+                    if layout_dim and isinstance(value, (int, float)) and value > 0:
+                        updates[layout_dim] = int(value)
+                    component.param.update(**updates)
             finally:
                 self._trait_changing.discard(name)
 
@@ -615,7 +769,9 @@ class AnyWidget(Pane):
                     setattr(widget, trait_name, value)
                     # If a traitlet validator transformed the value,
                     # sync the validated value back to the component param
-                    actual = _deep_serialize(getattr(widget, trait_name))
+                    actual = _serialize_trait(
+                        widget, trait_name, getattr(widget, trait_name),
+                    )
                     if actual is not event.new and param_name in component.param:
                         component.param.update(**{param_name: actual})
                 except traitlets.TraitError:
@@ -658,10 +814,20 @@ class AnyWidget(Pane):
         # ESM → Python: forward DataEvent messages to the widget
         # on_msg callbacks receive the full DataEvent object;
         # extract .data to pass to the widget's handler.
+        # Binary buffers from ESM are base64-encoded under `_b64_buffers`
+        # (by the TS adapter's send()) and decoded back to bytes here.
         def _on_component_msg(event):
             data = getattr(event, 'data', event)
             if hasattr(widget, '_handle_custom_msg'):
-                widget._handle_custom_msg(data, [])
+                buffers = []
+                if isinstance(data, dict) and '_b64_buffers' in data:
+                    import base64
+                    for b64 in data['_b64_buffers']:
+                        buffers.append(base64.b64decode(b64))
+                    data = {k: v for k, v in data.items() if k != '_b64_buffers'}
+                    if '_data' in data and len(data) == 1:
+                        data = data['_data']
+                widget._handle_custom_msg(data, buffers)
 
         component.on_msg(_on_component_msg)
 
@@ -687,10 +853,18 @@ class AnyWidget(Pane):
                     content = {'_data': content, '_b64_buffers': encoded}
             component._send_msg(content)
 
+        # Store original send so we can restore it on cleanup
+        self._original_widget_send = getattr(widget, 'send', None)
         widget.send = _send_override
 
     def _teardown_trait_sync(self):
         """Remove all traitlet observers and param watchers."""
+        # Restore original widget.send if we overrode it
+        if hasattr(self, '_original_widget_send') and self._original_widget_send is not None:
+            widget = self.object
+            if widget is not None:
+                widget.send = self._original_widget_send
+            self._original_widget_send = None
         for entry in self._trait_watchers:
             try:
                 if entry[0] == 'traitlet':

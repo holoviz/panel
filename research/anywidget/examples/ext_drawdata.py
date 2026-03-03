@@ -11,6 +11,9 @@ error on page load: `Cannot access 'circle_brush' before initialization`.
 This is a drawdata library bug, not a Panel AnyWidget issue. Despite the error,
 the widget renders and is partially functional.
 
+GitHub: https://github.com/koaning/drawdata
+Docs:   https://github.com/koaning/drawdata#readme
+
 Required package:
     pip install drawdata
 
@@ -63,40 +66,36 @@ def on_component_change(*events):
 component.param.watch(on_component_change, ["brushsize", "data"])
 
 # Layout
+status = pn.pane.Markdown("""
+<div style="background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #856404; font-size: 20px; font-weight: bold; margin: 0;">
+WORKS WITH CAVEATS
+</p>
+<p style="color: #856404; font-size: 15px; margin: 8px 0 0 0;">
+drawdata renders and allows drawing points, but logs a JavaScript error on page load:
+<code>Cannot access 'circle_brush' before initialization</code>. This is an upstream
+drawdata library bug, not a Panel issue. Despite the error, the widget is functional.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown("""
-# drawdata Example — Bidirectional Sync with Panel
+# drawdata -- Draw Scatter Data Points
 
-This example renders **drawdata's ScatterWidget** (a third-party anywidget)
-natively in Panel using the `AnyWidget` pane with full bidirectional synchronization.
+**drawdata** lets you create scatter plot datasets by drawing directly on a
+canvas. This is useful for generating synthetic classification data.
 
-## Known Issue
+## How to Draw
 
-drawdata's bundled ESM (487KB) has a `circle_brush` initialization error on page load.
-You'll see `Uncaught ReferenceError: Cannot access 'circle_brush' before initialization`
-in the browser console. This is a **drawdata library bug**, not a Panel issue.
+1. **Pick a class** by clicking one of the colored buttons at the top of the canvas
+   (each color represents a different label)
+2. **Draw points** by clicking or dragging on the canvas. Each click places
+   a point with the selected class label.
+3. **Watch the data update** in the "Drawn Data" panel on the right -- it
+   shows the x/y coordinates and labels in real time.
 
-This error **breaks bidirectional sync** — the widget partially renders but the
-Panel sliders (Brush Size, Number of Classes) may not update the widget because
-the initialization error prevents the `model.on("change:brushsize", ...)` handlers
-from being fully connected. Data sync (Widget -> Panel) may also be affected.
-
-## How It Works
-
-**Drawing Canvas:** Use your mouse to draw scatter data points by clicking and dragging in the canvas area.
-
-**Bidirectional Controls:**
-- **Brush Size:** Adjust the brush size using the slider (1-50 pixels). Changes sync both ways between the slider and the widget.
-
-**Data Display:** The drawn data is displayed in real-time as you draw. The JSON view shows:
-- `x`: x-coordinates of drawn points
-- `y`: y-coordinates of drawn points
-- `label`: class labels for each point
-
-## Testing Bidirectional Sync
-
-1. **Widget -> Panel:** Draw points in the canvas. The data display updates automatically.
-2. **Panel -> Widget:** Adjust the sliders. The widget's internal state updates.
-3. **Widget -> Panel (controls):** If you can directly change widget values (e.g., via console), the Panel sliders reflect the changes.
+**Note:** Due to an upstream bug in drawdata, the Brush Size slider may not
+sync changes to the canvas. Drawing and data export still work.
 """)
 
 controls = pn.Column(
@@ -111,6 +110,7 @@ data_section = pn.Column(
 )
 
 pn.Column(
+    status,
     header,
     pn.Row(
         pn.Column(

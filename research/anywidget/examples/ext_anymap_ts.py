@@ -1,16 +1,17 @@
 """
-anymap-ts MapLibreMap example — Known Limitation (Large ESM Bundle)
-===================================================================
+anymap-ts MapLibreMap — Known Limitation (Large ESM Bundle)
+===========================================================
 
-This example documents a known limitation with the anymap-ts widget.
-anymap-ts bundles the entire MapLibre GL JS library into its ESM module (~17 MB),
-which exceeds what Panel's AnyWidget pane can handle for inline ESM serialization.
+anymap-ts inlines the entire MapLibre GL JS library (~17 MB) into its ``_esm``
+string.  Panel serializes ESM via WebSocket, so the 17 MB payload kills the
+connection before it arrives.  This is an upstream issue — anymap-ts should
+load MapLibre GL JS from a CDN instead of bundling it inline.
 
-The WebSocket connection closes because the 17MB ESM payload is too large to
-transmit, resulting in `Error: Lost websocket connection` in the browser.
+GitHub: https://github.com/opengeos/anymap-ts
 
-A lightweight map example (`leaflet_map.py`) is provided as an alternative
-that demonstrates the same map interaction patterns without the heavy bundle.
+See: https://github.com/opengeos/anymap-ts/issues/92
+
+For a working map example, see ``leaflet_map.py`` (CDN-loaded Leaflet.js).
 
 Run with: panel serve research/anywidget/examples/ext_anymap_ts.py
 """
@@ -21,22 +22,27 @@ import panel as pn
 
 pn.extension()
 
+warning = pn.pane.Markdown("""
+<div style="background-color: #f8d7da; border: 2px solid #dc3545; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #721c24; font-size: 20px; font-weight: bold; margin: 0;">
+THIS WIDGET DOES NOT RENDER
+</p>
+<p style="color: #721c24; font-size: 15px; margin: 8px 0 0 0;">
+<strong>Reason:</strong> anymap-ts inlines the entire MapLibre GL JS library
+(~17 MB) into its ESM string. Panel serializes ESM via WebSocket, so the
+17 MB payload kills the connection before it arrives
+(<code>Error: Lost websocket connection, 1005</code>).
+This is an <strong>upstream anymap-ts issue</strong>.
+See <a href="https://github.com/opengeos/anymap-ts/issues/92">opengeos/anymap-ts#92</a>.
+For a working map example, see <code>leaflet_map.py</code>.
+</p>
+</div>
+""")
+
 header = pn.pane.Markdown("""
 # anymap-ts MapLibreMap — Large ESM Bundle Limitation
 
-## The Problem
-
-**anymap-ts** bundles the entire MapLibre GL JS library into its ESM module:
-- **ESM size:** ~17 MB of JavaScript
-- **CSS size:** ~231 KB
-
-Panel's `AnyWidget` pane serializes ESM as inline JavaScript and sends it via
-WebSocket. For bundles this large, the WebSocket connection closes before the
-payload can be transmitted:
-
-```
-Error: Lost websocket connection, 1005 ()
-```
+[GitHub](https://github.com/opengeos/anymap-ts)
 
 ## What Works vs. What Doesn't
 
@@ -47,17 +53,11 @@ Error: Lost websocket connection, 1005 ()
 | WebSocket transmission | **Fails** (payload too large) |
 | Browser-side rendering | **Fails** (never receives ESM) |
 
-## Alternative
+## Upstream Fix Needed
 
-See `leaflet_map.py` for a lightweight map example using a custom anywidget
-with CDN-loaded Leaflet.js. That example demonstrates the same patterns
-(center, zoom, click events, bidirectional sync) without a heavy ESM bundle.
-
-## Potential Fix
-
-Support for external ESM module loading (via URL or file path) instead of
-inline serialization would allow large bundled widgets like anymap-ts to work.
-This is a future enhancement for Panel's AnyWidgetComponent.
+The fix belongs upstream: anymap-ts should load MapLibre GL JS from a CDN
+(e.g. `import('https://esm.sh/maplibre-gl')`) instead of bundling it inline.
+This would reduce the ESM payload from ~17 MB to a few KB.
 """)
 
 info = pn.pane.Markdown(f"""
@@ -75,6 +75,7 @@ rendering it to avoid the WebSocket disconnection.
 """)
 
 pn.Column(
+    warning,
     header,
     info,
 ).servable()

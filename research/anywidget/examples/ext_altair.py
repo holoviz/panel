@@ -17,6 +17,9 @@ Note on _params vs _vl_selections:
 - `_params` tracks Vega-Lite **named parameters** created with `alt.param()`
   Both only sync if the chart spec includes the corresponding declarations.
 
+GitHub: https://github.com/vega/altair
+Docs:   https://altair-viz.github.io/
+
 Required packages:
     pip install altair vega_datasets
 
@@ -167,40 +170,59 @@ component.param.watch(on_params_change, ["_params"])
 
 ALTAIR_LOGO = "https://altair-viz.github.io/_static/altair-logo-light.png"
 
+status = pn.pane.Markdown("""
+<div style="background-color: #d4edda; border: 2px solid #28a745; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #155724; font-size: 20px; font-weight: bold; margin: 0;">
+WORKS
+</p>
+<p style="color: #155724; font-size: 15px; margin: 8px 0 0 0;">
+This example works fully with Panel's AnyWidget pane.
+Rendering, bidirectional sync (Panel &harr; Vega-Lite selections &amp; params), and interaction all work as expected.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown("""
-# Altair JupyterChart — Bidirectional Sync Demo
+# Altair Interactive Scatter Plot
 
-This example renders **Altair's JupyterChart** (an anywidget) natively
-in Panel using the `AnyWidget` pane.
+[GitHub](https://github.com/vega/altair) | [Docs](https://altair-viz.github.io/)
 
-**Bidirectional sync:**
-- **Panel -> Chart**: Use the dropdowns to change axes. The chart updates
-  by pushing a new Vega-Lite spec via `component.spec`.
-- **Chart -> Panel (selections)**: Brush-select points on the chart. The
-  selection coordinates sync back via `component._vl_selections`.
-- **Chart -> Panel (params)**: Drag the "cutoff" slider (rendered by Vega
-  inside the chart). The value syncs back via `component._params`.
-  Points with Horsepower below the cutoff become transparent.
+Explore the **Cars dataset** with an interactive Altair chart rendered in Panel.
+
+## How to Use
+
+1. **Brush-select points:** Click and drag on the chart to draw a selection
+   rectangle. Selected points turn colored; unselected points turn gray.
+   The data table below updates to show only the selected rows.
+2. **Drag the cutoff slider:** Look for the small slider labeled "cutoff"
+   directly above the chart. Drag it to set a Horsepower threshold --
+   points below the cutoff become semi-transparent.
+3. **Change axes:** Use the X Axis and Y Axis dropdowns on the right to
+   plot different car attributes (e.g., Weight vs. Acceleration).
+   The chart rebuilds instantly.
+
+The raw selection coordinates and slider value are shown in the sidebar.
 """, sizing_mode="stretch_width")
 
 controls = pn.Column(
-    pn.pane.Markdown("### Controls"),
+    pn.pane.Markdown("### Axis Controls"),
     x_selector,
     y_selector,
-    pn.Row(
-        pn.Column(
-            pn.pane.Markdown("### Brush Selection (from chart)"),
-            selections_display,
-        ),
-        pn.Column(
-            pn.pane.Markdown("### Named Parameters (from chart)"),
-            params_display,
-        ),
+    pn.Column(
+        pn.pane.Markdown("### Selection Bounds"),
+        pn.pane.Markdown("_Coordinates of your brush rectangle:_"),
+        selections_display,
+    ),
+    pn.Column(
+        pn.pane.Markdown("### Cutoff Value"),
+        pn.pane.Markdown("_Current value of the in-chart slider:_"),
+        params_display,
     ),
     width=350,
 )
 
 pn.Column(
+    status,
     header,
     pn.Row(
         pn.Column(

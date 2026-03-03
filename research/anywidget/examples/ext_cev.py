@@ -16,6 +16,8 @@ and traitlets, then rendering them through Panel's ReactiveESM pipeline.
 Since EmbeddingComparisonWidget does not have _esm or sync-tagged
 traitlets in the anywidget sense, the pane cannot render it.
 
+GitHub: https://github.com/OzetteTech/comparative-embedding-visualization
+
 Required package:
     pip install cev
 
@@ -30,6 +32,20 @@ pn.extension()
 # ---------------------------------------------------------------------------
 # Document why CEV cannot work with Panel's AnyWidget pane
 # ---------------------------------------------------------------------------
+
+status = pn.pane.Markdown("""
+<div style="background-color: #f8d7da; border: 2px solid #dc3545; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #721c24; font-size: 20px; font-weight: bold; margin: 0;">
+DOES NOT RENDER
+</p>
+<p style="color: #721c24; font-size: 15px; margin: 8px 0 0 0;">
+<strong>Reason:</strong> CEV's <code>EmbeddingComparisonWidget</code> extends
+<code>ipywidgets.VBox</code>, NOT <code>anywidget.AnyWidget</code>.
+It has no <code>_esm</code> attribute and cannot be rendered by Panel's AnyWidget pane.
+This page is documentation only.
+</p>
+</div>
+""", sizing_mode="stretch_width")
 
 header = pn.pane.Markdown("""
 # CEV (Comparative Embedding Visualization) -- Not Compatible
@@ -123,6 +139,7 @@ widget  # displays in Jupyter
 """)
 
 pn.Column(
+    status,
     header,
     sizing_mode="stretch_width",
     max_width=900,

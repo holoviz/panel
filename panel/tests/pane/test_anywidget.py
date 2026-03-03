@@ -72,6 +72,19 @@ class NameCollisionWidget(anywidget.AnyWidget):
     width = traitlets.Int(100).tag(sync=True)
 
 
+class BokehReservedNameWidget(anywidget.AnyWidget):
+    """Widget with traitlets that clash with BokehJS reserved attribute names."""
+    _esm = """
+    function render({ model, el }) {
+        el.innerHTML = `connect=${model.get("connect")} type=${model.get("type")}`;
+    }
+    export default { render };
+    """
+    connect = traitlets.Bool(True).tag(sync=True)
+    type = traitlets.Unicode("scatter").tag(sync=True)
+    destroy = traitlets.Int(0).tag(sync=True)
+
+
 class DisplayOnlyWidget(anywidget.AnyWidget):
     """Widget with no sync-tagged traitlets — pure display."""
     _esm = """
@@ -394,6 +407,34 @@ def test_anywidget_name_collision(document, comm):
     # Sync should still work through the prefixed params
     widget.name = "updated"
     assert component.w_name == "updated"
+
+
+def test_anywidget_bokeh_reserved_name_collision(document, comm):
+    """Traitlets with names that clash with BokehJS reserved attributes
+    (e.g. 'connect', 'type', 'destroy') should be prefixed with 'w_'
+    to avoid 'attempted to redefine attribute' errors."""
+    _COMPONENT_CACHE.clear()
+
+    widget = BokehReservedNameWidget()
+    pane = AnyWidget(widget)
+    pane.get_root(document, comm=comm)
+
+    component = pane.component
+    assert hasattr(component, 'w_connect')
+    assert hasattr(component, 'w_type')
+    assert hasattr(component, 'w_destroy')
+    assert component.w_connect is True
+    assert component.w_type == "scatter"
+    assert component.w_destroy == 0
+
+    # Sync works through prefixed params
+    widget.connect = False
+    assert component.w_connect is False
+
+    component.w_type = "bar"
+    assert widget.type == "bar"
+
+    _COMPONENT_CACHE.clear()
 
 
 # ---------------------------------------------------------------
@@ -774,6 +815,110 @@ def test_anywidget_non_json_safe_traitlet_change():
     _COMPONENT_CACHE.clear()
 
 
+def test_anywidget_dimension_forwarding():
+    """When height/width traits are renamed (e.g. height -> w_height),
+    their numeric values are forwarded to Layoutable height/width so
+    the DOM container gets actual pixel dimensions.  Without this,
+    widgets like jupyter-scatter crash because createScatterplot sees
+    a zero-size canvas."""
+    _COMPONENT_CACHE.clear()
+
+    class DimWidget(anywidget.AnyWidget):
+        _esm = """
+        function render({ model, el }) { el.innerHTML = "dim"; }
+        export default { render };
+        """
+        height = traitlets.Int(500).tag(sync=True)
+        width = traitlets.Int(800).tag(sync=True)
+
+    widget = DimWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+
+    # The renamed traits should have the widget values
+    assert component.w_height == 500
+    assert component.w_width == 800
+    # The Layoutable height/width should be forwarded from the renamed traits
+    assert component.height == 500
+    assert component.width == 800
+
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_dimension_forwarding_explicit_override():
+    """Explicit pane layout params override dimension forwarding."""
+    _COMPONENT_CACHE.clear()
+
+    class DimWidget2(anywidget.AnyWidget):
+        _esm = """
+        function render({ model, el }) { el.innerHTML = "dim2"; }
+        export default { render };
+        """
+        height = traitlets.Int(500).tag(sync=True)
+
+    widget = DimWidget2()
+    pane = AnyWidget(widget, height=300)
+    component = pane.component
+
+    # Explicit pane height should take priority over forwarded value
+    assert component.w_height == 500
+    assert component.height == 300
+
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_dimension_forwarding_non_numeric_skip():
+    """Non-numeric values (e.g. width='auto') are not forwarded."""
+    _COMPONENT_CACHE.clear()
+
+    class DimWidget3(anywidget.AnyWidget):
+        _esm = """
+        function render({ model, el }) { el.innerHTML = "dim3"; }
+        export default { render };
+        """
+        height = traitlets.Int(0).tag(sync=True)
+        width = traitlets.Unicode("auto").tag(sync=True)
+
+    widget = DimWidget3()
+    pane = AnyWidget(widget)
+    component = pane.component
+
+    # height=0 should NOT be forwarded (not > 0)
+    assert component.w_height == 0
+    assert component.height is None
+    # width="auto" should NOT be forwarded (not numeric)
+    assert component.w_width == "auto"
+    assert component.width is None
+
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_dimension_forwarding_runtime_sync():
+    """Changing the renamed height trait at runtime also updates
+    the Layoutable height."""
+    _COMPONENT_CACHE.clear()
+
+    class DimWidget4(anywidget.AnyWidget):
+        _esm = """
+        function render({ model, el }) { el.innerHTML = "dim4"; }
+        export default { render };
+        """
+        height = traitlets.Int(500).tag(sync=True)
+
+    widget = DimWidget4()
+    pane = AnyWidget(widget)
+    component = pane.component
+
+    assert component.height == 500
+
+    # Change via traitlet at runtime
+    widget.height = 600
+    assert component.w_height == 600
+    assert component.height == 600
+
+    _COMPONENT_CACHE.clear()
+
+
 # ---------------------------------------------------------------
 # _trait_name_map in esm_constants
 # ---------------------------------------------------------------
@@ -1118,7 +1263,7 @@ class MsgWidget(anywidget.AnyWidget):
     _received = []  # class-level store for testing
 
     def _handle_custom_msg(self, data, buffers):
-        self._received.append(data)
+        self._received.append((data, buffers))
 
 
 def test_anywidget_msg_routing_esm_to_python():
@@ -1139,7 +1284,9 @@ def test_anywidget_msg_routing_esm_to_python():
         cb(event)
 
     assert len(MsgWidget._received) == 1
-    assert MsgWidget._received[0] == {'query': 'SELECT 1'}
+    msg_data, msg_buffers = MsgWidget._received[0]
+    assert msg_data == {'query': 'SELECT 1'}
+    assert msg_buffers == []
     _COMPONENT_CACHE.clear()
 
 
@@ -1185,6 +1332,9 @@ def test_anywidget_msg_routing_roundtrip():
     for cb in component._msg__callbacks:
         cb(event)
     assert len(MsgWidget._received) == 1
+    msg_data, msg_buffers = MsgWidget._received[0]
+    assert msg_data['type'] == 'json'
+    assert msg_buffers == []
 
     # Simulate Python responding back → ESM
     widget.send({"type": "json", "result": {"rows": [{"col": 1}]}})
@@ -1245,4 +1395,267 @@ def test_anywidget_msg_routing_buffers_memoryview():
     assert len(sent) == 1
     decoded = base64.b64decode(sent[0]["_b64_buffers"][0])
     assert decoded == raw
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_msg_routing_esm_buffers_decoded():
+    """ESM→Python: base64-encoded _b64_buffers from ESM are decoded to bytes."""
+    import base64
+
+    _COMPONENT_CACHE.clear()
+    MsgWidget._received = []
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Simulate ESM sending a message with base64-encoded binary buffers
+    # (as the TS adapter's send() would do)
+    raw_buffer = b'\x00\x01\x02\x03\x04\x05'
+    encoded = base64.b64encode(raw_buffer).decode('ascii')
+    esm_msg = {
+        "type": "arrow_result",
+        "uuid": "test123",
+        "_b64_buffers": [encoded],
+    }
+
+    # Simulate the DataEvent arriving from ESM
+    # (on_msg callbacks are stored in _msg__callbacks)
+    class FakeEvent:
+        data = esm_msg
+
+    for cb in component._msg__callbacks:
+        cb(FakeEvent())
+
+    # The widget's _handle_custom_msg should have received decoded buffers
+    assert len(MsgWidget._received) == 1
+    msg_data, msg_buffers = MsgWidget._received[0]
+    assert msg_data["type"] == "arrow_result"
+    assert msg_data["uuid"] == "test123"
+    assert "_b64_buffers" not in msg_data  # transport key removed
+    assert len(msg_buffers) == 1
+    assert msg_buffers[0] == raw_buffer
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_msg_routing_esm_buffers_multiple():
+    """ESM→Python: multiple base64 buffers are decoded correctly."""
+    import base64
+
+    _COMPONENT_CACHE.clear()
+    MsgWidget._received = []
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    buf1 = b'\x00\x01\x02'
+    buf2 = b'\xff\xfe\xfd\xfc'
+    esm_msg = {
+        "type": "multi_arrow",
+        "_b64_buffers": [
+            base64.b64encode(buf1).decode('ascii'),
+            base64.b64encode(buf2).decode('ascii'),
+        ],
+    }
+
+    class FakeEvent:
+        data = esm_msg
+
+    for cb in component._msg__callbacks:
+        cb(FakeEvent())
+
+    assert len(MsgWidget._received) == 1
+    msg_data, msg_buffers = MsgWidget._received[0]
+    assert msg_data == {"type": "multi_arrow"}
+    assert len(msg_buffers) == 2
+    assert msg_buffers[0] == buf1
+    assert msg_buffers[1] == buf2
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_trait_name_map_property():
+    """pane.trait_name_map exposes renamed traits for discoverability."""
+    _COMPONENT_CACHE.clear()
+
+    widget = NameCollisionWidget()
+    pane = AnyWidget(widget)
+    assert 'name' in pane.trait_name_map
+    assert pane.trait_name_map['name'] == 'w_name'
+    assert 'width' in pane.trait_name_map
+    assert pane.trait_name_map['width'] == 'w_width'
+
+    # Non-colliding widget should have empty map
+    _COMPONENT_CACHE.clear()
+    counter = CounterWidget()
+    pane2 = AnyWidget(counter)
+    assert pane2.trait_name_map == {}
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_invoke_command_routing():
+    """Verify that anywidget-command messages are forwarded to widget._handle_custom_msg.
+
+    The experimental.invoke() RPC pattern (from @anywidget/signals) sends
+    messages with {id, kind: "anywidget-command", name, msg} and expects
+    the Python side to dispatch them via _handle_custom_msg.
+    """
+    from panel.models.esm import DataEvent
+
+    _COMPONENT_CACHE.clear()
+    MsgWidget._received = []
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Simulate an invoke-style message from the TS adapter
+    invoke_msg = {
+        'id': 'test-uuid-123',
+        'kind': 'anywidget-command',
+        'name': 'my_command',
+        'msg': {'x': 42},
+    }
+    event = DataEvent(model=None, data=invoke_msg)
+    for cb in component._msg__callbacks:
+        cb(event)
+
+    assert len(MsgWidget._received) == 1
+    msg_data, msg_buffers = MsgWidget._received[0]
+    assert msg_data['kind'] == 'anywidget-command'
+    assert msg_data['name'] == 'my_command'
+    assert msg_data['msg'] == {'x': 42}
+    assert msg_data['id'] == 'test-uuid-123'
+    assert msg_buffers == []
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_invoke_command_with_buffers():
+    """Verify that invoke messages with base64-encoded buffers are decoded."""
+    import base64
+
+    from panel.models.esm import DataEvent
+
+    _COMPONENT_CACHE.clear()
+    MsgWidget._received = []
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Simulate an invoke message with base64-encoded buffers
+    raw_data = b'\x01\x02\x03\x04'
+    encoded = base64.b64encode(raw_data).decode('ascii')
+    invoke_msg = {
+        'id': 'test-uuid-456',
+        'kind': 'anywidget-command',
+        'name': 'binary_command',
+        'msg': {'query': 'data'},
+        '_b64_buffers': [encoded],
+    }
+    event = DataEvent(model=None, data=invoke_msg)
+    for cb in component._msg__callbacks:
+        cb(event)
+
+    assert len(MsgWidget._received) == 1
+    msg_data, msg_buffers = MsgWidget._received[0]
+    # The _b64_buffers key should be stripped and decoded into buffers
+    assert '_b64_buffers' not in msg_data
+    assert msg_data['kind'] == 'anywidget-command'
+    assert len(msg_buffers) == 1
+    assert msg_buffers[0] == raw_data
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_send_override_delivers_response():
+    """Verify that widget.send() with anywidget-command-response data
+    is forwarded through the component's _send_msg for the invoke pattern."""
+    _COMPONENT_CACHE.clear()
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+
+    # Track messages sent through the component
+    sent = []
+    component._send_msg = lambda content: sent.append(content)
+
+    # widget.send() is the Python→ESM direction used for invoke responses
+    response_msg = {
+        'id': 'test-uuid-789',
+        'kind': 'anywidget-command-response',
+        'response': {'result': 'ok'},
+    }
+    widget.send(response_msg)
+
+    assert len(sent) == 1
+    assert sent[0]['id'] == 'test-uuid-789'
+    assert sent[0]['kind'] == 'anywidget-command-response'
+    assert sent[0]['response'] == {'result': 'ok'}
+    _COMPONENT_CACHE.clear()
+
+
+def test_anywidget_send_restored_on_cleanup():
+    """widget.send is restored to its original when the pane is cleaned up."""
+    _COMPONENT_CACHE.clear()
+
+    widget = MsgWidget()
+
+    pane = AnyWidget(widget)
+    _ = pane.component  # trigger component creation + msg routing
+
+    # After wrapping, widget.send should be the Panel override (a function, not a bound method)
+    import types
+    assert not isinstance(widget.send, types.MethodType)
+    assert callable(widget.send)
+
+    # Cleanup the pane
+    pane._teardown_trait_sync()
+
+    # After cleanup, widget.send should be a bound method again (the original)
+    assert isinstance(widget.send, types.MethodType)
+    _COMPONENT_CACHE.clear()
+
+
+# ---------------------------------------------------------------
+# Initialize-phase msg:custom handler queuing
+# ---------------------------------------------------------------
+
+def test_anywidget_initialize_msg_custom_queuing():
+    """Widgets that call model.on("msg:custom", cb) during initialize()
+    should have their handlers queued and connected when the view is ready.
+
+    This tests the fix for quak-style widgets that register msg:custom
+    handlers in their ESM initialize() function, before the view exists.
+    """
+    _COMPONENT_CACHE.clear()
+
+    class MsgWidget(anywidget.AnyWidget):
+        _esm = """
+        function initialize({ model }) {
+            // Register msg:custom handler during initialize (before render)
+            model.on("msg:custom", (data, buffers) => {
+                model.set("last_msg", JSON.stringify(data));
+                model.save_changes();
+            });
+        }
+        function render({ model, el }) {
+            el.innerHTML = "msg widget";
+        }
+        export default { render, initialize };
+        """
+        last_msg = traitlets.Unicode("").tag(sync=True)
+
+    widget = MsgWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+
+    # The component should have the last_msg param
+    assert hasattr(component, 'last_msg')
+    assert component.last_msg == ""
     _COMPONENT_CACHE.clear()

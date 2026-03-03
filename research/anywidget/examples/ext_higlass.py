@@ -11,6 +11,9 @@ synced traitlets (_viewconf, _options, location, etc.) and a bundled
 ESM module. This example uses a remote tileset from the HiGlass
 public server to display a Hi-C contact matrix heatmap.
 
+GitHub: https://github.com/higlass/higlass-python
+Docs:   https://docs.higlass.io/
+
 KNOWN LIMITATIONS:
 - The HiGlass ESM bundles the entire React-based HiGlass viewer. If the
   ESM is very large, it may hit WebSocket payload limits (similar to
@@ -87,8 +90,27 @@ if hasattr(component.param, 'location'):
 # 4. Layout
 # ---------------------------------------------------------------------------
 
+status = pn.pane.Markdown("""
+<div style="background-color: #f8d7da; border: 2px solid #dc3545; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #721c24; font-size: 20px; font-weight: bold; margin: 0;">
+THIS WIDGET DOES NOT RENDER
+</p>
+<p style="color: #721c24; font-size: 15px; margin: 8px 0 0 0;">
+<strong>Reason:</strong> HiGlass's ESM requires Jupyter's widget model manager
+(<code>model.widget_manager.get_model()</code>) to register its data fetcher.
+Panel does not implement this Jupyter protocol. The ESM crashes with
+<code>TypeError: model.get(...).slice is not a function</code> because the
+<code>_tileset_client</code> trait is a Python object, not a Jupyter
+<code>"IPY_MODEL_xxx"</code> string. This is a <strong>fundamental incompatibility</strong>,
+not a Panel bug.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown("""
 # HiGlass Genomic Data Viewer -- Panel AnyWidget Pane
+
+[GitHub](https://github.com/higlass/higlass-python) | [Docs](https://docs.higlass.io/)
 
 This example renders the **HiGlass** genomic visualization tool natively
 in Panel using the `AnyWidget` pane. The viewer displays a Hi-C contact
@@ -123,6 +145,7 @@ location_section = pn.Column(
 )
 
 pn.Column(
+    status,
     header,
     anywidget_pane,
     location_section,

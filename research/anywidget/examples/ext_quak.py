@@ -9,6 +9,9 @@ quak provides an interactive data profiler built on DuckDB and Mosaic.
 Users can mouse over column summaries, cross-filter, sort, and slice rows.
 Interactions are captured as executable SQL queries.
 
+GitHub: https://github.com/manzt/quak
+Docs:   https://github.com/manzt/quak#readme
+
 Key traitlets:
     - _table_name (Unicode): Internal table name in DuckDB
     - _columns (List[Unicode]): Column names from the data
@@ -69,8 +72,33 @@ component.param.watch(on_sql_change, ["sql"])
 # 4. Layout
 # ---------------------------------------------------------------------------
 
+status = pn.pane.Markdown("""
+<div style="background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #856404; font-size: 20px; font-weight: bold; margin: 0;">
+WORKS WITH CAVEATS
+</p>
+<p style="color: #856404; font-size: 15px; margin: 8px 0 0 0;">
+The quak data profiler renders correctly with Panel's AnyWidget pane.
+DuckDB-WASM loads in-browser and the interactive table/column profiler works.
+The <code>sql</code> trait syncs from browser to Python, reflecting user interactions
+as executable SQL queries.
+<br><br>
+<strong>Note:</strong> quak uses DuckDB-WASM which requires <code>SharedArrayBuffer</code>.
+This is only available when the page is served with
+<code>Cross-Origin-Opener-Policy: same-origin</code> and
+<code>Cross-Origin-Embedder-Policy: require-corp</code> headers.
+GitHub Codespaces sets these headers automatically.
+For standalone <code>panel serve</code>, you need to add these headers
+via a custom Tornado <code>OutputTransform</code> — see the
+<a href="https://panel.holoviz.org/reference/panes/AnyWidget.html">AnyWidget reference guide</a>.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown("""
 # quak Data Profiler — Panel AnyWidget Example
+
+[GitHub](https://github.com/manzt/quak) | [Docs](https://github.com/manzt/quak#readme)
 
 **quak** is a scalable data profiler built on DuckDB and Mosaic. It renders
 tabular data as an interactive profiler where you can:
@@ -90,6 +118,7 @@ to reactively display the current query.
 """, sizing_mode="stretch_width")
 
 pn.Column(
+    status,
     header,
     pn.pane.Markdown("### Interactive Data Profiler"),
     anywidget_pane,

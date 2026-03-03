@@ -9,6 +9,9 @@ pyobsplot renders Observable Plot charts as anywidgets. The Plot.plot()
 method returns an ObsplotWidget whose `spec` traitlet can be updated to
 change the chart dynamically.
 
+GitHub: https://github.com/juba/pyobsplot
+Docs:   https://juba.github.io/pyobsplot/
+
 Key traitlets:
     - spec (Dict): The Observable Plot specification dictionary
 
@@ -77,8 +80,8 @@ anywidget_pane = pn.pane.AnyWidget(plot_widget)
 # ---------------------------------------------------------------------------
 
 mark_select = pn.widgets.Select(
-    name="Mark Type",
-    options=["dot", "bar", "boxplot"],
+    name="Chart Type",
+    options={"Dot Plot": "dot", "Bar Chart": "bar", "Box Plot": "boxplot"},
     value="dot",
     width=200,
 )
@@ -113,27 +116,40 @@ grid_toggle.param.watch(update_plot, "value")
 # 4. Layout
 # ---------------------------------------------------------------------------
 
+status = pn.pane.Markdown("""
+<div style="background-color: #d4edda; border: 2px solid #28a745; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #155724; font-size: 20px; font-weight: bold; margin: 0;">
+WORKS
+</p>
+<p style="color: #155724; font-size: 15px; margin: 8px 0 0 0;">
+This example works fully with Panel's AnyWidget pane.
+Rendering, spec updates from Panel, and chart type switching all work as expected.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown("""
-# pyobsplot — Observable Plot in Panel
+# pyobsplot -- Observable Plot in Panel
 
-**pyobsplot** brings [Observable Plot](https://observablehq.com/@observablehq/plot)
-to Python. This example renders an Observable Plot chart natively in Panel
-using the `AnyWidget` pane.
+[GitHub](https://github.com/juba/pyobsplot) | [Docs](https://juba.github.io/pyobsplot/)
 
-## How It Works
+An interactive chart built with [Observable Plot](https://observablehq.com/plot/),
+rendered in Panel.
 
-`Plot.plot(spec)` returns an `ObsplotWidget` (an anywidget) with a `spec`
-traitlet. Panel wraps it with `pn.pane.AnyWidget()` and the chart updates
-reactively when `pane.component.spec` is reassigned.
+## Try These Controls
 
-## Controls
+- **Chart Type:** Switch between Dot plot (individual points), Bar chart
+  (summed by category), and Box plot (distribution per category)
+- **Color By:** Color the marks by "category" (A-E) or by "group" (alpha/beta)
+- **Show Grid:** Toggle background grid lines on and off
 
-Use the controls below to change the chart type, color mapping, and grid.
+The chart updates instantly when you change any control.
 """, sizing_mode="stretch_width")
 
 controls = pn.Row(mark_select, color_select, grid_toggle)
 
 pn.Column(
+    status,
     header,
     controls,
     anywidget_pane,

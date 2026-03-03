@@ -10,6 +10,9 @@ interactive visualization of HiPS (Hierarchical Progressive Surveys)
 sky maps with support for 550+ surveys, catalogue overlays, and
 coordinate-based navigation.
 
+GitHub: https://github.com/cds-astro/ipyaladin
+Docs:   https://cds-astro.github.io/ipyaladin/
+
 Key traitlets:
     - _target (Unicode): Sky coordinates to center on (e.g. "M1" or "83.63 22.01")
     - _fov (Float): Field of view in degrees (default 60.0)
@@ -146,24 +149,45 @@ except Exception:
 # 4. Layout
 # ---------------------------------------------------------------------------
 
+status = pn.pane.Markdown("""
+<div style="background-color: #d4edda; border: 2px solid #28a745; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #155724; font-size: 20px; font-weight: bold; margin: 0;">
+WORKS
+</p>
+<p style="color: #155724; font-size: 15px; margin: 8px 0 0 0;">
+This example works fully with Panel's AnyWidget pane.
+Rendering, sky navigation, survey switching, and field-of-view sync all work as expected.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown("""
-# ipyaladin — Aladin Lite Sky Viewer in Panel
+# ipyaladin -- Interactive Sky Viewer
 
-**ipyaladin** brings [Aladin Lite](https://aladin.cds.unistra.fr/AladinLite/)
-into Panel via anywidget, enabling interactive visualization of astronomical
-sky surveys directly in your data app.
+[GitHub](https://github.com/cds-astro/ipyaladin) | [Docs](https://cds-astro.github.io/ipyaladin/)
 
-## Features
+[Aladin Lite](https://aladin.cds.unistra.fr/AladinLite/) is an interactive
+sky map -- think Google Maps, but for the night sky.
 
-- Browse **550+ HiPS sky surveys** (optical, infrared, X-ray, radio)
-- Navigate to any **deep sky object** by name (M42, NGC 1234, etc.)
-- **Zoom** with scroll wheel, **pan** by dragging
-- Change **coordinate frames** (ICRS equatorial, Galactic)
+## How to Explore
 
-## Controls
+1. **Pick a target:** Select a famous astronomical object from the **Target**
+   dropdown to fly to it (e.g., the Orion Nebula is a glowing cloud of gas
+   where new stars form).
+2. **Zoom:** Use your **scroll wheel** to zoom. The **Field of View** slider
+   also controls zoom -- small values (< 1 degree) are close-ups, large
+   values (> 30 degrees) show a wide swath of sky.
+3. **Pan:** Click and drag to move across the sky.
+4. **Switch surveys:** The **Sky Survey** dropdown changes the imagery:
+   - *DSS Color* -- visible-light photographs
+   - *2MASS Color* -- near-infrared (reveals dust-hidden stars)
+   - *WISE Color* -- mid-infrared (warm dust and galaxies glow brightly)
+   - *Fermi Color* -- gamma-ray (shows the most violent events in the universe)
+5. **Coordinate Frame:** Switch between *ICRS* (standard sky coordinates)
+   and *Galactic* (centered on the Milky Way plane).
 
-Use the controls below to navigate the sky. Select a target object,
-adjust the field of view, or switch between different sky surveys.
+The field-of-view slider syncs bidirectionally -- zooming with the scroll
+wheel updates the slider, and dragging the slider updates the view.
 """, sizing_mode="stretch_width")
 
 controls = pn.Column(
@@ -172,6 +196,7 @@ controls = pn.Column(
 )
 
 pn.Column(
+    status,
     header,
     controls,
     anywidget_pane,

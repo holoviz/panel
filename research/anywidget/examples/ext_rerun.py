@@ -15,6 +15,9 @@ Note: rerun-notebook supports alternative asset loading modes
 environment variable, but these rely on anywidget's internal asset
 serving which is not available through Panel's AnyWidget pane.
 
+GitHub: https://github.com/rerun-io/rerun
+Docs:   https://rerun.io/docs
+
 Required packages:
     pip install "rerun-sdk[notebook]"
 
@@ -28,8 +31,24 @@ import panel as pn
 
 pn.extension()
 
+status = pn.pane.Markdown("""
+<div style="background-color: #f8d7da; border: 2px solid #dc3545; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #721c24; font-size: 20px; font-weight: bold; margin: 0;">
+THIS WIDGET DOES NOT RENDER
+</p>
+<p style="color: #721c24; font-size: 15px; margin: 8px 0 0 0;">
+<strong>Reason:</strong> rerun-notebook bundles a ~31 MiB WebAssembly binary.
+Panel serializes ESM via WebSocket, so the payload kills the connection before
+it arrives (<code>Error: Lost websocket connection, 1005</code>).
+This page is documentation only.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown("""
 # Rerun SDK Viewer — Large WASM Bundle Limitation
+
+[GitHub](https://github.com/rerun-io/rerun) | [Docs](https://rerun.io/docs)
 
 ## The Problem
 
@@ -100,6 +119,7 @@ rendering the viewer widget to avoid the WebSocket disconnection.
 """)
 
 pn.Column(
+    status,
     header,
     info,
     sizing_mode="stretch_width",

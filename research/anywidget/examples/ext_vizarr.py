@@ -9,6 +9,9 @@ vizarr provides a purely client-side viewer for zarr-based images, supporting
 2D slices of n-dimensional arrays with channel compositing. It uses the Viv
 library for GPU-accelerated rendering.
 
+GitHub: https://github.com/hms-dbmi/vizarr
+Docs:   https://github.com/hms-dbmi/vizarr#readme
+
 Key traitlets:
     - _configs (List): Image layer configurations
     - view_state (Dict): Current viewer state (zoom, position, etc.)
@@ -77,6 +80,35 @@ component = anywidget_pane.component
 component.height = 600
 component.sizing_mode = "stretch_width"
 
+# Fix vizarr layer controller text visibility: the viewer has a black
+# background but MUI components use dark text by default. Inject CSS to
+# force light text colors on the controls sidebar.
+component._stylesheets = ["""
+/* vizarr layer controller: force light text on black background */
+.MuiTypography-root,
+.MuiTypography-caption,
+.MuiTypography-body2,
+.MuiAccordionSummary-content p,
+.MuiAccordionDetails-root span,
+.MuiFormLabel-root,
+.MuiInputBase-root,
+.MuiInput-root input {
+    color: #e0e0e0 !important;
+}
+.MuiIconButton-root {
+    color: #e0e0e0 !important;
+}
+.MuiSvgIcon-root {
+    fill: #e0e0e0 !important;
+}
+.MuiSlider-rail {
+    background-color: #555 !important;
+}
+.MuiAccordion-root {
+    background-color: rgba(30, 30, 30, 0.85) !important;
+}
+"""]
+
 height_select = pn.widgets.Select(
     name="Viewer Height",
     options=["400px", "500px", "600px", "700px", "800px"],
@@ -114,6 +146,20 @@ status_msg = (
     "The viewer is rendered but no image is displayed."
 )
 
+status = pn.pane.Markdown("""
+<div style="background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #856404; font-size: 20px; font-weight: bold; margin: 0;">
+WORKS WITH CAVEATS
+</p>
+<p style="color: #856404; font-size: 15px; margin: 8px 0 0 0;">
+<strong>Limitations:</strong> (1) Requires a remote zarr store &mdash; if the store is
+unavailable, the viewer renders but shows no image.
+(2) The <code>height</code> trait (Unicode, e.g. "600px") collides with Panel's
+integer <code>height</code> and is renamed to <code>w_height</code>.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown(f"""
 # vizarr — Zarr Image Viewer in Panel
 
@@ -137,6 +183,7 @@ tracks the current zoom and position, displayed below.
 """, sizing_mode="stretch_width")
 
 pn.Column(
+    status,
     header,
     pn.Row(height_select),
     anywidget_pane,

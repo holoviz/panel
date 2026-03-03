@@ -64,7 +64,7 @@ features = ["py311", "required", "example", "doc"]
 no-default-feature = true
 
 [environments.anywidget]
-features = ["py312", "required", "anywidget-examples"]
+features = ["py312", "required", "test-core", "test", "test-ui", "anywidget-examples"]
 no-default-feature = true
 
 [environments.build]
@@ -440,15 +440,20 @@ wigglystuff = "*"
 cev = "*"
 higlass-python = "*"
 ipymario = "*"
+ipymolstar = "*"
 jscatter = "*"
+mapwidget = "*"
 tldraw = "*"
 mosaic-widget = "*"
 pygv = "*"
 vitessce = "*"
 vizarr = "*"
+sidecar = "*"
+widget-code-input = "*"
+widget-periodictable = "*"
 
 [feature.anywidget-examples.tasks]
-anywidget-serve = 'panel serve research/anywidget/examples/*.py'
+anywidget-serve = 'panel serve research/anywidget/examples/*.py --dev --static thumbnails=research/anywidget/examples/thumbnails'
 
 [feature.lite.tasks]
 lite-build = "bash scripts/jupyterlite/build.sh"

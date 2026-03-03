@@ -15,6 +15,9 @@ The widget accepts a Vega-Lite-like specification (as a dict) and
 optional data (as Pandas/Polars DataFrames). The `params` traitlet
 syncs interactive filter/selection parameters back to Python.
 
+GitHub: https://github.com/uwdata/mosaic
+Docs:   https://uwdata.github.io/mosaic/
+
 Required packages:
     pip install mosaic-widget pandas
 
@@ -45,12 +48,18 @@ df = pd.DataFrame({
 })
 
 # ---------------------------------------------------------------------------
-# 2. Create a Mosaic specification
+# 2. Create Mosaic specifications
 # ---------------------------------------------------------------------------
-# This spec creates an interactive scatter plot with cross-filtering.
-# Mosaic specs are Vega-Lite-like dicts that Mosaic compiles to SQL.
+# The scatter spec includes a named "brush" selection declared in the
+# "params" block. The "intervalXY" interactor lets users drag a rectangle
+# on the plot; "highlight" dims unselected points. Each time the brush
+# changes, Mosaic syncs the selection state to the widget's `params`
+# traitlet, which Panel then picks up automatically.
 
-spec = {
+scatter_spec = {
+    "params": {
+        "brush": {"select": "intersect"},
+    },
     "plot": [
         {
             "mark": "dot",
@@ -59,7 +68,23 @@ spec = {
             "y": "y",
             "fill": "category",
             "r": 5,
-        }
+        },
+        {"select": "intervalXY", "as": "$brush"},
+        {"select": "highlight", "by": "$brush"},
+    ],
+    "width": 500,
+    "height": 400,
+}
+
+bar_spec = {
+    "plot": [
+        {
+            "mark": "barY",
+            "data": {"from": "sample_data"},
+            "x": "category",
+            "y": {"avg": "value"},
+            "fill": "category",
+        },
     ],
     "width": 500,
     "height": 400,
@@ -70,7 +95,7 @@ spec = {
 # ---------------------------------------------------------------------------
 
 mosaic_widget = MosaicWidget(
-    spec=spec,
+    spec=scatter_spec,
     data={"sample_data": df},
 )
 
@@ -87,7 +112,7 @@ params_display = pn.pane.JSON(
     mosaic_widget.params if mosaic_widget.params else {},
     name="Mosaic Params",
     depth=3,
-    height=200,
+    height=300,
 )
 
 def on_params_change(*events):
@@ -100,25 +125,11 @@ component.param.watch(on_params_change, ["params"])
 # Button to update the spec from Python
 def update_to_bar_chart(event):
     """Switch the visualization to a bar chart (value by category)."""
-    bar_spec = {
-        "plot": [
-            {
-                "mark": "barY",
-                "data": {"from": "sample_data"},
-                "x": "category",
-                "y": "value",
-                "fill": "category",
-                "r": 5,
-            }
-        ],
-        "width": 500,
-        "height": 400,
-    }
     component.spec = bar_spec
 
 def update_to_scatter(event):
     """Switch the visualization back to the scatter plot."""
-    component.spec = spec
+    component.spec = scatter_spec
 
 scatter_btn = pn.widgets.Button(name="Scatter Plot", button_type="primary", width=150)
 bar_btn = pn.widgets.Button(name="Bar Chart", button_type="warning", width=150)
@@ -130,28 +141,50 @@ bar_btn.on_click(update_to_bar_chart)
 # 5. Layout
 # ---------------------------------------------------------------------------
 
+status = pn.pane.Markdown("""
+<div style="background-color: #d4edda; border: 2px solid #28a745; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #155724; font-size: 20px; font-weight: bold; margin: 0;">
+WORKS
+</p>
+<p style="color: #155724; font-size: 15px; margin: 8px 0 0 0;">
+This example works fully with Panel's AnyWidget pane.
+Rendering, interactive brush selections, spec switching (scatter &harr; bar),
+DuckDB-backed queries, and param sync all work as expected.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown("""
-# Mosaic Widget — AnyWidget Pane Demo
+# Mosaic Widget -- Interactive Scatter & Bar Chart
 
-This example renders **Mosaic's MosaicWidget** (an anywidget backed by DuckDB)
-natively in Panel using the `AnyWidget` pane.
+[Mosaic](https://uwdata.github.io/mosaic/) turns visualization specs into
+SQL queries that run against an in-browser DuckDB database.
 
-Mosaic compiles interactive visualization specifications into SQL queries
-that run against DuckDB. Interactive parameters (selections, filters) are
-synced back to Python via the `params` traitlet.
+## How to Interact
 
-**Switch views** using the buttons to push a new spec to the widget from Python.
+1. **Brush-select points** -- Click and drag on the scatter plot to draw a
+   selection rectangle. Selected points stay bright; the rest dim out.
+   Watch the **Selection State** panel update with the brush coordinates.
+2. **Clear the selection** -- Click on an empty area of the plot.
+3. **Switch to Bar Chart** -- Click the button to push a different spec
+   from Python. The bar chart shows average value per category.
+4. **Switch back to Scatter** -- Click to return to the interactive scatter.
 """, sizing_mode="stretch_width")
 
 controls = pn.Column(
-    pn.pane.Markdown("### Switch Visualization"),
+    pn.pane.Markdown("### Chart Type"),
     pn.Row(scatter_btn, bar_btn),
-    pn.pane.Markdown("### Interactive Params (synced from widget)"),
+    pn.pane.Markdown("### Selection State"),
+    pn.pane.Markdown(
+        "_Drag a rectangle on the scatter plot to see brush "
+        "coordinates appear here in real time._"
+    ),
     params_display,
     width=350,
 )
 
 pn.Column(
+    status,
     header,
     pn.Row(
         pn.Column(

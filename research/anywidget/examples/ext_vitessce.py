@@ -10,15 +10,22 @@ The VitessceWidget is a genuine anywidget.AnyWidget subclass with synced
 traitlets (_config, height, theme, proxy, etc.) and ESM that dynamically
 loads the Vitessce React application from a CDN.
 
+This demo uses the Codeluppi et al. 2018 Osmfish public dataset (mouse brain
+somatosensory cortex) hosted on the Vitessce public S3 bucket. It includes:
+- Spatial cell locations (tissue coordinates X, Y)
+- t-SNE embedding (dimensionality reduction)
+- Cluster / Subcluster annotations (excitatory, inhibitory neurons, etc.)
+
+GitHub: https://github.com/vitessce/vitessce-python
+Docs:   https://vitessce.github.io/vitessce-python/
+
 KNOWN LIMITATIONS:
-- Vitessce's ESM dynamically imports React and the Vitessce library from
-  unpkg.com CDN at runtime. This requires internet access and may take a
-  moment to load on first render.
+- Vitessce's ESM dynamically imports ~2-3 MB of JavaScript from unpkg.com
+  CDN at runtime. First load may be slow (5-15s).
 - The _config traitlet is prefixed with underscore, so the AnyWidget pane
-  may not expose it as a user-facing param (it filters names starting with _).
-  However, height and theme are exposed as regular synced traitlets.
-- Complex data setups (AnnData, OME-TIFF, etc.) require additional packages
-  and data preparation. This example uses a minimal remote JSON configuration.
+  does not expose it as a user-facing param.
+- The `height` trait collides with Panel's Layoutable.height and is renamed
+  to `w_height` on the component.
 
 Required package:
     pip install vitessce
@@ -27,159 +34,153 @@ Run with:
     panel serve research/anywidget/examples/ext_vitessce.py
 """
 
-from vitessce import ViewType as vt, VitessceConfig
+from vitessce import (
+    CoordinationType as ct,
+    FileType as ft,
+    ViewType as vt,
+    VitessceConfig,
+)
 
 import panel as pn
 
 pn.extension()
 
 # ---------------------------------------------------------------------------
-# 1. Create a Vitessce configuration
+# 1. Create a Vitessce configuration with public Codeluppi 2018 data
 # ---------------------------------------------------------------------------
 
-# Create a minimal Vitessce config with a scatterplot view
-# This uses the view config API without any data -- it will show
-# an empty viewer that demonstrates the widget rendering.
-vc = VitessceConfig(schema_version="1.0.15", name="Panel AnyWidget Demo")
+# The Codeluppi et al. 2018 Nature Methods dataset is a spatial
+# transcriptomics dataset (osmFISH) of the mouse brain somatosensory cortex.
+# CSV file columns: cell_id, TSNE_1, TSNE_2, PCA_1, PCA_2, Cluster,
+#                   Subcluster, X, Y
+DATA_BASE = "https://s3.amazonaws.com/vitessce-data/0.0.33/main/codeluppi-2018"
 
-# Add an empty dataset
-ds = vc.add_dataset(name="Demo Dataset")
+vc = VitessceConfig(
+    schema_version="1.0.15",
+    name="Codeluppi 2018 osmFISH — Panel AnyWidget Demo",
+    description=(
+        "Spatial transcriptomics (osmFISH) of the mouse brain somatosensory "
+        "cortex. Data: Codeluppi et al., Nature Methods 2018."
+    ),
+)
 
-# Add a description view
-desc = vc.add_view(vt.DESCRIPTION, dataset=ds)
+ds = vc.add_dataset(name="Codeluppi 2018 osmFISH").add_file(
+    url=f"{DATA_BASE}/codeluppi_2018_nature_methods.cells.csv",
+    file_type=ft.OBS_LOCATIONS_CSV,
+    options={"obsIndex": "cell_id", "obsLocations": ["X", "Y"]},
+    coordination_values={"obsType": "cell"},
+).add_file(
+    url=f"{DATA_BASE}/codeluppi_2018_nature_methods.cells.csv",
+    file_type=ft.OBS_EMBEDDING_CSV,
+    options={"obsIndex": "cell_id", "obsEmbedding": ["TSNE_1", "TSNE_2"]},
+    coordination_values={"obsType": "cell", "embeddingType": "t-SNE"},
+).add_file(
+    url=f"{DATA_BASE}/codeluppi_2018_nature_methods.cells.csv",
+    file_type=ft.OBS_LABELS_CSV,
+    options={"obsIndex": "cell_id", "obsLabels": "Cluster"},
+    coordination_values={"obsType": "cell", "obsLabelsType": "Cluster"},
+)
 
-# Set up layout
-vc.layout(desc)
+# Views: spatial map, t-SNE scatterplot, status
+spatial = vc.add_view(vt.SPATIAL, dataset=ds)
+scatterplot = vc.add_view(vt.SCATTERPLOT, dataset=ds)
+status_view = vc.add_view(vt.STATUS, dataset=ds)
 
-# Create the widget -- this returns a VitessceWidget (anywidget.AnyWidget subclass)
-# Synced traitlets: _config (Dict), height (Int), theme (Unicode),
-#   proxy (Bool), js_package_version (Unicode), plugin_esm (List)
-vitessce_widget = vc.widget(height=500, theme="light")
+# Link scatterplot to t-SNE embedding
+vc.link_views([scatterplot], [ct.EMBEDDING_TYPE], ["t-SNE"])
+
+# Layout: spatial on left, scatterplot + status on right
+vc.layout(spatial | (scatterplot / status_view))
+
+# Create the widget
+vitessce_widget = vc.widget(height=600, theme="dark")
 
 # ---------------------------------------------------------------------------
 # 2. Wrap with Panel's AnyWidget pane
 # ---------------------------------------------------------------------------
 
-# NOTE: Vitessce's "height" trait (Int) collides with Panel's "height" param.
-# The AnyWidget pane renames it to "w_height" on the component. The Vitessce
-# ESM calls model.get("height") on the JS side, which does NOT resolve to
-# "w_height" — this is a known framework limitation.  Set explicit sizing
-# on the component to ensure the container has non-zero dimensions.
 anywidget_pane = pn.pane.AnyWidget(vitessce_widget, sizing_mode="stretch_width")
 
 # ---------------------------------------------------------------------------
-# 3. Wire Panel controls for bidirectional sync
+# 3. Wire Panel controls
 # ---------------------------------------------------------------------------
 
 component = anywidget_pane.component
-
-# Set explicit height on the component to give the container non-zero dimensions
-component.height = 500
+component.height = 600
 component.sizing_mode = "stretch_width"
-
-# Height control
-height_slider = pn.widgets.IntSlider(
-    name="Widget Height",
-    start=300,
-    end=800,
-    value=500,
-    width=300,
-)
 
 # Theme selector
 theme_select = pn.widgets.Select(
     name="Theme",
-    options=["light", "dark"],
-    value="light",
+    options=["dark", "light"],
+    value="dark",
     width=200,
 )
 
-# Panel -> Widget sync
-# NOTE: Vitessce's "height" trait is renamed to "w_height" due to collision
-# with Panel's Layoutable.height.  We also update the Panel component height
-# so the container resizes along with the Vitessce viewer.
-def on_height_change(e):
-    if hasattr(component.param, 'w_height'):
-        component.w_height = e.new
-    component.height = e.new  # Also resize the container
-
-height_slider.param.watch(on_height_change, "value")
-
-if hasattr(component.param, 'theme'):
+if hasattr(component.param, "theme"):
     theme_select.param.watch(
-        lambda e: setattr(component, 'theme', e.new), "value"
+        lambda e: setattr(component, "theme", e.new), "value"
     )
 
-# Widget -> Panel sync
-def on_component_change(*events):
-    for event in events:
-        if event.name == "w_height":
-            height_slider.value = event.new
-        elif event.name == "theme":
-            theme_select.value = event.new
+    def on_theme_change(*events):
+        for event in events:
+            if event.name == "theme":
+                theme_select.value = event.new
 
-watch_params = [p for p in ["w_height", "theme"] if hasattr(component.param, p)]
-if watch_params:
-    component.param.watch(on_component_change, watch_params)
+    component.param.watch(on_theme_change, ["theme"])
 
 # ---------------------------------------------------------------------------
 # 4. Layout
 # ---------------------------------------------------------------------------
 
+banner = pn.pane.Markdown("""
+<div style="background-color: #d4edda; border: 2px solid #28a745; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #155724; font-size: 20px; font-weight: bold; margin: 0;">
+WORKS
+</p>
+<p style="color: #155724; font-size: 15px; margin: 8px 0 0 0;">
+Vitessce loads ~2-3 MB of JavaScript from CDN on first render. Please wait
+10-15 seconds for the viewer to appear. The <code>height</code> trait collides
+with Panel's <code>height</code> and is renamed to <code>w_height</code>.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown("""
-# Vitessce Spatial Single-Cell Viewer -- Panel AnyWidget Pane
+# Vitessce — Spatial Single-Cell Viewer
 
-This example renders the **Vitessce** viewer natively in Panel using the
-`AnyWidget` pane. Vitessce is a visual integration tool for exploration of
-spatial single-cell experiments.
+[GitHub](https://github.com/vitessce/vitessce-python) |
+[Docs](https://vitessce.github.io/vitessce-python/) |
+[Vitessce Web](http://vitessce.io/)
 
-## How It Works
+**Vitessce** is a framework for visual integration and exploration of spatial
+single-cell experiments. This demo loads the **Codeluppi et al. 2018** osmFISH
+dataset (mouse brain somatosensory cortex) from a public S3 bucket.
 
-The VitessceWidget loads the Vitessce React application dynamically from a
-CDN (unpkg.com). The widget syncs configuration, height, and theme via
-traitlets mapped to Panel params.
+## What You See
 
-## Controls
+- **Left panel (Spatial):** Physical tissue coordinates of cells (X, Y positions).
+- **Right top (Scatterplot):** t-SNE dimensionality reduction of gene expression.
+- **Right bottom (Status):** Viewer status and data loading progress.
 
-- **Height:** Adjust the viewer height using the slider
-- **Theme:** Switch between light and dark themes
+## Interaction
 
-## About Vitessce
+- **Pan** by clicking and dragging
+- **Zoom** with the scroll wheel
+- **Hover** over cells to see annotations
 
-[Vitessce](http://vitessce.io) supports visualization of:
-- Spatial transcriptomics data
-- Single-cell RNA-seq embeddings (UMAP, t-SNE)
-- Cell segmentation and spatial coordinates
-- Gene expression heatmaps
-- Multi-modal data coordination
+## First Load
 
-## Known Limitations
-
-- The Vitessce ESM dynamically imports ~2-3 MB of JavaScript from CDN at
-  runtime. First load may be slow.
-- The `_config` traitlet is underscore-prefixed and may not be exposed as
-  a user-facing param by the AnyWidget pane.
-- For full-featured usage with actual data (AnnData, Zarr, OME-TIFF),
-  additional packages are needed: `pip install 'vitessce[all]'`
-""")
-
-controls = pn.Column(
-    pn.pane.Markdown("### Controls"),
-    height_slider,
-    theme_select,
-    width=350,
-)
+The viewer dynamically loads JavaScript from unpkg.com CDN. It may take
+10-15 seconds to appear on first load. Then cell data (~3300 cells) loads
+from S3.
+""", sizing_mode="stretch_width")
 
 pn.Column(
+    banner,
     header,
-    pn.Row(
-        pn.Column(
-            pn.pane.Markdown("### Vitessce Viewer"),
-            anywidget_pane,
-            sizing_mode="stretch_width",
-        ),
-        controls,
-    ),
+    pn.Row(theme_select),
+    anywidget_pane,
     sizing_mode="stretch_width",
     max_width=1200,
 ).servable()

@@ -1,27 +1,45 @@
 """
-Jupyter Scatter Example with Bidirectional Sync
-================================================
+Jupyter Scatter Example -- WebGL Scatter Plot (DOES NOT RENDER)
+===============================================================
 
-This example demonstrates using jupyter-scatter's JupyterScatter widget
-with Panel's AnyWidget pane and bidirectional sync between the widget
-and Panel controls.
+This example attempts to use jupyter-scatter's JupyterScatter widget
+with Panel's AnyWidget pane.
 
-Jupyter Scatter is built on anywidget.AnyWidget and uses regl-scatterplot
-for high-performance WebGL rendering. It can handle millions of points.
-The widget's ESM is loaded from a bundled `bundle.js` file.
+STATUS: DOES NOT RENDER -- WebGL initialization fails inside Panel's
+shadow DOM because the container has 0x0 pixel dimensions when
+``createScatterplot`` (regl-scatterplot) runs.
 
-The JupyterScatter widget (accessed via `scatter.widget`) exposes many
-traitlets for appearance (color, size, opacity), interaction (selection,
-hovering, lasso), camera state, and data encoding. The high-level
-`jscatter.Scatter` class wraps this widget with a convenient API.
+Root cause
+----------
+jupyter-scatter uses `regl-scatterplot`, a WebGL-based renderer that
+requires its container element to have **non-zero CSS pixel dimensions**
+at the instant `createScatterplot()` is called. Inside Panel's Bokeh
+shadow DOM, the ESM render function runs before CSS layout has sized the
+container, so the canvas starts at 0x0 pixels.  This causes
+``getScatterGlPos`` → ``transformMat4`` to compute a singular projection
+matrix, crashing with:
 
-NOTE: If both `jscatter` (scientific computing) and `jupyter-scatter` are
-installed, the top-level `jscatter` namespace may be shadowed. Import from
-`jscatter.jscatter` to ensure the correct `Scatter` class is used.
+    TypeError: Cannot read properties of null (reading '0') at transformMat4
 
-NOTE: The `Scatter` class is a wrapper, not the anywidget itself.
-The actual anywidget is `scatter.widget` (a `JupyterScatter` instance).
-We must pass `scatter.widget` to pn.pane.AnyWidget(), not `scatter`.
+Even with explicit ``width`` and ``height`` on the AnyWidget pane, the
+inner shadow DOM container may still have 0x0 at render time.  Setting
+explicit dimensions sometimes silences the crash but the canvas still
+fails to initialize -- no scatter plot appears.
+
+This is NOT a binary data issue -- the ``_pnl_bytes`` base64 encoding
+correctly delivers the point data.  It is a **container sizing / WebGL
+init timing** issue specific to shadow DOM rendering.
+
+GitHub: https://github.com/flekschas/jupyter-scatter
+Docs:   https://jupyter-scatter.dev/
+
+NOTE: If both ``jscatter`` (scientific computing) and ``jupyter-scatter``
+are installed, the top-level ``jscatter`` namespace may be shadowed.
+Import from ``jscatter.jscatter`` to ensure the correct ``Scatter``
+class is used.
+
+NOTE: The ``Scatter`` class is a wrapper, not the anywidget itself.
+The actual anywidget is ``scatter.widget`` (a ``JupyterScatter`` instance).
 
 Required packages:
     pip install jupyter-scatter pandas numpy
@@ -78,8 +96,10 @@ scatter = Scatter(
 # The actual anywidget is scatter.widget (JupyterScatter instance)
 scatter_widget = scatter.widget
 
-# Wrap the underlying anywidget with Panel's AnyWidget pane
-anywidget_pane = pn.pane.AnyWidget(scatter_widget)
+# Wrap the underlying anywidget with Panel's AnyWidget pane.
+# Explicit width/height are set but do NOT fix the WebGL init issue --
+# the inner shadow DOM container still has 0×0 at createScatterplot time.
+anywidget_pane = pn.pane.AnyWidget(scatter_widget, width=600, height=500)
 
 # ---------------------------------------------------------------------------
 # 3. Wire up Panel controls for bidirectional sync
@@ -169,24 +189,52 @@ component.param.watch(on_hover_change, ["hovering"])
 # 4. Layout
 # ---------------------------------------------------------------------------
 
+status = pn.pane.Markdown("""
+<div style="background-color: #f8d7da; border: 2px solid #dc3545; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #721c24; font-size: 20px; font-weight: bold; margin: 0;">
+DOES NOT RENDER -- WebGL initialization fails in shadow DOM
+</p>
+<p style="color: #721c24; font-size: 14px; margin: 8px 0 0 0;">
+jupyter-scatter uses <code>regl-scatterplot</code>, a WebGL renderer that requires
+its container to have <strong>non-zero CSS pixel dimensions</strong> when
+<code>createScatterplot()</code> runs. Inside Panel's Bokeh shadow DOM, the ESM
+render function executes before the browser has laid out the container, so it
+starts at 0&times;0 pixels. This causes <code>transformMat4</code> to compute a
+singular projection matrix, crashing with
+<code>TypeError: Cannot read properties of null (reading '0')</code>.
+<br/><br/>
+<strong>This is a container sizing / WebGL init timing issue</strong>, not a data
+or binary serialization problem. Even explicit <code>width</code>/<code>height</code>
+on the pane do not resolve it because the <em>inner</em> shadow DOM container may
+still be unsized at render time.
+<br/><br/>
+<strong>Possible fix (upstream):</strong> regl-scatterplot could defer WebGL init until
+the container has non-zero dimensions (e.g. via ResizeObserver), or Panel could
+provide a &ldquo;deferred render&rdquo; hook that waits for layout to complete.
+</p>
+</div>
+""", sizing_mode="stretch_width")
+
 header = pn.pane.Markdown(f"""
-# Jupyter Scatter — AnyWidget Pane Demo
+# Jupyter Scatter -- Interactive Cluster Explorer
 
-This example renders **jupyter-scatter's JupyterScatter** widget (an anywidget)
-natively in Panel using the `AnyWidget` pane with bidirectional sync.
+A scatter plot of **{n:,} points** in 4 color-coded clusters, rendered with
+high-performance WebGL.
 
-**{n} points** in 4 clusters are rendered via WebGL (regl-scatterplot).
+## How to Interact (if rendering works)
 
-## Interaction
+- **Zoom:** Scroll to zoom in and out
+- **Pan:** Click and drag to move the view
+- **Select points:** Click and drag to draw a **lasso** around points.
+  Selected point indices appear in the "Selection" readout on the right.
+  Click on empty space to clear the selection.
+- **Hover:** Move your mouse over a point to see its coordinates and
+  cluster label in the "Hovering" readout.
 
-- **Pan/Zoom:** Scroll to zoom, drag to pan
-- **Lasso Select:** Click and drag to lasso-select points
-- **Hover:** Move the mouse over points to see details
+## Display Controls
 
-## Bidirectional Sync
-
-- **Panel to Widget:** Adjust the sliders and color picker to change the widget
-- **Widget to Panel:** Selection and hover info update in real-time from the widget
+Use the sliders on the right to adjust **point size**, **opacity**, and
+**background color**. Changes update the chart in real time.
 """, sizing_mode="stretch_width")
 
 controls = pn.Column(
@@ -201,6 +249,7 @@ controls = pn.Column(
 )
 
 pn.Column(
+    status,
     header,
     pn.Row(
         pn.Column(

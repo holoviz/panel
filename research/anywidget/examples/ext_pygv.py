@@ -7,12 +7,17 @@ using Panel's AnyWidget pane. pygv is a lightweight, scriptable
 genome browser built with anywidget that uses igv.js for rendering.
 
 The pygv Browser is a genuine anywidget.AnyWidget subclass with a
-synced `config` traitlet. The ESM is loaded from a bundled widget.js
-file. The package is very small (~18 KB wheel) so ESM size should
-not be a problem.
+synced `config` traitlet (Instance of a msgspec Struct). The ESM
+loads igv.js from a CDN and creates the browser from the config.
 
-This example displays genome tracks from publicly available remote
-URLs. pygv infers track types by file extension.
+GitHub: https://github.com/nicokant/pygv
+
+KNOWN LIMITATION: pygv's ESM reads the config once at render time
+and does not listen for `change:config` events. This means:
+  - Navigating in the browser does NOT sync locus back to Python
+  - Changing the config from Python does NOT navigate the browser
+To "navigate" from Panel, the example replaces the entire AnyWidget
+pane object, creating a fresh browser with the new config.
 
 Required package:
     pip install pygv
@@ -23,97 +28,159 @@ Run with:
 
 import pygv
 
+from pygv._config import Config
+
 import panel as pn
 
 pn.extension()
 
 # ---------------------------------------------------------------------------
-# 1. Create a pygv genome browser with remote data
+# 1. Genome region presets
 # ---------------------------------------------------------------------------
 
-# Set reference genome and initial locus
-pygv.ref("hg38")
-pygv.locus("chr8:127,735,434-127,742,951")
-
-# Create a browser with a remote gene annotation track
-# pygv.browse() returns a Browser widget (anywidget.AnyWidget subclass)
-# with a synced `config` traitlet (Instance of Config)
-browser = pygv.browse()
+PRESETS = {
+    "MYC (chr8)": Config(genome="hg38", locus="chr8:127,735,434-127,742,951"),
+    "TP53 (chr17)": Config(genome="hg38", locus="chr17:7,571,720-7,590,868"),
+    "BRCA1 (chr17)": Config(genome="hg38", locus="chr17:43,044,295-43,125,483"),
+    "EGFR (chr7)": Config(genome="hg38", locus="chr7:55,019,017-55,211,628"),
+}
 
 # ---------------------------------------------------------------------------
-# 2. Wrap with Panel's AnyWidget pane
+# 2. Create a pygv genome browser and wrap with Panel
 # ---------------------------------------------------------------------------
 
-anywidget_pane = pn.pane.AnyWidget(browser, height=700, sizing_mode="stretch_width", styles={"border": "1px solid #ccc", "border-radius": "4px"})
+def make_browser(config):
+    """Create a fresh pygv Browser with the given Config."""
+    return pygv._browser.Browser(config=config)
+
+initial_config = PRESETS["MYC (chr8)"]
+browser = make_browser(initial_config)
+
+browser_pane = pn.pane.AnyWidget(
+    browser, height=700, sizing_mode="stretch_width",
+    styles={"border": "1px solid #ccc", "border-radius": "4px"},
+)
 
 # ---------------------------------------------------------------------------
-# 3. Panel controls for genome navigation
+# 3. Panel controls: navigate to genome presets
 # ---------------------------------------------------------------------------
+# Because pygv's ESM is read-once, we replace `browser_pane.object`
+# with a new Browser instance to "navigate".  Panel tears down the
+# old component and creates a fresh one, which re-renders igv.js
+# with the new config.
 
-component = anywidget_pane.component
+region_select = pn.widgets.Select(
+    name="Gene Region",
+    options=list(PRESETS.keys()),
+    value="MYC (chr8)",
+    width=250,
+)
 
-# The `config` traitlet is the main synced state. Since it is an Instance
-# type (not a simple dict/string), the param mapping may use a generic
-# Parameter. We can display its current value.
+locus_input = pn.widgets.TextInput(
+    name="Custom Locus",
+    placeholder="e.g. chr1:1,000,000-2,000,000",
+    width=300,
+)
 
-config_display = pn.pane.JSON({}, name="Browser Config", height=200, width=400)
+go_btn = pn.widgets.Button(name="Go", button_type="primary", width=60)
 
-if hasattr(component.param, 'config'):
-    def on_config_change(*events):
-        for event in events:
-            if event.name == "config" and event.new is not None:
-                try:
-                    import msgspec
-                    config_dict = msgspec.to_builtins(event.new)
-                except Exception:
-                    config_dict = str(event.new)
-                config_display.object = config_dict
+config_display = pn.pane.JSON({}, name="Current Config", depth=2, height=120)
 
-    component.param.watch(on_config_change, ["config"])
+
+def navigate_to_preset(event):
+    """Navigate by replacing the widget with a fresh Browser."""
+    config = PRESETS[event.new]
+    browser_pane.object = make_browser(config)
+    try:
+        import msgspec
+        config_display.object = msgspec.to_builtins(config)
+    except Exception:
+        config_display.object = {"genome": config.genome}
+
+region_select.param.watch(navigate_to_preset, ["value"])
+
+
+def navigate_to_locus(event):
+    """Navigate to a custom locus typed by the user."""
+    locus = locus_input.value.strip()
+    if not locus:
+        return
+    config = Config(genome="hg38", locus=locus)
+    browser_pane.object = make_browser(config)
+    try:
+        import msgspec
+        config_display.object = msgspec.to_builtins(config)
+    except Exception:
+        config_display.object = {"genome": "hg38", "locus": locus}
+
+go_btn.on_click(navigate_to_locus)
+
+# Set initial config display
+try:
+    import msgspec
+    config_display.object = msgspec.to_builtins(initial_config)
+except Exception:
+    config_display.object = {"genome": "hg38"}
 
 # ---------------------------------------------------------------------------
 # 4. Layout
 # ---------------------------------------------------------------------------
 
-header = pn.pane.Markdown("""
-# pygv Genome Browser -- Panel AnyWidget Pane
+status = pn.pane.Markdown("""
+<div style="background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 16px; margin: 16px 0;">
+<p style="color: #856404; font-size: 20px; font-weight: bold; margin: 0;">
+WORKS WITH CAVEATS
+</p>
+<p style="color: #856404; font-size: 15px; margin: 8px 0 0 0;">
+<strong>Rendering and in-browser interaction work perfectly.</strong>
+However, pygv's ESM reads the config once at render time and never syncs
+navigation state back to Python.  To "navigate" from Panel, this example
+replaces the entire widget, which re-creates the browser.
+</p>
+</div>
+""", sizing_mode="stretch_width")
 
-This example renders the **pygv** minimal genome browser natively in Panel
-using the `AnyWidget` pane. pygv is built with anywidget and uses
-[igv.js](https://igv.org/doc/igvjs/) for rendering genomic data.
+header = pn.pane.Markdown("""
+# pygv -- Genome Browser
+
+An interactive genome browser powered by [igv.js](https://igv.org/doc/igvjs/)
+showing the **human reference genome (hg38)**.
 
 ## How to Interact
 
-- **Zoom:** Scroll wheel or use the +/- controls in the browser
-- **Navigate:** Click and drag to pan along the genome
-- **Search:** Use the locus search box to jump to a specific region
+### In the Browser (works immediately)
+- **Zoom:** Scroll wheel, or the +/- buttons in the top-left corner
+- **Pan:** Click and drag left/right
+- **Search:** Type a gene name (e.g. `TP53`) or coordinates in the search box
 
-## About pygv
+### From Panel (navigates by re-creating the browser)
+- **Gene Region dropdown:** Pick a preset to jump to a well-known cancer gene
+- **Custom Locus:** Type coordinates and click **Go**
 
-[pygv](https://github.com/manzt/pygv) is a minimal, scriptable genome
-browser for Python by Trevor Manz (the creator of anywidget). It supports:
-- Multiple reference genomes (hg38, hg19, mm10, etc.)
-- Automatic track type inference from file extensions
-- Remote URLs and indexed formats (BAM/BAI, CRAM/CRAI, etc.)
-- Custom track configuration via `pygv.track()`
-
-## Widget Details
-
-- **Widget class:** `pygv.Browser` (extends `anywidget.AnyWidget`)
-- **Synced traitlet:** `config` (Instance of Config, serialized via msgspec)
-- **ESM:** Bundled widget.js (~18 KB package, uses igv.js)
+Note: Changing the region from Panel replaces the widget (brief flash), because
+pygv's JavaScript doesn't listen for config updates after initial render.
 """)
 
-info_section = pn.Column(
-    pn.pane.Markdown("### Browser Config State"),
+controls = pn.Column(
+    pn.pane.Markdown("### Navigate"),
+    region_select,
+    pn.Row(locus_input, go_btn),
+    pn.pane.Markdown("### Current Config"),
     config_display,
-    width=400,
+    width=350,
 )
 
 pn.Column(
+    status,
     header,
-    anywidget_pane,
-    info_section,
+    pn.Row(
+        pn.Column(
+            pn.pane.Markdown("### Genome Browser"),
+            browser_pane,
+            sizing_mode="stretch_width",
+        ),
+        controls,
+    ),
     sizing_mode="stretch_width",
-    max_width=1000,
+    max_width=1200,
 ).servable()
