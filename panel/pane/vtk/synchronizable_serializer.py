@@ -7,7 +7,9 @@ import zipfile
 
 from typing import Any
 
-from vtk.vtkCommonCore import vtkTypeInt32Array, vtkTypeUInt32Array
+from vtk.vtkCommonCore import (
+    vtkIdTypeArray, vtkTypeInt32Array, vtkTypeUInt32Array,
+)
 from vtk.vtkCommonDataModel import vtkDataObject
 from vtk.vtkFiltersGeometry import (
     vtkCompositeDataGeometryFilter, vtkGeometryFilter,
@@ -1088,6 +1090,12 @@ def imageDataSerializer(parent, dataset, datasetId, context, depth):
 # -----------------------------------------------------------------------------
 
 
+def export_legacy_cell_array(cell_array):
+    arr = vtkIdTypeArray()
+    cell_array.ExportLegacyFormat(arr)
+    return arr
+
+
 def polydataSerializer(parent, dataset, datasetId, context, depth):
     datasetType = dataset.GetClassName()
 
@@ -1100,29 +1108,32 @@ def polydataSerializer(parent, dataset, datasetId, context, depth):
         properties['points'] = points
 
         # Verts
-        if dataset.GetVerts() and dataset.GetVerts().GetData().GetNumberOfTuples() > 0:
-            _verts = getArrayDescription(dataset.GetVerts().GetData(), context)
-            properties['verts'] = _verts
-            properties['verts']['vtkClass'] = 'vtkCellArray'
+        verts = dataset.GetVerts()
+        if verts and verts.GetNumberOfCells() > 0:
+            _verts = getArrayDescription(export_legacy_cell_array(verts), context)
+            properties["verts"] = _verts
+            properties["verts"]["vtkClass"] = "vtkCellArray"
 
         # Lines
-        if dataset.GetLines() and dataset.GetLines().GetData().GetNumberOfTuples() > 0:
-            _lines = getArrayDescription(dataset.GetLines().GetData(), context)
-            properties['lines'] = _lines
-            properties['lines']['vtkClass'] = 'vtkCellArray'
+        lines = dataset.GetLines()
+        if lines and lines.GetNumberOfCells() > 0:
+            _lines = getArrayDescription(export_legacy_cell_array(lines), context)
+            properties["lines"] = _lines
+            properties["lines"]["vtkClass"] = "vtkCellArray"
 
         # Polys
-        if dataset.GetPolys() and dataset.GetPolys().GetData().GetNumberOfTuples() > 0:
-            _polys = getArrayDescription(dataset.GetPolys().GetData(), context)
-            properties['polys'] = _polys
-            properties['polys']['vtkClass'] = 'vtkCellArray'
+        polys = dataset.GetPolys()
+        if polys and polys.GetNumberOfCells() > 0:
+            _polys = getArrayDescription(export_legacy_cell_array(polys), context)
+            properties["polys"] = _polys
+            properties["polys"]["vtkClass"] = "vtkCellArray"
 
         # Strips
-        if dataset.GetStrips() and dataset.GetStrips().GetData().GetNumberOfTuples() > 0:
-            _strips = getArrayDescription(
-                dataset.GetStrips().GetData(), context)
-            properties['strips'] = _strips
-            properties['strips']['vtkClass'] = 'vtkCellArray'
+        strips = dataset.GetStrips()
+        if strips and strips.GetNumberOfCells() > 0:
+            _strips = getArrayDescription(export_legacy_cell_array(strips), context)
+            properties["strips"] = _strips
+            properties["strips"]["vtkClass"] = "vtkCellArray"
 
         # Fields
         properties['fields'] = []
