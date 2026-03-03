@@ -2,8 +2,8 @@
 
 ## Version 1.8.8
 
-Panel 1.8.8 focuses on stability, event handling correctness, Pyodide improvements, ESM robustness, and multiple UI fixes. It also introduces a new experimental `freeze` option for `hold()` to improve performance during batch updates. Many thanks to the contributors to this release including:
-@philippjfr, @SumaiyaIslam, @emunsing, @AtharvaJaiswal005, @DevilSpecial, @DanielAlanBates, @FlorianVerdonck, @ahuang11, @SimonHeybrock, @Coderambling, and @MarcSkovMadsen.
+Panel 1.8.8 focuses on stability, event handling correctness, Pyodide improvements, ESM robustness, and multiple UI fixes. It also introduces a new experimental `freeze` option for `hold()` to improve performance during batch updates.
+Many thanks to [@AR21SM](https://github.com/AR21SM) (first contribution), [@AtharvaJaiswal005](https://github.com/AtharvaJaiswal005) (first contribution), [@danielalanbates](https://github.com/danielalanbates) (first contribution), [@DevilSpecial](https://github.com/DevilSpecial) (first contribution), [@emunsing](https://github.com/emunsing) (first contribution), [@nojaf](https://github.com/nojaf) (first contribution), [@SimonHeybrock](https://github.com/SimonHeybrock) (first contribution), [@SuMayaBee](https://github.com/SuMayaBee) (first contribution), [@ahuang11](https://github.com/ahuang11), [@Coderambling](https://github.com/Coderambling), [@philippjfr](https://github.com/philippjfr), and [@hoxbro](https://github.com/hoxbro) for their contributions.
 
 ### ✨ Enhancements
 
