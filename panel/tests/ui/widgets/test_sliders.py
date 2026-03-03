@@ -340,10 +340,12 @@ def test_slider_color_preserved_in_accordion(page, widget_cls):
         "el => getComputedStyle(el).backgroundColor"
     )
 
-    page.locator(".card-header").first.click()
+    accordion_element = page.locator(".accordion").first
+    accordion_element.wait_for()
+    accordion_element.click()
     page.locator(".noUi-target").first.wait_for(state="hidden")
 
-    page.locator(".card-header").first.click()
+    accordion_element.click()
     page.locator(".noUi-target").first.wait_for(state="visible")
 
     restored_color = page.locator(".noUi-connect").first.evaluate(
