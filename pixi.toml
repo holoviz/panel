@@ -228,6 +228,7 @@ setuptools_scm = ">=6"
 lab = 'jupyter lab'
 sync-git-tags = 'python scripts/sync_git_tags.py param'
 setup-dev = { depends-on = ["install", "lint-install"] }
+test-js = 'cd panel && npm install && npx vitest run'
 
 # =============================================
 # =================== TESTS ===================

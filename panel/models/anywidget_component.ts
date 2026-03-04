@@ -32,7 +32,7 @@ import {DataEvent, ReactiveESM, ReactiveESMView} from "./reactive_esm"
 // Deferred<T> — Promise with exposed resolve/reject
 // ---------------------------------------------------------------------------
 
-class Deferred<T> {
+export class Deferred<T> {
   promise: Promise<T>
   resolve!: (value: T) => void
   reject!: (reason?: any) => void
@@ -52,7 +52,7 @@ class Deferred<T> {
 // If get_model is called first, a pending Deferred is created and resolved
 // when register() is called later.
 
-class ModelRegistry {
+export class ModelRegistry {
   private _deferreds: Map<string, Deferred<any>> = new Map()
   private _resolved: Map<string, any> = new Map()
 
@@ -95,7 +95,7 @@ class ModelRegistry {
   }
 }
 
-const MODEL_REGISTRY = new ModelRegistry()
+export const MODEL_REGISTRY = new ModelRegistry()
 
 // ---------------------------------------------------------------------------
 // ChildModelAdapter — lightweight model for child widgets
@@ -103,7 +103,7 @@ const MODEL_REGISTRY = new ModelRegistry()
 // Implements the anywidget/ipywidgets model interface for child widgets
 // referenced via IPY_MODEL_ strings in compound widgets (lonboard, higlass).
 
-class ChildModelAdapter {
+export class ChildModelAdapter {
   model_id: string
   private _state: Record<string, any>
   private _parent: AnyWidgetModelAdapter
@@ -252,7 +252,7 @@ class ChildModelAdapter {
   }
 }
 
-class AnyWidgetModelAdapter {
+export class AnyWidgetModelAdapter {
   declare model: AnyWidgetComponent
   declare model_changes: any
   declare data_changes: any
@@ -263,6 +263,8 @@ class AnyWidgetModelAdapter {
   _cb_map: Map<any, any>
   // Generic "change" event listeners (fire on ANY property change)
   _generic_change_cbs: Set<(...args: any[]) => void>
+  // Per-callback watchers for generic "change" — needed for cleanup in off()
+  _generic_change_watchers: Map<(...args: any[]) => void, Array<{prop: string, wrapped: () => void}>>
   // Cached name maps (built lazily from esm_constants._trait_name_map)
   _cached_trait_name_map: Record<string, string> | null
   _cached_param_name_map: Record<string, string> | null
@@ -282,6 +284,7 @@ class AnyWidgetModelAdapter {
     this.data_changes = {}
     this._cb_map = new Map()
     this._generic_change_cbs = new Set()
+    this._generic_change_watchers = new Map()
     this._cached_trait_name_map = null
     this._cached_param_name_map = null
     this._cached_ws_values = {}
@@ -532,7 +535,25 @@ class AnyWidgetModelAdapter {
     if (event === "change") {
       // Generic "change" event — fires when ANY property changes.
       // Some widgets (e.g. those using @anywidget/signals) rely on this.
+      //
+      // We register Bokeh watchers on every data attribute so the callback
+      // fires regardless of whether any specific "change:<trait>" listener
+      // exists.  Without this, generic change callbacks would only fire as
+      // a side-effect of specific change:x wrappers.
       this._generic_change_cbs.add(cb)
+      const data_attrs = this.model.data?.attributes || {}
+      const watchers: Array<{prop: string, wrapped: () => void}> = []
+      for (const prop of Object.keys(data_attrs)) {
+        if (prop === "esm_constants") {
+          continue
+        }
+        const wrapped = () => {
+          try { cb() } catch (e) { console.error("Error in generic change callback:", e) }
+        }
+        this.model.watch(this.view, prop, wrapped)
+        watchers.push({prop, wrapped})
+      }
+      this._generic_change_watchers.set(cb, watchers)
     } else if (event.startsWith("change:")) {
       const trait_name = event.slice("change:".length)
       const prop = this._to_param_name(trait_name)
@@ -553,10 +574,6 @@ class AnyWidgetModelAdapter {
         const value = this.get(trait_name)
         if (value !== undefined) {
           cb(value)
-        }
-        // Also fire generic "change" listeners
-        for (const gcb of this._generic_change_cbs) {
-          try { gcb() } catch (e) { console.error("Error in generic change callback:", e) }
         }
       }
       this._cb_map.set(cb, wrapped)
@@ -681,14 +698,33 @@ class AnyWidgetModelAdapter {
     // off() with no args — clear everything
     if (!event) {
       this._generic_change_cbs.clear()
+      for (const [, watchers] of this._generic_change_watchers) {
+        for (const {prop, wrapped} of watchers) {
+          this.model.unwatch(this.view, prop, wrapped)
+        }
+      }
+      this._generic_change_watchers.clear()
       this._cb_map.clear()
       return
     }
     if (event === "change") {
       if (cb) {
         this._generic_change_cbs.delete(cb)
+        const watchers = this._generic_change_watchers.get(cb)
+        if (watchers) {
+          for (const {prop, wrapped} of watchers) {
+            this.model.unwatch(this.view, prop, wrapped)
+          }
+          this._generic_change_watchers.delete(cb)
+        }
       } else {
         this._generic_change_cbs.clear()
+        for (const [, watchers] of this._generic_change_watchers) {
+          for (const {prop, wrapped} of watchers) {
+            this.model.unwatch(this.view, prop, wrapped)
+          }
+        }
+        this._generic_change_watchers.clear()
       }
     } else if (event.startsWith("change:")) {
       const trait_name = event.slice("change:".length)
@@ -715,7 +751,7 @@ class AnyWidgetModelAdapter {
 
 // AnyWidgetAdapter extends the model adapter with view-specific features
 // (get_child for nested Panel components within anywidget layouts).
-class AnyWidgetAdapter extends AnyWidgetModelAdapter {
+export class AnyWidgetAdapter extends AnyWidgetModelAdapter {
   declare view: AnyWidgetComponentView
 
   constructor(view: AnyWidgetComponentView) {

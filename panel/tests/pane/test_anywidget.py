@@ -1764,10 +1764,9 @@ class TestSerializeChildState:
         _COMPONENT_CACHE.clear()
         child = ChildWidget(table=b'\x00\x01\x02')
         state = _serialize_child_state(child)
-        # Binary data should be base64-encoded with _pnl_bytes marker
-        # (handled by _deep_serialize at depth > 0 via _serialize_trait)
-        # At depth 0, bytes are passed through for Bokeh's bp.Bytes
-        assert state['table'] == b'\x00\x01\x02' or isinstance(state['table'], dict)
+        # _serialize_trait calls _deep_serialize at depth 0, which passes
+        # bytes through as-is for Bokeh's native bp.Bytes serializer.
+        assert state['table'] == b'\x00\x01\x02'
         _COMPONENT_CACHE.clear()
 
 
@@ -1838,3 +1837,53 @@ class TestIsWidgetSerialization:
     def test_non_widget_serialization_trait(self):
         trait = ParentCompound.class_traits()['value']
         assert _is_widget_serialization(trait) is False
+
+
+# ---------------------------------------------------------------
+# Tuple coercion (JSON list -> tuple for param.Tuple params)
+# ---------------------------------------------------------------
+
+class TupleWidget(anywidget.AnyWidget):
+    _esm = 'function render() {}\nexport default { render };'
+    bounds = traitlets.Tuple(
+        traitlets.Float(), traitlets.Float(),
+        traitlets.Float(), traitlets.Float(),
+        default_value=None, allow_none=True,
+    ).tag(sync=True)
+
+
+def test_process_property_change_list_to_tuple():
+    """AnyWidgetComponent._process_property_change converts JSON lists to tuples
+    for param.Tuple parameters (e.g. lonboard selected_bounds)."""
+    _COMPONENT_CACHE.clear()
+    widget = TupleWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+    result = component._process_property_change({'bounds': [1.0, 2.0, 3.0, 4.0]})
+    assert result['bounds'] == (1.0, 2.0, 3.0, 4.0)
+    assert isinstance(result['bounds'], tuple)
+    _COMPONENT_CACHE.clear()
+
+
+def test_process_property_change_preserves_non_tuple():
+    """Lists for param.List params stay as lists (not coerced to tuple)."""
+    _COMPONENT_CACHE.clear()
+    widget = MultiTraitWidget()
+    pane = AnyWidget(widget)
+    component = pane.component
+    assert component is not None
+    result = component._process_property_change({'data': [1, 2, 3]})
+    assert result['data'] == [1, 2, 3]
+    assert isinstance(result['data'], list)
+    _COMPONENT_CACHE.clear()
+
+
+def test_tuple_length_inferred_from_traitlet():
+    """_traitlet_to_param infers param.Tuple length from traitlet._traits."""
+    _COMPONENT_CACHE.clear()
+    trait = TupleWidget.class_traits()['bounds']
+    p = _traitlet_to_param(trait)
+    assert isinstance(p, param.Tuple)
+    assert p.length == 4
+    _COMPONENT_CACHE.clear()

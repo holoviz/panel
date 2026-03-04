@@ -36,6 +36,8 @@ KNOWN_CONSOLE_MESSAGES = [
     # SVG attribute warnings from wigglystuff canvas-based components
     "<svg> attribute height: Expected length",
     "<svg> attribute width: Expected length",
+    # Split.js CDN library emits this when components are torn down
+    "Event of type 'remove' not recognized",
 ]
 
 

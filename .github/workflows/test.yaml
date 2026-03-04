@@ -54,6 +54,9 @@ jobs:
         with:
           commit_message: "Optimize PNG images (lossless)"
           file_pattern: "*.png"
+      - name: Run JS tests
+        run: |
+          cd panel && npm ci && npx vitest run
 
   setup:
     name: Setup workflow

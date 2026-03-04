@@ -25,13 +25,16 @@
     "@typescript-eslint/parser": "^7.2.0",
     "acorn": "^8.11.3",
     "eslint": "^8.57.0",
-    "flatpickr": "^4.6.9"
+    "flatpickr": "^4.6.9",
+    "jsdom": "^25.0.0",
+    "vitest": "^2.1.0"
   },
   "files": [
     "dist/**/*.{js,js.map,d.ts,json,css,whl}"
   ],
   "main": "dist/panel.min.js",
   "scripts": {
-    "lint": "npx eslint -c .eslintrc.js './*.ts' './models/**/*.ts'"
+    "lint": "npx eslint -c .eslintrc.js './*.ts' './models/**/*.ts'",
+    "test": "vitest run"
   }
 }

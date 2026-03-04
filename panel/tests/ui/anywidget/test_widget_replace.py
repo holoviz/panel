@@ -136,7 +136,13 @@ def test_first_widget_renders(page):
 
 
 @pytest.mark.xfail(
-    reason="AnyWidget pane.object replacement does not reliably re-render ESM content in the browser",
+    reason=(
+        "Widget replacement creates a new Bokeh model via _update_object but BokehJS "
+        "does not reliably tear down the old ESM view and initialize a new one when "
+        "the model is swapped in the parent's children list. The new AnyWidgetComponent "
+        "model is inserted correctly but the ESM render() lifecycle is not re-triggered. "
+        "Fixing requires changes to Panel's ESM rendering pipeline (ReactiveESMView)."
+    ),
     strict=False,
 )
 def test_widget_replace_different_class(page):
@@ -171,7 +177,13 @@ def test_widget_replace_different_class(page):
 
 
 @pytest.mark.xfail(
-    reason="AnyWidget pane.object replacement does not reliably re-render ESM content in the browser",
+    reason=(
+        "Widget replacement creates a new Bokeh model via _update_object but BokehJS "
+        "does not reliably tear down the old ESM view and initialize a new one when "
+        "the model is swapped in the parent's children list. The new AnyWidgetComponent "
+        "model is inserted correctly but the ESM render() lifecycle is not re-triggered. "
+        "Fixing requires changes to Panel's ESM rendering pipeline (ReactiveESMView)."
+    ),
     strict=False,
 )
 def test_new_widget_syncs_after_replace(page):
@@ -204,7 +216,13 @@ def test_new_widget_syncs_after_replace(page):
 
 
 @pytest.mark.xfail(
-    reason="AnyWidget pane.object replacement does not reliably re-render ESM content in the browser",
+    reason=(
+        "Widget replacement creates a new Bokeh model via _update_object but BokehJS "
+        "does not reliably tear down the old ESM view and initialize a new one when "
+        "the model is swapped in the parent's children list. The new AnyWidgetComponent "
+        "model is inserted correctly but the ESM render() lifecycle is not re-triggered. "
+        "Fixing requires changes to Panel's ESM rendering pipeline (ReactiveESMView)."
+    ),
     strict=False,
 )
 def test_old_widget_not_affected_after_replace(page):
@@ -237,7 +255,13 @@ def test_old_widget_not_affected_after_replace(page):
 
 
 @pytest.mark.xfail(
-    reason="AnyWidget pane.object replacement does not reliably re-render ESM content in the browser",
+    reason=(
+        "Widget replacement creates a new Bokeh model via _update_object but BokehJS "
+        "does not reliably tear down the old ESM view and initialize a new one when "
+        "the model is swapped in the parent's children list. The new AnyWidgetComponent "
+        "model is inserted correctly but the ESM render() lifecycle is not re-triggered. "
+        "Fixing requires changes to Panel's ESM rendering pipeline (ReactiveESMView)."
+    ),
     strict=False,
 )
 def test_replace_with_same_class(page):
