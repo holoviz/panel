@@ -104,10 +104,12 @@ class SingleSelectBase(SelectBase):
         values = self.values
         if self.value is None and None not in values and values and not self._allows_none:
             self.value = values[0]
+        self._internal_callbacks.append(
+            self.param.watch(self._update_value_label, ['value', 'options'])
+        )
         self._update_value_label()
 
-    @param.depends('value', 'options', watch=True)
-    def _update_value_label(self):
+    def _update_value_label(self, *events):
         values = self.values
         labels = self.labels
         value = self.value
@@ -227,7 +229,7 @@ class Select(SingleSelectBase):
       or scale mode this will merely be used as a suggestion.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'groups': None,
+        'groups': None, 'value_label': None,
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -763,7 +765,7 @@ class ColorMap(SingleSelectBase):
 
     value_name = param.String(default=None, doc="Name of the selected colormap.")
 
-    _rename = {'options': 'items', 'value_name': None}
+    _rename = {'options': 'items', 'value_name': None, 'value_label': None}
 
     _widget_type: ClassVar[type[Model]] = PaletteSelect
 
@@ -1021,7 +1023,7 @@ class AutocompleteInput(SingleSelectBase):
 
     _allows_none: ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions', 'value_label': None}
 
     _widget_type: ClassVar[type[Model]] = _BkAutocompleteInput
 
@@ -1052,7 +1054,7 @@ class _RadioGroupBase(SingleSelectBase):
     _supports_embed = False
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'options': 'labels', 'value': 'active'
+        'name': None, 'options': 'labels', 'value': 'active', 'value_label': None,
     }
 
     _source_transforms = {'value': "source.labels[value]"}
@@ -1168,7 +1170,7 @@ class _CheckGroupBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active', 'value_label': None}
 
     _source_transforms = {'value': "value.map((index) => source.labels[index])"}
 
