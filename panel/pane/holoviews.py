@@ -962,8 +962,11 @@ def link_axes(root_view, root_model):
                 (ax[-1].start, ax[-1].end) for ax in axes
                 if isinstance(ax[-1], Range1d)
             ])
-            if axis.start > axis.end:
-                end, start = start, end
+            try:
+                if axis.start > axis.end:
+                    end, start = start, end
+            except Exception:
+                pass
             axis.start = start
             axis.end = end
         for fig, p, pax, _ in axes[1:]:
