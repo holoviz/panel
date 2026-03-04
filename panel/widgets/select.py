@@ -34,7 +34,7 @@ from ..models import (
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
 from ..util import (
-    PARAM_NAME_PATTERN, indexOf, isIn, unique_iterator,
+    PARAM_NAME_PATTERN, edit_readonly, indexOf, isIn, unique_iterator,
 )
 from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget
@@ -82,9 +82,17 @@ class SingleSelectBase(SelectBase):
 
     value = param.Parameter(default=None)
 
+    value_label = param.String(default=None, readonly=True, doc="""
+        The label corresponding to the currently selected value.
+        Read-only; automatically updated when ``value`` changes.""")
+
     _allows_values: ClassVar[bool] = True
 
     _allows_none: ClassVar[bool] = False
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'value_label': None,
+    }
 
     _supports_embed: bool = True
     _restrict: bool = True
@@ -96,6 +104,20 @@ class SingleSelectBase(SelectBase):
         values = self.values
         if self.value is None and None not in values and values and not self._allows_none:
             self.value = values[0]
+        self._update_value_label()
+
+    @param.depends('value', 'options', watch=True)
+    def _update_value_label(self):
+        values = self.values
+        labels = self.labels
+        value = self.value
+        if value is not None and values and isIn(value, values):
+            idx = indexOf(value, values)
+            label = labels[idx]
+        else:
+            label = None
+        with edit_readonly(self):
+            self.value_label = label
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
