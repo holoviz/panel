@@ -3047,3 +3047,55 @@ def test_header_filters_categorial_dtype():
 def test_tabulator_aggregators(document, comm, df_agg, aggs):
     tabulator = Tabulator(df_agg, hierarchical=True, aggregators=aggs)
     tabulator.get_root(document, comm)
+
+
+def make_column_order_df():
+    return pd.DataFrame({
+        'col1': [1, 2, 3], 'col2': [4, 5, 6],
+        'col3': [7, 8, 9], 'col4': [10, 11, 12],
+    })
+
+
+def test_tabulator_column_order_default():
+    tab = Tabulator(make_column_order_df())
+    fields = [c.field for c in tab._get_columns()]
+    assert fields == ['index', 'col1', 'col2', 'col3', 'col4']
+
+
+def test_tabulator_column_order_filters_and_reorders():
+    tab = Tabulator(make_column_order_df(), column_order=['col3', 'col1'])
+    fields = [c.field for c in tab._get_columns()]
+    assert fields == ['index', 'col3', 'col1']
+
+
+def test_tabulator_column_order_dynamic_update():
+    tab = Tabulator(make_column_order_df(), column_order=['col3', 'col1'])
+    tab.column_order = ['col2', 'col4', 'col1']
+    assert [c.field for c in tab._get_columns()] == ['index', 'col2', 'col4', 'col1']
+
+    tab.column_order = None
+    assert [c.field for c in tab._get_columns()] == ['index', 'col1', 'col2', 'col3', 'col4']
+
+
+def test_tabulator_column_order_ignores_invalid_columns():
+    df = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6], 'col3': [7, 8, 9]})
+    tab = Tabulator(df, column_order=['col3', 'nonexistent', 'col1'])
+    fields = [c.field for c in tab._get_columns()]
+    assert fields == ['index', 'col3', 'col1']
+
+
+def test_tabulator_column_order_index_not_affected():
+    df = pd.DataFrame(
+        {'col1': [1, 2], 'col2': [3, 4]},
+        index=pd.Index([10, 20], name='my_index')
+    )
+    tab = Tabulator(df, column_order=['col2'])
+    fields = [c.field for c in tab._get_columns()]
+    assert fields == ['my_index', 'col2']
+
+
+def test_tabulator_column_order_model_columns(document, comm):
+    tab = Tabulator(make_column_order_df(), column_order=['col3', 'col1'])
+    model = tab.get_root(document, comm)
+    fields = [c.field for c in model.columns]
+    assert fields == ['index', 'col3', 'col1']
