@@ -415,10 +415,7 @@ export class ReactiveESMView extends HTMLBoxView {
   }
 
   render_children() {
-    for (const child of this.model.children) {
-      if (!this.accessed_children.includes(child)) {
-        return
-      }
+    for (const child of this.accessed_children) {
       const child_model = this.model.data[child]
       const children = isArray(child_model) ? child_model : [child_model]
       for (const subchild of children) {
