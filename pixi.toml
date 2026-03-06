@@ -40,7 +40,7 @@ features = ["py313", "required", "test-core", "test", "example", "test-example",
 no-default-feature = true
 
 [environments.test-314]
-features = ["py314", "required", "test-core", "test-314", "example-314", "test-example", "test-unit-task"]
+features = ["py314", "required", "test-core", "test", "example-314", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-ui]
@@ -259,12 +259,12 @@ watchfiles = "*"
 # Test dependencies
 altair = "*"
 anywidget = "*"
-bokeh-fastapi = ">=0.1.5"
+# bokeh-fastapi = ">=0.1.6"  # not compatible with Bokeh 3.9 until new release
 bokeh_sampledata = "*"
 caddy = "*"
 cryptography = "*"
 diskcache = "*"
-fastapi = "*"
+# fastapi = "*"
 folium = "*"
 ipympl = "*"
 ipyvuetify = "*"
@@ -275,34 +275,6 @@ reacton = "*"
 scipy = "*"
 textual = "*"
 vl-convert-python = "*"
-
-[feature.test-314.dependencies]
-# Optional dependencies - recommended
-holoviews = ">=1.16.0"
-jupyterlab = "*"
-matplotlib-base = "*"
-pillow = "*"
-plotly = ">=6.0"
-# Optional dependencies - dev
-watchfiles = "*"
-# Test dependencies
-altair = "*"
-anywidget = "*"
-bokeh-fastapi = "*"
-bokeh_sampledata = "*"
-caddy = "*"
-cryptography = "*"
-diskcache = "*"
-fastapi = "*"
-folium = "*"
-ipympl = "*"
-ipyvuetify = "*"
-ipywidgets_bokeh = "*"
-# numba = "*"
-polars = "*"
-reacton = "*"
-scipy = "*"
-textual = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
