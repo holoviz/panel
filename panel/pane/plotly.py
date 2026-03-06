@@ -161,7 +161,7 @@ class Plotly(ModelPane):
 
         def _from_plotly(attr):
             mod_attr = getattr(fig, attr, None)
-            return mod_attr is None or getattr(mod_attr, "__module__", "").startswith('plotly')
+            return mod_attr is None or getattr(mod_attr, "__module__", "").startswith('plotly.')
 
         # Monkey patch the message stubs used by FigureWidget, only if the method is from plotly
         if _from_plotly('_send_addTraces_msg'):
