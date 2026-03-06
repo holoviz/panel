@@ -1326,7 +1326,7 @@ class SyncableData(Reactive):
         else:
             pd = None # type: ignore
         data = getattr(self, self._data_params[0])
-        patch_value_dict: Patches = {}
+        patch_value_dict: dict[str, list[Any]] = {}
         if pd and isinstance(patch_value, pd.DataFrame):
             for column in patch_value.columns:
                 patch_value_dict[column] = []
