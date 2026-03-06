@@ -55,6 +55,10 @@ no-default-feature = true
 features = ["py310", "required", "test-core", "test-unit-task", "bokeh37"]
 no-default-feature = true
 
+[environments.test-bokeh38]
+features = ["py310", "required", "test-core", "test-unit-task", "bokeh38"]
+no-default-feature = true
+
 [environments.test-type]
 features = ["py311", "required", "type", "example", "test"]
 no-default-feature = true
@@ -239,6 +243,9 @@ pytest-xdist = "*"
 
 [feature.bokeh37.dependencies]
 bokeh = "3.7.*"
+
+[feature.bokeh38.dependencies]
+bokeh = "3.8.*"
 
 [feature.test.dependencies]
 # Optional dependencies - recommended
