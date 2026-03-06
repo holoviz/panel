@@ -66,6 +66,12 @@ class TestChatInterface:
         chat_interface = ChatInterface(placeholder="Ask anything...")
         assert chat_interface.active_widget.placeholder == "Ask anything..."
 
+    def test_placeholder_dynamic_update(self):
+        chat_interface = ChatInterface(placeholder="Initial")
+        assert chat_interface.active_widget.placeholder == "Initial"
+        chat_interface.placeholder = "Updated placeholder"
+        assert chat_interface.active_widget.placeholder == "Updated placeholder"
+
     def test_placeholder_ignored_with_custom_widgets(self):
         widget = TextInput(name="Text", placeholder="Custom")
         chat_interface = ChatInterface(widgets=[widget], placeholder="Ignored")

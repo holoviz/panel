@@ -192,6 +192,13 @@ class ChatInterface(ChatFeed):
             css_classes=["chat-interface"],
         )
 
+    @param.depends("placeholder", watch=True)
+    def _update_placeholder(self):
+        """Sync placeholder to the active widget when changed dynamically."""
+        widget = self.active_widget
+        if widget is not None and hasattr(widget, "placeholder"):
+            widget.placeholder = self.placeholder
+
     def _link_disabled_loading(self, obj: Viewable):
         """
         Link the disabled and loading attributes of the chat box to the
