@@ -97,6 +97,7 @@ text = pn.widgets.StaticText(value=pn.bind(update_value, select, slider))
 ```
 
 This keeps the component reactive while avoiding unnecessary object recreation and ensures that only the relevant parameter is updated.
+
 ## Related Resources
 
 - Learn [how to use generators with `bind`](bind_generators)
