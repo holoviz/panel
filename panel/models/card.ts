@@ -236,10 +236,9 @@ export class CardView extends ColumnView {
         this.shadow_el.removeChild(child_view.el)
         this._set_child_visible(child_view, false)
       } else {
-        child_view.render()
-        child_view.after_render()
         this.shadow_el.appendChild(child_view.el)
         this._apply_child_visible(child_view)
+        child_view.r_after_render()
       }
     }
     if (this.model.collapsed) {
