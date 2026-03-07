@@ -76,6 +76,7 @@ pn.Row(slider, size, select, pn.pane.Markdown(refs=irefs))
 ```
 
 In this way we can update both the current `object` and the `styles` **Parameter** of the `Markdown` pane simultaneously.
+
 ### Using the bound function as a reference
 
 In some cases it may be tempting to use `watch=True` when calling `pn.bind` to update a component:
