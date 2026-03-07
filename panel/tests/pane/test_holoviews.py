@@ -658,6 +658,29 @@ def test_holoviews_linked_axes_merged_ranges(document, comm):
 
 @pytest.mark.usefixtures("hv_bokeh")
 @hv_available
+def test_holoviews_linked_datetime_axes_after_scroll_and_update(document, comm):
+    dates = [dt.datetime(2021, 1, 1), dt.datetime(2021, 6, 1), dt.datetime(2021, 12, 31)]
+    c1 = hv.Curve((dates, [1, 2, 3]))
+    c2 = hv.Curve((dates, [3, 2, 1]))
+
+    hv1 = HoloViews(c1, backend='bokeh')
+    hv2 = HoloViews(c2, backend='bokeh')
+    layout = Row(hv1, hv2)
+
+    row_model = layout.get_root(document, comm=comm)
+    p1, p2 = row_model.select({'type': figure})
+
+    assert p1.x_range is p2.x_range
+
+    p1.x_range.start = 1609459200000.0
+    p1.x_range.end = 1614556800000.0
+
+    hv1.object = hv.Curve((dates, [4, 5, 6]))
+    hv2.object = hv.Curve((dates, [6, 5, 4]))
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
 def test_holoviews_linked_x_axis(document, comm):
     c1 = hv.Curve([1, 2, 3])
     c2 = hv.Curve([1, 2, 3], vdims='y2')
