@@ -64,10 +64,17 @@ class LazyHTMLSanitizer:
 
     def clean(self, text):
         if self._cleaner is None:
-            import bleach
-            self._cleaner = bleach.sanitizer.Cleaner(**self._kwargs)
-        return self._cleaner.clean(text)
+            try:
+                import nh3
 
+                def _clean(t):
+                    return nh3.clean(t)
+
+                self._cleaner = _clean
+            except ImportError:
+                import bleach
+                self._cleaner = bleach.sanitizer.Cleaner(**self._kwargs).clean
+        return self._cleaner(text)
 HTML_SANITIZER = LazyHTMLSanitizer(strip=True)
 
 
