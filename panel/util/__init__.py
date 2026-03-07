@@ -62,21 +62,19 @@ class LazyHTMLSanitizer:
         self._cleaner = None
         self._kwargs = kwargs
 
-   def clean(self, text):
-    if self._cleaner is None:
-        try:
-            import nh3
+    def clean(self, text):
+        if self._cleaner is None:
+            try:
+                import nh3
 
-            def _cleaner(t):
-                return nh3.clean(t)
+                def _clean(t):
+                    return nh3.clean(t)
 
-            self._cleaner = _cleaner
-
-        except ImportError:
-            import bleach
-            self._cleaner = bleach.sanitizer.Cleaner(**self._kwargs).clean
-
-    return self._cleaner(text)
+                self._cleaner = _clean
+            except ImportError:
+                import bleach
+                self._cleaner = bleach.sanitizer.Cleaner(**self._kwargs).clean
+        return self._cleaner(text)
 HTML_SANITIZER = LazyHTMLSanitizer(strip=True)
 
 
