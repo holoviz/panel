@@ -98,4 +98,5 @@ huggingface
 ploomber
 pycafe
 pythonanywhere
+replit
 ```
