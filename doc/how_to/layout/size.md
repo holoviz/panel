@@ -79,6 +79,78 @@ pn.Column(
         sizing_mode='scale_both'
     ), height=400, width=500, styles={'background': '#f0f0f0'})
 ```
+## Maximum Size Constraints
+
+In addition to setting absolute sizes, components also support the
+`max_width` and `max_height` parameters. These parameters define the
+maximum size a component is allowed to grow to when used in responsive
+layouts.
+
+Example:
+
+```python
+import panel as pn
+pn.extension()
+
+pn.pane.Markdown(
+    "Example text",
+    sizing_mode="stretch_width",
+    max_width=400,
+    max_height=200
+)
+```
+
+These parameters are useful when components should expand with the layout
+but should not exceed a certain size.
+
+## Width and Height Policies
+
+The `width_policy` and `height_policy` parameters control how a component
+behaves when additional space is available in a layout.
+
+Common options include:
+
+- `"auto"` – Use the default sizing behavior.
+- `"fixed"` – Maintain the specified width or height.
+- `"fit"` – Adjust the component size to fit its content.
+- `"max"` – Expand to fill the available space.
+
+Example:
+
+```python
+import panel as pn
+pn.extension()
+
+pn.Row(
+    pn.pane.Str("Resizable component"),
+    width_policy="max"
+)
+```
+
+These policies are particularly useful when working with responsive layouts.
+
+## Global Sizing Mode
+
+Panel allows configuring a default sizing mode globally using
+`pn.config.sizing_mode` or when calling `pn.extension`.
+
+Example:
+
+```python
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+```
+
+Alternatively:
+
+```python
+import panel as pn
+
+pn.config.sizing_mode = "stretch_width"
+```
+
+This sets the default sizing behavior for Panel components unless it is
+explicitly overridden on individual components.
 
 ---
 
