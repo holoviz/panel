@@ -699,6 +699,15 @@ class BaseTable(ReactiveData, Widget):
             import pandas as pd
             if df is not None and col in df.columns and isinstance(df[col].dtype, pd.StringDtype):
                 values[df[col].isna()] = None
+            if values.dtype.kind == "O":
+                needs_fix = [
+                    i for i, v in enumerate(values)
+                    if v is pd.NaT or (isinstance(v, float) and np.isnan(v))
+                ]
+                if needs_fix:
+                    values = values.copy()
+                    for i in needs_fix:
+                        values[i] = None
         return values
 
     def _get_data(self) -> tuple[pd.DataFrame, DataDict]:
