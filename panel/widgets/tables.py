@@ -712,12 +712,7 @@ class BaseTable(ReactiveData, Widget):
 
         import pandas as pd
 
-        # Ensure NaT serialization is enabled.
-        # Must register type(pd.NaT) not pd.NaT itself — Serializer._encode
-        # dispatches via type(obj) lookup, so passing the instance as the key
-        # means the encoder is never found and NaT falls through to
-        # convert_datetime_type() which returns float('nan'), causing a JSON
-        # serialization error.
+        # Ensure NaT serialization is enabled
         try:
             Serializer.register(type(pd.NaT), lambda _, __: None)  # type: ignore
         except AssertionError:
