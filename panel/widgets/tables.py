@@ -699,15 +699,6 @@ class BaseTable(ReactiveData, Widget):
             import pandas as pd
             if df is not None and col in df.columns and isinstance(df[col].dtype, pd.StringDtype):
                 values[df[col].isna()] = None
-            if values.dtype.kind == "O":
-                needs_fix = [
-                    i for i, v in enumerate(values)
-                    if v is pd.NaT or (isinstance(v, float) and np.isnan(v))
-                ]
-                if needs_fix:
-                    values = values.copy()
-                    for i in needs_fix:
-                        values[i] = None
         return values
 
     def _get_data(self) -> tuple[pd.DataFrame, DataDict]:
@@ -721,9 +712,14 @@ class BaseTable(ReactiveData, Widget):
 
         import pandas as pd
 
-        # Ensure NaT serialization is enabled
+        # Ensure NaT serialization is enabled.
+        # Must register type(pd.NaT) not pd.NaT itself — Serializer._encode
+        # dispatches via type(obj) lookup, so passing the instance as the key
+        # means the encoder is never found and NaT falls through to
+        # convert_datetime_type() which returns float('nan'), causing a JSON
+        # serialization error.
         try:
-            Serializer.register(pd.NaT, lambda _, __: None)  # type: ignore
+            Serializer.register(type(pd.NaT), lambda _, __: None)  # type: ignore
         except AssertionError:
             pass
 
