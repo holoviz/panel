@@ -58,7 +58,7 @@ jobs:
           path: lite/dist/
       - name: Set output
         id: vars
-        run: echo "tag=${{ needs.docs_build.outputs.tag }}" >> $GITHUB_OUTPUT
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Upload dev
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
