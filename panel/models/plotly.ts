@@ -414,29 +414,32 @@ export class PlotlyPlotView extends HTMLBoxView {
     this._plotInitialized = true
   }
 
-  _get_trace(index: number, update: boolean): any {
-    const trace = clone(this.model.data[index]) as any
-    const cds = this.model.data_sources[index]
-    for (const column of cds.columns()) {
-      let array = cds.get_array(column)[0]
-      if (array.shape != null && array.shape.length > 1) {
-        array = reshape(array, array.shape)
-      }
-      const prop_path = column.split(".")
-      const prop = prop_path[prop_path.length - 1]
-      let prop_parent = trace
-      for (const k of prop_path.slice(0, -1)) {
-        prop_parent = (prop_parent[k])
-      }
-
-      if (update && prop_path.length == 1) {
-        prop_parent[prop] = [array]
-      } else {
-        prop_parent[prop] = array
-      }
+ _get_trace(index: number, update: boolean): any {
+  const trace = clone(this.model.data[index]) as any
+  const cds = this.model.data_sources[index]
+  const forbidden = ["__proto__", "constructor", "prototype"]
+  for (const column of cds.columns()) {
+    let array = cds.get_array(column)[0]
+    if (array.shape != null && array.shape.length > 1) {
+      array = reshape(array, array.shape)
     }
-    return trace
+    const prop_path = column.split(".")
+    const prop = prop_path[prop_path.length - 1]
+    if (forbidden.includes(prop)) {
+      continue
+    }
+    let prop_parent = trace
+    for (const k of prop_path.slice(0, -1)) {
+      prop_parent = prop_parent[k]
+    }
+    if (update && prop_path.length == 1) {
+      prop_parent[prop] = [array]
+    } else {
+      prop_parent[prop] = array
+    }
   }
+  return trace
+}
 
   _updateViewportFromProperty(): void {
     if (!(window as any).Plotly || this._settingViewport || this._reacting || !this.model.viewport) {
