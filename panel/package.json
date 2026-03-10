@@ -1,6 +1,6 @@
 {
   "name": "@holoviz/panel",
-  "version": "1.8.8-a.0",
+  "version": "1.8.10-a.0",
   "description": "The powerful data exploration & web app framework for Python.",
   "license": "BSD-3-Clause",
   "repository": {
@@ -20,18 +20,19 @@
     "sucrase": "^3.35.0"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin": "^1.6.3",
-    "@typescript-eslint/eslint-plugin": "^7.2.0",
-    "@typescript-eslint/parser": "^7.2.0",
+    "@stylistic/eslint-plugin": "^5.9.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
     "acorn": "^8.11.3",
-    "eslint": "^8.57.0",
-    "flatpickr": "^4.6.9"
+    "eslint": "^9.39.3",
+    "flatpickr": "^4.6.9",
+    "typescript-eslint": "^8.56.1"
   },
   "files": [
     "dist/**/*.{js,js.map,d.ts,json,css,whl}"
   ],
   "main": "dist/panel.min.js",
   "scripts": {
-    "lint": "npx eslint -c .eslintrc.js './*.ts' './models/**/*.ts'"
+    "lint": "npx eslint './*.ts' './models/**/*.ts'"
   }
 }

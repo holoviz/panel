@@ -611,3 +611,51 @@ def test_embed_widget_disabled(document, comm):
     with config.set(embed=True):
         model = panel.get_root(document, comm)
     assert embed_state(panel, model, document) is None
+
+
+
+def test_embed_widget_from_param_class(document, comm):
+    """Test that widgets created via from_param on class parameters can be embedded."""
+    import param
+
+    from panel.widgets import RadioButtonGroup
+
+    class Test(param.Parameterized):
+        fn = param.Selector(default="sin", objects=["sin", "cos"])
+
+    # Create widget from class parameter
+    widget = RadioButtonGroup.from_param(Test.param.fn)
+    panel = Row(widget)
+
+    # Should not raise AttributeError when embedding
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+
+    # embed_state should succeed (returns None when no state to embed)
+    result = embed_state(panel, model, document)
+    # Since this widget was created via class method, param_to_jslink should
+    # return early and not create any jslinks
+    assert result is None
+
+def test_embed_widget_from_param_instance(document, comm):
+    """Test that widgets created via from_param on instance parameters can be embedded."""
+    import param
+
+    from panel.widgets import RadioButtonGroup
+
+    class Test(param.Parameterized):
+        fn = param.Selector(default="sin", objects=["sin", "cos"])
+
+    # Create widget from instance parameter
+    test = Test()
+    widget = RadioButtonGroup.from_param(test.param.fn)
+    panel = Row(widget)
+
+    # Should not raise AttributeError when embedding
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+
+    # embed_state should succeed without raising AttributeError
+    # Returns None when there are no widgets with state to embed
+    result = embed_state(panel, model, document)
+    assert result is None  # No embeddable state for simple widgets without links

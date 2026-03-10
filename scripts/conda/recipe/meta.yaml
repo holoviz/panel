@@ -40,6 +40,7 @@ test:
     - pytest-rerunfailures <16
     - pytest-xdist
     - esbuild
+    - python-gil
   commands:
     - pip check
     - panel --help
