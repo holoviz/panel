@@ -4,11 +4,12 @@ pytest.importorskip("playwright")
 
 try:
     import altair as alt
-    import pandas as pd
 except Exception:
     alt = None  # type: ignore
 
 altair_available = pytest.mark.skipif(alt is None, reason='Requires altair')
+
+import pandas as pd
 
 from playwright.sync_api import expect
 
