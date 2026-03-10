@@ -71,7 +71,7 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
     }
 
     let selectorObject
-    if (eventData.hasOwnProperty("range")) {
+    if (Object.prototype.hasOwnProperty.call(eventData, "range")) {
       // Box selection
       selectorObject = {
         type: "box",
@@ -80,7 +80,7 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
           yrange: eventData.range.y,
         },
       }
-    } else if (eventData.hasOwnProperty("lassoPoints")) {
+    } else if (Object.prototype.hasOwnProperty.call(eventData, "lassoPoints")) {
       // Lasso selection
       selectorObject = {
         type: "lasso",
@@ -110,7 +110,7 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
       const pointData: {[k: string]: any} = {}
       for (const property in fullPoint) {
         const val = fullPoint[property]
-        if (fullPoint.hasOwnProperty(property) &&
+        if (Object.prototype.hasOwnProperty.call(fullPoint, property) &&
             !Array.isArray(val) && !isPlainObject(val) &&
             val !== undefined)  {
           pointData[property] = val
@@ -118,9 +118,9 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
       }
 
       if (fullPoint !== undefined && fullPoint !== null) {
-        if (fullPoint.hasOwnProperty("curveNumber") &&
-           fullPoint.hasOwnProperty("pointNumber") &&
-           data[fullPoint.curveNumber].hasOwnProperty("customdata")) {
+        if (Object.prototype.hasOwnProperty.call(fullPoint, "curveNumber") &&
+           Object.prototype.hasOwnProperty.call(fullPoint, "pointNumber") &&
+           Object.prototype.hasOwnProperty.call(data[fullPoint.curveNumber], "customdata")) {
 
           pointData.customdata =
             data[fullPoint.curveNumber].customdata[
@@ -129,7 +129,7 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
         }
 
         // specific to histogram. see https://github.com/plotly/plotly.js/pull/2113/
-        if (fullPoint.hasOwnProperty("pointNumbers")) {
+        if (Object.prototype.hasOwnProperty.call(fullPoint, "pointNumbers")) {
           pointData.pointNumbers = fullPoint.pointNumbers
         }
       }
@@ -145,15 +145,15 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
      * "xaxis.range[1]": 3.0095292008680063`
      */
     for (const property in eventData) {
-      if (eventData.hasOwnProperty(property))  {
+      if (Object.prototype.hasOwnProperty.call(eventData, property))  {
         filteredEventData[property] = eventData[property]
       }
     }
   }
-  if (eventData.hasOwnProperty("range")) {
+  if (Object.prototype.hasOwnProperty.call(eventData, "range")) {
     filteredEventData.range = eventData.range
   }
-  if (eventData.hasOwnProperty("lassoPoints")) {
+  if (Object.prototype.hasOwnProperty.call(eventData, "lassoPoints")) {
     filteredEventData.lassoPoints = eventData.lassoPoints
   }
   return convertUndefined(filteredEventData)
@@ -270,7 +270,7 @@ export class PlotlyPlotView extends HTMLBoxView {
       return
     }
     const width: number = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity)
-    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity);
+    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity)
     (window as any).Plotly.relayout(this.container, {width, height})
   }
 
@@ -470,12 +470,12 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     // Get range for all xaxis and yaxis properties
     for (const prop in fullLayout) {
-      if (!fullLayout.hasOwnProperty(prop)) {
+      if (!Object.prototype.hasOwnProperty.call(fullLayout, prop)) {
         continue
       }
       const maybe_axis = prop.slice(0, 5)
       if (maybe_axis === "xaxis" || maybe_axis === "yaxis") {
-        viewport[`${prop  }.range`] = deepCopy(fullLayout[prop].range)
+        viewport[`${prop}.range`] = deepCopy(fullLayout[prop].range)
       }
     }
 
