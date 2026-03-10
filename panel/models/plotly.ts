@@ -8,7 +8,7 @@ import {is_equal} from "@bokehjs/core/util/eq"
 import type {Attrs} from "@bokehjs/core/types"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
-import {debounce} from  "debounce"
+import {debounce} from "debounce"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 import {convertUndefined, deepCopy, get, reshape, throttle} from "./util"
@@ -414,10 +414,10 @@ export class PlotlyPlotView extends HTMLBoxView {
     this._plotInitialized = true
   }
 
- _get_trace(index: number, update: boolean): any {
+_get_trace(index: number, update: boolean): any {
   const trace = clone(this.model.data[index]) as any
   const cds = this.model.data_sources[index]
-  const forbidden = ["__proto__", "constructor", "prototype"]
+  const forbidden: string[] = ["__proto__", "constructor", "prototype"]
   for (const column of cds.columns()) {
     let array = cds.get_array(column)[0]
     if (array.shape != null && array.shape.length > 1) {
