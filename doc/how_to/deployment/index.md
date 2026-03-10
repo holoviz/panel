@@ -70,11 +70,11 @@ For guides on running and configuring a Panel server see the [server how-to guid
 ![PY.CAFE Logo](../../_static/logos/pycafe.png)
 :::
 
-:::{grid-item-card} PythonAnywhere
-:link: pythonanywhere
+:::{grid-item-card} Replit
+:link: replit
 :link-type: doc
 
-![PythonAnywhere Logo](../../_static/logos/pythonanywhere.png)
+![Replit Logo](../../_static/logos/replit.png)
 :::
 
 ::::
