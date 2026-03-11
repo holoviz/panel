@@ -119,8 +119,8 @@ class _state(param.Parameterized):
     _base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
 
-    _busy_counter = param.Integer(default=0, doc="""
-       Count of active callbacks current being processed.""")
+    _busy_counter = param.List(default=[], doc="""
+       Active callbacks currently being processed as (event_id, started_at).""")
 
     _memoize_cache = param.Dict(default={}, doc="""
        A dictionary used by the cache decorator.""")
@@ -236,6 +236,7 @@ class _state(param.Parameterized):
 
     # Watchers
     _watch_events: ClassVar[list[asyncio.Event]] = []
+    _busy_cleanup_scheduled: bool = False
 
     # Types
     _notification_type: ClassVar[type[NotificationAreaBase] | None] = None
@@ -311,8 +312,48 @@ class _state(param.Parameterized):
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
+        self._cleanup_busy_counter()
         with edit_readonly(self):
-            self.busy = self._busy_counter >= 1
+            self.busy = bool(self._busy_counter)
+
+    def _add_busy_event(self, event_id: str) -> None:
+        self._cleanup_busy_counter()
+        with edit_readonly(self):
+            self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
+        self._schedule_busy_cleanup()
+
+    def _remove_busy_event(self, event_id: str) -> None:
+        with edit_readonly(self):
+            self._busy_counter = [
+                (eid, started) for eid, started in self._busy_counter if eid != event_id
+            ]
+        self._cleanup_busy_counter()
+
+    def _cleanup_busy_counter(self, timeout: float = 30.0) -> None:
+        now = time.monotonic()
+        with edit_readonly(self):
+            self._busy_counter = [
+                (event_id, started_at)
+                for event_id, started_at in self._busy_counter
+                if now - started_at <= timeout
+            ]
+
+    def _schedule_busy_cleanup(self) -> None:
+        if self._busy_cleanup_scheduled or not self._busy_counter:
+            return
+
+        self._busy_cleanup_scheduled = True
+
+        def cleanup_busy_events():
+            self._busy_cleanup_scheduled = False
+            self._cleanup_busy_counter()
+            if self._busy_counter:
+                self._schedule_busy_cleanup()
+
+        if self._is_pyodide:
+            self._ioloop.call_later(1, cleanup_busy_events)
+        else:
+            self._ioloop.call_later(delay=1, callback=cleanup_busy_events)
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
@@ -854,6 +895,9 @@ class _state(param.Parameterized):
         self._connected.clear()
         self._loaded.clear()
         self.cache.clear()
+        self._busy_cleanup_scheduled = False
+        with edit_readonly(self):
+            self._busy_counter = []
         self._scheduled.clear()
         if self._thread_pool is not None:
             self._thread_pool.shutdown(wait=False)

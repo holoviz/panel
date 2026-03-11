@@ -6,12 +6,13 @@ import asyncio
 import inspect
 import logging
 import time
+import uuid
 
 from functools import partial
 
 import param
 
-from ..util import edit_readonly, function_name
+from ..util import function_name
 from .logging import LOG_PERIODIC_END, LOG_PERIODIC_START
 from .state import curdoc_locked, set_curdoc, state
 
@@ -78,7 +79,7 @@ class PeriodicCallback(param.Parameterized):
             self.stop()
             self.start()
 
-    def _exec_callback(self, post=False):
+    def _exec_callback(self, post=False, busy_event_id=None):
         try:
             with set_curdoc(self._doc):
                 if self.running:
@@ -88,18 +89,17 @@ class PeriodicCallback(param.Parameterized):
                 cb = self.callback() if self.running else None
         finally:
             if post:
-                self._post_callback()
+                self._post_callback(busy_event_id)
         return cb
 
-    def _post_callback(self):
+    def _post_callback(self, busy_event_id=None):
         cbname = function_name(self.callback)
         if self._doc and self.log:
             _periodic_logger.info(
                 LOG_PERIODIC_END, id(self._doc), cbname, self.counter
             )
-        if not self._background:
-            with edit_readonly(state):
-                state._busy_counter -= 1
+        if not self._background and busy_event_id is not None:
+            state._remove_busy_event(busy_event_id)
         if self.timeout is not None:
             dt = (time.time() - self._start_time) * 1000
             if dt > self.timeout:
@@ -108,9 +108,10 @@ class PeriodicCallback(param.Parameterized):
             self.stop()
 
     async def _periodic_callback(self):
+        busy_event_id = None
         if not self._background:
-            with edit_readonly(state):
-                state._busy_counter += 1
+            busy_event_id = f'periodic-{uuid.uuid4().hex}'
+            state._add_busy_event(busy_event_id)
         cbname = function_name(self.callback)
         if self._doc and self.log:
             _periodic_logger.info(
@@ -121,7 +122,7 @@ class PeriodicCallback(param.Parameterized):
             inspect.iscoroutinefunction(self.callback)
         )
         if state._thread_pool and not is_async:
-            future = state._thread_pool.submit(self._exec_callback, True)
+            future = state._thread_pool.submit(self._exec_callback, True, busy_event_id)
             future.add_done_callback(partial(state._handle_future_exception, doc=self._doc))
             return
         try:
@@ -133,7 +134,7 @@ class PeriodicCallback(param.Parameterized):
                 else:
                     await cb
         finally:
-            self._post_callback()
+            self._post_callback(busy_event_id)
 
     async def _async_repeat(self, func):
         """
