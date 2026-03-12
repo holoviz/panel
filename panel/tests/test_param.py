@@ -2053,38 +2053,23 @@ async def test_async_skip_param(document, comm):
     assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
 
 
-def test_param_widget_updates_from_own_callback(document, comm):
-    class ParameterizedCheckbox(param.Parameterized):
-        value = param.Boolean(label='Parameterized checkbox', default=False)
+@pytest.mark.parametrize('param_type,initial_value,user_input,expected_value', [
+    (param.Boolean, False, True, False),
+    (param.Number, 0, 7, 5),
+])
+def test_param_widget_updates_from_own_callback(document, comm, param_type, initial_value, user_input, expected_value):
+    class TestClass(param.Parameterized):
+        value = param_type(default=initial_value)
 
         @param.depends('value', watch=True)
         def update(self):
-            self.value = False
+            self.value = expected_value
 
-    pc = ParameterizedCheckbox()
-    param_pane = Param(pc, parameters=['value'])
+    instance = TestClass()
+    param_pane = Param(instance, parameters=['value'])
     widget = param_pane._widgets['value']
 
-    widget.value = True
+    widget.value = user_input
 
-    assert pc.value is False
-    assert widget.value is False
-
-
-def test_param_widget_updates_from_own_callback_number(document, comm):
-    class ParameterizedNumber(param.Parameterized):
-        value = param.Number(default=0, bounds=(0, 10))
-
-        @param.depends('value', watch=True)
-        def update(self):
-            if self.value != 5:
-                self.value = 5
-
-    pn = ParameterizedNumber()
-    param_pane = Param(pn, parameters=['value'])
-    widget = param_pane._widgets['value']
-
-    widget.value = 7
-
-    assert pn.value == 5
-    assert widget.value == 5
+    assert instance.value == expected_value
+    assert widget.value == expected_value
