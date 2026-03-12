@@ -10,11 +10,11 @@ from bokeh.plotting import figure
 
 from panel.custom import JSComponent
 from panel.layout import Row
-from panel.links import Link
+from panel.links import Callback, Link
 from panel.pane import Bokeh, HoloViews
 from panel.tests.util import hv_available
 from panel.widgets import (
-    ColorPicker, DatetimeInput, FloatInput, FloatSlider, RangeSlider,
+    Button, ColorPicker, DatetimeInput, FloatInput, FloatSlider, RangeSlider,
     TextInput,
 )
 
@@ -398,3 +398,33 @@ def test_link_with_customcode(document, comm):
     assert link_customjs.args['source'] is range_slider
     assert link_customjs.args['x_range'] is x_range
     assert link_customjs.code == f"try {{ {code} }} catch(err) {{ console.log(err) }}"
+
+
+def test_callback_unwatch():
+    button = Button(name="Test")
+    cb = button.js_on_click(args=dict(url="google.com"), code="window.open(url, '_blank');")
+
+    assert len(Callback.registry.get(button, [])) == 1
+    assert cb in Callback.registry[button]
+
+    cb.unwatch()
+
+    assert len(Callback.registry.get(button, [])) == 0
+
+
+def test_callback_unwatch_multiple_callbacks():
+    button = Button(name="Test")
+    cb1 = button.js_on_click(args=dict(url1="url1"), code="console.log('1');")
+    cb2 = button.js_on_click(args=dict(url2="url2"), code="console.log('2');")
+
+    assert len(Callback.registry.get(button, [])) == 2
+
+    cb1.unwatch()
+
+    assert len(Callback.registry.get(button, [])) == 1
+    assert cb1 not in Callback.registry[button]
+    assert cb2 in Callback.registry[button]
+
+    cb2.unwatch()
+
+    assert len(Callback.registry.get(button, [])) == 0
