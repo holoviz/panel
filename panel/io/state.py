@@ -335,16 +335,16 @@ class _state(param.Parameterized):
             ]
 
     def _schedule_busy_cleanup(self) -> None:
-        if state._busy_cleanup_scheduled:
+        if _state._busy_cleanup_scheduled:
             return
         from .callbacks import PeriodicCallback
-        state._busy_cleanup_scheduled = PeriodicCallback(
+        _state._busy_cleanup_scheduled = PeriodicCallback(
             background=True,
             callback=self._cleanup_busy_counter,
             session_scoped=False,
             period=10000
         )
-        state._busy_cleanup_scheduled.start()
+        _state._busy_cleanup_scheduled.start()
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
