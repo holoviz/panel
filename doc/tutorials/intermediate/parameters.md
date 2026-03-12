@@ -196,7 +196,7 @@ import panel as pn
 
 pn.extension()
 
-data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
+data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz'
 
 df = pn.cache(pd.read_csv)(data_url)
 
@@ -215,7 +215,7 @@ import panel as pn
 
 pn.extension()
 
-data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
+data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz'
 
 df = pn.cache(pd.read_csv)(data_url)
 
@@ -236,7 +236,7 @@ import numpy as np
 
 pn.extension()
 
-data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
+data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz'
 df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)
@@ -271,7 +271,7 @@ import numpy as np
 
 pn.extension()
 
-data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
+data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz'
 df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)

@@ -140,6 +140,9 @@ export function set_size(el: HTMLElement, model: HTMLBox, adjust_margin: boolean
           height_policy = "max"
           break
         }
+        case "inherit": {
+          break
+        }
         default: {
           unreachable()
         }

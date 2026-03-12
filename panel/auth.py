@@ -173,7 +173,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
 
     async def _fetch_access_token(
         self, client_id, redirect_uri=None, client_secret=None, code=None,
-        refresh_token=None, username=None, password=None
+        refresh_token=None, username=None, password=None, user=None
     ):
         """
         Fetches the access token.
@@ -231,10 +231,16 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         try:
             response = await http.fetch(req)
         except HTTPClientError as e:
+            # Clear partially initialized user state
+            if user and not state._oauth_user_overrides.get(user, True):
+                del state._oauth_user_overrides[user]
             log.debug("%s access token request failed.", type(self).__name__)
             self._raise_error(e.response, status=401)
 
         if not response.body or not (body:= decode_response_body(response)):
+            # Clear partially initialized user state
+            if user and not state._oauth_user_overrides.get(user, True):
+                del state._oauth_user_overrides[user]
             log.debug("%s token endpoint did not return a valid access token.", type(self).__name__)
             self._raise_error(response)
 
@@ -984,7 +990,10 @@ class BasicAuthProvider(AuthProvider):
     def _allow_guest(self, uri):
         if config.oauth_optional and not (uri == self._login_endpoint or '?code=' in uri):
             return True
-        return True if uri.replace('/ws', '') in self._guest_endpoints else False
+        for gep in self._guest_endpoints:
+            if uri == gep or uri == gep.rstrip('/') + '/ws':
+                return True
+        return False
 
     @property
     def get_user(self):
@@ -1169,9 +1178,9 @@ class OAuthProvider(BasicAuthProvider):
         state._active_users[user] -= 1
         if not state._active_users[user]:
             del state._active_users[user]
-            # Don't remove the user override when it is set to None or
-            # is missing, as this means it is being refreshed.
-            if state._oauth_user_overrides.get(user) is not None:
+            # Don't remove the user override when it is empty
+            # as this means it is being refreshed.
+            if state._oauth_user_overrides.get(user, False):
                 del state._oauth_user_overrides[user]
 
     def _schedule_refresh(self, expiry_ts, user, refresh_token, application, request):
@@ -1195,6 +1204,8 @@ class OAuthProvider(BasicAuthProvider):
             state.schedule_task(task, refresh_cb, at=expiry_date)
 
     async def _scheduled_refresh(self, user, refresh_token, application, request, reschedule=True):
+        if not state._active_users.get(user):
+            return None, None, None
         await self._refresh_access_token(user, refresh_token, application, request)
         if user not in state._oauth_user_overrides:
             return None, None, None
@@ -1223,7 +1234,8 @@ class OAuthProvider(BasicAuthProvider):
         _, access_token, refresh_token, expires_in = await auth_handler._fetch_access_token(
             client_id=config.oauth_key,
             client_secret=config.oauth_secret,
-            refresh_token=refresh_token
+            refresh_token=refresh_token,
+            user=user
         )
         if access_token:
             log.debug("%s successfully refreshed access_token", type(self).__name__)

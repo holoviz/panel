@@ -229,14 +229,13 @@ def test_plotly_swap_traces(document, comm):
         histnorm="probability",
     )
 
-
     plotly = Plotly(bar_plot)
 
     model = plotly.get_root(document, comm)
 
     assert len(model.data_sources) == 1
     cds = model.data_sources[0]
-    assert (cds.data['x'] == data_bar.Category.values).all()
+    assert (cds.data['x'][0] == data_bar.Category.values).all()
     assert (cds.data['y'] == data_bar.Count.values).all()
 
     plotly.object = dist_plot

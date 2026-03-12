@@ -119,8 +119,8 @@ class _state(param.Parameterized):
     _base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
 
-    _busy_counter = param.Integer(default=0, doc="""
-       Count of active callbacks current being processed.""")
+    _busy_counter = param.List(default=[], doc="""
+       Active callbacks currently being processed as (event_id, started_at).""")
 
     _memoize_cache = param.Dict(default={}, doc="""
        A dictionary used by the cache decorator.""")
@@ -196,6 +196,7 @@ class _state(param.Parameterized):
     # Scheduled callbacks
     _scheduled: ClassVar[dict[str, tuple[TIterator[int] | None, Callable[[], None]]]] = {}
     _periodic: ClassVar[WeakKeyDictionary[Document, list[PeriodicCallback]]] = WeakKeyDictionary()
+    _change_callbacks: ClassVar[WeakKeyDictionary[Document, dict[str, Callable[[], Coroutine[Any, Any, None]]]]] = WeakKeyDictionary()
 
     # Indicators listening to the busy state
     _indicators: ClassVar[list[BooleanIndicator]] = []
@@ -235,6 +236,7 @@ class _state(param.Parameterized):
 
     # Watchers
     _watch_events: ClassVar[list[asyncio.Event]] = []
+    _busy_cleanup_scheduled: ClassVar[PeriodicCallback | None] = None
 
     # Types
     _notification_type: ClassVar[type[NotificationAreaBase] | None] = None
@@ -281,6 +283,8 @@ class _state(param.Parameterized):
 
     @property
     def _thread_id(self) -> int | None:
+        if self._is_pyodide:
+            return self._current_thread
         return self._thread_id_.get(self.curdoc) if self.curdoc else None
 
     @_thread_id.setter
@@ -308,8 +312,39 @@ class _state(param.Parameterized):
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
+        self._cleanup_busy_counter()
         with edit_readonly(self):
-            self.busy = self._busy_counter >= 1
+            self.busy = bool(self._busy_counter)
+
+    def _add_busy_event(self, event_id: str) -> None:
+        self._cleanup_busy_counter()
+        with edit_readonly(self):
+            self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
+        self._schedule_busy_cleanup()
+
+    def _remove_busy_event(self, event_id: str) -> None:
+        self._cleanup_busy_counter(event_id)
+
+    def _cleanup_busy_counter(self, event_id: str | None = None, timeout: float = 30.0) -> None:
+        now = time.monotonic()
+        with edit_readonly(self):
+            self._busy_counter = [
+                (eid, started_at)
+                for eid, started_at in self._busy_counter
+                if now - started_at <= timeout and eid != event_id
+            ]
+
+    def _schedule_busy_cleanup(self) -> None:
+        if _state._busy_cleanup_scheduled:
+            return
+        from .callbacks import PeriodicCallback
+        _state._busy_cleanup_scheduled = PeriodicCallback(
+            background=True,
+            callback=self._cleanup_busy_counter,
+            session_scoped=False,
+            period=10000
+        )
+        _state._busy_cleanup_scheduled.start()
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
@@ -851,6 +886,9 @@ class _state(param.Parameterized):
         self._connected.clear()
         self._loaded.clear()
         self.cache.clear()
+        self._busy_cleanup_scheduled = None
+        with edit_readonly(self):
+            self._busy_counter = []
         self._scheduled.clear()
         if self._thread_pool is not None:
             self._thread_pool.shutdown(wait=False)
@@ -970,7 +1008,7 @@ class _state(param.Parameterized):
             )
         else:
             from croniter import croniter
-            base = dt.datetime.now() if at is None else at
+            base = dt.datetime.now(dt.timezone.utc) if at is None else at
             diter = croniter(cron, base)
         now = dt.datetime.now().timestamp()
         try:
@@ -1122,7 +1160,10 @@ class _state(param.Parameterized):
     @rel_path.setter
     def rel_path(self, value: str | None):
         if value is None:
-            return
+            if self.curdoc:
+                self._rel_paths.pop(self.curdoc, None)
+            else:
+                self._rel_path = ''
         elif self.curdoc:
             self._rel_paths[self.curdoc] = value
         else:

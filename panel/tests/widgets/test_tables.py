@@ -21,7 +21,9 @@ from packaging.version import Version
 from panel.depends import bind
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
-from panel.tests.util import mpl_available, serve_and_request, wait_until
+from panel.tests.util import (
+    async_wait_until, mpl_available, serve_and_request, wait_until,
+)
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
@@ -34,7 +36,7 @@ def makeMixedDataFrame():
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
         "B": [0.0, 1.0, 0.0, 1.0, 0.0],
         "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
-        "D": pd.bdate_range("1/1/2009", periods=5),
+        "D": pd.bdate_range("1/1/2009", periods=5).astype("datetime64[ns]"),
     }
     return pd.DataFrame(data)
 
@@ -271,6 +273,22 @@ def test_tabulator_none_value(document, comm):
 
     assert model.source.data == {}
     assert model.columns == []
+
+
+def test_tabulator_mixed_nat_datetime_serializes():
+    from bokeh.core.json_encoder import serialize_json
+    from bokeh.core.serialization import Serializer
+
+    df = pd.DataFrame({"date": [pd.NaT, 12]})
+    df["date"] = pd.to_datetime(df["date"]).dt.date
+
+    table = Tabulator(df)
+    _, data = table._get_data()
+
+    ser = Serializer()
+    payload = ser.encode(data)
+
+    serialize_json(payload)
 
 
 def test_tabulator_update_none_value(document, comm, df_mixed):
@@ -588,6 +606,55 @@ def test_tabulator_expanded_content(document, comm):
     assert 2 in model.children
     row2 = model.children[2]
     assert row2.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+
+def resolve_async_row_content_text(model, idx):
+    if idx not in model.children:
+        return False
+    child = model.children[idx]
+    if not getattr(child, "children", None):
+        return False
+    if not hasattr(child.children[0], "text"):
+        return False
+    return child.children[0].text
+
+
+async def test_tabulator_expanded_content_async(document, comm):
+    df = makeMixedDataFrame()
+
+    async def row_content(row):
+        return row.A
+
+    table = Tabulator(df, expanded=[0], row_content=row_content)
+
+    model = table.get_root(document, comm)
+
+    await async_wait_until(lambda: resolve_async_row_content_text(model, 0) == "&lt;pre&gt;0.0&lt;/pre&gt;")
+    assert len(model.children) == 1
+
+
+async def test_tabulator_content_embed_async(document, comm):
+    df = makeMixedDataFrame()
+
+    async def row_content(row):
+        return row.A
+
+    table = Tabulator(df, embed_content=True, row_content=row_content)
+
+    model = table.get_root(document, comm)
+
+    assert len(model.children) == len(df)
+
+    for i, r in df.iterrows():
+        await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A}&lt;/pre&gt;")
+
+    async def row_content(row):
+        return row.A + 1
+
+    table.row_content = row_content
+
+    for i, r in df.iterrows():
+        await async_wait_until(lambda i=i, r=r: resolve_async_row_content_text(model, i) == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;")
 
 
 def test_tabulator_remote_paginated_expanded_content(document, comm):
@@ -1873,6 +1940,15 @@ def test_tabulator_patch_with_NaT(document, comm):
         np.testing.assert_array_equal(values, expected_array)
         # Not checking that the data in table.value is the same as expected
         # In table.value we have NaT values, in expected np.nan.
+
+@pytest.mark.parametrize('bad_data', [{'col': 'bad'}, {'col': ['bad']}, {'col': [(0, 1, 'bad')]}])
+def test_tabulator_patch_with_bad_dict(bad_data):
+    df = pd.DataFrame(dict(col=[0, 1]))
+
+    table = Tabulator(df)
+
+    with pytest.raises(ValueError, match='wrapped'):
+        table.patch(bad_data)
 
 
 def test_tabulator_stream_series_paginated_not_follow(document, comm):

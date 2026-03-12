@@ -367,7 +367,15 @@ class Perspective(ModelPane, ReactiveData):
         if len(cols) != ncols:
             raise ValueError("Integer columns must be unique when "
                              "converted to strings.")
-        return df, {str(k): v for k, v in data.items()}
+        return df, {str(k): self._cow(v) for k, v in data.items()}
+
+    @staticmethod
+    def _cow(v):
+        # Makes a copy if an numpy array is set to not writeable
+        # this is done by Pandas 3.0 Copy-On-Write
+        if isinstance(v, np.ndarray) and not v.flags.writeable:
+            return v.copy()
+        return v
 
     def _filter_properties(self, properties):
         ignored = list(Viewable.param)

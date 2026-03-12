@@ -20,12 +20,13 @@ from bokeh.application.handlers.directory import DirectoryHandler
 from bokeh.application.handlers.document_lifecycle import (
     DocumentLifecycleHandler,
 )
-from bokeh.application.handlers.function import FunctionHandler
 from bokeh.models import CustomJS
 
 from ..config import config
 from .document import _destroy_document
-from .handlers import MarkdownHandler, NotebookHandler, ScriptHandler
+from .handlers import (
+    FunctionHandler, MarkdownHandler, NotebookHandler, ScriptHandler,
+)
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state

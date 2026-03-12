@@ -1,19 +1,31 @@
-# Sample django + parambokeh apps
+# Sample django + Panel apps
 
 Demos showing how panel can be integrated with django, to varying
 degrees.
 
-To install: `conda install "django=2"` (or install django your
-preferred way).
+To install using `pip`
 
+```bash
+pip install -r requirements.txt
+```
+
+and using `conda`:
+
+
+```bash
+conda install -c conda-forge bokeh-django django==5 django-channels panel
+```
 
 ## sliders
 
 ![screenshot of sliders app](sliders.png)
 
-Based on a standard django2 app template, the sliders app shows how to
-integrate panel with a django view; there's no interaction
-between param and django models.
+Based on a standard Django app template, the sliders app shows how to
+integrate panel with a Django view.
+
+:::{note}
+Currently there is no interaction between param and Django models.
+:::
 
 Additions/modifications to django2 app template:
 
@@ -31,7 +43,6 @@ Additions/modifications to django2 app template:
 
 To run: `python manage.py runserver`, then visit
 http://localhost:8000/sliders in your browser.
-
 
 ## polls
 

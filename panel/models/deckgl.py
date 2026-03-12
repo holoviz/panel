@@ -19,6 +19,8 @@ from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
 
+DECKGL_VERSION = "9.1.14"
+
 
 class DeckGLPlot(HTMLBox):
     """A Bokeh model that wraps around a DeckGL plot and renders it inside a HTMLBox"""
@@ -34,14 +36,14 @@ class DeckGLPlot(HTMLBox):
 
     __javascript_raw__ = [
         f"{config.npm_cdn}/h3-js@4.1.0/dist/h3-js.umd.js",
-        f"{config.npm_cdn}/deck.gl@9.0.20/dist.min.js",
-        f"{config.npm_cdn}/@deck.gl/json@9.0.20/dist.min.js",
+        f"{config.npm_cdn}/deck.gl@{DECKGL_VERSION}/dist.min.js",
+        f"{config.npm_cdn}/@deck.gl/json@{DECKGL_VERSION}/dist.min.js",
         f"{config.npm_cdn}/@loaders.gl/csv@4.2.2/dist/dist.min.js",
         f"{config.npm_cdn}/@loaders.gl/json@4.2.2/dist/dist.min.js",
         f"{config.npm_cdn}/@loaders.gl/3d-tiles@4.2.2/dist/dist.min.js",
         "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js",
         f"{config.npm_cdn}/maplibre-gl/dist/maplibre-gl.js",
-        f"{config.npm_cdn}/@deck.gl/carto@^9.0.20/dist.min.js"
+        f"{config.npm_cdn}/@deck.gl/carto@^{DECKGL_VERSION}/dist.min.js"
     ]
 
     @classproperty
@@ -58,13 +60,13 @@ class DeckGLPlot(HTMLBox):
     __js_require__ = {
         'paths': {
             "h3": f"{config.npm_cdn}/h3-js@4.1.0/dist/h3-js.umd",
-            "deck-gl": f"{config.npm_cdn}/deck.gl@9.0.20/dist.min",
-            "deck-json": f"{config.npm_cdn}/@deck.gl/json@9.0.20/dist.min",
+            "deck-gl": f"{config.npm_cdn}/deck.gl@{DECKGL_VERSION}/dist.min",
+            "deck-json": f"{config.npm_cdn}/@deck.gl/json@{DECKGL_VERSION}/dist.min",
             "loader-csv": f"{config.npm_cdn}/@loaders.gl/csv@4.2.2/dist/dist.min",
             "loader-json": f"{config.npm_cdn}/@loaders.gl/json@4.2.2/dist/dist.min",
             "loader-tiles": f"{config.npm_cdn}/@loaders.gl/3d-tiles@4.2.2/dist/dist.min",
             "mapbox-gl": "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl",
-            "carto": f"{config.npm_cdn}/@deck.gl/carto@^9.0.20/dist.min",
+            "carto": f"{config.npm_cdn}/@deck.gl/carto@^{DECKGL_VERSION}/dist.min",
     },
         'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
         'shim': {

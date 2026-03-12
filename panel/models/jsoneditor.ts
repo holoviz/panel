@@ -56,8 +56,8 @@ export class JSONEditorView extends HTMLBoxView {
   }
 
   override remove(): void {
+    this.editor?.destroy()
     super.remove()
-    this.editor.destroy()
   }
 
   override render(): void {

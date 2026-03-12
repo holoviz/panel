@@ -22,6 +22,7 @@ import typing
 import uuid
 
 from collections.abc import Callable, Mapping
+from html import escape
 from typing import (
     IO, TYPE_CHECKING, Any, ClassVar,
 )
@@ -51,7 +52,7 @@ from .io.notebook import (
 from .io.resources import set_resource_mode
 from .io.save import save
 from .io.state import set_curdoc, state
-from .util import escape, param_reprs
+from .util import param_reprs
 from .util.parameters import get_params_to_inherit
 
 if TYPE_CHECKING:

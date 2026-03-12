@@ -528,7 +528,7 @@ class Param(Pane):
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
         non_param_kwargs = {k: v for k, v in kw_widget.items() if k not in widget_class.param}
 
-        if isinstance(widget_class, type) and issubclass(widget_class, Button):
+        if isinstance(widget_class, type) and isinstance(widget_class.param.value, param.Event):
             kwargs.pop('value', None)
 
         if isinstance(widget_class, WidgetBase):
@@ -571,6 +571,11 @@ class Param(Pane):
                 updating.remove(p_key)
                 if reset:
                     widget.value = new
+                current_val = getattr(parameterized, p_name)
+                if not reset and current_val != new:
+                    is_w = isinstance(widget, Row) and len(widget) == 2
+                    target = widget[0] if is_w else widget
+                    target.param.update(value=current_val)
 
         if hasattr(param, 'Event') and isinstance(p_obj, param.Event):
             def event(change):
@@ -638,11 +643,12 @@ class Param(Pane):
             elif p_key in updating or isinstance(p_obj, param.Event):
                 return
             elif isinstance(p_obj, param.Action):
-                prev_watcher = watchers[0]
-                widget.param.unwatch(prev_watcher)
-                def action(event):
-                    change.new(parameterized)
-                watchers[0] = widget.param.watch(action, 'clicks')
+                if change.type == "changed":
+                    prev_watcher = watchers[0]
+                    widget.param.unwatch(prev_watcher)
+                    def action(event):
+                        change.new(parameterized)
+                    watchers[0] = widget.param.watch(action, 'clicks')
                 return
             elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
@@ -653,8 +659,12 @@ class Param(Pane):
             else:
                 updates['value'] = change.new
 
+            # Ensure we only de-duplicate value events since only
+            # the widget value can be controlled from the frontend
+            value_update = 'value' in updates or 'value_throttled' in updates
             try:
-                updating.append(p_key)
+                if value_update:
+                    updating.append(p_key)
                 if change.type == 'triggered':
                     with discard_events(widget):
                         widget.param.update(**updates)
@@ -665,7 +675,8 @@ class Param(Pane):
                 else:
                     widget.param.update(**updates)
             finally:
-                updating.remove(p_key)
+                if value_update:
+                    updating.remove(p_key)
 
         # Set up links to parameterized object
         watchers.append(parameterized.param.watch(link, p_name, 'constant'))

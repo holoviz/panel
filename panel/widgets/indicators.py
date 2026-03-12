@@ -24,6 +24,7 @@ import sys
 import time
 
 from collections.abc import Mapping
+from html import escape
 from math import pi
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -41,7 +42,7 @@ from ..models import (
 )
 from ..pane.markup import Str
 from ..reactive import SyncableData
-from ..util import PARAM_NAME_PATTERN, escape, updating
+from ..util import PARAM_NAME_PATTERN, updating
 from ..viewable import Viewable
 from .base import Widget
 
@@ -330,7 +331,7 @@ class Number(ValueIndicator):
     >>> Number(name='Rate', value=72, format='{value}%', colors=[(80, 'green'), (100, 'red')]
     """
 
-    default_color = param.String(default='black', doc="""
+    default_color = param.String(default='currentcolor', doc="""
         The color of the Number indicator if no colors are provided""")
 
     colors = param.List(default=None, doc="""
@@ -395,8 +396,8 @@ class String(ValueIndicator):
     The String indicator renders a string with a title.
     """
 
-    default_color = param.String(default='black', doc="""
-        The color of the Number indicator if no colors are provided""")
+    default_color = param.String(default='currentcolor', doc="""
+        The color of the indicator if no colors are provided""")
 
     font_size = param.String(default='54pt', doc="""
         The size of number itself.""")

@@ -281,9 +281,42 @@ def _bytes_converter(value, converter, other):
     )
     return {'id': uid}
 
+def to_py(obj):
+    """Convert JS value to Python, replacing any jsnull (even nested) with None."""
+    root = obj.to_py(default_converter=_bytes_converter)
+    seen = {}
+
+    def fix(x):
+        if x is pyodide.ffi.jsnull:
+            return None
+
+        if isinstance(x, (str, bytes, int, float, bool, type(None))):
+            return x
+
+        oid = id(x)
+        if oid in seen:
+            return seen[oid]
+
+        if isinstance(x, dict):
+            out = {}
+            seen[oid] = out
+            for k, v in x.items():
+                out[k] = fix(v)
+            return out
+
+        if isinstance(x, list):
+            out = []
+            seen[oid] = out
+            out.extend(fix(v) for v in x)
+            return out
+
+        return x
+
+    return fix(root)
+
 def _convert_json_patch(json_patch):
     try:
-        patch = json_patch.to_py(default_converter=_bytes_converter)
+        patch = to_py(json_patch)
         serialized = Serialized(content=patch, buffers=list(_current_buffers))
     finally:
         _current_buffers.clear()
@@ -347,7 +380,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
             return
         json_patch, buffer_map = _process_document_events(pydoc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
-        buffer_map = pyodide.ffi.to_js(buffer_map)
+        buffer_map = js.Map.new(js.Object.entries(pyodide.ffi.to_js(buffer_map)))
         _patching = True
         try:
             jsdoc.apply_json_patch(json_patch, buffer_map)
@@ -359,6 +392,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     try:
         pydoc.unhold()
         pydoc.on_event('document_ready', functools.partial(state._schedule_on_load, pydoc))
+        state._loaded[pydoc] = state._connected[pydoc] = True
         pydoc.callbacks.trigger_event(DocumentReady())
     except Exception as e:
         print(f'Error raised while processing Document events: {e}')  # noqa: T201
@@ -385,7 +419,7 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
             return
         json_patch, buffer_map = _process_document_events(doc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
-        buffers = js.Map.new(pyodide.ffi.to_js(buffer_map))
+        buffers = js.Map.new(js.Object.entries(pyodide.ffi.to_js(buffer_map)))
         dispatch_fn(json_patch, buffers, msg_id)
 
     doc.on_change(pysync)

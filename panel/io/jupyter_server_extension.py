@@ -243,7 +243,7 @@ class PanelJupyterHandler(PanelBaseHandler):
         if self.request.arguments.get('kernel'):
             requested_kernel = self.request.arguments.pop('kernel')[0].decode('utf-8')
         elif notebook_path.suffix == '.ipynb':
-            with open(notebook_path) as f:
+            with open(notebook_path, encoding='utf-8') as f:
                 nb = json.load(f)
             requested_kernel = nb.get('metadata', {}).get('kernelspec', {}).get('name')
         else:

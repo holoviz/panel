@@ -8,6 +8,11 @@ from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
 
 
+def _is_loading_css(url):
+    """Check if URL points to loading.css (either CDN or local path)."""
+    base_url = url.split('?')[0]
+    return base_url.endswith(('/dist/css/loading.css', 'panel/css/loading.css'))
+
 def _custom_repr(self):
     try:
         return f"ImportedStyleSheet(url={self.url!r})"
@@ -124,7 +129,7 @@ def test_design_apply(document, comm):
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/css/loading.css')
+    assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
     assert s3.url.endswith('/dist/bundled/theme/default.css')
     assert isinstance(s4, ImportedStyleSheet)
@@ -143,7 +148,7 @@ def test_design_apply_not_isolated(document, comm):
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/css/loading.css')
+    assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
     assert s3.url.endswith('foo.css')
     assert s4 == '.bk-input {\n  color: red;\n}\n'
@@ -161,7 +166,7 @@ def test_design_apply_inherited(document, comm):
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/css/loading.css')
+    assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
     assert s3.url.endswith('/dist/bundled/theme/default.css')
     assert isinstance(s4, ImportedStyleSheet)
@@ -181,7 +186,7 @@ def test_design_apply_url_inherited(document, comm):
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/css/loading.css')
+    assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
     assert s3.url.endswith('/dist/bundled/theme/default.css')
     assert isinstance(s4, ImportedStyleSheet)
@@ -201,7 +206,7 @@ def test_design_apply_with_dark_theme(document, comm):
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/css/loading.css')
+    assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
     assert s3.url.endswith('/dist/bundled/theme/dark.css')
     assert isinstance(s4, ImportedStyleSheet)
@@ -222,7 +227,7 @@ def test_design_apply_with_dark_theme_not_isolated(document, comm):
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/css/loading.css')
+    assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
     assert s3.url.endswith('foo.css')
     assert s4 == '.bk-input {\n  color: red;\n}\n'

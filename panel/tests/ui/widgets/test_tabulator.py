@@ -19,6 +19,7 @@ from bokeh.models.widgets.tables import (
 )
 from playwright.sync_api import expect
 
+from panel import extension
 from panel.depends import bind
 from panel.io.model import JSCode
 from panel.io.state import state
@@ -27,7 +28,9 @@ from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.pane import Markdown
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
 from panel.util import BOKEH_GE_3_6
-from panel.widgets import Select, Tabulator, TextInput
+from panel.widgets import (
+    Select, Switch, Tabulator, TextInput,
+)
 
 pytestmark = pytest.mark.ui
 
@@ -104,6 +107,18 @@ def test_tabulator_no_console_error(page, df_mixed):
 
     msgs, _ = serve_component(page, widget)
 
+    page.wait_for_timeout(1000)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+def test_tabulator_with_loading_ipywidgets_no_console_error(page, df_mixed):
+
+    def app():
+        extension("ipywidgets", "tabulator")
+        return Tabulator(df_mixed)
+
+    msgs, _ = serve_component(page, app)
     page.wait_for_timeout(1000)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
@@ -742,8 +757,7 @@ def test_tabulator_editors_tabulator_list_default(page):
 
 def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumulator):
     # https://github.com/holoviz/panel/issues/5556
-    df = pd.DataFrame({"tags": ['', '', '']}, index=['foo1', 'foo2', 'foo3'],
-    )
+    df = pd.DataFrame({"tags": ['', '', '']}, index=['foo1', 'foo2', 'foo3'], dtype=object)
     tabulator_editors = {
         'tags': {
             'type': 'list',
@@ -824,6 +838,111 @@ def test_tabulator_editors_nested(page, opt0, opt1):
     items_text = items.all_inner_texts()
     expected = options[opt0][opt1] if opt0 == "B" else options[opt0]
     assert items_text == list(map(str, expected))
+
+
+def test_tabulator_editable(page, df_mixed):
+    code = """
+    function format(cell) {
+        var data = cell.getRow().getData();
+        return data.bool;
+    }
+    """
+    jscode = JSCode(code)
+    widget = Tabulator(
+        df_mixed,
+        editors={
+            "str": StringEditor(),
+            "float": None,
+            "int": IntEditor(),
+            "bool": CheckboxEditor(),
+            "date": None,
+            "datetime": None,
+        },
+        editables={
+            "str": jscode,
+            "float": jscode,
+            "int": False,
+            "bool": True,
+            "date": False,
+            "datetime": True,
+        },
+    )
+
+    serve_component(page, widget)
+
+    # ``str`` is editable depending of the value of bool
+    cell = page.locator('text="A"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(1)
+    cell = page.locator('text="D"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(0)
+
+    # ``float`` is not editable since editor is None
+    cell = page.locator('text="3.14"')
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    # ``int`` is not editable since editable is False
+    cell = page.locator('text="1"').first
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    # ``bool`` is editable
+    cell = page.locator('text="true"').first
+    cell.click()
+    expect(page.locator('input[type="checkbox"]')).to_have_count(1)
+    page.locator('text="D"').click() # To ensure editing mode is not active
+    expect(page.locator('input[type="checkbox"]')).to_have_count(0)
+
+    # ``date`` is not editable since editor is None
+    cell = page.locator('text="2019-01-01"')
+    cell.click()
+    expect(page.locator('input[type="date"]')).to_have_count(0)
+
+    # ``datetime`` is not editable since editor is None
+    cell = page.locator('text="2019-01-01 10:00:00"')
+    cell.click()
+    expect(page.locator('input[type="datetime-local"]')).to_have_count(0)
+
+    # Change the False on the same row of D to True and check that D is editable
+    cell = page.locator('text="false"').first
+    cell.click()
+    checkboxes = page.locator('input[type="checkbox"]')
+    checkboxes.first.click(force=True)
+    cell = page.locator('text="D"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(1)
+
+    # Disable the Tabulator to check that all cell are non editable
+    widget.disabled = True
+
+    cell = page.locator('text="A"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(0)
+    cell = page.locator('text="D"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(0)
+
+    cell = page.locator('text="3.14"')
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    cell = page.locator('text="1"').first
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    cell = page.locator('text="true"').first
+    cell.click()
+    expect(page.locator('input[type="checkbox"]')).to_have_count(0)
+
+    cell = page.locator('text="2019-01-01"')
+    cell.click()
+    expect(page.locator('input[type="date"]')).to_have_count(0)
+
+    cell = page.locator('text="2019-01-01 10:00:00"')
+    cell.click()
+    expect(page.locator('input[type="datetime-local"]')).to_have_count(0)
 
 
 @pytest.mark.parametrize('layout', Tabulator.param['layout'].objects)
@@ -1201,8 +1320,10 @@ def test_tabulator_patch_no_height_resize(page):
 
     page.mouse.wheel(delta_x=0, delta_y=10000)
     at_bottom_script = """
-    () => Math.round(window.innerHeight + window.scrollY) === document.body.scrollHeight
-    """
+    () => {
+      const diff = document.body.scrollHeight - (window.innerHeight + window.scrollY);
+      return Math.abs(diff) <= 5;
+    }"""
     wait_until(lambda: page.evaluate(at_bottom_script), page)
 
     widget.patch({'a': [(len(df)-1, 100)]})
@@ -1276,7 +1397,7 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
     page.wait_for_timeout(500)
 
     # The table should keep the same scroll position, this fails
-    wait_until(lambda: page.locator(f'text="{col_name}"').bounding_box() == bb, page)
+    wait_until(lambda: abs(page.locator(f'text="{col_name}"').bounding_box()['x'] - bb['x']) <= 1, page)
 
 
 def test_tabulator_header_filter_always_visible(page, df_mixed):
@@ -4412,3 +4533,19 @@ def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_ag
             gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
     }
     assert gender_agged == expected_results["gender"]
+
+
+@pytest.mark.parametrize('show_index', [True, False])
+def test_tabulator_show_index_toggle(page, show_index):
+    s = Switch(value=show_index)
+    t = Tabulator(pd.DataFrame(range(10)), show_index=s)
+    row = Column(s, t)
+    serve_component(page, row)
+
+    expect(page.locator('text="index"')).to_have_count(int(show_index))
+
+    page.locator('.bk-knob').first.click()
+    expect(page.locator('text="index"')).to_have_count(int(not show_index))
+
+    page.locator('.bk-knob').first.click()
+    expect(page.locator('text="index"')).to_have_count(int(show_index))

@@ -16,19 +16,13 @@ Including another URLconf
 
 import sliders.pn_app as sliders_app
 
-try:
-    from bokeh_django import autoload, static_extensions
-except ModuleNotFoundError:
-    from bokeh.server.django import autoload, static_extensions
-
+from bokeh_django import autoload, static_extensions
 from django.apps import apps
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 
-from .settings import bokeh_app_module
-
-pn_app_config = apps.get_app_config(bokeh_app_module)
+pn_app_config = apps.get_app_config("bokeh_django")
 
 urlpatterns = [
     path('sliders/', include('sliders.urls')),

@@ -401,6 +401,24 @@ def test_action_param(document, comm):
     assert test.b == 2
 
 
+def test_action_param_triggers_once(document, comm):
+    class Test(param.Parameterized):
+        a = param.Action(default=lambda x: x.param.trigger('a'))
+        b = param.List(default=[])
+
+        @param.depends('a', watch=True)
+        def _record_a(self):
+            self.b.append(True)
+
+    test = Test()
+    test_pane = Param(test)
+
+    pn_button = test_pane.layout[1]
+    pn_button._process_event(None)
+
+    assert len(test.b) == 1
+
+
 def test_number_param_overrides(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=0.1, bounds=(0, 1.1))
@@ -2033,3 +2051,25 @@ async def test_async_skip_param(document, comm):
     button.param.trigger('value')
     await asyncio.sleep(0.01)
     assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+
+
+@pytest.mark.parametrize('param_type,initial_value,user_input,expected_value', [
+    (param.Boolean, False, True, False),
+    (param.Number, 0, 7, 5),
+])
+def test_param_widget_updates_from_own_callback(document, comm, param_type, initial_value, user_input, expected_value):
+    class TestClass(param.Parameterized):
+        value = param_type(default=initial_value)
+
+        @param.depends('value', watch=True)
+        def update(self):
+            self.value = expected_value
+
+    instance = TestClass()
+    param_pane = Param(instance, parameters=['value'])
+    widget = param_pane._widgets['value']
+
+    widget.value = user_input
+
+    assert instance.value == expected_value
+    assert widget.value == expected_value

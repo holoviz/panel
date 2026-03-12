@@ -80,7 +80,65 @@ DataExplorer().servable()
 
 ## Disk Caching
 
-If you have `diskcache` installed, you can also cache the results to disk by setting `to_disk=True`. The `diskcache` library will then cache the value to the supplied `cache_path` (defaulting to `./cache`). Making use of disk caching allows you to cache items even if the server is restarted. You can configure the `cache_path` inline or globally by setting `pn.extension(cache_path=...)` or `pn.config.cache_path = ...`.
+Disk backed caching persists cached results across server restarts, making it ideal for expensive operations like data loading or model inference.
+
+### Prerequisites
+
+First, install the [`diskcache`](https://grantjenks.com/docs/diskcache/) library:
+
+```bash
+pip install diskcache
+```
+
+### Basic Disk Caching
+
+To enable disk caching, set `to_disk=True` when decorating your function:
+
+```{pyodide}
+import panel as pn
+import time
+from datetime import datetime
+
+@pn.cache(to_disk=True)
+def expensive_computation(n):
+    # Simulate expensive operation
+    time.sleep(2)
+    return datetime.now()
+
+# First call takes 2 seconds
+result1 = expensive_computation(5)
+
+# Subsequent calls are instant, even after server restart
+result2 = expensive_computation(5)
+
+pn.Column(result1, result2).servable()
+```
+
+By default, cached values are stored in a `./cache` directory relative to your application.
+
+### Configuring the Cache Path
+
+You can customize where cached values are stored in three ways:
+
+**1. Inline configuration:**
+
+```python
+@pn.cache(to_disk=True, cache_path='./cache1')
+def expensive_computation(n):
+    ...
+```
+
+**2. Global configuration with `pn.extension`:**
+
+```python
+pn.extension(cache_path='./cache2')
+```
+
+**3. Direct configuration:**
+
+```python
+pn.config.cache_path = './cache3'
+```
 
 ## Clearing the Cache
 
@@ -91,3 +149,5 @@ Once a function has been decorated with `pn.cache`, you can easily clear the cac
 By default, any functions decorated or wrapped with `pn.cache` will use a global cache that will be reused across multiple sessions, i.e., multiple users visiting your app will all share the same cache. If instead, you want a session-local cache that only reuses cached outputs for the duration of each visit to your application, you can set `pn.cache(..., per_session=True)`.
 
 ## Related Resources
+
+- [Manually Cache](./manual.md)

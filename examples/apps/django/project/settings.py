@@ -12,13 +12,9 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 
-from bokeh.settings import bokehjsdir, settings
+import bokeh_django
 
-try:
-    import bokeh_django
-    bokeh_app_module = 'bokeh_django'
-except ModuleNotFoundError:
-    bokeh_app_module = 'bokeh.server.django'
+from bokeh.settings import settings
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -44,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     # These are required to connect bokeh
     'channels',
-    bokeh_app_module,
+    'bokeh_django',
 ]
 
 MIDDLEWARE = [
@@ -126,4 +122,4 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [bokehjsdir()]
+STATICFILES_DIRS = [settings.bokehjs_path()]

@@ -42,7 +42,7 @@ export class FeedView extends ColumnView {
       const nodes = this.node_map
 
       for (const entry of entries) {
-        const id = nodes.get(entry.target).id
+        const id = nodes.get(entry.target)?.id
         if (entry.isIntersecting) {
           if (!visible.includes(id)) {
             visible.push(id)

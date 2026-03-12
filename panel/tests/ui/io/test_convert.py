@@ -125,6 +125,18 @@ pn.state.onload(onload)
 row.servable()
 """
 
+resources_app = """
+import os
+import panel as pn
+
+row = pn.Row()
+
+if os.path.isfile('./app.md'):
+    with open('./app.md') as f:
+        row[:] = [f.read()]
+
+row.servable()
+"""
 
 @pytest.fixture(scope="module")
 def http_serve():
@@ -161,13 +173,22 @@ def http_serve():
         temp_dir.cleanup()
 
 
-def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
+def wait_for_app(http_serve, app, page, runtime, wait=True, resources=None, **kwargs):
     app_path = http_serve(app)
+
+    resource_paths = []
+    for resource in (resources or []):
+        resource_path = app_path.parent / pathlib.Path(resource).name
+        try:
+            shutil.copy(resource, resource_path)
+        except shutil.SameFileError:
+            pass
+        resource_paths.append(resource_path)
 
     convert_apps(
         [app_path], app_path.parent, runtime=runtime, build_pwa=False,
         prerender=False, panel_version='local', inline=True,
-        local_prefix=HTTP_URL, **kwargs
+        local_prefix=HTTP_URL, resources=resource_paths, **kwargs
     )
 
     msgs = []
@@ -284,5 +305,17 @@ def test_pyodide_test_convert_onload_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, onload_app, page, runtime)
 
     expect(page.locator('.markdown')).to_have_text('Bar')
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_resources_app(http_serve, page, runtime):
+    resource_path = pathlib.Path(__file__).parent / 'app.md'
+    msgs = wait_for_app(
+        http_serve, resources_app, page, runtime, resources=[resource_path]
+    )
+
+    expect(page.locator('.markdown')).to_have_text(resource_path.read_text().replace('```', '').replace('{pyodide}', ''))
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []

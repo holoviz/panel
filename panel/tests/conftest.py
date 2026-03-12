@@ -23,7 +23,8 @@ import pytest
 
 from bokeh.client import pull_session
 from bokeh.document import Document
-from bokeh.io.doc import curdoc, set_curdoc as set_bkdoc
+from bokeh.io.doc import _PATCHED_CURDOCS, curdoc, set_curdoc as set_bkdoc
+from bokeh.io.state import _STATE
 from pyviz_comms import Comm
 
 from panel import config, serve
@@ -289,6 +290,7 @@ def df_mixed():
         'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
         'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
     }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+    df["datetime"] = df["datetime"].astype("datetime64[ms]")
     return df
 
 
@@ -466,6 +468,8 @@ def server_cleanup():
     try:
         yield
     finally:
+        _PATCHED_CURDOCS.clear()
+        _STATE.document = Document()
         state.reset()
         _watched_files.clear()
         _modules.clear()

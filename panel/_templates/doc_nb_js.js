@@ -5,7 +5,7 @@
   if (!docs) {
     return
   }
-  const py_version = docs[0].version.replace('rc', '-rc.').replace('.dev', '-dev.')
+  const version = docs[0].version.replace('rc', '-rc.').replace('.dev', '-dev.')
   async function embed_document(root) {
     var Bokeh = get_bokeh(root)
     await Bokeh.embed.embed_items_notebook(docs_json, render_items);
@@ -27,12 +27,12 @@
   function get_bokeh(root) {
     if (root.Bokeh === undefined) {
       return null
-    } else if (root.Bokeh.version !== py_version) {
-      if (root.Bokeh.versions === undefined || !root.Bokeh.versions.has(py_version)) {
+    } else if (root.Bokeh.version !== version) {
+      if (root.Bokeh.versions === undefined || !root.Bokeh.versions.has(version)) {
 	return null
       }
-      return root.Bokeh.versions.get(py_version);
-    } else if (root.Bokeh.version === py_version) {
+      return root.Bokeh.versions.get(version);
+    } else if (root.Bokeh.version === version) {
       return root.Bokeh
     }
     return null

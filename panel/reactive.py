@@ -14,10 +14,12 @@ import pathlib
 import re
 import sys
 import textwrap
+import uuid
 
 from collections import Counter, defaultdict, namedtuple
 from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
+from html import escape
 from pprint import pformat
 from typing import (
     TYPE_CHECKING, Any, ClassVar, TypeAlias,
@@ -39,7 +41,7 @@ from param.parameterized import (
 from .io.document import hold, unlocked
 from .io.notebook import push
 from .io.resources import (
-    CDN_DIST, loading_css, patch_stylesheet, process_raw_css,
+    CDN_DIST, get_dist_path, loading_css, patch_stylesheet, process_raw_css,
     resolve_stylesheet,
 )
 from .io.state import set_curdoc, state
@@ -47,7 +49,7 @@ from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    HTML_SANITIZER, classproperty, edit_readonly, escape, updating,
+    HTML_SANITIZER, classproperty, edit_readonly, updating,
 )
 from .util.checks import import_available
 from .viewable import (
@@ -215,7 +217,7 @@ class Syncable(Renderable):
             from .config import config
             stylesheets = [loading_css(
                 config.loading_spinner, config.loading_color, config.loading_max_height
-            ), f'{CDN_DIST}css/loading.css']
+            ), f'{get_dist_path()}css/loading.css']
             stylesheets += process_raw_css(config.raw_css)
             stylesheets += config.css_files
             stylesheets += [
@@ -462,9 +464,10 @@ class Syncable(Renderable):
 
     def _process_events(self, events: dict[str, Any]) -> None:
         self._log('received events %s', events)
+        busy_event_id = None
         if any(e for e in events if e not in self._busy__ignore):
-            with edit_readonly(state):
-                state._busy_counter += 1
+            busy_event_id = f'events-{uuid.uuid4().hex}'
+            state._add_busy_event(busy_event_id)
         try:
             params = {}
             if events and state.curdoc:
@@ -497,23 +500,30 @@ class Syncable(Renderable):
             if state.curdoc and state.curdoc in self._in_process__events:
                 del self._in_process__events[state.curdoc]
             self._log('finished processing events %s', events)
-            if any(e for e in events if e not in self._busy__ignore):
-                with edit_readonly(state):
-                    state._busy_counter -= 1
+            if busy_event_id is not None:
+                state._remove_busy_event(busy_event_id)
 
     def _process_bokeh_event(self, doc: Document, event: Event) -> None:
         self._log('received bokeh event %s', event)
-        with edit_readonly(state):
-            state._busy_counter += 1
+        busy_event_id = f'bokeh-events-{uuid.uuid4().hex}'
+        state._add_busy_event(busy_event_id)
         try:
             with set_curdoc(doc):
                 self._process_event(event)
         finally:
             self._log('finished processing bokeh event %s', event)
-            with edit_readonly(state):
-                state._busy_counter -= 1
+            state._remove_busy_event(busy_event_id)
 
-    async def _change_coroutine(self, doc: Document) -> None:
+    async def _change_coroutine(self, doc: Document, event_id: str | None = None) -> None:
+        if event_id is not None:
+            # Determine if change event was already processed
+            callbacks = state._change_callbacks.get(doc, {})
+            if event_id not in callbacks:
+                return
+            del callbacks[event_id]
+            if not callbacks and doc in state._change_callbacks:
+                del state._change_callbacks[doc]
+
         if state._thread_pool:
             future = state._thread_pool.submit(self._change_event, doc)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
@@ -524,7 +534,11 @@ class Syncable(Renderable):
                 except Exception as e:
                     state._handle_exception(e)
 
-    async def _event_coroutine(self, doc: Document, event) -> None:
+    async def _event_coroutine(self, doc: Document, event: Event) -> None:
+        callbacks = state._change_callbacks.get(doc, {})
+        for cb in list(callbacks.values()):
+            await cb()
+
         if state._thread_pool:
             future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
@@ -580,7 +594,7 @@ class Syncable(Renderable):
             model.on_event(event_name, partial(method, doc))
 
     def _server_event(self, doc: Document, event: Event) -> None:
-        if doc.session_context and not state._unblocked(doc):
+        if doc.session_context and (not state._unblocked(doc) or doc in state._change_callbacks):
             cb = partial(self._event_coroutine, doc, event)
             with set_curdoc(doc):
                 state.execute(cb, schedule=True)
@@ -603,9 +617,15 @@ class Syncable(Renderable):
             return
 
         if doc.session_context:
-            cb = partial(self._change_coroutine, doc)
+            event_id = uuid.uuid4().hex
+            cb = partial(self._change_coroutine, doc, event_id=event_id)
+            if doc in state._change_callbacks:
+                state._change_callbacks[doc][event_id] = cb
+            else:
+                state._change_callbacks[doc] = {event_id: cb}
             if attr in self._priority_changes:
-                doc.add_next_tick_callback(cb) # type: ignore
+                with set_curdoc(doc):
+                    state.execute(cb, schedule=True)
             else:
                 doc.add_timeout_callback(cb, self._debounce) # type: ignore
         else:
@@ -779,7 +799,14 @@ class Reactive(Syncable, Viewable):
                     if callbacks:
                         callbacks[event.name](target, event)
                     else:
-                        setattr(target, links[event.name], event.new)
+                        _is_hv_stream = (
+                            'holoviews' in sys.modules and
+                            isinstance(target, sys.modules['holoviews'].streams.Stream)
+                        )
+                        if _is_hv_stream:
+                            target.event(**{links[event.name]: event.new})
+                        else:
+                            setattr(target, links[event.name], event.new)
                 finally:
                     _updating.pop(_updating.index(event.name))
         params = list(callbacks) if callbacks else list(links)
@@ -1215,7 +1242,7 @@ class SyncableData(Reactive):
             self._stream(stream_value, rollover)
         elif pd and isinstance(stream_value, pd.Series):
             if isinstance(self._processed, dict):
-                self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)
+                self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)  # type: ignore
                 return
             value_index_start = self._processed.index.max() + 1
             self._processed.loc[value_index_start] = stream_value
@@ -1298,7 +1325,7 @@ class SyncableData(Reactive):
         else:
             pd = None # type: ignore
         data = getattr(self, self._data_params[0])
-        patch_value_dict: Patches = {}
+        patch_value_dict: dict[str, list[Any]] = {}
         if pd and isinstance(patch_value, pd.DataFrame):
             for column in patch_value.columns:
                 patch_value_dict[column] = []
@@ -1370,7 +1397,7 @@ class ReactiveData(SyncableData):
                 else:
                     # Timestamps converted from milliseconds to nanoseconds,
                     # to datetime.
-                    converted = (values * 1e6).astype(dtype)  # type: ignore
+                    converted = values.astype("datetime64[ms]").astype(dtype)
         elif dtype.kind == 'O':
             if (all(isinstance(ov, dt.date) for ov in old_values) and
                 not all(isinstance(iv, dt.date) for iv in values)):

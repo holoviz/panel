@@ -23,10 +23,9 @@ from typing import (
 )
 
 import bokeh.embed.wrappers
-import param
 
 from bokeh.embed.bundle import (
-    CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle,
+    CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle, _any,
     _bundle_extensions, _use_mathjax, bundle_models, extension_dirs,
 )
 from bokeh.model import Model
@@ -38,7 +37,7 @@ from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
-from ..util import isurl, url_path
+from ..util import _descendents, isurl, url_path
 from .state import state
 
 if TYPE_CHECKING:
@@ -313,6 +312,8 @@ def patch_stylesheet(stylesheet, dist_url):
         patched_url = url.replace(CDN_DIST, dist_url)
     elif url.startswith(LOCAL_DIST) and dist_url.lstrip('./').startswith(LOCAL_DIST):
         patched_url = url.replace(LOCAL_DIST, dist_url)
+    elif url.startswith(LOCAL_DIST) and dist_url != LOCAL_DIST:
+        patched_url = url.replace(LOCAL_DIST, dist_url)
     else:
         return
     version_suffix = f'?v={JS_VERSION}'
@@ -416,11 +417,15 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
     bdir = BUNDLE_DIR / name
     shared = list((JS_URLS if file_type == 'javascript' else CSS_URLS).values())
     files = []
+    npm_cdn_prefixes = (config.npm_cdn, 'https://cdn.jsdelivr.net/npm', 'https://unpkg.com')
     for url in raw_files:
         if url.startswith(CDN_DIST):
             filepath = url.replace(f'{CDN_DIST}bundled/', '')
-        elif url.startswith(config.npm_cdn):
-            filepath = url.replace(config.npm_cdn, '')[1:]
+        elif url.startswith(npm_cdn_prefixes):
+            for prefix in npm_cdn_prefixes:
+                if url.startswith(prefix):
+                    filepath = url.replace(prefix, '')[1:]
+                    break
         else:
             filepath = url_path(url)
         test_filepath = filepath.split('?')[0]
@@ -444,6 +449,12 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
             files.append(url)
     return files
 
+def _panel_use_mathjax(roots) -> bool:
+    """Whether any model in roots is a Panel HTML model (may need MathJax)."""
+    from ..models.markup import HTML as PanelHTML
+    return _any(roots, lambda obj: isinstance(obj, PanelHTML))
+
+
 def bundle_resources(
     roots,
     resources: BkResources,
@@ -466,7 +477,11 @@ def bundle_resources(
     if isinstance(enable_mathjax, bool):
         use_mathjax = enable_mathjax
     elif roots:
-        use_mathjax = _use_mathjax(roots) or 'mathjax' in ext._loaded_extensions
+        use_mathjax = (
+            _use_mathjax(roots) or
+            _panel_use_mathjax(roots) or
+            'mathjax' in ext._loaded_extensions
+        )
     else:
         use_mathjax = 'mathjax' in ext._loaded_extensions
 
@@ -714,7 +729,7 @@ class Resources(BkResources):
         Adds resources for ReactiveHTML components.
         """
         from ..reactive import ReactiveCustomBase
-        for model in param.concrete_descendents(ReactiveCustomBase).values():
+        for model in _descendents(ReactiveCustomBase, concrete=True):
             cls_files = getattr(model, resource_type, None)
             if not (cls_files and model._loaded()):
                 continue
@@ -728,7 +743,7 @@ class Resources(BkResources):
                 if self.mode == 'cdn':
                     resource = resolve_resource_cdn(resource)
                 if state.rel_path:
-                    resource = resource.lstrip(state.rel_path+'/')
+                    resource = resource.removeprefix(state.rel_path+'/')
                 if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
                     resource = component_resource_path(model, resource_type, resource)
                 if resource not in resources:
@@ -868,6 +883,13 @@ class Resources(BkResources):
         js_files = self.adjust_paths([
             js for js in files if self.mode != 'inline' or not is_cdn_url(js)
         ])
+
+        # Load requirejs last to avoid interfering with other libraries
+        require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
+        if require_index:
+            requirejs = js_files.pop(require_index[0])
+            js_files.append(requirejs)
+
         return js_files
 
     @property
@@ -893,12 +915,12 @@ class Resources(BkResources):
                 if res not in modules
             ]
 
-        for model in param.concrete_descendents(ReactiveCustomBase).values():
+        for model in _descendents(ReactiveCustomBase, concrete=True):
             if not (getattr(model, '__javascript_modules__', None) and model._loaded()):
                 continue
             for js_module in model.__javascript_modules__:
                 if state.rel_path:
-                    js_module = js_module.lstrip(state.rel_path+'/')
+                    js_module = js_module.removeprefix(state.rel_path+'/')
                 if not isurl(js_module) and not js_module.startswith('static/extensions'):
                     js_module = component_resource_path(model, '__javascript_modules__', js_module)
                 if js_module not in modules:

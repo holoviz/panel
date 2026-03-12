@@ -483,3 +483,14 @@ def test_file_input_save_one_file(document, comm, tmpdir):
     assert fpath.exists()
     content = fpath.read_text()
     assert content == 'Some text\n'
+
+def test_int_input_placeholder(document, comm):
+
+    int_input = IntInput(placeholder='Foo', name='IntInput')
+
+    widget = int_input.get_root(document, comm=comm)
+
+    assert widget.placeholder == "Foo"
+
+    int_input.placeholder = "Bar"
+    assert widget.placeholder == "Bar"

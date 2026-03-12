@@ -78,6 +78,12 @@ class Convert(Subcommand):
             action  = 'store_true',
             help    = "Whether to disable patching http requests using the pyodide-http library."
         )),
+        ('--resources', Argument(
+            nargs   = '+',
+            help    = (
+                "Files to pack for distribution with the app. Does only support files located in the directory of the main panel app (or in subdirectories below)."
+            )
+        )),
         ('--watch', Argument(
             action  = 'store_true',
             help    = "Watch the files"
@@ -131,10 +137,17 @@ class Convert(Subcommand):
             try:
                 convert_apps(
                     cast(list[os.PathLike], files),
-                    dest_path=args.out, runtime=runtime, requirements=requirements,
-                    prerender=not args.skip_embed, build_index=index, build_pwa=args.pwa,
-                    title=args.title, max_workers=args.num_procs,
-                    http_patch=not args.disable_http_patch, compiled=args.compiled,
+                    dest_path=args.out,
+                    runtime=runtime,
+                    requirements=requirements,
+                    resources=args.resources,
+                    prerender=not args.skip_embed,
+                    build_index=index,
+                    build_pwa=args.pwa,
+                    title=args.title,
+                    max_workers=args.num_procs,
+                    http_patch=not args.disable_http_patch,
+                    compiled=args.compiled,
                     verbose=True
                 )
             except KeyboardInterrupt:

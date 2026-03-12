@@ -187,7 +187,7 @@ def test_card_scrollable(page):
 def test_card_widget_not_collapsed(page, card_components):
     # Fixes https://github.com/holoviz/panel/issues/7045
     w1, w2 = card_components
-    card = Card(w1, header=Row(w2))
+    card = Card("content", title="MyTitle", header=Row(w1, w2))
 
     serve_component(page, card)
 
@@ -199,5 +199,50 @@ def test_card_widget_not_collapsed(page, card_components):
     text_input.press("F")
     text_input.press("Enter")
 
+    slider_input = page.locator('.noUi-base')
+    expect(slider_input).to_have_count(1)
+    slider_input.click()
+
     wait_until(lambda: w2.value == 'F', page)
     assert not card.collapsed
+
+
+def test_card_child_visible(page, card_components):
+    w1, w2 = card_components
+    w1.visible = False
+    card = Card(w1, title="Foo", collapsed=True)
+
+    serve_component(page, card)
+
+    slider = page.locator('.bk-Slider')
+    expect(slider).not_to_be_visible()
+
+    w1.visible = True
+
+    expect(slider).not_to_be_visible()
+
+    card.collapsed = False
+
+    expect(slider).to_be_visible()
+
+    card.collapsed = True
+
+    # Ensure newly added component respects visibility
+    card.append(w2)
+
+    text_input = page.locator(".class_w2")
+
+    expect(text_input).not_to_be_visible()
+
+    # Ensure opening card renders visible component
+    card.collapsed = False
+    expect(text_input).to_be_visible()
+
+    # Ensure setting visible restores visibility
+    w2.visible = False
+    expect(text_input).not_to_be_visible()
+
+    # Ensure toggling collapsed doesn't override visible state
+    card.collapsed = True
+    card.collapsed = False
+    expect(text_input).not_to_be_visible()

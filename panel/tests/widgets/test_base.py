@@ -5,6 +5,7 @@ from panel.io import block_comm
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.tests.util import check_layoutable_properties
+from panel.util import _descendents
 from panel.widgets import (
     CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge,
     LoadingSpinner, Terminal, TextInput, ToggleGroup, Tqdm, Widget,
@@ -17,7 +18,7 @@ excluded = (
 )
 
 all_widgets = [
-    w for w in param.concrete_descendents(Widget).values()
+    w for w in _descendents(Widget, concrete=True)
     if not w.__name__.startswith('_') and not issubclass(w, excluded)
 ]
 

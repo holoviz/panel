@@ -9,6 +9,7 @@ import base64
 import struct
 
 from collections.abc import Mapping
+from html import escape
 from io import BytesIO
 from pathlib import PurePath
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -16,8 +17,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import param
 
 from ..models import PDF as _BkPDF
-from ..util import isfile, isurl
-from .markup import HTMLBasePane, escape
+from ..util import _descendents, isfile, isurl
+from .markup import HTMLBasePane
 
 if TYPE_CHECKING:
     from bokeh.model import Model
@@ -255,7 +256,7 @@ class Image(ImageBase):
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         precedences = []
-        for img_cls in param.concrete_descendents(ImageBase).values():
+        for img_cls in _descendents(ImageBase, concrete=True):
             if img_cls is Image:
                 continue
             applies = img_cls.applies(obj)
@@ -272,7 +273,7 @@ class Image(ImageBase):
             k: v for k, v in self.param.values().items()
             if k not in ('name', 'object')
         }
-        for img_cls in param.concrete_descendents(ImageBase).values():
+        for img_cls in _descendents(ImageBase, concrete=True):
             if img_cls is not Image and img_cls.applies(obj):
                 return img_cls(obj, **params)._transform_object(obj)
         return {'object': '<img></img>'}
@@ -300,6 +301,8 @@ class PNG(ImageBase):
     @classmethod
     def _imgshape(cls, data):
         import struct
+        if len(data) < 24:
+            raise ValueError("Could not determine dimensions of PNG image: insufficient data")
         w, h = struct.unpack('>LL', data[16:24])
         return int(w), int(h)
 
@@ -326,6 +329,8 @@ class GIF(ImageBase):
     @classmethod
     def _imgshape(cls, data):
         import struct
+        if len(data) < 10:
+            raise ValueError("Could not determine dimensions of GIF image: insufficient data")
         w, h = struct.unpack("<HH", data[6:10])
         return int(w), int(h)
 
@@ -358,6 +363,8 @@ class ICO(ImageBase):
     @classmethod
     def _imgshape(cls, data):
         import struct
+        if len(data) < 8:
+            raise ValueError("Could not determine dimensions of ICO image: insufficient data")
         w, h = struct.unpack("<BB" , data[6:8])
         return int(w or 256), int(h or 256)
 
@@ -391,16 +398,18 @@ class JPG(ImageBase):
         b.read(2)
         c = b.read(1)
         while (c and ord(c) != 0xDA):
-            while (ord(c) != 0xFF): c = b.read(1)
-            while (ord(c) == 0xFF): c = b.read(1)
+            while (c and ord(c) != 0xFF): c = b.read(1)
+            while (c and ord(c) == 0xFF): c = b.read(1)
+            if not c:
+                break
             if (ord(c) >= 0xC0 and ord(c) <= 0xC3):
                 b.read(3)
                 h, w = struct.unpack(">HH", b.read(4))
-                break
+                return int(w), int(h)
             else:
                 b.read(int(struct.unpack(">H", b.read(2))[0])-2)
             c = b.read(1)
-        return int(w), int(h)
+        raise ValueError("Could not determine dimensions of JPEG image: no SOF marker found")
 
 
 class SVG(ImageBase):
@@ -592,10 +601,14 @@ class AVIF(ImageBase):
 
     @classmethod
     def _imgshape(cls, data: bytes) -> tuple[int, int]:
-        # The width and height position are stored withyin the ispe box, its format is :
+        # The width and height position are stored within the ispe box, its format is:
         # ispe + 4 bytes + 4 bytes for width + 4 bytes for height
 
         ispe = data.find(b"ispe")
+        if ispe == -1:
+            raise ValueError("Could not determine dimensions of AVIF image: no 'ispe' box found")
+        if len(data) < ispe + 16:
+            raise ValueError("Could not determine dimensions of AVIF image: 'ispe' box is truncated or incomplete")
         w = int.from_bytes(data[ispe + 8 : ispe + 12], byteorder="big", signed=False)
         h = int.from_bytes(data[ispe + 12 : ispe + 16], byteorder="big", signed=False)
 

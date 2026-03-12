@@ -236,10 +236,10 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
     if page:
         await page.wait_for_load_state('networkidle')
 
-    start = time.time()
+    start = time.monotonic()
 
     def timed_out():
-        elapsed = time.time() - start
+        elapsed = time.monotonic() - start
         elapsed_ms = elapsed * 1000
         return elapsed_ms > timeout
 
@@ -263,7 +263,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
             # None is returned when the function has an assert
             if result is None:
                 return
-            # When the function returns True or False
+            # When the function returns True
             if result:
                 return
             if timed_out():

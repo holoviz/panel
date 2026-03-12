@@ -155,21 +155,29 @@ class Plotly(ModelPane):
 
     @param.depends('object', 'link_figure', watch=True)
     def _update_figure(self):
-        import plotly.graph_objs as go
-
-        if (self.object is None or not isinstance(self.object, (go.Figure, go.FigureWidget)) or
-            self.object is self._figure or not self.link_figure):
+        fig = self.object
+        if (fig is None or isinstance(fig, (dict, list, tuple)) or fig is self._figure or not self.link_figure):
             return
 
-        # Monkey patch the message stubs used by FigureWidget.
-        fig = self.object
-        fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure('add')
-        fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure('delete')
-        fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure('move')
-        fig._send_restyle_msg = self._send_restyle_msg
-        fig._send_relayout_msg = self._send_relayout_msg
-        fig._send_update_msg = self._send_update_msg
-        fig._send_animate_msg = lambda *_, **__: self._update_from_figure('animate')
+        def _from_plotly(attr):
+            mod_attr = getattr(fig, attr, None)
+            return mod_attr is None or getattr(mod_attr, "__module__", "").startswith('plotly.')
+
+        # Monkey patch the message stubs used by FigureWidget, only if the method is from plotly
+        if _from_plotly('_send_addTraces_msg'):
+            fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure('add')
+        if _from_plotly('_send_deleteTraces_msg'):
+            fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure('delete')
+        if _from_plotly('_send_moveTraces_msg'):
+            fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure('move')
+        if _from_plotly('_send_restyle_msg'):
+            fig._send_restyle_msg = self._send_restyle_msg
+        if _from_plotly('_send_relayout_msg'):
+            fig._send_relayout_msg = self._send_relayout_msg
+        if _from_plotly('_send_update_msg'):
+            fig._send_update_msg = self._send_update_msg
+        if _from_plotly('_send_animate_msg'):
+            fig._send_animate_msg = lambda *_, **__: self._update_from_figure('animate')
         self._figure = fig
 
     def _send_relayout_msg(self, relayout_data, source_view_id=None):

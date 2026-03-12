@@ -107,14 +107,6 @@ for item in zin.infolist():
         filename.endswith("bokeh.json") or any(filename.endswith(ext) for ext in exts)
     ):
         continue
-    elif filename.startswith("bokeh-") and filename.endswith("METADATA"):
-        # Remove tornado dependency
-        buffer = "\n".join(
-            [
-                line for line in buffer.decode("utf-8").split("\n")
-                if "Requires-Dist: tornado" not in line
-            ]
-        ).encode("utf-8")
     zout.writestr(item, buffer)
 
 zout.close()

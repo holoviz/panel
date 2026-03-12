@@ -37,7 +37,7 @@ from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.apps import apps
 
-bokeh_app_config = apps.get_app_config('bokeh.server.django')
+bokeh_app_config = apps.get_app_config('bokeh_django')
 
 application = ProtocolTypeRouter({
     'websocket': AuthMiddlewareStack(URLRouter(bokeh_app_config.routes.get_websocket_urlpatterns())),
@@ -52,7 +52,7 @@ Lastly we need to add some configuration to `examples/apps/django/project/settin
 INSTALLED_APPS = [
     ...,
     'channels',
-    'bokeh.server.django',
+    'bokeh_django',
 ]
 ```
 
@@ -86,7 +86,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 import sliders.pn_app as sliders_app
 
-pn_app_config = apps.get_app_config('bokeh.server.django')
+pn_app_config = apps.get_app_config('bokeh_django')
 
 urlpatterns = [
     path('sliders/', include('sliders.urls')),
