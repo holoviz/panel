@@ -215,8 +215,14 @@ export class CardView extends ColumnView {
   }
 
   _toggle_button(e: MouseEvent): void {
-    for (const path of e.composedPath()) {
-      if (path instanceof HTMLInputElement) {
+    const is_panel_widget = (el: EventTarget): boolean =>
+      el instanceof HTMLInputElement || (
+        el instanceof HTMLElement &&
+	Array.from(el.classList).some((c) => c.startsWith("bk-panel-models-widgets-")))
+
+    for (const el of e.composedPath()) {
+      // If the click came from any Panel widget in the header, don't toggle.
+      if (is_panel_widget(el)) {
         return
       }
     }
@@ -230,10 +236,9 @@ export class CardView extends ColumnView {
         this.shadow_el.removeChild(child_view.el)
         this._set_child_visible(child_view, false)
       } else {
-        child_view.render()
-        child_view.after_render()
         this.shadow_el.appendChild(child_view.el)
         this._apply_child_visible(child_view)
+        child_view.r_after_render()
       }
     }
     if (this.model.collapsed) {

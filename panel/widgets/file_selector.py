@@ -191,7 +191,9 @@ class BaseFileSelector(param.Parameterized):
         super().__init__(**params)
 
         # Set up periodic callback
-        self._periodic = PeriodicCallback(callback=self._refresh, period=self.refresh_period or 0)
+        self._periodic = PeriodicCallback(
+            background=True, callback=self._refresh, period=self.refresh_period or 0
+        )
         self.param.watch(self._update_periodic, 'refresh_period')
         if self.refresh_period:
             self._periodic.start()

@@ -13,7 +13,7 @@ import time
 import weakref
 
 from collections.abc import Callable, Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from functools import partial, wraps
 from typing import TYPE_CHECKING, Any
 from weakref import WeakKeyDictionary
@@ -539,7 +539,12 @@ def dispatch_events(events, doc: Document | None = None):
         doc.callbacks._held_events = events
 
 @contextmanager
-def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
+def hold(
+    doc: Document | None = None,
+    policy: HoldPolicyType = 'combine',
+    comm: Comm | None = None,
+    freeze: bool = False,
+):
     """
     Context manager that holds events on a particular Document
     allowing them all to be collected and dispatched when the context
@@ -556,39 +561,51 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
         dispatched when the context manager exits.
     comm: Comm
         The Comm to dispatch events on when the context manager exits.
+    freeze: bool
+        **Experimental.** Whether to freeze the Document model
+        references for the duration of the hold. When True, defers
+        expensive model graph recomputation
+        (``doc.models.recompute()``) until the hold exits, which can
+        significantly speed up batch updates that modify many models.
+        Safe to nest with the per-model ``freeze_doc`` calls used
+        internally, since Bokeh's freeze mechanism is
+        reference-counted.
     """
     doc = doc or state.curdoc
     if doc is None:
         yield
         return
-    threaded = state._current_thread != state._thread_id
-    held = doc.callbacks.hold_value
-    try:
-        if policy is None:
-            doc.unhold()
-            yield
-        elif threaded:
-            doc.hold(policy)
-            yield
-        else:
-            with unlocked(policy=policy):
-                if not doc.callbacks.hold_value:
-                    doc.hold(policy)
+    with ExitStack() as stack:
+        if freeze and hasattr(doc, 'models'):
+            stack.enter_context(doc.models.freeze())
+        threaded = state._current_thread != state._thread_id
+        held = doc.callbacks.hold_value
+        try:
+            if policy is None:
+                doc.unhold()
                 yield
-    finally:
-        if held:
-            doc.callbacks._hold = held
-        elif comm is not None:
-            from .notebook import push
-            push(doc, comm)
-        elif not state._connected.get(doc):
-            doc.callbacks._hold = None
-        elif threaded:
-            doc.callbacks._hold = None
-            doc.add_next_tick_callback(doc.unhold)
-            doc.callbacks._hold = policy
-        else:
-            doc.unhold()
+            elif threaded:
+                doc.hold(policy)
+                yield
+            else:
+                with unlocked(policy=policy):
+                    if not doc.callbacks.hold_value:
+                        doc.hold(policy)
+                    yield
+        finally:
+            if held:
+                doc.callbacks._hold = held
+            elif comm is not None:
+                from .notebook import push
+                push(doc, comm)
+            elif not state._connected.get(doc):
+                doc.callbacks._hold = None
+            elif threaded:
+                doc.callbacks._hold = None
+                doc.add_next_tick_callback(doc.unhold)
+                doc.callbacks._hold = policy
+            else:
+                doc.unhold()
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
