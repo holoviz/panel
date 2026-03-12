@@ -605,8 +605,10 @@ class AVIF(ImageBase):
         # ispe + 4 bytes + 4 bytes for width + 4 bytes for height
 
         ispe = data.find(b"ispe")
-        if ispe == -1 or len(data) < ispe + 16:
+        if ispe == -1:
             raise ValueError("Could not determine dimensions of AVIF image: no 'ispe' box found")
+        if len(data) < ispe + 16:
+            raise ValueError("Could not determine dimensions of AVIF image: 'ispe' box is truncated or incomplete")
         w = int.from_bytes(data[ispe + 8 : ispe + 12], byteorder="big", signed=False)
         h = int.from_bytes(data[ispe + 12 : ispe + 16], byteorder="big", signed=False)
 
