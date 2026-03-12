@@ -571,6 +571,11 @@ class Param(Pane):
                 updating.remove(p_key)
                 if reset:
                     widget.value = new
+                current_val = getattr(parameterized, p_name)
+                if not reset and current_val != new:
+                    is_w = isinstance(widget, Row) and len(widget) == 2
+                    target = widget[0] if is_w else widget
+                    target.param.update(value=current_val)
 
         if hasattr(param, 'Event') and isinstance(p_obj, param.Event):
             def event(change):
