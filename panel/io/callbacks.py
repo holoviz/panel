@@ -176,7 +176,7 @@ class PeriodicCallback(param.Parameterized):
                 self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
             else:
                 self._doc.add_next_tick_callback(self.start)
-        elif state._thread_id != state._current_thread:
+        elif state._thread_id and state._thread_id != state._current_thread:
             state.execute(self.start, schedule=True)
         else:
             try:
