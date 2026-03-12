@@ -136,6 +136,29 @@ class Location(Syncable):
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
+    @param.depends("pathname", watch=True)
+    def _sync_pathname(self):
+        """
+        When in a server context and the pathname is overridden dynamically
+        we need to keep the state.rel_path and the Document dist_url template
+        variable in sync to ensure that resources are resolved relative to the new URL.
+        Additionally we clear the stylesheets cache which holds now outdated URLs.
+        """
+        session_context = state.curdoc.session_context
+        if not (state._servers and session_context and session_context.server_context):
+            return
+        for server, _, _ in state._servers.values():
+            server_port = server.port if hasattr(server, 'port') else server.config.port
+            if self.port == str(server_port):
+                break
+        else:
+            return
+        prefix = getattr(server, 'prefix', '')
+        state.rel_path = rel_path = '/'.join(['..'] * self.pathname.replace(prefix, '').strip('/').count('/'))
+        if 'static/extensions/panel/' in state.curdoc._template_variables.get('dist_url', ''):
+            state.curdoc._template_variables['dist_url'] =  f"{rel_path}/static/extensions/panel/"
+        state._stylesheets.pop(state.curdoc, None)
+
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True

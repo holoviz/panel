@@ -14,6 +14,7 @@ from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal, TypedDict,
 )
 
+import numpy as np
 import param
 
 from bokeh.models import Range1d, Spacer as _BkSpacer
@@ -962,7 +963,9 @@ def link_axes(root_view, root_model):
                 (ax[-1].start, ax[-1].end) for ax in axes
                 if isinstance(ax[-1], Range1d)
             ])
-            if axis.start > axis.end:
+            axis_start = axis.start.astype(np.int64) if isinstance(axis.start, np.datetime64) else axis.start
+            axis_end = axis.end.astype(np.int64) if isinstance(axis.end, np.datetime64) else axis.end
+            if axis_start > axis_end:
                 end, start = start, end
             axis.start = start
             axis.end = end

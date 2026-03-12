@@ -22,9 +22,11 @@ try:
         FastAPI, HTTPException, Query, Request,
     )
     from fastapi.responses import FileResponse
-except ImportError:
-    msg = "bokeh_fastapi must be installed to use the panel.io.fastapi module."
-    raise ImportError(msg) from None
+except ImportError as e:
+    if e.name == "bokeh_fastapi":
+        msg = "bokeh_fastapi must be installed to use the panel.io.fastapi module."
+        raise ImportError(msg) from None
+    raise e
 
 if TYPE_CHECKING:
     from bokeh.application import Application as BkApplication

@@ -188,7 +188,7 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
             p for p in Reactive.param
             if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)
         ]
-        mcs._data_model__initialized = not (state.curdoc and state.curdoc.session_context)
+        mcs._data_model__initialized = not (state.curdoc and state.curdoc.session_context and state._connected.get(state.curdoc, False))
         mcs._data_model = construct_data_model(
             mcs, name=model_name, ignore=ignored, extras={'esm_constants': param.Dict}
         )

@@ -365,8 +365,10 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
                 try:
                     handler._func(doc)
                 except Exception as e:
+                    error_message = ''.join(traceback.format_exception(None, e, e.__traceback__))
+                    print(error_message)  # noqa
                     Alert(
-                        f'<b>{type(e).__name__}</b>\n<pre style="overflow-y: auto">{str(e)}</pre>',
+                        f'<b>{type(e).__name__}</b>\n<pre style="overflow-y: auto">{str(error_message)}</pre>',
                         alert_type='danger', margin=5, sizing_mode='stretch_width'
                     ).servable()
             elif runner is None or runner.error:
