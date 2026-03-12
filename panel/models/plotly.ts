@@ -38,7 +38,6 @@ function getSafeParent(obj: unknown, path: string[]): Record<string, unknown> | 
   return isRecord(current) ? current : null
 }
 
-
 export class PlotlyEvent extends ModelEvent {
   constructor(readonly data: any) {
     super()
