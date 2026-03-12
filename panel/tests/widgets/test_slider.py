@@ -932,3 +932,26 @@ def test_editable_fixed_nosoftbounds_fixed_end(editableslider):
     slider = editableslider(fixed_end=fixed_end, end=end, step=step)
     assert slider.start == end - step
     assert slider.end == end
+
+
+def test_date_range_slider_start_end_explicit_conversion(document, comm):
+    min_val = pd.Timestamp('2024-04-03 12:43:00+0200')
+    max_val = pd.Timestamp('2024-04-29 15:30:00+0200')
+
+    date_slider = DateRangeSlider(
+        name='Dates',
+        start=min_val,
+        end=max_val,
+        value=(min_val, max_val),
+    )
+    widget = date_slider.get_root(document, comm=comm)
+
+    import datetime as dt
+
+    expected_start_ms = min_val.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+    expected_end_ms = max_val.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+
+    assert widget.start == expected_start_ms
+    assert widget.end == expected_end_ms
+    assert widget.start == widget.value[0]
+    assert widget.end == widget.value[1]

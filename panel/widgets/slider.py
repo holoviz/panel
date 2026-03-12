@@ -787,6 +787,9 @@ class DateRangeSlider(_SliderBase):
             msg['value'] = (v1, v2)
         if msg.get('value_throttled', 'unchanged') is None:
             del msg['value_throttled']
+        for key in ('start', 'end'):
+            if key in msg and isinstance(msg[key], dt.datetime):
+                msg[key] = datetime_as_utctimestamp(msg[key])
         return msg
 
     def _process_property_change(self, msg):
