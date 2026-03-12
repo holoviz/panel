@@ -236,7 +236,7 @@ class _state(param.Parameterized):
 
     # Watchers
     _watch_events: ClassVar[list[asyncio.Event]] = []
-    _busy_cleanup_scheduled: bool = False
+    _busy_cleanup_scheduled: ClassVar[PeriodicCallback | None] = None
 
     # Types
     _notification_type: ClassVar[type[NotificationAreaBase] | None] = None
@@ -339,21 +339,14 @@ class _state(param.Parameterized):
             ]
 
     def _schedule_busy_cleanup(self) -> None:
-        if self._busy_cleanup_scheduled or not self._busy_counter:
+        if self._busy_cleanup_scheduled:
             return
-
-        self._busy_cleanup_scheduled = True
-
-        def cleanup_busy_events():
-            self._busy_cleanup_scheduled = False
-            self._cleanup_busy_counter()
-            if self._busy_counter:
-                self._schedule_busy_cleanup()
-
-        if self._is_pyodide:
-            self._ioloop.call_later(1, cleanup_busy_events)
-        else:
-            self._ioloop.call_later(delay=1, callback=cleanup_busy_events)
+        from .callbacks import PeriodicCallback
+        self._busy_cleanup_scheduled = PeriodicCallback(
+            callback=self._cleanup_busy_counter, session_scoped=False,
+            period=10000
+        )
+        self._busy_cleanup_scheduled.start()
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
@@ -895,7 +888,7 @@ class _state(param.Parameterized):
         self._connected.clear()
         self._loaded.clear()
         self.cache.clear()
-        self._busy_cleanup_scheduled = False
+        self._busy_cleanup_scheduled = None
         with edit_readonly(self):
             self._busy_counter = []
         self._scheduled.clear()

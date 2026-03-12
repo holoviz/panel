@@ -46,12 +46,16 @@ class PeriodicCallback(param.Parameterized):
     period = param.Integer(default=500, doc="""
         Period in milliseconds at which the callback is executed.""")
 
+    running = param.Boolean(default=False, doc="""
+        Toggles whether the periodic callback is currently running.""")
+
+    session_scoped = param.Boolean(default=True, doc="""
+        If scheduled from inside a user session scopes the callback
+        to that session.""")
+
     timeout = param.Integer(default=None, doc="""
         Timeout in milliseconds from the start time at which the callback
         expires.""")
-
-    running = param.Boolean(default=False, doc="""
-        Toggles whether the periodic callback is currently running.""")
 
     def __init__(self, **params):
         self._background = params.pop('background', False)
@@ -166,7 +170,7 @@ class PeriodicCallback(param.Parameterized):
             finally:
                 self._updating = False
         self._start_time = time.time()
-        if state.curdoc and state.curdoc.session_context and not state._is_pyodide:
+        if state.curdoc and state.curdoc.session_context and not state._is_pyodide and self.session_scoped:
             self._doc = state.curdoc
             if state._unblocked(state.curdoc):
                 self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
@@ -199,7 +203,7 @@ class PeriodicCallback(param.Parameterized):
             self._cb.cancel()
         self._cb = None
         doc = self._doc or curdoc_locked()
-        if doc:
+        if doc and self.session_scoped:
             doc.callbacks.session_destroyed_callbacks = {
                 cb for cb in doc.callbacks.session_destroyed_callbacks
                 if cb is not self._cleanup
