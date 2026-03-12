@@ -464,9 +464,10 @@ class Syncable(Renderable):
 
     def _process_events(self, events: dict[str, Any]) -> None:
         self._log('received events %s', events)
+        busy_event_id = None
         if any(e for e in events if e not in self._busy__ignore):
-            with edit_readonly(state):
-                state._busy_counter += 1
+            busy_event_id = f'events-{uuid.uuid4().hex}'
+            state._add_busy_event(busy_event_id)
         try:
             params = {}
             if events and state.curdoc:
@@ -499,21 +500,19 @@ class Syncable(Renderable):
             if state.curdoc and state.curdoc in self._in_process__events:
                 del self._in_process__events[state.curdoc]
             self._log('finished processing events %s', events)
-            if any(e for e in events if e not in self._busy__ignore):
-                with edit_readonly(state):
-                    state._busy_counter -= 1
+            if busy_event_id is not None:
+                state._remove_busy_event(busy_event_id)
 
     def _process_bokeh_event(self, doc: Document, event: Event) -> None:
         self._log('received bokeh event %s', event)
-        with edit_readonly(state):
-            state._busy_counter += 1
+        busy_event_id = f'bokeh-events-{uuid.uuid4().hex}'
+        state._add_busy_event(busy_event_id)
         try:
             with set_curdoc(doc):
                 self._process_event(event)
         finally:
             self._log('finished processing bokeh event %s', event)
-            with edit_readonly(state):
-                state._busy_counter -= 1
+            state._remove_busy_event(busy_event_id)
 
     async def _change_coroutine(self, doc: Document, event_id: str | None = None) -> None:
         if event_id is not None:
@@ -1326,7 +1325,7 @@ class SyncableData(Reactive):
         else:
             pd = None # type: ignore
         data = getattr(self, self._data_params[0])
-        patch_value_dict: Patches = {}
+        patch_value_dict: dict[str, list[Any]] = {}
         if pd and isinstance(patch_value, pd.DataFrame):
             for column in patch_value.columns:
                 patch_value_dict[column] = []

@@ -122,6 +122,7 @@ class TerminalSubprocess(param.Parameterized):
             self._set_winsize()
 
             self._periodic_callback = PeriodicCallback(
+                background=True,
                 callback=self._forward_subprocess_output_to_terminal,
                 period=self._period
             )

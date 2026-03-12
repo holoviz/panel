@@ -7,6 +7,9 @@ import zipfile
 
 from typing import Any
 
+import vtk
+
+from packaging.version import Version
 from vtk.vtkCommonCore import vtkTypeInt32Array, vtkTypeUInt32Array
 from vtk.vtkCommonDataModel import vtkDataObject
 from vtk.vtkFiltersGeometry import (
@@ -15,6 +18,26 @@ from vtk.vtkFiltersGeometry import (
 from vtk.vtkRenderingCore import vtkColorTransferFunction
 
 from .enums import TextPosition
+
+_vtk_version = Version(vtk.__version__).release
+
+if _vtk_version >= (9, 6, 0):
+
+    def _get_cell_array_data(cell_array):
+        from vtk.vtkCommonCore import vtkIdTypeArray
+
+        legacy = vtkIdTypeArray()
+        cell_array.ExportLegacyFormat(legacy)
+        return legacy
+
+    def _cell_array_nonempty(cell_array):
+        return cell_array and cell_array.GetNumberOfCells() > 0
+else:
+    def _get_cell_array_data(cell_array):
+        return cell_array.GetData()
+
+    def _cell_array_nonempty(cell_array):
+        return cell_array and cell_array.GetData().GetNumberOfTuples() > 0
 
 
 def iteritems(d, **kwargs):
@@ -1100,27 +1123,26 @@ def polydataSerializer(parent, dataset, datasetId, context, depth):
         properties['points'] = points
 
         # Verts
-        if dataset.GetVerts() and dataset.GetVerts().GetData().GetNumberOfTuples() > 0:
-            _verts = getArrayDescription(dataset.GetVerts().GetData(), context)
+        if _cell_array_nonempty(dataset.GetVerts()):
+            _verts = getArrayDescription(_get_cell_array_data(dataset.GetVerts()), context)
             properties['verts'] = _verts
             properties['verts']['vtkClass'] = 'vtkCellArray'
 
         # Lines
-        if dataset.GetLines() and dataset.GetLines().GetData().GetNumberOfTuples() > 0:
-            _lines = getArrayDescription(dataset.GetLines().GetData(), context)
+        if _cell_array_nonempty(dataset.GetLines()):
+            _lines = getArrayDescription(_get_cell_array_data(dataset.GetLines()), context)
             properties['lines'] = _lines
             properties['lines']['vtkClass'] = 'vtkCellArray'
 
         # Polys
-        if dataset.GetPolys() and dataset.GetPolys().GetData().GetNumberOfTuples() > 0:
-            _polys = getArrayDescription(dataset.GetPolys().GetData(), context)
+        if _cell_array_nonempty(dataset.GetPolys()):
+            _polys = getArrayDescription(_get_cell_array_data(dataset.GetPolys()), context)
             properties['polys'] = _polys
             properties['polys']['vtkClass'] = 'vtkCellArray'
 
         # Strips
-        if dataset.GetStrips() and dataset.GetStrips().GetData().GetNumberOfTuples() > 0:
-            _strips = getArrayDescription(
-                dataset.GetStrips().GetData(), context)
+        if _cell_array_nonempty(dataset.GetStrips()):
+            _strips = getArrayDescription(_get_cell_array_data(dataset.GetStrips()), context)
             properties['strips'] = _strips
             properties['strips']['vtkClass'] = 'vtkCellArray'
 

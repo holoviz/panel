@@ -389,11 +389,19 @@ class Vega(ModelPane):
         if isinstance(data, dict):
             data = data.pop('values', {})
             if data is not None and not (isinstance(data, dict) and not data):
-                sources['data'] = ColumnDataSource(data=ds_as_cds(data))
+                cds_data = ds_as_cds(data)
+                if 'data' in sources:
+                    sources['data'].data = cds_data
+                else:
+                    sources['data'] = ColumnDataSource(data=cds_data)
         elif isinstance(data, list):
             for d in data:
                 if 'values' in d:
-                    sources[d['name']] = ColumnDataSource(data=ds_as_cds(d.pop('values')))
+                    cds_data = ds_as_cds(d.pop('values'))
+                    if d['name'] in sources:
+                        sources[d['name']].data = cds_data
+                    else:
+                        sources[d['name']] = ColumnDataSource(data=cds_data)
         return sources
 
     def _process_event(self, event):
