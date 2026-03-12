@@ -15,6 +15,29 @@ import {convertUndefined, deepCopy, get, reshape, throttle} from "./util"
 
 import plotly_css from "styles/models/plotly.css"
 
+const FORBIDDEN_KEYS = new Set(["__proto__", "prototype", "constructor"])
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
+
+function isSafePath(path: string[]): boolean {
+  return path.every((part) => part.length > 0 && !FORBIDDEN_KEYS.has(part))
+}
+
+function getSafeParent(obj: unknown, path: string[]): Record<string, unknown> | null {
+  let current: unknown = obj
+
+  for (const key of path) {
+    if (!isRecord(current) || FORBIDDEN_KEYS.has(key) || !Object.hasOwn(current, key)) {
+      return null
+    }
+    current = current[key]
+  }
+
+  return isRecord(current) ? current : null
+}
+
 export class PlotlyEvent extends ModelEvent {
   constructor(readonly data: any) {
     super()
@@ -422,17 +445,21 @@ export class PlotlyPlotView extends HTMLBoxView {
       if (array.shape != null && array.shape.length > 1) {
         array = reshape(array, array.shape)
       }
-      const prop_path = column.split(".")
-      const prop = prop_path[prop_path.length - 1]
-      let prop_parent = trace
-      for (const k of prop_path.slice(0, -1)) {
-        prop_parent = (prop_parent[k])
+
+      // Column name used for resolving object data needs to be validated
+      // to avoid prototype pollution
+      const propPath = column.split(".")
+      const prop = propPath[propPath.length - 1]
+      const propParent = getSafeParent(trace, propPath.slice(0, -1))
+      if (!propParent || !prop || !isSafePath(propPath) || FORBIDDEN_KEYS.has(prop)) {
+        console.warn("Attempted prototype pollution detected via Plotly column resolution.")
+        continue
       }
 
-      if (update && prop_path.length == 1) {
-        prop_parent[prop] = [array]
+      if (update && propPath.length == 1) {
+        propParent[prop] = [array]
       } else {
-        prop_parent[prop] = array
+        propParent[prop] = array
       }
     }
     return trace
