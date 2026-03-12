@@ -343,7 +343,9 @@ class _state(param.Parameterized):
             return
         from .callbacks import PeriodicCallback
         self._busy_cleanup_scheduled = PeriodicCallback(
-            callback=self._cleanup_busy_counter, session_scoped=False,
+            background=True,
+            callback=self._cleanup_busy_counter,
+            session_scoped=False,
             period=10000
         )
         self._busy_cleanup_scheduled.start()
