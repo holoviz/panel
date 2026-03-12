@@ -176,10 +176,17 @@ class PeriodicCallback(param.Parameterized):
                 self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
             else:
                 self._doc.add_next_tick_callback(self.start)
+        elif state._thread_id != state._current_thread:
+            state.execute(self.start, schedule=True)
         else:
-            self._cb = asyncio.create_task(
-                self._async_repeat(self._periodic_callback)
-            )
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop and loop.is_running():
+                self._cb = asyncio.create_task(
+                    self._async_repeat(self._periodic_callback)
+                )
 
     def stop(self):
         """
