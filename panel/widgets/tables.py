@@ -714,7 +714,7 @@ class BaseTable(ReactiveData, Widget):
 
         # Ensure NaT serialization is enabled
         try:
-            Serializer.register(pd.NaT, lambda _, __: None)  # type: ignore
+            Serializer.register(type(pd.NaT), lambda _, __: None)  # type: ignore
         except AssertionError:
             pass
 

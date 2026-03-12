@@ -967,7 +967,7 @@ def test_server_thread_pool_busy(server_implementation, threads):
 
     serve_and_request(app, suffix="/")
 
-    wait_until(lambda: len(clicks) == 3 and state._busy_counter == 0 and not state.busy)
+    wait_until(lambda: len(clicks) == 3 and not state._busy_counter and not state.busy)
 
 
 def test_server_async_onload(threads):

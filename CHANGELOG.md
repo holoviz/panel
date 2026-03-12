@@ -1,5 +1,16 @@
 # Releases
 
+## Version 1.8.9
+
+Many thanks to [@philippjfr](https://github.com/philippjfr) and [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+### 🐛 Bug Fixes
+- Only serialize ESM model definition if session is already loaded ([#8462](https://github.com/holoviz/panel/pull/8462))
+
+### ⚙️ Compatibility
+- Compatibility with VTK 9.6.0 ([#8464](https://github.com/holoviz/panel/pull/8464))
+
+
 ## Version 1.8.8
 
 Panel 1.8.8 focuses on stability, event handling correctness, Pyodide improvements, ESM robustness, and multiple UI fixes. It also introduces a new experimental `freeze` option for `hold()` to improve performance during batch updates.

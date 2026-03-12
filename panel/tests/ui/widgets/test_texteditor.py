@@ -62,29 +62,22 @@ def test_texteditor_enter_value(page):
     wait_until(lambda: widget.value == '<p>test</p>', page)
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_texteditor_regression_copy_paste(page, browser):
     # https://github.com/holoviz/panel/issues/5545
     widget = TextEditor()
-    html = HTML('test')
 
-    serve_component(page, Column(html, widget))
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
 
-    page.get_by_text('test').select_text()
+    serve_component(page, widget)
+
+    page.evaluate("navigator.clipboard.writeText('test')")
 
     ctrl_key = 'Meta' if sys.platform == 'darwin' else 'Control'
-    page.get_by_text('test').press(f'{ctrl_key}+KeyC')
-
     page.locator('.ql-editor').press(f'{ctrl_key}+KeyV')
 
     expect(page.locator('.ql-container')).to_have_text('test')
-    # Quill v2 changed the way copied content is parsed and can preserve
-    # more of the copied html.
-    expected = '<p><span style="color: rgb(33, 37, 41);">test</span></p>'
-    if browser.browser_type.name == 'firefox':
-        # Copy/paste on firefox works a bit differently
-        expected = '<p>test</p>'
-    wait_until(lambda: widget.value == expected, page)
+
+    wait_until(lambda: widget.value == '<p>test</p>', page)
 
 
 def test_texteditor_regression_preserve_formatting_on_view_change(page):
