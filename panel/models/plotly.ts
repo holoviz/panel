@@ -453,8 +453,8 @@ export class PlotlyPlotView extends HTMLBoxView {
       const prop = propPath[propPath.length - 1]
       const propParent = getSafeParent(trace, propPath.slice(0, -1))
       if (!propParent || !prop || !isSafePath(propPath) || FORBIDDEN_KEYS.has(prop)) {
-	console.warn("Attempted prototype pollution detected via Plotly column resolution.")
-	continue
+        console.warn("Attempted prototype pollution detected via Plotly column resolution.")
+        continue
       }
 
       if (update && propPath.length == 1) {
