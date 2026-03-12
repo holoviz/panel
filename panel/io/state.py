@@ -323,32 +323,28 @@ class _state(param.Parameterized):
         self._schedule_busy_cleanup()
 
     def _remove_busy_event(self, event_id: str) -> None:
-        with edit_readonly(self):
-            self._busy_counter = [
-                (eid, started) for eid, started in self._busy_counter if eid != event_id
-            ]
-        self._cleanup_busy_counter()
+        self._cleanup_busy_counter(event_id)
 
-    def _cleanup_busy_counter(self, timeout: float = 30.0) -> None:
+    def _cleanup_busy_counter(self, event_id: str | None = None, timeout: float = 30.0) -> None:
         now = time.monotonic()
         with edit_readonly(self):
             self._busy_counter = [
-                (event_id, started_at)
-                for event_id, started_at in self._busy_counter
-                if now - started_at <= timeout
+                (eid, started_at)
+                for eid, started_at in self._busy_counter
+                if now - started_at <= timeout and eid != event_id
             ]
 
     def _schedule_busy_cleanup(self) -> None:
-        if self._busy_cleanup_scheduled:
+        if state._busy_cleanup_scheduled:
             return
         from .callbacks import PeriodicCallback
-        self._busy_cleanup_scheduled = PeriodicCallback(
+        state._busy_cleanup_scheduled = PeriodicCallback(
             background=True,
             callback=self._cleanup_busy_counter,
             session_scoped=False,
             period=10000
         )
-        self._busy_cleanup_scheduled.start()
+        state._busy_cleanup_scheduled.start()
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
