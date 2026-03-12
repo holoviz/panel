@@ -978,11 +978,11 @@ def test_tabulator_header_filters_config_boolean(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index', 'sorter': 'number', 'headerFilter': 'number'},
-        {'field': 'A', 'sorter': 'number', 'headerFilter': True},
-        {'field': 'B', 'sorter': 'number', 'headerFilter': True},
-        {'field': 'C', 'headerFilter': True},
-        {'field': 'D', 'headerFilter': False, 'sorter': 'timestamp'} # Datetime header filtering not supported
+        {'field': 'index', 'sorter': 'number', 'headerFilter': 'number', 'headerFilterPlaceholder': 'Filter by index...'},
+        {'field': 'A', 'sorter': 'number', 'headerFilter': True, 'headerFilterPlaceholder': 'Filter by A...'},
+        {'field': 'B', 'sorter': 'number', 'headerFilter': True, 'headerFilterPlaceholder': 'Filter by B...'},
+        {'field': 'C', 'headerFilter': True, 'headerFilterPlaceholder': 'Filter by C...'},
+        {'field': 'D', 'headerFilter': False, 'sorter': 'timestamp'} # Datetime header filtering not supported — no placeholder
     ]
 
 def test_tabulator_header_filters_column_config_list(document, comm):
