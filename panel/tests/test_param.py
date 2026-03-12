@@ -2051,3 +2051,40 @@ async def test_async_skip_param(document, comm):
     button.param.trigger('value')
     await asyncio.sleep(0.01)
     assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+
+
+def test_param_widget_updates_from_own_callback(document, comm):
+    class ParameterizedCheckbox(param.Parameterized):
+        value = param.Boolean(label='Parameterized checkbox', default=False)
+
+        @param.depends('value', watch=True)
+        def update(self):
+            self.value = False
+
+    pc = ParameterizedCheckbox()
+    param_pane = Param(pc, parameters=['value'])
+    widget = param_pane._widgets['value']
+
+    widget.value = True
+
+    assert pc.value is False
+    assert widget.value is False
+
+
+def test_param_widget_updates_from_own_callback_number(document, comm):
+    class ParameterizedNumber(param.Parameterized):
+        value = param.Number(default=0, bounds=(0, 10))
+
+        @param.depends('value', watch=True)
+        def update(self):
+            if self.value != 5:
+                self.value = 5
+
+    pn = ParameterizedNumber()
+    param_pane = Param(pn, parameters=['value'])
+    widget = param_pane._widgets['value']
+
+    widget.value = 7
+
+    assert pn.value == 5
+    assert widget.value == 5
