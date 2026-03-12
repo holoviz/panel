@@ -1,0 +1,269 @@
+/* Theme-adaptive styling for JSONEditor using Panel CSS variables */
+
+/* Border */
+div.jsoneditor,
+div.jsoneditor-menu {
+  border-color: var(--panel-border-color, #3883fa);
+}
+
+/* Menu bar */
+div.jsoneditor-menu {
+  background-color: var(--panel-primary-color, #3883fa);
+  color: var(--panel-on-primary-color, #ffffff);
+}
+
+/* Tree & text area backgrounds */
+div.jsoneditor-tree,
+div.jsoneditor textarea.jsoneditor-text {
+  background-color: var(--panel-background-color, #ffffff);
+  color: var(--panel-on-background-color, #1a1a1a);
+}
+
+/* Field & value text */
+div.jsoneditor-field,
+div.jsoneditor-value {
+  color: var(--panel-on-background-color, #1a1a1a);
+}
+
+/* Value type syntax highlighting */
+div.jsoneditor-value.jsoneditor-string {
+  color: var(--success-text-color, #006000);
+}
+
+div.jsoneditor-value.jsoneditor-number {
+  color: var(--danger-text-color, #ee422e);
+}
+
+div.jsoneditor-value.jsoneditor-boolean {
+  color: var(--warning-text-color, #ff8c00);
+}
+
+div.jsoneditor-value.jsoneditor-null {
+  color: var(--info-text-color, #004ed0);
+}
+
+div.jsoneditor-value.jsoneditor-url,
+a.jsoneditor-value.jsoneditor-url {
+  color: var(--success-text-color, #006000);
+}
+
+div.jsoneditor-value.jsoneditor-invalid {
+  color: var(--panel-on-background-color, #1a1a1a);
+}
+
+/* Read-only & separator text */
+div.jsoneditor-readonly {
+  color: var(--secondary-text-color, #acacac);
+}
+
+div.jsoneditor td.jsoneditor-separator {
+  color: var(--secondary-text-color, #808080);
+}
+
+/* Empty field/value placeholders */
+div.jsoneditor-field.jsoneditor-empty::after,
+div.jsoneditor-value.jsoneditor-empty::after {
+  color: var(--panel-border-color, #d3d3d3);
+}
+
+div.jsoneditor-empty {
+  border-color: var(--panel-border-color, #d3d3d3);
+}
+
+/* Search box */
+table.jsoneditor-search div.jsoneditor-frame {
+  background: var(--panel-surface-color, #f3f3f3);
+}
+
+table.jsoneditor-search input {
+  color: var(--panel-on-surface-color, #1a1d21);
+}
+
+/* Highlight & selection */
+tr.jsoneditor-highlight,
+tr.jsoneditor-selected {
+  background-color: var(--panel-surface-color, #f3f3f3);
+}
+
+div.jsoneditor-field[contenteditable="true"]:focus,
+div.jsoneditor-field[contenteditable="true"]:hover,
+div.jsoneditor-value[contenteditable="true"]:focus,
+div.jsoneditor-value[contenteditable="true"]:hover,
+div.jsoneditor-field.jsoneditor-highlight,
+div.jsoneditor-value.jsoneditor-highlight {
+  background-color: var(--panel-surface-color, #f3f3f3);
+  border-color: var(--panel-border-color, #e0e0e0);
+}
+
+div.jsoneditor-field.jsoneditor-highlight-active,
+div.jsoneditor-field.jsoneditor-highlight-active:focus,
+div.jsoneditor-field.jsoneditor-highlight-active:hover,
+div.jsoneditor-value.jsoneditor-highlight-active,
+div.jsoneditor-value.jsoneditor-highlight-active:focus,
+div.jsoneditor-value.jsoneditor-highlight-active:hover {
+  background-color: var(--panel-surface-color, #f3f3f3);
+  border-color: var(--panel-border-color, #e0e0e0);
+}
+
+/* Tree button focus */
+div.jsoneditor-tree button:focus {
+  background-color: var(--panel-surface-color, #f3f3f3);
+}
+
+/* Navigation bar */
+div.jsoneditor-navigation-bar {
+  background-color: var(--panel-surface-color, #f3f3f3);
+  color: var(--panel-on-surface-color, #1a1d21);
+}
+
+/* Treepath breadcrumb */
+div.jsoneditor-treepath.show-all {
+  background-color: var(--panel-surface-color, #f3f3f3);
+}
+
+div.jsoneditor-treepath .jsoneditor-treepath-show-all-btn {
+  background-color: var(--panel-surface-color, #f3f3f3);
+}
+
+/* Status bar */
+div.jsoneditor-statusbar {
+  background-color: var(--panel-surface-color, #f3f3f3);
+  color: var(--panel-on-surface-color, #1a1d21);
+}
+
+/* Context menu */
+div.jsoneditor-contextmenu .jsoneditor-menu {
+  background: var(--panel-background-color, #ffffff);
+  border-color: var(--panel-border-color, #d3d3d3);
+}
+
+div.jsoneditor-contextmenu .jsoneditor-separator {
+  border-top-color: var(--panel-border-color, #e5e5e5);
+}
+
+div.jsoneditor-contextmenu .jsoneditor-menu li button {
+  color: var(--panel-on-background-color, #1a1a1a);
+  background-color: var(--panel-background-color, #ffffff);
+}
+
+div.jsoneditor-contextmenu .jsoneditor-menu li button:hover,
+div.jsoneditor-contextmenu .jsoneditor-menu li button:focus {
+  color: var(--panel-on-surface-color, #1a1d21);
+  background-color: var(--panel-surface-color, #f3f3f3);
+}
+
+div.jsoneditor-contextmenu .jsoneditor-menu li button.jsoneditor-selected,
+div.jsoneditor-contextmenu .jsoneditor-menu li button.jsoneditor-selected:hover,
+div.jsoneditor-contextmenu .jsoneditor-menu li button.jsoneditor-selected:focus {
+  color: var(--panel-on-primary-color, #ffffff);
+  background-color: var(--panel-primary-color, #3883fa);
+}
+
+/* Schema error popover/tooltip */
+div.jsoneditor-popover {
+  background-color: var(--panel-surface-color, #4c4c4c);
+  color: var(--panel-on-surface-color, #ffffff);
+}
+
+div.jsoneditor-popover.jsoneditor-above::before {
+  border-top-color: var(--panel-surface-color, #4c4c4c);
+}
+
+div.jsoneditor-popover.jsoneditor-below::before {
+  border-bottom-color: var(--panel-surface-color, #4c4c4c);
+}
+
+div.jsoneditor-popover.jsoneditor-left::before {
+  border-left-color: var(--panel-surface-color, #4c4c4c);
+}
+
+div.jsoneditor-popover.jsoneditor-right::before {
+  border-right-color: var(--panel-surface-color, #4c4c4c);
+}
+
+/* Validation error panel */
+div.jsoneditor .jsoneditor-text-errors {
+  border-top-color: var(--panel-border-color, #ffc700);
+}
+
+div.jsoneditor .jsoneditor-text-errors tr {
+  background-color: var(--panel-surface-color, #ffffab);
+}
+
+div.jsoneditor .jsoneditor-additional-errors {
+  color: var(--secondary-text-color, #808080);
+  background-color: var(--panel-surface-color, #ebebeb);
+}
+
+/* Autocomplete dropdown */
+div.jsoneditor .autocomplete.dropdown {
+  background: var(--panel-background-color, #ffffff);
+  border-color: var(--panel-border-color, #d3d3d3);
+}
+
+div.jsoneditor .autocomplete.dropdown .item {
+  color: var(--panel-on-background-color, #1a1a1a);
+}
+
+div.jsoneditor .autocomplete.dropdown .item.hover {
+  background-color: var(--panel-surface-color, #ebebeb);
+}
+
+div.jsoneditor .autocomplete.hint {
+  color: var(--secondary-text-color, #a1a1a1);
+}
+
+/* Show more indicator */
+div.jsoneditor-tree div.jsoneditor-show-more {
+  background-color: var(--panel-surface-color, #e5e5e5);
+}
+
+div.jsoneditor-tree div.jsoneditor-show-more a {
+  color: var(--secondary-text-color, #808080);
+}
+
+/* Modal dialogs (sort, transform, etc.) */
+div.jsoneditor-modal {
+  color: var(--panel-on-background-color, #4d4d4d);
+}
+
+div.jsoneditor-modal .pico-modal-header {
+  background: var(--panel-primary-color, #3883fa);
+  color: var(--panel-on-primary-color, #ffffff);
+}
+
+div.jsoneditor-modal .pico-close {
+  color: var(--panel-on-primary-color, #ffffff);
+}
+
+div.jsoneditor-modal select,
+div.jsoneditor-modal textarea,
+div.jsoneditor-modal input,
+div.jsoneditor-modal input[type="text"],
+div.jsoneditor-modal input[type="text"]:focus,
+div.jsoneditor-modal #query {
+  background: var(--panel-background-color, #ffffff);
+  border: 1px solid var(--panel-border-color, #d3d3d3);
+  color: var(--panel-on-background-color, #4d4d4d);
+}
+
+div.jsoneditor-modal input[disabled] {
+  background: var(--panel-surface-color, #d3d3d3);
+  color: var(--secondary-text-color, #808080);
+}
+
+div.jsoneditor-modal .jsoneditor-transform-preview {
+  background: var(--panel-surface-color, #f5f5f5);
+  color: var(--panel-on-surface-color, #1a1d21);
+}
+
+div.jsoneditor-modal table td,
+div.jsoneditor-modal table th {
+  color: var(--panel-on-background-color, #4d4d4d);
+}
+
+div.jsoneditor-modal input[type="button"],
+div.jsoneditor-modal input[type="submit"] {
+  background: var(--panel-surface-color, #f5f5f5);
+  color: var(--panel-on-surface-color, #1a1d21);
+}
