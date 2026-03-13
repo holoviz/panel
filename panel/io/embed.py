@@ -227,7 +227,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     from ..links import Link
     from ..models.state import State
     from ..pane import PaneBase
-    from ..widgets import DiscreteSlider, Widget
+    from ..widgets import DiscreteSlider, Select, Widget
 
     ref = model.ref['id']
     if isinstance(panel, PaneBase) and ref in panel.layout._models:
@@ -286,8 +286,10 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             if not isinstance(w_model, w_type):
                 w_model = w_model.select_one({'type': w_type})
 
-        # If there is a widget with the same name, merge with it
-        if widget.name and widget.name in merged:
+        # If there is a widget with the same name, merge with it.
+        # Select widgets are excluded because independent selects often
+        # share display names but should not be synchronized.
+        if widget.name and widget.name in merged and not isinstance(widget, Select):
             merged[widget.name][0].append(w)
             merged[widget.name][1].append(w_model)
             continue
