@@ -9,6 +9,7 @@ from bokeh.models import LayoutDOM
 from bokeh.models.sources import DataSource
 
 from ..config import config
+from ..io.resources import bundled_files
 from ..util import classproperty
 
 VIZZU_VERSION = "0.17.1"
@@ -33,6 +34,10 @@ class VizzuChart(LayoutDOM):
     __javascript_modules__ = [
         f"{config.npm_cdn}/vizzu@{VIZZU_VERSION}/dist/vizzu.min.js"
     ]
+
+    @classproperty
+    def __javascript__(cls):
+        return bundled_files(cls)
 
     @classproperty
     def __js_skip__(cls):
