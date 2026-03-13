@@ -66,6 +66,7 @@ export class AcePlotView extends HTMLBoxView {
     this._update_language()
     this._editor.setReadOnly(this.model.readonly)
     this._editor.setShowPrintMargin(this.model.print_margin)
+    this._add_annotations()
     // if on keyup, update code from editor
     if (this.model.on_keyup) {
       this._editor.on("change", () => this._update_code_from_editor())
@@ -141,10 +142,16 @@ export class AcePlotView extends HTMLBoxView {
   _update_language(): void {
     if (this.model.language != null) {
       this._editor.session.setMode(`ace/mode/${this.model.language}`)
+      // Re-apply annotations after mode change, since setMode may
+      // spawn a new worker that would overwrite user annotations.
+      this._add_annotations()
     }
   }
 
   _add_annotations(): void {
+    // Toggle the Ace worker BEFORE setting annotations, because
+    // disabling the worker clears the session's annotations.
+    this._editor.session.setUseWorker(this.model.annotations.length === 0)
     this._editor.session.setAnnotations(this.model.annotations)
   }
 

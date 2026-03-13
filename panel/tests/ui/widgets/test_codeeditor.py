@@ -142,3 +142,70 @@ def test_code_editor_not_on_keyup(page):
     page.keyboard.up(ctrl_key)
 
     wait_until(lambda: editor.value == "print(\"Hello UI!\")", page)
+
+
+def _get_ace_annotations(page):
+    """Get annotations from the Ace editor session via JS evaluation."""
+    return page.evaluate("""() => {
+        function findAceEditor(root) {
+            const elements = root.querySelectorAll('*');
+            for (const el of elements) {
+                if (el.shadowRoot) {
+                    const ed = el.shadowRoot.querySelector('.ace_editor');
+                    if (ed && ed.env && ed.env.editor) return ed.env.editor;
+                    const nested = findAceEditor(el.shadowRoot);
+                    if (nested) return nested;
+                }
+            }
+            return null;
+        }
+        const editor = findAceEditor(document);
+        if (!editor) return [];
+        return editor.session.getAnnotations();
+    }""")
+
+
+def test_code_editor_annotations(page):
+    """Test that user-set annotations are not overwritten by Ace's worker."""
+    code = "test:\n- {a: 1, b: 2}\n- {c: 3, d: 4}\n"
+    editor = CodeEditor(value=code, language="yaml", annotations=[])
+
+    serve_component(page, editor)
+    ace_input = page.locator(".ace_content")
+    expect(ace_input).to_have_count(1)
+
+    # Set user annotations
+    editor.annotations = [
+        {"row": 1, "column": 0, "text": "a warning", "type": "warning"},
+        {"row": 2, "column": 0, "text": "an error", "type": "error"},
+    ]
+
+    # Wait for annotations to sync to browser
+    wait_until(lambda: len(_get_ace_annotations(page)) == 2, page)
+
+    # Wait and verify annotations persist (worker doesn't overwrite them)
+    page.wait_for_timeout(1000)
+    annotations = _get_ace_annotations(page)
+    assert len(annotations) == 2
+    assert annotations[0]["type"] == "warning"
+    assert annotations[1]["type"] == "error"
+
+    # Clear annotations
+    editor.annotations = []
+    wait_until(lambda: len(_get_ace_annotations(page)) == 0, page)
+
+
+def test_code_editor_annotations_constructor(page):
+    """Test that annotations provided at construction time are applied."""
+    code = "test:\n- {a: 1}\n"
+    annotations = [{"row": 1, "column": 0, "text": "note", "type": "info"}]
+    editor = CodeEditor(value=code, language="yaml", annotations=annotations)
+
+    serve_component(page, editor)
+    expect(page.locator(".ace_content")).to_have_count(1)
+
+    # Annotations set at construction should survive the Ace worker
+    page.wait_for_timeout(1000)
+    result = _get_ace_annotations(page)
+    assert len(result) == 1
+    assert result[0]["type"] == "info"
