@@ -11,7 +11,7 @@ How to use indicators
 ---------------------
 
 >>> pn.indicators.Number(
-...    name='Rate', value=72, format='{value}%',
+...    label='Rate', value=72, format='{value}%',
 ...    colors=[(80, 'green'), (100, 'red')]
 ... )
 """
@@ -72,7 +72,7 @@ class Indicator(Widget):
 
     _linked_properties: tuple[str,...] = ()
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'label': None}
 
     __abstract = True
 
@@ -218,7 +218,7 @@ class LoadingSpinner(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename = {'name': 'text'}
+    _rename = {'label': 'text'}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'color': None, 'bgcolor': None, 'size': None
@@ -328,7 +328,7 @@ class Number(ValueIndicator):
 
     :Example:
 
-    >>> Number(name='Rate', value=72, format='{value}%', colors=[(80, 'green'), (100, 'red')]
+    >>> Number(label='Rate', value=72, format='{value}%', colors=[(80, 'green'), (100, 'red')]
     """
 
     default_color = param.String(default='currentcolor', doc="""
@@ -348,9 +348,9 @@ class Number(ValueIndicator):
         How to format nan values.""")
 
     title_size = param.String(default='18pt', doc="""
-        The size of the title given by the name.""")
+        The size of the title given by the label.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'name'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'label': 'label'}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'colors': None, 'default_color': None,
@@ -371,7 +371,7 @@ class Number(ValueIndicator):
             return msg
         font_size = msg.pop('font_size', self.font_size)
         title_font_size = msg.pop('title_size', self.title_size)
-        name = msg.pop('name', self.name)
+        label = msg.pop('label', self.label)
         format = msg.pop('format', self.format)
         value = msg.pop('value', self.value)
         nan_format = msg.pop('nan_format', self.nan_format)
@@ -384,9 +384,9 @@ class Number(ValueIndicator):
             value = float('nan')
         value = format.format(value=value).replace('nan', nan_format)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
-        if self.name:
+        if self.label:
             title_font_size = msg.pop('title_size', self.title_size)
-            text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
+            text = f'<div style="font-size: {title_font_size}; color: {color}">{label}</div>\n{text}'
         msg['text'] = escape(text)
         return msg
 
@@ -403,7 +403,7 @@ class String(ValueIndicator):
         The size of number itself.""")
 
     title_size = param.String(default='18pt', doc="""
-        The size of the title given by the name.""")
+        The size of the title given by the label.""")
 
     value = param.String(default=None, allow_None=True, doc="""
         The string to display""")
@@ -427,13 +427,13 @@ class String(ValueIndicator):
             return msg
         font_size = msg.pop('font_size', self.font_size)
         title_font_size = msg.pop('title_size', self.title_size)
-        name = msg.pop('name', self.name)
+        label = msg.pop('label', self.label)
         value = msg.pop('value', self.value)
         color = msg.pop('default_color', self.default_color)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
-        if self.name:
+        if self.label:
             title_font_size = msg.pop('title_size', self.title_size)
-            text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
+            text = f'<div style="font-size: {title_font_size}; color: {color}">{label}</div>\n{text}'
         msg['text'] = escape(text)
         return msg
 
@@ -448,7 +448,7 @@ class Gauge(ValueIndicator):
 
     :Example:
 
-    >>> Gauge(name='Speed', value=79, bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
+    >>> Gauge(label='Speed', value=79, bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
     """
 
     annulus_width = param.Integer(default=10, doc="""
@@ -542,7 +542,7 @@ class Gauge(ValueIndicator):
                 'startAngle': msg.pop('start_angle', self.start_angle),
                 'endAngle': msg.pop('end_angle', self.end_angle),
                 'splitNumber': msg.pop('num_splits', self.num_splits),
-                'data': [{'value': msg.pop('value', self.value), 'name': self.name}],
+                'data': [{'value': msg.pop('value', self.value), 'name': self.label}],
                 'axisLine': {
                     'lineStyle': {
                         'width': msg.pop('annulus_width', self.annulus_width),
@@ -581,7 +581,7 @@ class Dial(ValueIndicator):
 
     :Example:
 
-    >>> Dial(name='Speed', value=79, format="{value} km/h", bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
+    >>> Dial(label='Speed', value=79, format="{value} km/h", bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
     """
 
     annulus_width = param.Number(default=0.2, doc="""
@@ -733,7 +733,7 @@ class Dial(ValueIndicator):
         text_data= {
             'x':    np.array([0, 0, tminx, tmaxx]),
             'y':    np.array([-.2, -.5, tminy, tmaxy]),
-            'text': [self.name, value, min_value, max_value],
+            'text': [self.label, value, min_value, max_value],
             'rot':  np.array([0, 0, tmin_angle, tmax_angle]),
             'size': [title_size, value_size, tick_size, tick_size],
             'color': [self.label_color, color, self.label_color, self.label_color]
@@ -891,7 +891,7 @@ class LinearGauge(ValueIndicator):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'background': 'background_fill_color',
-        'name': 'name',
+        'label': 'label',
         'show_boundaries': None,
         'default_color': None
     }
@@ -1119,7 +1119,7 @@ class Trend(SyncableData, Indicator):
     :Example:
 
     >>> data = {'x': np.arange(50), 'y': np.random.randn(50).cumsum()}
-    >>> Trend(name='Price', data=data, plot_type='area', width=200, height=200)
+    >>> Trend(label='Price', data=data, plot_type='area', width=200, height=200)
     """
 
     data = param.Parameter(doc="""
@@ -1151,7 +1151,7 @@ class Trend(SyncableData, Indicator):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    name = param.String(constant=False, doc="""The name or a short description of the card""")
+    label = param.String(constant=False, doc="""The label or a short description of the card""")
 
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
