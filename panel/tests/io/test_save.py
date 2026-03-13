@@ -2,6 +2,7 @@ import re
 
 from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -60,6 +61,28 @@ def test_save_cdn_resources():
     sio.seek(0)
     html = sio.read()
     assert re.findall('https://cdn.holoviz.org/panel/(.*)/dist/panel.min.js', html)
+
+
+def test_save_pdf_extension(tmp_path):
+    alert = Alert('# Save test')
+    out = tmp_path / 'test.pdf'
+
+    with patch('panel.io.save.save_pdf') as mock_save_pdf:
+        alert.save(str(out))
+
+    mock_save_pdf.assert_called_once()
+    assert mock_save_pdf.call_args.kwargs['filename'] == str(out)
+
+
+def test_save_as_pdf_flag(tmp_path):
+    alert = Alert('# Save test')
+    out = tmp_path / 'test.custom'
+
+    with patch('panel.io.save.save_pdf') as mock_save_pdf:
+        alert.save(str(out), as_pdf=True)
+
+    mock_save_pdf.assert_called_once()
+    assert mock_save_pdf.call_args.kwargs['filename'] == str(out)
 
 
 @hv_available

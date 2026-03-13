@@ -960,7 +960,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
         json_prefix: str='', save_path: str='./', load_path: str | None = None,
         progress: bool = True, embed_states: dict[Any, Any] = {},
-        as_png: bool | None = None, **kwargs
+        as_png: bool | None = None, as_pdf: bool | None = None, **kwargs
     ) -> None:
         """
         Saves Panel objects to file.
@@ -998,12 +998,15 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         as_png: boolean (default=None)
           To save as a .png. If None save_png will be true if filename is
           string and ends with png.
+                as_pdf: boolean (default=None)
+                    To save as a .pdf. If None save_pdf will be true if filename is
+                    string and ends with pdf.
         """
         return save(
             self, filename, title, resources, template,
             template_variables, embed, max_states, max_opts,
             embed_json, json_prefix, save_path, load_path, progress,
-            embed_states, as_png, **kwargs
+                        embed_states, as_png, as_pdf, **kwargs
         )
 
     def server_doc(

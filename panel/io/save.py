@@ -1,5 +1,5 @@
 """
-Defines utilities to save panel objects to files as HTML or PNG.
+Defines utilities to save panel objects to files as HTML, PNG or PDF.
 """
 from __future__ import annotations
 
@@ -59,6 +59,57 @@ else
 
 bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
 
+
+def _screenshot_image(
+    model: UIElement | Document,
+    resources: BkResources,
+    template,
+    template_variables: dict[str, Any] | None,
+    timeout: int
+):
+    from bokeh.io.webdriver import webdriver_control
+    if not state.webdriver:
+        state.webdriver = webdriver_control.create()
+
+    webdriver = state.webdriver
+
+    if template is None:
+        template = r"""\
+        {% block preamble %}
+        <style>
+        html, body {
+        box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        </style>
+        {% endblock %}
+        """
+
+    def get_layout_html(obj: UIElement | Document, resources: Resources, width: int | None, height: int | None, **kwargs):
+        resources = Resources.from_bokeh(resources)
+        return file_html(
+            obj, resources, title="", template=template,
+            template_variables=template_variables or {},
+            _always_new=True
+        )
+
+    old_layout_fn = bokeh.io.export.get_layout_html
+    try:
+        bokeh.io.export.get_layout_html = get_layout_html    # type: ignore
+        img = get_screenshot_as_png(model, driver=webdriver, timeout=timeout, resources=resources)
+    finally:
+        bokeh.io.export.get_layout_html = old_layout_fn
+
+    if img.width == 0 or img.height == 0:
+        raise ValueError("unable to save an empty image")
+
+    return img
+
 def save_png(
     model: UIElement | Document,
     filename: str | os.PathLike | IO,
@@ -85,50 +136,38 @@ def save_png(
     timeout: int
       The maximum amount of time (in seconds) to wait for
     """
-    from bokeh.io.webdriver import webdriver_control
-    if not state.webdriver:
-        state.webdriver = webdriver_control.create()
+    img = _screenshot_image(model, resources, template, template_variables, timeout)
+    img.save(filename, format="png")
 
-    webdriver = state.webdriver
 
-    if template is None:
-        template = r"""\
-        {% block preamble %}
-        <style>
-        html, body {
-        box-sizing: border-box;
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            border: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        </style>
-        {% endblock %}
-        """
+def save_pdf(
+    model: UIElement | Document,
+    filename: str | os.PathLike | IO,
+    resources: BkResources = CDN,
+    template=None,
+    template_variables: dict[str, Any] | None = None,
+    timeout: int = 5
+) -> None:
+    """
+    Saves a bokeh model to pdf by screenshotting and encoding to PDF.
 
-    try:
-        def get_layout_html(obj: UIElement | Document, resources: Resources, width: int | None, height: int | None, **kwargs):
-            resources = Resources.from_bokeh(resources)
-            return file_html(
-                obj, resources, title="", template=template,
-                template_variables=template_variables or {},
-                _always_new=True
-            )
-        old_layout_fn = bokeh.io.export.get_layout_html
-        bokeh.io.export.get_layout_html = get_layout_html    # type: ignore
-        img = get_screenshot_as_png(model, driver=webdriver, timeout=timeout, resources=resources)
-
-        if img.width == 0 or img.height == 0:
-            raise ValueError("unable to save an empty image")
-
-        img.save(filename, format="png")
-    except Exception:
-        raise
-    finally:
-        if template:
-            bokeh.io.export.get_layout_html = old_layout_fn
+    Parameters
+    ----------
+    model: bokeh.model.Model
+      Model to save to pdf
+    filename: str
+      Filename to save to
+    resources: str
+      Resources
+    template:
+      template file, as used by bokeh.file_html. If None will use bokeh defaults
+    template_variables:
+      template_variables file dict, as used by bokeh.file_html
+    timeout: int
+      The maximum amount of time (in seconds) to wait for
+    """
+    img = _screenshot_image(model, resources, template, template_variables, timeout)
+    img.convert("RGB").save(filename, format="PDF")
 
 def _title_from_models(models: Iterable[Model], title: str) -> str:
     if title is not None:
@@ -195,6 +234,7 @@ def save(
     progress: bool = True,
     embed_states={},
     as_png: bool | None = None,
+    as_pdf: bool | None = None,
     **kwargs
 ) -> None:
     """
@@ -235,6 +275,9 @@ def save(
     as_png: boolean (default=None)
         To save as a .png. If None save_png will be true if filename is
         string and ends with png.
+    as_pdf: boolean (default=None)
+        To save as a .pdf. If None save_pdf will be true if filename is
+        string and ends with pdf.
     """
     from ..pane import PaneBase
     from ..template import BaseTemplate
@@ -242,8 +285,16 @@ def save(
     if isinstance(panel, PaneBase) and len(panel.layout) > 1:
         panel = panel.layout
 
+    filename_path = os.fspath(filename) if isinstance(filename, (str, os.PathLike)) else None
+
     if as_png is None:
-        as_png = isinstance(filename, str) and filename.endswith('png')
+        as_png = filename_path is not None and filename_path.lower().endswith('.png')
+
+    if as_pdf is None:
+        as_pdf = filename_path is not None and filename_path.lower().endswith('.pdf')
+
+    if as_png and as_pdf:
+        raise ValueError("Cannot save to both PNG and PDF simultaneously.")
 
     if isinstance(panel, Document):
         doc = panel
@@ -292,6 +343,11 @@ def save(
 
     if as_png:
         return save_png(
+            model, resources=resources, filename=filename, template=template,
+            template_variables=template_variables, **kwargs
+        )
+    if as_pdf:
+        return save_pdf(
             model, resources=resources, filename=filename, template=template,
             template_variables=template_variables, **kwargs
         )
