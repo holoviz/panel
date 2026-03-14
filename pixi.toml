@@ -100,6 +100,9 @@ pyviz_comms = ">=2.0.0"
 requests = "*"
 tqdm = ">=4.48.0"
 typing_extensions = "*"
+firefox = ">=148.0.2,<149"
+geckodriver = ">=0.36.0,<0.37"
+selenium = ">=4.38.0,<5"
 
 [feature.required.tasks]
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
