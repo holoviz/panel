@@ -6,7 +6,6 @@ import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type {Attrs} from "@bokehjs/core/types"
 import {UIElementView} from "@bokehjs/models/ui/ui_element"
 import {isNumber} from "@bokehjs/core/util/types"
-import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 
 import modal_css from "styles/models/modal.css"
 
@@ -42,6 +41,7 @@ export class ModalView extends BkColumnView {
 
   modal: A11yDialogView
   close_button: HTMLButtonElement
+  content: HTMLElement
 
   override connect_signals(): void {
     super.connect_signals()
@@ -63,7 +63,38 @@ export class ModalView extends BkColumnView {
   }
 
   override async update_children(): Promise<void> {
-    await LayoutDOMView.prototype.update_children.call(this)
+    const created = await this.build_child_views()
+    const created_views = new Set(created)
+
+    // Find index up to which the order of the existing views
+    // matches the order of the new views so we can skip
+    // re-inserting views that are already in the correct position.
+    const current_views = Array.from(this.content.children).flatMap(el => {
+      const view = this.child_views.find(view => view.el === el)
+      return view === undefined ? [] : [view]
+    })
+    let matching_index = null
+    for (let i = 0; i < current_views.length; i++) {
+      if (current_views[i] === this.child_views[i]) {
+        matching_index = i
+      } else {
+        break
+      }
+    }
+
+    for (let i = 0; i < this.child_views.length; i++) {
+      const view = this.child_views[i]
+      const is_new = created_views.has(view)
+      const target = view.rendering_target() ?? this.content
+      if (is_new) {
+        view.render_to(target)
+      } else if (matching_index === null || i > matching_index) {
+        target.append(view.el)
+      }
+    }
+    this.r_after_render()
+    this._update_children()
+    this.invalidate_layout()
   }
 
   create_modal(): void {
@@ -93,8 +124,9 @@ export class ModalView extends BkColumnView {
         overflow: "auto",
       },
     } as any)
+    this.content = content
     for (const child_view of this.child_views) {
-      const target = child_view.rendering_target() ?? content
+      const target = child_view.rendering_target() ?? this.content
       child_view.render_to(target)
     }
 
