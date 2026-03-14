@@ -20,7 +20,7 @@ from panel.pane import Markdown
 from panel.reactive import Reactive, ReactiveHTML
 from panel.viewable import Viewable
 from panel.widgets import (
-    Checkbox, IntInput, IntSlider, StaticText, TextInput,
+    Button, Checkbox, IntInput, IntSlider, StaticText, TextInput,
 )
 
 
@@ -410,6 +410,46 @@ def test_in_process_change_event_cleaned_up(document, comm):
         checkbox._process_events({'active': True})
 
     assert document not in checkbox._in_process__events
+
+def test_rapid_toggle_disabled(document, comm):
+    button = Button(name="dummy")
+    model = button.get_root(document, comm)
+
+    assert model.disabled is False
+
+    # Rapid toggle: True then immediately False
+    button.disabled = True
+    button.disabled = False
+
+    assert model.disabled is False
+    assert button.disabled is False
+    assert 'disabled' not in button._events
+
+def test_rapid_toggle_disabled_repeated(document, comm):
+    button = Button(name="dummy")
+    model = button.get_root(document, comm)
+
+    for _ in range(5):
+        button.disabled = True
+        button.disabled = False
+
+    assert model.disabled is False
+    assert button.disabled is False
+    assert 'disabled' not in button._events
+
+def test_python_update_clears_stale_events(document, comm):
+    text_input = TextInput(value='A')
+    model = text_input.get_root(document, comm)
+
+    # Simulate stale frontend event contaminating _events
+    text_input._events['value'] = 'stale'
+
+    # Python sets a new value
+    text_input.value = 'C'
+
+    assert model.value == 'C'
+    assert text_input.value == 'C'
+    assert 'value' not in text_input._events
 
 def test_reactive_html_basic():
 
