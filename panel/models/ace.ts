@@ -66,7 +66,6 @@ export class AcePlotView extends HTMLBoxView {
     this._update_language()
     this._editor.setReadOnly(this.model.readonly)
     this._editor.setShowPrintMargin(this.model.print_margin)
-    this._add_annotations()
     // if on keyup, update code from editor
     if (this.model.on_keyup) {
       this._editor.on("change", () => this._update_code_from_editor())
