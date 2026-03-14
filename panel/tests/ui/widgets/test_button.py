@@ -5,8 +5,8 @@ pytest.importorskip("playwright")
 from bokeh.models import Tooltip
 from playwright.sync_api import Expect, expect
 
-from panel.tests.util import serve_component, wait_until
 from panel.layout import Column
+from panel.tests.util import serve_component, wait_until
 from panel.widgets import (
     Button, CheckButtonGroup, RadioButtonGroup, TextAreaInput, TooltipIcon,
 )
