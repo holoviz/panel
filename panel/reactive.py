@@ -374,10 +374,10 @@ class Syncable(Renderable):
                 del msg[attr]
                 continue
             elif attr in self._events:
-                # Do not override a property value that was just changed
-                # on the frontend
+                # Clear stale frontend event but still apply the
+                # Python-originated update so _changing protection
+                # prevents boomerang re-contamination of _events
                 del self._events[attr]
-                continue
 
             # Bokeh raises UnsetValueError if the value is Undefined.
             try:
