@@ -62,39 +62,12 @@ export class ModalView extends BkColumnView {
     return [...super.stylesheets(), modal_css]
   }
 
-  override async update_children(): Promise<void> {
-    const created = await this.build_child_views()
-    const created_views = new Set(created)
-
-    // Find index up to which the order of the existing views
-    // matches the order of the new views so we can skip
-    // re-inserting views that are already in the correct position.
-    const current_views = Array.from(this.content.children).flatMap(el => {
-      const view = this.child_views.find(view => view.el === el)
-      return view === undefined ? [] : [view]
-    })
-    let matching_index = null
-    for (let i = 0; i < current_views.length; i++) {
-      if (current_views[i] === this.child_views[i]) {
-        matching_index = i
-      } else {
-        break
-      }
-    }
-
-    for (let i = 0; i < this.child_views.length; i++) {
-      const view = this.child_views[i]
-      const is_new = created_views.has(view)
-      const target = view.rendering_target() ?? this.content
-      if (is_new) {
-        view.render_to(target)
-      } else if (matching_index === null || i > matching_index) {
-        target.append(view.el)
-      }
-    }
-    this.r_after_render()
-    this._update_children()
-    this.invalidate_layout()
+  // Route child views into the dialog content container instead of
+  // shadow_el. The inherited update_children() matching optimization
+  // scans shadow_el.children so it won't find existing modal children,
+  // but this is harmless for the small number of children a modal holds.
+  override get self_target() {
+    return this.content ?? this.shadow_el
   }
 
   create_modal(): void {

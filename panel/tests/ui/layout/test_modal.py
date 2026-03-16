@@ -105,13 +105,19 @@ def test_modal_update_objects(page):
     ]
     page.wait_for_timeout(500)
 
-    # New child must render inside #pnx_dialog_content, not inline
+    # New child must render inside #pnx_dialog_content, not inline (#7669)
     updated_children = content.locator(":scope > div:not(.pnx-dialog-close)")
     expect(updated_children).to_have_count(1)
 
     # Modal should still be functional: close and reopen
     page.mouse.click(0, 0)
     expect(content).to_be_hidden()
+
+    # Regression #7669: if children leaked outside the dialog into
+    # the shadow root, they would remain visible after dialog closes
+    dialog = page.locator("#pnx_dialog")
+    expect(dialog).to_be_hidden()
+
     wait_until(lambda: not modal.open, page)
     modal.open = True
     expect(content).to_be_visible()
@@ -160,6 +166,35 @@ def test_modal_append_objects(page):
 
     children = content.locator(":scope > div:not(.pnx-dialog-close)")
     expect(children).to_have_count(2)
+
+
+def test_modal_clear_objects(page):
+    modal = Modal(
+        Spacer(styles=dict(background="red"), width=200, height=200),
+        open=True,
+    )
+
+    serve_component(page, modal)
+
+    content = page.locator("#pnx_dialog_content")
+    expect(content).to_be_visible()
+
+    children = content.locator(":scope > div:not(.pnx-dialog-close)")
+    expect(children).to_have_count(1)
+
+    # Clear all objects
+    modal.objects = []
+    page.wait_for_timeout(500)
+
+    children = content.locator(":scope > div:not(.pnx-dialog-close)")
+    expect(children).to_have_count(0)
+
+    # Modal should still be functional
+    page.mouse.click(0, 0)
+    expect(content).to_be_hidden()
+    wait_until(lambda: not modal.open, page)
+    modal.open = True
+    expect(content).to_be_visible()
 
 
 def test_modal_multiple_updates(page):
