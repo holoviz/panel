@@ -65,7 +65,7 @@ export class EChartsView extends HTMLBoxView {
       try {
         (window as any).echarts.dispose(this._chart)
       } catch (e) {
-        console.debug("ECharts dispose error during re-render:", e)
+        // dispose may fail if echarts was never fully initialized
       }
     }
     this._clear_loading_timer()
@@ -168,7 +168,7 @@ export class EChartsView extends HTMLBoxView {
       try {
         (window as any).echarts.dispose(this._chart)
       } catch (e) {
-        console.debug("ECharts dispose error during removal:", e)
+        // dispose may fail if echarts was never fully initialized
       }
     }
   }
