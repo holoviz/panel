@@ -99,6 +99,16 @@ export class CardView extends ColumnView {
       header.el.style.backgroundColor = header_background != null ? header_background : ""
       this.button_el.appendChild(header.el)
       this.button_el.addEventListener("click", (e: MouseEvent) => this._toggle_button(e))
+      this.button_el.addEventListener("keyup", (e: KeyboardEvent) => {
+        if (e.code === "Space") {
+          for (const el of e.composedPath()) {
+            if (el instanceof HTMLInputElement) {
+              e.preventDefault()
+              return
+            }
+          }
+        }
+      })
       header_el = this.button_el
     } else {
       header_el = DOM.create_element((header_tag as any), {class: header_css_classes})
