@@ -64,7 +64,9 @@ export class EChartsView extends HTMLBoxView {
     if (this._chart != null) {
       try {
         (window as any).echarts.dispose(this._chart)
-      } catch (e) {}
+      } catch (e) {
+        console.debug("ECharts dispose error during re-render:", e)
+      }
     }
     this._clear_loading_timer()
     super.render()
@@ -165,7 +167,9 @@ export class EChartsView extends HTMLBoxView {
     if (this._chart != null) {
       try {
         (window as any).echarts.dispose(this._chart)
-      } catch (e) {}
+      } catch (e) {
+        console.debug("ECharts dispose error during removal:", e)
+      }
     }
   }
 
@@ -211,7 +215,7 @@ export class EChartsView extends HTMLBoxView {
           const serialized = JSON.parse(JSON.stringify(processed))
           this.model.trigger_event(new EChartsEvent(event_type, serialized, query))
         }
-        if (query == null) {
+        if (query != null) {
           this._chart.on(event_type, query, callback)
         } else {
           this._chart.on(event_type, callback)

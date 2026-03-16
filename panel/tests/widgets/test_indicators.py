@@ -150,6 +150,19 @@ def test_gauge_process_param_change_with_colors():
     ]
 
 
+def test_gauge_warns_without_extension(caplog):
+    import logging
+    from panel.config import panel_extension
+    original = list(panel_extension._loaded_extensions)
+    try:
+        panel_extension._loaded_extensions.clear()
+        with caplog.at_level(logging.WARNING):
+            Gauge(name="G", value=50, bounds=(0, 100))
+        assert "Gauge requires the ECharts library" in caplog.text
+    finally:
+        panel_extension._loaded_extensions.extend(original)
+
+
 def test_tqdm_color():
     tqdm = Tqdm()
     tqdm.text_pane.styles={'color': 'green'}
