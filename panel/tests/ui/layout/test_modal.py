@@ -1,7 +1,7 @@
 import pytest
 
 from panel.layout import Modal, Spacer
-from panel.tests.util import serve_component
+from panel.tests.util import serve_component, wait_until
 
 pytest.importorskip("playwright")
 
@@ -112,6 +112,7 @@ def test_modal_update_objects(page):
     # Modal should still be functional: close and reopen
     page.mouse.click(0, 0)
     expect(content).to_be_hidden()
+    wait_until(lambda: not modal.open, page)
     modal.open = True
     expect(content).to_be_visible()
 
@@ -187,5 +188,6 @@ def test_modal_multiple_updates(page):
     # Modal still functional
     page.mouse.click(0, 0)
     expect(content).to_be_hidden()
+    wait_until(lambda: not modal.open, page)
     modal.open = True
     expect(content).to_be_visible()
