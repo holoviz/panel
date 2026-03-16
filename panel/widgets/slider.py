@@ -968,7 +968,8 @@ class _EditableContinuousSlider(CompositeWidget):
 
     @param.depends('value', watch=True)
     def _update_value(self):
-        self._slider.value = self.value
+        if self.value is not None:
+            self._slider.value = self.value
         self._value_edit.value = self.value
 
     def _sync_value(self, event):

@@ -11,6 +11,7 @@ Many thanks to the contributors to this release including:
 
 - Improve Python error messages displayed when serving apps ([#8478](https://github.com/holoviz/panel/pull/8478))
 - Improve `state.busy` logic to avoid mismatches in busy state tracking ([#8498](https://github.com/holoviz/panel/pull/8498))
+- Allow configuring the Panel CDN with the PANEL_CDN_ROOT environment variable or `pn.config.cdn_root` ([#8512](https://github.com/holoviz/panel/pull/8512))
 
 ### 🐛 Bug Fixes
 
