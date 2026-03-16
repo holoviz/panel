@@ -152,6 +152,7 @@ def test_gauge_process_param_change_with_colors():
 
 def test_gauge_warns_without_extension(caplog):
     import logging
+
     from panel.config import panel_extension
     original = list(panel_extension._loaded_extensions)
     try:

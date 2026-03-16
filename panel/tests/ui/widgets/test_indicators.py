@@ -6,6 +6,7 @@ from bokeh.models import Tooltip
 from playwright.sync_api import expect
 
 import panel as pn
+
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import TooltipIcon
 from panel.widgets.indicators import Gauge

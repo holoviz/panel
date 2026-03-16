@@ -106,7 +106,7 @@ export class EChartsView extends HTMLBoxView {
 
   _await_echarts(): void {
     // Try script onload listener first (event-driven, not polling)
-    const script = document.querySelector("script[src*='echarts']") as HTMLScriptElement | null
+    const script = document.querySelector("script[src*='echarts']")
     if (script != null) {
       const onLoad = () => {
         script.removeEventListener("load", onLoad)
