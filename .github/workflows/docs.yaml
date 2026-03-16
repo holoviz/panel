@@ -49,7 +49,7 @@ jobs:
           opengl: true
       - name: Build documentation
         run: pixi run -e docs docs-build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: docs
@@ -64,7 +64,7 @@ jobs:
     runs-on: "ubuntu-latest"
     needs: [docs_build]
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: docs
           path: builtdocs/
