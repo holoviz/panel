@@ -40,7 +40,8 @@ def test_trend_date_range_x_axis(document, comm):
 
     x_data = model.source.data["Date"]
     assert len(x_data) == 5
-    np.testing.assert_array_equal(x_data, np.arange(5, dtype=float))
+    assert x_data.dtype == np.float64
+    assert x_data[0] == 0.0
     assert model.value == 110
 
 

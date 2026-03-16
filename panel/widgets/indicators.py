@@ -1179,8 +1179,11 @@ class Trend(SyncableData, Indicator):
             self.plot_x in getattr(self.data, 'columns', []) and
             np.issubdtype(self.data[self.plot_x].dtype, np.datetime64)
         ):
+            x_ns = self.data[self.plot_x].astype(np.int64)
+            diffs = np.diff(x_ns)
+            min_diff = diffs[diffs > 0].min() if len(diffs) else 1
             processed = dict(processed)
-            processed[self.plot_x] = np.arange(len(self.data), dtype=float)
+            processed[self.plot_x] = (x_ns - x_ns[0]) / min_diff
         return self.data, processed
 
     def _init_params(self):
