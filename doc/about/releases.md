@@ -1,5 +1,48 @@
 # Releases
 
+## Version 1.8.10
+
+Panel 1.8.10 focuses on stability improvements across widgets, plotting integrations, and server behavior. It includes fixes for Tabulator serialization, Param widget updates, Plotly and Vega regressions, and several UI issues. This release also improves compatibility with **Bokeh 3.9**, enhances error reporting when serving apps, and addresses a security issue in `panel.js`.
+
+Many thanks to the contributors to this release including:
+@philippjfr, @SumaiyaIslam, @emunsing, @AtharvaJaiswal005, @DevilSpecial, @DanielAlanBates, @FlorianVerdonck, @ahuang11, @SimonHeybrock, @Coderambling, @MarcSkovMadsen, @ghostiee-11, @tmoulignier, and @aadrita.
+
+### ✨ Enhancements
+
+- Improve Python error messages displayed when serving apps ([#8478](https://github.com/holoviz/panel/pull/8478))
+- Improve `state.busy` logic to avoid mismatches in busy state tracking ([#8498](https://github.com/holoviz/panel/pull/8498))
+- Allow configuring the Panel CDN with the PANEL_CDN_ROOT environment variable or `pn.config.cdn_root` ([#8512](https://github.com/holoviz/panel/pull/8512))
+
+### 🐛 Bug Fixes
+
+- Fix `DateRangeSlider` incorrectly modifying both values with timezone-aware timestamps ([#8455](https://github.com/holoviz/panel/pull/8455))
+- Preserve slider bar color when `Accordion` panels are collapsed or expanded ([#8460](https://github.com/holoviz/panel/pull/8460))
+- Fix datetime axis type mismatch in `link_axes` after scroll and plot update ([#8468](https://github.com/holoviz/panel/pull/8468))
+- Fix JSON serialization errors in `Tabulator` when using mixed `NaT` datetime columns ([#8491](https://github.com/holoviz/panel/pull/8491))
+- Fix Param widget values not updating when changed inside their own callback ([#8492](https://github.com/holoviz/panel/pull/8492))
+- Fix missing validation in `_imgshape` for image panes ([#8485](https://github.com/holoviz/panel/pull/8485))
+- Fix Vega pane not updating when using inline data ([#8495](https://github.com/holoviz/panel/pull/8495))
+- Fix Plotly regressions introduced in earlier 1.8 releases ([#8471](https://github.com/holoviz/panel/pull/8471), [#8476](https://github.com/holoviz/panel/pull/8476))
+- Ensure all `ReactiveESM` children render correctly ([#8473](https://github.com/holoviz/panel/pull/8473))
+
+### 🔒 Security
+
+- Address XSS and prototype overwrite issues in `panel.js` ([#8501](https://github.com/holoviz/panel/pull/8501))
+
+### 📦 Compatibility & Dependency Updates
+
+- Add compatibility with **Bokeh 3.9** ([#8475](https://github.com/holoviz/panel/pull/8475))
+
+### 📚 Documentation
+
+- Recommend using bound function references instead of `watch=True` in the `bind_component` guide ([#8479](https://github.com/holoviz/panel/pull/8479))
+
+### 🧪 Tests & Maintenance
+
+- Improve test robustness ([#8502](https://github.com/holoviz/panel/pull/8502))
+- Fix JupyterLite CI workflow ([#8494](https://github.com/holoviz/panel/pull/8494), [#8496](https://github.com/holoviz/panel/pull/8496))
+
+
 ## Version 1.8.9
 
 Many thanks to [@philippjfr](https://github.com/philippjfr) and [@hoxbro](https://github.com/hoxbro) for their contributions.
