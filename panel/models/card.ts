@@ -100,7 +100,7 @@ export class CardView extends ColumnView {
       this.button_el.appendChild(header.el)
       this.button_el.addEventListener("click", (e: MouseEvent) => this._toggle_button(e))
       this.button_el.addEventListener("keyup", (e: KeyboardEvent) => {
-        if (event.code === "Space") {
+        if (e.code === "Space") {
           for (const el of e.composedPath()) {
             if (el instanceof HTMLInputElement) {
               e.preventDefault()
