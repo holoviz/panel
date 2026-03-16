@@ -39,9 +39,12 @@ export class EChartsEvent extends ModelEvent {
 export class EChartsView extends HTMLBoxView {
   declare model: ECharts
 
-  container: Element
+  container: HTMLDivElement
   _chart: any
   _callbacks: Array<any>[] = []
+  _loading_interval: ReturnType<typeof setInterval> | null = null
+  _loading_timeout: ReturnType<typeof setTimeout> | null = null
+  _loading_el: HTMLDivElement | null = null
 
   override connect_signals(): void {
     super.connect_signals()
@@ -50,7 +53,9 @@ export class EChartsView extends HTMLBoxView {
     this.on_change([width, height], () => this._resize())
     this.on_change([theme, renderer], () => {
       this.render()
-      this._chart.resize()
+      if (this._chart != null) {
+        this._chart.resize()
+      }
     })
     this.on_change([event_config, js_events], () => this._subscribe())
   }
@@ -61,8 +66,89 @@ export class EChartsView extends HTMLBoxView {
         (window as any).echarts.dispose(this._chart)
       } catch (e) {}
     }
+    this._clear_loading_timer()
     super.render()
-    this.container = div({style: {height: "100%", width: "100%"}})
+    this.container = div({style: {height: "100%", width: "100%"}}) as HTMLDivElement
+    this.shadow_el.append(this.container)
+
+    if ((window as any).echarts == null) {
+      this._show_loading()
+      this._await_echarts()
+      return
+    }
+    this._init_chart()
+  }
+
+  _show_loading(): void {
+    this._loading_el = div({
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        width: "100%",
+        color: "#888",
+        fontSize: "14px",
+      },
+    }) as HTMLDivElement
+    this._loading_el.textContent = "Loading ECharts..."
+    this.container.append(this._loading_el)
+  }
+
+  _hide_loading(): void {
+    if (this._loading_el != null) {
+      this._loading_el.remove()
+      this._loading_el = null
+    }
+  }
+
+  _await_echarts(): void {
+    // Try script onload listener first (event-driven, not polling)
+    const script = document.querySelector("script[src*='echarts']") as HTMLScriptElement | null
+    if (script != null) {
+      const onLoad = () => {
+        script.removeEventListener("load", onLoad)
+        this._clear_loading_timer()
+        this._hide_loading()
+        this._init_chart()
+      }
+      script.addEventListener("load", onLoad)
+    }
+
+    // Polling fallback in case script tag isn't found or onload doesn't fire
+    this._loading_interval = setInterval(() => {
+      if ((window as any).echarts != null) {
+        this._clear_loading_timer()
+        this._hide_loading()
+        this._init_chart()
+      }
+    }, 50)
+    this._loading_timeout = setTimeout(() => {
+      this._clear_loading_timer()
+      this._hide_loading()
+      console.warn(
+        "ECharts library failed to load. Ensure you call pn.extension('echarts') " +
+        "before using Gauge or ECharts components.",
+      )
+    }, 10000)
+  }
+
+  _clear_loading_timer(): void {
+    if (this._loading_interval != null) {
+      clearInterval(this._loading_interval)
+      this._loading_interval = null
+    }
+    if (this._loading_timeout != null) {
+      clearTimeout(this._loading_timeout)
+      this._loading_timeout = null
+    }
+  }
+
+  _init_chart(): void {
+    if ((window as any).echarts == null) {
+      return
+    }
+    this._hide_loading()
     const config = {width: this.model.width, height: this.model.height, renderer: this.model.renderer}
     this._chart = (window as any).echarts.init(
       this.container,
@@ -71,13 +157,15 @@ export class EChartsView extends HTMLBoxView {
     )
     this._plot()
     this._subscribe()
-    this.shadow_el.append(this.container)
   }
 
   override remove(): void {
+    this._clear_loading_timer()
     super.remove()
     if (this._chart != null) {
-      (window as any).echarts.dispose(this._chart)
+      try {
+        (window as any).echarts.dispose(this._chart)
+      } catch (e) {}
     }
   }
 
@@ -89,7 +177,7 @@ export class EChartsView extends HTMLBoxView {
   }
 
   _plot(): void {
-    if ((window as any).echarts == null) {
+    if ((window as any).echarts == null || this._chart == null) {
       return
     }
     const data = transformJsPlaceholders(this.model.data)
@@ -97,11 +185,13 @@ export class EChartsView extends HTMLBoxView {
   }
 
   _resize(): void {
-    this._chart.resize({width: this.model.width, height: this.model.height})
+    if (this._chart != null) {
+      this._chart.resize({width: this.model.width, height: this.model.height})
+    }
   }
 
   _subscribe(): void {
-    if ((window as any).echarts == null) {
+    if ((window as any).echarts == null || this._chart == null) {
       return
     }
     for (const [event_type, callback] of this._callbacks) {

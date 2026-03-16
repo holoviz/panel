@@ -5,8 +5,10 @@ pytest.importorskip("playwright")
 from bokeh.models import Tooltip
 from playwright.sync_api import expect
 
+import panel as pn
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import TooltipIcon
+from panel.widgets.indicators import Gauge
 
 pytestmark = pytest.mark.ui
 
@@ -80,3 +82,40 @@ def test_tooltip_text_updates(page):
     tooltip = page.locator(".bk-tooltip-content")
     expect(tooltip).to_have_count(1)
     expect(tooltip).to_have_text("Updated")
+
+
+def test_gauge_renders(page):
+    gauge = Gauge(name="Speed", value=75, bounds=(0, 200))
+
+    serve_component(page, gauge)
+
+    # Wait for ECharts to load and render a canvas element
+    expect(page.locator("canvas")).to_have_count(1, timeout=10000)
+
+
+def test_gauge_does_not_crash_other_widgets(page):
+    """Regression test: Gauge should not crash other widgets on the page."""
+    gauge = Gauge(name="G", value=50, bounds=(0, 100))
+    slider = pn.widgets.IntSlider(name="Slider", value=25, start=0, end=100)
+    col = pn.Column(gauge, slider)
+
+    serve_component(page, col)
+
+    # The slider must render even if Gauge is on the same page
+    expect(page.locator(".noUi-target")).to_have_count(1, timeout=10000)
+    # Gauge canvas should also eventually render
+    expect(page.locator("canvas")).to_have_count(1, timeout=10000)
+
+
+def test_gauge_value_update(page):
+    gauge = Gauge(name="G", value=25, bounds=(0, 100))
+
+    serve_component(page, gauge)
+
+    expect(page.locator("canvas")).to_have_count(1, timeout=10000)
+
+    # Update value and verify no crash
+    gauge.value = 75
+
+    # Canvas should still be present after update
+    expect(page.locator("canvas")).to_have_count(1, timeout=5000)
