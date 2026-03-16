@@ -40,7 +40,7 @@ jobs:
           download-data: false
       - name: lite build
         run: pixi run lite-build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: jupyterlite
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lite_build]
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: jupyterlite
           path: lite/dist/

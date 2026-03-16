@@ -26,7 +26,7 @@ jobs:
         shell: bash -el {0}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Set and echo git ref
@@ -36,7 +36,7 @@ jobs:
         run: |
           echo "Deploying from ref $HEAD_BRANCH"
           echo "tag=$HEAD_BRANCH" >> $GITHUB_OUTPUT
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
           auto-update-conda: true
