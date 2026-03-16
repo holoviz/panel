@@ -240,6 +240,11 @@ class _config(_base_config):
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of the Admin Panel logger")
 
+    _cdn_root = param.String(
+        default="https://cdn.holoviz.org/panel/", doc="""
+        The root path of the CDN. Configurable to support air-gapped and
+        sandboxed environments.""")
+
     _comms = param.Selector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
@@ -346,7 +351,7 @@ class _config(_base_config):
 
     # Global parameters that are shared across all sessions
     _globals: ClassVar[set[str]] = {
-        'admin_plugins', 'autoreload', 'comms', 'cookie_path', 'cookie_secret',
+        'admin_plugins', 'autoreload', 'cdn_root', 'comms', 'cookie_path', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
@@ -514,6 +519,10 @@ class _config(_base_config):
     def admin_log_level(self):
         admin_log_level = os.environ.get('PANEL_ADMIN_LOG_LEVEL', self._admin_log_level)
         return admin_log_level.upper() if admin_log_level else None
+
+    @property
+    def cdn_root(self):
+        return os.environ.get('PANEL_CDN_ROOT', self._cdn_root)
 
     @property
     def console_output(self):
