@@ -683,6 +683,20 @@ def test_editable_slider_disabled():
     assert not slider._value_edit.disabled
 
 @pytest.mark.parametrize(
+    'editableslider',
+    [EditableFloatSlider, EditableIntSlider],
+    ids=["EditableFloatSlider", "EditableIntSlider"]
+)
+def test_editable_slider_none_value_no_error(editableslider):
+    slider = editableslider(value=5, start=0, end=10)
+    previous_slider_value = slider._slider.value
+
+    slider._value_edit.value = None  # simulate clearing the input field
+
+    assert slider._slider.value == previous_slider_value
+    assert slider._value_edit.value is None
+
+@pytest.mark.parametrize(
     'editableslider,start,end,step,val1,val2,val3,diff1',
     [
         (EditableRangeSlider, 0.1, 0.5, 0.1, (0.2, 0.4), (0.2, 0.3), (0.1, 0.5), 0.1),
