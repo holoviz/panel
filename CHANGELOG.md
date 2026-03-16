@@ -5,7 +5,7 @@
 Panel 1.8.10 focuses on stability improvements across widgets, plotting integrations, and server behavior. It includes fixes for Tabulator serialization, Param widget updates, Plotly and Vega regressions, and several UI issues. This release also improves compatibility with **Bokeh 3.9**, enhances error reporting when serving apps, and addresses a security issue in `panel.js`.
 
 Many thanks to the contributors to this release including:
-@philippjfr, @SumaiyaIslam, @emunsing, @AtharvaJaiswal005, @DevilSpecial, @DanielAlanBates, @FlorianVerdonck, @ahuang11, @SimonHeybrock, @Coderambling, @MarcSkovMadsen, @ghostiee-11, @tmoulignier, and @aadrita.
+@philippjfr, @SuMayaBee, @AtharvaJaiswal005, @hoxbro, @ghostiee-11, and @tmoulignier.
 
 ### ✨ Enhancements
 
@@ -15,6 +15,7 @@ Many thanks to the contributors to this release including:
 
 ### 🐛 Bug Fixes
 
+- Prevent spacebar in `Card` header inputs from toggling collapse ([#8442](https://github.com/holoviz/panel/pull/8442))
 - Fix `DateRangeSlider` incorrectly modifying both values with timezone-aware timestamps ([#8455](https://github.com/holoviz/panel/pull/8455))
 - Preserve slider bar color when `Accordion` panels are collapsed or expanded ([#8460](https://github.com/holoviz/panel/pull/8460))
 - Fix datetime axis type mismatch in `link_axes` after scroll and plot update ([#8468](https://github.com/holoviz/panel/pull/8468))
@@ -24,6 +25,9 @@ Many thanks to the contributors to this release including:
 - Fix Vega pane not updating when using inline data ([#8495](https://github.com/holoviz/panel/pull/8495))
 - Fix Plotly regressions introduced in earlier 1.8 releases ([#8471](https://github.com/holoviz/panel/pull/8471), [#8476](https://github.com/holoviz/panel/pull/8476))
 - Ensure all `ReactiveESM` children render correctly ([#8473](https://github.com/holoviz/panel/pull/8473))
+- Ensure `CodeEditor` annotations are not overridden ([#8505](https://github.com/holoviz/panel/pull/8505))
+- Fix Modal objects update rendering inline instead of in dialog ([#8508](https://github.com/holoviz/panel/pull/8508))
+- Prevent ValueError when `EditableFloatSlider` input is cleared ([#8511](https://github.com/holoviz/panel/pull/8511))
 
 ### 🔒 Security
 
