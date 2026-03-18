@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 pytest.importorskip("playwright")
@@ -15,6 +17,18 @@ from panel.pane import ECharts
 from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
+
+MINIMAL_GEOJSON = {
+    "type": "FeatureCollection",
+    "features": [{
+        "type": "Feature",
+        "properties": {"name": "TestRegion"},
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]
+        }
+    }]
+}
 
 data = [
     {"value": 12, "percent": 0.8},
@@ -52,3 +66,54 @@ def test_pyecharts_with_jscode(page):
 
     for v in data:
         expect(page.locator(f'text:has-text("{int(v["percent"]*100)}%")')).to_have_count(1)
+
+
+def test_echarts_geo_map_with_geo_data(page):
+    """Test that ECharts geo map renders region outlines when geo_data is provided."""
+    echart_config = {
+        "geo": {
+            "map": "test",
+            "roam": True,
+        },
+        "series": [],
+    }
+
+    pane = ECharts(echart_config, geo_data={"test": MINIMAL_GEOJSON},
+                   renderer="svg", height=300, width=400)
+
+    serve_component(page, pane)
+
+    # SVG should contain path elements for the geo region outlines
+    expect(page.locator("svg")).to_have_count(1, timeout=10000)
+    expect(page.locator("svg path").first).to_be_visible(timeout=5000)
+
+
+def test_echarts_geo_map_with_url_string(page):
+    """A URL-string geo_data value is fetched on the frontend before registerMap."""
+    fetched = []
+
+    def handler(route):
+        fetched.append(route.request.url)
+        route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps(MINIMAL_GEOJSON),
+        )
+
+    page.route("**/mocked_test_map.json", handler)
+
+    echart_config = {
+        "geo": {"map": "test", "roam": True},
+        "series": [],
+    }
+    pane = ECharts(
+        echart_config,
+        geo_data={"test": "http://example.test/mocked_test_map.json"},
+        renderer="svg", height=300, width=400,
+    )
+
+    serve_component(page, pane)
+
+    expect(page.locator("svg")).to_have_count(1, timeout=10000)
+    expect(page.locator("svg path").first).to_be_visible(timeout=5000)
+    assert any("mocked_test_map.json" in url for url in fetched)
