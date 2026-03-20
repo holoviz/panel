@@ -515,13 +515,24 @@ async function render(id) {
         }
         if (resolvedProp && targetModel) {
           const [value, setValue] = React.useState(targetModel.attributes[resolvedProp])
+          // Track values sent to Python to detect echoed-back changes
+          const sentRef = React.useRef([])
 
           React.useEffect(() => {
             const cb = () => {
               if (target.model.events.includes(resolvedProp)) {
                 targetModel.attributes[resolvedProp] && (setValue((v) => v+1) || targetModel.setv({[resolvedProp]: false}))
               } else {
-                setValue(targetModel.attributes[resolvedProp])
+                const incoming = targetModel.attributes[resolvedProp]
+                const idx = sentRef.current.indexOf(incoming)
+                if (idx !== -1) {
+                  // Value is an echo of what we sent — discard it
+                  sentRef.current.splice(0, idx + 1)
+                } else {
+                  // Genuine server-initiated update — apply it
+                  sentRef.current.length = 0
+                  setValue(incoming)
+                }
               }
             }
             react_proxy.on(prop, cb, true)
@@ -530,6 +541,7 @@ async function render(id) {
 
           React.useEffect(() => {
             if (!target.model.events.includes(resolvedProp)) {
+              sentRef.current.push(value)
               targetModel.setv({ [resolvedProp]: value })
             }
           }, [value])
