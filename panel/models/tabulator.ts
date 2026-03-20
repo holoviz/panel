@@ -387,9 +387,9 @@ export class DataTabulatorView extends HTMLBoxView {
   _applied_styles: boolean = false
   _building: boolean = false
   _redrawing: boolean = false
-  /** Resize redraw waiting for root layout to become idle (see `this.root.is_idle`). */
+  /** Coalesced resize redraw; waits for `this.root.ready` (Bokeh view async chain) before redrawing. */
   _resize_pending: boolean = false
-  _root_idle_timer: ReturnType<typeof setTimeout> | null = null
+  _resize_flush: Promise<void> | null = null
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
   _is_scrolling: boolean = false
@@ -578,40 +578,44 @@ export class DataTabulatorView extends HTMLBoxView {
     this._request_resize_redraw()
   }
 
-  private _clear_root_idle_timer(): void {
-    if (this._root_idle_timer != null) {
-      clearTimeout(this._root_idle_timer)
-      this._root_idle_timer = null
-    }
-  }
-
   /**
-   * Bokeh `document.is_idle` does not track ongoing layout after the first render.
-   * The root layout view’s `is_idle` does; there is no signal when it flips, so we poll with setTimeout.
+   * Defer Tabulator redraw until the Bokeh root view’s `ready` promise settles — it chains async
+   * work from connected signals (similar in spirit to waiting out `has_finished` / layout churn)
+   * without polling `root.is_idle`.
    */
   private _request_resize_redraw(): void {
     this._resize_pending = true
-    if (this._root_idle_timer == null) {
-      this._poll_root_idle_for_resize()
+    if (this._resize_flush !== null) {
+      return
     }
+    this._resize_flush = this._flush_resize_when_root_ready()
+    void this._resize_flush.finally(() => {
+      this._resize_flush = null
+      if (this._resize_pending) {
+        this._request_resize_redraw()
+      }
+    })
   }
 
-  private _poll_root_idle_for_resize(): void {
-    this._clear_root_idle_timer()
-    if (!this._resize_pending) {
-      return
-    }
-    if (this._is_scrolling || this._initializing || this._building || this.container === null || this.is_drawing) {
-      this._root_idle_timer = setTimeout(() => this._poll_root_idle_for_resize(), 0)
-      return
-    }
-    const root = this.root as {is_idle?: boolean} | null
-    if (root != null && root.is_idle === true) {
+  private async _flush_resize_when_root_ready(): Promise<void> {
+    while (true) {
+      if (!this._resize_pending) {
+        return
+      }
+      await this.root.ready
+      // `remove()` can clear `_resize_pending` while awaiting `root.ready`.
+      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- cleared asynchronously in `remove()` */
+      if (!this._resize_pending) {
+        continue
+      }
+      if (this._is_scrolling || this._initializing || this._building || this.container === null || this.is_drawing) {
+        await new Promise<void>((resolve) => setTimeout(resolve, 0))
+        continue
+      }
       this._resize_pending = false
       this._resize_redraw()
       return
     }
-    this._root_idle_timer = setTimeout(() => this._poll_root_idle_for_resize(), 0)
   }
 
   _resize_redraw(): void {
@@ -640,7 +644,6 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   override remove(): void {
-    this._clear_root_idle_timer()
     this._resize_pending = false
     this._last_after_resize_el_width = null
     this._last_after_resize_el_height = null
