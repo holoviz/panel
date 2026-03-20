@@ -365,6 +365,9 @@ function clone_column(group: any): any {
   return {...group, columns: group_columns}
 }
 
+/** Ignore Tabulator redraw after `after_resize` when `this.el` client size changes by at most this many pixels per axis. */
+const EL_CLIENT_RESIZE_EPSILON_PX = 3
+
 export class DataTabulatorView extends HTMLBoxView {
   declare model: DataTabulator
 
@@ -384,16 +387,18 @@ export class DataTabulatorView extends HTMLBoxView {
   _applied_styles: boolean = false
   _building: boolean = false
   _redrawing: boolean = false
-  _debounced_redraw: any = null
+  /** Resize redraw waiting for root layout to become idle (see `this.root.is_idle`). */
+  _resize_pending: boolean = false
+  _root_idle_timer: ReturnType<typeof setTimeout> | null = null
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
   _is_scrolling: boolean = false
   _automatic_page_size: boolean = false
+  _last_after_resize_el_width: number | null = null
+  _last_after_resize_el_height: number | null = null
 
   override connect_signals(): void {
     super.connect_signals()
-
-    this._debounced_redraw = debounce(() => this._resize_redraw(), 20, false)
     const {
       configuration, layout, columns, groupby, visible, download,
       children, expanded, cell_styles, hidden_columns, page_size,
@@ -549,24 +554,73 @@ export class DataTabulatorView extends HTMLBoxView {
     super.after_layout()
     if (this.tabulator != null && this._initializing && !this.is_drawing) {
       this._initializing = false
-      this._resize_redraw()
+      this._request_resize_redraw()
     }
   }
 
   override after_resize(): void {
     super.after_resize()
-    if (!this._is_scrolling && !this._initializing && !this.is_drawing) {
-      this._debounced_redraw()
+    if (this._is_scrolling || this._initializing || this.is_drawing) {
+      return
+    }
+    const w = this.el.clientWidth
+    const h = this.el.clientHeight
+    if (
+      this._last_after_resize_el_width !== null &&
+      this._last_after_resize_el_height !== null &&
+      Math.abs(w - this._last_after_resize_el_width) <= EL_CLIENT_RESIZE_EPSILON_PX &&
+      Math.abs(h - this._last_after_resize_el_height) <= EL_CLIENT_RESIZE_EPSILON_PX
+    ) {
+      return
+    }
+    this._last_after_resize_el_width = w
+    this._last_after_resize_el_height = h
+    this._request_resize_redraw()
+  }
+
+  private _clear_root_idle_timer(): void {
+    if (this._root_idle_timer != null) {
+      clearTimeout(this._root_idle_timer)
+      this._root_idle_timer = null
     }
   }
 
+  /**
+   * Bokeh `document.is_idle` does not track ongoing layout after the first render.
+   * The root layout view’s `is_idle` does; there is no signal when it flips, so we poll with setTimeout.
+   */
+  private _request_resize_redraw(): void {
+    this._resize_pending = true
+    if (this._root_idle_timer == null) {
+      this._poll_root_idle_for_resize()
+    }
+  }
+
+  private _poll_root_idle_for_resize(): void {
+    this._clear_root_idle_timer()
+    if (!this._resize_pending) {
+      return
+    }
+    if (this._is_scrolling || this._initializing || this._building || this.container === null || this.is_drawing) {
+      this._root_idle_timer = setTimeout(() => this._poll_root_idle_for_resize(), 0)
+      return
+    }
+    const root = this.root as {is_idle?: boolean} | null
+    if (root != null && root.is_idle === true) {
+      this._resize_pending = false
+      this._resize_redraw()
+      return
+    }
+    this._root_idle_timer = setTimeout(() => this._poll_root_idle_for_resize(), 0)
+  }
+
   _resize_redraw(): void {
-    if (this._initializing || !this.container || this._building) {
+    if (this._initializing || this.container === null || this._building) {
       return
     }
     const width = this.container.clientWidth
     const height = this.container.clientHeight
-    if (!width || !height) {
+    if (!(width > 0 && height > 0)) {
       return
     }
     this.redraw(true, true)
@@ -586,6 +640,10 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   override remove(): void {
+    this._clear_root_idle_timer()
+    this._resize_pending = false
+    this._last_after_resize_el_width = null
+    this._last_after_resize_el_height = null
     this.tabulator?.destroy()
     super.remove()
   }
@@ -593,6 +651,8 @@ export class DataTabulatorView extends HTMLBoxView {
   override render(): void {
     this.tabulator?.destroy()
     super.render()
+    this._last_after_resize_el_width = null
+    this._last_after_resize_el_height = null
     this._initializing = true
     this._building = true
     const container = div({style: {display: "contents"}})
@@ -717,13 +777,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.setPage(this.model.page)
     }
     this._building = false
-    schedule_when(() => {
-      const initializing = this._initializing
-      this._initializing = false
-      if (initializing) {
-        this._resize_redraw()
-      }
-    }, () => this.has_finished() && [...this._initialized_stylesheets.values()].every(v => v))
+    this._request_resize_redraw()
   }
 
   recompute_page_size(): void {
