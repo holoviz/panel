@@ -230,7 +230,7 @@ def test_esm_parameter_override(document, comm):
 
 class ESMInput(ReactiveESM):
 
-    value_input = param.String(default='')
+    value_input = param.String(default='', doc="Text value updated on every key press.")
 
     _esm = """
     export function render({model}) {}
@@ -239,7 +239,7 @@ class ESMInput(ReactiveESM):
 
 class ReactInput(ReactComponent):
 
-    value_input = param.String(default='')
+    value_input = param.String(default='', doc="Text value updated on every key press.")
 
     _esm = """
     export function render({model}) {
