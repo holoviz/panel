@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 import param
+import pytest
 
 from bokeh.plotting import figure
 
-from panel.custom import PyComponent, ReactiveESM
-from panel.io.state import state
+from panel.custom import PyComponent, ReactComponent, ReactiveESM
+from panel.io.state import set_curdoc, state
 from panel.layout import Row
 from panel.pane import Bokeh, Markdown
 from panel.util import edit_readonly
@@ -225,3 +226,46 @@ def test_esm_parameter_override(document, comm):
     esm.width = 84
 
     assert model.width == 84
+
+
+class ESMInput(ReactiveESM):
+
+    value_input = param.String(default='')
+
+    _esm = """
+    export function render({model}) {}
+    """
+
+
+class ReactInput(ReactComponent):
+
+    value_input = param.String(default='')
+
+    _esm = """
+    export function render({model}) {
+      const [value_input, setValueInput] = model.useState("value_input")
+      return <input value={value_input} onChange={(e) => setValueInput(e.target.value)} />
+    }
+    """
+
+
+@pytest.mark.parametrize('component', [ESMInput, ReactInput])
+def test_esm_property_change_does_not_boomerang(document, comm, component):
+    widget = component(value_input='A')
+
+    model = widget.get_root(document, comm)
+
+    assert model.data.value_input == 'A'
+
+    # Simulate: frontend updates the property to 'B' (user typed)
+    model.data.value_input = 'B'
+
+    # Simulate: a different frontend event arrives for processing
+    with set_curdoc(document):
+        widget._process_events({'value_input': 'C'})
+
+    # The Bokeh model should retain 'B' (the latest frontend value),
+    # NOT be overwritten to 'C' (which would be a boomerang).
+    assert model.data.value_input == 'B'
+    # The Python param should still be updated to 'C'.
+    assert widget.value_input == 'C'
