@@ -28,15 +28,4 @@ From there, follow the template's [step-by-step guide](https://github.com/panel-
 
 ## Example extensions
 
-The [**panel-extensions**](https://github.com/orgs/panel-extensions/repositories) GitHub organization hosts extensions built with this template. Browse it to see real-world examples and find components you can use directly:
-
-| Extension | Description |
-|-----------|-------------|
-| [panel-material-ui](https://github.com/panel-extensions/panel-material-ui) | Material UI components for Panel |
-| [panel-graphic-walker](https://github.com/panel-extensions/panel-graphic-walker) | Graphic Walker drag-and-drop data explorer |
-| [panel-splitjs](https://github.com/panel-extensions/panel-splitjs) | Responsive draggable split-panel layout |
-| [panel-reactflow](https://github.com/panel-extensions/panel-reactflow) | Reactflow node-graph wrapper |
-| [panel-web-llm](https://github.com/panel-extensions/panel-web-llm) | Client-side in-browser LLM interface |
-| [panel-full-calendar](https://github.com/panel-extensions/panel-full-calendar) | FullCalendar integration |
-| [panel-precision-slider](https://github.com/panel-extensions/panel-precision-slider) | Slider with fine-tuned precision control and direct text input |
-| [panel-live-server](https://github.com/panel-extensions/panel-live-server) | Live server for displaying Panel outputs to humans and AI agents |
+See the [Component Gallery](https://panel.holoviz.org/reference/index.html#extensions) for community extensions built on Panel's custom component APIs.
