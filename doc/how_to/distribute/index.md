@@ -12,6 +12,13 @@ Panel applications are standard Python applications that can run on different se
 How to share your Panel scripts with UV
 :::
 
+:::{grid-item-card} {octicon}`package;2.5em;sd-mr-1 sd-animate-grow50` Publish a Panel Extension
+:link: publish_extension
+:link-type: doc
+
+How to package and publish a custom Panel component as a reusable Python package.
+:::
+
 ::::
 
 ```{toctree}
@@ -20,4 +27,5 @@ How to share your Panel scripts with UV
 :maxdepth: 2
 
 uv
+publish_extension
 ```
