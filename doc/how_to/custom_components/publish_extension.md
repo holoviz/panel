@@ -28,7 +28,7 @@ From there, follow the template's [step-by-step guide](https://github.com/panel-
 
 ## Example extensions
 
-The [**panel-extensions**](https://github.com/orgs/panel-extensions/repositories) GitHub organisation hosts extensions built with this template. Browse it to see real-world examples and find components you can use directly:
+The [**panel-extensions**](https://github.com/orgs/panel-extensions/repositories) GitHub organization hosts extensions built with this template. Browse it to see real-world examples and find components you can use directly:
 
 | Extension | Description |
 |-----------|-------------|
