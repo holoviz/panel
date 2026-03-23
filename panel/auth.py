@@ -1140,10 +1140,14 @@ class OAuthProvider(BasicAuthProvider):
                 user, refresh_token, handler.application, handler.request,
                 reschedule=is_ws
             )
-            if access_token is None or refresh_token is None or expiry is None:
+            if access_token is None:
                 # Refresh failed, user needs to fully reauthenticate
                 return
-            expires_in = expiry - now_ts
+
+            if expiry is not None:
+                expires_in = expiry - now_ts
+            else:
+                expires_in = None
             OAuthLoginHandler.set_auth_cookies(
                 handler, None, access_token, refresh_token, expires_in
             )
