@@ -28,4 +28,4 @@ From there, follow the template's [step-by-step guide](https://github.com/panel-
 
 ## Example extensions
 
-See the [Component Gallery](https://panel.holoviz.org/reference/index.html#extensions) for community extensions built on Panel's custom component APIs.
+Browse the [panel-extensions](https://github.com/orgs/panel-extensions/repositories) organisation on GitHub to see community extensions built on Panel's custom component APIs.
