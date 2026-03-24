@@ -7,7 +7,7 @@ If you've built a custom Panel component—a `Viewer`, `JSComponent`, `ReactComp
 The [`copier-template-panel-extension`](https://github.com/panel-extensions/copier-template-panel-extension) generates a project pre-configured with:
 
 - **pytest** for testing
-- **MkDocs + mkdocstrings** for auto-generated API documentation hosted on GitHub Pages
+- **Zensical + mkdocstrings** for auto-generated API documentation hosted on GitHub Pages
 - **GitHub Actions** CI/CD for automated testing and publishing
 - **Pixi** for reproducible environment management
 
