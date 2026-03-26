@@ -19,6 +19,6 @@ else:
     print('bokeh')
 ")
 
-conda build scripts/conda/recipe --no-anaconda-upload --no-verify -c "$BK_CHANNEL" -c conda-forge --package-format 1
+conda build scripts/conda/recipe --no-anaconda-upload --no-verify -c "$BK_CHANNEL" -c conda-forge --package-format 2
 
-mv "$CONDA_PREFIX/conda-bld/noarch/$PACKAGE-$VERSION-py_0.tar.bz2" dist
+mv "$CONDA_PREFIX/conda-bld/noarch/$PACKAGE-$VERSION-py_0.conda" dist
