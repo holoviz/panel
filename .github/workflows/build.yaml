@@ -248,7 +248,7 @@ jobs:
         run: |
           awk -v ver="## Version ${TAG#v}" '
             $0 == ver {flag=1; next}
-            /^#{2} Version / && flag {exit}
+            /^## Version / && flag {exit}
             flag && !/^(\*\*.*\*\*)$/
           ' CHANGELOG.md | tee RELEASE_BODY.md
       - name: Create draft GitHub release with dist artifacts
