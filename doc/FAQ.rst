@@ -6,17 +6,17 @@ Here is a list of questions we have either been asked by users or potential pitf
 
 **Q: What objects can I use with Panel?**
 
-**A:** The Panel `Component Gallery <https://panel.pyviz.org/reference/>`__ shows examples of all the plotting libraries, data types, image formats, and other objects that can be used in a panel.  There is also a older `Github issue <https://github.com/pyviz/panel/issues/2>`__ where possible types are discussed.
+**A:** The Panel `Component Gallery <https://panel.pyviz.org/reference/>`__ shows examples of various plotting libraries, data types, image formats, and other objects that can be used in  panel.  There is also an older `Github issue <https://github.com/pyviz/panel/issues/2>`__ where possible types are discussed.
 
 
 **Q: Does it matter which plotting library I use with Panel?**
 
-**A:** Yes and no! Just about `any Python library <https://pyviz.org/tools.html>`__ will work with Panel. That said, only certain libraries will provide deeply interactive objects in a web browser, such as Bokeh and Plotly.  If you want to tie custom actions to individual sub-elements of such a plot, you should use a library with extensive JavaScript support. Otherwise, just use any supported library that you prefer!
+**A:** Yes and no!  `Most Python libraries <https://pyviz.org/tools.html>`__ can be used with Panel.That said, only certain libraries will provide deeply interactive objects in a web browser, such as Bokeh and Plotly.  If you want to tie custom actions to individual sub-elements of such a plot, you should use a library with extensive JavaScript support. Otherwise, just use any supported library that you prefer!
 
 
 **Q: How do I add support for a library or datatype not yet supported?**
 
-**A:** It depends. If the object already has one of the usual IPython ``_repr_X_`` rich display methods (where X is png, jpg, svg, or html), then it is very likely to work already. Try it!  If it doesn't have a rich display method, check to see if you can add one as a PR to that project -- those representations are very useful for many cases other than Panel, too. Otherwise, adding support is quite easy for anything that can somehow return an image or some HTML. If it can return an image in any way, see the ``panel.pane.Matplotlib`` implementation as a starting point; you just need to be able to call some method or function on the object to return an image, and the rest should be simple.
+**A:** It depends on the specific use case. If the object already has one of the usual IPython ``_repr_X_`` rich display methods (where X is png, jpg, svg, or html), then it is very likely to work already. You can try it to verify. If it doesn't have a rich display method, check to see if you can add one as a PR to that project -- those representations are very useful for many cases other than Panel, too. Otherwise, adding support is relatively straightforward for anything that can somehow return an image or some HTML. If it can return an image in any way, see the ``panel.pane.Matplotlib`` implementation as a starting point; you just need to be able to call some method or function on the object to return an image, and the rest should be simple.
 
 If you want an even richer JavaScript-based representation where that's supported by a library but not yet by Panel, it will be more difficult to add that, but you can see the ``pane.Bokeh`` class and the ``panel.holoviews`` and ``panel.plotly`` modules for examples.
 
