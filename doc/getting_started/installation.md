@@ -5,7 +5,7 @@
 [![PyPI badge](https://img.shields.io/pypi/v/panel.svg)](https://pypi.python.org/pypi/panel)
 [![License badge](https://img.shields.io/pypi/l/panel.svg)](https://github.com/holoviz/panel/blob/main/LICENSE.txt)
 
-Panel is compatible with Python 3.9 or later and works seamlessly on Linux, Windows, and Mac.
+Panel is compatible with Python 3.9 or later and works seamlessly on Linux, Windows, and macOS.
 
 ## Setup
 
@@ -37,7 +37,7 @@ When using `conda`, it's crucial to maintain a clean base environment. Consider 
 
 ## Installing Panel
 
-Now, let's get Panel installed on your system.
+Now, let's install Panel on your system.
 
 :::::{tab-set}
 
@@ -62,7 +62,7 @@ conda install panel watchfiles
 :::::
 
 :::{tip}
-We recommend also installing [`watchfiles`](https://watchfiles.helpmanual.io) while developing. This will provide a significantly better experience when using Panel's autoreload features when activating `--dev` mode. It's not needed for production.
+We recommend also installing [`watchfiles`](https://watchfiles.helpmanual.io) while developing.This provides a significantly better experience when using Panel's autoreload features in `--dev` mode.It's not needed for production.
 :::
 
 :::{tip}
