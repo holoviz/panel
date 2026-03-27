@@ -6,7 +6,7 @@ Here is a list of questions we have either been asked by users or potential pitf
 
 **Q: What objects can I use with Panel?**
 
-**A:** The Panel `Component Gallery <https://panel.pyviz.org/reference/>`__ shows examples of all the plotting libraries, data types, image formats, and other objects that can be used in a panel.  There is also a older `Github issue <https://github.com/pyviz/panel/issues/2>`__ where possible types are discussed.
+**A:** The Panel `Component Gallery <https://panel.pyviz.org/reference/>`__ shows examples of all the plotting libraries, data types, image formats, and other objects that can be used in a Panel.  There is also a older `Github issue <https://github.com/pyviz/panel/issues/2>`__ where possible types are discussed.
 
 
 **Q: Does it matter which plotting library I use with Panel?**
