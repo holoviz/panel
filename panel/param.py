@@ -546,6 +546,16 @@ class Param(Pane):
             watchers, updating = [], []
             widgets = {p_name: widget}
 
+        def _equal(current, new):
+            if (is_dataframe(current) and is_dataframe(new)) or (
+                is_series(current) and is_series(new)
+            ):
+                return current.equals(new)
+            try:
+                return current == new
+            except Exception:
+                return False
+
         def link_widget(change):
             p_key = p_name if config.nthreads is None else (threading.get_ident(), p_name)
             if p_key in updating:
@@ -572,7 +582,7 @@ class Param(Pane):
                 if reset:
                     widget.value = new
                 current_val = getattr(parameterized, p_name)
-                if not reset and current_val != new:
+                if not reset and not _equal(current_val, new):
                     is_w = isinstance(widget, Row) and len(widget) == 2
                     target = widget[0] if is_w else widget
                     target.param.update(value=current_val)
