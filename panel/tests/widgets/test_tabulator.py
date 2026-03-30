@@ -15,3 +15,4 @@ def test_tabulator_from_param_dataframe_update():
     widget.value = pd.DataFrame({"a": [1, 2, 5]})
 
     assert obj.data.equals(pd.DataFrame({"a": [1, 2, 5]}))
+    assert widget.value.equals(pd.DataFrame({"a": [1, 2, 5]}))

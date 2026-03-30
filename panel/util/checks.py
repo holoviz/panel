@@ -74,6 +74,8 @@ def is_mpl_axes(obj) -> bool:
     from matplotlib.axes import Axes
     return isinstance(obj, Axes)
 
+def is_array(obj) -> bool:
+    return isinstance(obj, np.ndarray)
 
 def isIn(obj, objs):
     """

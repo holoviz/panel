@@ -21,6 +21,7 @@ from functools import partial
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import numpy as np
 import param
 
 try:
@@ -49,7 +50,9 @@ from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
     param_name, recursive_parameterized, to_async_gen,
 )
-from .util.checks import is_dataframe, is_mpl_axes, is_series
+from .util.checks import (
+    is_array, is_dataframe, is_mpl_axes, is_series,
+)
 from .viewable import Layoutable, Viewable
 from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
@@ -551,10 +554,12 @@ class Param(Pane):
                 is_series(current) and is_series(new)
             ):
                 return current.equals(new)
+            if is_array(current) and is_array(new):
+                return np.array_equal(current, new)
             try:
-                return current == new
+                return bool(current == new)
             except Exception:
-                return False
+                return True
 
         def link_widget(change):
             p_key = p_name if config.nthreads is None else (threading.get_ident(), p_name)
