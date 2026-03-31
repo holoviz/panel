@@ -57,6 +57,7 @@ custom_viewer
 python/create_custom_widget
 examples/plot_viewer
 examples/table_viewer
+publish_extension
 ```
 
 ## ESM Components
@@ -266,3 +267,17 @@ examples/canvas_draw
 examples/leaflet
 examples/vue
 ```
+
+## Publish your extension
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`package;2.5em;sd-mr-1 sd-animate-grow50` Publish a Panel Extension
+:link: publish_extension
+:link-type: doc
+
+How to package and publish a custom Panel component as a reusable Python package.
+:::
+
+::::
