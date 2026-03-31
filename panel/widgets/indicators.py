@@ -1174,7 +1174,17 @@ class Trend(SyncableData, Indicator):
             return None, {self.plot_x: [], self.plot_y: []}
         elif isinstance(self.data, dict):
             return self.data, self.data
-        return self.data, ColumnDataSource.from_df(self.data)
+        processed = ColumnDataSource.from_df(self.data)
+        if (
+            self.plot_x in getattr(self.data, 'columns', []) and
+            np.issubdtype(self.data[self.plot_x].dtype, np.datetime64)
+        ):
+            x_ns = self.data[self.plot_x].astype(np.int64)
+            diffs = np.diff(x_ns)
+            min_diff = diffs[diffs > 0].min() if len(diffs) else 1
+            processed = dict(processed)
+            processed[self.plot_x] = (x_ns - x_ns[0]) / min_diff
+        return self.data, processed
 
     def _init_params(self):
         props = super()._init_params()
