@@ -600,10 +600,16 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         model_msg, data_msg, data_resets  = {}, {}, {}
+        curdoc_events = self._in_process__events.get(doc, {})
         for prop, v in list(msg.items()):
             if prop in list(Reactive.param)+['esm', 'importmap']:
                 model_msg[prop] = v
             elif prop in model.children:
+                continue
+            elif prop in curdoc_events and v is curdoc_events[prop]:
+                # Do not apply change that originated directly from
+                # the frontend since this may cause boomerang if a
+                # new property value is already in-flight
                 continue
             else:
                 data_msg[prop] = v

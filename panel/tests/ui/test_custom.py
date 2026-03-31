@@ -1325,3 +1325,34 @@ def test_esm_compile_shared(page, components):
 
     expect(page.locator(f'#{example[0].name}')).to_have_text('Rendered')
     expect(page.locator(f'#{example[1].name}')).to_have_text('Rendered')
+
+
+def test_usestate_no_character_loss(page):
+    """Fast typing into a controlled input using model.useState should not lose characters."""
+
+    class TypingTest(ReactComponent):
+        value_input = param.String(default="")
+        _esm = """
+        export function render({model}) {
+          const [value_input, setValueInput] = model.useState("value_input")
+          return (
+            <textarea
+              id="typing-test"
+              value={value_input}
+              onChange={(e) => setValueInput(e.target.value)}
+            />
+          )
+        }
+        """
+
+    test_string = "The quick brown fox jumps"
+    widget = TypingTest()
+    serve_component(page, widget)
+
+    textarea = page.locator("#typing-test")
+    expect(textarea).to_be_visible(timeout=10000)
+    textarea.click()
+    textarea.press_sequentially(test_string, delay=30)
+
+    wait_until(lambda: widget.value_input == test_string, page, timeout=10000)
+    assert widget.value_input == test_string
