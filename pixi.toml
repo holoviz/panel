@@ -286,7 +286,7 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 
 [feature.doc.dependencies]
 lxml = "*"
-nbsite = ">=0.8.6rc9"
+nbsite = ">=0.9.0a20"
 selenium = "*"
 numpydoc = "*"
 pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
