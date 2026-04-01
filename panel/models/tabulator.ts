@@ -447,8 +447,11 @@ export class DataTabulatorView extends HTMLBoxView {
 
     this.on_change(cell_styles, () => {
       if (this._applied_styles) {
+        this._updating_scroll = true
         this.tabulator.redraw(true)
+        this._updating_scroll = false
       }
+      this.restore_scroll()
       this.setStyles()
     })
     this.on_change(hidden_columns, () => {
