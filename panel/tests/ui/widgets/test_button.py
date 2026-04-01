@@ -5,9 +5,10 @@ pytest.importorskip("playwright")
 from bokeh.models import Tooltip
 from playwright.sync_api import Expect, expect
 
+from panel.layout import Column
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import (
-    Button, CheckButtonGroup, RadioButtonGroup, TooltipIcon,
+    Button, CheckButtonGroup, RadioButtonGroup, TextAreaInput, TooltipIcon,
 )
 
 pytestmark = pytest.mark.ui
@@ -105,3 +106,39 @@ def test_button_tooltip_with_delay(page, button_fn, button_locator):
     page.hover("body")
     page.wait_for_timeout(300)
     exp(tooltip).to_have_count(0)
+
+
+def test_widget_disabled_toggle(page):
+    dummy_button = Button(name="dummy", button_type='primary')
+    dummy_text = TextAreaInput()
+    toggle_button = Button(name="toggle")
+
+    def toggle(_):
+        dummy_button.disabled = True
+        dummy_text.disabled = True
+        dummy_button.disabled = False
+        dummy_text.disabled = False
+
+    toggle_button.on_click(toggle)
+
+    serve_component(page, Column(dummy_button, dummy_text, toggle_button))
+
+    toggle_btn = page.locator('button', has_text='toggle')
+    expect(toggle_btn).to_have_count(1)
+
+    dummy_btn = page.locator('button', has_text='dummy')
+    textarea = page.locator('textarea')
+
+    # Click toggle and verify widgets are not stuck disabled
+    toggle_btn.click()
+    page.wait_for_timeout(500)
+
+    expect(dummy_btn).to_be_enabled()
+    expect(textarea).to_be_enabled()
+
+    # Click toggle again to verify repeated toggling works
+    toggle_btn.click()
+    page.wait_for_timeout(500)
+
+    expect(dummy_btn).to_be_enabled()
+    expect(textarea).to_be_enabled()
