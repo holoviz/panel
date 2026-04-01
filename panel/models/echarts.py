@@ -56,6 +56,8 @@ class ECharts(LayoutDOM):
 
     data = Nullable(Dict(String, Any))
 
+    geo_data = Dict(String, Any)
+
     options = Nullable(Dict(String, Any))
 
     event_config = Dict(String, Any)

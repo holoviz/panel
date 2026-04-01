@@ -16,6 +16,18 @@ from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
+MINIMAL_GEOJSON = {
+    "type": "FeatureCollection",
+    "features": [{
+        "type": "Feature",
+        "properties": {"name": "TestRegion"},
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]
+        }
+    }]
+}
+
 data = [
     {"value": 12, "percent": 0.8},
     {"value": 23, "percent": 0.52},
@@ -52,3 +64,23 @@ def test_pyecharts_with_jscode(page):
 
     for v in data:
         expect(page.locator(f'text:has-text("{int(v["percent"]*100)}%")')).to_have_count(1)
+
+
+def test_echarts_geo_map_with_geo_data(page):
+    """Test that ECharts geo map renders region outlines when geo_data is provided."""
+    echart_config = {
+        "geo": {
+            "map": "test",
+            "roam": True,
+        },
+        "series": [],
+    }
+
+    pane = ECharts(echart_config, geo_data={"test": MINIMAL_GEOJSON},
+                   renderer="svg", height=300, width=400)
+
+    serve_component(page, pane)
+
+    # SVG should contain path elements for the geo region outlines
+    expect(page.locator("svg")).to_have_count(1, timeout=10000)
+    expect(page.locator("svg path").first).to_be_visible(timeout=5000)
