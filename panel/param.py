@@ -21,7 +21,6 @@ from functools import partial
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, ClassVar
 
-import numpy as np
 import param
 
 try:
@@ -38,6 +37,8 @@ from param.parameterized import (
 )
 from param.reactive import rx
 
+from panel.io.cache import is_equal
+
 from .config import config
 from .io import state
 from .layout import (
@@ -50,9 +51,7 @@ from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
     param_name, recursive_parameterized, to_async_gen,
 )
-from .util.checks import (
-    is_array, is_dataframe, is_mpl_axes, is_series,
-)
+from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
 from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
@@ -549,18 +548,6 @@ class Param(Pane):
             watchers, updating = [], []
             widgets = {p_name: widget}
 
-        def _equal(current, new):
-            if (is_dataframe(current) and is_dataframe(new)) or (
-                is_series(current) and is_series(new)
-            ):
-                return current.equals(new)
-            if is_array(current) and is_array(new):
-                return np.array_equal(current, new)
-            try:
-                return bool(current == new)
-            except Exception:
-                return True
-
         def link_widget(change):
             p_key = p_name if config.nthreads is None else (threading.get_ident(), p_name)
             if p_key in updating:
@@ -587,7 +574,7 @@ class Param(Pane):
                 if reset:
                     widget.value = new
                 current_val = getattr(parameterized, p_name)
-                if not reset and not _equal(current_val, new):
+                if not reset and not is_equal(current_val, new):
                     is_w = isinstance(widget, Row) and len(widget) == 2
                     target = widget[0] if is_w else widget
                     target.param.update(value=current_val)
