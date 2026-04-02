@@ -21,7 +21,7 @@ import traceback
 import typing
 import uuid
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from html import escape
 from typing import (
     IO, TYPE_CHECKING, Any, ClassVar,
@@ -651,8 +651,13 @@ class Renderable(param.Parameterized, MimeRenderMixin):
             add_to_doc(model, doc)
         return model
 
-    def _init_params(self) -> Mapping[str, Any]:
-        return {k: v for k, v in self.param.values().items() if v is not None}
+    def _init_params(self) -> dict[str, Any]:
+        params = {}
+        for p in self.param:
+            v = getattr(self, p)
+            if v is not None:
+                params[p] = v
+        return params
 
     def _server_destroy(self, session_context: BokehSessionContext) -> None:
         """

@@ -402,7 +402,7 @@ class _config(_base_config):
 
     @contextmanager
     def set(self, **kwargs):
-        values = [(k, v) for k, v in self.param.values().items() if k != 'name']
+        values = [(p, getattr(self, p)) for p in self.param if p != 'name']
         overrides = [
             (k, getattr(self, k+'_')) for k in _config._parameter_set
             if k.startswith('_') and k[1:] not in _config._globals
@@ -412,7 +412,7 @@ class _config(_base_config):
         try:
             yield
         finally:
-            new = self.param.values()
+            new = {p: getattr(self, p) for p in self.param}
             restore = {k: v for k, v in values if v is not new.get(k)}
             self.param.update(**restore)
             for k, v in overrides:

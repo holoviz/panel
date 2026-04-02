@@ -144,8 +144,9 @@ def param_reprs(parameterized, skip=None):
     """
     cls = type(parameterized).__name__
     param_reprs = []
-    for p, v in sorted(parameterized.param.values().items()):
+    for p in sorted(parameterized.param):
         default = parameterized.param[p].default
+        v = getattr(parameterized, p)
         equal = v is default
         if not equal:
             if isinstance(v, np.ndarray):

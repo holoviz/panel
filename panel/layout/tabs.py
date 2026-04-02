@@ -202,9 +202,13 @@ class Tabs(NamedListPanel):
                 child = rendered[pref]
                 old_models.append(child)
             elif hidden:
-                child = BkSpacer(**{k: v for k, v in pane.param.values().items()
-                                    if k in Layoutable.param and v is not None and
-                                    k not in ('name', 'design')})
+                params = {}
+                for k in pane.param:
+                    if k not in Layoutable.param or k in ('name', 'design'):
+                        continue
+                    v = getattr(pane, k)
+                    params[k] = v
+                child = BkSpacer(**params)
                 child.tags = ['hidden']
             else:
                 try:
