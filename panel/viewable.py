@@ -1050,21 +1050,22 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             model = self.get_root(doc)
 
         self._documents[doc] = model
-        add_to_doc(model, doc)
-        if location:
-            self._add_location(doc, location, model)
-        if config.notifications and doc is state.curdoc:
-            notification = state.notifications
-            if notification:
-                notification_model = notification.get_root(doc)
-                notification_model.name = 'notifications'
-                doc.add_root(notification_model)
-        if config.browser_info and doc is state.curdoc:
-            browser = state.browser_info
-            if browser:
-                browser_model = browser._get_model(doc, model)
-                browser_model.name = 'browser_info'
-                doc.add_root(browser_model)
+        with doc.models.freeze():
+            add_to_doc(model, doc)
+            if location:
+                self._add_location(doc, location, model)
+            if config.notifications and doc is state.curdoc:
+                notification = state.notifications
+                if notification:
+                    notification_model = notification.get_root(doc)
+                    notification_model.name = 'notifications'
+                    doc.add_root(notification_model)
+            if config.browser_info and doc is state.curdoc:
+                browser = state.browser_info
+                if browser:
+                    browser_model = browser._get_model(doc, model)
+                    browser_model.name = 'browser_info'
+                    doc.add_root(browser_model)
         return doc
 
 
