@@ -20,7 +20,7 @@ import urllib.parse as urlparse
 from collections import OrderedDict, defaultdict
 from collections.abc import MutableMapping, MutableSequence
 from datetime import datetime
-from functools import partial
+from functools import lru_cache, partial
 from html import escape  # noqa
 from importlib import import_module
 from typing import Any, AnyStr
@@ -413,6 +413,7 @@ def base_version(version: str) -> str:
         return version
 
 
+@lru_cache(maxsize=128)
 def relative_to(path, other_path):
     try:
         pathlib.Path(path).relative_to(other_path)
