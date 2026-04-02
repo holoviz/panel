@@ -37,10 +37,9 @@ from param.parameterized import (
 )
 from param.reactive import rx
 
-from panel.io.cache import is_equal
-
 from .config import config
 from .io import state
+from .io.cache import is_equal
 from .layout import (
     Column, HSpacer, ListLike, Panel, Row, Spacer, Tabs, WidgetBox,
 )
