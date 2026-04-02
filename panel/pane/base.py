@@ -770,7 +770,7 @@ class ReplacementPane(Pane):
         return pane, internal
 
     def _update_inner(self, new_object: Any) -> None:
-        kwargs = dict({getattr(self, p) for p in self.param}, **self._kwargs)
+        kwargs = dict({p: getattr(self, p) for p in self.param}, **self._kwargs)
         del kwargs['object']
         new_pane, internal = self._update_from_object(
             new_object, self._pane, self._internal, **kwargs
