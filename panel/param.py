@@ -39,6 +39,7 @@ from param.reactive import rx
 
 from .config import config
 from .io import state
+from .io.cache import is_equal
 from .layout import (
     Column, HSpacer, ListLike, Panel, Row, Spacer, Tabs, WidgetBox,
 )
@@ -572,7 +573,7 @@ class Param(Pane):
                 if reset:
                     widget.value = new
                 current_val = getattr(parameterized, p_name)
-                if not reset and current_val != new:
+                if not reset and not is_equal(current_val, new):
                     is_w = isinstance(widget, Row) and len(widget) == 2
                     target = widget[0] if is_w else widget
                     target.param.update(value=current_val)
