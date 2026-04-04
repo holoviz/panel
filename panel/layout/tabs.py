@@ -206,8 +206,8 @@ class Tabs(NamedListPanel):
                 for k in pane.param:
                     if k not in Layoutable.param or k in ('name', 'design'):
                         continue
-                    v = getattr(pane, k)
-                    params[k] = v
+                    if (v := getattr(pane, k)) is not None:
+                        params[k] = v
                 child = BkSpacer(**params)
                 child.tags = ['hidden']
             else:

@@ -139,7 +139,7 @@ class PyComponent(Viewable, Layoutable):
             view = ParamMethod(self.__panel__, lazy=True)
         else:
             view = panel(self.__panel__())
-        params = {p: getattr(self, p) for p in view.param}
+        params = {p: getattr(view, p) for p in view.param}
         overrides, sync = {}, {}
         for p in Layoutable.param:
             if p != 'name' and view.param[p].default != params[p]:
