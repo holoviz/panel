@@ -22,6 +22,7 @@ from weakref import WeakKeyDictionary
 
 import param
 
+from bokeh.settings import settings as _bk_settings
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
@@ -372,6 +373,12 @@ class _config(_base_config):
         if self.log_level:
             panel_log_handler.setLevel(self.log_level)
 
+    @param.depends('autoreload', watch=True, on_init=True)
+    def _set_bokeh_validation(self):
+        _bk_settings.perform_document_validation.set_value(self.autoreload)
+        if hasattr(_bk_settings, 'perform_error_diagnostics'):
+            _bk_settings.perform_error_diagnostics.set_value(self.autoreload)
+
     @param.depends('_nthreads', watch=True, on_init=True)
     def _set_thread_pool(self):
         if self.nthreads is None:
@@ -402,7 +409,7 @@ class _config(_base_config):
 
     @contextmanager
     def set(self, **kwargs):
-        values = [(k, v) for k, v in self.param.values().items() if k != 'name']
+        values = [(p, getattr(self, p)) for p in self.param if p != 'name']
         overrides = [
             (k, getattr(self, k+'_')) for k in _config._parameter_set
             if k.startswith('_') and k[1:] not in _config._globals
@@ -412,7 +419,7 @@ class _config(_base_config):
         try:
             yield
         finally:
-            new = self.param.values()
+            new = {p: getattr(self, p) for p in self.param}
             restore = {k: v for k, v in values if v is not new.get(k)}
             self.param.update(**restore)
             for k, v in overrides:
