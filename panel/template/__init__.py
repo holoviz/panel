@@ -13,7 +13,7 @@ from .vanilla import VanillaTemplate  # noqa
 templates = {
     'bootstrap' : BootstrapTemplate,
     'editable'  : EditableTemplate,
-    'fast'      : FastListTemplate,
+    'fast'      : FastGridTemplate,
     'fast-list' : FastListTemplate,
     'material'  : MaterialTemplate,
     'golden'    : GoldenTemplate,
