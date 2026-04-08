@@ -3104,7 +3104,6 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     assert len(widget.current_view) == 2
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pagination):
     df = pd.DataFrame({
@@ -3128,7 +3127,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     header.fill('B')
     header.press('Enter')
 
-    wait_until(lambda: widget.current_view.equals(df[df['values'] == 'B']))
+    wait_until(lambda: widget.current_view is not None and widget.current_view.equals(df[df['values'] == 'B']))
 
     cell = page.locator('text="B"').first
     cell.click()
