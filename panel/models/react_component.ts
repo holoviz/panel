@@ -205,6 +205,7 @@ export class ReactComponentView extends ReactiveESMView {
     // children changing order we must force an update in the
     // React component to ensure anything depending on the DOM
     // structure (e.g. emotion caches) is updated
+    if (!this.model.use_shadow_dom) { this._apply_visible() }
     super.r_after_render()
     if (this.use_shadow_dom) {
       this.force_update()
@@ -528,10 +529,11 @@ async function render(id) {
             return () => react_proxy.off(prop, cb)
           }, [])
 
+          let initialized = React.useRef(false)
           React.useEffect(() => {
-            if (!target.model.events.includes(resolvedProp)) {
+            if (!target.model.events.includes(resolvedProp) && initialized.current) {
               targetModel.setv({ [resolvedProp]: value })
-            }
+            } else { initialized.current = true }
           }, [value])
 
           return [value, setValue]

@@ -139,7 +139,7 @@ class PyComponent(Viewable, Layoutable):
             view = ParamMethod(self.__panel__, lazy=True)
         else:
             view = panel(self.__panel__())
-        params = view.param.values()
+        params = {p: getattr(view, p) for p in view.param}
         overrides, sync = {}, {}
         for p in Layoutable.param:
             if p != 'name' and view.param[p].default != params[p]:
@@ -468,7 +468,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
              and type(Reactive.param[p]) is type(cls.param[p]))
         ]
         events = []
-        for k in self.param.values():
+        for k in self.param:
             p = self.param[k]
             if is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
                 props.pop(k, None)
@@ -546,10 +546,11 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     def _get_children(self, data_model, doc, root, parent, comm) -> tuple[dict[str, list[UIElement] | UIElement | None], list[UIElement]]:
         children = {}
         old_models = []
-        for k, v in self.param.values().items():
+        for k in self.param:
             p = self.param[k]
             if not is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
                 continue
+            v = getattr(self, k)
             children[k], old = self._get_child_model(v, doc, root, parent, comm)
             old_models += old
         return children, old_models
