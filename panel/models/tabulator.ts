@@ -381,7 +381,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _updating_sort: boolean = false
   _updating_page_size: boolean = false
   _selection_updating: boolean = false
-  _selection_pending: boolean = false
+  _selection_pending: boolean = true
   _last_selected_row: any = null
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0
@@ -613,7 +613,7 @@ export class DataTabulatorView extends HTMLBoxView {
       if (!this._resize_pending) {
         continue
       }
-      if (this._is_scrolling || this._initializing || this._building || this.container === null || this.is_drawing || ![...this._initialized_stylesheets.values()].every(v => v)) {
+      if (this._is_scrolling || this._initializing || this.container === null || this.is_drawing || ![...this._initialized_stylesheets.values()].every(v => v)) {
         await defer()
         continue
       }
@@ -792,7 +792,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
     }
-    this._building = false
+    this._initializing = this._building = false
     this._request_resize_redraw()
   }
 
