@@ -542,6 +542,8 @@ def test_tabulator_editor_jscode(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="A"')
     cell.click()
     expect(page.locator('.custom-jscode')).to_have_count(1)
@@ -551,6 +553,8 @@ def test_tabulator_editors_bokeh_string_completions(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'str': StringEditor(completions=['AAA'])})
 
     serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
 
     cell = page.locator('text="A"')
     cell.click()
@@ -564,6 +568,8 @@ def test_tabulator_editors_bokeh_text(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="A"')
     cell.click()
     # A TextEditor with completions is turned into a textarea
@@ -576,6 +582,8 @@ def test_tabulator_editors_bokeh_int(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'int': IntEditor(step=step)})
 
     serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
 
     cell = page.locator('text="1"').first
     cell.click()
@@ -592,6 +600,8 @@ def test_tabulator_editors_bokeh_number(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="3.14"')
     cell.click()
     # A NumberEditor with step is turned into a number tabulator editor
@@ -606,6 +616,8 @@ def test_tabulator_editors_bokeh_checkbox(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="true"').first
     cell.click()
     # A CheckboxEditor is turned into a tickCross tabulator editor
@@ -619,6 +631,8 @@ def test_tabulator_editors_bokeh_date(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="2019-01-01"')
     cell.click()
     # A DateEditor is turned into a Panel date editor
@@ -630,6 +644,8 @@ def test_tabulator_editors_bokeh_select(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="A"')
     cell.click()
     # A SelectEditor with options is turned into a select tabulator editor.
@@ -640,6 +656,8 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'date': 'date'})
 
     serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
 
     cell = page.locator('text="2019-01-01"')
     cell.click()
@@ -671,6 +689,8 @@ def test_tabulator_editors_panel_datetime(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'datetime': 'datetime'})
 
     serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
 
     cell = page.locator('text="2019-01-01 10:00:00"')
     cell.click()
@@ -812,6 +832,8 @@ def test_tabulator_editors_nested(page, opt0, opt1):
     widget = Tabulator(df, editors=tabulator_editors, show_index=False)
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cells = page.locator('.tabulator-cell.tabulator-editable')
     expect(cells).to_have_count(3)
 
@@ -869,6 +891,8 @@ def test_tabulator_editable(page, df_mixed):
     )
 
     serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
 
     # ``str`` is editable depending of the value of bool
     cell = page.locator('text="A"')
@@ -3956,6 +3980,7 @@ class Test_RemotePagination:
             header_filters=True,
         )
         serve_component(page, self.widget)
+        expect(page.locator('.tabulator')).to_have_count(1)
 
     def check_selected(self, page, expected, ui_count=None):
         if ui_count is None:
