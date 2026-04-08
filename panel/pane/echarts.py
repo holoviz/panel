@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
+import logging
 import sys
+import urllib.request
 
 from collections import defaultdict
 from collections.abc import Callable, Mapping
@@ -37,6 +40,16 @@ class ECharts(ModelPane):
     object = param.Parameter(default=None, doc="""
         The Echarts object being wrapped. Can be an Echarts dictionary or a pyecharts chart""")
 
+    geo_data = param.Dict(default=None, doc="""
+        A dictionary mapping map names to GeoJSON data or URLs.
+        Each entry will be registered via echarts.registerMap(name, geojson)
+        before setOption() is called. Values can be GeoJSON dicts or
+        URL strings pointing to GeoJSON files. When a geo/map config
+        references a map name not present in geo_data, Panel will
+        attempt to auto-fetch it from the ECharts CDN.
+        Example: geo_data={"world": world_geojson_dict}
+        Example: geo_data={"world": "https://example.com/world.json"}""")
+
     options = param.Parameter(default=None, doc="""
         An optional dict of options passed to Echarts.setOption. Allows to fine-tune the rendering behavior.
         For example, you might want to use `options={ "replaceMerge": ['series'] })` when updating
@@ -50,6 +63,12 @@ class ECharts(ModelPane):
        Theme to apply to plots.""")
 
     priority: ClassVar[float | bool | None] = None
+
+    _echarts_map_cdn: ClassVar[str] = (
+        "https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/{}.json"
+    )
+
+    _geo_cache: ClassVar[dict[str, Any]] = {}
 
     _rename: ClassVar[Mapping[str, str | None]] = {"object": "data"}
 
@@ -108,22 +127,96 @@ class ECharts(ModelPane):
             data = obj
         return data
 
+    def _get_map_names(self, data):
+        """Extract map names referenced in geo or map-type series config."""
+        names = set()
+        if isinstance(data.get('geo'), dict):
+            name = data['geo'].get('map')
+            if name:
+                names.add(name)
+        elif isinstance(data.get('geo'), list):
+            for geo in data['geo']:
+                if isinstance(geo, dict):
+                    name = geo.get('map')
+                    if name:
+                        names.add(name)
+        for series in data.get('series', []):
+            if isinstance(series, dict) and series.get('type') == 'map':
+                name = series.get('map')
+                if name:
+                    names.add(name)
+        return names
+
+    @classmethod
+    def _fetch_geojson(cls, url):
+        """Fetch GeoJSON from a URL with caching."""
+        if url in cls._geo_cache:
+            return cls._geo_cache[url]
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            data = json.loads(resp.read())
+        cls._geo_cache[url] = data
+        return data
+
+    def _resolve_geo_data(self, data, geo_data):
+        """Resolve geo_data URL strings and auto-fetch missing maps from CDN.
+
+        Returns resolved geo_data dict ready for the frontend model.
+        """
+        resolved = dict(geo_data or {})
+
+        # Resolve URL strings to GeoJSON dicts
+        for name, value in list(resolved.items()):
+            if isinstance(value, str):
+                try:
+                    resolved[name] = self._fetch_geojson(value)
+                except Exception as e:
+                    logging.warning(
+                        f"ECharts: failed to fetch GeoJSON for map "
+                        f"'{name}' from {value!r}: {e}"
+                    )
+                    del resolved[name]
+
+        # Auto-fetch missing map names from ECharts CDN
+        map_names = self._get_map_names(data)
+        missing = map_names - set(resolved.keys())
+        for name in sorted(missing):
+            url = self._echarts_map_cdn.format(name)
+            try:
+                resolved[name] = self._fetch_geojson(url)
+                logging.info(
+                    f"ECharts: auto-fetched '{name}' map data from CDN."
+                )
+            except Exception as e:
+                logging.warning(
+                    f"ECharts config references map '{name}' but no "
+                    f"GeoJSON was provided and auto-fetch from CDN "
+                    f"failed: {e}. Pass geo_data={{'{name}': geojson_dict}} "
+                    f"to register map data manually."
+                )
+
+        return resolved
+
     def _process_param_change(self, params):
         props = super()._process_param_change(params)
-        if 'data' not in props:
-            return props
-        data = props['data'] or {}
-        if not isinstance(data, dict):
-            w, h = data.width, data.height
-            props['data'] = data = self._serialize(data.get_options())
-            if not self.height and h:
-                props['height'] = int(h.replace('px', ''))
-            if not self.width and w:
-                props['width'] = int(w.replace('px', ''))
-        else:
-            props['data'] = data
-        if data.get('responsive'):
-            props['sizing_mode'] = 'stretch_both'
+        if 'data' in props:
+            data = props['data'] or {}
+            if not isinstance(data, dict):
+                w, h = data.width, data.height
+                props['data'] = data = self._serialize(data.get_options())
+                if not self.height and h:
+                    props['height'] = int(h.replace('px', ''))
+                if not self.width and w:
+                    props['width'] = int(w.replace('px', ''))
+            else:
+                props['data'] = data
+            if data.get('responsive'):
+                props['sizing_mode'] = 'stretch_both'
+        if 'data' in props or 'geo_data' in props:
+            data = props.get('data', self.object)
+            if not isinstance(data, dict):
+                data = self._serialize(data.get_options()) if data else {}
+            geo_data = props.get('geo_data', self.geo_data)
+            props['geo_data'] = self._resolve_geo_data(data, geo_data)
         return props
 
     def _get_properties(self, document: Document | None) -> dict[str, Any]:

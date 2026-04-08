@@ -45,8 +45,8 @@ export class EChartsView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const {width, height, renderer, theme, event_config, js_events, data} = this.model.properties
-    this.on_change(data, () => this._plot())
+    const {width, height, renderer, theme, event_config, js_events, data, geo_data} = this.model.properties
+    this.on_change([data, geo_data], () => this._plot())
     this.on_change([width, height], () => this._resize())
     this.on_change([theme, renderer], () => {
       this.render()
@@ -88,10 +88,24 @@ export class EChartsView extends HTMLBoxView {
     }
   }
 
+  _register_maps(): void {
+    const echarts = (window as any).echarts
+    if (echarts == null) {
+      return
+    }
+    const geo_data = this.model.geo_data
+    if (geo_data != null) {
+      for (const [name, geojson] of Object.entries(geo_data)) {
+        echarts.registerMap(name, geojson as any)
+      }
+    }
+  }
+
   _plot(): void {
     if ((window as any).echarts == null) {
       return
     }
+    this._register_maps()
     const data = transformJsPlaceholders(this.model.data)
     this._chart.setOption(data, this.model.options)
   }
@@ -121,7 +135,7 @@ export class EChartsView extends HTMLBoxView {
           const serialized = JSON.parse(JSON.stringify(processed))
           this.model.trigger_event(new EChartsEvent(event_type, serialized, query))
         }
-        if (query == null) {
+        if (query != null) {
           this._chart.on(event_type, query, callback)
         } else {
           this._chart.on(event_type, callback)
@@ -154,6 +168,7 @@ export namespace ECharts {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     data: p.Property<any>
+    geo_data: p.Property<any>
     options: p.Property<any>
     event_config: p.Property<any>
     js_events: p.Property<any>
@@ -178,6 +193,7 @@ export class ECharts extends HTMLBox {
 
     this.define<ECharts.Props>(({Any, Str}) => ({
       data:          [ Any,           {} ],
+      geo_data:      [ Any,           {} ],
       options:       [ Any,           {} ],
       event_config:  [ Any,           {} ],
       js_events:     [ Any,           {} ],
