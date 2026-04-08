@@ -636,6 +636,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this._updating_scroll = true
     this.redraw(true, true)
     requestAnimationFrame(() => {
+      this._initializing = false
       if (this._selection_pending) {
         this.setSelection()
       }
