@@ -1,5 +1,6 @@
 import {display, undisplay} from "@bokehjs/core/dom"
 import {sum} from "@bokehjs/core/util/arrayable"
+import {defer} from "@bokehjs/core/util/defer"
 import {isArray, isBoolean, isFunction, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
@@ -365,6 +366,9 @@ function clone_column(group: any): any {
   return {...group, columns: group_columns}
 }
 
+/** Ignore Tabulator redraw after `after_resize` when `this.el` client size changes by at most this many pixels per axis. */
+const EL_CLIENT_RESIZE_EPSILON_PX = 3
+
 export class DataTabulatorView extends HTMLBoxView {
   declare model: DataTabulator
 
@@ -377,6 +381,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _updating_sort: boolean = false
   _updating_page_size: boolean = false
   _selection_updating: boolean = false
+  _selection_pending: boolean = true
   _last_selected_row: any = null
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0
@@ -384,16 +389,18 @@ export class DataTabulatorView extends HTMLBoxView {
   _applied_styles: boolean = false
   _building: boolean = false
   _redrawing: boolean = false
-  _debounced_redraw: any = null
+  /** Coalesced resize redraw; waits for `this.root.ready` (Bokeh view async chain) before redrawing. */
+  _resize_pending: boolean = false
+  _resize_flush: Promise<void> | null = null
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
   _is_scrolling: boolean = false
   _automatic_page_size: boolean = false
+  _last_after_resize_el_width: number | null = null
+  _last_after_resize_el_height: number | null = null
 
   override connect_signals(): void {
     super.connect_signals()
-
-    this._debounced_redraw = debounce(() => this._resize_redraw(), 20, false)
     const {
       configuration, layout, columns, groupby, visible, download,
       children, expanded, cell_styles, hidden_columns, page_size,
@@ -549,29 +556,93 @@ export class DataTabulatorView extends HTMLBoxView {
     super.after_layout()
     if (this.tabulator != null && this._initializing && !this.is_drawing) {
       this._initializing = false
-      this._resize_redraw()
+      if (this._selection_pending) {
+        this.setSelection()
+      }
+      this._request_resize_redraw()
     }
   }
 
   override after_resize(): void {
     super.after_resize()
-    if (!this._is_scrolling && !this._initializing && !this.is_drawing) {
-      this._debounced_redraw()
+    if (this._is_scrolling || this._initializing || this.is_drawing) {
+      return
+    }
+    const w = this.el.clientWidth
+    const h = this.el.clientHeight
+    if (
+      this._last_after_resize_el_width !== null &&
+      this._last_after_resize_el_height !== null &&
+      Math.abs(w - this._last_after_resize_el_width) <= EL_CLIENT_RESIZE_EPSILON_PX &&
+      Math.abs(h - this._last_after_resize_el_height) <= EL_CLIENT_RESIZE_EPSILON_PX
+    ) {
+      return
+    }
+    this._last_after_resize_el_width = w
+    this._last_after_resize_el_height = h
+    this._request_resize_redraw()
+  }
+
+  /**
+   * Defer Tabulator redraw until the Bokeh root view’s `ready` promise settles — it chains async
+   * work from connected signals (similar in spirit to waiting out `has_finished` / layout churn)
+   * without polling `root.is_idle`.
+   */
+  private _request_resize_redraw(): void {
+    this._resize_pending = true
+    if (this._resize_flush !== null) {
+      return
+    }
+    this._resize_flush = this._flush_resize_when_root_ready()
+    void this._resize_flush.finally(() => {
+      this._resize_flush = null
+      if (this._resize_pending) {
+        this._request_resize_redraw()
+      }
+    })
+  }
+
+  private async _flush_resize_when_root_ready(): Promise<void> {
+    while (true) {
+      if (!this._resize_pending) {
+        return
+      }
+      await this.root.ready
+      // `remove()` can clear `_resize_pending` while awaiting `root.ready`.
+      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- cleared asynchronously in `remove()` */
+      if (!this._resize_pending) {
+        continue
+      }
+      if (this._is_scrolling || this._initializing || this.container === null || this.is_drawing || ![...this._initialized_stylesheets.values()].every(v => v)) {
+        await defer()
+        continue
+      }
+      this._resize_pending = false
+      this._resize_redraw()
+      return
     }
   }
 
   _resize_redraw(): void {
-    if (this._initializing || !this.container || this._building) {
+    if (this._initializing || this.container === null || this._building) {
       return
     }
     const width = this.container.clientWidth
     const height = this.container.clientHeight
-    if (!width || !height) {
+    if (!(width > 0 && height > 0)) {
       return
     }
+    this.record_scroll()
+    this._updating_scroll = true
     this.redraw(true, true)
-    this.restore_scroll()
-    requestAnimationFrame(() => this.recompute_page_size())
+    requestAnimationFrame(() => {
+      this._initializing = false
+      if (this._selection_pending) {
+        this.setSelection()
+      }
+      this.restore_scroll()
+      this.recompute_page_size()
+    })
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -586,6 +657,9 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   override remove(): void {
+    this._resize_pending = false
+    this._last_after_resize_el_width = null
+    this._last_after_resize_el_height = null
     this.tabulator?.destroy()
     super.remove()
   }
@@ -593,6 +667,8 @@ export class DataTabulatorView extends HTMLBoxView {
   override render(): void {
     this.tabulator?.destroy()
     super.render()
+    this._last_after_resize_el_width = null
+    this._last_after_resize_el_height = null
     this._initializing = true
     this._building = true
     const container = div({style: {display: "contents"}})
@@ -716,14 +792,8 @@ export class DataTabulatorView extends HTMLBoxView {
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
     }
-    this._building = false
-    schedule_when(() => {
-      const initializing = this._initializing
-      this._initializing = false
-      if (initializing) {
-        this._resize_redraw()
-      }
-    }, () => this.has_finished() && [...this._initialized_stylesheets.values()].every(v => v))
+    this._initializing = this._building = false
+    this._request_resize_redraw()
   }
 
   recompute_page_size(): void {
@@ -1365,9 +1435,14 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setSelection(): void {
-    if (this.tabulator == null || this._initializing || this._selection_updating || !this.tabulator.initialized) {
+    if (this._selection_updating) {
       return
     }
+    if (this.tabulator == null || this._initializing || !this.tabulator.initialized) {
+      this._selection_pending = true
+      return
+    }
+    this._selection_pending = false
 
     const indices = this.model.source.selected.indices
     const current_indices: any = this.tabulator.getSelectedData().map((row: any) => row._index)
