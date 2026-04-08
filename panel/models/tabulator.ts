@@ -634,6 +634,7 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     this.record_scroll()
     this._updating_scroll = true
+    this.redraw(true, true)
     requestAnimationFrame(() => {
       this.restore_scroll()
       this.recompute_page_size()
