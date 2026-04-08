@@ -1,5 +1,6 @@
 import {display, undisplay} from "@bokehjs/core/dom"
 import {sum} from "@bokehjs/core/util/arrayable"
+import {defer} from "@bokehjs/core/util/defer"
 import {isArray, isBoolean, isFunction, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
@@ -608,8 +609,8 @@ export class DataTabulatorView extends HTMLBoxView {
       if (!this._resize_pending) {
         continue
       }
-      if (this._is_scrolling || this._initializing || this._building || this.container === null || this.is_drawing) {
-        await new Promise<void>((resolve) => setTimeout(resolve, 0))
+      if (this._is_scrolling || this._initializing || this._building || this.container === null || this.is_drawing || ![...this._initialized_stylesheets.values()].every(v => v)) {
+        await defer()
         continue
       }
       this._resize_pending = false
