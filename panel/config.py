@@ -22,7 +22,6 @@ from weakref import WeakKeyDictionary
 
 import param
 
-from bokeh.settings import settings as _bk_settings
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
@@ -372,12 +371,6 @@ class _config(_base_config):
                 setattr(self, p+'_', None)
         if self.log_level:
             panel_log_handler.setLevel(self.log_level)
-
-    @param.depends('autoreload', watch=True, on_init=True)
-    def _set_bokeh_validation(self):
-        _bk_settings.perform_document_validation.set_value(self.autoreload)
-        if hasattr(_bk_settings, 'perform_error_diagnostics'):
-            _bk_settings.perform_error_diagnostics.set_value(self.autoreload)
 
     @param.depends('_nthreads', watch=True, on_init=True)
     def _set_thread_pool(self):
