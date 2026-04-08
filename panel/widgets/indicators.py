@@ -442,12 +442,13 @@ class Gauge(ValueIndicator):
     """
     A `Gauge` represents a value in some range as a position on
     speedometer or gauge. It is similar to a `Dial` but visually a lot
-    busier.
+    busier. Requires the ECharts extension to be loaded.
 
     Reference: https://panel.holoviz.org/reference/indicators/Gauge.html
 
     :Example:
 
+    >>> pn.extension('echarts')
     >>> Gauge(name='Speed', value=79, bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
     """
 
@@ -514,6 +515,12 @@ class Gauge(ValueIndicator):
         return ECharts
 
     def __init__(self, **params):
+        from ..config import panel_extension
+        if 'echarts' not in panel_extension._loaded_extensions:
+            self.param.warning(
+                "Gauge requires the ECharts library. Ensure you call "
+                "pn.extension('echarts') before using Gauge components."
+            )
         super().__init__(**params)
         self._update_value_bounds()
 
