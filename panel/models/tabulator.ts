@@ -381,6 +381,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _updating_sort: boolean = false
   _updating_page_size: boolean = false
   _selection_updating: boolean = false
+  _selection_pending: boolean = false
   _last_selected_row: any = null
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0
@@ -555,6 +556,9 @@ export class DataTabulatorView extends HTMLBoxView {
     super.after_layout()
     if (this.tabulator != null && this._initializing && !this.is_drawing) {
       this._initializing = false
+      if (this._selection_pending) {
+        this.setSelection()
+      }
       this._request_resize_redraw()
     }
   }
@@ -1426,9 +1430,14 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setSelection(): void {
-    if (this.tabulator == null || this._initializing || this._selection_updating || !this.tabulator.initialized) {
+    if (this._selection_updating) {
       return
     }
+    if (this.tabulator == null || this._initializing || !this.tabulator.initialized) {
+      this._selection_pending = true
+      return
+    }
+    this._selection_pending = false
 
     const indices = this.model.source.selected.indices
     const current_indices: any = this.tabulator.getSelectedData().map((row: any) => row._index)
