@@ -214,7 +214,7 @@ watchfiles = "*"
 # Test dependencies
 altair = "*"
 anywidget = "*"
-bokeh-fastapi = ">=0.1.5"
+bokeh-fastapi = ">=0.1.8"
 bokeh_sampledata = "*"
 caddy = "*"
 cryptography = "*"

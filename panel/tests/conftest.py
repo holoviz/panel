@@ -35,7 +35,9 @@ from panel.io.reload import (
 from panel.io.resources import EXTENSION_CDN
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
-from panel.tests.util import get_open_ports, reverse_proxy as reverse_proxy_ctx
+from panel.tests.util import (
+    get_open_ports, reverse_proxy as reverse_proxy_ctx, serve_and_wait,
+)
 from panel.theme import Design
 
 CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
@@ -609,3 +611,14 @@ def panel_test_cdn():
         yield TEST_DIR
     except Exception:
         del EXTENSION_CDN[TEST_DIR]
+
+
+@pytest.fixture
+def fastapi_server():
+    pytest.importorskip("bokeh_fastapi")
+    server_implementation = serve_and_wait.server_implementation
+    serve_and_wait.server_implementation = 'fastapi'
+    try:
+        yield
+    finally:
+        serve_and_wait.server_implementation = server_implementation
