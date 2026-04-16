@@ -39,16 +39,29 @@ class TextEditor(Widget):
     mode = param.Selector(default='toolbar', objects=['bubble', 'toolbar'], doc="""
         Whether to display a toolbar or a bubble menu on highlight.""")
 
+    on_keyup = param.Boolean(default=True, doc="""
+        Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
+
     toolbar = param.ClassSelector(default=True, class_=(list, bool), doc="""
         Toolbar configuration either as a boolean toggle or a configuration
         specified as a list.""")
 
     placeholder = param.String(doc="Placeholder output when the editor is empty.")
 
-    value = param.String(default="", doc="State of the current text in the editor")
+    selection = param.Dict(default={}, doc="""
+        The current text selection in the editor, as ``{"text": "..."}`` when
+        the user has a non-empty selection, else ``{}``. Updates live as the
+        selection changes.""")
+
+    value = param.String(default="", doc="""
+        State of the current text in the editor if `on_keyup`. Otherwise, only upon loss of focus,
+        i.e. clicking outside the editor, or pressing <Ctrl+Enter> or <Cmd+Enter>.""")
+
+    value_input = param.String(default="", doc="""
+        State of the current text updated on every key press. Identical to `value` if `on_keyup`.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'name', 'value': 'text'
+        'name': 'name', 'value': 'text', 'value_input': 'text_input',
     }
 
     def _get_model(
