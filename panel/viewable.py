@@ -18,13 +18,13 @@ import os
 import sys
 import threading
 import traceback
-import typing
+import typing as t
 import uuid
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from html import escape
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar,
+    IO, TYPE_CHECKING, Any, ClassVar, Literal,
 )
 
 import param  # type: ignore
@@ -93,8 +93,8 @@ class Layoutable(param.Parameterized):
     css_classes = param.List(default=[], nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
 
-    design = param.Selector(default=None, objects=[], doc="""
-        The design system to use to style components.""")
+    design: Any = param.Selector(default=None, objects=[], doc="""
+        The design system to use to style components.""")  # type: ignore[assignment]
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
         The height of the component (in pixels).  This can be either
@@ -134,7 +134,9 @@ class Layoutable(param.Parameterized):
         The width of the component (in pixels). This can be either
         fixed or preferred width, depending on width sizing policy.""")
 
-    width_policy = param.Selector(
+    width_policy: Literal[
+        'auto', 'fixed', 'fit', 'min', 'max'
+    ] = param.Selector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its width.
 
@@ -164,9 +166,11 @@ class Layoutable(param.Parameterized):
             preferred width (if set). The width of the component may
             shrink or grow depending on the parent layout, aspect
             management and other factors.
-    """)
+    """)  # type: ignore[assignment]
 
-    height_policy = param.Selector(
+    height_policy: Literal[
+        'auto', 'fixed', 'fit', 'min', 'max'
+    ] = param.Selector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its height.
 
@@ -196,9 +200,12 @@ class Layoutable(param.Parameterized):
             preferred height (if set). The height of the component may
             shrink or grow depending on the parent layout, aspect
             management and other factors.
-    """)
+    """)  # type: ignore[assignment]
 
-    sizing_mode = param.Selector(default=None, objects=[
+    sizing_mode: Literal[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         How the component should size itself.
@@ -247,7 +254,7 @@ class Layoutable(param.Parameterized):
             Component will responsively resize to both the available
             width and height, while maintaining the original or
             provided aspect ratio.
-    """)
+    """)  # type: ignore[assignment]
 
     visible = param.Boolean(default=True, doc="""
         Whether the component is visible. Setting visible to false will
@@ -651,13 +658,8 @@ class Renderable(param.Parameterized, MimeRenderMixin):
             add_to_doc(model, doc)
         return model
 
-    def _init_params(self) -> dict[str, Any]:
-        params = {}
-        for p in self.param:
-            v = getattr(self, p)
-            if v is not None:
-                params[p] = v
-        return params
+    def _init_params(self) -> Mapping[str, Any]:
+        return {k: v for k, v in self.param.values().items() if v is not None}
 
     def _server_destroy(self, session_context: BokehSessionContext) -> None:
         """
@@ -1055,22 +1057,21 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             model = self.get_root(doc)
 
         self._documents[doc] = model
-        with doc.models.freeze():
-            add_to_doc(model, doc)
-            if location:
-                self._add_location(doc, location, model)
-            if config.notifications and doc is state.curdoc:
-                notification = state.notifications
-                if notification:
-                    notification_model = notification.get_root(doc)
-                    notification_model.name = 'notifications'
-                    doc.add_root(notification_model)
-            if config.browser_info and doc is state.curdoc:
-                browser = state.browser_info
-                if browser:
-                    browser_model = browser._get_model(doc, model)
-                    browser_model.name = 'browser_info'
-                    doc.add_root(browser_model)
+        add_to_doc(model, doc)
+        if location:
+            self._add_location(doc, location, model)
+        if config.notifications and doc is state.curdoc:
+            notification = state.notifications
+            if notification:
+                notification_model = notification.get_root(doc)
+                notification_model.name = 'notifications'
+                doc.add_root(notification_model)
+        if config.browser_info and doc is state.curdoc:
+            browser = state.browser_info
+            if browser:
+                browser_model = browser._get_model(doc, model)
+                browser_model.name = 'browser_info'
+                doc.add_root(browser_model)
         return doc
 
 
@@ -1131,7 +1132,7 @@ class Child(param.ClassSelector):
     by calling the `pn.panel` utility.
     """
 
-    @typing.overload  # type: ignore
+    @t.overload  # type: ignore
     def __init__(
         self,
         default=None, *, is_instance=True, allow_None=False, doc=None,
@@ -1175,7 +1176,11 @@ class Children(param.List):
     """
 
     def __init__(
-        self, /, default=Undefined, instantiate=Undefined, bounds=Undefined,
+        self,
+        /,
+        default: list[t.Any] = t.cast(list[t.Any], Undefined),  # noqa: B008
+        instantiate: bool = t.cast(bool, Undefined),  # noqa: B008
+        bounds: tuple[int, int | None] = t.cast(tuple[int, int | None], Undefined),
         item_type=Viewable, **params
     ):
         if isinstance(item_type, type) and not issubclass(item_type, Viewable):

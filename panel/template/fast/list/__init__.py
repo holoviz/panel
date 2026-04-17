@@ -5,6 +5,8 @@ use of Fast components.
 """
 import pathlib
 
+from typing import Literal
+
 import param
 
 from ....layout import ListLike
@@ -44,8 +46,9 @@ class FastListTemplate(FastBaseTemplate):
     Please note the `FastListTemplate` cannot display in a notebook output cell.
     """
 
-    collapsed_right_sidebar = param.Selector(default=False, constant=True, doc="""
-       Whether the secondary sidebar on the right (if present) is initially collapsed.""")
+    collapsed_right_sidebar: Literal[True, False] = param.Selector(
+        default=False, constant=True, doc="""
+       Whether the secondary sidebar on the right (if present) is initially collapsed.""")  # type: ignore[assignment]
 
     right_sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates a secondary sidebar (on the right).""")

@@ -19,7 +19,9 @@ from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import partial
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
@@ -64,6 +66,7 @@ from .widgets.button import _ButtonBase
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
+    from matplotlib.pyplot import Figure
     from pyviz_comms import Comm
 
 
@@ -89,7 +92,7 @@ def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     return LiteralInput
 
 
-def DataFrameWidget(pobj: param.DataFrame) -> type[Widget]:
+def DataFrameWidget(pobj: param.Parameter) -> type[WidgetBase]:
     if 'panel.models.tabulator' in sys.modules:
         return Tabulator
     else:
@@ -208,7 +211,7 @@ class Param(Pane):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    mapping: ClassVar[dict[param.Parameter, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
+    mapping: ClassVar[dict[type[param.Parameter], type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
         param.Action:            Button,
         param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
@@ -438,7 +441,12 @@ class Param(Pane):
                     toggle_pane(namedtuple('Change', 'new')(True))
 
     @bothmethod
-    def widget(self_or_cls, p_name: str, parameterized: param.Parameterized | None = None, widget_spec: type[WidgetBase] | dict | None = None):
+    def widget(
+        self_or_cls,
+        p_name: str,
+        parameterized: param.Parameterized | None = None,
+        widget_spec: type[WidgetBase] | dict | None = None
+    ):
         """Get widget for param_name"""
         parameterized = self_or_cls.object if parameterized is None else parameterized
         p_obj = parameterized.param[p_name]
@@ -462,9 +470,8 @@ class Param(Pane):
         else:
             widget_class = widget_spec
 
-        if not self_or_cls.show_labels and not issubclass(widget_class, _ButtonBase):
-            label = ''
-        else:
+        label = ''
+        if self_or_cls.show_labels or issubclass(widget_class, _ButtonBase):
             label = p_obj.label
         kw = dict(disabled=p_obj.constant, name=label)
         if self_or_cls.hide_constant:
@@ -846,8 +853,9 @@ class ParamRef(ReplacementPane):
         Whether to defer load until after the page is rendered.
         Can be set as parameter or by setting panel.config.defer_load.""")
 
-    generator_mode = param.Selector(default='replace', objects=['append', 'replace'], doc="""
-        Whether generators should 'append' to or 'replace' existing output.""")
+    generator_mode: Literal['append', 'replace'] = param.Selector(
+        default='replace', objects=['append', 'replace'], doc="""
+        Whether generators should 'append' to or 'replace' existing output.""")  # type: ignore[assignment]
 
     lazy = param.Boolean(default=False, doc="""
         Whether to lazily evaluate the contents of the object
@@ -1177,12 +1185,16 @@ class ReactiveExpr(Pane):
         class_=ListLike, constant=True, is_instance=False, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")
 
-    widget_location = param.Selector(default='left_top', objects=[
+    widget_location: Literal[
+        'left', 'right', 'top', 'bottom', 'top_left',
+        'top_right', 'bottom_left', 'bottom_right',
+        'left_top', 'right_top', 'right_bottom'
+    ] = param.Selector(default='left_top', objects=[
         'left', 'right', 'top', 'bottom', 'top_left',
         'top_right', 'bottom_left', 'bottom_right',
         'left_top', 'right_top', 'right_bottom'], doc="""
         The location of the widgets relative to the output
-        of the reactive expression.""")
+        of the reactive expression.""")  # type: ignore[assignment]
 
     priority: ClassVar[float | bool | None] = 1
 
@@ -1413,7 +1425,7 @@ Viewable._preprocessing_hooks.insert(0, link_param_method)
 
 class FigureWrapper(param.Parameterized):
 
-    figure = param.Parameter()
+    figure: Figure = param.Parameter()
 
     def get_ax(self):
         from matplotlib.backends.backend_agg import FigureCanvas

@@ -6,7 +6,7 @@ import sys
 from collections.abc import Callable, Mapping
 from enum import Enum
 from functools import partial
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 import numpy as np
 import param
@@ -304,8 +304,12 @@ class Perspective(ModelPane, ReactiveData):
     sort = param.List(default=None, doc="""
       How to sort. For example[["x","desc"]]""")
 
-    plugin = param.Selector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
-      The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")
+    plugin: Literal[
+        'hypergrid', 'datagrid', 'd3_y_bar', 'd3_x_bar', 'd3_xy_line', 'd3_y_line',
+        'd3_y_area', 'd3_y_scatter', 'd3_xy_scatter', 'd3_treemap', 'd3_sunburst',
+        'd3_heatmap', 'd3_candlestick', 'd3_ohlc',
+    ] = param.Selector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
+      The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")  # type: ignore[assignment]
 
     plugin_config = param.Dict(default={}, nested_refs=True, doc="""
       Configuration for the PerspectiveViewerPlugin.""")
@@ -313,8 +317,11 @@ class Perspective(ModelPane, ReactiveData):
     settings = param.Boolean(default=True, doc="""
       Whether to show the settings menu.""")
 
-    theme = param.Selector(default='pro', objects=THEMES, doc="""
-      The style of the PerspectiveViewer. For example pro-dark""")
+    theme: Literal[
+        'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark',
+        'vaporwave', 'pro', 'pro-dark',
+    ] = param.Selector(default='pro', objects=THEMES, doc="""
+      The style of the PerspectiveViewer. For example pro-dark""")  # type: ignore[assignment]
 
     title = param.String(default=None, doc="""
       Title for the Perspective viewer.""")

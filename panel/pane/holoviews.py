@@ -74,10 +74,10 @@ class HoloViews(Pane):
     >>> HoloViews(some_holoviews_object)
     """
 
-    backend = param.Selector(
+    backend: Literal['bokeh', 'matplotlib', 'plotly'] | None = param.Selector(
         default=None, objects=['bokeh', 'matplotlib', 'plotly'], doc="""
         The HoloViews backend used to render the plot (if None defaults
-        to the currently selected renderer).""")
+        to the currently selected renderer).""")  # type: ignore[assignment]
 
     center = param.Boolean(default=False, doc="""
         Whether to center the plot.""")
@@ -109,8 +109,9 @@ class HoloViews(Pane):
         """
     )
 
-    format = param.Selector(default='png', objects=['png', 'svg'], doc="""
-        The format to render Matplotlib plots with.""")
+    format: Literal['png', 'svg'] = param.Selector(
+        default='png', objects=['png', 'svg'], doc="""
+        The format to render Matplotlib plots with.""")  # type: ignore[assignment]
 
     linked_axes = param.Boolean(default=True, doc="""
         Whether to link the axes of bokeh plots inside this pane
@@ -124,21 +125,26 @@ class HoloViews(Pane):
                                 allow_None=True, doc="""
         Bokeh theme to apply to the HoloViews plot.""")
 
-    widget_location = param.Selector(default='right_top', objects=[
+    widget_location: Literal[
+        'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
+        'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
+        'right_top', 'right_bottom'
+    ] = param.Selector(default='right_top', objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
         'right_top', 'right_bottom'], doc="""
         The layout of the plot and the widgets. The value refers to the
-        position of the widgets relative to the plot.""")
+        position of the widgets relative to the plot.""")  # type: ignore[assignment]
 
-    widget_layout = param.Selector(
+    widget_layout: Any = param.Selector(
         objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
-        The layout object to display the widgets in.""")
+        The layout object to display the widgets in.""")  # type: ignore[assignment]
 
-    widget_type = param.Selector(default='individual',
-                                       objects=['individual', 'scrubber'], doc=""")
+    widget_type: Literal['individual', 'scrubber'] = param.Selector(
+        default='individual',
+        objects=['individual', 'scrubber'], doc="""
         Whether to generate individual widgets for each dimension or
-        on global scrubber.""")
+        on global scrubber.""")  # type: ignore[assignment]
 
     widgets = param.Dict(default={}, doc="""
         A mapping from dimension name to a widget instance which will

@@ -105,7 +105,7 @@ class _state(param.Parameterized):
        Global location you can use to cache large datasets or expensive computation results
        across multiple client sessions for a given server.""")
 
-    encryption = param.Parameter(default=None, doc="""
+    encryption: Any = param.Parameter(default=None, doc="""
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
@@ -113,13 +113,13 @@ class _state(param.Parameterized):
                                        'sessions': {}}, doc="""
        Tracks information and statistics about user sessions.""")
 
-    webdriver = param.Parameter(default=None, doc="""
+    webdriver: Any = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
 
     _base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
 
-    _busy_counter = param.List(default=[], doc="""
+    _busy_counter = param.List(default=[], item_type=tuple, doc="""
        Active callbacks currently being processed as (event_id, started_at).""")
 
     _memoize_cache = param.Dict(default={}, doc="""
@@ -584,7 +584,7 @@ class _state(param.Parameterized):
         try:
             with lock:
                 if cache_key in self.cache:
-                    ret, expiry = self.cache.get(cache_key)
+                    ret, expiry = self.cache[cache_key]
                 else:
                     ret, expiry = _Undefined, None
                 if ret is _Undefined or (expiry is not None and expiry < time.monotonic()):
@@ -1271,7 +1271,7 @@ class _state(param.Parameterized):
             return self._templates[self.curdoc]
         elif self.curdoc is None and self._template:
             return self._template
-        template = config.template(theme=config.theme)
+        template = config.template(theme=config.theme)  # type: ignore[operator]
         if not config.design:
             config.design = template.design
         if self.curdoc is None:

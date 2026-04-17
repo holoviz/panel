@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
@@ -62,14 +64,14 @@ class ChatAreaInput(_PnTextAreaInput):
         of rows the input area can grow.""",
     )
 
-    resizable = param.Selector(
+    resizable: Literal["both", "width", "height", False] = param.Selector(
         default="height",
         objects=["both", "width", "height", False],
         doc="""
         Whether the layout is interactively resizable,
         and if so in which dimensions: `width`, `height`, or `both`.
         Can only be set during initialization.""",
-    )
+    )  # type: ignore[assignment]
 
     enter_pressed = param.Event(doc="""
         Event when the Enter/Ctrl+Enter key has been pressed.""")

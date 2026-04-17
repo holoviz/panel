@@ -6,7 +6,7 @@ from __future__ import annotations
 from base64 import b64encode
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 import param
 
@@ -40,9 +40,10 @@ class VideoStream(Widget):
     >>> VideoStream(name='Video Stream', timeout=100)
     """
 
-    format = param.Selector(default='png', objects=['png', 'jpeg'],
-                                  doc="""
-        The file format as which the video is returned.""")
+    format: Literal['png', 'jpeg'] = param.Selector(
+        default='png', objects=['png', 'jpeg'],
+        doc="""
+        The file format as which the video is returned.""")  # type: ignore[assignment]
 
     paused = param.Boolean(default=False, doc="""
         Whether the video is currently paused""")
@@ -87,13 +88,16 @@ class FileDownload(IconMixin):
         Whether to download on the initial click or allow for
         right-click save as.""")
 
-    button_type = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
+    button_type: Literal[
+        'default', 'primary', 'success', 'warning', 'danger', 'light'
+    ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
-        or 'danger' (red).""")
+        or 'danger' (red).""")  # type: ignore[assignment]
 
-    button_style = param.Selector(default='solid', objects=BUTTON_STYLES, doc="""
-        A button style to switch between 'solid', 'outline'.""")
+    button_style: Literal['solid', 'outline'] = param.Selector(
+        default='solid', objects=BUTTON_STYLES, doc="""
+        A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment]
 
     callback = param.Callable(default=None, allow_refs=False, doc="""
         A callable that returns the file path or file-like object.""")
@@ -298,7 +302,9 @@ class JSONEditor(Widget):
         etc. functionality. true by default. Applicable in all types
         of mode.""")
 
-    mode = param.Selector(default='tree', objects=[
+    mode: Literal[
+        "tree", "view", "form", "text", "preview"
+    ] = param.Selector(default='tree', objects=[
         "tree", "view", "form", "text", "preview"], doc="""
         Sets the editor mode. In 'view' mode, the data and
         datastructure is read-only. In 'form' mode, only the value can
@@ -307,7 +313,7 @@ class JSONEditor(Widget):
         shows the data as plain text. The 'preview' mode can handle
         large JSON documents up to 500 MiB. It shows a preview of the
         data, and allows to transform, sort, filter, format, or
-        compact the data.""")
+        compact the data.""")  # type: ignore[assignment]
 
     search = param.Boolean(default=True, doc="""
         Enables a search box in the upper right corner of the

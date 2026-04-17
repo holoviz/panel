@@ -121,10 +121,11 @@ def add_applications(
         Additional keyword arguments to pass to the BokehFastAPI application
     """
     apps = build_applications(panel, title=title, location=location, admin=admin)
-    ws_origins = kwargs.pop('websocket_origin', [])
+    ws_origins = kwargs.pop('websocket_origin', None)
     if ws_origins and not isinstance(ws_origins, list):
         ws_origins = [ws_origins]
-    kwargs['websocket_origins'] = ws_origins
+    if ws_origins:
+        kwargs['websocket_origins'] = ws_origins
 
     application = BokehFastAPI(apps, app=app, **kwargs)
     if session_history is not None:

@@ -10,7 +10,9 @@ from __future__ import annotations
 import datetime as dt
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import numpy as np
 import param
@@ -49,18 +51,20 @@ class _SliderBase(Widget):
     bar_color = param.Color(default="#e6e6e6", doc="""
         The color of the slider bar. Accepts any valid CSS color string.""")
 
-    direction = param.Selector(default='ltr', objects=['ltr', 'rtl'], doc="""
+    direction: Literal['ltr', 'rtl'] = param.Selector(
+        default='ltr', objects=['ltr', 'rtl'], doc="""
         Whether the slider should go from left-to-right ('ltr') or
-        right-to-left ('rtl').""")
+        right-to-left ('rtl').""")  # type: ignore[assignment]
 
     name = param.String(default=None, constant=False, doc="""
         The name of the widget. Also used as the label of the widget. If not set,
         the widget has no label.""")
 
-    orientation = param.Selector(default='horizontal', objects=['horizontal', 'vertical'],
+    orientation: Literal['horizontal', 'vertical'] = param.Selector(
+        default='horizontal', objects=['horizontal', 'vertical'],
         doc="""
         Whether the slider should be oriented horizontally or
-        vertically.""")
+        vertically.""")  # type: ignore[assignment]
 
     show_value = param.Boolean(default=True, doc="""
         Whether to show the widget value as a label or not.""")

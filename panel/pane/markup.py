@@ -10,7 +10,9 @@ import textwrap
 
 from collections.abc import Mapping
 from html import escape
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param  # type: ignore
 
@@ -169,10 +171,13 @@ class DataFrame(HTML):
     index_names = param.Boolean(default=True, doc="""
         Prints the names of the indexes.""")
 
-    justify = param.Selector(default=None, allow_None=True, objects=[
+    justify: Literal[
+        'left', 'right', 'center', 'justify', 'justify-all', 'start',
+        'end', 'inherit', 'match-parent', 'initial', 'unset'
+    ] | None = param.Selector(default=None, allow_None=True, objects=[
         'left', 'right', 'center', 'justify', 'justify-all', 'start',
         'end', 'inherit', 'match-parent', 'initial', 'unset'], doc="""
-        How to justify the column labels.""")
+        How to justify the column labels.""")  # type: ignore[assignment]
 
     max_rows = param.Integer(default=None, doc="""
         Maximum number of rows to display.""")
@@ -194,9 +199,10 @@ class DataFrame(HTML):
         Set to False for a DataFrame with a hierarchical index to
         print every multi-index key at each row.""")
 
-    text_align = param.Selector(default=None, objects=[
+    text_align: Literal['start', 'end', 'center'] | None = param.Selector(
+        default=None, objects=[
         'start', 'end', 'center'], doc="""
-         Alignment of non-header cells.""")
+         Alignment of non-header cells.""")  # type: ignore[assignment]
 
     _object = param.Parameter(default=None, doc="""Hidden parameter.""")
 
@@ -369,9 +375,10 @@ class Markdown(HTMLBasePane):
     plugins = param.List(default=[], nested_refs=True, doc="""
         Additional markdown-it-py plugins to use.""")
 
-    renderer = param.Selector(default='markdown-it', objects=[
+    renderer: Literal['markdown-it', 'myst', 'markdown'] = param.Selector(
+        default='markdown-it', objects=[
         'markdown-it', 'myst', 'markdown'], doc="""
-        Markdown renderer implementation.""")
+        Markdown renderer implementation.""")  # type: ignore[assignment]
 
     renderer_options = param.Dict(default={}, nested_refs=True, doc="""
         Options to pass to the markdown renderer.""")
@@ -516,11 +523,12 @@ class JSON(HTMLBasePane):
     hover_preview = param.Boolean(default=False, doc="""
         Whether to display a hover preview for collapsed nodes.""")
 
-    theme = param.Selector(default="light", objects=["light", "dark"], doc="""
+    theme: Literal["light", "dark"] = param.Selector(
+        default="light", objects=["light", "dark"], doc="""
         If no value is provided, it defaults to the current theme
         set by pn.config.theme, as specified in the
         JSON.THEME_CONFIGURATION dictionary. If not defined there, it
-        falls back to the default parameter value.""")
+        falls back to the default parameter value.""")  # type: ignore[assignment]
 
     priority: ClassVar[float | bool | None] = None
 

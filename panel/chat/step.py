@@ -45,14 +45,14 @@ class ChatStep(Card):
     collapsed_on_success = param.Boolean(default=True, doc="""
         Whether to collapse the card on completion.""")
 
-    context_exception = param.Selector(
+    context_exception: Literal["raise", "summary", "verbose", "ignore"] = param.Selector(
         default="raise", objects=["raise", "summary", "verbose", "ignore"], doc="""
         How to handle exceptions raised upon exiting the context manager.
         If "raise", the exception will be raised.
         If "summary", a summary will be sent to the chat step.
         If "verbose", the full traceback will be sent to the chat step.
         If "ignore", the exception will be ignored.
-        """)
+        """)  # type: ignore[assignment]
 
     default_badges = param.Dict(default=DEFAULT_STATUS_BADGES, doc="""
         Mapping from status to default status badge; keys must be one of
@@ -80,8 +80,9 @@ class ChatStep(Card):
     running_title = param.String(default=None, doc="""
         Title to display when status is running.""")
 
-    status = param.Selector(default="pending", objects=[
-        "pending", "running", "success", "failed"], doc="""The status of the chat step.""")
+    status: Literal["pending", "running", "success", "failed"] = param.Selector(
+        default="pending", objects=[
+        "pending", "running", "success", "failed"], doc="""The status of the chat step.""")  # type: ignore[assignment]
 
     success_title = param.String(default=None, doc="""
         Title to display when status is success.""")

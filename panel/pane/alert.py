@@ -6,7 +6,7 @@ See https://getbootstrap.com/docs/4.0/components/alerts/
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 import param
 
@@ -31,9 +31,12 @@ class Alert(Markdown):
     >>> Alert('Some important message', alert_type='warning')
     """
 
-    alert_type = param.Selector(default="primary", objects=ALERT_TYPES, doc="""
+    alert_type: Literal[
+        "primary", "secondary", "success", "danger",
+        "warning", "info", "light", "dark"
+    ] = param.Selector(default="primary", objects=ALERT_TYPES, doc="""
         The type of Alert and one of 'primary', 'secondary', 'success', 'danger',
-        'warning', 'info', 'light', 'dark'.""")
+        'warning', 'info', 'light', 'dark'.""")  # type: ignore[assignment]
 
     priority: ClassVar[float | bool | None] = 0
 

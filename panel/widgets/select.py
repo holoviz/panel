@@ -11,7 +11,9 @@ import sys
 from collections.abc import Awaitable, Callable, Mapping
 from functools import partial
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import numpy as np
 import param
@@ -975,12 +977,13 @@ class AutocompleteInput(SingleSelectBase):
         Set to False in order to allow users to enter text that is not
         present in the list of completion strings.""")
 
-    search_strategy = param.Selector(default='starts_with',
+    search_strategy: Literal['starts_with', 'includes'] = param.Selector(
+        default='starts_with',
         objects=['starts_with', 'includes'], doc="""
         Define how to search the list of completion strings. The default option
         `"starts_with"` means that the user's text must match the start of a
         completion string. Using `"includes"` means that the user's text can
-        match any substring of a completion string.""")
+        match any substring of a completion string.""")  # type: ignore[assignment]
 
     value = param.Parameter(default='', allow_None=True, doc="""
       Initial or entered text value updated when <enter> key is pressed.""")
@@ -1098,9 +1101,10 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
     ... )
     """
 
-    orientation = param.Selector(default='horizontal',
+    orientation: Literal['horizontal', 'vertical'] = param.Selector(
+        default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
-        Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+        Button group orientation, either 'horizontal' (default) or 'vertical'.""")  # type: ignore[assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {**_RadioGroupBase._rename, **TooltipMixin._rename}
 
@@ -1199,9 +1203,10 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
     ... )
     """
 
-    orientation = param.Selector(default='horizontal',
+    orientation: Literal['horizontal', 'vertical'] = param.Selector(
+        default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
-        Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+        Button group orientation, either 'horizontal' (default) or 'vertical'.""")  # type: ignore[assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {**_CheckGroupBase._rename, **TooltipMixin._rename}
 

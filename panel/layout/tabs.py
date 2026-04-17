@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 import param
 
@@ -44,9 +44,9 @@ class Tabs(NamedListPanel):
     dynamic = param.Boolean(default=False, doc="""
         Dynamically populate only the active tab.""")
 
-    tabs_location = param.Selector(
+    tabs_location: Literal['above', 'below', 'left', 'right'] = param.Selector(
         default='above', objects=['above', 'below', 'left', 'right'], doc="""
-        The location of the tabs relative to the tab contents.""")
+        The location of the tabs relative to the tab contents.""")  # type: ignore[assignment]
 
     height = param.Integer(default=None, bounds=(0, None))
 

@@ -1047,7 +1047,9 @@ class DataFrame(BaseTable):
     auto_edit = param.Boolean(default=False, doc="""
         Whether clicking on a table cell automatically starts edit mode.""")
 
-    autosize_mode = param.Selector(default='force_fit', objects=[
+    autosize_mode: Literal[
+        "none", "fit_columns", "fit_viewport", "force_fit"
+    ] = param.Selector(default='force_fit', objects=[
         "none", "fit_columns", "fit_viewport", "force_fit"], doc="""
 
         Determines the column autosizing mode, as one of the following options:
@@ -1069,7 +1071,7 @@ class DataFrame(BaseTable):
           can get unreadable if there is not enough space available.
 
         ``"none"``
-          Do not automatically compute column widths.""")
+          Do not automatically compute column widths.""")  # type: ignore[assignment]
 
     fit_columns = param.Boolean(default=None, doc="""
         Whether columns should expand to the available width. This
@@ -1261,18 +1263,22 @@ class Tabulator(BaseTable):
     hidden_columns = param.List(default=[], nested_refs=True, doc="""
         List of columns to hide.""")
 
-    layout = param.Selector(default='fit_data_table', objects=[
+    layout: Literal[
+        'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
+        'fit_columns',
+    ] = param.Selector(default='fit_data_table', objects=[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
         'fit_columns'], doc="""
         Describes the column layout mode with one of the following options
         'fit_columns', 'fit_data', 'fit_data_stretch', 'fit_data_fill',
-        'fit_data_table'.""")
+        'fit_data_table'.""")  # type: ignore[assignment]
 
     initial_page_size = param.Integer(default=20, bounds=(1, None), doc="""
         Initial page size if page_size is None and therefore automatically set.""")
 
-    pagination = param.Selector(default=None, allow_None=True,
-                                      objects=['local', 'remote'], doc="""
+    pagination: Literal['local', 'remote'] | None = param.Selector(
+        default=None, allow_None=True,
+        objects=['local', 'remote'], doc="""
         Defines the pagination mode of the Tabulator.
 
           - None
@@ -1282,7 +1288,7 @@ class Tabulator(BaseTable):
               is loaded and then paginated.
           - 'remote' (server-side)
               Pagination is applied remotely, i.e. only the current page
-              is loaded from the server.""")
+              is loaded from the server.""")  # type: ignore[assignment]
 
     page = param.Integer(default=1, doc="""
         Currently selected page (indexed starting at 1), if pagination is enabled.""")
@@ -1330,13 +1336,17 @@ class Tabulator(BaseTable):
         Can either be specified as a simple boolean toggling the behavior
         on and off or as a dictionary specifying the option per column.""")
 
-    theme = param.Selector(
+    theme: Literal[
+        'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
+        'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast',
+        'bootstrap5',
+    ] = param.Selector(
         default="simple", objects=[
             'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
             'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast',
             'bootstrap5'
         ], doc="""
-        Tabulator CSS theme to apply to table.""")
+        Tabulator CSS theme to apply to table.""")  # type: ignore[assignment]
 
     theme_classes = param.List(default=[], nested_refs=True, item_type=str, doc="""
        List of extra CSS classes to apply to the Tabulator element

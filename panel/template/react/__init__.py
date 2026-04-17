@@ -7,6 +7,8 @@ import json
 import math
 import pathlib
 
+from typing import Literal
+
 import param
 
 from ...config import config
@@ -21,7 +23,8 @@ class ReactTemplate(BasicTemplate):
     ReactTemplate is built on top of React Grid Layout web components.
     """
 
-    compact = param.Selector(default=None, objects=[None, 'vertical', 'horizontal', 'both'])
+    compact: Literal['vertical', 'horizontal', 'both'] | None = param.Selector(
+        default=None, objects=[None, 'vertical', 'horizontal', 'both'])  # type: ignore[assignment]
 
     cols = param.Dict(default={'lg': 12, 'md': 10, 'sm': 6, 'xs': 4, 'xxs': 2})
 

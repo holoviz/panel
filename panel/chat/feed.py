@@ -225,8 +225,9 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
-    _callback_state = param.Selector(objects=list(CallbackState), doc="""
-        The current state of the callback.""")
+    _callback_state: CallbackState = param.Selector(
+        objects=list(CallbackState), doc="""
+        The current state of the callback.""")  # type: ignore[assignment]
 
     _prompt_trigger = param.Event(doc="Triggers the prompt input.")
 

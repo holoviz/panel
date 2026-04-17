@@ -218,13 +218,16 @@ class Vega(ModelPane):
     show_actions = param.Boolean(default=False, doc="""
         Whether to show Vega actions.""")
 
-    theme = param.Selector(default=None, allow_None=True, objects=[
+    theme: Literal[
+        'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
+        'latimes', 'urbaninstitute', 'googlecharts'
+    ] | None = param.Selector(default=None, allow_None=True, objects=[
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
         'latimes', 'urbaninstitute', 'googlecharts'], doc="""
         A theme to apply to the plot. Must be one of 'excel', 'ggplot2',
         'quartz', 'vox', 'fivethirtyeight', 'dark', 'latimes',
         'urbaninstitute', or 'googlecharts'.
-        """)
+        """)  # type: ignore[assignment]
 
     priority: ClassVar[float | bool | None] = 0.8
 

@@ -8,7 +8,9 @@ import math
 from collections import namedtuple
 from collections.abc import Mapping
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import numpy as np
 import param
@@ -260,8 +262,9 @@ class GridSpec(Panel):
     objects = ChildDict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
 
-    mode = param.Selector(default='warn', objects=['warn', 'error', 'override'], doc="""
-        Whether to warn, error or simply override on overlapping assignment.""")
+    mode: Literal['warn', 'error', 'override'] = param.Selector(
+        default='warn', objects=['warn', 'error', 'override'], doc="""
+        Whether to warn, error or simply override on overlapping assignment.""")  # type: ignore[assignment]
 
     ncols = param.Integer(default=None, bounds=(0, None), doc="""
         Limits the number of columns that can be assigned.""")

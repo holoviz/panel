@@ -12,7 +12,7 @@ from __future__ import annotations
 import uuid
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -91,8 +91,8 @@ class Utterance(param.Parameterized):
         spoken. The text may be provided as plain text, or a
         well-formed SSML document.""")
 
-    lang = param.Selector(default="", doc="""
-        The language of the utterance.""")
+    lang: str = param.Selector(default="", doc="""
+        The language of the utterance.""")  # type: ignore[assignment]
 
     pitch = param.Number(default=1.0, bounds=(0.0, 2.0), doc="""
         The pitch at which the utterance will be spoken at expressed
@@ -102,8 +102,8 @@ class Utterance(param.Parameterized):
         The speed at which the utterance will be spoken at expressed
         as a number between 0.1 and 10.""" )
 
-    voice = param.Selector(doc="""
-        The voice that will be used to speak the utterance.""")
+    voice: Any = param.Selector(doc="""
+        The voice that will be used to speak the utterance.""")  # type: ignore[assignment]
 
     volume = param.Number(default=1.0, bounds=(0.0, 1.0), doc=""" The
         volume that the utterance will be spoken at expressed as a

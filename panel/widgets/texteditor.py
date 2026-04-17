@@ -4,7 +4,7 @@ Defines a WYSIWYG TextEditor widget based on quill.js.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 import param
 
@@ -36,8 +36,9 @@ class TextEditor(Widget):
     disabled = param.Boolean(default=False, doc="""
         Whether the editor is disabled.""")
 
-    mode = param.Selector(default='toolbar', objects=['bubble', 'toolbar'], doc="""
-        Whether to display a toolbar or a bubble menu on highlight.""")
+    mode: Literal['bubble', 'toolbar'] = param.Selector(
+        default='toolbar', objects=['bubble', 'toolbar'], doc="""
+        Whether to display a toolbar or a bubble menu on highlight.""")  # type: ignore[assignment]
 
     toolbar = param.ClassSelector(default=True, class_=(list, bool), doc="""
         Toolbar configuration either as a boolean toggle or a configuration

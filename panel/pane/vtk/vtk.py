@@ -11,7 +11,7 @@ import zipfile
 from abc import abstractmethod
 from collections.abc import Mapping
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar,
+    IO, TYPE_CHECKING, Any, ClassVar, Literal,
 )
 from urllib.request import urlopen
 
@@ -560,8 +560,9 @@ class VTKVolume(AbstractVTK):
     controller_expanded = param.Boolean(default=True, doc="""
         If True the volume controller panel options is expanded in the view""")
 
-    colormap = param.Selector(default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
-        Name of the colormap used to transform pixel value in color.""")
+    colormap: str = param.Selector(
+        default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
+        Name of the colormap used to transform pixel value in color.""")  # type: ignore[assignment]
 
     diffuse = param.Number(default=0.7, step=1e-2, doc="""
         Value to control the diffuse Lighting. It relies on both the
@@ -580,14 +581,15 @@ class VTKVolume(AbstractVTK):
         Parameter to adjust the opacity of the volume based on the
         gradient between voxels.""")
 
-    interpolation = param.Selector(default='fast_linear', objects=['fast_linear','linear','nearest'], doc="""
+    interpolation: Literal['fast_linear', 'linear', 'nearest'] = param.Selector(
+        default='fast_linear', objects=['fast_linear','linear','nearest'], doc="""
         interpolation type for sampling a volume. `nearest`
         interpolation will snap to the closest voxel, `linear` will
         perform trilinear interpolation to compute a scalar value from
         surrounding voxels.  `fast_linear` under WebGL 1 will perform
         bilinear interpolation on X and Y but use nearest for Z. This
         is slightly faster than full linear at the cost of no Z axis
-        linear interpolation.""")
+        linear interpolation.""")  # type: ignore[assignment]
 
     mapper = param.Dict(doc="Lookup Table in format {low, high, palette}")
 

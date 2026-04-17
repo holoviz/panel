@@ -612,8 +612,9 @@ class BasicTemplate(BaseTemplate):
                                          allow_None=True, doc="""
         Visual indicator of application busy state.""")
 
-    collapsed_sidebar = param.Selector(default=False, constant=True, doc="""
-        Whether the sidebar (if present) is initially collapsed.""")
+    collapsed_sidebar: Literal[True, False] = param.Selector(
+        default=False, constant=True, doc="""
+        Whether the sidebar (if present) is initially collapsed.""")  # type: ignore[assignment]
 
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
@@ -685,9 +686,10 @@ class BasicTemplate(BaseTemplate):
         Specifies the base URL for all relative URLs in a
         page. Default is '', i.e. not the domain.""")
 
-    base_target = param.Selector(default="_self",
+    base_target: Literal["_blank", "_self", "_parent", "_top"] = param.Selector(
+        default="_self",
         objects=["_blank", "_self", "_parent", "_top"], doc="""
-        Specifies the base Target for all relative URLs in a page.""")
+        Specifies the base Target for all relative URLs in a page.""")  # type: ignore[assignment]
 
     header_background = param.String(doc="""
         Optional header background color override.""")

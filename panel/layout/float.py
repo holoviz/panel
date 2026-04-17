@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 import param
 
@@ -52,8 +52,18 @@ class FloatPanel(ListLike, ReactiveHTML):
        Whether the component is contained within parent container
        or completely free floating.""")
 
-    position = param.Selector(default='right-top', objects=POSITIONS, doc="""
-       The initial position if the container is free-floating.""")
+    position: Literal[
+        'center',
+        'left-top',
+        'center-top',
+        'right-top',
+        'right-center',
+        'right-bottom',
+        'center-bottom',
+        'left-bottom',
+        'left-center',
+    ] = param.Selector(default='right-top', objects=POSITIONS, doc="""
+       The initial position if the container is free-floating.""")  # type: ignore[assignment]
 
     offsetx = param.Integer(default=None, bounds=(0, None), doc="""
        Horizontal offset in pixels.""")
@@ -73,8 +83,15 @@ class FloatPanel(ListLike, ReactiveHTML):
           'filled', 'filledlight', 'filleddark' or 'fillcolor'
           separated from the theme color by a space like 'primary""")
 
-    status = param.Selector(default="normalized", objects=STATUS, doc="""
-        The current status of the panel.""")
+    status: Literal[
+        "normalized",
+        "maximized",
+        "minimized",
+        "smallified",
+        "smallifiedmax",
+        "closed",
+    ] = param.Selector(default="normalized", objects=STATUS, doc="""
+        The current status of the panel.""")  # type: ignore[assignment]
 
     _extension_name = 'floatpanel'
 

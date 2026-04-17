@@ -17,7 +17,9 @@ import warnings
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 from weakref import WeakKeyDictionary
 
 import param
@@ -66,7 +68,7 @@ def validate_config(config, parameter, value):
 
 class _base_config(param.Parameterized):
 
-    css_files = param.List(default=[], doc="""
+    css_files = param.List(default=[], item_type=(str, os.PathLike), doc="""
         External CSS files to load.""")
 
     js_files = param.Dict(default={}, doc="""
@@ -77,7 +79,7 @@ class _base_config(param.Parameterized):
         External JS files to load as modules. Dictionary should map from
         exported name to the URL of the JS file.""")
 
-    raw_css = param.List(default=[], doc="""
+    raw_css = param.List(default=[], item_type=str, doc="""
         List of raw CSS strings to add to load.""")
 
 
@@ -143,7 +145,7 @@ class _config(_base_config):
         Whether to defer load of rendered functions.""")
 
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
-        The design system to use to style components.""")
+        The design system to use to style components.""")  # type: ignore[call-overload]
 
     disconnect_notification = param.String(default="Server connection lost.", doc="""
         The notification to display to the user when the connection
@@ -152,16 +154,17 @@ class _config(_base_config):
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
 
-    global_css = param.List(default=[], doc="""
+    global_css = param.List(default=[], item_type=str, doc="""
         List of raw CSS to be added to the header.""")
 
     global_loading_spinner = param.Boolean(default=False, doc="""
         Whether to add a global loading spinner for the whole application.""")
 
-    layout_compatibility = param.Selector(default='warn', objects=['warn', 'error'], doc="""
+    layout_compatibility: Literal['warn', 'error'] = param.Selector(
+        default='warn', objects=['warn', 'error'], doc="""
         Provide compatibility for older layout specifications. Incompatible
         specifications will trigger warnings by default but can be set to error.
-        Compatibility to be set to error by default in Panel 1.1.""")
+        Compatibility to be set to error by default in Panel 1.1.""")  # type: ignore[assignment]
 
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
@@ -169,9 +172,11 @@ class _config(_base_config):
     loading_indicator = param.Boolean(default=False, doc="""
         Whether a loading indicator is shown by default while panes are updating.""")
 
-    loading_spinner = param.Selector(default='arc', objects=[
+    loading_spinner: Literal[
+        'arc', 'arcs', 'bar', 'dots', 'petal'
+    ] = param.Selector(default='arc', objects=[
         'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
-        Loading indicator to use when component loading parameter is set.""")
+        Loading indicator to use when component loading parameter is set.""")  # type: ignore[assignment]
 
     loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
@@ -182,20 +187,23 @@ class _config(_base_config):
     notifications = param.Boolean(default=False, doc="""
         Whether to enable notifications functionality.""")
 
-    profiler = param.Selector(default=None, allow_None=True, objects=[
+    profiler: Literal['pyinstrument', 'snakeviz', 'memray'] | None = param.Selector(
+        default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz', 'memray'], doc="""
-        The profiler engine to enable.""")
+        The profiler engine to enable.""")  # type: ignore[assignment]
 
     ready_notification = param.String(doc="""
         The notification to display when the application is ready and
         fully loaded.""")
 
-    reconnect = param.Selector(default=False, objects=[True, False, 'prompt'], doc="""
+    reconnect: Literal[True, False, 'prompt'] = param.Selector(
+        default=False, objects=[True, False, 'prompt'], doc="""
         Whether to enable automatic re-connect should the server connection
         be disrupted. Setting "prompt" will not enable automatic re-connect but
-        will pop up a notification asking the user to confirm.""")
+        will pop up a notification asking the user to confirm.""")  # type: ignore[assignment]
 
-    reuse_sessions = param.Selector(default=False, objects=[True, False, 'warm'], doc="""
+    reuse_sessions: Literal[True, False, 'warm'] = param.Selector(
+        default=False, objects=[True, False, 'warm'], doc="""
         Whether to reuse a session for the initial request to speed up
         the initial page render. Note that if the initial page differs
         between sessions, e.g. because it uses query parameters to modify
@@ -203,7 +211,7 @@ class _config(_base_config):
         content being rendered. Define a session_key_func to ensure that
         reused sessions are only reused when appropriate. If set to 'warm'
         session reuse is enabled and the session is warmed up as soon as
-        the initial request arrives.""")
+        the initial request arrives.""")  # type: ignore[assignment]
 
     session_key_func = param.Callable(default=None, doc="""
         Used in conjunction with the reuse_sessions option, the
@@ -221,13 +229,16 @@ class _config(_base_config):
         information about user sessions. A value of -1 indicates an
         unlimited history.""")
 
-    sizing_mode = param.Selector(default=None, objects=[
+    sizing_mode: Literal[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
-        Specify the default sizing mode behavior of panels.""")
+        Specify the default sizing mode behavior of panels.""")  # type: ignore[assignment]
 
-    template = param.Selector(default=None, doc="""
-        The default template to render served applications into.""")
+    template: str = param.Selector(default=None, doc="""
+        The default template to render served applications into.""")  # type: ignore[assignment]
 
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
@@ -236,25 +247,27 @@ class _config(_base_config):
 
     _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
 
-    _admin_log_level = param.Selector(
+    _admin_log_level: Literal[
+        'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+    ] = param.Selector(
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        doc="Log level of the Admin Panel logger")
+        doc="Log level of the Admin Panel logger")  # type: ignore[assignment]
 
     _cdn_root = param.String(
         default="https://cdn.holoviz.org/panel/", doc="""
         The root path of the CDN. Configurable to support air-gapped and
         sandboxed environments.""")
 
-    _comms = param.Selector(
+    _comms: Literal['default', 'ipywidgets', 'vscode', 'colab'] = param.Selector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
-        extension or use the jupyter_bokeh ipywidget model.""")
+        extension or use the jupyter_bokeh ipywidget model.""")  # type: ignore[assignment]
 
-    _console_output = param.Selector(default='accumulate', allow_None=True,
-                                 objects=['accumulate', 'replace', 'disable',
-                                          False], doc="""
+    _console_output: Literal['accumulate', 'replace', 'disable', False] | None = param.Selector(
+        default='accumulate', allow_None=True,
+        objects=['accumulate', 'replace', 'disable', False], doc="""
         How to log errors and stdout output triggered by callbacks
-        from Javascript in the notebook.""")
+        from Javascript in the notebook.""")  # type: ignore[assignment]
 
     _cookie_secret = param.String(default=None, doc="""
         Configure to enable getting/setting secure cookies.""")
@@ -281,15 +294,19 @@ class _config(_base_config):
     _embed_save_path = param.String(default='./', doc="""
         Where to save json files for embedded state.""")
 
-    _log_level = param.Selector(
+    _log_level: Literal[
+        'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+    ] = param.Selector(
         default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        doc="Log level of Panel loggers")
+        doc="Log level of Panel loggers")  # type: ignore[assignment]
 
-    _npm_cdn = param.Selector(default='https://cdn.jsdelivr.net/npm',
+    _npm_cdn: Literal[
+        'https://unpkg.com', 'https://cdn.jsdelivr.net/npm'
+    ] = param.Selector(default='https://cdn.jsdelivr.net/npm',
         objects=['https://unpkg.com', 'https://cdn.jsdelivr.net/npm'],  doc="""
         The CDN to load NPM packages from if resources are served from
         CDN. Allows switching between [https://unpkg.com](https://unpkg.com) and
-        [https://cdn.jsdelivr.net/npm](https://cdn.jsdelivr.net/npm) for most resources.""")
+        [https://cdn.jsdelivr.net/npm](https://cdn.jsdelivr.net/npm) for most resources.""")  # type: ignore[assignment]
 
     _nthreads = param.Integer(default=None, doc="""
         When set to a non-None value a thread pool will be started.
@@ -304,9 +321,9 @@ class _config(_base_config):
         or filepath containing JSON to use with the basic auth
         provider.""")
 
-    _oauth_provider = param.Selector(
+    _oauth_provider: Any = param.Selector(
         default=None, allow_None=True, objects=[], doc="""
-        Select between a list of authentication providers.""")
+        Select between a list of authentication providers.""")  # type: ignore[assignment]
 
     _oauth_expiry = param.Number(default=1, bounds=(0, None), doc="""
         Expiry of the OAuth cookie in number of days.""")
@@ -343,8 +360,9 @@ class _config(_base_config):
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
-    _theme = param.Selector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
-        The theme to apply to components.""")
+    _theme: Literal['default', 'dark'] | None = param.Selector(
+        default=None, objects=['default', 'dark'], allow_None=True, doc="""
+        The theme to apply to components.""")  # type: ignore[assignment]
 
     _disable_validation = param.Boolean(default=False, doc="""
         Whether to disable bokeh validation, speeding up applications.""")

@@ -7,7 +7,9 @@ from __future__ import annotations
 import sys
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param  # type: ignore
 
@@ -41,9 +43,10 @@ class LaTeX(ModelPane):
     ... )
     """
 
-    renderer = param.Selector(default=None, allow_None=True,
-                                    objects=['katex', 'mathjax'], doc="""
-        The JS renderer used to render the LaTeX expression. Defaults to katex.""")
+    renderer: Literal['katex', 'mathjax'] | None = param.Selector(
+        default=None, allow_None=True,
+        objects=['katex', 'mathjax'], doc="""
+        The JS renderer used to render the LaTeX expression. Defaults to katex.""")  # type: ignore[assignment]
 
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None

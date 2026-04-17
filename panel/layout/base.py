@@ -9,7 +9,7 @@ from collections.abc import (
     Generator, Iterable, Iterator, Mapping,
 )
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, overload,
+    TYPE_CHECKING, Any, ClassVar, Literal, overload,
 )
 
 import param
@@ -770,7 +770,9 @@ class ListPanel(ListLike, Panel):
     An abstract baseclass for Panel objects with list-like children.
     """
 
-    scroll = param.Selector(
+    scroll: Literal[
+        False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"
+    ] = param.Selector(
         default=False,
         objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
         doc="""Whether to add scrollbars if the content overflows the size
@@ -781,7 +783,7 @@ class ListPanel(ListLike, Panel):
         If "x" or "y", will always add scrollbars in the respective
         direction. If False, overflowing content will be clipped.
         If True, will only add scrollbars in the direction of the container,
-        (e.g. Column: vertical, Row: horizontal).""")
+        (e.g. Column: vertical, Row: horizontal).""")  # type: ignore[assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
@@ -819,7 +821,9 @@ class NamedListPanel(NamedListLike, Panel):
     active = param.Integer(default=0, bounds=(0, None), doc="""
         Index of the currently displayed objects.""")
 
-    scroll = param.Selector(
+    scroll: Literal[
+        False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"
+    ] = param.Selector(
         default=False,
         objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
         doc="""Whether to add scrollbars if the content overflows the size
@@ -830,7 +834,7 @@ class NamedListPanel(NamedListLike, Panel):
         If "x" or "y", will always add scrollbars in the respective
         direction. If False, overflowing content will be clipped.
         If True, will only add scrollbars in the direction of the container,
-        (e.g. Column: vertical, Row: horizontal).""")
+        (e.g. Column: vertical, Row: horizontal).""")  # type: ignore[assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 

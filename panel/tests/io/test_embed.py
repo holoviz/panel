@@ -3,6 +3,7 @@ import json
 import os
 
 from io import StringIO
+from typing import Literal
 
 import pytest
 
@@ -621,7 +622,8 @@ def test_embed_widget_from_param_class(document, comm):
     from panel.widgets import RadioButtonGroup
 
     class Test(param.Parameterized):
-        fn = param.Selector(default="sin", objects=["sin", "cos"])
+        fn: Literal["sin", "cos"] = param.Selector(
+            default="sin", objects=["sin", "cos"])  # type: ignore[assignment]
 
     # Create widget from class parameter
     widget = RadioButtonGroup.from_param(Test.param.fn)
@@ -644,7 +646,8 @@ def test_embed_widget_from_param_instance(document, comm):
     from panel.widgets import RadioButtonGroup
 
     class Test(param.Parameterized):
-        fn = param.Selector(default="sin", objects=["sin", "cos"])
+        fn: Literal["sin", "cos"] = param.Selector(
+            default="sin", objects=["sin", "cos"])  # type: ignore[assignment]
 
     # Create widget from instance parameter
     test = Test()

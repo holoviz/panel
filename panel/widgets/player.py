@@ -4,7 +4,7 @@ Defines Player widgets which offer media-player like controls.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 import param
 
@@ -31,9 +31,9 @@ class PlayerBase(Widget):
         Interval between updates, in milliseconds. Default is 500, i.e.
         two updates per second.""")
 
-    loop_policy = param.Selector(
+    loop_policy: Literal['once', 'loop', 'reflect'] = param.Selector(
         default='once', objects=['once', 'loop', 'reflect'], doc="""
-        Policy used when player hits last frame""")
+        Policy used when player hits last frame""")  # type: ignore[assignment]
 
     preview_duration = param.Integer(default=1500, bounds=(0, None), doc="""
         Duration (in milliseconds) for showing the current FPS when clicking
@@ -50,10 +50,10 @@ class PlayerBase(Widget):
 
     height = param.Integer(default=80)
 
-    value_align = param.Selector(
+    value_align: Literal["start", "center", "end"] = param.Selector(
         objects=["start", "center", "end"], doc="""
         Location to display the value of the slider
-        ("start", "center", "end")""")
+        ("start", "center", "end")""")  # type: ignore[assignment]
 
     width = param.Integer(default=510, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch

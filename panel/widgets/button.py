@@ -5,7 +5,9 @@ events or merely toggling between on-off states.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
@@ -32,13 +34,16 @@ BUTTON_STYLES: list[str] = ['solid', 'outline']
 
 class _ButtonBase(Widget):
 
-    button_type = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
+    button_type: Literal[
+        'default', 'primary', 'success', 'warning', 'danger', 'light'
+    ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
-        or 'danger' (red).""")
+        or 'danger' (red).""")  # type: ignore[assignment]
 
-    button_style = param.Selector(default='solid', objects=BUTTON_STYLES, doc="""
-        A button style to switch between 'solid', 'outline'.""")
+    button_style: Literal['solid', 'outline'] = param.Selector(
+        default='solid', objects=BUTTON_STYLES, doc="""
+        A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'button_style': None}
 

@@ -52,11 +52,12 @@ class CodeEditor(Widget):
 
     soft_tabs = param.Boolean(default=False, doc="Whether to use spaces instead of tabs.")
 
-    theme = param.Selector(default="github_light_default", objects=list(ace_themes), doc="""
+    theme: str = param.Selector(
+        default="github_light_default", objects=list(ace_themes), doc="""
         If no value is provided, it defaults to the current theme
         set by pn.config.theme, as specified in the
         CodeEditor.THEME_CONFIGURATION dictionary. If not defined there, it
-        falls back to the default parameter value.""")
+        falls back to the default parameter value.""")  # type: ignore[assignment]
 
     value = param.String(default="", doc="""
         State of the current code in the editor if `on_keyup`. Otherwise, only upon loss of focus,

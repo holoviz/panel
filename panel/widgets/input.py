@@ -12,7 +12,7 @@ from collections.abc import Iterable, Mapping
 from datetime import date, datetime, time as dt_time
 from html import escape
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Type,
+    TYPE_CHECKING, Any, ClassVar, Literal, Type,
 )
 
 import numpy as np
@@ -171,11 +171,11 @@ class TextAreaInput(_TextInputBase):
     rows = param.Integer(default=2, doc="""
         Number of rows in the text input field.""")
 
-    resizable = param.Selector(
+    resizable: Literal["both", "width", "height", False] = param.Selector(
         objects=["both", "width", "height", False], doc="""
         Whether the layout is interactively resizable,
         and if so in which dimensions: `width`, `height`, or `both`.
-        Can only be set during initialization.""")
+        Can only be set during initialization.""")  # type: ignore[assignment]
 
     _widget_type: ClassVar[type[Model]] = _bkTextAreaInput
 
@@ -338,12 +338,12 @@ class FileDropper(Widget):
     chunk_size = param.Integer(default=10_000_000, doc="""
         Size in bytes per chunk transferred across the WebSocket.""")
 
-    layout = param.Selector(
+    layout: Literal["circle", "compact", "integrated"] | None = param.Selector(
         default=None, objects=["circle", "compact", "integrated"], doc="""
         Compact mode will remove padding, integrated mode is used to render
         FilePond as part of a bigger element. Circle mode adjusts the item
         position offsets so buttons and progress indicators don't fall outside
-        of the circular shape.""")
+        of the circular shape.""")  # type: ignore[assignment]
 
     max_file_size = param.String(default=None, doc="""
         Maximum size of a file as a string with units given in KB or MB,
@@ -846,8 +846,9 @@ class _TimeCommon(Widget):
     selectable, and AM/PM depending on the `clock` option.
     """)
 
-    clock = param.Selector(default='12h', objects=['12h', '24h'], doc="""
-        Whether to use 12 hour or 24 hour clock.""")
+    clock: Literal['12h', '24h'] = param.Selector(
+        default='12h', objects=['12h', '24h'], doc="""
+        Whether to use 12 hour or 24 hour clock.""")  # type: ignore[assignment]
 
     __abstract = True
 
@@ -1160,10 +1161,11 @@ class LiteralInput(Widget):
     placeholder = param.String(default='', doc="""
       Placeholder for empty input field.""")
 
-    serializer = param.Selector(default='ast', objects=['ast', 'json'], doc="""
+    serializer: Literal['ast', 'json'] = param.Selector(
+        default='ast', objects=['ast', 'json'], doc="""
        The serialization (and deserialization) method to use. 'ast'
        uses ast.literal_eval and 'json' uses json.loads and json.dumps.
-    """)
+    """)  # type: ignore[assignment]
 
     type = param.ClassSelector(default=None, class_=(type, tuple),
                                is_instance=True, doc="""

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
@@ -82,9 +84,12 @@ class IPyWidget(Pane):
 
 class IPyLeaflet(IPyWidget):
 
-    sizing_mode = param.Selector(default='stretch_width', objects=[
+    sizing_mode: Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default='stretch_width', objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment]
 
     priority: ClassVar[float | bool | None] = 0.7
 

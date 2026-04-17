@@ -1,6 +1,8 @@
 import asyncio
 import os
 
+from typing import Any, Literal
+
 import pandas as pd
 import param
 import pytest
@@ -312,7 +314,8 @@ def test_integer_param(document, comm):
 
 def test_object_selector_param(document, comm):
     class Test(param.Parameterized):
-        a = param.Selector(default='b', objects=[1, 'b', 'c'])
+        a: Literal[1, 'b', 'c'] = param.Selector(
+            default='b', objects=[1, 'b', 'c'])  # type: ignore[assignment]
 
     test = Test()
     test_pane = Param(test)
@@ -436,7 +439,8 @@ def test_number_param_overrides(document, comm):
 
 def test_object_selector_param_overrides(document, comm):
     class Test(param.Parameterized):
-        a = param.Selector(default='b', objects=[1, 'b', 'c'])
+        a: Literal[1, 'b', 'c'] = param.Selector(
+            default='b', objects=[1, 'b', 'c'])  # type: ignore[assignment]
 
     test = Test()
     test_pane = Param(test, widgets={'a': {'options': ['b', 'c'], 'value': 'c'}})
@@ -1032,7 +1036,7 @@ def test_expand_param_subobject(document, comm):
 
 def test_switch_param_subobject(document, comm):
     class Test(param.Parameterized):
-        a = param.Selector()
+        a: Any = param.Selector()  # type: ignore[assignment]
 
     o1 = Test(name='Subobject 1')
     o2 = Test(name='Subobject 2')
@@ -1636,7 +1640,8 @@ def test_set_widget_autocompleteinput(document, comm):
     class Test(param.Parameterized):
         # Testing with default='' and check_on_set=False since this feels
         # like the most sensible default config for Selector -> AutocompleteInput
-        choice = param.Selector(default='', objects=['a', 'b'], check_on_set=False)
+        choice: Literal['a', 'b'] = param.Selector(
+            default='', objects=['a', 'b'], check_on_set=False)  # type: ignore[assignment]
 
     test = Test()
     test_pane = Param(test, widgets={'choice': AutocompleteInput})
@@ -1664,7 +1669,8 @@ def test_set_widget_autocompleteinput_empty_objects(document, comm):
     class Test(param.Parameterized):
         # Testing with default='' and check_on_set=False since this feels
         # like the most sensible default config for Selector -> AutocompleteInput
-        choice = param.Selector(default='', objects=[], check_on_set=False)
+        choice: Any = param.Selector(
+            default='', objects=[], check_on_set=False)  # type: ignore[assignment]
 
     test = Test()
     test_pane = Param(test, widgets={'choice': AutocompleteInput})

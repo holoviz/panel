@@ -5,7 +5,9 @@ bokeh model.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import numpy as np
 import param
@@ -68,7 +70,8 @@ class Plotly(ModelPane):
     viewport = param.Dict(nested_refs=True, doc="""Current viewport state, i.e. the x- and y-axis limits of the displayed plot.
                           Updated on `plotly_relayout`, `plotly_relayouting` and `plotly_restyle` events.""")
 
-    viewport_update_policy = param.Selector(default="mouseup", doc="""
+    viewport_update_policy: Literal["mouseup", "continuous", "throttle"] = param.Selector(
+        default="mouseup", doc="""
         Policy by which the viewport parameter is updated during user interactions.
 
         * "mouseup": updates are synchronized when mouse button is
@@ -76,7 +79,7 @@ class Plotly(ModelPane):
         * "continuous": updates are synchronized continually while panning
         * "throttle": updates are synchronized while panning, at
           intervals determined by the viewport_update_throttle parameter
-        """, objects=["mouseup", "continuous", "throttle"])
+        """, objects=["mouseup", "continuous", "throttle"])  # type: ignore[assignment]
 
     viewport_update_throttle = param.Integer(default=200, bounds=(0, None), doc="""
         Time interval in milliseconds at which viewport updates are

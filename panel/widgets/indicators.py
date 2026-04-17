@@ -26,7 +26,9 @@ import time
 from collections.abc import Mapping
 from html import escape
 from math import pi
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import numpy as np
 import param
@@ -66,9 +68,12 @@ class Indicator(Widget):
     Indicator is a baseclass for widgets which indicate some state.
     """
 
-    sizing_mode = param.Selector(default='fixed', objects=[
+    sizing_mode: Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default='fixed', objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment]
 
     _linked_properties: tuple[str,...] = ()
 
@@ -158,10 +163,12 @@ class BooleanStatus(BooleanIndicator):
     >>> BooleanStatus(value=True, color='primary', width=100, height=100)
     """
 
-    color = param.Selector(default='dark', objects=[
+    color: Literal[
+        'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'light', 'dark'
+    ] = param.Selector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'light', 'dark'], doc="""
         The color of the circle, one of 'primary', 'secondary', 'success', 'info', 'danger',
-        'warning', 'light', 'dark'""")
+        'warning', 'light', 'dark'""")  # type: ignore[assignment]
 
     height = param.Integer(default=20, doc="""
         height of the circle.""")
@@ -203,14 +210,18 @@ class LoadingSpinner(BooleanIndicator):
     >>> LoadingSpinner(value=True, color='primary', bgcolor='light', width=100, height=100)
     """
 
-    bgcolor = param.Selector(default='light', objects=['dark', 'light'], doc="""
-        The color of spinner background segment, either 'light' or 'dark'.""")
+    bgcolor: Literal['dark', 'light'] = param.Selector(
+        default='light', objects=['dark', 'light'], doc="""
+        The color of spinner background segment, either 'light' or 'dark'.""")  # type: ignore[assignment]
 
-    color = param.Selector(default='dark', objects=[
+    color: Literal[
+        'primary', 'secondary', 'success', 'info', 'danger', 'warning',
+        'light', 'dark'
+    ] = param.Selector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'], doc="""
         The color of the spinning segment, one of 'primary', 'secondary',
-        'success', 'info', 'warn', 'danger', 'light', 'dark'.""")
+        'success', 'info', 'warn', 'danger', 'light', 'dark'.""")  # type: ignore[assignment]
 
     size = param.Integer(default=125, doc="""
         Size of the spinner in pixels.""")
@@ -287,17 +298,23 @@ class Progress(ValueIndicator):
         If no value is set the active property toggles animation of the
         progress bar on and off.""")
 
-    bar_color = param.Selector(default='success', objects=[
+    bar_color: Literal[
+        'primary', 'secondary', 'success', 'info', 'danger', 'warning',
+        'light', 'dark'
+    ] = param.Selector(default='success', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'], doc="""
         The color of the bar, one of 'primary', 'secondary', 'success',
-        'info', 'warning', 'danger', 'light', 'dark'.""")
+        'info', 'warning', 'danger', 'light', 'dark'.""")  # type: ignore[assignment]
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    sizing_mode = param.Selector(default=None, objects=[
+    sizing_mode: Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment]
 
     value = param.Integer(default=-1, bounds=(-1, None), doc="""
         The current value of the progress bar. If set to -1 the progress
@@ -1132,9 +1149,10 @@ class Trend(SyncableData, Indicator):
     data = param.Parameter(doc="""
       The plot data declared as a dictionary of arrays or a DataFrame.""")
 
-    layout = param.Selector(default="column", objects=["column", "row"], doc="""
+    layout: Literal["column", "row"] = param.Selector(
+        default="column", objects=["column", "row"], doc="""
         The layout of the indicator, either a column (text and plot on top of each other)
-        or a row (text and plot after each other).""")
+        or a row (text and plot after each other).""")  # type: ignore[assignment]
 
     plot_x = param.String(default="x", doc="""
       The name of the key in the plot_data to use on the x-axis.""")
@@ -1145,8 +1163,9 @@ class Trend(SyncableData, Indicator):
     plot_color = param.String(default=BLUE, doc="""
       The color to use in the plot.""")
 
-    plot_type = param.Selector(default="bar", objects=["line", "step", "area", "bar"], doc="""
-      The plot type to render the plot data as.""")
+    plot_type: Literal["line", "step", "area", "bar"] = param.Selector(
+        default="bar", objects=["line", "step", "area", "bar"], doc="""
+      The plot type to render the plot data as.""")  # type: ignore[assignment]
 
     pos_color = param.String(GREEN, doc="""
       The color used to indicate a positive change.""")
@@ -1154,9 +1173,12 @@ class Trend(SyncableData, Indicator):
     neg_color = param.String(RED, doc="""
       The color used to indicate a negative change.""")
 
-    sizing_mode = param.Selector(default=None, objects=[
+    sizing_mode: Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment]
 
     name = param.String(constant=False, doc="""The name or a short description of the card""")
 

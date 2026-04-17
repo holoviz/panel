@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import param
 
@@ -61,11 +61,15 @@ class NotificationAreaBase(param.Parameterized):
     notifications = param.List(item_type=Notification, doc="""
         A list of notifications to display in the notification area.""")
 
-    position = param.Selector(default='bottom-right', objects=[
+    position: Literal[
+        'bottom-right', 'bottom-left', 'bottom-center', 'top-left',
+        'top-right', 'top-center', 'center-center', 'center-left',
+        'center-right',
+    ] = param.Selector(default='bottom-right', objects=[
         'bottom-right', 'bottom-left', 'bottom-center', 'top-left',
         'top-right', 'top-center', 'center-center', 'center-left',
         'center-right'], doc="""
-        Position of the notification area on the screen (e.g., 'top-right', 'bottom-left').""")
+        Position of the notification area on the screen (e.g., 'top-right', 'bottom-left').""")  # type: ignore[assignment]
 
     __abstract = True
 

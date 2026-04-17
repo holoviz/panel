@@ -11,7 +11,9 @@ from contextlib import contextmanager
 from functools import partial
 from html import escape
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
@@ -224,8 +226,9 @@ class Matplotlib(Image, IPyWidget):
     encode = param.Boolean(default=False, doc="""
         Whether to encode SVG out as base64.""")
 
-    format = param.Selector(default='png', objects=['png', 'svg'], doc="""
-        The format to render the plot as if the plot is not interactive.""")
+    format: Literal['png', 'svg'] = param.Selector(
+        default='png', objects=['png', 'svg'], doc="""
+        The format to render the plot as if the plot is not interactive.""")  # type: ignore[assignment]
 
     high_dpi = param.Boolean(default=True, doc="""
         Whether to optimize output for high-dpi displays.""")
@@ -443,9 +446,12 @@ class Folium(HTML):
     The Folium pane wraps Folium map components.
     """
 
-    sizing_mode = param.Selector(default='stretch_width', objects=[
+    sizing_mode: Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default='stretch_width', objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment]
 
     priority: ClassVar[float | bool | None] = 0.6
 

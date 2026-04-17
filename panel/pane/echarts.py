@@ -4,7 +4,9 @@ import sys
 
 from collections import defaultdict
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
@@ -43,11 +45,13 @@ class ECharts(ModelPane):
         the `objects` with a value containing a smaller number of series.
         """)
 
-    renderer = param.Selector(default="canvas", objects=["canvas", "svg"], doc="""
-       Whether to render as HTML canvas or SVG""")
+    renderer: Literal["canvas", "svg"] = param.Selector(
+        default="canvas", objects=["canvas", "svg"], doc="""
+       Whether to render as HTML canvas or SVG""")  # type: ignore[assignment]
 
-    theme = param.Selector(default="default", objects=["default", "light", "dark"], doc="""
-       Theme to apply to plots.""")
+    theme: Literal["default", "light", "dark"] = param.Selector(
+        default="default", objects=["default", "light", "dark"], doc="""
+       Theme to apply to plots.""")  # type: ignore[assignment]
 
     priority: ClassVar[float | bool | None] = None
 
