@@ -451,6 +451,23 @@ def test_python_update_clears_stale_events(document, comm):
     assert text_input.value == 'C'
     assert 'value' not in text_input._events
 
+def test_boomerang_value_is_skipped(document, comm):
+    # When the Python update matches the recorded frontend value
+    # it is a boomerang echo and must not be re-pushed to the model.
+    text_input = TextInput(value='A')
+    model = text_input.get_root(document, comm)
+
+    # Prime _events as if the frontend just pushed 'frontend'
+    text_input._events['value'] = 'frontend'
+
+    # Python sets the same value — treated as a boomerang echo
+    text_input.value = 'frontend'
+
+    # Model stays at its original value since the echo is skipped
+    assert model.value == 'A'
+    assert text_input.value == 'frontend'
+    assert 'value' not in text_input._events
+
 def test_reactive_html_basic():
 
     class Test(ReactiveHTML):
