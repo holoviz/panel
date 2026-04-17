@@ -250,9 +250,9 @@ def test_texteditor_selection_updates_on_select(page):
 
     serve_component(page, widget)
 
-    # Select the word "hello"
-    page.get_by_text('hello world').dblclick()
-    wait_until(lambda: widget.selection.get('text') == 'hello', page)
+    # Select the word "world"
+    page.get_by_text('world').dblclick()
+    wait_until(lambda: widget.selection.get('text') == 'world', page)
 
 
 def test_texteditor_selection_clears_on_deselect(page):
@@ -260,9 +260,9 @@ def test_texteditor_selection_clears_on_deselect(page):
 
     serve_component(page, widget)
 
-    # First select "hello"
-    page.get_by_text('hello world').dblclick()
-    wait_until(lambda: widget.selection.get('text') == 'hello', page)
+    # First select "world"
+    page.get_by_text('world').dblclick()
+    wait_until(lambda: widget.selection.get('text') == 'world', page)
 
     # Click outside to deselect; Quill fires selection-change with null range.
     page.locator('body').click(position={'x': 0, 'y': 0})
