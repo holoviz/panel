@@ -148,6 +148,32 @@ nbsite_gallery_conf = {
                 'indicators',
                 'templates',
                 'custom_components',
+                {
+                    'path': 'extensions',
+                    'title': 'Extensions',
+                    'items': [
+                        {
+                            'title': 'panel-material-ui',
+                            'url': 'https://panel-material-ui.holoviz.org',
+                        },
+                        {
+                            'title': 'panel-graphic-walker',
+                            'url': 'https://github.com/holoviz/panel-graphic-walker',
+                        },
+                        {
+                            'title': 'panel-reactflow',
+                            'url': 'https://panel-extensions.github.io/panel-reactflow/',
+                        },
+                        {
+                            'title': 'panel-splitjs',
+                            'url': 'https://github.com/holoviz/panel-splitjs',
+                        },
+                        {
+                            'title': 'panel-web-llm',
+                            'url': 'https://github.com/holoviz/panel-web-llm',
+                        },
+                    ]
+                },
             ],
             'titles': {
                 'Vega': 'Altair & Vega',

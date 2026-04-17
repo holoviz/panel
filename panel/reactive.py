@@ -264,10 +264,14 @@ class Syncable(Renderable):
         return [p for p in self.param if p not in self._manual_params+ignored]
 
     def _init_params(self) -> dict[str, Any]:
-        return {
-            k: v for k, v in self.param.values().items()
-            if k in self._synced_params and v is not None
-        }
+        params = {}
+        for p in self.param:
+            if p not in self._synced_params:
+                continue
+            v = getattr(self, p)
+            if v is not None:
+                params[p] = v
+        return params
 
     def _link_params(self) -> None:
         params = self._synced_params
@@ -1931,8 +1935,9 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
             if getattr(self, p) is not None and p != 'name'
         }
         data_params, event_params = {}, []
-        for k, v in self.param.values().items():
+        for k in self.param:
             pobj = self.param[k]
+            v = getattr(self, k)
             if (
                 (k in ignored and k != 'name') or
                 ((pobj.precedence or 0) < 0) or
@@ -2066,10 +2071,11 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         # Render Jinja template
         template = jinja2.Template(template_string)
         context = {'param': self.param, '__doc__': self.__original_doc__, 'id': id}
-        for parameter, value in self.param.values().items():
-            context[parameter] = value
-            if parameter in self._child_names:
-                context[f'{parameter}_names'] = self._child_names[parameter]
+        for p in self.param:
+            value = getattr(self, p)
+            context[p] = value
+            if p in self._child_names:
+                context[f'{p}_names'] = self._child_names[p]
         try:
             html = template.render(context)
         except Exception as e:

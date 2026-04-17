@@ -443,7 +443,7 @@ class GridSpec(Panel):
         -------
         Cloned GridSpec object
         """
-        p = dict(self.param.values(), **params)
+        p = dict({p: getattr(self, p) for p in self.param}, **params)
         if not self._cols_fixed:
             del p['ncols']
         if not self._rows_fixed:

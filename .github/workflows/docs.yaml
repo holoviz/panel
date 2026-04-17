@@ -40,8 +40,6 @@ jobs:
     needs: [pixi_lock]
     runs-on: "macos-latest"
     timeout-minutes: 180
-    outputs:
-      tag: ${{ steps.vars.outputs.tag }}
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
@@ -55,9 +53,6 @@ jobs:
           name: docs
           if-no-files-found: error
           path: builtdocs
-      - name: Set output
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
   docs_publish:
     name: Publish Documentation
@@ -68,24 +63,21 @@ jobs:
         with:
           name: docs
           path: builtdocs/
-      - name: Set output
-        id: vars
-        run: echo "tag=${{ needs.docs_build.outputs.tag }}" >> $GITHUB_OUTPUT
       - name: Deploy dev
         uses: peaceiris/actions-gh-pages@v4
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
-          (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+          (github.event_name == 'push' && (contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')))
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
           external_repository: holoviz-dev/panel
           publish_dir: ./builtdocs
           force_orphan: true
       - name: Deploy main
+        uses: peaceiris/actions-gh-pages@v4
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
-          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        uses: peaceiris/actions-gh-pages@v4
+          (github.event_name == 'push' && !(contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')))
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./builtdocs

@@ -29,13 +29,16 @@ from pyviz_comms import Comm
 
 from panel import config, serve
 from panel.config import panel_extension
+from panel.io.compile import check_cli_tool
 from panel.io.reload import (
     _local_modules, _modules, _watched_files, async_file_watcher, watch,
 )
 from panel.io.resources import EXTENSION_CDN
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
-from panel.tests.util import get_open_ports, reverse_proxy as reverse_proxy_ctx
+from panel.tests.util import (
+    get_open_ports, reverse_proxy as reverse_proxy_ctx, serve_and_wait,
+)
 from panel.theme import Design
 
 CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
@@ -184,7 +187,9 @@ def pytest_collection_modifyitems(config, items):
             skipped.append(item)
 
     config.hook.pytest_deselected(items=skipped)
-    items[:] = selected
+    # Sorted because pytest 8.4.0 and pytest-playwright
+    # https://github.com/microsoft/playwright-pytest/pull/284
+    items[:] = sorted(selected, key=lambda x: x.path)
 
 
 def pytest_runtest_setup(item):
@@ -599,6 +604,8 @@ def df_strings():
 
 @pytest.fixture
 def reverse_proxy():
+    if not check_cli_tool("caddy"):
+        pytest.skip(reason="caddy is not installed")
     with reverse_proxy_ctx() as (port, proxy):
         yield port, proxy
 
@@ -609,3 +616,15 @@ def panel_test_cdn():
         yield TEST_DIR
     except Exception:
         del EXTENSION_CDN[TEST_DIR]
+
+
+@pytest.fixture(params=["tornado", "fastapi"])
+def server_implementation(request):
+    if request.param == "fastapi":
+        pytest.importorskip("bokeh_fastapi", reason='bokeh_fastapi is not installed')
+    old = serve_and_wait.server_implementation
+    serve_and_wait.server_implementation = request.param
+    try:
+        yield request.param
+    finally:
+        serve_and_wait.server_implementation = old

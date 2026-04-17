@@ -555,7 +555,7 @@ class ChatMessage(Pane):
         if isinstance(event.old, (HTML, ImageBase)) or new_type is not old_type:
             self._left_col[:] = [new_avatar]
         else:
-            params = new_avatar.param.values()
+            params = {p: getattr(new_avatar, p) for p in new_avatar.param}
             del params['name']
             self._left_col[0].param.update(**params)
 
