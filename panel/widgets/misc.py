@@ -3,10 +3,7 @@ Miscellaneous widgets which do not fit into the other main categories.
 """
 from __future__ import annotations
 
-import os
-
 from base64 import b64encode
-from collections.abc import Mapping
 from pathlib import Path
 from typing import (
     IO, TYPE_CHECKING, Any, ClassVar, Literal,
@@ -29,6 +26,10 @@ from .button import BUTTON_STYLES, BUTTON_TYPES, IconMixin
 from .indicators import Progress  # noqa
 
 if TYPE_CHECKING:
+    import os
+
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
 

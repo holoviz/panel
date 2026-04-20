@@ -137,7 +137,7 @@ log_data_handler.addFilter(log_filter)
 formatter = logging.Formatter('%(asctime)s %(levelname)s: %(name)s - %(message)s')
 log_handler.setFormatter(formatter)
 log_terminal = _LogTabulator(sizing_mode='stretch_both', min_height=400)
-log_handler.setStream(cast(TextIO, log_terminal))
+log_handler.setStream(cast('TextIO', log_terminal))
 
 def _textinput_filter(df, pattern, column):
     if not pattern or df.empty:

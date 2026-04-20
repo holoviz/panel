@@ -8,7 +8,6 @@ from __future__ import annotations
 import asyncio
 import traceback
 
-from collections.abc import Callable
 from enum import Enum
 from functools import partial
 from inspect import (
@@ -32,7 +31,6 @@ from ..pane.image import SVG, ImageBase
 from ..pane.markup import HTML, Markdown
 from ..util import to_async_gen
 from ..viewable import Children, Viewable
-from ..widgets import Widget
 from ..widgets.button import Button
 from ._param import CallbackException
 from .icon import ChatReactionIcons
@@ -40,9 +38,13 @@ from .message import ChatMessage
 from .step import ChatStep
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+
+    from ..widgets import Widget
 
 
 PLACEHOLDER_SVG = """
@@ -983,7 +985,7 @@ class ChatFeed(ListPanel):
         if steps_layout is None:
             steps_layout = self._build_steps_layout(step, layout_params, default_layout)
             self.stream(
-                cast(ListPanel, steps_layout),
+                cast("ListPanel", steps_layout),
                 user=user or self.callback_user,
                 avatar=avatar,
                 trigger_post_hook=False

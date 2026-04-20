@@ -6,7 +6,6 @@ from __future__ import annotations
 import re
 import sys
 
-from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import partial
 from html import escape
@@ -33,6 +32,8 @@ from .ipywidget import IPyWidget
 from .markup import HTML
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from pyviz_comms import Comm
 

@@ -4,7 +4,6 @@ ways.
 """
 from __future__ import annotations
 
-import argparse
 import ast
 import base64
 import contextlib
@@ -14,9 +13,9 @@ import os
 import pathlib
 import sys
 
-from collections.abc import Iterator
 from glob import glob
 from types import ModuleType
+from typing import TYPE_CHECKING
 
 from bokeh.application import Application
 from bokeh.application.handlers.document_lifecycle import (
@@ -44,7 +43,13 @@ from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
 from ..util import edit_readonly, fullpath
 
+if TYPE_CHECKING:
+    import argparse
+
+    from collections.abc import Iterator
+
 log = logging.getLogger(__name__)
+
 
 @contextlib.contextmanager
 def add_sys_path(path: str | os.PathLike) -> Iterator[None]:

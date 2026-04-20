@@ -4,7 +4,6 @@ object transforming it into a Bokeh model that can be rendered.
 """
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, ClassVar, TypeVar, cast, overload,
@@ -39,6 +38,8 @@ from ..viewable import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -398,7 +399,7 @@ class Pane(PaneBase, Reactive):
                         parent.children[node] = new_models  # type: ignore
                         break
             elif isinstance(parent, _BkTabs):
-                parent.tabs = cast(list[_BkTabPanel], parent.tabs)
+                parent.tabs = cast('list[_BkTabPanel]', parent.tabs)
                 index = [tab.child for tab in parent.tabs].index(old_model)
                 old_tab = parent.tabs[index]  # type: ignore
                 props = dict(old_tab.properties_with_values(), child=new_model)
@@ -769,13 +770,13 @@ class ReplacementPane(Pane):
                 if len(old_items) == len(new_items):
                     for i, (old, new) in enumerate(zip(old_items, new_items, strict=True)):
                         if type(old) is not type(new):
-                            cast(Any, old_panel)[i] = new
+                            cast('Any', old_panel)[i] = new
                             continue
                         cls._recursive_update(old, new)
                 elif isinstance(object, Reactive):
-                    cls._recursive_update(cast(Reactive, old_object), object)
+                    cls._recursive_update(cast('Reactive', old_object), object)
             elif isinstance(object, Reactive):
-                cls._recursive_update(cast(Reactive, old_object), object)
+                cls._recursive_update(cast('Reactive', old_object), object)
             elif old_object.object is not object:
                 # See https://github.com/holoviz/param/pull/901
                 old_object.object = object

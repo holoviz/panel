@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import datetime
 
-from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import dataclass
 from functools import partial
@@ -45,6 +44,8 @@ Avatar = Union[str, BytesIO, bytes, ImageBase]
 AvatarDict = dict[str, Avatar]
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -200,7 +201,7 @@ class ChatMessage(Pane):
         The message contents. Can be any Python object that panel can display.""")
 
     reactions = param.List(item_type=str, doc="""
-        Reactions to associate with the message.""")  # type: ignore[assignment]
+        Reactions to associate with the message.""")
 
     reaction_icons = param.ClassSelector(class_=ChatReactionIcons, doc="""
         A mapping of reactions to their reaction icons; if not provided
@@ -713,7 +714,7 @@ class ChatMessage(Pane):
                     "Cannot set user or avatar when explicitly sending "
                     "a ChatMessage. Set them directly on the ChatMessage."
                 )
-            updates = cast(MessageParams, value.param.values())
+            updates = cast("MessageParams", value.param.values())
         else:
             updates["object"] = value
         self.param.update(**updates)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -10,6 +9,9 @@ from ..io.resources import CDN_DIST, bundled_files
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .grid import GridSpec
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class GridStack(ReactiveHTML, GridSpec):  # type: ignore[override]

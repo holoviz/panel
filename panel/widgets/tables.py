@@ -420,7 +420,7 @@ class BaseTable(ReactiveData, Widget):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         properties = self._get_properties(doc)
-        model = cast(Model, self._widget_type(**properties))  # type: ignore[misc]
+        model = cast("Model", self._widget_type(**properties))  # type: ignore[misc]
         root = root or model
         self._link_props(model.source, ['data'], doc, root, comm)
         self._link_props(model.source.selected, ['indices'], doc, root, comm)
@@ -1262,7 +1262,7 @@ class Tabulator(BaseTable):
         Dictionary mapping from column name to a tooltip to show when
         hovering over the column header.""")
 
-    hidden_columns: list[str] = param.List(default=[], item_type=str, nested_refs=True, doc="""
+    hidden_columns = param.List(default=[], item_type=str, nested_refs=True, doc="""
         List of columns to hide.""")  # type: ignore[assignment]
 
     layout: Literal[
@@ -2196,7 +2196,7 @@ class Tabulator(BaseTable):
 
             if isinstance(index, tuple):
                 children = columns
-                last = cast(GroupSpec, children[-1] if len(children) > 0 else {})
+                last = cast("GroupSpec", children[-1] if len(children) > 0 else {})
                 for j, group in enumerate(index[:-1]):
                     group_title = self.titles.get(index[: j + 1], group)
                     if 'title' in last and last['title'] == group_title:
@@ -2208,7 +2208,7 @@ class Tabulator(BaseTable):
                             'columns': [],
                             'title': group_title,
                         })
-                    last = cast(GroupSpec, children[-1])
+                    last = cast("GroupSpec", children[-1])
                     if new:
                         children = last['columns']
                 children.append(col_dict)

@@ -12,7 +12,6 @@ import threading
 import time
 import weakref
 
-from collections.abc import Callable, Iterator, Sequence
 from contextlib import ExitStack, contextmanager
 from functools import partial, wraps
 from typing import TYPE_CHECKING, Any
@@ -31,10 +30,10 @@ from .state import state
 
 if TYPE_CHECKING:
     from asyncio.futures import Future
+    from collections.abc import Callable, Iterator, Sequence
 
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
-    from bokeh.document import Document
     from bokeh.protocol.message import Message
     from bokeh.server.connection import ServerConnection
     from pyviz_comms import Comm

@@ -22,7 +22,6 @@ from param.parameterized import Undefined
 
 from ..io import PeriodicCallback
 from ..layout import Column, Divider, Row
-from ..models.widgets import DoubleClickEvent
 from ..util import fullpath
 from ..viewable import Layoutable
 from .base import CompositeWidget
@@ -34,6 +33,7 @@ if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
 
     from ..layout.base import ListLike, NamedListLike
+    from ..models.widgets import DoubleClickEvent
 
 
 def _scan_path(path: str, file_pattern: str = '*') -> tuple[list[str], list[str]]:
@@ -393,7 +393,7 @@ class FileSelector(BaseFileNavigator):
     ):
         path = self._provider.normalize(self._directory.value)
         super()._update_files(event, refresh)
-        selected = cast(list[str | os.PathLike], self.value)
+        selected = cast('list[str | os.PathLike]', self.value)
         dirs, files = self._provider.ls(path, self.file_pattern)
         for s in selected:
             check = os.path.realpath(s) if os.path.islink(s) else s

@@ -9,7 +9,6 @@ import sys
 import time
 import uuid
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 import bokeh
@@ -43,6 +42,8 @@ resources.RESOURCE_MODE = 'cdn'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from bokeh.core.types import ID
 
     from ..template.base import TemplateBase

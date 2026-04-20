@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import sys
 
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
@@ -13,6 +12,8 @@ import param
 from .base import ReplacementPane
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm

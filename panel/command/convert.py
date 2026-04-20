@@ -1,14 +1,16 @@
 import argparse
 import json
-import os
 import pathlib
 import time
 
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 from bokeh.command.subcommand import Argument, Subcommand
 
 from ..io.convert import convert_apps
+
+if TYPE_CHECKING:
+    import os
 
 
 class Convert(Subcommand):
@@ -136,7 +138,7 @@ class Convert(Subcommand):
             index = args.index and not built
             try:
                 convert_apps(
-                    cast(list[os.PathLike], files),
+                    cast("list[os.PathLike]", files),
                     dest_path=args.out,
                     runtime=runtime,
                     requirements=requirements,

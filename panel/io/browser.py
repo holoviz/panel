@@ -4,7 +4,6 @@ navigator APIs.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, ClassVar
 
 import param  # type: ignore
@@ -15,6 +14,8 @@ from .document import create_doc_if_none_exists
 from .state import state
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm

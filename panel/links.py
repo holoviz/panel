@@ -7,7 +7,6 @@ import difflib
 import sys
 import weakref
 
-from collections.abc import Iterable, Sequence
 from typing import (
     TYPE_CHECKING, Any, TypeAlias, cast,
 )
@@ -24,6 +23,8 @@ from .util.warnings import warn
 from .viewable import Viewable
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
     from bokeh.model import Model
     from holoviews.core.dimension import Dimensioned
 
@@ -72,7 +73,7 @@ def assert_target_syncable(
     if not hasattr(target, "_rename") and not hasattr(target, "param"):
         return
 
-    target = cast(Reactive, target)
+    target = cast('Reactive', target)
     for k, p in properties.items():
         if k.startswith('event:'):
             continue
@@ -239,7 +240,7 @@ class Callback(param.Parameterized):
         found = [
             (link, src, getattr(link, 'target', None))
             for src in linkable
-            for link in cls.registry.get(cast(Reactive | BkModel, src), [])
+            for link in cls.registry.get(cast('Reactive | BkModel', src), [])
             if isinstance(src, (Reactive, BkModel))
             if not link._requires_target or link.target in linkable
             or isinstance(link.target, param.Parameterized)

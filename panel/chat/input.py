@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
 )
@@ -13,10 +12,12 @@ from ..models.chatarea_input import (
 from ..widgets import TextAreaInput as _PnTextAreaInput
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
+    from bokeh.model import Model
     from pyviz_comms import Comm
 
-from bokeh.model import Model
 
 
 class ChatAreaInput(_PnTextAreaInput):

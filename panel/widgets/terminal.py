@@ -13,7 +13,6 @@ import signal
 import subprocess
 import sys
 
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, ClassVar
 
 import param
@@ -25,6 +24,8 @@ from ..util import edit_readonly, lazy_load
 from .base import Widget
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from param.parameterized import Watcher
 
 

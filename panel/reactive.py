@@ -17,7 +17,6 @@ import textwrap
 import uuid
 
 from collections import Counter, defaultdict, namedtuple
-from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
 from html import escape
 from pprint import pformat
@@ -57,6 +56,8 @@ from .viewable import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, Sequence
+
     import pandas as pd
 
     from bokeh.document import Document

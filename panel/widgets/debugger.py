@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import logging
 
-from collections.abc import Mapping
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -16,6 +15,9 @@ from ..io.state import state
 from ..layout import Card, HSpacer, Row
 from ..reactive import ReactiveHTML
 from .terminal import Terminal
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class TermFormatter(logging.Formatter):

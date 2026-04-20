@@ -10,7 +10,6 @@ import sys
 import uuid
 import warnings
 
-from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import partial
 from html import escape
@@ -49,6 +48,8 @@ from .resources import (
 from .state import state
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from bokeh.protocol.message import Message
     from bokeh.server.server import Server
     from jinja2 import Template

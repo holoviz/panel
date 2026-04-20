@@ -8,7 +8,6 @@ import json
 import sys
 
 from collections import defaultdict
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
@@ -22,6 +21,8 @@ from ..util import is_dataframe, lazy_load
 from .base import ModelPane
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm

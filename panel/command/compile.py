@@ -4,10 +4,14 @@ import os
 import pathlib
 import sys
 
+from typing import TYPE_CHECKING
+
 from bokeh.command.subcommand import Argument, Subcommand
 
-from ..custom import ReactiveESM
 from ..io.compile import RED, compile_components, find_module_bundles
+
+if TYPE_CHECKING:
+    from ..custom import ReactiveESM
 
 
 def run_compile(

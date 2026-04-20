@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import textwrap
 
-from collections.abc import Iterable, Sequence
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -24,6 +23,8 @@ from bokeh.protocol.messages.patch_doc import patch_doc
 from .state import state
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
     from bokeh.protocol.message import Message
 
 #---------------------------------------------------------------------

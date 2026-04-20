@@ -4,7 +4,6 @@ import datetime as dt
 import re
 import sys
 
-from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
 )
@@ -21,6 +20,8 @@ from .image import PDF, SVG, Image
 from .markup import HTML, JSON
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     import narwhals as nw
 
     from bokeh.document import Document

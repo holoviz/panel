@@ -11,9 +11,6 @@ import textwrap
 
 from abc import abstractmethod
 from collections import defaultdict
-from collections.abc import (
-    Awaitable, Callable, Iterator, Mapping,
-)
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
@@ -48,6 +45,10 @@ from .viewable import (  # noqa
 from .widgets.base import WidgetBase  # noqa
 
 if TYPE_CHECKING:
+    from collections.abc import (
+        Awaitable, Callable, Iterator, Mapping,
+    )
+
     from bokeh.document import Document
     from bokeh.events import Event
     from bokeh.model import Model

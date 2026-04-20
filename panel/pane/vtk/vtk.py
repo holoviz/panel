@@ -9,7 +9,6 @@ import sys
 import zipfile
 
 from abc import abstractmethod
-from collections.abc import Mapping
 from typing import (
     IO, TYPE_CHECKING, Any, ClassVar, Literal,
 )
@@ -29,6 +28,8 @@ from ..plot import Bokeh
 from .enums import PRESET_CMAPS
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm

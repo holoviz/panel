@@ -16,7 +16,6 @@ import threading
 import time
 import unittest.mock
 
-from collections.abc import Awaitable, Callable, Hashable
 from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, TypeVar, cast, overload,
@@ -34,6 +33,7 @@ from .state import state
 #---------------------------------------------------------------------
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable, Hashable
     _P = ParamSpec("_P")
     _R = TypeVar("_R")
     _CallableT = TypeVar("_CallableT", bound=Callable)
@@ -530,7 +530,7 @@ def cache(
                     ret, ts, count, _ = func_cache[hash_value]
                     func_cache[hash_value] = (ret, ts, count+1, time)
             else:
-                ret = await cast(Awaitable[Any], func(*args, **kwargs))
+                ret = await cast("Awaitable[Any]", func(*args, **kwargs))
                 with lock:
                     func_cache[hash_value] = (ret, time, 0, time)
             return ret

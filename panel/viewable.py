@@ -14,14 +14,11 @@ import asyncio
 import functools
 import inspect
 import logging
-import os
 import sys
-import threading
 import traceback
 import typing as t
 import uuid
 
-from collections.abc import Callable, Mapping
 from html import escape
 from typing import (
     IO, TYPE_CHECKING, Any, ClassVar, Literal,
@@ -32,11 +29,8 @@ import param  # type: ignore
 from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
 from bokeh.models import UIElement
-from bokeh.resources import Resources
-from jinja2 import Template
 from param import Undefined
 from param.parameterized import instance_descriptor
-from pyviz_comms import Comm  # type: ignore
 
 from ._param import Align, Aspect, Margin
 from .config import config, panel_extension
@@ -56,9 +50,17 @@ from .util import param_reprs
 from .util.parameters import get_params_to_inherit
 
 if TYPE_CHECKING:
+    import os
+    import threading
+
+    from collections.abc import Callable, Mapping
+
     from bokeh.model import Model
+    from bokeh.resources import Resources
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
+    from jinja2 import Template
+    from pyviz_comms import Comm
     from typing_extensions import Self
 
     from .io.location import Location
@@ -1181,9 +1183,9 @@ class Children(param.List):
     def __init__(
         self,
         /,
-        default: list[t.Any] = t.cast(list[t.Any], Undefined),  # noqa: B008
-        instantiate: bool = t.cast(bool, Undefined),  # noqa: B008
-        bounds: tuple[int, int | None] = t.cast(tuple[int, int | None], Undefined),
+        default: list[t.Any] = t.cast("list[t.Any]", Undefined),  # noqa: B008
+        instantiate: bool = t.cast("bool", Undefined),  # noqa: B008
+        bounds: tuple[int, int | None] = t.cast("tuple[int, int | None]", Undefined),
         item_type=Viewable, **params
     ):
         if isinstance(item_type, type) and not issubclass(item_type, Viewable):

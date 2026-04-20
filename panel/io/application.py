@@ -7,7 +7,6 @@ import json
 import logging
 import os
 
-from collections.abc import Callable, Sequence
 from functools import partial
 from types import FunctionType, MethodType
 from typing import TYPE_CHECKING, Any, TypeAlias
@@ -32,6 +31,8 @@ from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from bokeh.application.application import SessionContext
     from bokeh.application.handlers.handler import Handler
     from bokeh.document.document import Document

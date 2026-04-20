@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import datetime as dt
 
-from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
 )
@@ -41,6 +40,8 @@ from .base import CompositeWidget, Widget, WidgetBase
 from .input import StaticText
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -713,7 +714,8 @@ class DateRangeSlider(_SliderBase):
     ... )
     """
 
-    value = param.DateRange(default=None, allow_None=True, doc="""
+    value = param.DateRange(default=None, allow_None=False,  # type: ignore[call-overload]
+        doc="""
         The selected range as a tuple of values. Updated when one of the handles is
         dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""")
 

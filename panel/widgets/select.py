@@ -8,7 +8,6 @@ import itertools
 import re
 import sys
 
-from collections.abc import Awaitable, Callable, Mapping
 from functools import partial
 from types import FunctionType
 from typing import (
@@ -44,6 +43,8 @@ from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm

@@ -142,7 +142,7 @@ def add_applications(
         # ComponentResourceHandler.parse_url_path only ever accesses
         # self._resource_attrs, which fortunately is a class attribute. Thus, we can
         # get away with using the method without actually instantiating the class
-        self_ = cast(ComponentResourceHandler, ComponentResourceHandler)
+        self_ = cast("ComponentResourceHandler", ComponentResourceHandler)
         resolved_path = ComponentResourceHandler.parse_url_path(self_, path)
         return FileResponse(resolved_path)
 

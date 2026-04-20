@@ -6,11 +6,10 @@ through a frontend input UI.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -18,13 +17,17 @@ from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
 from ..layout.base import ListLike, NamedListLike
 from ..pane.image import ImageBase
-from ..viewable import Viewable
 from ..widgets.base import WidgetBase
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
 from .feed import CallbackState, ChatFeed
 from .input import ChatAreaInput
 from .message import ChatMessage, _FileInputMessage
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ..viewable import Viewable
 
 
 @dataclass

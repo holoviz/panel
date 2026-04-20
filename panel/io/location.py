@@ -6,7 +6,6 @@ from __future__ import annotations
 import json
 import urllib.parse as urlparse
 
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
@@ -19,6 +18,8 @@ from .document import create_doc_if_none_exists
 from .state import state
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext

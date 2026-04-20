@@ -3,7 +3,6 @@ Defines Player widgets which offer media-player like controls.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
 )
@@ -20,6 +19,8 @@ from .base import Widget
 from .select import SelectBase
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
 

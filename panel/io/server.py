@@ -15,7 +15,6 @@ import sys
 import threading
 import uuid
 
-from collections.abc import Callable, Mapping
 from functools import partial, wraps
 from html import escape
 from typing import (
@@ -79,6 +78,8 @@ from .threads import StoppableThread
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.application.application import SessionContext
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson

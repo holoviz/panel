@@ -4,7 +4,6 @@ Layout component to lay out objects in a set of tabs.
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 import param
@@ -16,6 +15,8 @@ from ..viewable import Layoutable
 from .base import NamedListPanel
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, ClassVar
 
 import param
@@ -10,6 +9,8 @@ from ..viewable import Child
 from .base import Column, Row
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.model import Model
 
     from ..viewable import Viewable

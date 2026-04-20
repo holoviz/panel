@@ -66,7 +66,7 @@ def build_avatar_pane(
     }
     if isinstance(avatar, Viewable):
         avatar_pane = avatar
-        css_classes = cast(list[str], avatar_params.get("css_classes", []))
+        css_classes = cast("list[str]", avatar_params.get("css_classes", []))
         avatar_params["css_classes"] = css_classes + avatar_pane.css_classes
         avatar_pane.param.update(avatar_params)
     elif isinstance(avatar, str) and len(avatar) == 1:

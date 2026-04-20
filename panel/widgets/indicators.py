@@ -23,7 +23,6 @@ import os
 import sys
 import time
 
-from collections.abc import Mapping
 from html import escape
 from math import pi
 from typing import (
@@ -50,6 +49,7 @@ from .base import Widget
 
 if TYPE_CHECKING:
     from _thread import LockType
+    from collections.abc import Mapping
 
     from bokeh.document import Document
     from bokeh.model import Model

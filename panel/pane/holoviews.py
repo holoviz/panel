@@ -8,7 +8,6 @@ from __future__ import annotations
 import sys
 
 from collections import defaultdict
-from collections.abc import Mapping
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal, TypedDict,
@@ -37,6 +36,8 @@ from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from holoviews.plotting.renderer import Renderer

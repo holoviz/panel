@@ -4,9 +4,7 @@ Defines utilities to save panel objects to files as HTML or PNG.
 from __future__ import annotations
 
 import io
-import os
 
-from collections.abc import Iterable
 from typing import IO, TYPE_CHECKING, Any
 
 import bokeh
@@ -32,6 +30,10 @@ from .resources import (
 from .state import state
 
 if TYPE_CHECKING:
+    import os
+
+    from collections.abc import Iterable
+
     from bokeh.embed.standalone import ThemeLike
     from jinja2 import Template
 

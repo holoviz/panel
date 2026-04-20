@@ -5,13 +5,17 @@ See https://getbootstrap.com/docs/4.0/components/alerts/
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any, ClassVar, Literal
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
 from ..io.resources import CDN_DIST
 from .markup import Markdown
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 ALERT_TYPES = [
     "primary", "secondary", "success", "danger",

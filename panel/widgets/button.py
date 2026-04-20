@@ -4,7 +4,6 @@ events or merely toggling between on-off states.
 """
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Mapping
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
 )
@@ -22,6 +21,8 @@ from ._mixin import TooltipMixin
 from .base import Widget
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm

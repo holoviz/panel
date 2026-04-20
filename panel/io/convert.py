@@ -8,10 +8,9 @@ import os
 import pathlib
 import uuid
 
-from collections.abc import Sequence
 from html import escape
 from typing import (
-    IO, Any, Literal, cast,
+    IO, TYPE_CHECKING, Any, Literal, cast,
 )
 from urllib.parse import urlparse
 from zipfile import ZipFile
@@ -39,6 +38,9 @@ from .resources import (
     _env as _pn_env, bundle_resources, loading_css, set_resource_mode,
 )
 from .state import set_curdoc, state
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 PWA_MANIFEST_TEMPLATE = _pn_env.get_template('site.webmanifest')
 SERVICE_WORKER_TEMPLATE = _pn_env.get_template('serviceWorker.js')
@@ -241,7 +243,7 @@ def collect_python_requirements(
             req = Requirement(stripped_req)
         except ValueError as e:
             if stripped_req.endswith('.whl'):
-                req = cast(Requirement, DummyRequirement(stripped_req))
+                req = cast('Requirement', DummyRequirement(stripped_req))
             else:
                 raise ValueError(f'Requirements parser raised following error: {e}') from e
 

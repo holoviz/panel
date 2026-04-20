@@ -7,9 +7,8 @@ import os
 import pathlib
 
 from base64 import b64encode
-from collections.abc import Mapping
 from io import BytesIO
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -17,6 +16,9 @@ import param
 from ..models import Audio as _BkAudio, Video as _BkVideo
 from ..util import isfile, isurl
 from .base import ModelPane
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class TensorLikeMeta(type):

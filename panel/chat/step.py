@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import traceback
 
-from collections.abc import Mapping
-from typing import ClassVar, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 import param
 
@@ -18,6 +17,9 @@ from ..widgets.indicators import BooleanStatus
 from .utils import (
     avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 DEFAULT_STATUS_BADGES = {
     "pending": lambda: BooleanStatus(value=False, margin=0, color="primary"),

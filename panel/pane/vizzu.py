@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime as dt
 import sys
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
@@ -17,6 +16,8 @@ from ..util import isdatetime, lazy_load
 from .base import ModelPane
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm

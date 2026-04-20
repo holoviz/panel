@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -9,6 +8,9 @@ from bokeh.models import Tooltip as BkTooltip
 
 from .base import Widget
 from .indicators import TooltipIcon
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class TooltipMixin(Widget):

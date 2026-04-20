@@ -33,9 +33,8 @@ import pathlib
 import textwrap
 import time
 
-from collections.abc import Awaitable
 from queue import Empty
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 
 import tornado
@@ -59,6 +58,9 @@ from ..config import config
 from .resources import DIST_DIR, ERROR_TEMPLATE, _env
 from .server import COMPONENT_PATH, ComponentResourceHandler
 from .state import state
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable
 
 logger = logging.getLogger(__name__)
 

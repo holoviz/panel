@@ -28,10 +28,8 @@ from weakref import WeakKeyDictionary
 
 import param
 
-from bokeh.document import Document
 from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
-from param.parameterized import Event, Parameterized
 from pyviz_comms import CommManager as _CommManager
 
 from ..util import decode_token, edit_readonly, parse_timedelta
@@ -43,11 +41,13 @@ if TYPE_CHECKING:
     from concurrent.futures import Future
 
     from bokeh.application.application import SessionContext
+    from bokeh.document import Document
     from bokeh.model import Model
     from bokeh.models import ImportedStyleSheet
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.session import ServerSession
     from IPython.display import DisplayHandle
+    from param.parameterized import Event, Parameterized
     from pyviz_comms import Comm
     from tornado.ioloop import IOLoop
 

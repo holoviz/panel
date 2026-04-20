@@ -20,7 +20,6 @@ case is up to you to evaluate.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Literal,
 )
@@ -32,6 +31,8 @@ from .base import Widget
 from .button import BUTTON_TYPES
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
 BUTTON_TYPES = BUTTON_TYPES+['light', 'dark']

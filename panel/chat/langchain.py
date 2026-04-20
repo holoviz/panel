@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 try:
     from langchain.callbacks.base import BaseCallbackHandler
@@ -13,11 +13,13 @@ except ImportError:
     AgentFinish = None
     LLMResult = None
 
-from ..chat.feed import ChatFeed
-from ..chat.interface import ChatInterface
 from ..chat.message import DEFAULT_AVATARS
 from ..layout import Accordion
 from ..util.warnings import deprecated
+
+if TYPE_CHECKING:
+    from ..chat.feed import ChatFeed
+    from ..chat.interface import ChatInterface
 
 
 class PanelCallbackHandler(BaseCallbackHandler):

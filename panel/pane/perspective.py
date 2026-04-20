@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime as dt
 import sys
 
-from collections.abc import Callable, Mapping
 from enum import Enum
 from functools import partial
 from typing import (
@@ -23,6 +22,8 @@ from ..viewable import Viewable
 from .base import ModelPane
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm

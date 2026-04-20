@@ -3,7 +3,6 @@ Defines the CodeEditor widget based on Ace.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
@@ -16,6 +15,8 @@ from ..util import lazy_load
 from .base import Widget
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm

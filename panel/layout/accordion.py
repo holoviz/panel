@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, ClassVar
 
 import param
@@ -12,6 +11,8 @@ from .base import NamedListPanel
 from .card import Card
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.model import Model
 
     from ..viewable import Viewable
@@ -39,6 +40,7 @@ class Accordion(NamedListPanel):
     active_header_background = param.String(default=None, doc="""
         Color for currently active headers.""")
 
+    # Override of NamedListPanel.active (which is an integer)
     active = param.List(default=[], item_type=int, doc="""
         List of indexes of active cards.""")  # type: ignore[assignment]
 

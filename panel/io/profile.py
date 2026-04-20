@@ -6,7 +6,6 @@ import re
 import tempfile
 import uuid
 
-from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from cProfile import Profile
 from functools import wraps
@@ -19,6 +18,8 @@ from ..config import config
 from .state import state
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+
     from pyinstrument.session import Session
 
     _P = ParamSpec("_P")

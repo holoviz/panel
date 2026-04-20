@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import uuid
 
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
@@ -21,6 +20,8 @@ from panel.widgets import Widget
 from ..models.text_to_speech import TextToSpeech as _BkTextToSpeech
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
 

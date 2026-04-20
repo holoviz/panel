@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -13,6 +12,9 @@ from ..models import (
 from ._mixin import TooltipMixin
 from .base import Widget
 from .button import ButtonClick, _ClickButton
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
 
 
 class _ClickableIcon(Widget):

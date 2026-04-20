@@ -8,7 +8,6 @@ import asyncio
 import base64
 import struct
 
-from collections.abc import Mapping
 from html import escape
 from io import BytesIO
 from pathlib import PurePath
@@ -21,6 +20,8 @@ from ..util import _descendents, isfile, isurl
 from .markup import HTMLBasePane
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
 _tasks = set()

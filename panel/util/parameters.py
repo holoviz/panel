@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import inspect
 
-from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import param
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 def should_inherit(parameterized: param.Parameterized, p: str, v: Any) -> Any:

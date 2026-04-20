@@ -11,9 +11,7 @@ import sys
 import traceback
 import urllib.parse as urlparse
 
-from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from types import ModuleType
 from typing import IO, TYPE_CHECKING, Any
 
 import bokeh.command.util
@@ -24,8 +22,6 @@ from bokeh.application.handlers.function import (
     FunctionHandler as BokehFunctionHandler,
 )
 from bokeh.application.handlers.handler import Handler, handle_exception
-from bokeh.core.types import PathLike
-from bokeh.document import Document
 from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
@@ -37,6 +33,11 @@ from .reload import record_modules
 from .state import set_curdoc, state
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+    from types import ModuleType
+
+    from bokeh.core.types import PathLike
+    from bokeh.document import Document
     from nbformat import NotebookNode
 
 log = logging.getLogger('panel.io.handlers')
