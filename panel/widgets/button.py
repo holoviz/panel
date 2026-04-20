@@ -324,8 +324,8 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
     clicked = param.String(default=None, doc="""
       Last menu item that was clicked.""")
 
-    items: list[str | tuple[str, str]] = param.List(
-        default=[], item_type=(str, tuple), doc="""
+    items: list[str | tuple[str, str] | None] = param.List(
+        default=[], item_type=(str, tuple, type(None)), doc="""
       Menu items in the dropdown. Allows strings, tuples of the form
       (title, value) or Nones to separate groups of items."""
     )  # type: ignore[assignment]

@@ -12,7 +12,7 @@ from collections.abc import Iterable, Mapping
 from datetime import date, datetime, time as dt_time
 from html import escape
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, Self, Type,
+    TYPE_CHECKING, Any, ClassVar, Literal, Type,
 )
 
 import numpy as np
@@ -28,6 +28,7 @@ from bokeh.models.widgets import (
 )
 from bokeh.models.widgets.inputs import ClearInput
 from pyviz_comms import JupyterComm
+from typing_extensions import Self
 
 from ..config import config
 from ..layout import Column
@@ -43,7 +44,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    from ..layout.base import ListLike
+    from ..layout.base import ListLike, NamedListLike
     from ..models.file_dropper import DeleteEvent, UploadEvent
 
 
@@ -1453,7 +1454,7 @@ class DatetimeRangeInput(CompositeWidget):
     format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
         Datetime format used for parsing and formatting the datetime.""")
 
-    _composite_type: ClassVar[type[ListLike]] = Column
+    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Column
 
     def __init__(self, **params):
         self._text = StaticText(margin=(5, 0, 0, 0), styles={'white-space': 'nowrap'})

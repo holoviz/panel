@@ -5,22 +5,23 @@ directories on the server.
 from __future__ import annotations
 
 import os
+import pathlib
 
 from abc import abstractmethod
 from fnmatch import fnmatch
 from importlib.util import find_spec
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING, AnyStr, ClassVar, Optional,
+    TYPE_CHECKING, AnyStr, ClassVar, cast,
 )
 from urllib.parse import urlparse
 
 import param
 
+from param.parameterized import Undefined
+
 from ..io import PeriodicCallback
-from ..layout import (
-    Column, Divider, ListPanel, Row,
-)
+from ..layout import Column, Divider, Row
 from ..models.widgets import DoubleClickEvent
 from ..util import fullpath
 from ..viewable import Layoutable
@@ -31,6 +32,8 @@ from .select import CrossSelector
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
+
+    from ..layout.base import ListLike, NamedListLike
 
 
 def _scan_path(path: str, file_pattern: str = '*') -> tuple[list[str], list[str]]:
@@ -171,7 +174,7 @@ class BaseFileSelector(param.Parameterized):
         If set, overrides directory parameter as the root directory
         beyond which users cannot navigate.""")
 
-    value = param.List(default=[], item_type=str, doc="""
+    value = param.List(default=[], item_type=(str, pathlib.Path), doc="""
         List of selected files.""")
 
     def __init__(
@@ -220,7 +223,7 @@ class BaseFileSelector(param.Parameterized):
 
 class BaseFileNavigator(BaseFileSelector, CompositeWidget):
 
-    _composite_type: ClassVar[type[ListPanel]] = Column
+    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Column
 
     def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
         super().__init__(directory=directory, **params)
@@ -263,7 +266,7 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         self._stack: list[str] = []
         self._cwd = ""
         self._position = -1
-        self._update_files(refresh=True)
+        self._update_files(event=Undefined)  # type: ignore[arg-type]
 
     def _dir_change(self, event: param.parameterized.Event):
         path = fullpath(event.new)
@@ -287,16 +290,16 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         self.directory = self._stack[self._position]
         self._update_files()
 
-    def _go_up(self, event: Optional[param.parameterized.Event] = None):
+    def _go_up(self, event: param.parameterized.Event | None = None):
         path = self._cwd.split(os.path.sep)
         self.directory = os.path.sep.join(path[:-1]) or os.path.sep
-        self._update_files(refresh=True)
+        self._update_files(event=Undefined)  # type: ignore[arg-type]
 
     def _update_files(
         self, event: param.parameterized.Event | None = None, refresh: bool = False
     ):
         path = self._provider.normalize(self._directory.value)
-        refresh = refresh or bool(event and getattr(event, 'obj', None) is self._reload)
+        refresh = refresh or bool(event is not None and getattr(event, 'obj', None) is self._reload)
         if refresh:
             path = self._cwd
         elif not self._provider.isdir(path):
@@ -337,7 +340,7 @@ class FileSelector(BaseFileNavigator):
         The number of options shown at once (note this is the only
         way to control the height of this widget)""")
 
-    _composite_type: ClassVar[type[ListPanel]] = Column
+    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Column
 
     def __init__(
         self,
@@ -386,11 +389,11 @@ class FileSelector(BaseFileNavigator):
         self.value = value
 
     def _update_files(
-        self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
+        self, event: param.parameterized.Event | None = None, refresh: bool = False
     ):
         path = self._provider.normalize(self._directory.value)
         super()._update_files(event, refresh)
-        selected = self.value
+        selected = cast(list[str | os.PathLike], self.value)
         dirs, files = self._provider.ls(path, self.file_pattern)
         for s in selected:
             check = os.path.realpath(s) if os.path.islink(s) else s

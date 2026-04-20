@@ -43,8 +43,9 @@ from .config import config
 from .io import state
 from .io.cache import is_equal
 from .layout import (
-    Column, HSpacer, ListLike, Panel, Row, Spacer, Tabs, WidgetBox,
+    Column, HSpacer, Row, Spacer, Tabs, WidgetBox,
 )
+from .layout.base import ListLike, NamedListLike
 from .pane import DataFrame as DataFramePane
 from .pane.base import Pane, ReplacementPane
 from .reactive import Reactive
@@ -150,7 +151,7 @@ class Param(Pane):
     display_threshold = param.Number(default=0, precedence=-10, doc="""
         Parameters with precedence below this value are not displayed.""")
 
-    default_layout = param.ClassSelector(default=Column, class_=ListLike,
+    default_layout = param.ClassSelector(default=Column, class_=(ListLike, NamedListLike),
                                          is_instance=False)
 
     default_precedence = param.Number(default=1e-8, precedence=-10, doc="""
@@ -167,9 +168,8 @@ class Param(Pane):
     expand_button = param.Boolean(default=None, doc="""
         Whether to add buttons to expand and collapse sub-objects.""")
 
-    expand_layout = param.ClassSelector(
-        default=Column, class_=ListLike, is_instance=False, doc="""
-        Layout to expand sub-objects into.""")
+    expand_layout: ListLike | NamedListLike | type[ListLike] | type[NamedListLike] | Callable[..., ListLike | NamedListLike] = param.Parameter(
+        default=Column, doc="Layout to expand sub-objects into.")  # type: ignore[assignment]
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
         Height of widgetbox the parameter widgets are displayed in.""")
@@ -284,12 +284,12 @@ class Param(Pane):
         self._widget_box = self.default_layout(**kwargs)
 
         layout = self.expand_layout
-        if isinstance(layout, Panel):
+        if isinstance(layout, (ListLike, NamedListLike)):
             self._expand_layout = layout
             self.layout = self._widget_box
         elif isinstance(self._widget_box, layout):
             self.layout = self._expand_layout = self._widget_box
-        elif isinstance(layout, type) and issubclass(layout, Panel):
+        elif isinstance(layout, type) and issubclass(layout, (ListLike, NamedListLike)):
             self.layout = self._expand_layout = layout(self._widget_box, **kwargs)
         else:
             raise ValueError('expand_layout expected to be a panel.layout.Panel'

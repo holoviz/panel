@@ -9,13 +9,14 @@ from collections.abc import (
     Generator, Iterable, Iterator, Mapping,
 )
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, Self, overload,
+    TYPE_CHECKING, Any, ClassVar, Literal, overload,
 )
 
 import param
 
 from bokeh.models import Row as BkRow
 from param.parameterized import iscoroutinefunction, resolve_ref
+from typing_extensions import Self
 
 from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST

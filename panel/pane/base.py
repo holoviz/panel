@@ -124,7 +124,7 @@ class PaneBase(Layoutable):
     """
 
     default_layout = param.ClassSelector(
-        default=Row, class_=ListLike, is_instance=False, doc="""
+        default=Row, class_=(ListLike, NamedListLike), is_instance=False, doc="""
         Defines the layout the model(s) returned by the pane will
         be placed in."""
     )

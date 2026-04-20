@@ -37,7 +37,7 @@ from ..util import (
 )
 from ..viewable import Layoutable
 from ..widgets import FloatInput, IntInput
-from .base import CompositeWidget, Widget
+from .base import CompositeWidget, Widget, WidgetBase
 from .input import StaticText
 
 if TYPE_CHECKING:
@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    from ..layout.base import ListLike
+    from ..layout.base import ListLike, NamedListLike
 
 
 class _SliderBase(Widget):
@@ -858,9 +858,9 @@ class _EditableContinuousSlider(CompositeWidget):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
-    _composite_type: ClassVar[type[ListLike]] = Column
-    _slider_widget: ClassVar[type[Widget]]
-    _input_widget: ClassVar[type[Widget]]
+    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Column
+    _slider_widget: ClassVar[type[WidgetBase]]
+    _input_widget: ClassVar[type[WidgetBase]]
     __abstract = True
 
     def __init__(self, **params):
@@ -1022,8 +1022,8 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
     fixed_end = param.Number(default=None, doc="""
         A fixed upper bound for the slider and input.""")
 
-    _slider_widget: ClassVar[type[Widget]] = FloatSlider
-    _input_widget: ClassVar[type[Widget]] = FloatInput
+    _slider_widget: ClassVar[type[WidgetBase]] = FloatSlider
+    _input_widget: ClassVar[type[WidgetBase]] = FloatInput
 
 
 class EditableIntSlider(_EditableContinuousSlider, IntSlider):
@@ -1047,8 +1047,8 @@ class EditableIntSlider(_EditableContinuousSlider, IntSlider):
     fixed_end = param.Integer(default=None, doc="""
        A fixed upper bound for the slider and input.""")
 
-    _slider_widget: ClassVar[type[Widget]] = IntSlider
-    _input_widget: ClassVar[type[Widget]] = IntInput
+    _slider_widget: ClassVar[type[WidgetBase]] = IntSlider
+    _input_widget: ClassVar[type[WidgetBase]] = IntInput
 
 
 class EditableRangeSlider(CompositeWidget, _SliderBase):
@@ -1093,7 +1093,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
-    _composite_type: ClassVar[type[ListLike]] = Column
+    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Column
 
     def __init__(self, **params):
         if 'width' not in params and 'sizing_mode' not in params:

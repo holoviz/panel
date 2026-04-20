@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    from ..layout.base import ListLike
+    from ..layout.base import ListLike, NamedListLike
 
     T = TypeVar('T')
 
@@ -237,7 +237,7 @@ class CompositeWidget(Widget):
     widgets
     """
 
-    _composite_type: ClassVar[type[ListLike]] = Row
+    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Row
 
     _linked_properties: tuple[str, ...] = ()
 
