@@ -44,9 +44,9 @@ class IPyWidget(Pane):
     priority: ClassVar[float | bool | None] = 0.6
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
+    def applies(cls, object: Any) -> float | bool | None:
         try:
-            return (hasattr(obj, 'traits') and hasattr(obj, 'get_manager_state') and hasattr(obj, 'comm'))
+            return (hasattr(object, 'traits') and hasattr(object, 'get_manager_state') and hasattr(object, 'comm'))
         except Exception:
             return False
 
@@ -94,8 +94,8 @@ class IPyLeaflet(IPyWidget):
     priority: ClassVar[float | bool | None] = 0.7
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return IPyWidget.applies(obj) and obj._view_module == 'jupyter-leaflet'
+    def applies(cls, object: Any) -> float | bool | None:
+        return IPyWidget.applies(object) and object._view_module == 'jupyter-leaflet'
 
 
 class Reacton(IPyWidget):
@@ -105,8 +105,8 @@ class Reacton(IPyWidget):
         self._rcs = {}
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return getattr(obj, '__module__', 'None').startswith('reacton')
+    def applies(cls, object: Any) -> float | bool | None:
+        return getattr(object, '__module__', 'None').startswith('reacton')
 
     def _cleanup(self, root: Model | None = None) -> None:
         if root and root.ref['id'] in self._rcs:

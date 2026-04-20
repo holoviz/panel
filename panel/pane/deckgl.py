@@ -134,10 +134,10 @@ class DeckGL(ModelPane):
     priority: ClassVar[float | bool | None] = None
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if cls.is_pydeck(obj):
+    def applies(cls, object: Any) -> float | bool | None:
+        if cls.is_pydeck(object):
             return 0.8
-        elif isinstance(obj, (dict, str)):
+        elif isinstance(object, (dict, str)):
             return 0
         return False
 

@@ -180,7 +180,7 @@ class Syncable(Renderable):
     def _get_properties(self, doc: Document | None) -> dict[str, Any]:
         return self._process_param_change(self._init_params())
 
-    def _process_property_change(self, msg: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
         """
         Transform bokeh model property changes into parameter updates.
         Should be overridden to provide appropriate mapping between
@@ -189,9 +189,9 @@ class Syncable(Renderable):
         property names.
         """
         inverted = {v: k for k, v in self._property_mapping.items()}
-        return {inverted.get(k, k): v for k, v in msg.items()}
+        return {inverted.get(k, k): v for k, v in props.items()}
 
-    def _process_param_change(self, msg: dict[str, Any]) -> dict[str, Any]:
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
         """
         Transform parameter changes into bokeh model property updates.
         Should be overridden to provide appropriate mapping between
@@ -200,7 +200,7 @@ class Syncable(Renderable):
         property names.
         """
         properties = {
-            self._property_mapping.get(k) or k: v for k, v in msg.items()
+            self._property_mapping.get(k) or k: v for k, v in params.items()
             if self._property_mapping.get(k, False) is not None and
             k not in self._manual_params
         }

@@ -800,10 +800,10 @@ class Param(Pane):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, param.parameterized.Parameters):
+    def applies(cls, object: Any) -> float | bool | None:
+        if isinstance(object, param.parameterized.Parameters):
             return 0.8
-        elif (is_parameterized(obj) or (isinstance(obj, param.Parameter) and obj.owner is not None)):
+        elif (is_parameterized(object) or (isinstance(object, param.Parameter) and object.owner is not None)):
             return 0.1
         return False
 
@@ -885,8 +885,8 @@ class ParamRef(ReplacementPane):
                 self._replace_pane()
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return bool(resolve_ref(obj))
+    def applies(cls, object: Any) -> float | bool | None:
+        return bool(resolve_ref(object))
 
     def _validate_object(self):
         return
@@ -1108,8 +1108,8 @@ class ParamMethod(ParamRef):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+    def applies(cls, object: Any) -> float | bool | None:
+        return inspect.ismethod(object) and isinstance(get_method_owner(object), param.Parameterized)
 
     @classmethod
     def eval(cls, ref):
@@ -1150,14 +1150,14 @@ class ParamFunction(ParamRef):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any, **kwargs) -> float | bool | None:
-        if isinstance(obj, types.FunctionType):
-            if hasattr(obj, '_dinfo'):
+    def applies(cls, object: Any, **kwargs) -> float | bool | None:
+        if isinstance(object, types.FunctionType):
+            if hasattr(object, '_dinfo'):
                 return True
             if (
                 kwargs.get('defer_load') or cls.param.defer_load.default or
                 (cls.param.defer_load.default is None and config.defer_load) or
-                iscoroutinefunction(obj)
+                iscoroutinefunction(object)
             ):
                 return True
             return None

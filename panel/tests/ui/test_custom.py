@@ -2,6 +2,8 @@ import os
 import pathlib
 import time
 
+from typing import Any
+
 import param
 import pytest
 
@@ -628,8 +630,8 @@ class JSSendMsg(JSComponent):
     }
     """
 
-    def _handle_msg(self, msg):
-        self.msg = msg
+    def _handle_msg(self, data: Any) -> None:
+        self.msg = data
         self.clicks += 1
 
 
@@ -645,8 +647,8 @@ class ReactSendMsg(ReactComponent):
     }
     """
 
-    def _handle_msg(self, msg):
-        self.msg = msg
+    def _handle_msg(self, data: Any) -> None:
+        self.msg = data
         self.clicks += 1
 
 

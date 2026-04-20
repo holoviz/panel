@@ -27,8 +27,8 @@ class Align(Parameter):
         super().__init__(default=default, **params)
         self._validate(default)
 
-    def _validate(self, value: Any) -> None:
-        self._validate_value(value, self.allow_None)
+    def _validate(self, val: Any) -> None:
+        self._validate_value(val, self.allow_None)
 
     def _validate_value(self, value: Any, allow_None: bool) -> None:
         if ((value is None and allow_None) or value in Alignment or
@@ -51,8 +51,8 @@ class Aspect(Parameter):
         super().__init__(default=default, allow_None=allow_None, **params)
         self._validate(default)
 
-    def _validate(self, value: Any) -> None:
-        self._validate_value(value, self.allow_None)
+    def _validate(self, val: Any) -> None:
+        self._validate_value(val, self.allow_None)
 
     def _validate_value(self, value: Any, allow_None: bool) -> None:
         if (value is None and allow_None) or value == 'auto' or _is_number(value):
@@ -93,9 +93,9 @@ class Margin(Parameter):
             '(top, right, bottom, left).'
         )
 
-    def _validate(self, value: Any) -> None:
-        self._validate_value(value, self.allow_None)
-        self._validate_length(value)
+    def _validate(self, val: Any) -> None:
+        self._validate_value(val, self.allow_None)
+        self._validate_length(val)
 
     @classmethod
     def serialize(cls, value: MarginType) -> Literal['null'] | list[int] | int:

@@ -225,7 +225,7 @@ class PaneBase(Layoutable):
         return self.layout[index]
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
+    def applies(cls, object: Any) -> float | bool | None:
         """
         Returns boolean or float indicating whether the Pane
         can render the object.

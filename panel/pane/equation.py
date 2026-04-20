@@ -63,10 +63,10 @@ class LaTeX(ModelPane):
     ]
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if hasattr(obj, '_repr_latex_'):
+    def applies(cls, object: Any) -> float | bool | None:
+        if hasattr(object, '_repr_latex_'):
             return 0.05
-        elif isinstance(obj, str):
+        elif isinstance(object, str):
             return None
         else:
             return False

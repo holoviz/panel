@@ -254,12 +254,12 @@ class BaseVTKRenderWindow(AbstractVTK):
         rws.initializeSerializers()
 
     @classmethod
-    def applies(cls, obj, **kwargs):
+    def applies(cls, object, **kwargs):
         if 'vtk' not in sys.modules and 'vtkmodules' not in sys.modules:
             return False
         else:
             import vtk
-            return isinstance(obj, vtk.vtkRenderWindow)
+            return isinstance(object, vtk.vtkRenderWindow)
 
     def get_renderer(self):
         """
@@ -374,9 +374,9 @@ class VTKRenderWindow(BaseVTKRenderWindow):
     _updates = True
 
     @classmethod
-    def applies(cls, obj, **kwargs):
+    def applies(cls, object, **kwargs):
         serialize_on_instantiation = kwargs.get('serialize_on_instantiation', False)
-        return (super().applies(obj, **kwargs) and
+        return (super().applies(object, **kwargs) and
                 serialize_on_instantiation)
 
     def __init__(self, object=None, **params):
@@ -436,9 +436,9 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
     _updates = True
 
     @classmethod
-    def applies(cls, obj, **kwargs):
+    def applies(cls, object, **kwargs):
         serialize_on_instantiation = kwargs.get('serialize_on_instantiation', False)
-        return super().applies(obj, **kwargs) and not serialize_on_instantiation
+        return super().applies(object, **kwargs) and not serialize_on_instantiation
 
     def __init__(self, object=None, **params):
         if object is None:
@@ -659,15 +659,15 @@ class VTKVolume(AbstractVTK):
         self._update(None, None)
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if ((isinstance(obj, np.ndarray) and obj.ndim == 3) or
-            any([isinstance(obj, k) for k in cls._serializers.keys()])):
+    def applies(cls, object: Any) -> float | bool | None:
+        if ((isinstance(object, np.ndarray) and object.ndim == 3) or
+            any([isinstance(object, k) for k in cls._serializers.keys()])):
             return True
         elif 'vtk' not in sys.modules and 'vtkmodules' not in sys.modules:
             return False
         else:
             import vtk
-            return isinstance(obj, vtk.vtkImageData)
+            return isinstance(object, vtk.vtkImageData)
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -838,8 +838,8 @@ class VTKJS(AbstractVTK):
         self._vtkjs = None
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, str) and obj.endswith('.vtkjs'):
+    def applies(cls, object: Any) -> float | bool | None:
+        if isinstance(object, str) and object.endswith('.vtkjs'):
             return True
         return None
 

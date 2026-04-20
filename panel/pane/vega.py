@@ -276,10 +276,10 @@ class Vega(ModelPane):
         return False
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, dict) and 'vega' in obj.get('$schema', '').lower():
+    def applies(cls, object: Any) -> float | bool | None:
+        if isinstance(object, dict) and 'vega' in object.get('$schema', '').lower():
             return True
-        return cls.is_altair(obj)
+        return cls.is_altair(object)
 
     def export(
         self, fmt: VEGA_EXPORT_FORMATS, as_pane: bool = False, **kwargs: dict

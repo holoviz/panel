@@ -109,10 +109,10 @@ class Plotly(ModelPane):
     }
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
-                hasattr(obj, 'to_plotly_json') or (isinstance(obj, dict)
-                                                   and 'data' in obj and 'layout' in obj))
+    def applies(cls, object: Any) -> float | bool | None:
+        return ((isinstance(object, list) and object and all(cls.applies(o) for o in object)) or
+                hasattr(object, 'to_plotly_json') or (isinstance(object, dict)
+                                                   and 'data' in object and 'layout' in object))
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)

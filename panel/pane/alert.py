@@ -51,8 +51,8 @@ class Alert(Markdown):
     ]
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        priority = Markdown.applies(obj)
+    def applies(cls, object: Any) -> float | bool | None:
+        priority = Markdown.applies(object)
         return 0 if priority else False
 
     def __init__(self, object=None, **params):

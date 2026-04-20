@@ -68,10 +68,10 @@ class ECharts(ModelPane):
         self._js_callbacks = defaultdict(list)
 
     @classmethod
-    def applies(cls, obj: Any, **params) -> float | bool | None:
-        if isinstance(obj, dict):
+    def applies(cls, object: Any, **params) -> float | bool | None:
+        if isinstance(object, dict):
             return 0
-        elif cls.is_pyecharts(obj):
+        elif cls.is_pyecharts(object):
             return 0.8
         return None
 
@@ -131,8 +131,8 @@ class ECharts(ModelPane):
             props['sizing_mode'] = 'stretch_both'
         return props
 
-    def _get_properties(self, document: Document | None) -> dict[str, Any]:
-        props = super()._get_properties(document)
+    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+        props = super()._get_properties(doc)
         props['event_config'] = {
             event: list(queries) for event, queries in self._py_callbacks.items()
         }

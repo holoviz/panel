@@ -575,7 +575,7 @@ class ChatMessage(Pane):
     def _update_reaction_icons(self, _):
         self._icons_row[-1] = self._render_reaction_icons()
 
-    def _update(self, ref, old_models):
+    def _update(self, ref: str, model: "Model") -> None:
         """
         Internals will be updated inplace.
         """

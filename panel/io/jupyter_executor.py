@@ -138,11 +138,11 @@ class PanelExecutor(WSHandler):
         except Exception as e:
             self._internal_error(f"server failed to handle a message: {e}")
 
-    def _internal_error(self, msg: str) -> None:
-        self.comm.send(msg, {'status': 'internal_error'})
+    def _internal_error(self, message: str) -> None:
+        self.comm.send(message, {'status': 'internal_error'})
 
-    def _protocol_error(self, msg: str) -> None:
-        self.comm.send(msg, {'status': 'protocol_error'})
+    def _protocol_error(self, message: str) -> None:
+        self.comm.send(message, {'status': 'protocol_error'})
 
     def _create_server_session(self) -> tuple[ServerSession, str | None]:
         doc = Document()

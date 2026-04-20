@@ -58,27 +58,27 @@ class FileBase(HTMLBasePane):
         super()._type_error(object)
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
+    def applies(cls, object: Any) -> float | bool | None:
         filetype = cls.filetype.split('+')[0]
         exts = cls._extensions or (filetype,)
-        if hasattr(obj, f'_repr_{filetype}_'):
+        if hasattr(object, f'_repr_{filetype}_'):
             return 0.15
-        if isinstance(obj, PurePath):
-            obj = str(obj.absolute())
-        if isinstance(obj, str):
-            if isurl(obj, exts):
+        if isinstance(object, PurePath):
+            object = str(object.absolute())
+        if isinstance(object, str):
+            if isurl(object, exts):
                 return True
-            elif any(obj.lower().endswith(f'.{ext}') for ext in exts):
+            elif any(object.lower().endswith(f'.{ext}') for ext in exts):
                 return True
-            elif isurl(obj, None):
+            elif isurl(object, None):
                 return 0.0
-        elif isinstance(obj, bytes):
+        elif isinstance(object, bytes):
             try:
-                cls._imgshape(obj)
+                cls._imgshape(object)
                 return True
             except Exception:
                 return False
-        if hasattr(obj, 'read'):  # Check for file like object
+        if hasattr(object, 'read'):  # Check for file like object
             return True
         return False
 
@@ -256,12 +256,12 @@ class Image(ImageBase):
     """
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
+    def applies(cls, object: Any) -> float | bool | None:
         precedences = []
         for img_cls in _descendents(ImageBase, concrete=True):
             if img_cls is Image:
                 continue
-            applies = img_cls.applies(obj)
+            applies = img_cls.applies(object)
             if isinstance(applies, bool) and applies:
                 return applies
             elif isinstance(applies, (float, int)):
@@ -442,9 +442,9 @@ class SVG(ImageBase):
     _rerender_params: ClassVar[list[str]] = ImageBase._rerender_params + ['encode']
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return (super().applies(obj) or
-                (isinstance(obj, str) and obj.lstrip().startswith('<svg')))
+    def applies(cls, object: Any) -> float | bool | None:
+        return (super().applies(object) or
+                (isinstance(object, str) and object.lstrip().startswith('<svg')))
 
     def _type_error(self, object):
         if isinstance(object, str):

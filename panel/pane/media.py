@@ -83,14 +83,14 @@ class _MediaBase(ModelPane):
     __abstract = True
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, (pathlib.Path, str)):
-            path = str(obj)
+    def applies(cls, object: Any) -> float | bool | None:
+        if isinstance(object, (pathlib.Path, str)):
+            path = str(object)
             if isfile(path) and any(path.endswith('.'+fmt) for fmt in cls._formats):
                 return True
             if isurl(path, cls._formats):
                 return True
-        if hasattr(obj, 'read') or isinstance(obj, bytes):  # Check for file like object (or bytes)
+        if hasattr(object, 'read') or isinstance(object, bytes):  # Check for file like object (or bytes)
             return True
         return False
 
@@ -243,10 +243,10 @@ class Audio(_MediaBase):
     _media_type = 'audio'
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return (super().applies(obj)
-            or _is_1_or_2dim_int_or_float_ndarray(obj)
-            or _is_1_or_2dim_int_or_float_tensor(obj)
+    def applies(cls, object: Any) -> float | bool | None:
+        return (super().applies(object)
+            or _is_1_or_2dim_int_or_float_ndarray(object)
+            or _is_1_or_2dim_int_or_float_tensor(object)
         )
 
     @classmethod

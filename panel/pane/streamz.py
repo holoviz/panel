@@ -76,8 +76,8 @@ class Streamz(ReplacementPane):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
+    def applies(cls, object: Any) -> float | bool | None:
         if 'streamz' in sys.modules:
             from streamz import Stream
-            return isinstance(obj, Stream)
+            return isinstance(object, Stream)
         return False

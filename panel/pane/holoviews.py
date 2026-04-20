@@ -607,12 +607,12 @@ class HoloViews(Pane):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
+    def applies(cls, object: Any) -> float | bool | None:
         if 'holoviews' not in sys.modules:
             return False
         from holoviews.core.dimension import Dimensioned
         from holoviews.plotting.plot import Plot
-        return isinstance(obj, (Dimensioned, Plot))
+        return isinstance(object, (Dimensioned, Plot))
 
     def jslink(self, target, code=None, args=None, bidirectional=False, **links):
         if links and code:

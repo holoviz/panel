@@ -100,12 +100,12 @@ class HTML(HTMLBasePane):
     ]
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        module, name = getattr(obj, '__module__', ''), type(obj).__name__
+    def applies(cls, object: Any) -> float | bool | None:
+        module, name = getattr(object, '__module__', ''), type(object).__name__
         if ((any(m in module for m in ('pandas', 'dask')) and
-            name in ('DataFrame', 'Series')) or hasattr(obj, '_repr_html_')):
-            return 0 if isinstance(obj, param.Parameterized) else 0.2
-        elif isinstance(obj, str):
+            name in ('DataFrame', 'Series')) or hasattr(object, '_repr_html_')):
+            return 0 if isinstance(object, param.Parameterized) else 0.2
+        elif isinstance(object, str):
             return None
         else:
             return False
@@ -230,9 +230,9 @@ class DataFrame(HTML):
         super().__init__(object, **params)
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        module = getattr(obj, '__module__', '')
-        name = type(obj).__name__
+    def applies(cls, object: Any) -> float | bool | None:
+        module = getattr(object, '__module__', '')
+        name = type(object).__name__
         if (any(m in module for m in ('pandas', 'dask', 'streamz', 'geopandas', 'spatialpandas')) and
             name in ('DataFrame', 'Series', 'Random', 'DataFrames',
                      'Seriess', 'Styler', 'GeoDataFrame', 'GeoSeries')):
@@ -328,7 +328,7 @@ class Str(HTMLBasePane):
     }
 
     @classmethod
-    def applies(cls, obj: Any) -> bool:
+    def applies(cls, object: Any) -> bool:
         return True
 
     def _transform_object(self, obj: Any) -> dict[str, Any]:
@@ -406,10 +406,10 @@ class Markdown(HTMLBasePane):
     ]
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if hasattr(obj, '_repr_markdown_'):
+    def applies(cls, object: Any) -> float | bool | None:
+        if hasattr(object, '_repr_markdown_'):
             return 0.3
-        elif isinstance(obj, str):
+        elif isinstance(object, str):
             return 0.1
         else:
             return False
@@ -557,15 +557,15 @@ class JSON(HTMLBasePane):
         super().__init__(object=object, **params)
 
     @classmethod
-    def applies(cls, obj: Any, **params) -> float | bool | None:
-        if isinstance(obj, (list, dict)):
+    def applies(cls, object: Any, **params) -> float | bool | None:
+        if isinstance(object, (list, dict)):
             try:
-                json.dumps(obj, cls=params.get('encoder', cls.encoder))
+                json.dumps(object, cls=params.get('encoder', cls.encoder))
             except Exception:
                 return False
             else:
                 return 0.1
-        elif isinstance(obj, str):
+        elif isinstance(object, str):
             return 0
         else:
             return None
@@ -578,11 +578,11 @@ class JSON(HTMLBasePane):
         text = json.dumps(data or {}, cls=self.encoder)
         return dict(object=text)
 
-    def _process_property_change(self, properties: dict[str, Any]) -> dict[str, Any]:
-        properties = super()._process_property_change(properties)
-        if 'depth' in properties:
-            properties['depth'] = -1 if properties['depth'] is None else properties['depth']
-        return properties
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        props = super()._process_property_change(props)
+        if 'depth' in props:
+            props['depth'] = -1 if props['depth'] is None else props['depth']
+        return props
 
     def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any] :
         params = super()._process_param_change(params)

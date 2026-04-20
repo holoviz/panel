@@ -99,8 +99,8 @@ class Bokeh(Pane):
         super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes', 'visible']))
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return isinstance(obj, LayoutDOM)
+    def applies(cls, object: Any) -> float | bool | None:
+        return isinstance(object, LayoutDOM)
 
     @classmethod
     def _property_callback_wrapper(cls, cb, doc, comm, callbacks):
@@ -257,12 +257,12 @@ class Matplotlib(Image, IPyWidget):
     _num = 0
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
+    def applies(cls, object: Any) -> float | bool | None:
         if 'matplotlib' not in sys.modules:
             return False
         from matplotlib.figure import Figure
-        is_fig = isinstance(obj, Figure)
-        if is_fig and obj.canvas is None:
+        is_fig = isinstance(object, Figure)
+        if is_fig and object.canvas is None:
             raise ValueError('Matplotlib figure has no canvas and '
                              'cannot be rendered.')
         return is_fig
@@ -412,8 +412,8 @@ class RGGPlot(PNG):
     _rename: ClassVar[Mapping[str, str | None]] = {'dpi': None}
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return type(obj).__name__ == 'GGPlot' and hasattr(obj, 'r_repr')
+    def applies(cls, object: Any) -> float | bool | None:
+        return type(object).__name__ == 'GGPlot' and hasattr(object, 'r_repr')
 
     def _data(self, obj):
         from rpy2 import robjects
@@ -436,10 +436,10 @@ class YT(HTML):
     priority: ClassVar[float | bool | None] = 0.5
 
     @classmethod
-    def applies(cls, obj: bool) -> float | bool | None:
-        return (getattr(obj, '__module__', '').startswith('yt.') and
-                hasattr(obj, "plots") and
-                hasattr(obj, "_repr_html_"))
+    def applies(cls, object: Any) -> float | bool | None:
+        return (getattr(object, '__module__', '').startswith('yt.') and
+                hasattr(object, "plots") and
+                hasattr(object, "_repr_html_"))
 
 
 class Folium(HTML):
@@ -457,9 +457,9 @@ class Folium(HTML):
     priority: ClassVar[float | bool | None] = 0.6
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return (getattr(obj, '__module__', '').startswith('folium.') and
-                hasattr(obj, "_repr_html_"))
+    def applies(cls, object: Any) -> float | bool | None:
+        return (getattr(object, '__module__', '').startswith('folium.') and
+                hasattr(object, "_repr_html_"))
 
     def _transform_object(self, obj: Any) -> dict[str, Any]:
         text = '' if obj is None else obj
