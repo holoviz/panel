@@ -89,7 +89,7 @@ class IPyLeaflet(IPyWidget):
         'scale_width', 'scale_height', 'scale_both'
     ] | None = param.Selector(default='stretch_width', objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment]
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment, ty:invalid-assignment]
 
     priority: ClassVar[float | bool | None] = 0.7
 

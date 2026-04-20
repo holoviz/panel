@@ -47,7 +47,7 @@ class Tabs(NamedListPanel):
 
     tabs_location: Literal['above', 'below', 'left', 'right'] = param.Selector(
         default='above', objects=['above', 'below', 'left', 'right'], doc="""
-        The location of the tabs relative to the tab contents.""")  # type: ignore[assignment]
+        The location of the tabs relative to the tab contents.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     height = param.Integer(default=None, bounds=(0, None))
 

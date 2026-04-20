@@ -623,7 +623,7 @@ def test_embed_widget_from_param_class(document, comm):
 
     class Test(param.Parameterized):
         fn: Literal["sin", "cos"] = param.Selector(
-            default="sin", objects=["sin", "cos"])  # type: ignore[assignment]
+            default="sin", objects=["sin", "cos"])  # type: ignore[assignment, ty:invalid-assignment]
 
     # Create widget from class parameter
     widget = RadioButtonGroup.from_param(Test.param.fn)
@@ -647,7 +647,7 @@ def test_embed_widget_from_param_instance(document, comm):
 
     class Test(param.Parameterized):
         fn: Literal["sin", "cos"] = param.Selector(
-            default="sin", objects=["sin", "cos"])  # type: ignore[assignment]
+            default="sin", objects=["sin", "cos"])  # type: ignore[assignment, ty:invalid-assignment]
 
     # Create widget from instance parameter
     test = Test()

@@ -787,7 +787,7 @@ class ListPanel(ListLike, Panel):
         If "x" or "y", will always add scrollbars in the respective
         direction. If False, overflowing content will be clipped.
         If True, will only add scrollbars in the direction of the container,
-        (e.g. Column: vertical, Row: horizontal).""")  # type: ignore[assignment]
+        (e.g. Column: vertical, Row: horizontal).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
@@ -838,7 +838,7 @@ class NamedListPanel(NamedListLike, Panel):
         If "x" or "y", will always add scrollbars in the respective
         direction. If False, overflowing content will be clipped.
         If True, will only add scrollbars in the direction of the container,
-        (e.g. Column: vertical, Row: horizontal).""")  # type: ignore[assignment]
+        (e.g. Column: vertical, Row: horizontal).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 

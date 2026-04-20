@@ -275,7 +275,7 @@ class Perspective(ModelPane, ReactiveData):
       How to aggregate. For example {"x": "distinct count"}""")
 
     columns: list[str | int] = param.List(default=None, item_type=(str, int), nested_refs=True, doc="""
-      A list of source columns to show as columns. For example ["x", "y"]""")  # type: ignore[assignment]
+      A list of source columns to show as columns. For example ["x", "y"]""")  # type: ignore[assignment, ty:invalid-assignment]
 
     columns_config = param.Dict(default=None, nested_refs=True, doc="""
       Column configuration allowing specification of formatters, coloring
@@ -289,11 +289,11 @@ class Perspective(ModelPane, ReactiveData):
       For example [""x"+"index""]""")
 
     split_by: list[str | int] = param.List(default=None, item_type=(str, int), nested_refs=True, doc="""
-      A list of source columns to pivot by. For example ["x", "y"]""")  # type: ignore[assignment]
+      A list of source columns to pivot by. For example ["x", "y"]""")  # type: ignore[assignment, ty:invalid-assignment]
 
     filters: list[tuple[str | int, str, Any] | list[Any]] | None = param.List(
         default=None, item_type=(tuple, list), nested_refs=True, doc="""
-      How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")  # type: ignore[assignment]
+      How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")  # type: ignore[assignment, ty:invalid-assignment]
 
     min_width = param.Integer(default=420, bounds=(0, None), doc="""
         Minimal width of the component (in pixels) if width is adjustable.""")
@@ -302,21 +302,21 @@ class Perspective(ModelPane, ReactiveData):
       The plot data declared as a dictionary of arrays or a DataFrame.""")
 
     group_by: list[str | int] = param.List(default=None, item_type=(str, int), doc="""
-      A list of source columns to group by. For example ["x", "y"]""")  # type: ignore[assignment]
+      A list of source columns to group by. For example ["x", "y"]""")  # type: ignore[assignment, ty:invalid-assignment]
 
     selectable = param.Boolean(default=True, allow_None=True, doc="""
       Whether items are selectable.""")
 
     sort: list[str | int | tuple[str, SortLiteral] | list[str]] | None = param.List(
         default=None, item_type=(str, int, tuple, list), doc="""
-      How to sort. For example[["x","desc"]]""")  # type: ignore[assignment]
+      How to sort. For example[["x","desc"]]""")  # type: ignore[assignment, ty:invalid-assignment]
 
     plugin: Literal[
         'hypergrid', 'datagrid', 'd3_y_bar', 'd3_x_bar', 'd3_xy_line', 'd3_y_line',
         'd3_y_area', 'd3_y_scatter', 'd3_xy_scatter', 'd3_treemap', 'd3_sunburst',
         'd3_heatmap', 'd3_candlestick', 'd3_ohlc',
     ] = param.Selector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
-      The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")  # type: ignore[assignment]
+      The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     plugin_config = param.Dict(default={}, nested_refs=True, doc="""
       Configuration for the PerspectiveViewerPlugin.""")
@@ -328,7 +328,7 @@ class Perspective(ModelPane, ReactiveData):
         'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark',
         'vaporwave', 'pro', 'pro-dark',
     ] = param.Selector(default='pro', objects=THEMES, doc="""
-      The style of the PerspectiveViewer. For example pro-dark""")  # type: ignore[assignment]
+      The style of the PerspectiveViewer. For example pro-dark""")  # type: ignore[assignment, ty:invalid-assignment]
 
     title = param.String(default=None, doc="""
       Title for the Perspective viewer.""")
@@ -481,19 +481,19 @@ class Perspective(ModelPane, ReactiveData):
             return int(col)
         return col
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
         for prop in ('columns', 'group_by', 'split_by'):
-            if prop not in msg:
+            if prop not in params:
                 continue
-            msg[prop] = [self._as_digit(col) for col in msg[prop]]
-        if msg.get('sort'):
-            msg['sort'] = [[self._as_digit(col), *args] for col, *args in msg['sort']]
-        if msg.get('filters'):
-            msg['filters'] = [[self._as_digit(col), *args] for col, *args in msg['filters']]
-        if msg.get('aggregates'):
-            msg['aggregates'] = {self._as_digit(col): agg for col, agg in msg['aggregates'].items()}
-        return msg
+            params[prop] = [self._as_digit(col) for col in params[prop]]
+        if params.get('sort'):
+            params['sort'] = [[self._as_digit(col), *args] for col, *args in params['sort']]
+        if params.get('filters'):
+            params['filters'] = [[self._as_digit(col), *args] for col, *args in params['filters']]
+        if params.get('aggregates'):
+            params['aggregates'] = {self._as_digit(col): agg for col, agg in params['aggregates'].items()}
+        return params
 
     def _get_model(
         self, doc: Document, root: Model | None = None,

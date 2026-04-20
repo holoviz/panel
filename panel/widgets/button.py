@@ -40,11 +40,11 @@ class _ButtonBase(Widget):
     ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
-        or 'danger' (red).""")  # type: ignore[assignment]
+        or 'danger' (red).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     button_style: Literal['solid', 'outline'] = param.Selector(
         default='solid', objects=BUTTON_STYLES, doc="""
-        A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment]
+        A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'button_style': None}
 
@@ -329,7 +329,7 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
         default=[], item_type=(str, tuple, type(None)), doc="""
       Menu items in the dropdown. Allows strings, tuples of the form
       (title, value) or Nones to separate groups of items."""
-    )  # type: ignore[assignment]
+    )  # type: ignore[assignment, ty:invalid-assignment]
 
     split = param.Boolean(default=False, doc="""
       Whether to add separate dropdown area to button.""")

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
@@ -54,7 +56,7 @@ class Feed(Column):
         If "x" or "y", will always add scrollbars in the respective
         direction. If False, overflowing content will be clipped.
         If True, will only add scrollbars in the direction of the container,
-        (e.g. Column: vertical, Row: horizontal).""")  # type: ignore[assignment]
+        (e.g. Column: vertical, Row: horizontal).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     visible_range = param.Range(readonly=True, doc="""
         Read-only upper and lower bounds of the currently visible feed objects.
@@ -128,16 +130,16 @@ class Feed(Column):
         self._register_events('scroll_button_click', model=model, doc=doc, comm=comm)
         return model
 
-    def _process_property_change(self, msg):
-        if 'visible_children' in msg:
-            visible = msg.pop('visible_children')
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        if 'visible_children' in props:
+            visible = props.pop('visible_children')
             for model, _ in self._models.values():
                 refs = [c.ref['id'] for c in model.children]
                 if visible and visible[0] in refs:
                     indexes = sorted(refs.index(v) for v in visible if v in refs)
                     break
             else:
-                return super()._process_property_change(msg)
+                return super()._process_property_change(props)
             offset = self._synced_range[0]
             n = len(self.objects)
             visible_range = [
@@ -146,12 +148,12 @@ class Feed(Column):
             ]
             if visible_range[0] >= visible_range[1]:
                 visible_range[0] = visible_range[1] - self.load_buffer
-            msg['visible_range'] = tuple(visible_range)
-        return super()._process_property_change(msg)
+            props['visible_range'] = tuple(visible_range)
+        return super()._process_property_change(props)
 
-    def _process_param_change(self, msg):
-        msg.pop('visible_range', None)
-        return super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        params.pop('visible_range', None)
+        return super()._process_param_change(params)
 
     def _get_objects(
         self, model: Model, old_objects: list[Viewable], doc: Document,

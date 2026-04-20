@@ -196,6 +196,9 @@ unfixable = [
 "scripts/*.py" = ["T201"]
 "hatch_build.py" = ["T201"]
 
+[tool.ty.rules]
+unused-type-ignore-comment = "ignore"
+
 [tool.isort]
 force_grid_wrap = 4
 multi_line_output = 5

@@ -32,7 +32,7 @@ class TemplateEditor(ReactiveHTML):
         The current layout of the template, which is updated by the editor.
         It is a list of dictionaries with the keys 'id', 'width', 'height', and 'visible'.
         The 'id' corresponds to the component's model id, while 'width' and 'height'
-        are in percentage of the grid cell size.""")  # type: ignore[assignment]
+        are in percentage of the grid cell size.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _scripts = {
         'render': """

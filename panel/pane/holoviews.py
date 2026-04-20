@@ -79,7 +79,7 @@ class HoloViews(Pane):
     backend: Literal['bokeh', 'matplotlib', 'plotly'] | None = param.Selector(
         default=None, objects=['bokeh', 'matplotlib', 'plotly'], doc="""
         The HoloViews backend used to render the plot (if None defaults
-        to the currently selected renderer).""")  # type: ignore[assignment]
+        to the currently selected renderer).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     center = param.Boolean(default=False, doc="""
         Whether to center the plot.""")
@@ -109,11 +109,11 @@ class HoloViews(Pane):
         to select between the static case (i.e. a HoloMap) and
         dynamic case (i.e. a DynamicMap).
         """
-    )  # type: ignore[assignment]
+    )  # type: ignore[assignment, ty:invalid-assignment]
 
     format: Literal['png', 'svg'] = param.Selector(
         default='png', objects=['png', 'svg'], doc="""
-        The format to render Matplotlib plots with.""")  # type: ignore[assignment]
+        The format to render Matplotlib plots with.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     linked_axes = param.Boolean(default=True, doc="""
         Whether to link the axes of bokeh plots inside this pane
@@ -121,7 +121,7 @@ class HoloViews(Pane):
 
     renderer: Renderer | None = param.Parameter(default=None, doc="""
         Explicit renderer instance to use for rendering the HoloViews
-        plot. Overrides the backend.""")  # type: ignore[assignment]
+        plot. Overrides the backend.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     theme = param.ClassSelector(default=None, class_=(Theme, str),
                                 allow_None=True, doc="""
@@ -136,17 +136,17 @@ class HoloViews(Pane):
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
         'right_top', 'right_bottom'], doc="""
         The layout of the plot and the widgets. The value refers to the
-        position of the widgets relative to the plot.""")  # type: ignore[assignment]
+        position of the widgets relative to the plot.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     widget_layout: Any = param.Selector(
         objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
-        The layout object to display the widgets in.""")  # type: ignore[assignment]
+        The layout object to display the widgets in.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     widget_type: Literal['individual', 'scrubber'] = param.Selector(
         default='individual',
         objects=['individual', 'scrubber'], doc="""
         Whether to generate individual widgets for each dimension or
-        on global scrubber.""")  # type: ignore[assignment]
+        on global scrubber.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     widgets = param.Dict(default={}, doc="""
         A mapping from dimension name to a widget instance which will

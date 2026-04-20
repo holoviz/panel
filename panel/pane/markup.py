@@ -178,7 +178,7 @@ class DataFrame(HTML):
     ] | None = param.Selector(default=None, allow_None=True, objects=[
         'left', 'right', 'center', 'justify', 'justify-all', 'start',
         'end', 'inherit', 'match-parent', 'initial', 'unset'], doc="""
-        How to justify the column labels.""")  # type: ignore[assignment]
+        How to justify the column labels.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     max_rows = param.Integer(default=None, doc="""
         Maximum number of rows to display.""")
@@ -203,9 +203,9 @@ class DataFrame(HTML):
     text_align: Literal['start', 'end', 'center'] | None = param.Selector(
         default=None, objects=[
         'start', 'end', 'center'], doc="""
-         Alignment of non-header cells.""")  # type: ignore[assignment]
+         Alignment of non-header cells.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _object: Any = param.Parameter(default=None, doc="""Hidden parameter.""")  # type: ignore[assignment]
+    _object: Any = param.Parameter(default=None, doc="""Hidden parameter.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _dask_params: ClassVar[list[str]] = ['max_rows']
 
@@ -374,12 +374,12 @@ class Markdown(HTMLBasePane):
         the 'myst' renderer.""")
 
     plugins: list[Any] = param.List(default=[], nested_refs=True, doc="""
-        Additional markdown-it-py plugins to use.""")  # type: ignore[assignment]
+        Additional markdown-it-py plugins to use.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     renderer: Literal['markdown-it', 'myst', 'markdown'] = param.Selector(
         default='markdown-it', objects=[
         'markdown-it', 'myst', 'markdown'], doc="""
-        Markdown renderer implementation.""")  # type: ignore[assignment]
+        Markdown renderer implementation.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     renderer_options = param.Dict(default={}, nested_refs=True, doc="""
         Options to pass to the markdown renderer.""")
@@ -529,7 +529,7 @@ class JSON(HTMLBasePane):
         If no value is provided, it defaults to the current theme
         set by pn.config.theme, as specified in the
         JSON.THEME_CONFIGURATION dictionary. If not defined there, it
-        falls back to the default parameter value.""")  # type: ignore[assignment]
+        falls back to the default parameter value.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     priority: ClassVar[float | bool | None] = None
 

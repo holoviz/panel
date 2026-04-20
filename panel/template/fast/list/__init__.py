@@ -48,7 +48,7 @@ class FastListTemplate(FastBaseTemplate):
 
     collapsed_right_sidebar: Literal[True, False] = param.Selector(
         default=False, constant=True, doc="""
-       Whether the secondary sidebar on the right (if present) is initially collapsed.""")  # type: ignore[assignment]
+       Whether the secondary sidebar on the right (if present) is initially collapsed.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     right_sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates a secondary sidebar (on the right).""")

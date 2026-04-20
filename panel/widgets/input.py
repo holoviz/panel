@@ -181,7 +181,7 @@ class TextAreaInput(_TextInputBase):
         objects=["both", "width", "height", False], doc="""
         Whether the layout is interactively resizable,
         and if so in which dimensions: `width`, `height`, or `both`.
-        Can only be set during initialization.""")  # type: ignore[assignment]
+        Can only be set during initialization.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _widget_type: ClassVar[type[Model]] = _bkTextAreaInput
 
@@ -252,31 +252,31 @@ class FileInput(Widget):
 
     _widget_type: ClassVar[type[Model]] = _BkFileInput
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            msg.pop('value')
-        if 'mime_type' in msg:
-            msg.pop('mime_type')
-        return msg
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        props = super()._process_param_change(params)
+        if 'value' in props:
+            props.pop('value')
+        if 'mime_type' in props:
+            props.pop('mime_type')
+        return props
 
     @property
     def _linked_properties(self) -> tuple[str, ...]:
         properties = super()._linked_properties
         return properties + ('filename',)
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            if isinstance(msg['value'], str):
-                msg['value'] = b64decode(msg['value']) if msg['value'] else None
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params:
+            if isinstance(params['value'], str):
+                params['value'] = b64decode(params['value']) if params['value'] else None
             else:
-                msg['value'] = [b64decode(content) for content in msg['value']]
-        if 'filename' in msg and len(msg['filename']) == 0:
-            msg['filename'] = None
-        if 'mime_type' in msg and len(msg['mime_type']) == 0:
-            msg['mime_type'] = None
-        return msg
+                params['value'] = [b64decode(content) for content in params['value']]
+        if 'filename' in params and len(params['filename']) == 0:
+            params['filename'] = None
+        if 'mime_type' in params and len(params['mime_type']) == 0:
+            params['mime_type'] = None
+        return params
 
     def save(self, filename):
         """
@@ -339,7 +339,7 @@ class FileDropper(Widget):
     accepted_filetypes: list[str] = param.List(default=[], item_type=str, doc="""
         List of accepted file types. Can be mime types, file extensions
         or wild cards.For instance ['image/*'] will accept all images.
-        ['.png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")  # type: ignore[assignment]
+        ['.png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     chunk_size = param.Integer(default=10_000_000, doc="""
         Size in bytes per chunk transferred across the WebSocket.""")
@@ -349,7 +349,7 @@ class FileDropper(Widget):
         Compact mode will remove padding, integrated mode is used to render
         FilePond as part of a bigger element. Circle mode adjusts the item
         position offsets so buttons and progress indicators don't fall outside
-        of the circular shape.""")  # type: ignore[assignment]
+        of the circular shape.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     max_file_size = param.String(default=None, doc="""
         Maximum size of a file as a string with units given in KB or MB,
@@ -471,17 +471,17 @@ class StaticText(Widget):
             if k in self._synced_params and (v is not None or k == 'value')
         }
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'text' in msg:
-            text = msg.pop('text')
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        props = super()._process_param_change(params)
+        if 'text' in props:
+            text = props.pop('text')
             if not isinstance(text, str):
                 text = escape("" if text is None else str(text))
             partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
                 text = self._format.format(title=self.name, value=text.replace(partial, ''))
-            msg['text'] = text
-        return msg
+            props['text'] = text
+        return props
 
 
 class DatePicker(Widget):
@@ -544,15 +544,15 @@ class DatePicker(Widget):
             params["value"] = value
         super().__init__(**params)
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
         for p in ('start', 'end', 'value'):
-            if p not in msg:
+            if p not in params:
                 continue
-            value = msg[p]
+            value = params[p]
             if isinstance(value, str):
-                msg[p] = datetime.date(datetime.strptime(value, '%Y-%m-%d'))
-        return msg
+                params[p] = datetime.date(datetime.strptime(value, '%Y-%m-%d'))
+        return params
 
 
 class DateRangePicker(Widget):
@@ -612,28 +612,28 @@ class DateRangePicker(Widget):
         self.param.value.bounds = (self.start, self.end)
         self.param.value._validate(self.value)
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
         for p in ('start', 'end', 'value'):
-            if p not in msg:
+            if p not in params:
                 continue
-            value = msg[p]
+            value = params[p]
             if isinstance(value, tuple):
-                msg[p] = tuple(self._convert_string_to_date(v) for v in value)
-        return msg
+                params[p] = tuple(self._convert_string_to_date(v) for v in value)
+        return params
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg and msg['value'] is not None:
-            msg['value'] = tuple(
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        props = super()._process_param_change(params)
+        if 'value' in props and props['value'] is not None:
+            props['value'] = tuple(
                 v if v is None else self._convert_date_to_string(v)
-                for v in msg['value']
+                for v in props['value']
             )
-        if 'min_date' in msg:
-            msg['min_date'] = self._convert_date_to_string(msg['min_date'])
-        if 'max_date' in msg:
-            msg['max_date'] = self._convert_date_to_string(msg['max_date'])
-        return msg
+        if 'min_date' in props:
+            props['min_date'] = self._convert_date_to_string(props['min_date'])
+        if 'max_date' in props:
+            props['max_date'] = self._convert_date_to_string(props['max_date'])
+        return props
 
     @staticmethod
     def _convert_string_to_date(v):
@@ -737,21 +737,21 @@ class _DatetimePickerBase(Widget):
             self._convert_to_datetime(self.value)
         )
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = self._serialize_value(msg['value'])
-        return msg
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params:
+            params['value'] = self._serialize_value(params['value'])
+        return params
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            msg['value'] = self._deserialize_value(self._convert_to_datetime(msg['value']))
-        if 'min_date' in msg:
-            msg['min_date'] = self._convert_to_datetime(msg['min_date'])
-        if 'max_date' in msg:
-            msg['max_date'] = self._convert_to_datetime(msg['max_date'])
-        return msg
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        props = super()._process_param_change(params)
+        if 'value' in props:
+            props['value'] = self._deserialize_value(self._convert_to_datetime(props['value']))
+        if 'min_date' in props:
+            props['min_date'] = self._convert_to_datetime(props['min_date'])
+        if 'max_date' in props:
+            props['max_date'] = self._convert_to_datetime(props['max_date'])
+        return props
 
 
 class DatetimePicker(_DatetimePickerBase):
@@ -854,7 +854,7 @@ class _TimeCommon(Widget):
 
     clock: Literal['12h', '24h'] = param.Selector(
         default='12h', objects=['12h', '24h'], doc="""
-        Whether to use 12 hour or 24 hour clock.""")  # type: ignore[assignment]
+        Whether to use 12 hour or 24 hour clock.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     __abstract = True
 
@@ -947,10 +947,10 @@ class _NumericInputBase(Widget):
         Allows defining a custom format string or bokeh TickFormatter.""")
 
     start: float | int | None = param.Parameter(default=None, allow_None=True, doc="""
-        Optional minimum allowable value.""")  # type: ignore[assignment]
+        Optional minimum allowable value.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     end: float | int | None = param.Parameter(default=None, allow_None=True, doc="""
-        Optional maximum allowable value.""")  # type: ignore[assignment]
+        Optional maximum allowable value.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
@@ -1042,20 +1042,20 @@ class _SpinnerBase(_NumericInputBase):
 
         return super()._update_model(events, msg, root, model, doc, comm)
 
-    def _process_param_change(self, msg):
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
         # Workaround for -inf serialization errors
-        if 'value' in msg and msg['value'] == float('-inf'):
-            msg['value'] = None
-            msg['value_throttled'] = None
-        return super()._process_param_change(msg)
+        if 'value' in params and params['value'] == float('-inf'):
+            params['value'] = None
+            params['value_throttled'] = None
+        return super()._process_param_change(params)
 
-    def _process_property_change(self, msg):
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
         if config.throttled:
-            if "value" in msg:
-                del msg["value"]
-            if "value_throttled" in msg:
-                msg["value"] = msg["value_throttled"]
-        return super()._process_property_change(msg)
+            if "value" in props:
+                del props["value"]
+            if "value_throttled" in props:
+                props["value"] = props["value_throttled"]
+        return super()._process_property_change(props)
 
     def _process_events(self, events: dict[str, Any]) -> None:
         if config.throttled:
@@ -1114,19 +1114,19 @@ class FloatInput(_SpinnerBase, _FloatInputBase):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
-    def _process_param_change(self, msg):
-        if msg.get('value', False) is None:
-            msg['value'] = float('NaN')
-        if msg.get('value_throttled', False) is None:
-            msg['value_throttled'] = float('NaN')
-        return super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        if params.get('value', False) is None:
+            params['value'] = float('NaN')
+        if params.get('value_throttled', False) is None:
+            params['value_throttled'] = float('NaN')
+        return super()._process_param_change(params)
 
-    def _process_property_change(self, msg):
-        if msg.get('value', False) and np.isnan(msg['value']):
-            msg['value'] = None
-        if msg.get('value_throttled', False) and np.isnan(msg['value_throttled']):
-            msg['value_throttled'] = None
-        return super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        if props.get('value', False) and np.isnan(props['value']):
+            props['value'] = None
+        if props.get('value_throttled', False) and np.isnan(props['value_throttled']):
+            props['value_throttled'] = None
+        return super()._process_property_change(props)
 
 
 class NumberInput(_SpinnerBase):
@@ -1171,7 +1171,7 @@ class LiteralInput(Widget):
         default='ast', objects=['ast', 'json'], doc="""
        The serialization (and deserialization) method to use. 'ast'
        uses ast.literal_eval and 'json' uses json.loads and json.dumps.
-    """)  # type: ignore[assignment]
+    """)  # type: ignore[assignment, ty:invalid-assignment]
 
     type = param.ClassSelector(default=None, class_=(type, tuple),
                                is_instance=True, doc="""
@@ -1214,11 +1214,11 @@ class LiteralInput(Widget):
             raise ValueError(f'{self.__class__.__name__} expected {types} type, but value \'{new}\' '
                              f'is of type {type(new).__name__}.')
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
         new_state = ''
-        if 'value' in msg:
-            value = msg.pop('value')
+        if 'value' in params:
+            value = params.pop('value')
             try:
                 if value == '':
                     value = ''
@@ -1247,25 +1247,25 @@ class LiteralInput(Widget):
                         value = self.value
                     else:
                         value = typed_value
-            msg['value'] = value
-        msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
+            params['value'] = value
+        params['name'] = params.get('title', self.name).replace(self._state, '') + new_state
         self._state = new_state
         self.param.trigger('name')
-        return msg
+        return params
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            value = msg['value']
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        props = super()._process_param_change(params)
+        if 'value' in props:
+            value = props['value']
             if isinstance(value, str):
                 value = repr(value)
             elif self.serializer == 'json':
                 value = json.dumps(value)
             else:
                 value = '' if value is None else str(value)
-            msg['value'] = value
-        msg['title'] = self.name
-        return msg
+            props['value'] = value
+        props['title'] = self.name
+        return props
 
 
 class ArrayInput(LiteralInput):
@@ -1302,29 +1302,29 @@ class ArrayInput(LiteralInput):
         super().__init__(**params)
         self._auto_disabled = False
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg and isinstance(msg['value'], list):
-            msg['value'] = np.asarray(msg['value'])
-        return msg
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params and isinstance(params['value'], list):
+            params['value'] = np.asarray(params['value'])
+        return params
 
-    def _process_param_change(self, msg):
-        if msg.get('disabled', False):
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        if params.get('disabled', False):
             self._auto_disabled = False
-        value = msg.get('value')
+        value = params.get('value')
         if value is None:
-            return super()._process_param_change(msg)
+            return super()._process_param_change(params)
         if value.size <= self.max_array_size:
-            msg['value'] = value.tolist()
+            params['value'] = value.tolist()
             # If array is no longer larger than max_array_size
             # unset disabled
             if self.disabled and self._auto_disabled:
                 self.disabled = False
-                msg['disabled'] = False
+                params['disabled'] = False
                 self._auto_disabled = False
         else:
-            msg['value'] = np.array2string(
-                msg['value'], separator=',',
+            params['value'] = np.array2string(
+                params['value'], separator=',',
                 threshold=self.max_array_size
             )
             if not self.disabled:
@@ -1334,9 +1334,9 @@ class ArrayInput(LiteralInput):
                     "will be disabled."
                 )
                 self.disabled = True
-                msg['disabled'] = True
+                params['disabled'] = True
                 self._auto_disabled = True
-        return super()._process_param_change(msg)
+        return super()._process_param_change(params)
 
 
 class DatetimeInput(LiteralInput):
@@ -1393,11 +1393,11 @@ class DatetimeInput(LiteralInput):
             raise ValueError(f'DatetimeInput value must be between {start} and {end}, '
                              f'supplied value is {value}')
 
-    def _process_property_change(self, msg):
-        msg = Widget._process_property_change(self, msg)
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = Widget._process_property_change(self, props)
         new_state = ''
-        if 'value' in msg:
-            value = msg.pop('value')
+        if 'value' in params:
+            value = params.pop('value')
             try:
                 value = datetime.strptime(value, self.format)
             except Exception:
@@ -1408,22 +1408,22 @@ class DatetimeInput(LiteralInput):
                                           (self.end is not None and self.end < value)):
                     new_state = ' (out of bounds)'
                     value = self.value
-            msg['value'] = value
-        msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
+            params['value'] = value
+        params['name'] = params.get('title', self.name).replace(self._state, '') + new_state
         self._state = new_state
-        return msg
+        return params
 
-    def _process_param_change(self, msg):
-        msg = Widget._process_param_change(self, msg)
-        if 'value' in msg:
-            value = msg['value']
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        props = Widget._process_param_change(self, params)
+        if 'value' in props:
+            value = props['value']
             if value is None:
                 value = ''
             else:
-                value = datetime.strftime(msg['value'], self.format)
-            msg['value'] = value
-        msg['title'] = self.name
-        return msg
+                value = datetime.strftime(props['value'], self.format)
+            props['value'] = value
+        props['title'] = self.name
+        return props
 
 
 class DatetimeRangeInput(CompositeWidget):

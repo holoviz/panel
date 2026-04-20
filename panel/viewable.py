@@ -96,7 +96,7 @@ class Layoutable(param.Parameterized):
         CSS classes to apply to the layout.""")
 
     design: Any = param.Selector(default=None, objects=[], doc="""
-        The design system to use to style components.""")  # type: ignore[assignment]
+        The design system to use to style components.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
         The height of the component (in pixels).  This can be either
@@ -130,7 +130,7 @@ class Layoutable(param.Parameterized):
     tags: list[Any] = param.List(default=[], nested_refs=True, doc="""
         List of arbitrary tags to add to the component.
         Can be useful for templating or for storing metadata on
-        the model.""")  # type: ignore[assignment]
+        the model.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     width = param.Integer(default=None, bounds=(0, None), doc="""
         The width of the component (in pixels). This can be either
@@ -168,7 +168,7 @@ class Layoutable(param.Parameterized):
             preferred width (if set). The width of the component may
             shrink or grow depending on the parent layout, aspect
             management and other factors.
-    """)  # type: ignore[assignment]
+    """)  # type: ignore[assignment, ty:invalid-assignment]
 
     height_policy: Literal[
         'auto', 'fixed', 'fit', 'min', 'max'
@@ -202,7 +202,7 @@ class Layoutable(param.Parameterized):
             preferred height (if set). The height of the component may
             shrink or grow depending on the parent layout, aspect
             management and other factors.
-    """)  # type: ignore[assignment]
+    """)  # type: ignore[assignment, ty:invalid-assignment]
 
     sizing_mode: Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
@@ -256,7 +256,7 @@ class Layoutable(param.Parameterized):
             Component will responsively resize to both the available
             width and height, while maintaining the original or
             provided aspect ratio.
-    """)  # type: ignore[assignment]
+    """)  # type: ignore[assignment, ty:invalid-assignment]
 
     visible = param.Boolean(default=True, doc="""
         Whether the component is visible. Setting visible to false will

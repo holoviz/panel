@@ -137,7 +137,7 @@ class PaneBase(Layoutable):
 
     object: Any = param.Parameter(default=None, allow_refs=True, doc="""
         The object being wrapped, which will be converted to a
-        Bokeh model.""")  # type: ignore[assignment]
+        Bokeh model.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     # When multiple Panes apply to an object, the one with the highest
     # numerical priority is selected. The default is an intermediate value.

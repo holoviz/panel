@@ -45,7 +45,7 @@ class GridStack(ReactiveHTML, GridSpec):  # type: ignore[override]
 
     state: list[dict[str, Any]] = param.List(item_type=dict, doc="""
         Current state of the grid (updated as items are resized and
-        dragged).""")  # type: ignore[assignment]
+        dragged).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     width = param.Integer(default=None)
 

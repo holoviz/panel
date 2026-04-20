@@ -66,7 +66,7 @@ class Plotly(ModelPane):
 
     restyle_data: list[Any] = param.List(
         default=[], nested_refs=True, doc="""
-        Restyle event data from `plotly_restyle` event""")  # type: ignore[assignment]
+        Restyle event data from `plotly_restyle` event""")  # type: ignore[assignment, ty:invalid-assignment]
 
     selected_data = param.Dict(
         nested_refs=True, doc="Selected event data from `plotly_selected` and `plotly_deselect` events."
@@ -85,7 +85,7 @@ class Plotly(ModelPane):
         * "continuous": updates are synchronized continually while panning
         * "throttle": updates are synchronized while panning, at
           intervals determined by the viewport_update_throttle parameter
-        """, objects=["mouseup", "continuous", "throttle"])  # type: ignore[assignment]
+        """, objects=["mouseup", "continuous", "throttle"])  # type: ignore[assignment, ty:invalid-assignment]
 
     viewport_update_throttle = param.Integer(default=200, bounds=(0, None), doc="""
         Time interval in milliseconds at which viewport updates are

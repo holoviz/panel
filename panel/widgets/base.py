@@ -45,7 +45,7 @@ class WidgetBase(param.Parameterized):
 
     value: Any = param.Parameter(allow_None=True, doc="""
         The widget value which the widget type resolves to when used
-        as a reactive param reference.""")  # type: ignore[assignment]
+        as a reactive param reference.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     __abstract = True
 

@@ -40,7 +40,7 @@ class Alert(Markdown):
         "warning", "info", "light", "dark"
     ] = param.Selector(default="primary", objects=ALERT_TYPES, doc="""
         The type of Alert and one of 'primary', 'secondary', 'success', 'danger',
-        'warning', 'info', 'light', 'dark'.""")  # type: ignore[assignment]
+        'warning', 'info', 'light', 'dark'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     priority: ClassVar[float | bool | None] = 0
 

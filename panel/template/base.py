@@ -615,7 +615,7 @@ class BasicTemplate(BaseTemplate):
 
     collapsed_sidebar: Literal[True, False] = param.Selector(
         default=False, constant=True, doc="""
-        Whether the sidebar (if present) is initially collapsed.""")  # type: ignore[assignment]
+        Whether the sidebar (if present) is initially collapsed.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
@@ -690,7 +690,7 @@ class BasicTemplate(BaseTemplate):
     base_target: Literal["_blank", "_self", "_parent", "_top"] = param.Selector(
         default="_self",
         objects=["_blank", "_self", "_parent", "_top"], doc="""
-        Specifies the base Target for all relative URLs in a page.""")  # type: ignore[assignment]
+        Specifies the base Target for all relative URLs in a page.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     header_background = param.String(doc="""
         Optional header background color override.""")

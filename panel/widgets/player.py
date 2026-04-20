@@ -36,7 +36,7 @@ class PlayerBase(Widget):
 
     loop_policy: Literal['once', 'loop', 'reflect'] = param.Selector(
         default='once', objects=['once', 'loop', 'reflect'], doc="""
-        Policy used when player hits last frame""")  # type: ignore[assignment]
+        Policy used when player hits last frame""")  # type: ignore[assignment, ty:invalid-assignment]
 
     preview_duration = param.Integer(default=1500, bounds=(0, None), doc="""
         Duration (in milliseconds) for showing the current FPS when clicking
@@ -56,7 +56,7 @@ class PlayerBase(Widget):
     value_align: Literal["start", "center", "end"] = param.Selector(
         objects=["start", "center", "end"], doc="""
         Location to display the value of the slider
-        ("start", "center", "end")""")  # type: ignore[assignment]
+        ("start", "center", "end")""")  # type: ignore[assignment, ty:invalid-assignment]
 
     width = param.Integer(default=510, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -135,13 +135,13 @@ class Player(PlayerBase):
             params['value'] = params['start']
         super().__init__(**params)
 
-    def _process_property_change(self, msg):
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
         if config.throttled:
-            if "value" in msg:
-                del msg["value"]
-            if "value_throttled" in msg:
-                msg["value"] = msg["value_throttled"]
-        return super()._process_property_change(msg)
+            if "value" in props:
+                del props["value"]
+            if "value_throttled" in props:
+                props["value"] = props["value_throttled"]
+        return super()._process_property_change(props)
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         if values is None:
@@ -177,7 +177,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value = param.Parameter(doc="Current player value")
 
-    value_throttled: Any = param.Parameter(constant=True, doc="Current player value")  # type: ignore[assignment]
+    value_throttled: Any = param.Parameter(constant=True, doc="Current player value")  # type: ignore[assignment, ty:invalid-assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
@@ -185,28 +185,28 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     _widget_type: ClassVar[type[Model]] = _BkDiscretePlayer
 
-    def _process_param_change(self, msg):
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
         values = self.values
-        if 'options' in msg:
-            msg['start'] = 0
-            msg['end'] = len(values) - 1
+        if 'options' in params:
+            params['start'] = 0
+            params['end'] = len(values) - 1
             if values and not isIn(self.value, values):
                 self.value = values[0]
-            msg['options'] = self.labels
-        if 'value' in msg:
-            value = msg['value']
+            params['options'] = self.labels
+        if 'value' in params:
+            value = params['value']
             if isIn(value, values):
-                msg['value'] = indexOf(value, values)
+                params['value'] = indexOf(value, values)
             elif values:
                 self.value = values[0]
-        if 'value_throttled' in msg:
-            del msg['value_throttled']
-        return super()._process_param_change(msg)
+        if 'value_throttled' in params:
+            del params['value_throttled']
+        return super()._process_param_change(params)
 
-    def _process_property_change(self, msg):
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
         for prop in ('value', 'value_throttled'):
-            if prop in msg:
-                value = msg.pop(prop)
+            if prop in props:
+                value = props.pop(prop)
                 if value < len(self.options):
-                    msg[prop] = self.values[value]
-        return msg
+                    props[prop] = self.values[value]
+        return props

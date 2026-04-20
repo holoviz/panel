@@ -48,7 +48,7 @@ class VideoStream(Widget):
     format: Literal['png', 'jpeg'] = param.Selector(
         default='png', objects=['png', 'jpeg'],
         doc="""
-        The file format as which the video is returned.""")  # type: ignore[assignment]
+        The file format as which the video is returned.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     paused = param.Boolean(default=False, doc="""
         Whether the video is currently paused""")
@@ -98,11 +98,11 @@ class FileDownload(IconMixin):
     ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
-        or 'danger' (red).""")  # type: ignore[assignment]
+        or 'danger' (red).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     button_style: Literal['solid', 'outline'] = param.Selector(
         default='solid', objects=BUTTON_STYLES, doc="""
-        A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment]
+        A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     callback = param.Callable(default=None, allow_refs=False, doc="""
         A callable that returns the file path or file-like object.""")
@@ -111,12 +111,12 @@ class FileDownload(IconMixin):
         The data being transferred.""")
 
     embed = param.Boolean(default=False, doc="""
-        Whether to embed the file on initialization.""")  # type: ignore[assignment]
+        Whether to embed the file on initialization.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     file: str | os.PathLike | IO | None = param.Parameter(default=None, doc="""
         The file, Path, file-like object or file contents to transfer.  If
         the file is not pointing to a file on disk a filename must
-        also be provided.""")  # type: ignore[assignment]
+        also be provided.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     filename = param.String(default=None, doc="""
         A filename which will also be the default name when downloading
@@ -320,7 +320,7 @@ class JSONEditor(Widget):
         shows the data as plain text. The 'preview' mode can handle
         large JSON documents up to 500 MiB. It shows a preview of the
         data, and allows to transform, sort, filter, format, or
-        compact the data.""")  # type: ignore[assignment]
+        compact the data.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     search = param.Boolean(default=True, doc="""
         Enables a search box in the upper right corner of the
@@ -328,7 +328,7 @@ class JSONEditor(Widget):
         'tree', 'view', or 'form'.""")
 
     selection: list[str] = param.List(default=[], item_type=str, doc="""
-        Current selection.""")  # type: ignore[assignment]
+        Current selection.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     schema = param.Dict(default=None, doc="""
         Validate the JSON object against a JSON schema. A JSON schema
@@ -340,7 +340,7 @@ class JSONEditor(Widget):
     templates: list[dict[str, Any]] = param.List(item_type=dict, doc="""
         Array of templates that will appear in the context menu, Each
         template is a json object precreated that can be added as a
-        object value to any node in your document.""")  # type: ignore[assignment]
+        object value to any node in your document.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     value = param.Parameter(default={}, doc="""
         JSON data to be edited.""")

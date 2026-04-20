@@ -328,7 +328,7 @@ class SpeechToText(Widget):
         The language of the current SpeechRecognition in BCP 47
         format. For example 'en-US'. If not specified, this defaults
         to the HTML lang attribute value, or the user agent's language
-        setting if that isn't set either.  """)  # type: ignore[assignment]
+        setting if that isn't set either.  """)  # type: ignore[assignment, ty:invalid-assignment]
 
     continuous = param.Boolean(default=False, doc="""
         Controls whether continuous results are returned for each
@@ -361,7 +361,7 @@ class SpeechToText(Widget):
     button_type: Literal[
         'default', 'primary', 'success', 'warning', 'danger', 'light', 'dark'
     ] = param.Selector(default="light", objects=BUTTON_TYPES, doc="""
-        The button styling.""")  # type: ignore[assignment]
+        The button styling.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     button_not_started = param.String(label="Button Text when not started", doc="""
         The text to show on the button when the SpeechRecognition
@@ -387,7 +387,7 @@ class SpeechToText(Widget):
         Returns True if the the User has started speaking and False otherwise.""")
 
     results: list[dict[str, Any]] = param.List(constant=True, item_type=dict, doc="""
-        The `results` as a list of Dictionaries.""")  # type: ignore[assignment]
+        The `results` as a list of Dictionaries.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     value = param.String(default="", constant=True, label="Last Result", doc="""
         The transcipt of the highest confidence RecognitionAlternative
@@ -396,7 +396,7 @@ class SpeechToText(Widget):
 
     _grammars: list[dict] = param.List(constant=True, item_type=dict, doc="""
         List used to transfer the serialized grammars from server to
-        browser.""")  # type: ignore[assignment]
+        browser.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'grammars': None, '_grammars': 'grammars', 'name': None, 'value': None,

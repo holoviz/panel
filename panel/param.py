@@ -169,7 +169,7 @@ class Param(Pane):
         Whether to add buttons to expand and collapse sub-objects.""")
 
     expand_layout: ListLike | NamedListLike | type[ListLike] | type[NamedListLike] | Callable[..., ListLike | NamedListLike] = param.Parameter(
-        default=Column, doc="Layout to expand sub-objects into.")  # type: ignore[assignment]
+        default=Column, doc="Layout to expand sub-objects into.")  # type: ignore[assignment, ty:invalid-assignment]
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
         Height of widgetbox the parameter widgets are displayed in.""")
@@ -205,7 +205,7 @@ class Param(Pane):
         If True the widgets will be sorted alphabetically by label.
         If a callable is provided it will be used to sort the Parameters,
         for example lambda x: x[1].label[::-1] will sort by the reversed
-        label.""")  # type: ignore[assignment]
+        label.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     width = param.Integer(default=None, allow_None=True, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
@@ -858,7 +858,7 @@ class ParamRef(ReplacementPane):
 
     generator_mode: Literal['append', 'replace'] = param.Selector(
         default='replace', objects=['append', 'replace'], doc="""
-        Whether generators should 'append' to or 'replace' existing output.""")  # type: ignore[assignment]
+        Whether generators should 'append' to or 'replace' existing output.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     lazy = param.Boolean(default=False, doc="""
         Whether to lazily evaluate the contents of the object
@@ -1197,7 +1197,7 @@ class ReactiveExpr(Pane):
         'top_right', 'bottom_left', 'bottom_right',
         'left_top', 'right_top', 'right_bottom'], doc="""
         The location of the widgets relative to the output
-        of the reactive expression.""")  # type: ignore[assignment]
+        of the reactive expression.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     priority: ClassVar[float | bool | None] = 1
 
@@ -1428,7 +1428,7 @@ Viewable._preprocessing_hooks.insert(0, link_param_method)
 
 class FigureWrapper(param.Parameterized):
 
-    figure: Figure | None = param.Parameter()  # type: ignore[assignment]
+    figure: Figure | None = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
     def get_ax(self):
         from matplotlib.backends.backend_agg import FigureCanvas

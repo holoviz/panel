@@ -57,17 +57,17 @@ class _SliderBase(Widget):
     direction: Literal['ltr', 'rtl'] = param.Selector(
         default='ltr', objects=['ltr', 'rtl'], doc="""
         Whether the slider should go from left-to-right ('ltr') or
-        right-to-left ('rtl').""")  # type: ignore[assignment]
+        right-to-left ('rtl').""")  # type: ignore[assignment, ty:invalid-assignment]
 
     name = param.String(default=None, constant=False, doc="""
         The name of the widget. Also used as the label of the widget. If not set,
-        the widget has no label.""")  # type: ignore[assignment]
+        the widget has no label.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     orientation: Literal['horizontal', 'vertical'] = param.Selector(
         default='horizontal', objects=['horizontal', 'vertical'],
         doc="""
         Whether the slider should be oriented horizontally or
-        vertically.""")  # type: ignore[assignment]
+        vertically.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     show_value = param.Boolean(default=True, doc="""
         Whether to show the widget value as a label or not.""")
@@ -94,13 +94,13 @@ class _SliderBase(Widget):
     def _linked_properties(self) -> tuple[str, ...]:
         return super()._linked_properties + ('value_throttled',)
 
-    def _process_property_change(self, msg):
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
         if config.throttled:
-            if "value" in msg:
-                del msg["value"]
-            if "value_throttled" in msg:
-                msg["value"] = msg["value_throttled"]
-        return super()._process_property_change(msg)
+            if "value" in props:
+                del props["value"]
+            if "value_throttled" in props:
+                props["value"] = props["value_throttled"]
+        return super()._process_property_change(props)
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
@@ -241,14 +241,14 @@ class IntSlider(ContinuousSlider):
         'name': 'title', 'value_throttled': None
     }
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = msg['value'] if msg['value'] is None else int(msg['value'])
-        if 'value_throttled' in msg:
-            throttled = msg['value_throttled']
-            msg['value_throttled'] = throttled if throttled is None else int(throttled)
-        return msg
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params:
+            params['value'] = params['value'] if params['value'] is None else int(params['value'])
+        if 'value_throttled' in params:
+            throttled = params['value_throttled']
+            params['value_throttled'] = throttled if throttled is None else int(throttled)
+        return params
 
 
 class DateSlider(_SliderBase):
@@ -308,23 +308,23 @@ class DateSlider(_SliderBase):
             params['value'] = params.get('start', self.start)
         super().__init__(**params)
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            value = msg['value']
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        props = super()._process_param_change(params)
+        if 'value' in props:
+            value = props['value']
             if isinstance(value, dt.datetime):
                 value = datetime_as_utctimestamp(value)
-            msg['value'] = value
-        return msg
+            props['value'] = value
+        return props
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
         transform = value_as_datetime if self.as_datetime else value_as_date
-        if 'value' in msg:
-            msg['value'] = transform(msg['value'])
-        if 'value_throttled' in msg:
-            msg['value_throttled'] = transform(msg['value_throttled'])
-        return msg
+        if 'value' in params:
+            params['value'] = transform(params['value'])
+        if 'value_throttled' in params:
+            params['value_throttled'] = transform(params['value_throttled'])
+        return params
 
 
 class DatetimeSlider(DateSlider):
@@ -350,7 +350,7 @@ class DatetimeSlider(DateSlider):
         Whether to store the date as a datetime.""")
 
     step = param.Number(default=60, bounds=(1, None), doc="""
-        The step size in seconds. Default is 1 minute, i.e 60 seconds.""")  # type: ignore[assignment]
+        The step size in seconds. Default is 1 minute, i.e 60 seconds.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _property_conversion = staticmethod(value_as_datetime)
 
@@ -378,7 +378,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         dragged. Must be one of the options.""")
 
     value_throttled: Any = param.Parameter(constant=True, doc="""
-        The value of the slider. Updated when the handle is released.""")  # type: ignore[assignment]
+        The value of the slider. Updated when the handle is released.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     options = param.ClassSelector(default=[], class_=(dict, list), doc="""
         A list or dictionary of valid options.""")
@@ -576,9 +576,9 @@ class _RangeSliderBase(_SliderBase):
     value = param.Tuple(default=(None, None), length=2, allow_None=False, nested_refs=True, doc="""
         The selected range of the slider. Updated when a handle is dragged.""")
 
-    value_start: Any = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")  # type: ignore[assignment]
+    value_start: Any = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    value_end: Any = param.Parameter(readonly=True, doc="""The upper value of the selected range.""")  # type: ignore[assignment]
+    value_end: Any = param.Parameter(readonly=True, doc="""The upper value of the selected range.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     __abstract = True
 
@@ -599,13 +599,13 @@ class _RangeSliderBase(_SliderBase):
         with edit_readonly(self):
             self.param.update(value_start=vs, value_end=ve)
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = tuple(msg['value'])
-        if 'value_throttled' in msg:
-            msg['value_throttled'] = tuple(msg['value_throttled'])
-        return msg
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params:
+            params['value'] = tuple(params['value'])
+        if 'value_throttled' in params:
+            params['value_throttled'] = tuple(params['value_throttled'])
+        return params
 
 
 class RangeSlider(_RangeSliderBase):
@@ -683,15 +683,17 @@ class IntRangeSlider(RangeSlider):
     step = param.Integer(default=1, doc="""
         The step size""")
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = tuple([v if v is None else round(v)
-                                  for v in msg['value']])
-        if 'value_throttled' in msg:
-            msg['value_throttled'] = tuple([v if v is None else round(v)
-                                            for v in msg['value_throttled']])
-        return msg
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params:
+            params['value'] = tuple([
+                v if v is None else round(v)
+                for v in params['value']
+            ])
+        if 'value_throttled' in params:
+            params['value_throttled'] = tuple([v if v is None else round(v)
+                                            for v in params['value_throttled']])
+        return params
 
 
 class DateRangeSlider(_SliderBase):
@@ -782,33 +784,33 @@ class DateRangeSlider(_SliderBase):
         with edit_readonly(self):
             self.param.update(value_start=vs, value_end=ve)
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if msg.get('value', 'unchanged') is None:
-            del msg['value']
-        elif 'value' in msg:
-            v1, v2 = msg['value']
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        props = super()._process_param_change(params)
+        if props.get('value', 'unchanged') is None:
+            del props['value']
+        elif 'value' in props:
+            v1, v2 = props['value']
             if isinstance(v1, dt.datetime):
                 v1 = datetime_as_utctimestamp(v1)
             if isinstance(v2, dt.datetime):
                 v2 = datetime_as_utctimestamp(v2)
-            msg['value'] = (v1, v2)
-        if msg.get('value_throttled', 'unchanged') is None:
-            del msg['value_throttled']
+            props['value'] = (v1, v2)
+        if props.get('value_throttled', 'unchanged') is None:
+            del props['value_throttled']
         for key in ('start', 'end'):
-            if key in msg and isinstance(msg[key], dt.datetime):
-                msg[key] = datetime_as_utctimestamp(msg[key])
-        return msg
+            if key in props and isinstance(props[key], dt.datetime):
+                props[key] = datetime_as_utctimestamp(props[key])
+        return props
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            v1, v2 = msg['value']
-            msg['value'] = (self._property_conversion(v1), self._property_conversion(v2))
-        if 'value_throttled' in msg:
-            v1, v2 = msg['value_throttled']
-            msg['value_throttled'] = (self._property_conversion(v1), self._property_conversion(v2))
-        return msg
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params:
+            v1, v2 = params['value']
+            params['value'] = (self._property_conversion(v1), self._property_conversion(v2))
+        if 'value_throttled' in params:
+            v1, v2 = params['value_throttled']
+            params['value_throttled'] = (self._property_conversion(v1), self._property_conversion(v2))
+        return params
 
 
 

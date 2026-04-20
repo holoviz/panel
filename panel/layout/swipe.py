@@ -39,9 +39,9 @@ class Swipe(ListLike, ReactiveHTML):
     value = param.Integer(default=50, bounds=(0, 100), doc="""
         The percentage of the *after* panel to show.""")
 
-    _before: Any = param.Parameter()  # type: ignore[assignment]
+    _before: Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
-    _after: Any = param.Parameter()  # type: ignore[assignment]
+    _after: Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
     _direction: ClassVar[str | None] = 'vertical'
 

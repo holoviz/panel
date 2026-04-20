@@ -265,7 +265,7 @@ class GridSpec(Panel):
 
     mode: Literal['warn', 'error', 'override'] = param.Selector(
         default='warn', objects=['warn', 'error', 'override'], doc="""
-        Whether to warn, error or simply override on overlapping assignment.""")  # type: ignore[assignment]
+        Whether to warn, error or simply override on overlapping assignment.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     ncols = param.Integer(default=None, bounds=(0, None), doc="""
         Limits the number of columns that can be assigned.""")

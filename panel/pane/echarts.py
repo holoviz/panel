@@ -44,15 +44,15 @@ class ECharts(ModelPane):
         An optional dict of options passed to Echarts.setOption. Allows to fine-tune the rendering behavior.
         For example, you might want to use `options={ "replaceMerge": ['series'] })` when updating
         the `objects` with a value containing a smaller number of series.
-        """)  # type: ignore[assignment]
+        """)  # type: ignore[assignment, ty:invalid-assignment]
 
     renderer: Literal["canvas", "svg"] = param.Selector(
         default="canvas", objects=["canvas", "svg"], doc="""
-       Whether to render as HTML canvas or SVG""")  # type: ignore[assignment]
+       Whether to render as HTML canvas or SVG""")  # type: ignore[assignment, ty:invalid-assignment]
 
     theme: Literal["default", "light", "dark"] = param.Selector(
         default="default", objects=["default", "light", "dark"], doc="""
-       Theme to apply to plots.""")  # type: ignore[assignment]
+       Theme to apply to plots.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     priority: ClassVar[float | bool | None] = None
 

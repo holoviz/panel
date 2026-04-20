@@ -47,7 +47,7 @@ class LaTeX(ModelPane):
     renderer: Literal['katex', 'mathjax'] | None = param.Selector(
         default=None, allow_None=True,
         objects=['katex', 'mathjax'], doc="""
-        The JS renderer used to render the LaTeX expression. Defaults to katex.""")  # type: ignore[assignment]
+        The JS renderer used to render the LaTeX expression. Defaults to katex.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None

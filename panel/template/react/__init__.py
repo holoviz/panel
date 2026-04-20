@@ -24,14 +24,14 @@ class ReactTemplate(BasicTemplate):
     """
 
     compact: Literal['vertical', 'horizontal', 'both'] | None = param.Selector(
-        default=None, objects=[None, 'vertical', 'horizontal', 'both'])  # type: ignore[assignment]
+        default=None, objects=[None, 'vertical', 'horizontal', 'both'])  # type: ignore[assignment, ty:invalid-assignment]
 
     cols = param.Dict(default={'lg': 12, 'md': 10, 'sm': 6, 'xs': 4, 'xxs': 2})
 
     breakpoints = param.Dict(default={'lg': 1200, 'md': 996, 'sm': 768, 'xs': 480, 'xxs': 0})
 
     main = param.ClassSelector(class_=GridSpec, constant=True, doc="""
-        A list-like container which populates the main area.""")  # type: ignore[assignment]
+        A list-like container which populates the main area.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     row_height = param.Integer(default=150)
 

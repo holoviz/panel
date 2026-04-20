@@ -54,7 +54,7 @@ class ChatStep(Card):
         If "summary", a summary will be sent to the chat step.
         If "verbose", the full traceback will be sent to the chat step.
         If "ignore", the exception will be ignored.
-        """)  # type: ignore[assignment]
+        """)  # type: ignore[assignment, ty:invalid-assignment]
 
     default_badges = param.Dict(default=DEFAULT_STATUS_BADGES, doc="""
         Mapping from status to default status badge; keys must be one of
@@ -84,7 +84,7 @@ class ChatStep(Card):
 
     status: Literal["pending", "running", "success", "failed"] = param.Selector(
         default="pending", objects=[
-        "pending", "running", "success", "failed"], doc="""The status of the chat step.""")  # type: ignore[assignment]
+        "pending", "running", "success", "failed"], doc="""The status of the chat step.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     success_title = param.String(default=None, doc="""
         Title to display when status is success.""")

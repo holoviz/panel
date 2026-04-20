@@ -23,7 +23,7 @@ from panel.widgets import (
 
 class MockJSComponent(JSComponent):
 
-    value: Any = param.Parameter()  # type: ignore[assignment]
+    value: Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
 
 def test_widget_link_bidirectional():

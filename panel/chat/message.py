@@ -249,7 +249,7 @@ class ChatMessage(Pane):
     )
 
     user: str = param.Parameter(default="User", doc="""
-        Name of the user who sent the message.""")  # type: ignore[assignment]
+        Name of the user who sent the message.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_message.css"]
 

@@ -157,7 +157,7 @@ class ChatFeed(ListPanel):
 
     header: Any = param.Parameter(doc="""
         The header of the chat feed; commonly used for the title.
-        Can be a string, pane, or widget.""")  # type: ignore[assignment]
+        Can be a string, pane, or widget.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     margin = Margin(default=5, doc="""
         Allows to create additional space around the component. May
@@ -229,7 +229,7 @@ class ChatFeed(ListPanel):
 
     _callback_state: CallbackState = param.Selector(
         objects=list(CallbackState), doc="""
-        The current state of the callback.""")  # type: ignore[assignment]
+        The current state of the callback.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _prompt_trigger = param.Event(doc="Triggers the prompt input.")
 

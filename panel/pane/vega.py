@@ -228,7 +228,7 @@ class Vega(ModelPane):
         A theme to apply to the plot. Must be one of 'excel', 'ggplot2',
         'quartz', 'vox', 'fivethirtyeight', 'dark', 'latimes',
         'urbaninstitute', or 'googlecharts'.
-        """)  # type: ignore[assignment]
+        """)  # type: ignore[assignment, ty:invalid-assignment]
 
     priority: ClassVar[float | bool | None] = 0.8
 

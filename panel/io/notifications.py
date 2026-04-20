@@ -30,7 +30,7 @@ class Notification(param.Parameterized):
 
     message = param.String(default='', constant=True)
 
-    notification_area: Any = param.Parameter(constant=True, precedence=-1)  # type: ignore[assignment]
+    notification_area: Any = param.Parameter(constant=True, precedence=-1)  # type: ignore[assignment, ty:invalid-assignment]
 
     notification_type = param.String(default=None, constant=True, label='type')
 
@@ -69,7 +69,7 @@ class NotificationAreaBase(param.Parameterized):
         'bottom-right', 'bottom-left', 'bottom-center', 'top-left',
         'top-right', 'top-center', 'center-center', 'center-left',
         'center-right'], doc="""
-        Position of the notification area on the screen (e.g., 'top-right', 'bottom-left').""")  # type: ignore[assignment]
+        Position of the notification area on the screen (e.g., 'top-right', 'bottom-left').""")  # type: ignore[assignment, ty:invalid-assignment]
 
     __abstract = True
 

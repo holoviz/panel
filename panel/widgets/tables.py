@@ -143,7 +143,7 @@ class BaseTable(ReactiveData, Widget):
         Whether to show the index column.""")
 
     sorters: list[dict[str, Any]] = param.List(default=[], item_type=dict, doc="""
-        A list of sorters to apply during pagination.""")  # type: ignore[assignment]
+        A list of sorters to apply during pagination.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     text_align = param.ClassSelector(default={}, nested_refs=True, class_=(dict, str), doc="""
         A mapping from column name to alignment or a fixed column
@@ -1073,7 +1073,7 @@ class DataFrame(BaseTable):
           can get unreadable if there is not enough space available.
 
         ``"none"``
-          Do not automatically compute column widths.""")  # type: ignore[assignment]
+          Do not automatically compute column widths.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     fit_columns = param.Boolean(default=None, doc="""
         Whether columns should expand to the available width. This
@@ -1263,7 +1263,7 @@ class Tabulator(BaseTable):
         hovering over the column header.""")
 
     hidden_columns = param.List(default=[], item_type=str, nested_refs=True, doc="""
-        List of columns to hide.""")  # type: ignore[assignment]
+        List of columns to hide.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     layout: Literal[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
@@ -1273,7 +1273,7 @@ class Tabulator(BaseTable):
         'fit_columns'], doc="""
         Describes the column layout mode with one of the following options
         'fit_columns', 'fit_data', 'fit_data_stretch', 'fit_data_fill',
-        'fit_data_table'.""")  # type: ignore[assignment]
+        'fit_data_table'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     initial_page_size = param.Integer(default=20, bounds=(1, None), doc="""
         Initial page size if page_size is None and therefore automatically set.""")
@@ -1290,7 +1290,7 @@ class Tabulator(BaseTable):
               is loaded and then paginated.
           - 'remote' (server-side)
               Pagination is applied remotely, i.e. only the current page
-              is loaded from the server.""")  # type: ignore[assignment]
+              is loaded from the server.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     page = param.Integer(default=1, doc="""
         Currently selected page (indexed starting at 1), if pagination is enabled.""")
@@ -1308,7 +1308,7 @@ class Tabulator(BaseTable):
 
     selection: list[int] = _ListValidateWithCallable(default=[], doc="""
         The currently selected rows of the table. It validates
-        its values against 'selectable_rows' if used.""")  # type: ignore[assignment]
+        its values against 'selectable_rows' if used.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     selectable = param.ClassSelector(
         default=True, class_=(bool, str, int), doc="""
@@ -1348,7 +1348,7 @@ class Tabulator(BaseTable):
             'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast',
             'bootstrap5'
         ], doc="""
-        Tabulator CSS theme to apply to table.""")  # type: ignore[assignment]
+        Tabulator CSS theme to apply to table.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     theme_classes = param.List(default=[], nested_refs=True, item_type=str, doc="""
        List of extra CSS classes to apply to the Tabulator element

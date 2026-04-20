@@ -34,7 +34,7 @@ class CodeEditor(Widget):
     """
 
     annotations: list[dict[str, Any]] = param.List(default=[], item_type=dict, doc="""
-        List of annotations to add to the editor.""")  # type: ignore[assignment]
+        List of annotations to add to the editor.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     filename = param.String(doc="Filename from which to deduce language")
 
@@ -58,7 +58,7 @@ class CodeEditor(Widget):
         If no value is provided, it defaults to the current theme
         set by pn.config.theme, as specified in the
         CodeEditor.THEME_CONFIGURATION dictionary. If not defined there, it
-        falls back to the default parameter value.""")  # type: ignore[assignment]
+        falls back to the default parameter value.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     value = param.String(default="", doc="""
         State of the current code in the editor if `on_keyup`. Otherwise, only upon loss of focus,

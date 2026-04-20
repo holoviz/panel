@@ -38,7 +38,7 @@ class FlexBox(ListLike, ReactiveHTML):
         'space-around', 'space-evenly', 'stretch', 'start', 'end',
         'baseline', 'first baseline', 'last baseline'], doc="""
         Defines how a flex container's lines align when there is extra
-        space in the cross-axis.""")  # type: ignore[assignment]
+        space in the cross-axis.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     align_items: Literal[
         'stretch', 'flex-start', 'flex-end', 'center', 'baseline',
@@ -49,19 +49,19 @@ class FlexBox(ListLike, ReactiveHTML):
         'first baseline', 'last baseline', 'start', 'end',
         'self-start', 'self-end'], doc="""
         Defines the default behavior for how flex items are laid
-        out along the cross axis on the current line.""")  # type: ignore[assignment]
+        out along the cross axis on the current line.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     flex_direction: Literal[
         'row', 'row-reverse', 'column', 'column-reverse'
     ] = param.Selector(default='row', objects=[
         'row', 'row-reverse', 'column', 'column-reverse'], doc="""
         This establishes the main-axis, thus defining the direction
-        flex items are placed in the flex container.""")  # type: ignore[assignment]
+        flex items are placed in the flex container.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     flex_wrap: Literal['nowrap', 'wrap', 'wrap-reverse'] = param.Selector(
         default='wrap', objects=[
         'nowrap', 'wrap', 'wrap-reverse'], doc="""
-        Whether and how to wrap items in the flex container.""")  # type: ignore[assignment]
+        Whether and how to wrap items in the flex container.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     gap = param.String(default='', doc="""
         Defines the spacing between flex items, supporting various units (px, em, rem, %, vw/vh).""")
@@ -72,7 +72,7 @@ class FlexBox(ListLike, ReactiveHTML):
     ] = param.Selector(default='flex-start', objects=[
         'flex-start', 'flex-end', 'center', 'space-between', 'space-around',
         'space-evenly', 'start', 'end', 'left', 'right'], doc="""
-        Defines the alignment along the main axis.""")  # type: ignore[assignment]
+        Defines the alignment along the main axis.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _template = (Path(__file__).parent / 'flexbox.html').read_text('utf-8')
 

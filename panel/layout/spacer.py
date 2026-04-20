@@ -62,7 +62,7 @@ class VSpacer(Spacer):
 
     sizing_mode: Literal["stretch_height"] = param.Parameter(
         default='stretch_height', readonly=True
-    )  # type: ignore[assignment]
+    )  # type: ignore[assignment, ty:invalid-assignment]
 
 
 class HSpacer(Spacer):
@@ -85,7 +85,7 @@ class HSpacer(Spacer):
 
     sizing_mode: Literal["stretch_width"] = param.Parameter(
         default='stretch_width', readonly=True
-    )  # type: ignore[assignment]
+    )  # type: ignore[assignment, ty:invalid-assignment]
 
 
 class Divider(Reactive):
@@ -106,7 +106,7 @@ class Divider(Reactive):
     """
 
     width_policy: Literal['fit'] = param.Selector(
-        default="fit", readonly=True)  # type: ignore[assignment]
+        default="fit", readonly=True)  # type: ignore[assignment, ty:invalid-assignment]
 
     _bokeh_model = BkDiv
 

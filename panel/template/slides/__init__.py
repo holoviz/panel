@@ -26,7 +26,7 @@ class SlidesTemplate(VanillaTemplate):
 
     collapsed_sidebar: Literal[True, False] = param.Selector(
         default=True, constant=True, doc="""
-        Whether the sidebar (if present) is initially collapsed.""")  # type: ignore[assignment]
+        Whether the sidebar (if present) is initially collapsed.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     reveal_config = param.Dict(default={}, doc="""
         Configuration parameters for reveal.js""")
@@ -34,7 +34,7 @@ class SlidesTemplate(VanillaTemplate):
     reveal_theme: Literal[
         'black', 'white', 'league', 'beige', 'night', 'solarized', 'simple'
     ] | None = param.Selector(default=None, objects=REVEAL_THEMES, doc="""
-        The reveal.js theme to load.""")  # type: ignore[assignment]
+        The reveal.js theme to load.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     show_header = param.Boolean(default=False, doc="""
         Whether to show the header component.""")

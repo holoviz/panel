@@ -72,7 +72,7 @@ class ChatAreaInput(_PnTextAreaInput):
         Whether the layout is interactively resizable,
         and if so in which dimensions: `width`, `height`, or `both`.
         Can only be set during initialization.""",
-    )  # type: ignore[assignment]
+    )  # type: ignore[assignment, ty:invalid-assignment]
 
     enter_pressed = param.Event(doc="""
         Event when the Enter/Ctrl+Enter key has been pressed.""")

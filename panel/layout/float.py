@@ -63,7 +63,7 @@ class FloatPanel(ListLike, ReactiveHTML):
         'left-bottom',
         'left-center',
     ] = param.Selector(default='right-top', objects=POSITIONS, doc="""
-       The initial position if the container is free-floating.""")  # type: ignore[assignment]
+       The initial position if the container is free-floating.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     offsetx = param.Integer(default=None, bounds=(0, None), doc="""
        Horizontal offset in pixels.""")
@@ -91,7 +91,7 @@ class FloatPanel(ListLike, ReactiveHTML):
         "smallifiedmax",
         "closed",
     ] = param.Selector(default="normalized", objects=STATUS, doc="""
-        The current status of the panel.""")  # type: ignore[assignment]
+        The current status of the panel.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _extension_name = 'floatpanel'
 

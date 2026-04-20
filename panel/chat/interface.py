@@ -82,7 +82,7 @@ class ChatInterface(ChatFeed):
     auto_send_types: list[type[WidgetBase]] = param.List(item_type=type, doc="""
         The widget types to automatically send when the user presses enter
         or clicks away from the widget. If not provided, defaults to
-        `[TextInput]`.""")  # type: ignore[assignment]
+        `[TextInput]`.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     avatar = param.ClassSelector(class_=(str, BytesIO, bytes, ImageBase), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,

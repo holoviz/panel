@@ -229,7 +229,7 @@ class Matplotlib(Image, IPyWidget):
 
     format: Literal['png', 'svg'] = param.Selector(
         default='png', objects=['png', 'svg'], doc="""
-        The format to render the plot as if the plot is not interactive.""")  # type: ignore[assignment]
+        The format to render the plot as if the plot is not interactive.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     high_dpi = param.Boolean(default=True, doc="""
         Whether to optimize output for high-dpi displays.""")
@@ -452,7 +452,7 @@ class Folium(HTML):
         'scale_width', 'scale_height', 'scale_both'
     ] | None = param.Selector(default='stretch_width', objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment]
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment, ty:invalid-assignment]
 
     priority: ClassVar[float | bool | None] = 0.6
 

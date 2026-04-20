@@ -42,7 +42,7 @@ class Accordion(NamedListPanel):
 
     # Override of NamedListPanel.active (which is an integer)
     active = param.List(default=[], item_type=int, doc="""
-        List of indexes of active cards.""")  # type: ignore[assignment]
+        List of indexes of active cards.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     header_color = param.String(doc="""
         A valid CSS color to apply to the expand button.""")

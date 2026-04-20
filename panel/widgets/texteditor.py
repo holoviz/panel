@@ -39,7 +39,7 @@ class TextEditor(Widget):
 
     mode: Literal['bubble', 'toolbar'] = param.Selector(
         default='toolbar', objects=['bubble', 'toolbar'], doc="""
-        Whether to display a toolbar or a bubble menu on highlight.""")  # type: ignore[assignment]
+        Whether to display a toolbar or a bubble menu on highlight.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     toolbar = param.ClassSelector(default=True, class_=(list, bool), doc="""
         Toolbar configuration either as a boolean toggle or a configuration

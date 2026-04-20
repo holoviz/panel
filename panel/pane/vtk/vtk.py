@@ -66,7 +66,7 @@ class AbstractVTK(Pane):
       State of the rendered VTK camera.""")
 
     color_mappers: list[Any] = param.List(nested_refs=True, doc="""
-      Color mapper of the actor in the scene""")  # type: ignore[assignment]
+      Color mapper of the actor in the scene""")  # type: ignore[assignment, ty:invalid-assignment]
 
     orientation_widget = param.Boolean(default=False, doc="""
       Activate/Deactivate the orientation widget display.""")
@@ -77,13 +77,13 @@ class AbstractVTK(Pane):
 
     __abstract = True
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'axes' in msg and msg['axes'] is not None:
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        props = super()._process_param_change(params)
+        if 'axes' in props and props['axes'] is not None:
             VTKAxes = sys.modules['panel.models.vtk'].VTKAxes
-            axes = msg['axes']
-            msg['axes'] = VTKAxes(**axes)
-        return msg
+            axes = props['axes']
+            props['axes'] = VTKAxes(**axes)
+        return props
 
     def _update_model(
         self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
@@ -563,7 +563,7 @@ class VTKVolume(AbstractVTK):
 
     colormap: str = param.Selector(
         default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
-        Name of the colormap used to transform pixel value in color.""")  # type: ignore[assignment]
+        Name of the colormap used to transform pixel value in color.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     diffuse = param.Number(default=0.7, step=1e-2, doc="""
         Value to control the diffuse Lighting. It relies on both the
@@ -590,7 +590,7 @@ class VTKVolume(AbstractVTK):
         surrounding voxels.  `fast_linear` under WebGL 1 will perform
         bilinear interpolation on X and Y but use nearest for Z. This
         is slightly faster than full linear at the cost of no Z axis
-        linear interpolation.""")  # type: ignore[assignment]
+        linear interpolation.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     mapper = param.Dict(doc="Lookup Table in format {low, high, palette}")
 
@@ -697,29 +697,29 @@ class VTKVolume(AbstractVTK):
         else:
             return self.object.GetDimensions()
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        props = super()._process_param_change(params)
         if self.object is not None:
             slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
-            for k, v in msg.items():
+            for k, v in props.items():
                 sub_dim = self._subsample_dimensions
                 ori_dim = self._orginal_dimensions
                 if k in slice_params:
                     index = slice_params[k]
-                    msg[k] = int(np.round(v * sub_dim[index] / ori_dim[index]))
-        return msg
+                    props[k] = int(np.round(v * sub_dim[index] / ori_dim[index]))
+        return props
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+        params = super()._process_property_change(props)
         if self.object is not None:
-            slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
-            for k, v in msg.items():
+            slice_params = {'slice_i': 0, 'slice_j': 1, 'slice_k': 2}
+            for k, v in params.items():
                 sub_dim = self._subsample_dimensions
                 ori_dim = self._orginal_dimensions
                 if k in slice_params:
                     index = slice_params[k]
-                    msg[k] = int(np.round(v * ori_dim[index] / sub_dim[index]))
-        return msg
+                    params[k] = int(np.round(v * ori_dim[index] / sub_dim[index]))
+        return params
 
     def _update(self, ref: str, model: Model) -> None:
         self._volume_data = self._get_volume_data()

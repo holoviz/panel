@@ -93,7 +93,7 @@ class Utterance(param.Parameterized):
         well-formed SSML document.""")
 
     lang: str = param.Selector(default="", doc="""
-        The language of the utterance.""")  # type: ignore[assignment]
+        The language of the utterance.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     pitch = param.Number(default=1.0, bounds=(0.0, 2.0), doc="""
         The pitch at which the utterance will be spoken at expressed
@@ -219,9 +219,9 @@ class TextToSpeech(Utterance, Widget):
 
     voices: list[Voice] = param.List(item_type=Voice, readonly=True, doc="""
         Returns a list of Voice objects representing all the available
-        voices on the current device.""")  # type: ignore[assignment]
+        voices on the current device.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _voices: list[Voice] = param.List(item_type=Voice)  # type: ignore[assignment]
+    _voices: list[Voice] = param.List(item_type=Voice)  # type: ignore[assignment, ty:invalid-assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'auto_speak': None, 'lang': None, 'name': None, 'pitch': None,
@@ -231,12 +231,12 @@ class TextToSpeech(Utterance, Widget):
 
     _widget_type: ClassVar[type[Model]] = _BkTextToSpeech
 
-    def _process_param_change(self, msg):
-        speak = msg.get('speak') or ('value' in msg and self.auto_speak)
-        msg = super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        speak = params.get('speak') or ('value' in params and self.auto_speak)
+        props = super()._process_param_change(params)
         if speak:
-            msg['speak'] = self.to_dict()
-        return msg
+            props['speak'] = self.to_dict()
+        return props
 
     @param.depends('_voices', watch=True)
     def _update_voices(self):

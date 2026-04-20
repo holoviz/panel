@@ -318,7 +318,7 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to add a global loading spinner to the application(s).",
         )),
-    )) # type: ignore[assignment]
+    )) # type: ignore[assignment, ty:invalid-assignment]
 
     # Supported file extensions
     _extensions = ['.py', '.ipynb', '.md']
