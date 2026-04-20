@@ -47,10 +47,6 @@ no-default-feature = true
 features = ["py313", "required", "test-core", "test", "test-ui"]
 no-default-feature = true
 
-[environments.asv]
-features = ["py312", "required", "test-core", "test-ui", "asv"]
-no-default-feature = true
-
 [environments.test-core]
 features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
@@ -263,27 +259,6 @@ _install-ui = 'playwright install chromium'
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup'
 depends-on = ["_install-ui"]
-
-# =============================================
-# ==================== ASV ====================
-# =============================================
-[feature.asv.dependencies]
-asv = "*"
-
-[feature.asv.tasks]
-_install-asv-browser = 'playwright install chromium'
-
-[feature.asv.tasks.asv-check]
-cmd = 'cd benchmarks && PYTHONPATH=.. python -m asv check -E existing'
-depends-on = ["install", "_install-asv-browser"]
-
-[feature.asv.tasks.asv-run-quick]
-cmd = 'cd benchmarks && PYTHONPATH=.. python -m asv run -E existing --quick'
-depends-on = ["install", "_install-asv-browser"]
-
-[feature.asv.tasks.asv-run]
-cmd = 'cd benchmarks && PYTHONPATH=.. python -m asv run -E existing'
-depends-on = ["_install-asv-browser"]
 
 # =============================================
 # ================== TYPES ====================
