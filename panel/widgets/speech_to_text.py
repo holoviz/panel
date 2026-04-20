@@ -393,7 +393,7 @@ class SpeechToText(Widget):
         of the last RecognitionResult. Please note we strip the
         transcript for leading spaces.""")
 
-    _grammars: list[str] = param.List(constant=True, item_type=str, doc="""
+    _grammars: list[dict] = param.List(constant=True, item_type=dict, doc="""
         List used to transfer the serialized grammars from server to
         browser.""")  # type: ignore[assignment]
 

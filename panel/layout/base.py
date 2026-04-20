@@ -16,7 +16,6 @@ import param
 
 from bokeh.models import Row as BkRow
 from param.parameterized import iscoroutinefunction, resolve_ref
-from typing_extensions import Self
 
 from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
@@ -29,6 +28,7 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+    from typing_extensions import Self
 
     from ..viewable import Viewable
 
@@ -200,9 +200,9 @@ class Panel(Reactive, SizingModeMixin):
         spacer = '\n' + ('    ' * (depth+1))
         cls = type(self).__name__
         params = param_reprs(self, ['objects'])
-        objs = [
+        objs = [  # type: ignore[var-annotated]
             f'[{i}] {obj.__repr__(depth+1)}'
-            for i, obj in enumerate(self.objects)
+            for i, obj in enumerate(self)  # type: ignore[arg-type]
         ]
         if not params and not objs:
             return super().__repr__(depth+1)

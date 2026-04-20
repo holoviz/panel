@@ -28,7 +28,6 @@ from bokeh.models.widgets import (
 )
 from bokeh.models.widgets.inputs import ClearInput
 from pyviz_comms import JupyterComm
-from typing_extensions import Self
 
 from ..config import config
 from ..layout import Column
@@ -43,6 +42,7 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+    from typing_extensions import Self
 
     from ..layout.base import ListLike, NamedListLike
     from ..models.file_dropper import DeleteEvent, UploadEvent
