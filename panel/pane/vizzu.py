@@ -42,7 +42,7 @@ class Vizzu(ModelPane, SyncableData):
         particular static chart or a state of an animated chart
         (see https://lib.vizzuhq.com/latest/reference/interfaces/Config.Chart/).""")
 
-    click = param.Parameter(doc="""
+    click = param.Dict(default=None, doc="""
         Data associated with the latest click event.""")
 
     column_types = param.Dict(default={}, nested_refs=True, doc="""

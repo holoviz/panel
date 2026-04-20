@@ -171,7 +171,7 @@ class BaseFileSelector(param.Parameterized):
         If set, overrides directory parameter as the root directory
         beyond which users cannot navigate.""")
 
-    value = param.List(default=[], doc="""
+    value = param.List(default=[], item_type=str, doc="""
         List of selected files.""")
 
     def __init__(
@@ -263,7 +263,7 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         self._stack: list[str] = []
         self._cwd = ""
         self._position = -1
-        self._update_files(True)
+        self._update_files(refresh=True)
 
     def _dir_change(self, event: param.parameterized.Event):
         path = fullpath(event.new)
@@ -290,7 +290,7 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
     def _go_up(self, event: Optional[param.parameterized.Event] = None):
         path = self._cwd.split(os.path.sep)
         self.directory = os.path.sep.join(path[:-1]) or os.path.sep
-        self._update_files(True)
+        self._update_files(refresh=True)
 
     def _update_files(
         self, event: param.parameterized.Event | None = None, refresh: bool = False

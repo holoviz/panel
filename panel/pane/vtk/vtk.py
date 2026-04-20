@@ -64,8 +64,8 @@ class AbstractVTK(Pane):
     camera = param.Dict(nested_refs=True, doc="""
       State of the rendered VTK camera.""")
 
-    color_mappers = param.List(nested_refs=True, doc="""
-      Color mapper of the actor in the scene""")
+    color_mappers: list[Any] = param.List(nested_refs=True, doc="""
+      Color mapper of the actor in the scene""")  # type: ignore[assignment]
 
     orientation_widget = param.Boolean(default=False, doc="""
       Activate/Deactivate the orientation widget display.""")

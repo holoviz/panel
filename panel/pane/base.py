@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, TypeVar, cast,
+    TYPE_CHECKING, Any, ClassVar, TypeVar, cast, overload,
 )
 
 import numpy as np
@@ -20,11 +20,11 @@ from bokeh.models.layouts import (
 
 from .._param import Margin
 from ..io.cache import _generate_hash
-from ..io.document import create_doc_if_none_exists, unlocked
+from ..io.document import create_doc_if_none_exists, hold, unlocked
 from ..io.notebook import push
 from ..io.state import set_curdoc, state
 from ..layout.base import (
-    Column, ListPanel, NamedListPanel, Panel, Row,
+    Column, ListLike, NamedListLike, Row,
 )
 from ..links import Link
 from ..models import (
@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+
 
 def panel(obj: Any, **kwargs) -> Viewable | ServableMixin:
     """
@@ -122,19 +123,20 @@ class PaneBase(Layoutable):
     a priority value.
     """
 
-    default_layout = param.ClassSelector(default=Row, class_=(Panel),
-                                         is_instance=False, doc="""
+    default_layout = param.ClassSelector(
+        default=Row, class_=ListLike, is_instance=False, doc="""
         Defines the layout the model(s) returned by the pane will
-        be placed in.""")
+        be placed in."""
+    )
 
     margin = Margin(default=(5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    object = param.Parameter(default=None, allow_refs=True, doc="""
+    object: Any = param.Parameter(default=None, allow_refs=True, doc="""
         The object being wrapped, which will be converted to a
-        Bokeh model.""")
+        Bokeh model.""")  # type: ignore[assignment]
 
     # When multiple Panes apply to an object, the one with the highest
     # numerical priority is selected. The default is an intermediate value.
@@ -233,8 +235,16 @@ class PaneBase(Layoutable):
         """
         return None
 
+    @overload
     @classmethod
-    def get_pane_type(cls, obj: Any, **kwargs) -> type[PaneBase]:
+    def get_pane_type(cls, obj: Viewable, **kwargs: Any) -> type[Viewable]: ...
+
+    @overload
+    @classmethod
+    def get_pane_type(cls, obj: Any, **kwargs: Any) -> type[PaneBase]: ...
+
+    @classmethod
+    def get_pane_type(cls, obj: Any, **kwargs: Any) -> type[Viewable] | type[PaneBase]:
         """
         Returns the applicable Pane type given an object by resolving
         the precedence of all types whose applies method declares that
@@ -435,7 +445,7 @@ class Pane(PaneBase, Reactive):
             ))
 
         # If there is a fake root we run pre-processors on it
-        if fake_view is not None and view in fake_view and fake_root:
+        if isinstance(fake_view, ListLike) and view in fake_view and fake_root:
             fake_view._preprocess(fake_root, self)
         else:
             view._preprocess(root, self)
@@ -686,15 +696,16 @@ class ReplacementPane(Pane):
           or replaced with.
         """
         ignored: tuple[str, ...] = ('name',)
-        if isinstance(new, ListPanel):
+        if isinstance(old, ListLike) and isinstance(new, ListLike):
             if len(old) == len(new):
-                for i, (sub_old, sub_new) in enumerate(zip(old, new)):
+                for i, (sub_old, sub_new) in enumerate(zip(old, new, strict=True)):
                     if type(sub_old) is not type(sub_new):
-                        old[i] = new
+                        old[i] = sub_new
                         continue
-                    if isinstance(new, NamedListPanel):
+                    if isinstance(new, NamedListLike):
                         old._names[i] = new._names[i]
-                    cls._recursive_update(sub_old, sub_new)
+                    if isinstance(sub_old, Reactive) and isinstance(sub_new, Reactive):
+                        cls._recursive_update(sub_old, sub_new)
                 ignored += ('objects',)
         new_params = {}
         for p in new.param:
@@ -751,14 +762,20 @@ class ReplacementPane(Pane):
         # If the object has no external referrers we can update
         # it inplace instead of replacing it
         if type(old_object) is pane_type and ((not links and not custom_watchers and was_internal) or inplace):
-            if isinstance(object, Panel) and len(old_object) == len(object):
-                for i, (old, new) in enumerate(zip(old_object, object)):
-                    if type(old) is not type(new):
-                        old_object[i] = new
-                        continue
-                    cls._recursive_update(old, new)
+            if isinstance(object, ListLike) and isinstance(old_object, ListLike):
+                old_panel = old_object
+                old_items = old_panel.objects
+                new_items = object.objects
+                if len(old_items) == len(new_items):
+                    for i, (old, new) in enumerate(zip(old_items, new_items, strict=True)):
+                        if type(old) is not type(new):
+                            cast(Any, old_panel)[i] = new
+                            continue
+                        cls._recursive_update(old, new)
+                elif isinstance(object, Reactive):
+                    cls._recursive_update(cast(Reactive, old_object), object)
             elif isinstance(object, Reactive):
-                cls._recursive_update(old_object, object)
+                cls._recursive_update(cast(Reactive, old_object), object)
             elif old_object.object is not object:
                 # See https://github.com/holoviz/param/pull/901
                 old_object.object = object
@@ -772,9 +789,10 @@ class ReplacementPane(Pane):
     def _update_inner(self, new_object: Any) -> None:
         kwargs = dict({p: getattr(self, p) for p in self.param}, **self._kwargs)
         del kwargs['object']
-        new_pane, internal = self._update_from_object(
-            new_object, self._pane, self._internal, **kwargs
-        )
+        with hold():
+            new_pane, internal = self._update_from_object(
+                new_object, self._pane, self._internal, **kwargs
+            )
         if new_pane is None:
             return
 

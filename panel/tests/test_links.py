@@ -1,3 +1,5 @@
+from typing import Any
+
 try:
     import holoviews as hv
 except ImportError:
@@ -21,7 +23,7 @@ from panel.widgets import (
 
 class MockJSComponent(JSComponent):
 
-    value = param.Parameter()
+    value: Any = param.Parameter()  # type: ignore[assignment]
 
 
 def test_widget_link_bidirectional():

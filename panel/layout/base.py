@@ -9,7 +9,7 @@ from collections.abc import (
     Generator, Iterable, Iterator, Mapping,
 )
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, overload,
+    TYPE_CHECKING, Any, ClassVar, Literal, Self, overload,
 )
 
 import param
@@ -199,7 +199,10 @@ class Panel(Reactive, SizingModeMixin):
         spacer = '\n' + ('    ' * (depth+1))
         cls = type(self).__name__
         params = param_reprs(self, ['objects'])
-        objs = [f'[{i}] {obj.__repr__(depth+1)}' for i, obj in enumerate(self)]
+        objs = [
+            f'[{i}] {obj.__repr__(depth+1)}'
+            for i, obj in enumerate(self.objects)
+        ]
         if not params and not objs:
             return super().__repr__(depth+1)
 
@@ -383,16 +386,16 @@ class ListLike(param.Parameterized):
     def __iter__(self) -> Iterator[Viewable]:
         yield from self.objects
 
-    def __iadd__(self, other: Iterable[Any]) -> ListLike:
+    def __iadd__(self, other: Iterable[Any]) -> Self:
         self.extend(other)
         return self
 
-    def __add__(self, other: Iterable[Any]) -> ListLike:
+    def __add__(self, other: Iterable[Any]) -> Self:
         if isinstance(other, ListLike):
             other = other.objects
         return self.clone(*self.objects, *other)
 
-    def __radd__(self, other: Iterable[Any]) -> ListLike:
+    def __radd__(self, other: Iterable[Any]) -> Self:
         if isinstance(other, ListLike):
             other = other.objects
         return self.clone(*other, *self.objects)
@@ -411,7 +414,7 @@ class ListLike(param.Parameterized):
         new_objects[index] = panes
         self.objects = new_objects
 
-    def clone(self, *objects: Any, **params: Any) -> ListLike:
+    def clone(self, *objects: Any, **params: Any) -> Self:
         """
         Makes a copy of the layout sharing the same parameters.
 
@@ -606,11 +609,11 @@ class NamedListLike(param.Parameterized):
     def __iter__(self) -> Iterator[Viewable]:
         yield from self.objects
 
-    def __iadd__(self, other: Iterable[Any]) -> NamedListLike:
+    def __iadd__(self, other: Iterable[Any]) -> Self:
         self.extend(other)
         return self
 
-    def __add__(self, other: Iterable[Any]) -> NamedListLike:
+    def __add__(self, other: Iterable[Any]) -> Self:
         added: Iterable
         if isinstance(other, NamedListLike):
             added = zip(other._names, other.objects)
@@ -621,7 +624,7 @@ class NamedListLike(param.Parameterized):
         objects = zip(self._names, self.objects)
         return self.clone(*objects, *added)
 
-    def __radd__(self, other: Iterable[Any]) -> NamedListLike:
+    def __radd__(self, other: Iterable[Any]) -> Self:
         added: Iterable
         if isinstance(other, NamedListLike):
             added = zip(other._names, other.objects)
@@ -646,7 +649,7 @@ class NamedListLike(param.Parameterized):
             new_objects[index], self._names[index] = self._to_object_and_name(panes)
         self.objects = new_objects
 
-    def clone(self, *objects: Any, **params: Any) -> NamedListLike:
+    def clone(self, *objects: Any, **params: Any) -> Self:
         """
         Makes a copy of the Tabs sharing the same parameters.
 

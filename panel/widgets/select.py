@@ -39,7 +39,7 @@ from ..util import (
     PARAM_NAME_PATTERN, indexOf, isIn, unique_iterator,
 )
 from ._mixin import TooltipMixin
-from .base import CompositeWidget, Widget
+from .base import CompositeWidget, Widget, WidgetBase
 from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
 
@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    from ..layout.base import ListLike
     from ..models.widgets import DoubleClickEvent
 
 
@@ -186,10 +187,10 @@ class Select(SingleSelectBase):
     description = param.String(default=None, doc="""
         A description of the widget, which will be displayed as a tooltip.""")
 
-    disabled_options = param.List(default=[], nested_refs=True, doc="""
+    disabled_options: list[Any] = param.List(default=[], nested_refs=True, doc="""
         Optional list of ``options`` that are disabled, i.e. unusable and
         un-clickable. If ``options`` is a dictionary the list items must be
-        dictionary values.""")
+        dictionary values.""")  # type: ignore[assignment]
 
     groups = param.Dict(default=None, nested_refs=True, doc="""
         Dictionary whose keys are used to visually group the options
@@ -364,18 +365,18 @@ class NestedSelect(CompositeWidget):
     disabled = param.Boolean(default=False, doc="""
         Whether the widget is disabled.""")
 
-    layout = param.Parameter(default=Column, doc="""
+    layout: ListLike | dict[str, Any] = param.Parameter(default=Column, doc="""
         The layout type of the widgets. If a dictionary, a "type" key can be provided,
         to specify the layout type of the widgets, and any additional keyword arguments
-        will be used to instantiate the layout.""")
+        will be used to instantiate the layout.""")  # type: ignore[assignment]
 
-    levels = param.List(doc="""
+    levels: list[Any] = param.List(doc="""
         Either a list of strings or a list of dictionaries. If a list of strings, the strings
         are used as the names of the levels. If a list of dictionaries, each dictionary may
         have a "name" key, which is used as the name of the level, a "type" key, which
         is used as the type of widget, and any corresponding widget keyword arguments;
         otherwise, will inherit layoutable keyword arguments from the `NestedSelect` itself, e.g.
-        width, height, and sizing_mode. Must be specified if options is callable.""")
+        width, height, and sizing_mode. Must be specified if options is callable.""")  # type: ignore[assignment]
 
     options = param.ClassSelector(class_=(list, dict, FunctionType), doc="""
         The options to select from. The options may be nested dictionaries, lists,
@@ -388,12 +389,12 @@ class NestedSelect(CompositeWidget):
         The value from all the Select widgets; the keys are the levels names.
         If no levels names are specified, the keys are the levels indices.""")
 
-    _widgets = param.List(doc="The nested select widgets.")
+    _widgets: list[WidgetBase] = param.List(item_type=WidgetBase, doc="The nested select widgets.")  # type: ignore[assignment]
 
     _max_depth = param.Integer(doc="The number of levels of the nested select widgets.")
 
-    _levels = param.List(doc="""
-        The internal rep of levels to prevent overwriting user provided levels.""")
+    _levels: list[Any] = param.List(doc="""
+        The internal rep of levels to prevent overwriting user provided levels.""")  # type: ignore[assignment]
 
     @classmethod
     def _infer_params(cls, values, **params):
@@ -867,7 +868,7 @@ class MultiSelect(_MultiSelectBase):
 
     def on_double_click(
         self, callback: Callable[[param.parameterized.Event], None | Awaitable[None]]
-    ) -> param.parameterized.Watcher:
+    ) -> None:
         """
         Register a callback to be executed when a `MultiSelect` option is double-clicked.
 

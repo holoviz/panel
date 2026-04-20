@@ -12,7 +12,7 @@ from collections.abc import Iterable, Mapping
 from datetime import date, datetime, time as dt_time
 from html import escape
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, Type,
+    TYPE_CHECKING, Any, ClassVar, Literal, Self, Type,
 )
 
 import numpy as np
@@ -30,7 +30,7 @@ from bokeh.models.widgets.inputs import ClearInput
 from pyviz_comms import JupyterComm
 
 from ..config import config
-from ..layout import Column, Panel
+from ..layout import Column
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
     TextInput as _BkTextInput, TimePicker as _BkTimePicker,
@@ -43,8 +43,8 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    from ..layout.base import ListLike
     from ..models.file_dropper import DeleteEvent, UploadEvent
-    from ..viewable import Viewable
 
 
 class _TextInputBase(Widget):
@@ -69,7 +69,12 @@ class _TextInputBase(Widget):
       or scale mode this will merely be used as a suggestion.""")
 
     @classmethod
-    def from_param(cls, parameter: param.Parameter, onkeyup=False, **params) -> Viewable:
+    def from_param(
+        cls,
+        parameter: param.Parameter,
+        onkeyup: bool = False,
+        **params
+    ) -> Self:  # type: ignore[override]
         """
         Construct a widget from a Parameter and link the two
         bi-directionally.
@@ -330,10 +335,10 @@ class FileDropper(Widget):
     >>> FileDropper(accepted_filetypes=['image/*'], multiple=True)
     """
 
-    accepted_filetypes = param.List(default=[], doc="""
+    accepted_filetypes: list[str] = param.List(default=[], item_type=str, doc="""
         List of accepted file types. Can be mime types, file extensions
         or wild cards.For instance ['image/*'] will accept all images.
-        ['.png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")
+        ['.png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")  # type: ignore[assignment]
 
     chunk_size = param.Integer(default=10_000_000, doc="""
         Size in bytes per chunk transferred across the WebSocket.""")
@@ -940,11 +945,11 @@ class _NumericInputBase(Widget):
     format = param.ClassSelector(default=None, class_=(str, TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
-    start = param.Parameter(default=None, allow_None=True, doc="""
-        Optional minimum allowable value.""")
+    start: float | int | None = param.Parameter(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")  # type: ignore[assignment]
 
-    end = param.Parameter(default=None, allow_None=True, doc="""
-        Optional maximum allowable value.""")
+    end: float | int | None = param.Parameter(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")  # type: ignore[assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
@@ -1448,7 +1453,7 @@ class DatetimeRangeInput(CompositeWidget):
     format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
         Datetime format used for parsing and formatting the datetime.""")
 
-    _composite_type: ClassVar[type[Panel]] = Column
+    _composite_type: ClassVar[type[ListLike]] = Column
 
     def __init__(self, **params):
         self._text = StaticText(margin=(5, 0, 0, 0), styles={'white-space': 'nowrap'})

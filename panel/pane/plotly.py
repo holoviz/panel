@@ -63,12 +63,17 @@ class Plotly(ModelPane):
 
     relayout_data = param.Dict(nested_refs=True, doc="Relayout event data from `plotly_relayout` event")
 
-    restyle_data = param.List(nested_refs=True, doc="Restyle event data from `plotly_restyle` event")
+    restyle_data: list[Any] = param.List(
+        default=[], nested_refs=True, doc="""
+        Restyle event data from `plotly_restyle` event""")  # type: ignore[assignment]
 
-    selected_data = param.Dict(nested_refs=True, doc="Selected event data from `plotly_selected` and `plotly_deselect` events.")
+    selected_data = param.Dict(
+        nested_refs=True, doc="Selected event data from `plotly_selected` and `plotly_deselect` events."
+    )
 
-    viewport = param.Dict(nested_refs=True, doc="""Current viewport state, i.e. the x- and y-axis limits of the displayed plot.
-                          Updated on `plotly_relayout`, `plotly_relayouting` and `plotly_restyle` events.""")
+    viewport = param.Dict(nested_refs=True, doc="""
+        Current viewport state, i.e. the x- and y-axis limits of the displayed plot.
+        Updated on `plotly_relayout`, `plotly_relayouting` and `plotly_restyle` events.""")
 
     viewport_update_policy: Literal["mouseup", "continuous", "throttle"] = param.Selector(
         default="mouseup", doc="""

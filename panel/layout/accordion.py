@@ -39,8 +39,8 @@ class Accordion(NamedListPanel):
     active_header_background = param.String(default=None, doc="""
         Color for currently active headers.""")
 
-    active = param.List(default=[], doc="""
-        List of indexes of active cards.""")
+    active = param.List(default=[], item_type=int, doc="""
+        List of indexes of active cards.""")  # type: ignore[assignment]
 
     header_color = param.String(doc="""
         A valid CSS color to apply to the expand button.""")

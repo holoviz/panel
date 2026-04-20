@@ -45,4 +45,5 @@ class BootstrapTemplate(BasicTemplate):
     def _update_vars(self, *args) -> None:
         super()._update_vars(*args)
         design = self.design(theme=self.theme)
-        self._render_variables['html_attrs'] = f'data-bs-theme="{design.theme._bs_theme}"'
+        if design.theme is not None:
+            self._render_variables['html_attrs'] = f'data-bs-theme="{design.theme._bs_theme}"'

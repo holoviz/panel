@@ -52,7 +52,7 @@ if TYPE_CHECKING:
     from tornado.ioloop import IOLoop
 
     from ..template.base import BaseTemplate
-    from ..viewable import Viewable
+    from ..viewable import Renderable
     from ..widgets.indicators import BooleanIndicator
     from .application import TViewableFuncOrPath
     from .browser import BrowserInfo
@@ -166,7 +166,7 @@ class _state(param.Parameterized):
     _templates: ClassVar[WeakKeyDictionary[Document, BaseTemplate]] = WeakKeyDictionary() # Server templates indexed by document
 
     # An index of all currently active views
-    _views: ClassVar[dict[str, tuple[Viewable, Model, Document, Comm | None]]] = {}
+    _views: ClassVar[dict[str, tuple[Renderable, Model, Document, Comm | None]]] = {}
 
     # For templates to keep reference to their main root
     _fake_roots: ClassVar[list[str]] = []

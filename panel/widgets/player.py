@@ -4,7 +4,9 @@ Defines Player widgets which offer media-player like controls.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
@@ -174,7 +176,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value = param.Parameter(doc="Current player value")
 
-    value_throttled = param.Parameter(constant=True, doc="Current player value")
+    value_throttled: Any = param.Parameter(constant=True, doc="Current player value")  # type: ignore[assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 

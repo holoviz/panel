@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import param
 
@@ -41,9 +41,9 @@ class GridStack(ReactiveHTML, GridSpec):  # type: ignore[override]
     allow_drag = param.Boolean(default=True, doc="""
         Allow dragging the grid cells.""")
 
-    state = param.List(doc="""
+    state: list[dict[str, Any]] = param.List(item_type=dict, doc="""
         Current state of the grid (updated as items are resized and
-        dragged).""")
+        dragged).""")  # type: ignore[assignment]
 
     width = param.Integer(default=None)
 

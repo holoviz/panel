@@ -3,10 +3,14 @@ Miscellaneous widgets which do not fit into the other main categories.
 """
 from __future__ import annotations
 
+import os
+
 from base64 import b64encode
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import (
+    IO, TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
@@ -106,12 +110,12 @@ class FileDownload(IconMixin):
         The data being transferred.""")
 
     embed = param.Boolean(default=False, doc="""
-        Whether to embed the file on initialization.""")
+        Whether to embed the file on initialization.""")  # type: ignore[assignment]
 
-    file = param.Parameter(default=None, doc="""
+    file: str | os.PathLike | IO | None = param.Parameter(default=None, doc="""
         The file, Path, file-like object or file contents to transfer.  If
         the file is not pointing to a file on disk a filename must
-        also be provided.""")
+        also be provided.""")  # type: ignore[assignment]
 
     filename = param.String(default=None, doc="""
         A filename which will also be the default name when downloading
@@ -179,12 +183,14 @@ class FileDownload(IconMixin):
         self._default_label = False
 
     @property
-    def _is_file_path(self)->bool:
+    def _is_file_path(self) -> bool:
         return isinstance(self.file, (str, Path))
 
     @property
-    def _file_path(self)->Path:
-        return Path(self.file)
+    def _file_path(self) -> Path | None:
+        if isinstance(self.file, (str, Path)):
+            return Path(self.file)
+        return None
 
     @param.depends('file', watch=True)
     def _update_filename(self):
@@ -320,8 +326,8 @@ class JSONEditor(Widget):
         JSONEditor. true by default. Only applicable when mode is
         'tree', 'view', or 'form'.""")
 
-    selection = param.List(default=[], doc="""
-        Current selection.""")
+    selection: list[str] = param.List(default=[], item_type=str, doc="""
+        Current selection.""")  # type: ignore[assignment]
 
     schema = param.Dict(default=None, doc="""
         Validate the JSON object against a JSON schema. A JSON schema
@@ -330,10 +336,10 @@ class JSONEditor(Widget):
 
         See http://json-schema.org/ for more information.""")
 
-    templates = param.List(doc="""
+    templates: list[dict[str, Any]] = param.List(item_type=dict, doc="""
         Array of templates that will appear in the context menu, Each
         template is a json object precreated that can be added as a
-        object value to any node in your document.""")
+        object value to any node in your document.""")  # type: ignore[assignment]
 
     value = param.Parameter(default={}, doc="""
         JSON data to be edited.""")

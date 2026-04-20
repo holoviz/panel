@@ -6,7 +6,9 @@ import sys
 from collections.abc import Callable, Mapping
 from enum import Enum
 from functools import partial
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import numpy as np
 import param
@@ -26,6 +28,8 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
     from ..models.perspective import PerspectiveClickEvent
+
+    SortLiteral = Literal["asc", "desc"]
 
 DEFAULT_THEME = "pro"
 
@@ -269,7 +273,7 @@ class Perspective(ModelPane, ReactiveData):
     aggregates = param.Dict(default=None, nested_refs=True, doc="""
       How to aggregate. For example {"x": "distinct count"}""")
 
-    columns = param.List(default=None, nested_refs=True, doc="""
+    columns = param.List(default=None, item_type=str, nested_refs=True, doc="""
       A list of source columns to show as columns. For example ["x", "y"]""")
 
     columns_config = param.Dict(default=None, nested_refs=True, doc="""
@@ -283,11 +287,12 @@ class Perspective(ModelPane, ReactiveData):
       A list of expressions computing new columns from existing columns.
       For example [""x"+"index""]""")
 
-    split_by = param.List(default=None, nested_refs=True, doc="""
+    split_by = param.List(default=None, item_type=str, nested_refs=True, doc="""
       A list of source columns to pivot by. For example ["x", "y"]""")
 
-    filters = param.List(default=None, nested_refs=True, doc="""
-      How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")
+    filters: list[tuple[str, str, Any] | list[Any]] | None = param.List(
+        default=None, item_type=(tuple, list), nested_refs=True, doc="""
+      How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")  # type: ignore[assignment]
 
     min_width = param.Integer(default=420, bounds=(0, None), doc="""
         Minimal width of the component (in pixels) if width is adjustable.""")
@@ -295,14 +300,15 @@ class Perspective(ModelPane, ReactiveData):
     object = param.Parameter(doc="""
       The plot data declared as a dictionary of arrays or a DataFrame.""")
 
-    group_by = param.List(default=None, doc="""
+    group_by = param.List(default=None, item_type=str, doc="""
       A list of source columns to group by. For example ["x", "y"]""")
 
     selectable = param.Boolean(default=True, allow_None=True, doc="""
       Whether items are selectable.""")
 
-    sort = param.List(default=None, doc="""
-      How to sort. For example[["x","desc"]]""")
+    sort: list[str | tuple[str, SortLiteral] | list[str]] | None = param.List(
+        default=None, item_type=(str, tuple, list), doc="""
+      How to sort. For example[["x","desc"]]""")  # type: ignore[assignment]
 
     plugin: Literal[
         'hypergrid', 'datagrid', 'd3_y_bar', 'd3_x_bar', 'd3_xy_line', 'd3_y_line',

@@ -25,10 +25,11 @@ if TYPE_CHECKING:
 
 _tasks = set()
 
+
 class FileBase(HTMLBasePane):
 
     embed = param.Boolean(default=False, doc="""
-        Whether to embed the file as base64.""")
+        Whether to embed the file as base64.""")  # type: ignore[assignment]
 
     filetype: ClassVar[str]
 

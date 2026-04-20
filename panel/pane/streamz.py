@@ -66,7 +66,7 @@ class Streamz(ReplacementPane):
 
     def _cleanup(self, root: Model | None = None):
         super()._cleanup(root)
-        if not self._pane._models and self._stream:
+        if self._pane is not None and not self._pane._models and self._stream:
             self._stream.destroy()
             self._stream = None
 

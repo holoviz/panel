@@ -136,14 +136,14 @@ class BaseTable(ReactiveData, Widget):
     row_height = param.Integer(default=40, doc="""
         The height of each table row.""")
 
-    selection = param.List(default=[], doc="""
+    selection = param.List(default=[], item_type=int, doc="""
         The currently selected rows of the table.""")
 
     show_index = param.Boolean(default=True, doc="""
         Whether to show the index column.""")
 
-    sorters = param.List(default=[], doc="""
-        A list of sorters to apply during pagination.""")
+    sorters: list[dict[str, Any]] = param.List(default=[], item_type=dict, doc="""
+        A list of sorters to apply during pagination.""")  # type: ignore[assignment]
 
     text_align = param.ClassSelector(default={}, nested_refs=True, class_=(dict, str), doc="""
         A mapping from column name to alignment or a fixed column
@@ -523,6 +523,8 @@ class BaseTable(ReactiveData, Widget):
                     filters.append(res)
                 continue
             if isinstance(filt, param.Parameter):
+                if filt.name is None:
+                    continue
                 val = getattr(filt.owner, filt.name)
             else:
                 val = filt
@@ -1217,7 +1219,7 @@ class Tabulator(BaseTable):
         If True, popups will appear within the table container, otherwise
         popups will be appended to the body element of the DOM.""")
 
-    expanded = param.List(default=[], nested_refs=True, doc="""
+    expanded = param.List(default=[], item_type=int, nested_refs=True, doc="""
         List of expanded rows, only applicable if a row_content function
         has been defined.""")
 
@@ -1225,7 +1227,7 @@ class Tabulator(BaseTable):
         Whether to embed the row_content or render it dynamically
         when a row is expanded.""")
 
-    filters = param.List(default=[], doc="""
+    filters = param.List(default=[], item_type=dict, doc="""
         List of client-side filters declared as dictionaries containing
         'field', 'type' and 'value' keys.""")
 
@@ -1236,7 +1238,7 @@ class Tabulator(BaseTable):
         - Dict indicating columns to freeze as keys and their freeze location
         as values, freeze location is either 'right' or 'left'.""")
 
-    frozen_rows = param.List(default=[], nested_refs=True, doc="""
+    frozen_rows = param.List(default=[], item_type=int, nested_refs=True, doc="""
         List indicating the rows to freeze. If set, the
         first N rows will be frozen, which prevents them from scrolling
         out of frame; if set to a negative value the last N rows will be
@@ -1245,7 +1247,7 @@ class Tabulator(BaseTable):
     groups = param.Dict(default={}, nested_refs=True, doc="""
         Dictionary mapping defining the groups.""")
 
-    groupby = param.List(default=[], nested_refs=True, doc="""
+    groupby = param.List(default=[], item_type=str, nested_refs=True, doc="""
         Groups rows in the table by one or more columns.""")
 
     header_align = param.ClassSelector(default={}, nested_refs=True, class_=(dict, str), doc="""
@@ -1260,8 +1262,8 @@ class Tabulator(BaseTable):
         Dictionary mapping from column name to a tooltip to show when
         hovering over the column header.""")
 
-    hidden_columns = param.List(default=[], nested_refs=True, doc="""
-        List of columns to hide.""")
+    hidden_columns: list[str] = param.List(default=[], item_type=str, nested_refs=True, doc="""
+        List of columns to hide.""")  # type: ignore[assignment]
 
     layout: Literal[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
@@ -1306,7 +1308,7 @@ class Tabulator(BaseTable):
 
     selection: list[int] = _ListValidateWithCallable(default=[], doc="""
         The currently selected rows of the table. It validates
-        its values against 'selectable_rows' if used.""")
+        its values against 'selectable_rows' if used.""")  # type: ignore[assignment]
 
     selectable = param.ClassSelector(
         default=True, class_=(bool, str, int), doc="""
@@ -2075,7 +2077,7 @@ class Tabulator(BaseTable):
         groups: dict[str, GroupSpec] = {}
         columns: Sequence[ColumnSpec | GroupSpec] = []
         selectable = self.selectable
-        if self.row_content:
+        if self.row_content is not None:
             columns.append({
                 "formatter": "expand"
             })

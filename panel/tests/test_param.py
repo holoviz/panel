@@ -1226,7 +1226,7 @@ class View(param.Parameterized):
 
     a = param.Integer(default=0)
 
-    b = param.Parameter()
+    b: Any = param.Parameter()  # type: ignore[assignment]
 
     @param.depends('a')
     def view(self):

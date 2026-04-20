@@ -22,7 +22,7 @@ class fixed(param.Parameterized):
 
     description = param.String(default='')
 
-    value = param.Parameter(doc="Any Python object")
+    value: Any = param.Parameter(doc="Any Python object")  # type: ignore[assignment]
 
     def __init__(self, value: Any, **kwargs: Any):
         super().__init__(value=value, **kwargs)

@@ -20,7 +20,8 @@ from typing import TYPE_CHECKING, ClassVar
 
 import param
 
-from .layout import Column, Panel, Row
+from .layout import Column, Row
+from .layout.base import ListLike
 from .pane import HTML, Pane, panel
 from .pane.base import ReplacementPane
 from .viewable import Viewable
@@ -63,8 +64,9 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
 
 class interactive(Pane):
 
-    default_layout = param.ClassSelector(default=Column, class_=(Panel),
-                                         is_instance=False)
+    default_layout = param.ClassSelector(
+        default=Column, class_=ListLike, is_instance=False
+    )
 
     manual_update = param.Boolean(default=False, doc="""
         Whether to update manually by clicking on button.""")

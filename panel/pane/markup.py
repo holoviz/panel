@@ -204,7 +204,7 @@ class DataFrame(HTML):
         'start', 'end', 'center'], doc="""
          Alignment of non-header cells.""")  # type: ignore[assignment]
 
-    _object = param.Parameter(default=None, doc="""Hidden parameter.""")
+    _object: Any = param.Parameter(default=None, doc="""Hidden parameter.""")  # type: ignore[assignment]
 
     _dask_params: ClassVar[list[str]] = ['max_rows']
 
@@ -372,8 +372,8 @@ class Markdown(HTMLBasePane):
         default to conform with the original Markdown spec. Not supported by
         the 'myst' renderer.""")
 
-    plugins = param.List(default=[], nested_refs=True, doc="""
-        Additional markdown-it-py plugins to use.""")
+    plugins: list[Any] = param.List(default=[], nested_refs=True, doc="""
+        Additional markdown-it-py plugins to use.""")  # type: ignore[assignment]
 
     renderer: Literal['markdown-it', 'myst', 'markdown'] = param.Selector(
         default='markdown-it', objects=[

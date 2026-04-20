@@ -29,7 +29,7 @@ from param.parameterized import resolve_value
 from ..config import config
 from ..io import state
 from ..io.resources import CDN_DIST
-from ..layout import Column, Panel, Row
+from ..layout import Column, Row
 from ..models.datetime_slider import DatetimeSlider as _BkDatetimeSlider
 from ..util import (
     datetime_as_utctimestamp, edit_readonly, param_reprs, value_as_date,
@@ -45,6 +45,8 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    from ..layout.base import ListLike
+
 
 class _SliderBase(Widget):
 
@@ -58,7 +60,7 @@ class _SliderBase(Widget):
 
     name = param.String(default=None, constant=False, doc="""
         The name of the widget. Also used as the label of the widget. If not set,
-        the widget has no label.""")
+        the widget has no label.""")  # type: ignore[assignment]
 
     orientation: Literal['horizontal', 'vertical'] = param.Selector(
         default='horizontal', objects=['horizontal', 'vertical'],
@@ -347,7 +349,7 @@ class DatetimeSlider(DateSlider):
         Whether to store the date as a datetime.""")
 
     step = param.Number(default=60, bounds=(1, None), doc="""
-        The step size in seconds. Default is 1 minute, i.e 60 seconds.""")
+        The step size in seconds. Default is 1 minute, i.e 60 seconds.""")  # type: ignore[assignment]
 
     _property_conversion = staticmethod(value_as_datetime)
 
@@ -374,8 +376,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         The selected value of the slider. Updated when the handle is
         dragged. Must be one of the options.""")
 
-    value_throttled = param.Parameter(constant=True, doc="""
-        The value of the slider. Updated when the handle is released.""")
+    value_throttled: Any = param.Parameter(constant=True, doc="""
+        The value of the slider. Updated when the handle is released.""")  # type: ignore[assignment]
 
     options = param.ClassSelector(default=[], class_=(dict, list), doc="""
         A list or dictionary of valid options.""")
@@ -573,9 +575,9 @@ class _RangeSliderBase(_SliderBase):
     value = param.Tuple(default=(None, None), length=2, allow_None=False, nested_refs=True, doc="""
         The selected range of the slider. Updated when a handle is dragged.""")
 
-    value_start = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")
+    value_start: Any = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")  # type: ignore[assignment]
 
-    value_end = param.Parameter(readonly=True, doc="""The upper value of the selected range.""")
+    value_end: Any = param.Parameter(readonly=True, doc="""The upper value of the selected range.""")  # type: ignore[assignment]
 
     __abstract = True
 
@@ -711,7 +713,7 @@ class DateRangeSlider(_SliderBase):
     ... )
     """
 
-    value = param.DateRange(default=None, allow_None=False, doc="""
+    value = param.DateRange(default=None, allow_None=True, doc="""
         The selected range as a tuple of values. Updated when one of the handles is
         dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""")
 
@@ -856,7 +858,7 @@ class _EditableContinuousSlider(CompositeWidget):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
-    _composite_type: ClassVar[type[Panel]] = Column
+    _composite_type: ClassVar[type[ListLike]] = Column
     _slider_widget: ClassVar[type[Widget]]
     _input_widget: ClassVar[type[Widget]]
     __abstract = True
@@ -1091,7 +1093,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
-    _composite_type: ClassVar[type[Panel]] = Column
+    _composite_type: ClassVar[type[ListLike]] = Column
 
     def __init__(self, **params):
         if 'width' not in params and 'sizing_mode' not in params:

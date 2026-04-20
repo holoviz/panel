@@ -21,7 +21,9 @@ case is up to you to evaluate.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Literal,
+)
 
 import param
 
@@ -383,17 +385,17 @@ class SpeechToText(Widget):
     speech_started = param.Boolean(constant=True, doc="""
         Returns True if the the User has started speaking and False otherwise.""")
 
-    results = param.List(constant=True, doc="""
-        The `results` as a list of Dictionaries.""")
+    results: list[dict[str, Any]] = param.List(constant=True, item_type=dict, doc="""
+        The `results` as a list of Dictionaries.""")  # type: ignore[assignment]
 
     value = param.String(default="", constant=True, label="Last Result", doc="""
         The transcipt of the highest confidence RecognitionAlternative
         of the last RecognitionResult. Please note we strip the
         transcript for leading spaces.""")
 
-    _grammars = param.List(constant=True, doc="""
+    _grammars: list[str] = param.List(constant=True, item_type=str, doc="""
         List used to transfer the serialized grammars from server to
-        browser.""")
+        browser.""")  # type: ignore[assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'grammars': None, '_grammars': 'grammars', 'name': None, 'value': None,

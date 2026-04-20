@@ -346,7 +346,7 @@ class _config(_base_config):
     _oauth_extra_params = param.Dict(default={}, doc="""
         Additional parameters required for OAuth provider.""")
 
-    _oauth_guest_endpoints = param.List(default=None, doc="""
+    _oauth_guest_endpoints = param.List(default=None, item_type=str, doc="""
         List of endpoints that can be accessed as a guest without authenticating.""")
 
     _oauth_optional = param.Boolean(default=False, doc="""

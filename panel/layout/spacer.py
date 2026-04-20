@@ -60,7 +60,9 @@ class VSpacer(Spacer):
     ... )
     """
 
-    sizing_mode = param.Parameter(default='stretch_height', readonly=True)
+    sizing_mode: Literal["stretch_height"] = param.Parameter(
+        default='stretch_height', readonly=True
+    )  # type: ignore[assignment]
 
 
 class HSpacer(Spacer):
@@ -81,7 +83,9 @@ class HSpacer(Spacer):
     ... )
     """
 
-    sizing_mode = param.Parameter(default='stretch_width', readonly=True)
+    sizing_mode: Literal["stretch_width"] = param.Parameter(
+        default='stretch_width', readonly=True
+    )  # type: ignore[assignment]
 
 
 class Divider(Reactive):

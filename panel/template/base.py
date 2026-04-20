@@ -396,6 +396,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 js = f'{state.rel_path}/{js}'
             js_modules[rname] = js
         for i, css in enumerate(list(self.config.css_files)):
+            css = cast("str", css)
             if '//' not in css and state.rel_path:
                 css = f'{state.rel_path}/{css}'
             css_files[f'config_{i}'] = css

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import param
 
@@ -30,7 +30,7 @@ class Notification(param.Parameterized):
 
     message = param.String(default='', constant=True)
 
-    notification_area = param.Parameter(constant=True, precedence=-1)
+    notification_area: Any = param.Parameter(constant=True, precedence=-1)  # type: ignore[assignment]
 
     notification_type = param.String(default=None, constant=True, label='type')
 

@@ -179,7 +179,7 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
 
     def __init__(mcs, name: str, bases: tuple[type, ...], dict_: Mapping[str, Any]):
         mcs.__original_doc__ = mcs.__doc__
-        ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
+        ParameterizedMetaclass.__init__(mcs, name, bases, dict(dict_))
 
         # Create model with unique name
         ReactiveMetaBase._name_counter[name] += 1
@@ -188,7 +188,9 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
             p for p in Reactive.param
             if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)
         ]
-        mcs._data_model__initialized = not (state.curdoc and state.curdoc.session_context and state._connected.get(state.curdoc, False))
+        mcs._data_model__initialized = not (
+            state.curdoc and state.curdoc.session_context and state._connected.get(state.curdoc, None)
+        )
         mcs._data_model = construct_data_model(
             mcs, name=model_name, ignore=ignored, extras={'esm_constants': param.Dict}
         )

@@ -13,7 +13,7 @@ from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, TypedDict, Union,
+    TYPE_CHECKING, Any, ClassVar, TypedDict, Union, cast,
 )
 from zoneinfo import ZoneInfo
 
@@ -199,8 +199,8 @@ class ChatMessage(Pane):
     object = param.Parameter(allow_refs=False, doc="""
         The message contents. Can be any Python object that panel can display.""")
 
-    reactions = param.List(doc="""
-        Reactions to associate with the message.""")
+    reactions = param.List(item_type=str, doc="""
+        Reactions to associate with the message.""")  # type: ignore[assignment]
 
     reaction_icons = param.ClassSelector(class_=ChatReactionIcons, doc="""
         A mapping of reactions to their reaction icons; if not provided
@@ -247,8 +247,8 @@ class ChatMessage(Pane):
         from the object."""
     )
 
-    user = param.Parameter(default="User", doc="""
-        Name of the user who sent the message.""")
+    user: str = param.Parameter(default="User", doc="""
+        Name of the user who sent the message.""")  # type: ignore[assignment]
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
@@ -535,7 +535,7 @@ class ChatMessage(Pane):
         self._internal = True
         return object_panel
 
-    def _render_avatar(self) -> HTML | Image:
+    def _render_avatar(self) -> Viewable:
         """
         Render the avatar pane as some HTML text or Image pane.
         """
@@ -713,7 +713,7 @@ class ChatMessage(Pane):
                     "Cannot set user or avatar when explicitly sending "
                     "a ChatMessage. Set them directly on the ChatMessage."
                 )
-            updates = value.param.values()
+            updates = cast(MessageParams, value.param.values())
         else:
             updates["object"] = value
         self.param.update(**updates)

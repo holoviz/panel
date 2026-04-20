@@ -4,7 +4,7 @@ Defines the CodeEditor widget based on Ace.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -32,8 +32,8 @@ class CodeEditor(Widget):
     >>> CodeEditor(value=py_code, language='python', theme='monokai')
     """
 
-    annotations = param.List(default=[], doc="""
-        List of annotations to add to the editor.""")
+    annotations: list[dict[str, Any]] = param.List(default=[], item_type=dict, doc="""
+        List of annotations to add to the editor.""")  # type: ignore[assignment]
 
     filename = param.String(doc="Filename from which to deduce language")
 

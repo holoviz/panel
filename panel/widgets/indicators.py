@@ -351,9 +351,9 @@ class Number(ValueIndicator):
     default_color = param.String(default='currentcolor', doc="""
         The color of the Number indicator if no colors are provided""")
 
-    colors = param.List(default=None, doc="""
+    colors: list[tuple[float | int, str]] | None = param.List(default=None, item_type=tuple, doc="""
         Color thresholds for the Number indicator, specified as a tuple of the absolute thresholds
-        and the color to switch to.""")
+        and the color to switch to.""")  # type: ignore[assignment]
 
     format = param.String(default='{value}', doc="""
         A formatter string which accepts a {value}.""")
@@ -422,8 +422,8 @@ class String(ValueIndicator):
     title_size = param.String(default='18pt', doc="""
         The size of the title given by the name.""")
 
-    value = param.String(default=None, allow_None=True, doc="""
-        The string to display""")
+    value: str | None = param.String(default=None, allow_None=True, doc="""
+        The string to display""")  # type: ignore[assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {}
 
@@ -475,9 +475,9 @@ class Gauge(ValueIndicator):
     bounds = param.Range(default=(0, 100), doc="""
       The upper and lower bound of the dial.""")
 
-    colors = param.List(default=None, doc="""
+    colors: list[tuple[float | int, str]] | None = param.List(default=None, item_type=tuple, doc="""
       Color thresholds for the Gauge, specified as a list of tuples
-      of the fractional threshold and the color to switch to.""")
+      of the fractional threshold and the color to switch to.""")  # type: ignore[assignment]
 
     custom_opts = param.Dict(doc="""
       Additional options to pass to the ECharts Gauge definition.""")
@@ -611,15 +611,15 @@ class Dial(ValueIndicator):
     annulus_width = param.Number(default=0.2, doc="""
       Width of the radial annulus as a fraction of the total.""")
 
-    background = param.Parameter(default=None, doc="""
-        Background color of the component.""")
+    background: str | None = param.Parameter(default=None, doc="""
+        Background color of the component.""")  # type: ignore[assignment]
 
     bounds = param.Range(default=(0, 100), doc="""
       The upper and lower bound of the dial.""")
 
-    colors = param.List(default=None, doc="""
+    colors: list[tuple[float | int, str]] | None = param.List(default=None, item_type=tuple, doc="""
       Color thresholds for the Dial, specified as a list of tuples
-      of the fractional threshold and the color to switch to.""")
+      of the fractional threshold and the color to switch to.""")  # type: ignore[assignment]
 
     default_color = param.String(default='lightblue', doc="""
       Color of the radial annulus if not color thresholds are supplied.""")
@@ -862,9 +862,9 @@ class LinearGauge(ValueIndicator):
     default_color = param.String(default='lightblue', doc="""
       Color of the radial annulus if not color thresholds are supplied.""")
 
-    colors = param.Parameter(default=None, doc="""
+    colors: list[tuple[float | int, str]] | None = param.Parameter(default=None, doc="""
       Color thresholds for the gauge, specified as a list of tuples
-      of the fractional threshold and the color to switch to.""")
+      of the fractional threshold and the color to switch to.""")  # type: ignore[assignment]
 
     format = param.String(default='{value:.2f}%', doc="""
       Formatting string for the value indicator and lower/upper bounds.""")
@@ -1146,8 +1146,8 @@ class Trend(SyncableData, Indicator):
     >>> Trend(name='Price', data=data, plot_type='area', width=200, height=200)
     """
 
-    data = param.Parameter(doc="""
-      The plot data declared as a dictionary of arrays or a DataFrame.""")
+    data: Any = param.Parameter(doc="""
+      The plot data declared as a dictionary of arrays or a DataFrame.""")  # type: ignore[assignment]
 
     layout: Literal["column", "row"] = param.Selector(
         default="column", objects=["column", "row"], doc="""
@@ -1185,8 +1185,8 @@ class Trend(SyncableData, Indicator):
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
 
-    value_change = param.Parameter(default='auto', doc="""
-      A secondary value. For example the change in percent.""")
+    value_change: Any = param.Parameter(default='auto', doc="""
+      A secondary value. For example the change in percent.""")  # type: ignore[assignment]
 
     _data_params: ClassVar[list[str]] = ['data']
 

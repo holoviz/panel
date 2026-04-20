@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from bokeh.embed.standalone import ThemeLike
     from jinja2 import Template
 
+    from ..template.base import BaseTemplate
     from ..viewable import Viewable
     from .resources import MODES
 
@@ -179,7 +180,7 @@ def file_html(
 #---------------------------------------------------------------------
 
 def save(
-    panel: Viewable | Document,
+    panel: Viewable | Document | BaseTemplate,
     filename: str | os.PathLike | IO,
     title: str | None = None,
     resources: BkResources | None = None,
@@ -202,7 +203,7 @@ def save(
 
     Parameters
     ----------
-    panel: Viewable
+    panel: Viewable | bokeh.document.Document | panel.template.base.BaseTemplate
       The Panel Viewable to save to file
     filename: str or file-like object
       Filename to save the plot to

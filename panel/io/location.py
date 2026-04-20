@@ -189,7 +189,7 @@ class Location(Syncable):
         if ref in state._views:
             del state._views[ref]
 
-    def _update_synced(self, event: param.parameterized.Event = None) -> None:
+    def _update_synced(self, event: param.parameterized.Event | None = None) -> None:
         if self._syncing:
             return
         query_params = self.query_params

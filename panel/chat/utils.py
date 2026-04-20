@@ -6,7 +6,7 @@ from collections.abc import Iterable
 from io import BytesIO
 from textwrap import indent
 from types import FunctionType
-from typing import Any, Union
+from typing import Any, Union, cast
 
 import param
 
@@ -58,7 +58,7 @@ def avatar_lookup(
 
 def build_avatar_pane(
     avatar: Any, css_classes: list[str], width: int = 15, height: int = 15
-) -> Image | HTML:
+) -> Viewable:
     avatar_params = {
         "css_classes": css_classes,
         "width": width,
@@ -66,11 +66,10 @@ def build_avatar_pane(
     }
     if isinstance(avatar, Viewable):
         avatar_pane = avatar
-        avatar_params["css_classes"] = (
-            avatar_params.get("css_classes", []) + avatar_pane.css_classes
-        )
+        css_classes = cast(list[str], avatar_params.get("css_classes", []))
+        avatar_params["css_classes"] = css_classes + avatar_pane.css_classes
         avatar_pane.param.update(avatar_params)
-    elif not isinstance(avatar, (BytesIO, bytes)) and len(avatar) == 1:
+    elif isinstance(avatar, str) and len(avatar) == 1:
         # single character
         avatar_pane = HTML(avatar, **avatar_params)
     else:
@@ -120,7 +119,7 @@ def stream_to(obj, token: str, replace: bool = False, object_panel: Viewable | N
             obj = parent_panel
             parent_panel = None
             i -= 1
-    contents = token if replace else obj + token
+    contents = token if replace else str(obj) + token
     setattr(object_panel, attr, contents)
     return object_panel
 

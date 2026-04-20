@@ -216,11 +216,11 @@ class TextToSpeech(Utterance, Widget):
         the process of being spoken — even if TextToSpeak is in a
         paused state.""")
 
-    voices = param.List(readonly=True, doc="""
+    voices: list[Voice] = param.List(item_type=Voice, readonly=True, doc="""
         Returns a list of Voice objects representing all the available
-        voices on the current device.""")
+        voices on the current device.""")  # type: ignore[assignment]
 
-    _voices = param.List()
+    _voices: list[Voice] = param.List(item_type=Voice)  # type: ignore[assignment]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'auto_speak': None, 'lang': None, 'name': None, 'pitch': None,

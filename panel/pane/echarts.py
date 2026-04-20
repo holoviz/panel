@@ -39,11 +39,11 @@ class ECharts(ModelPane):
     object = param.Parameter(default=None, doc="""
         The Echarts object being wrapped. Can be an Echarts dictionary or a pyecharts chart""")
 
-    options = param.Parameter(default=None, doc="""
+    options: dict[str, Any] | None = param.Dict(default=None, doc="""
         An optional dict of options passed to Echarts.setOption. Allows to fine-tune the rendering behavior.
         For example, you might want to use `options={ "replaceMerge": ['series'] })` when updating
         the `objects` with a value containing a smaller number of series.
-        """)
+        """)  # type: ignore[assignment]
 
     renderer: Literal["canvas", "svg"] = param.Selector(
         default="canvas", objects=["canvas", "svg"], doc="""

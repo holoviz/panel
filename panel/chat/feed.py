@@ -17,7 +17,7 @@ from inspect import (
 )
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
+    TYPE_CHECKING, Any, ClassVar, Literal, cast,
 )
 
 import param
@@ -25,7 +25,7 @@ import param
 from .._param import Margin
 from ..io.resources import CDN_DIST
 from ..layout import (
-    Column, Feed, ListPanel, WidgetBox,
+    Column, Feed, ListLike, ListPanel, WidgetBox,
 )
 from ..layout.card import Card
 from ..pane.image import SVG, ImageBase
@@ -153,9 +153,9 @@ class ChatFeed(ListPanel):
         `show_avatar`, `show_user`, and `show_timestamp`. Params passed
         that are not ChatFeed params will be forwarded into `message_params`.""")
 
-    header = param.Parameter(doc="""
+    header: Any = param.Parameter(doc="""
         The header of the chat feed; commonly used for the title.
-        Can be a string, pane, or widget.""")
+        Can be a string, pane, or widget.""")  # type: ignore[assignment]
 
     margin = Margin(default=5, doc="""
         Allows to create additional space around the component. May
@@ -233,7 +233,7 @@ class ChatFeed(ListPanel):
 
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
 
-    _disabled_stack = param.List(doc="""
+    _disabled_stack = param.List(item_type=bool, doc="""
         The previous disabled state of the feed.""")
 
     _card_type: ClassVar[type[Card]] = Card
@@ -414,7 +414,8 @@ class ChatFeed(ListPanel):
             try:
                 if self.loading:
                     return
-                self.remove(self._placeholder)
+                if self._placeholder is not None:
+                    self.remove(self._placeholder)
             except ValueError:
                 pass
 
@@ -782,7 +783,7 @@ class ChatFeed(ListPanel):
 
     def stream(
         self,
-        value: str | dict | ChatMessage,
+        value: str | dict | ChatMessage | Viewable,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
@@ -801,7 +802,7 @@ class ChatFeed(ListPanel):
 
         Parameters
         ----------
-        value : str | dict | ChatMessage
+        value : str | dict | ChatMessage | Viewable
             The new token value to stream.
         user : str | None
             The user to stream as; overrides the message's user if provided.
@@ -867,7 +868,12 @@ class ChatFeed(ListPanel):
             self._callback_state = CallbackState.IDLE
             self._run_post_hook(event.obj)
 
-    def _build_steps_layout(self, step, layout_params, default_layout):
+    def _build_steps_layout(
+        self,
+        step: ChatStep,
+        layout_params: dict[str, Any] | None,
+        default_layout: Literal["card", "column"]
+    ) -> ListLike:
         layout_params = layout_params or {}
         input_layout_params = dict(
             min_width=100,
@@ -903,9 +909,9 @@ class ChatFeed(ListPanel):
         append: bool = True,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
-        steps_layout: Column | Card | None = None,
+        steps_layout: ListLike | None = None,
         default_layout: Literal["column", "card"] = "card",
-        layout_params: dict | None = None,
+        layout_params: dict[str, Any] | None = None,
         last_messages: int = 1,
         **step_params
     ) -> ChatStep:
@@ -925,7 +931,7 @@ class ChatFeed(ListPanel):
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message's avatar if provided.
             Will default to the avatar parameter. Only applicable if steps is "new".
-        steps_layout : Column | None
+        steps_layout : ListLike | None
             An existing layout of steps to stream to, if None is provided
             it will default to the last Column of steps or create a new one.
         default_layout : str
@@ -976,7 +982,12 @@ class ChatFeed(ListPanel):
 
         if steps_layout is None:
             steps_layout = self._build_steps_layout(step, layout_params, default_layout)
-            self.stream(steps_layout, user=user or self.callback_user, avatar=avatar, trigger_post_hook=False)
+            self.stream(
+                cast(ListPanel, steps_layout),
+                user=user or self.callback_user,
+                avatar=avatar,
+                trigger_post_hook=False
+            )
         else:
             steps_layout.append(step)
             self._chat_log.scroll_to_latest(scroll_limit=self.auto_scroll_limit)

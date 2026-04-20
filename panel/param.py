@@ -167,7 +167,8 @@ class Param(Pane):
     expand_button = param.Boolean(default=None, doc="""
         Whether to add buttons to expand and collapse sub-objects.""")
 
-    expand_layout = param.Parameter(default=Column, doc="""
+    expand_layout = param.ClassSelector(
+        default=Column, class_=ListLike, is_instance=False, doc="""
         Layout to expand sub-objects into.""")
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
@@ -188,7 +189,7 @@ class Param(Pane):
         The object being wrapped, which will be converted to a
         Bokeh model.""")
 
-    parameters = param.List(default=[], allow_None=True, doc="""
+    parameters = param.List(default=[], item_type=str, allow_None=True, doc="""
         If set this serves as a allowlist of parameters to display on
         the supplied Parameterized object.""")
 
@@ -198,11 +199,13 @@ class Param(Pane):
     show_name = param.Boolean(default=True, doc="""
         Whether to show the parameterized object's name""")
 
-    sort = param.ClassSelector(default=False, class_=(bool, Callable), doc="""
+    sort: bool | Callable[[Any], Any] = param.ClassSelector(
+        default=False, class_=(bool, Callable),  # type: ignore[arg-type]
+        doc="""
         If True the widgets will be sorted alphabetically by label.
         If a callable is provided it will be used to sort the Parameters,
         for example lambda x: x[1].label[::-1] will sort by the reversed
-        label.""")
+        label.""")  # type: ignore[assignment]
 
     width = param.Integer(default=None, allow_None=True, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
@@ -472,7 +475,7 @@ class Param(Pane):
 
         label = ''
         if self_or_cls.show_labels or issubclass(widget_class, _ButtonBase):
-            label = p_obj.label
+            label = p_obj.label or ''
         kw = dict(disabled=p_obj.constant, name=label)
         if self_or_cls.hide_constant:
             kw['visible'] = not p_obj.constant
@@ -1425,7 +1428,7 @@ Viewable._preprocessing_hooks.insert(0, link_param_method)
 
 class FigureWrapper(param.Parameterized):
 
-    figure: Figure = param.Parameter()
+    figure: Figure | None = param.Parameter()  # type: ignore[assignment]
 
     def get_ax(self):
         from matplotlib.backends.backend_agg import FigureCanvas

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    from ..layout.base import ListPanel
+    from ..layout.base import ListLike
 
     T = TypeVar('T')
 
@@ -42,9 +42,9 @@ class WidgetBase(param.Parameterized):
     e.g. it may be used as a mix-in to a PyComponent or JSComponent.
     """
 
-    value = param.Parameter(allow_None=True, doc="""
+    value: Any = param.Parameter(allow_None=True, doc="""
         The widget value which the widget type resolves to when used
-        as a reactive param reference.""")
+        as a reactive param reference.""")  # type: ignore[assignment]
 
     __abstract = True
 
@@ -237,7 +237,7 @@ class CompositeWidget(Widget):
     widgets
     """
 
-    _composite_type: ClassVar[type[ListPanel]] = Row
+    _composite_type: ClassVar[type[ListLike]] = Row
 
     _linked_properties: tuple[str, ...] = ()
 

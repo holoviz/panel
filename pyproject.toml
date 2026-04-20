@@ -297,8 +297,12 @@ module = [
     "setuptools_scm.*",
     "snakeviz.*",
     "streamz.*",
+    "textual",
     "traitlets.*",
     "tranquilizer.*",
+    "textual.*",
+    "reacton",
+    "reacton.*",
     "uvicorn.*",
     "vtk.*",
     "watchfiles.*"

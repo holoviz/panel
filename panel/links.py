@@ -237,8 +237,10 @@ class Callback(param.Parameterized):
             return
 
         found = [
-            (link, src, getattr(link, 'target', None)) for src in linkable
-            for link in cls.registry.get(src, [])
+            (link, src, getattr(link, 'target', None))
+            for src in linkable
+            for link in cls.registry.get(cast(Reactive | BkModel, src), [])
+            if isinstance(src, (Reactive, BkModel))
             if not link._requires_target or link.target in linkable
             or isinstance(link.target, param.Parameterized)
         ]
@@ -255,12 +257,14 @@ class Callback(param.Parameterized):
             hv_views = root_view.select(HoloViews)
             map_hve_bk = generate_panel_bokeh_map(root_model, hv_views)
             for src in linkable:
+                if not isinstance(src, (Reactive, BkModel)):
+                    continue
                 for link in cls.registry.get(src, []):
                     if hasattr(link, 'target'):
                         for tgt in map_hve_bk.get(link.target, []):
                             found.append((link, src, tgt))
                     arg_overrides[id(link)] = {}
-                    for k, v in link.args.items():
+                    for k, v in (link.args or {}).items():
                         # Not all args are hashable
                         try:
                             hv_objs = map_hve_bk.get(v, [])
@@ -276,7 +280,8 @@ class Callback(param.Parameterized):
                 (tgt is not None and ref not in getattr(tgt, '_models', [ref]))):
                 continue
             overrides = arg_overrides.get(id(link), {})
-            cb(root_model, link, src, tgt, arg_overrides=overrides)
+            if isinstance(src, Reactive) and isinstance(link, Link):
+                cb(root_model, link, src, tgt, arg_overrides=overrides)
 
 
 class Link(Callback):
@@ -449,7 +454,7 @@ class CallbackGenerator:
             if tgt_model is not None:
                 references['target'] = tgt_model
 
-        for k, v in dict(link.args, **self.arg_overrides).items():
+        for k, v in dict(link.args or {}, **self.arg_overrides).items():
             arg_model = self._resolve_model(root_model, v, None)
             if arg_model is not None:
                 references[k] = arg_model

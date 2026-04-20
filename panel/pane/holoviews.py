@@ -39,6 +39,7 @@ from .plotly import Plotly
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
+    from holoviews.plotting.renderer import Renderer
     from pyviz_comms import Comm
 
     WidgetType = type[WidgetBase]
@@ -107,7 +108,7 @@ class HoloViews(Pane):
         to select between the static case (i.e. a HoloMap) and
         dynamic case (i.e. a DynamicMap).
         """
-    )
+    )  # type: ignore[assignment]
 
     format: Literal['png', 'svg'] = param.Selector(
         default='png', objects=['png', 'svg'], doc="""
@@ -117,9 +118,9 @@ class HoloViews(Pane):
         Whether to link the axes of bokeh plots inside this pane
         across a panel layout.""")
 
-    renderer = param.Parameter(default=None, doc="""
+    renderer: Renderer | None = param.Parameter(default=None, doc="""
         Explicit renderer instance to use for rendering the HoloViews
-        plot. Overrides the backend.""")
+        plot. Overrides the backend.""")  # type: ignore[assignment]
 
     theme = param.ClassSelector(default=None, class_=(Theme, str),
                                 allow_None=True, doc="""

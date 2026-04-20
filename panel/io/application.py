@@ -288,8 +288,9 @@ def build_applications(
             app = str(app) # enables serving apps from Paths
         if (isinstance(app, str) and app.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(app)):
-            apps[slug] = app = build_single_handler_application(app)
-            app._admin = admin
+            built_app = build_single_handler_application(app)
+            apps[slug] = built_app
+            built_app._admin = admin
         elif isinstance(app, BkApplication):
             apps[slug] = app
         else:

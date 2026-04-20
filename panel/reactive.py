@@ -1517,7 +1517,7 @@ class ReactiveHTMLMetaclass(ReactiveMetaBase):
         from .io.datamodel import PARAM_MAPPING, construct_data_model
 
         mcs.__original_doc__ = mcs.__doc__
-        ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
+        ParameterizedMetaclass.__init__(mcs, name, bases, dict(dict_))
         cls_name = mcs.__name__
 
         # Validate _child_config

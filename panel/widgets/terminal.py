@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 from collections.abc import Mapping
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -23,6 +23,9 @@ from pyviz_comms import JupyterComm
 from ..io.callbacks import PeriodicCallback
 from ..util import edit_readonly, lazy_load
 from .base import Widget
+
+if TYPE_CHECKING:
+    from param.parameterized import Watcher
 
 
 class TerminalSubprocess(param.Parameterized):
@@ -56,12 +59,13 @@ class TerminalSubprocess(param.Parameterized):
 
     _period = param.Integer(default=50, doc="Period length of _periodic_callback")
 
-    _terminal = param.Parameter(constant=True, allow_refs=False, doc="""
-        The Terminal to which the subprocess is connected.""")
+    _terminal: Terminal | None = param.Parameter(constant=True, allow_refs=False, doc="""
+        The Terminal to which the subprocess is connected.""")  # type: ignore[assignment]
 
     _timeout_sec = param.Integer(default=0)
 
-    _watcher = param.Parameter(doc="Watches the subprocess for user input")
+    _watcher: Watcher = param.Parameter(
+        doc="Watches the subprocess for user input")  # type: ignore[assignment]
 
     def __init__(self, terminal, **kwargs):
         super().__init__(_terminal=terminal, kill=self._kill, **kwargs)

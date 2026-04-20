@@ -90,7 +90,7 @@ class Layoutable(param.Parameterized):
         be used to determine the aspect (if not set, no aspect will be
         preserved).""")
 
-    css_classes = param.List(default=[], nested_refs=True, doc="""
+    css_classes = param.List(default=[], item_type=str, nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
 
     design: Any = param.Selector(default=None, objects=[], doc="""
@@ -121,14 +121,14 @@ class Layoutable(param.Parameterized):
         Dictionary of CSS rules to apply to DOM node wrapping the
         component.""")
 
-    stylesheets = param.List(default=[], nested_refs=True, doc="""
+    stylesheets = param.List(default=[], item_type=str, nested_refs=True, doc="""
         List of stylesheets defined as URLs pointing to .css files
         or raw CSS defined as a string.""")
 
-    tags = param.List(default=[], nested_refs=True, doc="""
+    tags: list[Any] = param.List(default=[], nested_refs=True, doc="""
         List of arbitrary tags to add to the component.
         Can be useful for templating or for storing metadata on
-        the model.""")
+        the model.""")  # type: ignore[assignment]
 
     width = param.Integer(default=None, bounds=(0, None), doc="""
         The width of the component (in pixels). This can be either
@@ -886,7 +886,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     # Public API
     #----------------------------------------------------------------
 
-    def clone(self, **params) -> Viewable:
+    def clone(self, *objects: Any, **params) -> Viewable:
         """
         Makes a copy of the object sharing the same parameters.
 
@@ -898,6 +898,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
+        if objects:
+            raise TypeError(f"{type(self).__name__}.clone does not accept positional arguments.")
         inherited = get_params_to_inherit(self)
         return type(self)(**dict(inherited, **params))
 
@@ -1057,21 +1059,22 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             model = self.get_root(doc)
 
         self._documents[doc] = model
-        add_to_doc(model, doc)
-        if location:
-            self._add_location(doc, location, model)
-        if config.notifications and doc is state.curdoc:
-            notification = state.notifications
-            if notification:
-                notification_model = notification.get_root(doc)
-                notification_model.name = 'notifications'
-                doc.add_root(notification_model)
-        if config.browser_info and doc is state.curdoc:
-            browser = state.browser_info
-            if browser:
-                browser_model = browser._get_model(doc, model)
-                browser_model.name = 'browser_info'
-                doc.add_root(browser_model)
+        with doc.models.freeze():
+            add_to_doc(model, doc)
+            if location:
+                self._add_location(doc, location, model)
+            if config.notifications and doc is state.curdoc:
+                notification = state.notifications
+                if notification:
+                    notification_model = notification.get_root(doc)
+                    notification_model.name = 'notifications'
+                    doc.add_root(notification_model)
+            if config.browser_info and doc is state.curdoc:
+                browser = state.browser_info
+                if browser:
+                    browser_model = browser._get_model(doc, model)
+                    browser_model.name = 'browser_info'
+                    doc.add_root(browser_model)
         return doc
 
 

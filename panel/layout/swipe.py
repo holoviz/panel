@@ -3,7 +3,7 @@ The Swipe layout enables you to quickly compare two panels
 """
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import param
 
@@ -39,9 +39,9 @@ class Swipe(ListLike, ReactiveHTML):
     value = param.Integer(default=50, bounds=(0, 100), doc="""
         The percentage of the *after* panel to show.""")
 
-    _before = param.Parameter()
+    _before: Any = param.Parameter()  # type: ignore[assignment]
 
-    _after = param.Parameter()
+    _after: Any = param.Parameter()  # type: ignore[assignment]
 
     _direction: ClassVar[str | None] = 'vertical'
 
