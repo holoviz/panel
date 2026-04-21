@@ -11,12 +11,12 @@ Distributed under the terms of the Modified BSD License.
 from __future__ import annotations
 
 import types
+import typing as t
 
 from collections.abc import Iterable, Mapping
 from inspect import (
     Parameter, getcallargs, getfullargspec as check_argspec, signature,
 )
-from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -28,7 +28,7 @@ from .viewable import Viewable
 from .widgets import Button, WidgetBase
 from .widgets.widget import fixed, widget
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.model import Model
 
 empty = Parameter.empty
@@ -77,7 +77,7 @@ class interactive(Pane):
 
     _pane = param.ClassSelector(class_=Viewable)
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'_pane': None}
 
     def __init__(self, object, params={}, **kwargs):
         if signature is None:

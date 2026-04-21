@@ -20,9 +20,7 @@ case is up to you to evaluate.
 
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
+import typing as t
 
 import param
 
@@ -30,7 +28,7 @@ from ..models.speech_to_text import SpeechToText as _BkSpeechToText
 from .base import Widget
 from .button import BUTTON_TYPES
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.model import Model
@@ -358,7 +356,7 @@ class SpeechToText(Widget):
     button_hide = param.Boolean(default=False, label="Hide the Button", doc="""
         If True no button is shown. If False a toggle Start/ Stop button is shown.""")
 
-    button_type: Literal[
+    button_type: t.Literal[
         'default', 'primary', 'success', 'warning', 'danger', 'light', 'dark'
     ] = param.Selector(default="light", objects=BUTTON_TYPES, doc="""
         The button styling.""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -386,7 +384,7 @@ class SpeechToText(Widget):
     speech_started = param.Boolean(constant=True, doc="""
         Returns True if the the User has started speaking and False otherwise.""")
 
-    results: list[dict[str, Any]] = param.List(constant=True, item_type=dict, doc="""
+    results: list[dict[str, t.Any]] = param.List(constant=True, item_type=dict, doc="""
         The `results` as a list of Dictionaries.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     value = param.String(default="", constant=True, label="Last Result", doc="""
@@ -398,11 +396,11 @@ class SpeechToText(Widget):
         List used to transfer the serialized grammars from server to
         browser.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'grammars': None, '_grammars': 'grammars', 'name': None, 'value': None,
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkSpeechToText
+    _widget_type: t.ClassVar[type[Model]] = _BkSpeechToText
 
     def __init__(self, **params):
         super().__init__(**params)

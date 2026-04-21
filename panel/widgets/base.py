@@ -5,9 +5,7 @@ parameters.
 """
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, TypeVar,
-)
+import typing as t
 
 import numpy as np
 import param  # type: ignore
@@ -23,7 +21,7 @@ from ..reactive import Reactive
 from ..util import unique_iterator
 from ..viewable import Layoutable, Viewable
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
     from bokeh.document import Document
@@ -32,7 +30,7 @@ if TYPE_CHECKING:
 
     from ..layout.base import ListLike, NamedListLike
 
-    T = TypeVar('T')
+    T = t.TypeVar('T')
 
 
 class WidgetBase(param.Parameterized):
@@ -43,7 +41,7 @@ class WidgetBase(param.Parameterized):
     e.g. it may be used as a mix-in to a PyComponent or JSComponent.
     """
 
-    value: Any = param.Parameter(allow_None=True, doc="""
+    value: t.Any = param.Parameter(allow_None=True, doc="""
         The widget value which the widget type resolves to when used
         as a reactive param reference.""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -133,17 +131,17 @@ class Widget(Reactive, WidgetBase):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     # Whether the widget supports embedding
     _supports_embed: bool = False
 
     # Declares the Bokeh model type of the widget
-    _widget_type: ClassVar[type[Model] | None] = None
+    _widget_type: t.ClassVar[type[Model] | None] = None
 
     __abstract = True
 
-    def __init__(self, **params: Any):
+    def __init__(self, **params: t.Any):
         if 'name' not in params:
             params['name'] = ''
         if '_supports_embed' in params:
@@ -161,7 +159,7 @@ class Widget(Reactive, WidgetBase):
             props.remove('description')
         return tuple(props)
 
-    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_param_change(params)
         if self._widget_type is not None and 'stylesheets' in params:
             css = getattr(self._widget_type, '__css__', [])
@@ -199,8 +197,8 @@ class Widget(Reactive, WidgetBase):
         return model
 
     def _get_embed_state(
-        self, root: Model, values: list[Any] | None = None, max_opts: int = 3
-    ) -> tuple[Widget, Model, list[Any], Callable[[Model], Any], str, str]:
+        self, root: Model, values: list[t.Any] | None = None, max_opts: int = 3
+    ) -> tuple[Widget, Model, list[t.Any], Callable[[Model], t.Any], str, str]:
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -238,7 +236,7 @@ class CompositeWidget(Widget):
     widgets
     """
 
-    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Row
+    _composite_type: t.ClassVar[type[ListLike] | type[NamedListLike]] = Row
 
     _linked_properties: tuple[str, ...] = ()
 
@@ -301,7 +299,7 @@ class CompositeWidget(Widget):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def __contains__(self, object: Any) -> bool:
+    def __contains__(self, object: t.Any) -> bool:
         return object in self._composite.objects
 
     @property

@@ -6,12 +6,10 @@ from __future__ import annotations
 import base64
 import json
 import sys
+import typing as t
 import zipfile
 
 from abc import abstractmethod
-from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Literal,
-)
 from urllib.request import urlopen
 
 import numpy as np
@@ -27,7 +25,7 @@ from ..base import Pane
 from ..plot import Bokeh
 from .enums import PRESET_CMAPS
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -65,7 +63,7 @@ class AbstractVTK(Pane):
     camera = param.Dict(nested_refs=True, doc="""
       State of the rendered VTK camera.""")
 
-    color_mappers: list[Any] = param.List(nested_refs=True, doc="""
+    color_mappers: list[t.Any] = param.List(nested_refs=True, doc="""
       Color mapper of the actor in the scene""")  # type: ignore[assignment, ty:invalid-assignment]
 
     orientation_widget = param.Boolean(default=False, doc="""
@@ -77,7 +75,7 @@ class AbstractVTK(Pane):
 
     __abstract = True
 
-    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         props = super()._process_param_change(params)
         if 'axes' in props and props['axes'] is not None:
             VTKAxes = sys.modules['panel.models.vtk'].VTKAxes
@@ -86,7 +84,7 @@ class AbstractVTK(Pane):
         return props
 
     def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'axes' in msg and msg['axes'] is not None:
@@ -243,7 +241,7 @@ class BaseVTKRenderWindow(AbstractVTK):
 
     _applies_kw = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
 
     __abstract = True
 
@@ -430,7 +428,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
 
     _one_time_reset = param.Boolean(default=False)
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(_one_time_reset='one_time_reset',
+    _rename: t.ClassVar[Mapping[str, str | None]] = dict(_one_time_reset='one_time_reset',
                    **BaseVTKRenderWindow._rename)
 
     _updates = True
@@ -582,7 +580,7 @@ class VTKVolume(AbstractVTK):
         Parameter to adjust the opacity of the volume based on the
         gradient between voxels.""")
 
-    interpolation: Literal['fast_linear', 'linear', 'nearest'] = param.Selector(
+    interpolation: t.Literal['fast_linear', 'linear', 'nearest'] = param.Selector(
         default='fast_linear', objects=['fast_linear','linear','nearest'], doc="""
         interpolation type for sampling a volume. `nearest`
         interpolation will snap to the closest voxel, `linear` will
@@ -647,9 +645,9 @@ class VTKVolume(AbstractVTK):
         Integer parameter to control the position of the slice normal
         to the Z direction.""")
 
-    _serializers: dict[type, Any] = {}
+    _serializers: dict[type, t.Any] = {}
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'max_data_size': None, 'spacing': None, 'origin': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'max_data_size': None, 'spacing': None, 'origin': None}
 
     _updates = True
 
@@ -659,7 +657,7 @@ class VTKVolume(AbstractVTK):
         self._update(None, None)
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         if ((isinstance(object, np.ndarray) and object.ndim == 3) or
             any([isinstance(object, k) for k in cls._serializers.keys()])):
             return True
@@ -697,7 +695,7 @@ class VTKVolume(AbstractVTK):
         else:
             return self.object.GetDimensions()
 
-    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         props = super()._process_param_change(params)
         if self.object is not None:
             slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
@@ -709,7 +707,7 @@ class VTKVolume(AbstractVTK):
                     props[k] = int(np.round(v * sub_dim[index] / ori_dim[index]))
         return props
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_property_change(props)
         if self.object is not None:
             slice_params = {'slice_i': 0, 'slice_j': 1, 'slice_k': 2}
@@ -829,7 +827,7 @@ class VTKJS(AbstractVTK):
                  notebook context if they interact with already
                  bound keys.""")
 
-    _serializers: dict[type, Any] = {}
+    _serializers: dict[type, t.Any] = {}
 
     _updates = True
 
@@ -838,7 +836,7 @@ class VTKJS(AbstractVTK):
         self._vtkjs = None
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         if isinstance(object, str) and object.endswith('.vtkjs'):
             return True
         return None
@@ -882,7 +880,7 @@ class VTKJS(AbstractVTK):
         data_url, vtkjs = self._get_vtkjs()
         model.update(data_url=data_url, data=vtkjs)
 
-    def export_vtkjs(self, filename: str | IO ='vtk_panel.vtkjs'):
+    def export_vtkjs(self, filename: str | t.IO ='vtk_panel.vtkjs'):
         """
         Exports current VTK data to .vtkjs file.
 

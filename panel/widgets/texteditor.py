@@ -3,7 +3,7 @@ Defines a WYSIWYG TextEditor widget based on quill.js.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Literal
+import typing as t
 
 import param
 
@@ -12,7 +12,7 @@ from pyviz_comms import JupyterComm
 from ..util import lazy_load
 from .base import Widget
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -37,7 +37,7 @@ class TextEditor(Widget):
     disabled = param.Boolean(default=False, doc="""
         Whether the editor is disabled.""")
 
-    mode: Literal['bubble', 'toolbar'] = param.Selector(
+    mode: t.Literal['bubble', 'toolbar'] = param.Selector(
         default='toolbar', objects=['bubble', 'toolbar'], doc="""
         Whether to display a toolbar or a bubble menu on highlight.""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -49,7 +49,7 @@ class TextEditor(Widget):
 
     value = param.String(default="", doc="State of the current text in the editor")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'name': 'name', 'value': 'text'
     }
 

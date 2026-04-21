@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import pathlib
-
-from typing import TYPE_CHECKING
+import typing as t
 
 import param
 
@@ -19,7 +18,7 @@ from .base import (
     DarkTheme, DefaultTheme, Design, Inherit,
 )
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Callable
 
 COLLAPSED_SVG_ICON = """

@@ -6,12 +6,10 @@ objects and their widgets and support for Links
 from __future__ import annotations
 
 import sys
+import typing as t
 
 from collections import defaultdict
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, TypedDict,
-)
 
 import numpy as np
 import param
@@ -35,7 +33,7 @@ from .base import Pane, RerenderError, panel
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -46,7 +44,7 @@ if TYPE_CHECKING:
     WidgetType = type[WidgetBase]
     DimensionWidgetType = tuple[WidgetType, WidgetType] | WidgetType
 
-    class WidgetMapping(TypedDict, total=False):
+    class WidgetMapping(t.TypedDict, total=False):
         date: DimensionWidgetType
         discrete: DimensionWidgetType
         discrete_numeric: DimensionWidgetType
@@ -76,7 +74,7 @@ class HoloViews(Pane):
     >>> HoloViews(some_holoviews_object)
     """
 
-    backend: Literal['bokeh', 'matplotlib', 'plotly'] | None = param.Selector(
+    backend: t.Literal['bokeh', 'matplotlib', 'plotly'] | None = param.Selector(
         default=None, objects=['bokeh', 'matplotlib', 'plotly'], doc="""
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -111,7 +109,7 @@ class HoloViews(Pane):
         """
     )  # type: ignore[assignment, ty:invalid-assignment]
 
-    format: Literal['png', 'svg'] = param.Selector(
+    format: t.Literal['png', 'svg'] = param.Selector(
         default='png', objects=['png', 'svg'], doc="""
         The format to render Matplotlib plots with.""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -127,7 +125,7 @@ class HoloViews(Pane):
                                 allow_None=True, doc="""
         Bokeh theme to apply to the HoloViews plot.""")
 
-    widget_location: Literal[
+    widget_location: t.Literal[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
         'right_top', 'right_bottom'
@@ -138,11 +136,11 @@ class HoloViews(Pane):
         The layout of the plot and the widgets. The value refers to the
         position of the widgets relative to the plot.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    widget_layout: Any = param.Selector(
+    widget_layout: t.Any = param.Selector(
         objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    widget_type: Literal['individual', 'scrubber'] = param.Selector(
+    widget_type: t.Literal['individual', 'scrubber'] = param.Selector(
         default='individual',
         objects=['individual', 'scrubber'], doc="""
         Whether to generate individual widgets for each dimension or
@@ -152,7 +150,7 @@ class HoloViews(Pane):
         A mapping from dimension name to a widget instance which will
         be used to override the default widgets.""")
 
-    priority: ClassVar[float | bool | None] = 0.8
+    priority: t.ClassVar[float | bool | None] = 0.8
 
     _alignments = {
         'left': (Row, ('start', 'center'), True),
@@ -169,11 +167,11 @@ class HoloViews(Pane):
         'right_bottom': (Row, 'end', False)
     }
 
-    _panes: ClassVar[Mapping[str, type[Pane]]] = {
+    _panes: t.ClassVar[Mapping[str, type[Pane]]] = {
         'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly
     }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'backend': None, 'center': None, 'linked_axes': None,
         'renderer': None, 'theme': None, 'widgets': None,
         'widget_layout': None, 'widget_location': None,
@@ -607,7 +605,7 @@ class HoloViews(Pane):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         if 'holoviews' not in sys.modules:
             return False
         from holoviews.core.dimension import Dimensioned
@@ -647,10 +645,10 @@ class HoloViews(Pane):
     @classmethod
     def widgets_from_dimensions(
         cls,
-        object: Any,
+        object: t.Any,
         widget_types: dict[str, WidgetBase] | None = None,
-        widgets_type: Literal['individual', 'scrubber'] = 'individual',
-        direction: Literal['vertical', 'horizontal'] = 'vertical',
+        widgets_type: t.Literal['individual', 'scrubber'] = 'individual',
+        direction: t.Literal['vertical', 'horizontal'] = 'vertical',
         default_widgets: WidgetMapping | None = None
     ):
         from holoviews.core import Dimension, DynamicMap
@@ -735,7 +733,7 @@ class HoloViews(Pane):
             widget_kwargs.update(kwargs)
 
             if vals:
-                options: dict[str, Any] | list[str]
+                options: dict[str, t.Any] | list[str]
                 if len(vals) > 1 and all(isnumeric(v) or isinstance(v, datetime_types) for v in vals):
                     vals = sorted(vals)
                     labels = [str(dim.pprint_value(v)) for v in vals]
@@ -788,8 +786,8 @@ class Interactive(Pane):
         The object being wrapped, which will be converted to a
         Bokeh model.""")
 
-    priority: ClassVar[float | bool | None] = None
-    _ignored_refs: ClassVar[tuple[str, ...]] = ('object',)
+    priority: t.ClassVar[float | bool | None] = None
+    _ignored_refs: t.ClassVar[tuple[str, ...]] = ('object',)
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -797,7 +795,7 @@ class Interactive(Pane):
         self.param.watch(self._update_layout_properties, list(Layoutable.param))
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         if 'hvplot.interactive' not in sys.modules:
             return False
         from hvplot.interactive import Interactive

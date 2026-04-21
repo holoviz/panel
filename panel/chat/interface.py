@@ -6,10 +6,11 @@ through a frontend input UI.
 
 from __future__ import annotations
 
+import typing as t
+
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -24,7 +25,7 @@ from .feed import CallbackState, ChatFeed
 from .input import ChatAreaInput
 from .message import ChatMessage, _FileInputMessage
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Callable
 
     from ..viewable import Viewable
@@ -165,8 +166,8 @@ class ChatInterface(ChatFeed):
     _buttons = param.Dict(default={}, doc="""
         The rendered buttons.""")
 
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_interface.css"]
-    _input_type: ClassVar[type[WidgetBase]] = ChatAreaInput
+    _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/chat_interface.css"]
+    _input_type: t.ClassVar[type[WidgetBase]] = ChatAreaInput
 
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
@@ -195,7 +196,7 @@ class ChatInterface(ChatFeed):
         Link the disabled and loading attributes of the chat box to the
         given object.
         """
-        mapping: dict[str, Any] = {"disabled": "disabled", "loading": "loading"}
+        mapping: dict[str, t.Any] = {"disabled": "disabled", "loading": "loading"}
         values = {p: getattr(self, p) for p in mapping}
         self.param.update(values)
         self.link(obj, **mapping)
@@ -601,9 +602,9 @@ class ChatInterface(ChatFeed):
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
         default_role: str = "assistant",
-        custom_serializer: Callable[[ChatMessage], Any] | None = None,
+        custom_serializer: Callable[[ChatMessage], t.Any] | None = None,
         **serialize_kwargs
-    ) -> list[dict[str, Any]]:
+    ) -> list[dict[str, t.Any]]:
         """
         Exports the chat log for use with transformers.
 
@@ -660,7 +661,7 @@ class ChatInterface(ChatFeed):
 
     def send(
         self,
-        value: ChatMessage | dict | Any,
+        value: ChatMessage | dict | t.Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,

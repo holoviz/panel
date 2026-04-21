@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
+import typing as t
 
 import param
 
@@ -11,7 +9,7 @@ from ..models.chatarea_input import (
 )
 from ..widgets import TextAreaInput as _PnTextAreaInput
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -65,7 +63,7 @@ class ChatAreaInput(_PnTextAreaInput):
         of rows the input area can grow.""",
     )
 
-    resizable: Literal["both", "width", "height", False] = param.Selector(
+    resizable: t.Literal["both", "width", "height", False] = param.Selector(
         default="height",
         objects=["both", "width", "height", False],
         doc="""
@@ -80,15 +78,15 @@ class ChatAreaInput(_PnTextAreaInput):
     max_length = param.Integer(default=50000, doc="""
         Max count of characters in the input field.""")
 
-    _widget_type: ClassVar[type[Model]] = _bkChatAreaInput
+    _widget_type: t.ClassVar[type[Model]] = _bkChatAreaInput
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         "value": None,
         "enter_pressed": None,
         **_PnTextAreaInput._rename,
     }
 
-    def _get_properties(self, doc: Document | None = None) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None = None) -> dict[str, t.Any]:
         props = super()._get_properties(doc)
         props.update({"value_input": self.value, "value": self.value})
         return props

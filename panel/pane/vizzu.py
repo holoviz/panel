@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import sys
-
-from typing import TYPE_CHECKING, Any, ClassVar
+import typing as t
 
 import numpy as np
 import param
@@ -15,7 +14,7 @@ from ..reactive import SyncableData
 from ..util import isdatetime, lazy_load
 from .base import ModelPane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Callable
 
     from bokeh.document import Document
@@ -60,15 +59,15 @@ class Vizzu(ModelPane, SyncableData):
     tooltip = param.Boolean(default=False, doc="""
         Whether to enable tooltips on the chart.""")
 
-    _data_params: ClassVar[list[str]] = ['object']
+    _data_params: t.ClassVar[list[str]] = ['object']
 
-    _rename: ClassVar[dict[str, str | None]] = {
+    _rename: t.ClassVar[dict[str, str | None]] = {
         'click': None, 'column_types': None, 'object': None
     }
 
-    _rerender_params: ClassVar[list[str]] = []
+    _rerender_params: t.ClassVar[list[str]] = []
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
         click_handler = params.pop('on_click', None)
@@ -168,7 +167,7 @@ class Vizzu(ModelPane, SyncableData):
         pass
 
     def animate(
-        self, anim: dict[str, Any], options: int | dict[str, Any] | None = None
+        self, anim: dict[str, t.Any], options: int | dict[str, t.Any] | None = None
     ) -> None:
         """
         Updates the chart with a new configuration.

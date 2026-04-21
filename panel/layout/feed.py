@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
+import typing as t
 
 import param
 
@@ -10,7 +8,7 @@ from ..models.feed import Feed as PnFeed, ScrollButtonClick, ScrollLatestEvent
 from ..util import edit_readonly, isIn
 from .base import Column
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -43,7 +41,7 @@ class Feed(Column):
         When scrolled halfway into the buffer, the feed will automatically
         load additional objects while unloading objects on the opposite side.""")
 
-    scroll: Literal[
+    scroll: t.Literal[
         False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"
     ] = param.Selector(
         default="y",
@@ -62,11 +60,11 @@ class Feed(Column):
         Read-only upper and lower bounds of the currently visible feed objects.
         This list is automatically updated based on scrolling.""")
 
-    _bokeh_model: ClassVar[type[Model]] = PnFeed
+    _bokeh_model: t.ClassVar[type[Model]] = PnFeed
 
     _direction = 'vertical'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'objects': 'children', 'visible_range': 'visible_children',
         'load_buffer': None,
     }
@@ -130,7 +128,7 @@ class Feed(Column):
         self._register_events('scroll_button_click', model=model, doc=doc, comm=comm)
         return model
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         if 'visible_children' in props:
             visible = props.pop('visible_children')
             for model, _ in self._models.values():
@@ -151,7 +149,7 @@ class Feed(Column):
             props['visible_range'] = tuple(visible_range)
         return super()._process_property_change(props)
 
-    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         params.pop('visible_range', None)
         return super()._process_param_change(params)
 

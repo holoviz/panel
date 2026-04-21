@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar
+import typing as t
 
 import param
 
@@ -9,7 +9,7 @@ from bokeh.models import Tooltip as BkTooltip
 from .base import Widget
 from .indicators import TooltipIcon
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
 
@@ -24,11 +24,11 @@ class TooltipMixin(Widget):
         Delay (in milliseconds) to display the tooltip after the cursor has
         hovered over the Button, default is 500ms.""")
 
-    _rename: ClassVar[Mapping[str, str | None]]  = {
+    _rename: t.ClassVar[Mapping[str, str | None]]  = {
         'description': 'tooltip', 'description_delay': 'tooltip_delay'
     }
 
-    def _process_param_change(self, params) -> dict[str, Any]:
+    def _process_param_change(self, params) -> dict[str, t.Any]:
         desc = params.get('description')
         if isinstance(desc, TooltipIcon):
             params['description'] = TooltipIcon.value

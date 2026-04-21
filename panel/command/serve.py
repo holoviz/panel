@@ -12,10 +12,10 @@ import logging
 import os
 import pathlib
 import sys
+import typing as t
 
 from glob import glob
 from types import ModuleType
-from typing import TYPE_CHECKING
 
 from bokeh.application import Application
 from bokeh.application.handlers.document_lifecycle import (
@@ -43,7 +43,7 @@ from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
 from ..util import edit_readonly, fullpath
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import argparse
 
     from collections.abc import Iterator

@@ -3,7 +3,7 @@ Spacer components to add horizontal or vertical space to a layout.
 """
 from __future__ import annotations
 
-from typing import ClassVar, Literal
+import typing as t
 
 import param
 
@@ -60,7 +60,7 @@ class VSpacer(Spacer):
     ... )
     """
 
-    sizing_mode: Literal["stretch_height"] = param.Parameter(
+    sizing_mode: t.Literal["stretch_height"] = param.Parameter(
         default='stretch_height', readonly=True
     )  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -83,7 +83,7 @@ class HSpacer(Spacer):
     ... )
     """
 
-    sizing_mode: Literal["stretch_width"] = param.Parameter(
+    sizing_mode: t.Literal["stretch_width"] = param.Parameter(
         default='stretch_width', readonly=True
     )  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -105,12 +105,12 @@ class Divider(Reactive):
     >>> )
     """
 
-    width_policy: Literal['fit'] = param.Selector(
+    width_policy: t.Literal['fit'] = param.Selector(
         default="fit", readonly=True)  # type: ignore[assignment, ty:invalid-assignment]
 
     _bokeh_model = BkDiv
 
-    _stylesheets: ClassVar[list[str]] = [
+    _stylesheets: t.ClassVar[list[str]] = [
         f'{CDN_DIST}css/divider.css'
     ]
 

@@ -13,15 +13,13 @@ import sys
 import textwrap
 import threading
 import types
+import typing as t
 
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import partial
 from types import FunctionType
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
 
 import param
 
@@ -64,7 +62,7 @@ from .widgets import (
 )
 from .widgets.button import _ButtonBase
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from matplotlib.pyplot import Figure
@@ -199,7 +197,7 @@ class Param(Pane):
     show_name = param.Boolean(default=True, doc="""
         Whether to show the parameterized object's name""")
 
-    sort: bool | Callable[[Any], Any] = param.ClassSelector(
+    sort: bool | Callable[[t.Any], t.Any] = param.ClassSelector(
         default=False, class_=(bool, Callable),  # type: ignore[arg-type]
         doc="""
         If True the widgets will be sorted alphabetically by label.
@@ -214,7 +212,7 @@ class Param(Pane):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    mapping: ClassVar[dict[type[param.Parameter], type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
+    mapping: t.ClassVar[dict[type[param.Parameter], type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
         param.Action:            Button,
         param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
@@ -241,7 +239,7 @@ class Param(Pane):
         param.String:            TextInput,
     }
 
-    input_widgets: ClassVar[dict[Any, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]]  = {
+    input_widgets: t.ClassVar[dict[t.Any, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]]  = {
         float: FloatInput,
         int: IntInput,
         "literal": LiteralInput,
@@ -250,13 +248,13 @@ class Param(Pane):
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
 
-    _ignored_refs: ClassVar[tuple[str,...]] = ('object',)
+    _ignored_refs: t.ClassVar[tuple[str,...]] = ('object',)
 
-    _linkable_properties: ClassVar[tuple[str,...]] = ()
+    _linkable_properties: t.ClassVar[tuple[str,...]] = ()
 
-    _rerender_params: ClassVar[list[str]] = []
+    _rerender_params: t.ClassVar[list[str]] = []
 
-    _unpack: ClassVar[bool] = True
+    _unpack: t.ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
         if isinstance(object, param.Parameter):
@@ -800,7 +798,7 @@ class Param(Pane):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         if isinstance(object, param.parameterized.Parameters):
             return 0.8
         elif (is_parameterized(object) or (isinstance(object, param.Parameter) and object.owner is not None)):
@@ -810,10 +808,10 @@ class Param(Pane):
     @classmethod
     def widget_type(cls, pobj):
         ptype = type(pobj)
-        for t in classlist(ptype)[::-1]:
-            if t not in cls.mapping:
+        for wt in classlist(ptype)[::-1]:
+            if wt not in cls.mapping:
                 continue
-            wtype = cls.mapping[t]
+            wtype = cls.mapping[wt]
             if isinstance(wtype, types.FunctionType):
                 return wtype(pobj)
             return wtype
@@ -856,7 +854,7 @@ class ParamRef(ReplacementPane):
         Whether to defer load until after the page is rendered.
         Can be set as parameter or by setting panel.config.defer_load.""")
 
-    generator_mode: Literal['append', 'replace'] = param.Selector(
+    generator_mode: t.Literal['append', 'replace'] = param.Selector(
         default='replace', objects=['append', 'replace'], doc="""
         Whether generators should 'append' to or 'replace' existing output.""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -868,7 +866,7 @@ class ParamRef(ReplacementPane):
         Whether to show a loading indicator while the pane is updating.
         Can be set as parameter or by setting panel.config.loading_indicator.""")
 
-    priority: ClassVar[float | bool | None] = 0
+    priority: t.ClassVar[float | bool | None] = 0
 
     def __init__(self, object=None, **params):
         if 'defer_load' not in params:
@@ -885,7 +883,7 @@ class ParamRef(ReplacementPane):
                 self._replace_pane()
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         return bool(resolve_ref(object))
 
     def _validate_object(self):
@@ -1043,7 +1041,7 @@ class ParamMethod(ParamRef):
     return any object which itself can be rendered as a Pane.
     """
 
-    priority: ClassVar[float | bool | None] = 0.5
+    priority: t.ClassVar[float | bool | None] = 0.5
 
     @param.depends('object', watch=True)
     def _validate_object(self):
@@ -1108,7 +1106,7 @@ class ParamMethod(ParamRef):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         return inspect.ismethod(object) and isinstance(get_method_owner(object), param.Parameterized)
 
     @classmethod
@@ -1125,9 +1123,9 @@ class ParamFunction(ParamRef):
     a widget to some other output.
     """
 
-    priority: ClassVar[float | bool | None] = 0.6
+    priority: t.ClassVar[float | bool | None] = 0.6
 
-    _applies_kw: ClassVar[bool] = True
+    _applies_kw: t.ClassVar[bool] = True
 
     @param.depends('object', watch=True)
     def _validate_object(self):
@@ -1150,7 +1148,7 @@ class ParamFunction(ParamRef):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, object: Any, **kwargs) -> float | bool | None:
+    def applies(cls, object: t.Any, **kwargs) -> float | bool | None:
         if isinstance(object, types.FunctionType):
             if hasattr(object, '_dinfo'):
                 return True
@@ -1188,7 +1186,7 @@ class ReactiveExpr(Pane):
         class_=ListLike, constant=True, is_instance=False, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")
 
-    widget_location: Literal[
+    widget_location: t.Literal[
         'left', 'right', 'top', 'bottom', 'top_left',
         'top_right', 'bottom_left', 'bottom_right',
         'left_top', 'right_top', 'right_bottom'
@@ -1199,7 +1197,7 @@ class ReactiveExpr(Pane):
         The location of the widgets relative to the output
         of the reactive expression.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    priority: ClassVar[float | bool | None] = 1
+    priority: t.ClassVar[float | bool | None] = 1
 
     _layouts = {
         'left': (Row, ('start', 'center'), True),
@@ -1216,7 +1214,7 @@ class ReactiveExpr(Pane):
         'right_bottom': (Row, 'end', False)
     }
 
-    _unpack: ClassVar[bool] = False
+    _unpack: t.ClassVar[bool] = False
 
     def __init__(self, object=None, **params):
         super().__init__(object=object, **params)

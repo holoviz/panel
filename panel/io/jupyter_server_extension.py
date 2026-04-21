@@ -32,9 +32,9 @@ import os
 import pathlib
 import textwrap
 import time
+import typing as t
 
 from queue import Empty
-from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 
 import tornado
@@ -59,7 +59,7 @@ from .resources import DIST_DIR, ERROR_TEMPLATE, _env
 from .server import COMPONENT_PATH, ComponentResourceHandler
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Awaitable
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ CONNECTION_TIMEOUT = 30 # Timeout for WS connection to open
 
 KERNEL_ERROR_TEMPLATE = _env.get_template('kernel_error.html')
 
-async def ensure_async(obj: Awaitable | Any) -> Any:
+async def ensure_async(obj: Awaitable | t.Any) -> t.Any:
     """Convert a non-awaitable object to a coroutine if needed,
     and await it if it was not already awaited.
     """
@@ -337,7 +337,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
         # Note: tornado_app is stored as self.application
         kw['application_context'] = None
         super().__init__(tornado_app, *args, **kw)
-        self.kernel: Any = None
+        self.kernel: t.Any = None
         self.comm_id: str | None = None
         self.kernel_id: str | None = None
         self.session_id: str | None = None
@@ -399,7 +399,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
             msg = f"Session ID '{self.session_id}' does not correspond to any active kernel."
             raise RuntimeError(msg)
 
-        kernel_info: tuple[Any, str, str, bool] = state._kernels[self.session_id]
+        kernel_info: tuple[t.Any, str, str, bool] = state._kernels[self.session_id]
         self.kernel, self.comm_id, self.kernel_id, _ = kernel_info
         state._kernels[self.session_id] = kernel_info[:-1] + (True,)
 

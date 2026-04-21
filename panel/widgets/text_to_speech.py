@@ -9,9 +9,8 @@ unit of speech in spoken language analysis.
 """
 from __future__ import annotations
 
+import typing as t
 import uuid
-
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -19,7 +18,7 @@ from panel.widgets import Widget
 
 from ..models.text_to_speech import TextToSpeech as _BkTextToSpeech
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.model import Model
@@ -103,7 +102,7 @@ class Utterance(param.Parameterized):
         The speed at which the utterance will be spoken at expressed
         as a number between 0.1 and 10.""" )
 
-    voice: Any = param.Selector(doc="""
+    voice: t.Any = param.Selector(doc="""
         The voice that will be used to speak the utterance.""")  # type: ignore[assignment]
 
     volume = param.Number(default=1.0, bounds=(0.0, 1.0), doc=""" The
@@ -223,15 +222,15 @@ class TextToSpeech(Utterance, Widget):
 
     _voices: list[Voice] = param.List(item_type=Voice)  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'auto_speak': None, 'lang': None, 'name': None, 'pitch': None,
         'rate': None, 'speak': None, 'value': None, 'voice': None,
         'voices': None, 'volume': None, '_voices': 'voices',
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkTextToSpeech
+    _widget_type: t.ClassVar[type[Model]] = _BkTextToSpeech
 
-    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         speak = params.get('speak') or ('value' in params and self.auto_speak)
         props = super()._process_param_change(params)
         if speak:

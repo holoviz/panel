@@ -4,9 +4,7 @@ bokeh model.
 """
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
+import typing as t
 
 import numpy as np
 import param
@@ -19,7 +17,7 @@ from ..util.checks import datetime_types, isdatetime
 from ..viewable import Layoutable
 from .base import ModelPane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -64,7 +62,7 @@ class Plotly(ModelPane):
 
     relayout_data = param.Dict(nested_refs=True, doc="Relayout event data from `plotly_relayout` event")
 
-    restyle_data: list[Any] = param.List(
+    restyle_data: list[t.Any] = param.List(
         default=[], nested_refs=True, doc="""
         Restyle event data from `plotly_restyle` event""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -76,7 +74,7 @@ class Plotly(ModelPane):
         Current viewport state, i.e. the x- and y-axis limits of the displayed plot.
         Updated on `plotly_relayout`, `plotly_relayouting` and `plotly_restyle` events.""")
 
-    viewport_update_policy: Literal["mouseup", "continuous", "throttle"] = param.Selector(
+    viewport_update_policy: t.Literal["mouseup", "continuous", "throttle"] = param.Selector(
         default="mouseup", doc="""
         Policy by which the viewport parameter is updated during user interactions.
 
@@ -94,11 +92,11 @@ class Plotly(ModelPane):
     _render_count = param.Integer(default=0, doc="""
         Number of renders, increment to trigger re-render""")
 
-    priority: ClassVar[float | bool | None] = 0.8
+    priority: t.ClassVar[float | bool | None] = 0.8
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'link_figure': None,
         'object': None,
         'doubleclick_data': None,
@@ -109,7 +107,7 @@ class Plotly(ModelPane):
     }
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         return ((isinstance(object, list) and object and all(cls.applies(o) for o in object)) or
                 hasattr(object, 'to_plotly_json') or (isinstance(object, dict)
                                                    and 'data' in object and 'layout' in object))
@@ -486,7 +484,7 @@ class Plotly(ModelPane):
         except Exception:
             update_frames = True
 
-        updates: dict[str, Any] = {}
+        updates: dict[str, t.Any] = {}
         if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
             autosize = layout.get('autosize')
             styles = dict(model.styles)

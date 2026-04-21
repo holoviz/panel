@@ -3,11 +3,10 @@ Miscellaneous widgets which do not fit into the other main categories.
 """
 from __future__ import annotations
 
+import typing as t
+
 from base64 import b64encode
 from pathlib import Path
-from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Literal,
-)
 
 import param
 
@@ -25,7 +24,7 @@ from .base import Widget
 from .button import BUTTON_STYLES, BUTTON_TYPES, IconMixin
 from .indicators import Progress  # noqa
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import os
 
     from collections.abc import Mapping
@@ -45,7 +44,7 @@ class VideoStream(Widget):
     >>> VideoStream(name='Video Stream', timeout=100)
     """
 
-    format: Literal['png', 'jpeg'] = param.Selector(
+    format: t.Literal['png', 'jpeg'] = param.Selector(
         default='png', objects=['png', 'jpeg'],
         doc="""
         The file format as which the video is returned.""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -59,9 +58,9 @@ class VideoStream(Widget):
     value = param.String(default='', doc="""
         A base64 representation of the video stream snapshot.""")
 
-    _widget_type: ClassVar[type[Model]] = _BkVideoStream
+    _widget_type: t.ClassVar[type[Model]] = _BkVideoStream
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': None}
 
     def snapshot(self):
         """
@@ -93,14 +92,14 @@ class FileDownload(IconMixin):
         Whether to download on the initial click or allow for
         right-click save as.""")
 
-    button_type: Literal[
+    button_type: t.Literal[
         'default', 'primary', 'success', 'warning', 'danger', 'light'
     ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
         or 'danger' (red).""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    button_style: Literal['solid', 'outline'] = param.Selector(
+    button_style: t.Literal['solid', 'outline'] = param.Selector(
         default='solid', objects=BUTTON_STYLES, doc="""
         A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -113,7 +112,7 @@ class FileDownload(IconMixin):
     embed = param.Boolean(default=False, doc="""
         Whether to embed the file on initialization.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    file: str | os.PathLike | IO | None = param.Parameter(default=None, doc="""
+    file: str | os.PathLike | t.IO | None = param.Parameter(default=None, doc="""
         The file, Path, file-like object or file contents to transfer.  If
         the file is not pointing to a file on disk a filename must
         also be provided.""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -153,14 +152,14 @@ class FileDownload(IconMixin):
         }
     }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks',
         'value': None
     }
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
 
-    _widget_type: ClassVar[type[Model]] = _BkFileDownload
+    _widget_type: t.ClassVar[type[Model]] = _BkFileDownload
 
     def __init__(self, file=None, **params):
         self._default_label = 'label' not in params
@@ -309,7 +308,7 @@ class JSONEditor(Widget):
         etc. functionality. true by default. Applicable in all types
         of mode.""")
 
-    mode: Literal[
+    mode: t.Literal[
         "tree", "view", "form", "text", "preview"
     ] = param.Selector(default='tree', objects=[
         "tree", "view", "form", "text", "preview"], doc="""
@@ -337,7 +336,7 @@ class JSONEditor(Widget):
 
         See http://json-schema.org/ for more information.""")
 
-    templates: list[dict[str, Any]] = param.List(item_type=dict, doc="""
+    templates: list[dict[str, t.Any]] = param.List(item_type=dict, doc="""
         Array of templates that will appear in the context menu, Each
         template is a json object precreated that can be added as a
         object value to any node in your document.""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -345,7 +344,7 @@ class JSONEditor(Widget):
     value = param.Parameter(default={}, doc="""
         JSON data to be edited.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'name': None, 'value': 'data'
     }
 

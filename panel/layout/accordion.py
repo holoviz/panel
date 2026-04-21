@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
@@ -10,7 +10,7 @@ from ..reactive import Reactive
 from .base import NamedListPanel
 from .card import Card
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
     from bokeh.model import Model
@@ -55,9 +55,9 @@ class Accordion(NamedListPanel):
 
     _bokeh_model = BkColumn
 
-    _direction: ClassVar[str | None] = 'vertical'
+    _direction: t.ClassVar[str | None] = 'vertical'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'active': None, 'active_header_background': None,
         'header_background': None, 'objects': 'children',
         'dynamic': None, 'toggle': None, 'header_color': None

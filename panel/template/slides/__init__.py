@@ -2,8 +2,7 @@
 Vanilla template
 """
 import pathlib
-
-from typing import Literal
+import typing as t
 
 import param
 
@@ -24,14 +23,14 @@ class SlidesTemplate(VanillaTemplate):
     SlidesTemplate is built on top of Vanilla web components.
     """
 
-    collapsed_sidebar: Literal[True, False] = param.Selector(
+    collapsed_sidebar: t.Literal[True, False] = param.Selector(
         default=True, constant=True, doc="""
         Whether the sidebar (if present) is initially collapsed.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     reveal_config = param.Dict(default={}, doc="""
         Configuration parameters for reveal.js""")
 
-    reveal_theme: Literal[
+    reveal_theme: t.Literal[
         'black', 'white', 'league', 'beige', 'night', 'solarized', 'simple'
     ] | None = param.Selector(default=None, objects=REVEAL_THEMES, doc="""
         The reveal.js theme to load.""")  # type: ignore[assignment, ty:invalid-assignment]

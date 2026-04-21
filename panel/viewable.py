@@ -20,9 +20,6 @@ import typing as t
 import uuid
 
 from html import escape
-from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Literal,
-)
 
 import param  # type: ignore
 
@@ -49,7 +46,7 @@ from .io.state import set_curdoc, state
 from .util import param_reprs
 from .util.parameters import get_params_to_inherit
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import os
     import threading
 
@@ -95,7 +92,7 @@ class Layoutable(param.Parameterized):
     css_classes = param.List(default=[], item_type=str, nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
 
-    design: Any = param.Selector(default=None, objects=[], doc="""
+    design: t.Any = param.Selector(default=None, objects=[], doc="""
         The design system to use to style components.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
@@ -127,7 +124,7 @@ class Layoutable(param.Parameterized):
         List of stylesheets defined as URLs pointing to .css files
         or raw CSS defined as a string.""")
 
-    tags: list[Any] = param.List(default=[], nested_refs=True, doc="""
+    tags: list[t.Any] = param.List(default=[], nested_refs=True, doc="""
         List of arbitrary tags to add to the component.
         Can be useful for templating or for storing metadata on
         the model.""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -136,7 +133,7 @@ class Layoutable(param.Parameterized):
         The width of the component (in pixels). This can be either
         fixed or preferred width, depending on width sizing policy.""")
 
-    width_policy: Literal[
+    width_policy: t.Literal[
         'auto', 'fixed', 'fit', 'min', 'max'
     ] = param.Selector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
@@ -170,7 +167,7 @@ class Layoutable(param.Parameterized):
             management and other factors.
     """)  # type: ignore[assignment, ty:invalid-assignment]
 
-    height_policy: Literal[
+    height_policy: t.Literal[
         'auto', 'fixed', 'fit', 'min', 'max'
     ] = param.Selector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
@@ -204,7 +201,7 @@ class Layoutable(param.Parameterized):
             management and other factors.
     """)  # type: ignore[assignment, ty:invalid-assignment]
 
-    sizing_mode: Literal[
+    sizing_mode: t.Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both'
     ] | None = param.Selector(default=None, objects=[
@@ -523,7 +520,7 @@ class MimeRenderMixin:
         if accumulator:
             handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
 
-    def _on_stdout(self, ref: str, stdout: Any) -> None:
+    def _on_stdout(self, ref: str, stdout: t.Any) -> None:
         if ref not in state._handles or config.console_output in [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
@@ -660,7 +657,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
             add_to_doc(model, doc)
         return model
 
-    def _init_params(self) -> Mapping[str, Any]:
+    def _init_params(self) -> Mapping[str, t.Any]:
         return {k: v for k, v in self.param.values().items() if v is not None}
 
     def _server_destroy(self, session_context: BokehSessionContext) -> None:
@@ -735,7 +732,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Whether or not the Viewable is loading. If True a loading spinner
         is shown on top of the Viewable.""")
 
-    _preprocessing_hooks: ClassVar[list[Callable[[Viewable, Model], None]]] = []
+    _preprocessing_hooks: t.ClassVar[list[Callable[[Viewable, Model], None]]] = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
@@ -888,7 +885,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     # Public API
     #----------------------------------------------------------------
 
-    def clone(self, *objects: Any, **params) -> Self:
+    def clone(self, *objects: t.Any, **params) -> Self:
         """
         Makes a copy of the object sharing the same parameters.
 
@@ -965,12 +962,12 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         )
 
     def save(
-        self, filename: str | os.PathLike | IO, title: str | None = None,
+        self, filename: str | os.PathLike | t.IO, title: str | None = None,
         resources: Resources | None = None, template: str | Template | None = None,
-        template_variables: dict[str, Any] = {}, embed: bool = False,
+        template_variables: dict[str, t.Any] = {}, embed: bool = False,
         max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
         json_prefix: str='', save_path: str='./', load_path: str | None = None,
-        progress: bool = True, embed_states: dict[Any, Any] = {},
+        progress: bool = True, embed_states: dict[t.Any, t.Any] = {},
         as_png: bool | None = None, **kwargs
     ) -> None:
         """

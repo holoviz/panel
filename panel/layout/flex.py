@@ -1,5 +1,6 @@
+import typing as t
+
 from pathlib import Path
-from typing import Literal
 
 import param
 
@@ -29,7 +30,7 @@ class FlexBox(ListLike, ReactiveHTML):
     ... )
     """
 
-    align_content: Literal[
+    align_content: t.Literal[
         'normal', 'flex-start', 'flex-end', 'center', 'space-between',
         'space-around', 'space-evenly', 'stretch', 'start', 'end',
         'baseline', 'first baseline', 'last baseline'
@@ -40,7 +41,7 @@ class FlexBox(ListLike, ReactiveHTML):
         Defines how a flex container's lines align when there is extra
         space in the cross-axis.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    align_items: Literal[
+    align_items: t.Literal[
         'stretch', 'flex-start', 'flex-end', 'center', 'baseline',
         'first baseline', 'last baseline', 'start', 'end',
         'self-start', 'self-end'
@@ -51,14 +52,14 @@ class FlexBox(ListLike, ReactiveHTML):
         Defines the default behavior for how flex items are laid
         out along the cross axis on the current line.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    flex_direction: Literal[
+    flex_direction: t.Literal[
         'row', 'row-reverse', 'column', 'column-reverse'
     ] = param.Selector(default='row', objects=[
         'row', 'row-reverse', 'column', 'column-reverse'], doc="""
         This establishes the main-axis, thus defining the direction
         flex items are placed in the flex container.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    flex_wrap: Literal['nowrap', 'wrap', 'wrap-reverse'] = param.Selector(
+    flex_wrap: t.Literal['nowrap', 'wrap', 'wrap-reverse'] = param.Selector(
         default='wrap', objects=[
         'nowrap', 'wrap', 'wrap-reverse'], doc="""
         Whether and how to wrap items in the flex container.""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -66,7 +67,7 @@ class FlexBox(ListLike, ReactiveHTML):
     gap = param.String(default='', doc="""
         Defines the spacing between flex items, supporting various units (px, em, rem, %, vw/vh).""")
 
-    justify_content: Literal[
+    justify_content: t.Literal[
         'flex-start', 'flex-end', 'center', 'space-between', 'space-around',
         'space-evenly', 'start', 'end', 'left', 'right'
     ] = param.Selector(default='flex-start', objects=[

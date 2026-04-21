@@ -12,8 +12,7 @@ import shlex
 import signal
 import subprocess
 import sys
-
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
@@ -23,7 +22,7 @@ from ..io.callbacks import PeriodicCallback
 from ..util import edit_readonly, lazy_load
 from .base import Widget
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -268,7 +267,7 @@ class Terminal(Widget):
 
     _output = param.String(default="")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'clear': None, 'name': None, 'output': None, '_output': 'output',
         'value': None, 'write_to_console': None,
     }

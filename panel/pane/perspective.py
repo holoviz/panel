@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import datetime as dt
 import sys
+import typing as t
 
 from enum import Enum
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
 
 import numpy as np
 import param
@@ -21,7 +19,7 @@ from ..util import datetime_types, lazy_load
 from ..viewable import Viewable
 from .base import ModelPane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
     from bokeh.document import Document
@@ -30,7 +28,7 @@ if TYPE_CHECKING:
 
     from ..models.perspective import PerspectiveClickEvent
 
-    SortLiteral = Literal["asc", "desc"]
+    SortLiteral = t.Literal["asc", "desc"]
 
 DEFAULT_THEME = "pro"
 
@@ -291,7 +289,7 @@ class Perspective(ModelPane, ReactiveData):
     split_by: list[str | int] = param.List(default=None, item_type=(str, int), nested_refs=True, doc="""
       A list of source columns to pivot by. For example ["x", "y"]""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    filters: list[tuple[str | int, str, Any] | list[Any]] | None = param.List(
+    filters: list[tuple[str | int, str, t.Any] | list[t.Any]] | None = param.List(
         default=None, item_type=(tuple, list), nested_refs=True, doc="""
       How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -311,7 +309,7 @@ class Perspective(ModelPane, ReactiveData):
         default=None, item_type=(str, int, tuple, list), doc="""
       How to sort. For example[["x","desc"]]""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    plugin: Literal[
+    plugin: t.Literal[
         'hypergrid', 'datagrid', 'd3_y_bar', 'd3_x_bar', 'd3_xy_line', 'd3_y_line',
         'd3_y_area', 'd3_y_scatter', 'd3_xy_scatter', 'd3_treemap', 'd3_sunburst',
         'd3_heatmap', 'd3_candlestick', 'd3_ohlc',
@@ -324,7 +322,7 @@ class Perspective(ModelPane, ReactiveData):
     settings = param.Boolean(default=True, doc="""
       Whether to show the settings menu.""")
 
-    theme: Literal[
+    theme: t.Literal[
         'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark',
         'vaporwave', 'pro', 'pro-dark',
     ] = param.Selector(default='pro', objects=THEMES, doc="""
@@ -333,17 +331,17 @@ class Perspective(ModelPane, ReactiveData):
     title = param.String(default=None, doc="""
       Title for the Perspective viewer.""")
 
-    priority: ClassVar[float | bool | None] = None
+    priority: t.ClassVar[float | bool | None] = None
 
-    _bokeh_model: ClassVar[type[Model] | None] = None
+    _bokeh_model: t.ClassVar[type[Model] | None] = None
 
-    _data_params: ClassVar[list[str]] = ['object']
+    _data_params: t.ClassVar[list[str]] = ['object']
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'selection': None
     }
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
     @classmethod
     def applies(cls, object):
@@ -481,7 +479,7 @@ class Perspective(ModelPane, ReactiveData):
             return int(col)
         return col
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_property_change(props)
         for prop in ('columns', 'group_by', 'split_by'):
             if prop not in params:

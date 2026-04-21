@@ -3,9 +3,7 @@ Defines Player widgets which offer media-player like controls.
 """
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
+import typing as t
 
 import param
 
@@ -18,7 +16,7 @@ from ..util import indexOf, isIn
 from .base import Widget
 from .select import SelectBase
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.model import Model
@@ -34,7 +32,7 @@ class PlayerBase(Widget):
         Interval between updates, in milliseconds. Default is 500, i.e.
         two updates per second.""")
 
-    loop_policy: Literal['once', 'loop', 'reflect'] = param.Selector(
+    loop_policy: t.Literal['once', 'loop', 'reflect'] = param.Selector(
         default='once', objects=['once', 'loop', 'reflect'], doc="""
         Policy used when player hits last frame""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -53,7 +51,7 @@ class PlayerBase(Widget):
 
     height = param.Integer(default=80)
 
-    value_align: Literal["start", "center", "end"] = param.Selector(
+    value_align: t.Literal["start", "center", "end"] = param.Selector(
         objects=["start", "center", "end"], doc="""
         Location to display the value of the slider
         ("start", "center", "end")""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -73,11 +71,11 @@ class PlayerBase(Widget):
         'once', 'loop', 'reflect'
     ], doc="The loop options to display on the player.")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': "title"}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': "title"}
 
-    _widget_type: ClassVar[type[Model]] = _BkPlayer
+    _widget_type: t.ClassVar[type[Model]] = _BkPlayer
 
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/player.css"]
+    _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/player.css"]
 
     __abstract = True
 
@@ -135,7 +133,7 @@ class Player(PlayerBase):
             params['value'] = params['start']
         super().__init__(**params)
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         if config.throttled:
             if "value" in props:
                 del props["value"]
@@ -177,15 +175,15 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value = param.Parameter(doc="Current player value")
 
-    value_throttled: Any = param.Parameter(constant=True, doc="Current player value")  # type: ignore[assignment, ty:invalid-assignment]
+    value_throttled: t.Any = param.Parameter(constant=True, doc="Current player value")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'value_throttled': None}
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'value': None, 'value_throttled': None}
 
-    _widget_type: ClassVar[type[Model]] = _BkDiscretePlayer
+    _widget_type: t.ClassVar[type[Model]] = _BkDiscretePlayer
 
-    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         values = self.values
         if 'options' in params:
             params['start'] = 0
@@ -203,7 +201,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
             del params['value_throttled']
         return super()._process_param_change(params)
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         for prop in ('value', 'value_throttled'):
             if prop in props:
                 value = props.pop(prop)

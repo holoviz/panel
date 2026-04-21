@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
@@ -8,7 +8,7 @@ from ..models import Card as BkCard
 from ..viewable import Child
 from .base import Column, Row
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
     from bokeh.model import Model
@@ -69,9 +69,9 @@ class Card(Column):
         A title to be displayed in the Card header, will be overridden
         by the header if defined.""")
 
-    _bokeh_model: ClassVar[type[Model]] = BkCard
+    _bokeh_model: t.ClassVar[type[Model]] = BkCard
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'title': None, 'header': None, 'title_css_classes': None
     }
 

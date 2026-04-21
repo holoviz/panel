@@ -4,8 +4,7 @@ Bootstrap template based on the bootstrap.css library.
 from __future__ import annotations
 
 import pathlib
-
-from typing import ClassVar
+import typing as t
 
 import param
 
@@ -18,7 +17,7 @@ _ROOT = pathlib.Path(__file__).parent
 
 class BootstrapTemplateActions(TemplateActions):
 
-    _scripts: ClassVar[dict[str, list[str] | str]] = {
+    _scripts: t.ClassVar[dict[str, list[str] | str]] = {
         'render': "state.modal = new bootstrap.Modal(document.getElementById('pn-Modal'))",
         'open_modal': "state.modal.show()",
         'close_modal': "state.modal.hide()",

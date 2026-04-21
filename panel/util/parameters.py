@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import inspect
+import typing as t
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any
 
 import param
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-def should_inherit(parameterized: param.Parameterized, p: str, v: Any) -> Any:
+def should_inherit(parameterized: param.Parameterized, p: str, v: t.Any) -> t.Any:
     pobj = parameterized.param[p]
     return v is not pobj.default and not pobj.readonly and (v is not None or pobj.allow_None)
 

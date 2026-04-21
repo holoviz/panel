@@ -12,14 +12,11 @@ import importlib
 import inspect
 import os
 import sys
-import typing
+import typing as t
 import warnings
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
 from weakref import WeakKeyDictionary
 
 import param
@@ -33,7 +30,7 @@ from .io.logging import panel_log_handler
 from .io.state import state
 from .util import _descendents, set_bokeh_validation
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
 
 _LOCAL_DEV_VERSION = (
@@ -160,7 +157,7 @@ class _config(_base_config):
     global_loading_spinner = param.Boolean(default=False, doc="""
         Whether to add a global loading spinner for the whole application.""")
 
-    layout_compatibility: Literal['warn', 'error'] = param.Selector(
+    layout_compatibility: t.Literal['warn', 'error'] = param.Selector(
         default='warn', objects=['warn', 'error'], doc="""
         Provide compatibility for older layout specifications. Incompatible
         specifications will trigger warnings by default but can be set to error.
@@ -172,7 +169,7 @@ class _config(_base_config):
     loading_indicator = param.Boolean(default=False, doc="""
         Whether a loading indicator is shown by default while panes are updating.""")
 
-    loading_spinner: Literal[
+    loading_spinner: t.Literal[
         'arc', 'arcs', 'bar', 'dots', 'petal'
     ] = param.Selector(default='arc', objects=[
         'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
@@ -187,7 +184,7 @@ class _config(_base_config):
     notifications = param.Boolean(default=False, doc="""
         Whether to enable notifications functionality.""")
 
-    profiler: Literal['pyinstrument', 'snakeviz', 'memray'] | None = param.Selector(
+    profiler: t.Literal['pyinstrument', 'snakeviz', 'memray'] | None = param.Selector(
         default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -196,13 +193,13 @@ class _config(_base_config):
         The notification to display when the application is ready and
         fully loaded.""")
 
-    reconnect: Literal[True, False, 'prompt'] = param.Selector(
+    reconnect: t.Literal[True, False, 'prompt'] = param.Selector(
         default=False, objects=[True, False, 'prompt'], doc="""
         Whether to enable automatic re-connect should the server connection
         be disrupted. Setting "prompt" will not enable automatic re-connect but
         will pop up a notification asking the user to confirm.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    reuse_sessions: Literal[True, False, 'warm'] = param.Selector(
+    reuse_sessions: t.Literal[True, False, 'warm'] = param.Selector(
         default=False, objects=[True, False, 'warm'], doc="""
         Whether to reuse a session for the initial request to speed up
         the initial page render. Note that if the initial page differs
@@ -229,7 +226,7 @@ class _config(_base_config):
         information about user sessions. A value of -1 indicates an
         unlimited history.""")
 
-    sizing_mode: Literal[
+    sizing_mode: t.Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both'
     ] | None = param.Selector(default=None, objects=[
@@ -247,7 +244,7 @@ class _config(_base_config):
 
     _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
 
-    _admin_log_level: Literal[
+    _admin_log_level: t.Literal[
         'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
     ] = param.Selector(
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -258,12 +255,12 @@ class _config(_base_config):
         The root path of the CDN. Configurable to support air-gapped and
         sandboxed environments.""")
 
-    _comms: Literal['default', 'ipywidgets', 'vscode', 'colab'] = param.Selector(
+    _comms: t.Literal['default', 'ipywidgets', 'vscode', 'colab'] = param.Selector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
         extension or use the jupyter_bokeh ipywidget model.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _console_output: Literal['accumulate', 'replace', 'disable', False] | None = param.Selector(
+    _console_output: t.Literal['accumulate', 'replace', 'disable', False] | None = param.Selector(
         default='accumulate', allow_None=True,
         objects=['accumulate', 'replace', 'disable', False], doc="""
         How to log errors and stdout output triggered by callbacks
@@ -294,13 +291,13 @@ class _config(_base_config):
     _embed_save_path = param.String(default='./', doc="""
         Where to save json files for embedded state.""")
 
-    _log_level: Literal[
+    _log_level: t.Literal[
         'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
     ] = param.Selector(
         default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of Panel loggers")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _npm_cdn: Literal[
+    _npm_cdn: t.Literal[
         'https://unpkg.com', 'https://cdn.jsdelivr.net/npm'
     ] = param.Selector(default='https://cdn.jsdelivr.net/npm',
         objects=['https://unpkg.com', 'https://cdn.jsdelivr.net/npm'],  doc="""
@@ -321,7 +318,7 @@ class _config(_base_config):
         or filepath containing JSON to use with the basic auth
         provider.""")
 
-    _oauth_provider: Any = param.Selector(
+    _oauth_provider: t.Any = param.Selector(
         default=None, allow_None=True, objects=[], doc="""
         Select between a list of authentication providers.""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -360,7 +357,7 @@ class _config(_base_config):
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
-    _theme: Literal['default', 'dark'] | None = param.Selector(
+    _theme: t.Literal['default', 'dark'] | None = param.Selector(
         default=None, objects=['default', 'dark'], allow_None=True, doc="""
         The theme to apply to components.""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -368,7 +365,7 @@ class _config(_base_config):
         Whether to disable bokeh validation, speeding up applications.""")
 
     # Global parameters that are shared across all sessions
-    _globals: ClassVar[set[str]] = {
+    _globals: t.ClassVar[set[str]] = {
         'admin_plugins', 'autoreload', 'cdn_root', 'comms', 'cookie_path', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
@@ -379,7 +376,7 @@ class _config(_base_config):
 
     _truthy = ['True', 'true', '1', True, 1]
 
-    _session_config: ClassVar[WeakKeyDictionary[Document, dict[str, Any]]] = WeakKeyDictionary()
+    _session_config: t.ClassVar[WeakKeyDictionary[Document, dict[str, t.Any]]] = WeakKeyDictionary()
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -732,7 +729,7 @@ class panel_extension(_pyviz_extension):
 
     _loaded: bool = False
 
-    _imports: ClassVar[dict[str, str]] = {
+    _imports: t.ClassVar[dict[str, str]] = {
         'ace': 'panel.models.ace',
         'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
@@ -756,7 +753,7 @@ class panel_extension(_pyviz_extension):
     # Check whether these are loaded before rendering (if any item
     # in the list is available the extension will be confidered as
     # loaded)
-    _globals: ClassVar[dict[str, list[str]]] = {
+    _globals: t.ClassVar[dict[str, list[str]]] = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
         'filedropper': ['FilePond'],
@@ -778,15 +775,15 @@ class panel_extension(_pyviz_extension):
 
     _comms_detected_before: bool = False
 
-    @typing.overload  # type: ignore
+    @t.overload  # type: ignore
     def __init__(
-        self, *extensions: str, **params: Any
+        self, *extensions: str, **params: t.Any
     ):
         # Typing overload to ensure that type checkers
         # handle the ParameterizedFunction call signature
         ...
 
-    def __call__(self, *args: str, **params: Any):
+    def __call__(self, *args: str, **params: t.Any):
         from bokeh.core.has_props import _default_resolver
         from bokeh.model import Model
         from bokeh.settings import settings as bk_settings

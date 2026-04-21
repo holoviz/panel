@@ -6,14 +6,12 @@ from __future__ import annotations
 
 import os
 import pathlib
+import typing as t
 
 from abc import abstractmethod
 from fnmatch import fnmatch
 from importlib.util import find_spec
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING, AnyStr, ClassVar, cast,
-)
 from urllib.parse import urlparse
 
 import param
@@ -29,7 +27,7 @@ from .button import Button
 from .input import TextInput
 from .select import CrossSelector
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from fsspec import AbstractFileSystem
 
     from ..layout.base import ListLike, NamedListLike
@@ -179,7 +177,7 @@ class BaseFileSelector(param.Parameterized):
 
     def __init__(
         self,
-        directory: AnyStr | os.PathLike | None = None,
+        directory: t.AnyStr | os.PathLike | None = None,
         fs: AbstractFileSystem | None = None,
         **params,
     ):
@@ -223,9 +221,9 @@ class BaseFileSelector(param.Parameterized):
 
 class BaseFileNavigator(BaseFileSelector, CompositeWidget):
 
-    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Column
+    _composite_type: t.ClassVar[type[ListLike] | type[NamedListLike]] = Column
 
-    def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
+    def __init__(self, directory: t.AnyStr | os.PathLike | None = None, **params):
         super().__init__(directory=directory, **params)
 
         layout = {p: getattr(self, p) for p in Layoutable.param
@@ -340,11 +338,11 @@ class FileSelector(BaseFileNavigator):
         The number of options shown at once (note this is the only
         way to control the height of this widget)""")
 
-    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Column
+    _composite_type: t.ClassVar[type[ListLike] | type[NamedListLike]] = Column
 
     def __init__(
         self,
-        directory: AnyStr | os.PathLike | None = None,
+        directory: t.AnyStr | os.PathLike | None = None,
         fs: AbstractFileSystem | None = None,
         **params,
     ):
@@ -393,7 +391,7 @@ class FileSelector(BaseFileNavigator):
     ):
         path = self._provider.normalize(self._directory.value)
         super()._update_files(event, refresh)
-        selected = cast('list[str | os.PathLike]', self.value)
+        selected = t.cast('list[str | os.PathLike]', self.value)
         dirs, files = self._provider.ls(path, self.file_pattern)
         for s in selected:
             check = os.path.realpath(s) if os.path.islink(s) else s

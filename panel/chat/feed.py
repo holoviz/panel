@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import traceback
+import typing as t
 
 from enum import Enum
 from functools import partial
@@ -15,9 +16,6 @@ from inspect import (
     iscoroutinefunction, isgenerator, isgeneratorfunction, ismethod,
 )
 from io import BytesIO
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, cast,
-)
 
 import param
 
@@ -37,7 +35,7 @@ from .icon import ChatReactionIcons
 from .message import ChatMessage
 from .step import ChatStep
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Callable
 
     from bokeh.document import Document
@@ -155,7 +153,7 @@ class ChatFeed(ListPanel):
         `show_avatar`, `show_user`, and `show_timestamp`. Params passed
         that are not ChatFeed params will be forwarded into `message_params`.""")
 
-    header: Any = param.Parameter(doc="""
+    header: t.Any = param.Parameter(doc="""
         The header of the chat feed; commonly used for the title.
         Can be a string, pane, or widget.""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -238,11 +236,11 @@ class ChatFeed(ListPanel):
     _disabled_stack = param.List(item_type=bool, doc="""
         The previous disabled state of the feed.""")
 
-    _card_type: ClassVar[type[Card]] = Card
-    _message_type: ClassVar[type[ChatMessage]] = ChatMessage
-    _step_type: ClassVar[type[ChatStep]] = ChatStep
+    _card_type: t.ClassVar[type[Card]] = Card
+    _message_type: t.ClassVar[type[ChatMessage]] = ChatMessage
+    _step_type: t.ClassVar[type[ChatStep]] = ChatStep
 
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_feed.css"]
+    _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
         # Task management for proper cancellation
@@ -353,7 +351,7 @@ class ChatFeed(ListPanel):
         return model
 
     def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         return
@@ -472,7 +470,7 @@ class ChatFeed(ListPanel):
         return message
 
     def _upsert_message(
-        self, value: Any, message: ChatMessage | None = None, callback_id: int | None = None
+        self, value: t.Any, message: ChatMessage | None = None, callback_id: int | None = None
     ) -> ChatMessage | None:
         """
         Replace the placeholder message with the response or update
@@ -520,7 +518,7 @@ class ChatFeed(ListPanel):
         self._replace_placeholder(new_message)
         return new_message
 
-    def _gather_callback_args(self, message: ChatMessage) -> Any:
+    def _gather_callback_args(self, message: ChatMessage) -> t.Any:
         """
         Extracts the contents from the message's panel object.
         """
@@ -559,7 +557,7 @@ class ChatFeed(ListPanel):
         elif len(callback_args) == 0:
             raise ValueError("Function should have at least one argument")
 
-    async def _serialize_response(self, response: Any, callback_id: int) -> ChatMessage | None:
+    async def _serialize_response(self, response: t.Any, callback_id: int) -> ChatMessage | None:
         """
         Serializes the response by iterating over it and
         updating the message's value.
@@ -684,7 +682,7 @@ class ChatFeed(ListPanel):
             if not self.adaptive or len(self._callback_ids) == 0:
                 self._callback_state = CallbackState.STOPPED
         except Exception as e:
-            send_kwargs: dict[str, Any] = dict(user="Exception", respond=False)
+            send_kwargs: dict[str, t.Any] = dict(user="Exception", respond=False)
             if callable(self.callback_exception):
                 if iscoroutinefunction(self.callback_exception):
                     await self.callback_exception(e, self)
@@ -730,7 +728,7 @@ class ChatFeed(ListPanel):
 
     def send(
         self,
-        value: ChatMessage | dict | Any,
+        value: ChatMessage | dict | t.Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
@@ -873,8 +871,8 @@ class ChatFeed(ListPanel):
     def _build_steps_layout(
         self,
         step: ChatStep,
-        layout_params: dict[str, Any] | None,
-        default_layout: Literal["card", "column"]
+        layout_params: dict[str, t.Any] | None,
+        default_layout: t.Literal["card", "column"]
     ) -> ListLike:
         layout_params = layout_params or {}
         input_layout_params = dict(
@@ -912,8 +910,8 @@ class ChatFeed(ListPanel):
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         steps_layout: ListLike | None = None,
-        default_layout: Literal["column", "card"] = "card",
-        layout_params: dict[str, Any] | None = None,
+        default_layout: t.Literal["column", "card"] = "card",
+        layout_params: dict[str, t.Any] | None = None,
         last_messages: int = 1,
         **step_params
     ) -> ChatStep:
@@ -985,7 +983,7 @@ class ChatFeed(ListPanel):
         if steps_layout is None:
             steps_layout = self._build_steps_layout(step, layout_params, default_layout)
             self.stream(
-                cast("ListPanel", steps_layout),
+                t.cast("ListPanel", steps_layout),
                 user=user or self.callback_user,
                 avatar=avatar,
                 trigger_post_hook=False
@@ -1127,7 +1125,7 @@ class ChatFeed(ListPanel):
             self._replace_placeholder(None)
         return cancelled
 
-    def undo(self, count: int = 1) -> list[Any]:
+    def undo(self, count: int = 1) -> list[t.Any]:
         """
         Removes the last `count` of messages from the chat log and returns them.
 
@@ -1147,7 +1145,7 @@ class ChatFeed(ListPanel):
         self._chat_log.objects = messages[:-count]
         return undone_entries
 
-    def clear(self) -> list[Any]:
+    def clear(self) -> list[t.Any]:
         """
         Clears the chat log and returns the messages that were cleared.
 
@@ -1166,7 +1164,7 @@ class ChatFeed(ListPanel):
         default_role: str = "assistant",
         custom_serializer: Callable | None = None,
         **serialize_kwargs
-    ) -> list[dict[str, Any]]:
+    ) -> list[dict[str, t.Any]]:
         """
         Exports the chat log for use with transformers.
         """
@@ -1234,7 +1232,7 @@ class ChatFeed(ListPanel):
         self,
         exclude_users: list[str] | None = None,
         filter_by: Callable | None = None,
-        format: Literal["transformers"] = "transformers",
+        format: t.Literal["transformers"] = "transformers",
         custom_serializer: Callable | None = None,
         limit: int | None = None,
         **serialize_kwargs

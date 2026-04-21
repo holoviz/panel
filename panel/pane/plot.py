@@ -5,14 +5,12 @@ from __future__ import annotations
 
 import re
 import sys
+import typing as t
 
 from contextlib import contextmanager
 from functools import partial
 from html import escape
 from io import BytesIO
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
 
 import param
 
@@ -31,7 +29,7 @@ from .image import (
 from .ipywidget import IPyWidget
 from .markup import HTML
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -80,9 +78,9 @@ class Bokeh(Pane):
     theme = param.ClassSelector(default=None, class_=(Theme, str), doc="""
         Bokeh theme to apply to the plot.""")
 
-    priority: ClassVar[float | bool | None] = 0.8
+    priority: t.ClassVar[float | bool | None] = 0.8
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'autodispatch': None, 'theme': None
     }
 
@@ -99,7 +97,7 @@ class Bokeh(Pane):
         super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes', 'visible']))
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         return isinstance(object, LayoutDOM)
 
     @classmethod
@@ -227,7 +225,7 @@ class Matplotlib(Image, IPyWidget):
     encode = param.Boolean(default=False, doc="""
         Whether to encode SVG out as base64.""")
 
-    format: Literal['png', 'svg'] = param.Selector(
+    format: t.Literal['png', 'svg'] = param.Selector(
         default='png', objects=['png', 'svg'], doc="""
         The format to render the plot as if the plot is not interactive.""")  # type: ignore[assignment, ty:invalid-assignment]
 
@@ -245,7 +243,7 @@ class Matplotlib(Image, IPyWidget):
         Automatically adjust the figure size to fit the
         subplots and other artist elements.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'object': 'text', 'interactive': None, 'dpi': None,  'tight': None,
         'high_dpi': None, 'format': None, 'encode': None
     }
@@ -257,7 +255,7 @@ class Matplotlib(Image, IPyWidget):
     _num = 0
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         if 'matplotlib' not in sys.modules:
             return False
         from matplotlib.figure import Figure
@@ -316,7 +314,7 @@ class Matplotlib(Image, IPyWidget):
     ):
         return self._img_type._format_html(self, src, width, height)
 
-    def _transform_object(self, obj: Any) -> dict[str, Any]:
+    def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         if self.interactive:
             return {}
         return self._img_type._transform_object(self, obj)
@@ -409,10 +407,10 @@ class RGGPlot(PNG):
 
     _rerender_params = PNG._rerender_params + ['object', 'dpi', 'width', 'height']
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'dpi': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'dpi': None}
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         return type(object).__name__ == 'GGPlot' and hasattr(object, 'r_repr')
 
     def _data(self, obj):
@@ -433,10 +431,10 @@ class YT(HTML):
     provide additional space.
     """
 
-    priority: ClassVar[float | bool | None] = 0.5
+    priority: t.ClassVar[float | bool | None] = 0.5
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         return (getattr(object, '__module__', '').startswith('yt.') and
                 hasattr(object, "plots") and
                 hasattr(object, "_repr_html_"))
@@ -447,21 +445,21 @@ class Folium(HTML):
     The Folium pane wraps Folium map components.
     """
 
-    sizing_mode: Literal[
+    sizing_mode: t.Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both'
     ] | None = param.Selector(default='stretch_width', objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment, ty:invalid-assignment]
 
-    priority: ClassVar[float | bool | None] = 0.6
+    priority: t.ClassVar[float | bool | None] = 0.6
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         return (getattr(object, '__module__', '').startswith('folium.') and
                 hasattr(object, "_repr_html_"))
 
-    def _transform_object(self, obj: Any) -> dict[str, Any]:
+    def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_().replace(FOLIUM_BEFORE, FOLIUM_AFTER)

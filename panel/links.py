@@ -5,11 +5,8 @@ from __future__ import annotations
 
 import difflib
 import sys
+import typing as t
 import weakref
-
-from typing import (
-    TYPE_CHECKING, Any, TypeAlias, cast,
-)
 
 import param
 
@@ -22,13 +19,13 @@ from .reactive import Reactive
 from .util.warnings import warn
 from .viewable import Viewable
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
     from bokeh.model import Model
     from holoviews.core.dimension import Dimensioned
 
-    JSLinkTarget: TypeAlias = Reactive | BkModel | Dimensioned
+    JSLinkTarget: t.TypeAlias = Reactive | BkModel | Dimensioned
     SourceModelSpec = tuple[str | None, str]
     TargetModelSpec = tuple[str | None, str | None]
 
@@ -73,7 +70,7 @@ def assert_target_syncable(
     if not hasattr(target, "_rename") and not hasattr(target, "param"):
         return
 
-    target = cast('Reactive', target)
+    target = t.cast('Reactive', target)
     for k, p in properties.items():
         if k.startswith('event:'):
             continue
@@ -125,7 +122,7 @@ class Callback(param.Parameterized):
 
     def __init__(
         self, source: Reactive, target: JSLinkTarget | None = None,
-        args: dict[str, Any] | None = None, code: dict[str, str] | None = None,
+        args: dict[str, t.Any] | None = None, code: dict[str, str] | None = None,
         **params
     ):
         """
@@ -240,13 +237,13 @@ class Callback(param.Parameterized):
         found = [
             (link, src, getattr(link, 'target', None))
             for src in linkable
-            for link in cls.registry.get(cast('Reactive | BkModel', src), [])
+            for link in cls.registry.get(t.cast('Reactive | BkModel', src), [])
             if isinstance(src, (Reactive, BkModel))
             if not link._requires_target or link.target in linkable
             or isinstance(link.target, param.Parameterized)
         ]
 
-        arg_overrides: dict[int, dict[str, Any]] = {}
+        arg_overrides: dict[int, dict[str, t.Any]] = {}
         if 'holoviews' in sys.modules:
             from holoviews.core.dimension import Dimensioned
 
@@ -363,7 +360,7 @@ class CallbackGenerator:
 
     def __init__(
         self, root_model: Model, link: Callback | Link, source: Reactive,
-        target: JSLinkTarget | None = None, arg_overrides: dict[str, Any] = {}
+        target: JSLinkTarget | None = None, arg_overrides: dict[str, t.Any] = {}
     ):
         self.root_model = root_model
         self.link = link
@@ -609,7 +606,7 @@ class JSCallbackGenerator(CallbackGenerator):
                 src_prop = src_specs[0]
                 if isinstance(source, Reactive):
                     src_prop = source._rename.get(src_prop, src_prop)
-                src_spec = (None, cast("str", src_prop))
+                src_spec = (None, t.cast("str", src_prop))
         return [(src_spec, (None, None), link.code[spec])]
 
 

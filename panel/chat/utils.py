@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import re
+import typing as t
 
 from collections.abc import Iterable
 from io import BytesIO
 from textwrap import indent
 from types import FunctionType
-from typing import Any, Union, cast
 
 import param
 
@@ -16,7 +16,7 @@ from ..io.resources import CDN_DIST
 from ..pane.image import ImageBase
 from ..viewable import Viewable
 
-Avatar = Union[str, BytesIO, bytes, ImageBase]
+Avatar = t.Union[str, BytesIO, bytes, ImageBase]
 AvatarDict = dict[str, Avatar]
 
 
@@ -30,9 +30,9 @@ def to_alpha_numeric(user: str) -> str:
 
 def avatar_lookup(
     user: str,
-    avatar: Any,
-    avatars: dict[str, Any],
-    default_avatars: dict[str, Any],
+    avatar: t.Any,
+    avatars: dict[str, t.Any],
+    default_avatars: dict[str, t.Any],
 ) -> Avatar:
     """
     Lookup the avatar for the user.
@@ -57,7 +57,7 @@ def avatar_lookup(
 
 
 def build_avatar_pane(
-    avatar: Any, css_classes: list[str], width: int = 15, height: int = 15
+    avatar: t.Any, css_classes: list[str], width: int = 15, height: int = 15
 ) -> Viewable:
     avatar_params = {
         "css_classes": css_classes,
@@ -66,7 +66,7 @@ def build_avatar_pane(
     }
     if isinstance(avatar, Viewable):
         avatar_pane = avatar
-        css_classes = cast("list[str]", avatar_params.get("css_classes", []))
+        css_classes = t.cast("list[str]", avatar_params.get("css_classes", []))
         avatar_params["css_classes"] = css_classes + avatar_pane.css_classes
         avatar_pane.param.update(avatar_params)
     elif isinstance(avatar, str) and len(avatar) == 1:
@@ -139,7 +139,7 @@ def get_obj_label(obj):
 
 
 def serialize_recursively(
-    obj: Any,
+    obj: t.Any,
     prefix_with_viewable_label: bool = True,
     prefix_with_container_label: bool = True,
 ) -> str:

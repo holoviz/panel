@@ -4,14 +4,13 @@ Renders Streamz Stream objects.
 from __future__ import annotations
 
 import sys
-
-from typing import TYPE_CHECKING, Any, ClassVar
+import typing as t
 
 import param
 
 from .base import ReplacementPane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -38,7 +37,7 @@ class Streamz(ReplacementPane):
     rate_limit = param.Number(default=0.1, bounds=(0, None), doc="""
         The minimum interval between events.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'rate_limit': None, 'always_watch': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'rate_limit': None, 'always_watch': None}
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -76,7 +75,7 @@ class Streamz(ReplacementPane):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         if 'streamz' in sys.modules:
             from streamz import Stream
             return isinstance(object, Stream)

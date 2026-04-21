@@ -8,10 +8,7 @@ moving one or more handle(s).
 from __future__ import annotations
 
 import datetime as dt
-
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
+import typing as t
 
 import numpy as np
 import param
@@ -39,7 +36,7 @@ from ..widgets import FloatInput, IntInput
 from .base import CompositeWidget, Widget, WidgetBase
 from .input import StaticText
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -54,7 +51,7 @@ class _SliderBase(Widget):
     bar_color = param.Color(default="#e6e6e6", doc="""
         The color of the slider bar. Accepts any valid CSS color string.""")
 
-    direction: Literal['ltr', 'rtl'] = param.Selector(
+    direction: t.Literal['ltr', 'rtl'] = param.Selector(
         default='ltr', objects=['ltr', 'rtl'], doc="""
         Whether the slider should go from left-to-right ('ltr') or
         right-to-left ('rtl').""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -63,7 +60,7 @@ class _SliderBase(Widget):
         The name of the widget. Also used as the label of the widget. If not set,
         the widget has no label.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    orientation: Literal['horizontal', 'vertical'] = param.Selector(
+    orientation: t.Literal['horizontal', 'vertical'] = param.Selector(
         default='horizontal', objects=['horizontal', 'vertical'],
         doc="""
         Whether the slider should be oriented horizontally or
@@ -75,7 +72,7 @@ class _SliderBase(Widget):
     tooltips = param.Boolean(default=True, doc="""
         Whether the slider handle should display tooltips.""")
 
-    _widget_type: ClassVar[type[Model]] = _BkSlider
+    _widget_type: t.ClassVar[type[Model]] = _BkSlider
 
     __abstract = True
 
@@ -94,7 +91,7 @@ class _SliderBase(Widget):
     def _linked_properties(self) -> tuple[str, ...]:
         return super()._linked_properties + ('value_throttled',)
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         if config.throttled:
             if "value" in props:
                 del props["value"]
@@ -103,7 +100,7 @@ class _SliderBase(Widget):
         return super()._process_property_change(props)
 
     def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'value_throttled' in msg:
@@ -111,7 +108,7 @@ class _SliderBase(Widget):
 
         return super()._update_model(events, msg, root, model, doc, comm)
 
-    def _process_events(self, events: dict[str, Any]) -> None:
+    def _process_events(self, events: dict[str, t.Any]) -> None:
         if config.throttled:
             events.pop("value", None)
         super()._process_events(events)
@@ -205,7 +202,7 @@ class FloatSlider(ContinuousSlider):
     value_throttled = param.Number(default=None, constant=True, doc="""
          The value of the slider. Updated when the handle is released.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'name': 'title', 'value_throttled': None
     }
 
@@ -237,11 +234,11 @@ class IntSlider(ContinuousSlider):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'name': 'title', 'value_throttled': None
     }
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_property_change(props)
         if 'value' in params:
             params['value'] = params['value'] if params['value'] is None else int(params['value'])
@@ -293,22 +290,22 @@ class DateSlider(_SliderBase):
     format = param.String(default=None, doc="""
         Datetime format used for parsing and formatting the date.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'name': 'title', 'as_datetime': None, 'value_throttled': None
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'value_throttled': None, 'start': None, 'end': None
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkDateSlider
+    _widget_type: t.ClassVar[type[Model]] = _BkDateSlider
 
     def __init__(self, **params):
         if 'value' not in params:
             params['value'] = params.get('start', self.start)
         super().__init__(**params)
 
-    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         props = super()._process_param_change(params)
         if 'value' in props:
             value = props['value']
@@ -317,7 +314,7 @@ class DateSlider(_SliderBase):
             props['value'] = value
         return props
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_property_change(props)
         transform = value_as_datetime if self.as_datetime else value_as_date
         if 'value' in params:
@@ -354,7 +351,7 @@ class DatetimeSlider(DateSlider):
 
     _property_conversion = staticmethod(value_as_datetime)
 
-    _widget_type: ClassVar[type[Model]] = _BkDatetimeSlider
+    _widget_type: t.ClassVar[type[Model]] = _BkDatetimeSlider
 
 
 class DiscreteSlider(CompositeWidget, _SliderBase):
@@ -377,7 +374,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         The selected value of the slider. Updated when the handle is
         dragged. Must be one of the options.""")
 
-    value_throttled: Any = param.Parameter(constant=True, doc="""
+    value_throttled: t.Any = param.Parameter(constant=True, doc="""
         The value of the slider. Updated when the handle is released.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     options = param.ClassSelector(default=[], class_=(dict, list), doc="""
@@ -387,19 +384,19 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         A custom format string. Separate from format parameter since
         formatting is applied in Python, not via the bokeh TickFormatter.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'formatter': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'formatter': None}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'value_throttled': None, 'options': None
     }
 
     _supports_embed: bool = True
 
-    _style_params: ClassVar[list[str]] = [
+    _style_params: t.ClassVar[list[str]] = [
         p for p in list(Layoutable.param) if p != 'name'
     ] + ['orientation']
 
-    _slider_style_params: ClassVar[list[str]] = [
+    _slider_style_params: t.ClassVar[list[str]] = [
         'bar_color', 'direction', 'disabled', 'orientation'
     ]
 
@@ -576,9 +573,9 @@ class _RangeSliderBase(_SliderBase):
     value = param.Tuple(default=(None, None), length=2, allow_None=False, nested_refs=True, doc="""
         The selected range of the slider. Updated when a handle is dragged.""")
 
-    value_start: Any = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")  # type: ignore[assignment, ty:invalid-assignment]
+    value_start: t.Any = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    value_end: Any = param.Parameter(readonly=True, doc="""The upper value of the selected range.""")  # type: ignore[assignment, ty:invalid-assignment]
+    value_end: t.Any = param.Parameter(readonly=True, doc="""The upper value of the selected range.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     __abstract = True
 
@@ -599,7 +596,7 @@ class _RangeSliderBase(_SliderBase):
         with edit_readonly(self):
             self.param.update(value_start=vs, value_end=ve)
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_property_change(props)
         if 'value' in params:
             params['value'] = tuple(params['value'])
@@ -648,9 +645,9 @@ class RangeSlider(_RangeSliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A format string or bokeh TickFormatter.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None, 'value_throttled': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None, 'value_throttled': None}
 
-    _widget_type: ClassVar[type[Model]] = _BkRangeSlider
+    _widget_type: t.ClassVar[type[Model]] = _BkRangeSlider
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -683,7 +680,7 @@ class IntRangeSlider(RangeSlider):
     step = param.Integer(default=1, doc="""
         The step size""")
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_property_change(props)
         if 'value' in params:
             params['value'] = tuple([
@@ -743,17 +740,17 @@ class DateRangeSlider(_SliderBase):
     format = param.String(default=None, doc="""
         Datetime format used for parsing and formatting the date.""")
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'value_throttled': None, 'start': None, 'end': None,
         'step': None
     }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'name': 'title', 'value_start': None, 'value_end': None,
         'value_throttled': None
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkDateRangeSlider
+    _widget_type: t.ClassVar[type[Model]] = _BkDateRangeSlider
 
     _property_conversion = staticmethod(value_as_date)
 
@@ -784,7 +781,7 @@ class DateRangeSlider(_SliderBase):
         with edit_readonly(self):
             self.param.update(value_start=vs, value_end=ve)
 
-    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         props = super()._process_param_change(params)
         if props.get('value', 'unchanged') is None:
             del props['value']
@@ -802,7 +799,7 @@ class DateRangeSlider(_SliderBase):
                 props[key] = datetime_as_utctimestamp(props[key])
         return props
 
-    def _process_property_change(self, props: dict[str, Any]) -> dict[str, Any]:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_property_change(props)
         if 'value' in params:
             v1, v2 = params['value']
@@ -862,9 +859,9 @@ class _EditableContinuousSlider(CompositeWidget):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
-    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Column
-    _slider_widget: ClassVar[type[WidgetBase]]
-    _input_widget: ClassVar[type[WidgetBase]]
+    _composite_type: t.ClassVar[type[ListLike] | type[NamedListLike]] = Column
+    _slider_widget: t.ClassVar[type[WidgetBase]]
+    _input_widget: t.ClassVar[type[WidgetBase]]
     __abstract = True
 
     def __init__(self, **params):
@@ -1026,8 +1023,8 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
     fixed_end = param.Number(default=None, doc="""
         A fixed upper bound for the slider and input.""")
 
-    _slider_widget: ClassVar[type[WidgetBase]] = FloatSlider
-    _input_widget: ClassVar[type[WidgetBase]] = FloatInput
+    _slider_widget: t.ClassVar[type[WidgetBase]] = FloatSlider
+    _input_widget: t.ClassVar[type[WidgetBase]] = FloatInput
 
 
 class EditableIntSlider(_EditableContinuousSlider, IntSlider):
@@ -1051,8 +1048,8 @@ class EditableIntSlider(_EditableContinuousSlider, IntSlider):
     fixed_end = param.Integer(default=None, doc="""
        A fixed upper bound for the slider and input.""")
 
-    _slider_widget: ClassVar[type[WidgetBase]] = IntSlider
-    _input_widget: ClassVar[type[WidgetBase]] = IntInput
+    _slider_widget: t.ClassVar[type[WidgetBase]] = IntSlider
+    _input_widget: t.ClassVar[type[WidgetBase]] = IntInput
 
 
 class EditableRangeSlider(CompositeWidget, _SliderBase):
@@ -1097,7 +1094,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
-    _composite_type: ClassVar[type[ListLike] | type[NamedListLike]] = Column
+    _composite_type: t.ClassVar[type[ListLike] | type[NamedListLike]] = Column
 
     def __init__(self, **params):
         if 'width' not in params and 'sizing_mode' not in params:

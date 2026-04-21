@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import typing as t
+
 from collections.abc import Iterable, Mapping
 from inspect import Parameter
 from numbers import Integral, Real
-from typing import Any
 
 empty = Parameter.empty
 
@@ -22,9 +23,9 @@ class fixed(param.Parameterized):
 
     description = param.String(default='')
 
-    value: Any = param.Parameter(doc="Any Python object")  # type: ignore[assignment]
+    value: t.Any = param.Parameter(doc="Any Python object")  # type: ignore[assignment]
 
-    def __init__(self, value: Any, **kwargs: Any):
+    def __init__(self, value: t.Any, **kwargs: t.Any):
         super().__init__(value=value, **kwargs)
 
     def get_interact_value(self):
@@ -76,7 +77,7 @@ def _get_min_max_value(
     return min_val, max_val, value
 
 
-def _matches(o: tuple[Any, ...], pattern: tuple[type, ...]) -> bool:
+def _matches(o: tuple[t.Any, ...], pattern: tuple[type, ...]) -> bool:
     """Match a pattern of types in a sequence."""
     if not len(o) == len(pattern):
         return False
@@ -104,7 +105,7 @@ class widget(param.ParameterizedFunction):
     Widget
     """
 
-    def __call__(self, value: Any, name: str, default=empty, **params):
+    def __call__(self, value: t.Any, name: str, default=empty, **params):
         """Build a ValueWidget instance given an abbreviation or Widget."""
         if isinstance(value, Widget):
             widget = value

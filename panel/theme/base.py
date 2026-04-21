@@ -3,10 +3,7 @@ from __future__ import annotations
 import functools
 import os
 import pathlib
-
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
+import typing as t
 
 import param
 
@@ -22,7 +19,7 @@ from ..io.resources import (
 from ..io.state import set_curdoc, state
 from ..util import relative_to
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
 
@@ -58,7 +55,7 @@ class Theme(param.Parameterized):
        A stylesheet that overrides variables specifically for the
        Theme subclass. In most cases, this is not necessary.""")
 
-    modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
+    modifiers: t.ClassVar[dict[type[Viewable], dict[str, t.Any]]] = {}
 
 
 BOKEH_DARK = dict(_dark_minimal.json)
@@ -77,7 +74,7 @@ class DefaultTheme(Theme):
 
     base_css = param.Filename(default=THEME_CSS / 'default.css')
 
-    _name: ClassVar[str] = 'default'
+    _name: t.ClassVar[str] = 'default'
 
 
 class DarkTheme(Theme):
@@ -90,7 +87,7 @@ class DarkTheme(Theme):
     bokeh_theme = param.ClassSelector(class_=(_BkTheme, str),
                                       default=_BkTheme(json=BOKEH_DARK))
 
-    _name: ClassVar[str] = 'dark'
+    _name: t.ClassVar[str] = 'dark'
 
 
 class Design(param.Parameterized, ResourceComponent):
@@ -98,18 +95,18 @@ class Design(param.Parameterized, ResourceComponent):
     theme = param.ClassSelector(class_=Theme, constant=True)
 
     # Defines parameter overrides to apply to each model
-    modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
+    modifiers: t.ClassVar[dict[type[Viewable], dict[str, t.Any]]] = {}
 
     # Defines the resources required to render this theme
     _resources = {}
 
     # Declares valid themes for this Design
-    _themes: ClassVar[dict[str, type[Theme]]] = {
+    _themes: t.ClassVar[dict[str, type[Theme]]] = {
         'default': DefaultTheme,
         'dark': DarkTheme
     }
 
-    _cache: ClassVar[dict[str, ImportedStyleSheet]] = {}
+    _cache: t.ClassVar[dict[str, ImportedStyleSheet]] = {}
 
     def __init__(self, theme=None, **params):
         if isinstance(theme, type) and issubclass(theme, Theme):
@@ -231,7 +228,7 @@ class Design(param.Parameterized, ResourceComponent):
         return modifiers, child_modifiers
 
     @classmethod
-    def _patch_modifiers(cls, doc: Document | None, modifiers: dict[str, Any], cache: dict[str, ImportedStyleSheet]):
+    def _patch_modifiers(cls, doc: Document | None, modifiers: dict[str, t.Any], cache: dict[str, ImportedStyleSheet]):
         if 'stylesheets' in modifiers:
             stylesheets = []
             for sts in modifiers['stylesheets']:
@@ -380,7 +377,7 @@ class Design(param.Parameterized, ResourceComponent):
 
     def resolve_resources(
         self,
-        cdn: bool | Literal['auto'] = 'auto',
+        cdn: bool | t.Literal['auto'] = 'auto',
         extras: dict[str, dict[str, str]] | None = None,
         include_theme: bool = True
     ) -> ResourceTypes:
@@ -427,7 +424,7 @@ class Design(param.Parameterized, ResourceComponent):
 
     def params(
         self, viewable: Viewable, doc: Document | None = None
-    ) -> tuple[dict[str, Any], dict[str, Any]]:
+    ) -> tuple[dict[str, t.Any], dict[str, t.Any]]:
         """
         Provides parameter values to apply the provided Viewable.
 

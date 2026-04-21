@@ -5,10 +5,7 @@ SymPy objects.
 from __future__ import annotations
 
 import sys
-
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
+import typing as t
 
 import param  # type: ignore
 
@@ -18,7 +15,7 @@ from ..io.resources import CDN_DIST
 from ..util import lazy_load
 from .base import ModelPane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
@@ -44,26 +41,26 @@ class LaTeX(ModelPane):
     ... )
     """
 
-    renderer: Literal['katex', 'mathjax'] | None = param.Selector(
+    renderer: t.Literal['katex', 'mathjax'] | None = param.Selector(
         default=None, allow_None=True,
         objects=['katex', 'mathjax'], doc="""
         The JS renderer used to render the LaTeX expression. Defaults to katex.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     # Priority is dependent on the data type
-    priority: ClassVar[float | bool | None] = None
+    priority: t.ClassVar[float | bool | None] = None
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'renderer': None, 'object': 'text'
     }
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
-    _stylesheets: ClassVar[list[str]] = [
+    _stylesheets: t.ClassVar[list[str]] = [
         f'{CDN_DIST}css/katex.css'
     ]
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         if hasattr(object, '_repr_latex_'):
             return 0.05
         elif isinstance(object, str):
@@ -92,7 +89,7 @@ class LaTeX(ModelPane):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _transform_object(self, obj: Any) -> dict[str, Any]:
+    def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         if obj is None:
             obj = ''
         elif hasattr(obj, '_repr_latex_'):

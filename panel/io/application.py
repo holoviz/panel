@@ -6,10 +6,10 @@ from __future__ import annotations
 import json
 import logging
 import os
+import typing as t
 
 from functools import partial
 from types import FunctionType, MethodType
-from typing import TYPE_CHECKING, Any, TypeAlias
 from urllib.parse import urljoin
 
 import bokeh.command.util
@@ -30,7 +30,7 @@ from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from bokeh.application.application import SessionContext
@@ -41,8 +41,8 @@ if TYPE_CHECKING:
     from ..viewable import Viewable, Viewer
     from .location import Location
 
-    TViewable: TypeAlias = Viewable | Viewer | BaseTemplate
-    TViewableFuncOrPath: TypeAlias = TViewable | Callable[[], TViewable] | os.PathLike | str
+    TViewable: t.TypeAlias = Viewable | Viewer | BaseTemplate
+    TViewableFuncOrPath: t.TypeAlias = TViewable | Callable[[], TViewable] | os.PathLike | str
 
 
 logger = logging.getLogger('panel.io.application')
@@ -160,7 +160,7 @@ class Application(BkApplication):
         doc.on_event('document_ready', partial(state._schedule_on_load, doc))
         doc.on_session_destroyed(_log_session_destroyed)
 
-    def process_request(self, request) -> dict[str, Any]:
+    def process_request(self, request) -> dict[str, t.Any]:
         ''' Processes incoming HTTP request returning a dictionary of
         additional data to add to the session_context.
 

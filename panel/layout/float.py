@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar, Literal
+import typing as t
 
 import param
 
@@ -52,7 +52,7 @@ class FloatPanel(ListLike, ReactiveHTML):
        Whether the component is contained within parent container
        or completely free floating.""")
 
-    position: Literal[
+    position: t.Literal[
         'center',
         'left-top',
         'center-top',
@@ -83,7 +83,7 @@ class FloatPanel(ListLike, ReactiveHTML):
           'filled', 'filledlight', 'filleddark' or 'fillcolor'
           separated from the theme color by a space like 'primary""")
 
-    status: Literal[
+    status: t.Literal[
         "normalized",
         "maximized",
         "minimized",
@@ -211,7 +211,7 @@ class FloatPanel(ListLike, ReactiveHTML):
         }
     }
 
-    _stylesheets: ClassVar[list[str]] = [
+    _stylesheets: t.ClassVar[list[str]] = [
         f'{CDN_DIST}css/floatpanel.css'
     ]
 

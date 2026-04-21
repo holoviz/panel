@@ -1,4 +1,5 @@
-from typing import Literal
+
+import typing as t
 
 import param
 import pytest
@@ -501,7 +502,7 @@ def test_widgetbox(document, comm):
 
 def test_layout_with_param_setitem(document, comm):
     class TestClass(param.Parameterized):
-        select: Literal[0, 1] = param.Selector(default=0, objects=[0, 1])  # type: ignore[assignment, ty:invalid-assignment]
+        select: t.Literal[0, 1] = param.Selector(default=0, objects=[0, 1])  # type: ignore[assignment, ty:invalid-assignment]
 
         def __init__(self, **params):
             super().__init__(**params)

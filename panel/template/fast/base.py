@@ -1,6 +1,5 @@
 import pathlib
-
-from typing import Literal
+import typing as t
 
 import param
 
@@ -49,7 +48,7 @@ class FastBaseTemplate(BasicTemplate):
         A HTML string appended to the sidebar""")
 
     # Might be extended to accordion or tabs in the future
-    main_layout: Literal[None, "card"] = param.Selector(
+    main_layout: t.Literal[None, "card"] = param.Selector(
         default="card", label="Layout", objects=[None, "card"], doc="""
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
         Could be extended to Accordion, Tab etc. in the future.""")  # type: ignore[assignment, ty:invalid-assignment]

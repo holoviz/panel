@@ -3,14 +3,13 @@ from __future__ import annotations
 import os
 import pathlib
 import sys
-
-from typing import TYPE_CHECKING
+import typing as t
 
 from bokeh.command.subcommand import Argument, Subcommand
 
 from ..io.compile import RED, compile_components, find_module_bundles
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from ..custom import ReactiveESM
 
 

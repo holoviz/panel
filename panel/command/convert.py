@@ -2,14 +2,13 @@ import argparse
 import json
 import pathlib
 import time
-
-from typing import TYPE_CHECKING, Literal, cast
+import typing as t
 
 from bokeh.command.subcommand import Argument, Subcommand
 
 from ..io.convert import convert_apps
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import os
 
 
@@ -104,7 +103,7 @@ class Convert(Subcommand):
         runtime = args.to.lower()
         if runtime not in self._targets:
             raise ValueError(f'Supported conversion targets include: {self._targets!r}')
-        requirements: list[str] | Literal['auto'] | os.PathLike = args.requirements or 'auto'
+        requirements: list[str] | t.Literal['auto'] | os.PathLike = args.requirements or 'auto'
         if (
             isinstance(requirements, list) and
             len(requirements) == 1 and
@@ -138,7 +137,7 @@ class Convert(Subcommand):
             index = args.index and not built
             try:
                 convert_apps(
-                    cast("list[os.PathLike]", files),
+                    t.cast("list[os.PathLike]", files),
                     dest_path=args.out,
                     runtime=runtime,
                     requirements=requirements,

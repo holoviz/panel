@@ -7,11 +7,11 @@ from __future__ import annotations
 import asyncio
 import base64
 import struct
+import typing as t
 
 from html import escape
 from io import BytesIO
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -19,7 +19,7 @@ from ..models import PDF as _BkPDF
 from ..util import _descendents, isfile, isurl
 from .markup import HTMLBasePane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.model import Model
@@ -32,13 +32,13 @@ class FileBase(HTMLBasePane):
     embed = param.Boolean(default=False, doc="""
         Whether to embed the file as base64.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    filetype: ClassVar[str]
+    filetype: t.ClassVar[str]
 
-    _extensions: ClassVar[None | tuple[str, ...]] = None
+    _extensions: t.ClassVar[None | tuple[str, ...]] = None
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'embed': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'embed': None}
 
-    _rerender_params: ClassVar[list[str]] = [
+    _rerender_params: t.ClassVar[list[str]] = [
         'embed', 'object', 'styles', 'width', 'height'
     ]
 
@@ -58,7 +58,7 @@ class FileBase(HTMLBasePane):
         super()._type_error(object)
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         filetype = cls.filetype.split('+')[0]
         exts = cls._extensions or (filetype,)
         if hasattr(object, f'_repr_{filetype}_'):
@@ -88,7 +88,7 @@ class FileBase(HTMLBasePane):
         b64 = base64.b64encode(data).decode("utf-8")
         return f"data:image/{self.filetype};base64,{b64}"
 
-    def _data(self, obj: Any) -> bytes | None:
+    def _data(self, obj: t.Any) -> bytes | None:
         filetype = self.filetype.split('+')[0]
         if hasattr(obj, f'_repr_{filetype}_'):
             return getattr(obj, f'_repr_{filetype}_')()
@@ -157,15 +157,15 @@ class ImageBase(FileBase):
         The target attribute specifies where to open the linked document.
         It can be `_self` (default), `_blank`, etc.""")
 
-    _rerender_params: ClassVar[list[str]] = [
+    _rerender_params: t.ClassVar[list[str]] = [
         'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height', 'target'
     ]
 
-    _rename: ClassVar[Mapping[str, str | None ]] = {
+    _rename: t.ClassVar[Mapping[str, str | None ]] = {
         'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None, "target": None
     }
 
-    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+    _target_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'object': """'<img src="' + value + '"></img>'"""
     }
 
@@ -209,7 +209,7 @@ class ImageBase(FileBase):
             w, h = '100%', 'auto'
         return w, h
 
-    def _transform_object(self, obj: Any) -> dict[str, Any]:
+    def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         if self.embed or (isfile(obj) or not isinstance(obj, (str, PurePath))):
             data = self._data(obj)
         elif isinstance(obj, PurePath):
@@ -256,7 +256,7 @@ class Image(ImageBase):
     """
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         precedences = []
         for img_cls in _descendents(ImageBase, concrete=True):
             if img_cls is Image:
@@ -270,7 +270,7 @@ class Image(ImageBase):
             return sorted(precedences)[-1]
         return False
 
-    def _transform_object(self, obj: Any) -> dict[str, Any]:
+    def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         params = {
             k: v for k, v in self.param.values().items()
             if k not in ('name', 'object')
@@ -298,7 +298,7 @@ class PNG(ImageBase):
     ... )
     """
 
-    filetype: ClassVar[str] = 'png'
+    filetype: t.ClassVar[str] = 'png'
 
     @classmethod
     def _imgshape(cls, data):
@@ -326,7 +326,7 @@ class GIF(ImageBase):
     ... )
     """
 
-    filetype: ClassVar[str] = 'gif'
+    filetype: t.ClassVar[str] = 'gif'
 
     @classmethod
     def _imgshape(cls, data):
@@ -354,7 +354,7 @@ class ICO(ImageBase):
     ...
     """
 
-    filetype: ClassVar[str] = 'ico'
+    filetype: t.ClassVar[str] = 'ico'
 
     def _b64(self, data: str | bytes) -> str:
         if not isinstance(data, bytes):
@@ -389,9 +389,9 @@ class JPG(ImageBase):
     ... )
     """
 
-    filetype: ClassVar[str] = 'jpeg'
+    filetype: t.ClassVar[str] = 'jpeg'
 
-    _extensions: ClassVar[tuple[str, ...]] = ('jpeg', 'jpg')
+    _extensions: t.ClassVar[tuple[str, ...]] = ('jpeg', 'jpg')
 
     @classmethod
     def _imgshape(cls, data):
@@ -435,14 +435,14 @@ class SVG(ImageBase):
         Whether to enable base64 encoding of the SVG, base64 encoded
         SVGs do not support links.""")
 
-    filetype: ClassVar[str] = 'svg+xml'
+    filetype: t.ClassVar[str] = 'svg+xml'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'encode': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'encode': None}
 
-    _rerender_params: ClassVar[list[str]] = ImageBase._rerender_params + ['encode']
+    _rerender_params: t.ClassVar[list[str]] = ImageBase._rerender_params + ['encode']
 
     @classmethod
-    def applies(cls, object: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         return (super().applies(object) or
                 (isinstance(object, str) and object.lstrip().startswith('<svg')))
 
@@ -460,7 +460,7 @@ class SVG(ImageBase):
     def _imgshape(self, data):
         return (self.width, self.height)
 
-    def _transform_object(self, obj: Any) -> dict[str, Any]:
+    def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         width, height = self.width, self.height
         w, h = self._img_dims(width, height)
         if self.embed or (isfile(obj) or (isinstance(obj, str) and obj.lstrip().startswith('<svg'))
@@ -501,20 +501,20 @@ class PDF(FileBase):
     start_page = param.Integer(default=1, doc="""
         Start page of the pdf, by default the first page.""")
 
-    filetype: ClassVar[str] = 'pdf'
+    filetype: t.ClassVar[str] = 'pdf'
 
-    _bokeh_model: ClassVar[type[Model]] = _BkPDF
+    _bokeh_model: t.ClassVar[type[Model]] = _BkPDF
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'embed': 'embed'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'embed': 'embed'}
 
-    _rerender_params: ClassVar[list[str]] = FileBase._rerender_params + ['start_page']
+    _rerender_params: t.ClassVar[list[str]] = FileBase._rerender_params + ['start_page']
 
     @classmethod
     def _imgshape(cls, data):
         assert data.startswith(b'%PDF-')
         return 0, 0
 
-    def _transform_object(self, obj: Any) -> dict[str, Any]:
+    def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         if obj is None:
             return dict(object='<embed></embed>')
         elif self.embed or not isurl(obj):
@@ -551,9 +551,9 @@ class WebP(ImageBase):
     ... )
     """
 
-    filetype: ClassVar[str] = 'webp'
+    filetype: t.ClassVar[str] = 'webp'
 
-    _extensions: ClassVar[tuple[str, ...]] = ('webp',)
+    _extensions: t.ClassVar[tuple[str, ...]] = ('webp',)
 
     @classmethod
     def _imgshape(cls, data):
@@ -597,9 +597,9 @@ class AVIF(ImageBase):
     ... )
     """
 
-    filetype: ClassVar[str] = "avif"
+    filetype: t.ClassVar[str] = "avif"
 
-    _extensions: ClassVar[tuple[str, ...]] = ("avif",)
+    _extensions: t.ClassVar[tuple[str, ...]] = ("avif",)
 
     @classmethod
     def _imgshape(cls, data: bytes) -> tuple[int, int]:

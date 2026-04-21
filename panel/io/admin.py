@@ -5,9 +5,9 @@ import logging
 import os
 import sys
 import time
+import typing as t
 
 from functools import partial
-from typing import TYPE_CHECKING, TextIO, cast
 
 import bokeh
 import numpy as np
@@ -37,7 +37,7 @@ from .profile import profiling_tabs
 from .server import set_curdoc
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from psutil import Process
 
 
@@ -137,7 +137,7 @@ log_data_handler.addFilter(log_filter)
 formatter = logging.Formatter('%(asctime)s %(levelname)s: %(name)s - %(message)s')
 log_handler.setFormatter(formatter)
 log_terminal = _LogTabulator(sizing_mode='stretch_both', min_height=400)
-log_handler.setStream(cast('TextIO', log_terminal))
+log_handler.setStream(t.cast('t.TextIO', log_terminal))
 
 def _textinput_filter(df, pattern, column):
     if not pattern or df.empty:

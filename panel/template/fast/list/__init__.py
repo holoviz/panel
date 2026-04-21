@@ -4,8 +4,7 @@ Panel VanillaTemplate but in the Fast.design style and enabling the
 use of Fast components.
 """
 import pathlib
-
-from typing import Literal
+import typing as t
 
 import param
 
@@ -46,7 +45,7 @@ class FastListTemplate(FastBaseTemplate):
     Please note the `FastListTemplate` cannot display in a notebook output cell.
     """
 
-    collapsed_right_sidebar: Literal[True, False] = param.Selector(
+    collapsed_right_sidebar: t.Literal[True, False] = param.Selector(
         default=False, constant=True, doc="""
        Whether the secondary sidebar on the right (if present) is initially collapsed.""")  # type: ignore[assignment, ty:invalid-assignment]
 
