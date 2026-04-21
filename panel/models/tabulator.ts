@@ -1395,11 +1395,11 @@ export class DataTabulatorView extends HTMLBoxView {
     if (horizontal) {
       opts.left = this._lastHorizontalScrollbarLeftPosition
     }
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       this._updating_scroll = true
       this.tabulator.rowManager.element.scrollTo(opts)
       this._updating_scroll = false
-    }, 0)
+    })
   }
 
   // Update model
