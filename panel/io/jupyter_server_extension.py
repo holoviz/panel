@@ -356,7 +356,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
     def get_current_user(self) -> str:
         return "default_user"
 
-    def check_origin(self, origin: str) -> bool:
+    def check_origin(self, origin_to_satisfy_tornado: str = "") -> bool:
         return True
 
     @tornado.web.authenticated

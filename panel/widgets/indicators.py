@@ -573,8 +573,8 @@ class Gauge(ValueIndicator):
             }]
         }
         sm = self.sizing_mode
-        if 'stretch' in sm:
-            data['responsive'] = True
+        if sm is not None and 'stretch' in sm:
+            data['responsive'] = True  # type: ignore[assignment]
             if 'width' in props and ('both' in sm or 'width' in sm):
                 del props['width']
             if 'height' in props  and ('both' in sm or 'height' in sm):

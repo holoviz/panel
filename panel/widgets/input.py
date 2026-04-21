@@ -1281,7 +1281,7 @@ class ArrayInput(LiteralInput):
     >>> To be determined ...
     """
 
-    max_array_size = param.Number(default=1000, doc="""
+    max_array_size = param.Integer(default=1000, doc="""
         Arrays larger than this limit will be allowed in Python but
         will not be serialized into JavaScript. Although such large
         arrays will thus not be editable in the widget, such a
