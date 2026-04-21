@@ -1308,6 +1308,36 @@ def test_tabulator_patch_no_vertical_rescroll(page):
     assert bb == page.locator(f'text="{new_val}"').bounding_box()
 
 
+def test_tabulator_patch_with_filter_no_vertical_rescroll(page):
+    df = pd.DataFrame({
+        "value": [0.0] * 30,
+        "state": ["Present" if i % 2 == 0 else "Hidden" for i in range(30)],
+    })
+    widget = Tabulator(df, height=300)
+    widget.add_filter("Present", "state")
+
+    serve_component(page, widget)
+
+    tableholder = page.locator(".tabulator-tableholder")
+    expect(tableholder).to_be_attached()
+
+    # Scroll down inside the tableholder
+    tableholder.evaluate("el => el.scrollTop = 10000")
+    page.wait_for_timeout(400)
+
+    scroll_top_before = tableholder.evaluate("el => el.scrollTop")
+    assert scroll_top_before > 0
+
+    # Patch a visible (non-filtered) row
+    widget.patch({"value": [(0, 999.0)]})
+
+    # Wait to catch a potential scroll reset
+    page.wait_for_timeout(400)
+
+    scroll_top_after = tableholder.evaluate("el => el.scrollTop")
+    assert scroll_top_before == scroll_top_after
+
+
 def test_tabulator_patch_no_height_resize(page):
     header = Column('Text', height=1000)
     df = pd.DataFrame(np.random.random((150, 1)), columns=['a'])
@@ -3104,7 +3134,6 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     assert len(widget.current_view) == 2
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pagination):
     df = pd.DataFrame({
@@ -3128,7 +3157,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     header.fill('B')
     header.press('Enter')
 
-    wait_until(lambda: widget.current_view.equals(df[df['values'] == 'B']))
+    wait_until(lambda: widget.current_view is not None and widget.current_view.equals(df[df['values'] == 'B']))
 
     cell = page.locator('text="B"').first
     cell.click()

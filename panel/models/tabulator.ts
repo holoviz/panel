@@ -474,10 +474,11 @@ export class DataTabulatorView extends HTMLBoxView {
       this._restore_scroll = "horizontal"
       this._selection_updating = true
       this._updating_scroll = true
-      this.setData()
-      this._updating_scroll = false
-      this._selection_updating = false
-      this.postUpdate()
+      void this.setData().then(() => {
+        this._selection_updating = false
+        this.postUpdate()
+        this.restore_scroll()
+      })
     })
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
@@ -1215,20 +1216,17 @@ export class DataTabulatorView extends HTMLBoxView {
     const last_row = rows[rows.length-1]
     const start = ((last_row?.data._index) || 0)
     this._updating_page = true
-    const promise = this.setData()
-    if (this.model.follow) {
-      promise.then(() => {
+    void this.setData().then(() => {
+      if (this.model.follow) {
         if (this.model.pagination) {
           this.tabulator.setPage(Math.ceil(this.tabulator.rowManager.getDataCount() / (this.model.page_size || 20)))
         }
         if (last_row) {
           this.tabulator.scrollToRow(start, "top", false)
         }
-        this._updating_page = false
-      })
-    } else {
-      this._updating_page = true
-    }
+      }
+      this._updating_page = false
+    })
   }
 
   postUpdate(): void {
@@ -1397,11 +1395,11 @@ export class DataTabulatorView extends HTMLBoxView {
     if (horizontal) {
       opts.left = this._lastHorizontalScrollbarLeftPosition
     }
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       this._updating_scroll = true
       this.tabulator.rowManager.element.scrollTo(opts)
       this._updating_scroll = false
-    }, 0)
+    })
   }
 
   // Update model

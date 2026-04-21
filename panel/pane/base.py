@@ -186,7 +186,7 @@ class PaneBase(Layoutable):
             }
         else:
             kwargs = {
-                k: v for k, v in self.param.values().items() if k in included
+                p: getattr(self, p) for p in self.param if p in included
             }
         if self.margin:
             margin = self.margin
@@ -202,7 +202,7 @@ class PaneBase(Layoutable):
                 kwargs['width'] = kwargs['width'] + l + r
             if kwargs.get('height') is not None:
                 kwargs['height'] = kwargs['height'] + t + b
-        old_values = self.layout.param.values()
+        old_values = {p: getattr(self.layout, p) for p in self.layout.param}
         self.layout.param.update({k: v for k, v in kwargs.items() if v != old_values[k]})
 
     def _type_error(self, object):
@@ -570,11 +570,14 @@ class ModelPane(Pane):
     def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties(model.document))
 
-    def _init_params(self):
-        params = {
-            p: v for p, v in self.param.values().items()
-            if v is not None and p not in ('name', 'default_layout')
-        }
+    def _init_params(self) -> dict[str, Any]:
+        params = {}
+        for p in self.param:
+            if p in ('name', 'default_layout'):
+                continue
+            v = getattr(self, p)
+            if v is not None:
+                params[p] = v
         params['object'] = self.object
         return params
 
@@ -652,8 +655,7 @@ class ReplacementPane(Pane):
         if not hasattr(self, '_inner_layout') or (self._pane is not None and getattr(self._pane, '_object_changing', False)):
             return
         self._inner_layout.param.update({
-            k: v for k, v in self._pane.param.values().items()
-            if k in ('sizing_mode', 'width_policy', 'height_policy')
+            p: getattr(self._pane, p) for p in ('sizing_mode', 'width_policy', 'height_policy')
         })
 
     def _update_inner_layout(self, *events):
@@ -694,11 +696,14 @@ class ReplacementPane(Pane):
                         old._names[i] = new._names[i]
                     cls._recursive_update(sub_old, sub_new)
                 ignored += ('objects',)
-        pvals = dict(old.param.values())
         new_params = {}
-        for p, p_new in new.param.values().items():
-            p_old = pvals[p]
-            if p in ignored or p_new is p_old:
+        for p in new.param:
+            if p in ignored:
+                continue
+
+            p_new = getattr(new, p)
+            p_old = getattr(old, p)
+            if p_new is p_old:
                 continue
             try:
                 equal = p_new == p_old
@@ -765,7 +770,7 @@ class ReplacementPane(Pane):
         return pane, internal
 
     def _update_inner(self, new_object: Any) -> None:
-        kwargs = dict(self.param.values(), **self._kwargs)
+        kwargs = dict({p: getattr(self, p) for p in self.param}, **self._kwargs)
         del kwargs['object']
         new_pane, internal = self._update_from_object(
             new_object, self._pane, self._internal, **kwargs

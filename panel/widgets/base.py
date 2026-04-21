@@ -189,7 +189,7 @@ class Widget(Reactive, WidgetBase):
     ) -> Model:
         if self._widget_type is None:
             raise NotImplementedError(
-                'Widget {type(self).__name__} did not define a _widget_type'
+                f'Widget {type(self).__name__} did not define a _widget_type'
             )
         model = self._widget_type(**self._get_properties(doc))
         root = root or model

@@ -15,10 +15,12 @@ def should_inherit(parameterized: param.Parameterized, p: str, v: Any) -> Any:
 
 
 def get_params_to_inherit(parameterized: param.Parameterized) -> dict:
-    return {
-        p: v for p, v in parameterized.param.values().items()
-        if should_inherit(parameterized, p, v)
-    }
+    params = {}
+    for p in parameterized.param:
+        v = getattr(parameterized, p)
+        if should_inherit(parameterized, p, v):
+            params[p] = v
+    return params
 
 
 def get_method_owner(meth):
