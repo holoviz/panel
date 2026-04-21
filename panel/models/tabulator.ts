@@ -471,12 +471,11 @@ export class DataTabulatorView extends HTMLBoxView {
       if (this.tabulator === undefined) {
         return
       }
+      this._restore_scroll = "horizontal"
       this._selection_updating = true
       this._updating_scroll = true
-      const scroll_left = this._lastHorizontalScrollbarLeftPosition
       void this.setData().then(() => {
         this._selection_updating = false
-        this._lastHorizontalScrollbarLeftPosition = scroll_left
         this.postUpdate()
         this.restore_scroll()
       })

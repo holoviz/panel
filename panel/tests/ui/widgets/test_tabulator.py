@@ -1326,7 +1326,7 @@ def test_tabulator_patch_with_filter_no_vertical_rescroll(page):
     page.wait_for_timeout(400)
 
     scroll_top_before = tableholder.evaluate("el => el.scrollTop")
-    assert scroll_top_before > 0, "Table did not scroll"
+    assert scroll_top_before > 0
 
     # Patch a visible (non-filtered) row
     widget.patch({"value": [(0, 999.0)]})
@@ -1335,9 +1335,7 @@ def test_tabulator_patch_with_filter_no_vertical_rescroll(page):
     page.wait_for_timeout(400)
 
     scroll_top_after = tableholder.evaluate("el => el.scrollTop")
-    assert scroll_top_before == scroll_top_after, (
-        f"Scroll reset after patch: was {scroll_top_before}, now {scroll_top_after}"
-    )
+    assert scroll_top_before == scroll_top_after
 
 
 def test_tabulator_patch_no_height_resize(page):
