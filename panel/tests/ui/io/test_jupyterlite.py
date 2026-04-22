@@ -50,19 +50,19 @@ def test_jupyterlite_execution(launch_jupyterlite, page):
     page.wait_for_load_state('networkidle')
 
     page.locator('text="Getting_Started.ipynb"').first.dblclick()
+    page.wait_for_load_state('networkidle')
 
     # Select the kernel
     if page.locator('.jp-Dialog').count() == 1:
         page.locator('.jp-select-wrapper > select').select_option('Python (Pyodide)')
         page.locator('.jp-Dialog-footer > button').nth(1).click()
-
-    page.locator('.jp-Cell').first.wait_for()  # Wait for first cell to load
+        page.wait_for_load_state('networkidle')
 
     for _ in range(6):
         page.locator('jp-button[data-command="notebook:run-cell-and-select-next"]').click()
-        page.wait_for_timeout(500)
+        page.wait_for_load_state('networkidle')
 
-    page.locator('.noUi-handle').click(timeout=120 * 1000)
+    page.locator('.noUi-handle').click()
 
     page.keyboard.press('ArrowRight')
 
