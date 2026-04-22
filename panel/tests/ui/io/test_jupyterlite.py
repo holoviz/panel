@@ -58,12 +58,10 @@ def test_jupyterlite_execution(launch_jupyterlite, page):
         page.locator('.jp-Dialog-footer > button').nth(1).click()
         page.wait_for_load_state('networkidle')
 
-    indicator = page.locator('.jp-Notebook-ExecutionIndicator')
-    expect(indicator).to_have_attribute('data-status', 'idle', timeout=60_000)
     for _ in range(6):
         page.locator('jp-button[data-command="notebook:run-cell-and-select-next"]').click()
-        page.wait_for_timeout(200)
-        expect(indicator).to_have_attribute('data-status', 'idle', timeout=60_000)
+        page.wait_for_load_state('networkidle')
+        expect(page.locator('.jp-Notebook-ExecutionIndicator')).to_have_attribute('data-status', 'idle', timeout=60_000)
 
     page.locator('.noUi-handle').click()
 
