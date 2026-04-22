@@ -43,11 +43,11 @@ def launch_jupyterlite():
 
 
 @pytest.mark.filterwarnings("ignore::ResourceWarning")
-@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_jupyterlite_execution(launch_jupyterlite, page):
     # INFO: Needs TS changes uploaded to CDN. Relevant when
     # testing a new version of Bokeh.
     page.goto("http://localhost:8123/index.html")
+    page.wait_for_load_state('networkidle')
 
     page.locator('text="Getting_Started.ipynb"').first.dblclick()
 
