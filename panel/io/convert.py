@@ -380,7 +380,7 @@ def script_to_html(
     # Execution
     post_code = POST_PYSCRIPT if runtime == 'pyscript' else POST
     if not preserve_format_strings:
-        # Escpae javascript-style format strings.
+        # Escape javascript-style format strings.
         source = source.replace('${', '&#36;{')
     code = '\n'.join([PRE, source, post_code])
     web_worker = None
