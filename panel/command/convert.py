@@ -95,6 +95,11 @@ class Convert(Subcommand):
             default = 1,
             help    = "The number of processes to start in parallel to convert the apps."
         )),
+        ('--preserve-format-strings', Argument(
+            default = False,
+            action  = 'store_true',
+            help    = "Whether to preserve javascript-style format strings within python code."
+        ))
     )
 
     _targets = ('pyscript', 'pyodide', 'pyodide-worker', 'pyscript-worker')
@@ -149,7 +154,8 @@ class Convert(Subcommand):
                     max_workers=args.num_procs,
                     http_patch=not args.disable_http_patch,
                     compiled=args.compiled,
-                    verbose=True
+                    verbose=True,
+                    preserve_format_strings=args.preserve_format_strings,
                 )
             except KeyboardInterrupt:
                 print("Aborted while building docs.")  # noqa: T201

@@ -320,7 +320,8 @@ def script_to_html(
     local_prefix: str = LOCAL_PREFIX,
     manifest: str | None = None,
     inline: bool = False,
-    compiled: bool = True
+    compiled: bool = True,
+    preserve_format_strings: bool = False,
 ) -> tuple[str, str | None]:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
@@ -350,6 +351,8 @@ def script_to_html(
         Whether to inline resources.
     compiled: bool
         Whether to use pre-compiled pyodide bundles.
+    preserve_format_strings: bool
+        If '${' patterns should be preserved.
     """
     # Run script
     if hasattr(filename, 'read'):
@@ -376,6 +379,9 @@ def script_to_html(
 
     # Execution
     post_code = POST_PYSCRIPT if runtime == 'pyscript' else POST
+    if not preserve_format_strings:
+        # Escpae javascript-style format strings.
+        source = source.replace('${', '&#36;{')
     code = '\n'.join([PRE, source, post_code])
     web_worker = None
     if css_resources is None:
@@ -505,6 +511,7 @@ def convert_app(
     inline: bool = False,
     compiled: bool = False,
     verbose: bool = True,
+    preserve_format_strings: bool = False,
 ):
     if dest_path is None:
         dest_path = pathlib.Path('./')
@@ -647,6 +654,7 @@ def convert_apps(
     inline: bool = False,
     compiled: bool = False,
     verbose: bool = True,
+    preserve_format_strings: bool = False,
 ):
     """
     Parameters
@@ -691,6 +699,8 @@ def convert_apps(
         Whether to inline resources.
     compiled: bool
         Whether to use the compiled and faster version of Pyodide.
+    preserve_format_strings: bool
+        Whether to preserve javascript-style format strings within python code
     """
     if isinstance(apps, (str, os.PathLike)):
         apps = [apps]
@@ -724,7 +734,8 @@ def convert_apps(
         'inline': inline,
         'verbose': verbose,
         'compiled': compiled,
-        'local_prefix': local_prefix
+        'local_prefix': local_prefix,
+        'preserve_format_strings': preserve_format_strings,
     }
 
     if state._is_pyodide:
