@@ -355,6 +355,7 @@ jupyterlab-myst = "*"
 jupyterlite-core = "<0.7.0"
 jupyterlite-pyodide-kernel = "*"
 python-build = "*"
+python-libarchive-c = "*"
 
 [feature.lite.tasks]
 lite-build = "bash scripts/jupyterlite/build.sh"

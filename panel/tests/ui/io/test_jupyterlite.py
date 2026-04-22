@@ -55,6 +55,8 @@ def test_jupyterlite_execution(launch_jupyterlite, page):
         page.locator('.jp-select-wrapper > select').select_option('Python (Pyodide)')
         page.locator('.jp-Dialog-footer > button').nth(1).click()
 
+    page.locator('.jp-Cell').first.wait_for()  # Wait for first cell to load
+
     for _ in range(6):
         page.locator('jp-button[data-command="notebook:run-cell-and-select-next"]').click()
         page.wait_for_timeout(500)
