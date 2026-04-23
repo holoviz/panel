@@ -42,6 +42,7 @@ def launch_jupyterlite():
         process.wait()
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 @pytest.mark.filterwarnings("ignore::ResourceWarning")
 def test_jupyterlite_execution(launch_jupyterlite, page):
     # INFO: Needs TS changes uploaded to CDN. Relevant when

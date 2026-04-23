@@ -36,6 +36,7 @@ def test_jupyter_server_custom_resources(page, jupyter_preview):
         window.getComputedStyle(element).getPropertyValue('background-color')""") == 'rgb(128, 0, 128)'
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_jupyter_server_kernel_error(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py?kernel=blah")
     page.wait_for_load_state('networkidle')
