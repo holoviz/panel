@@ -52,14 +52,11 @@ def test_jupyterlite_execution(launch_jupyterlite, page):
     page.locator('text="Getting_Started.ipynb"').first.dblclick()
     page.wait_for_load_state('networkidle')
 
-    # Select the kernel
-    if page.locator('.jp-Dialog').count() == 1:
-        page.locator('.jp-select-wrapper > select').select_option('Python (Pyodide)')
-        page.locator('.jp-Dialog-footer > button').nth(1).click()
-        page.wait_for_load_state('networkidle')
-
     for _ in range(6):
         page.locator('jp-button[data-command="notebook:run-cell-and-select-next"]').click()
+        if page.locator('.jp-Dialog').count() == 1: # Select the kernel if pop-up
+            page.locator('.jp-select-wrapper > select').select_option('Python (Pyodide)')
+            page.locator('.jp-Dialog-footer > button').nth(1).click()
         page.wait_for_load_state('networkidle')
         expect(page.locator('.jp-Notebook-ExecutionIndicator')).to_have_attribute('data-status', 'idle', timeout=60_000)
 
