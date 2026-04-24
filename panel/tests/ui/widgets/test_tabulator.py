@@ -1454,26 +1454,30 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
 
     serve_component(page, widget)
 
-    page.wait_for_timeout(100)
+    page.wait_for_timeout(150)
 
-    header = page.locator(f'text="{col_name}"')
-    # Scroll to the right
-    header.scroll_into_view_if_needed()
+    table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
+    expect(table_holder).to_have_count(1)
+    # Scroll horizontally to the right, then track that position.
+    table_holder.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
+    wait_until(lambda: table_holder.evaluate("el => el.scrollLeft > 0"), page)
+    scroll_left = table_holder.evaluate("el => el.scrollLeft")
 
-    page.wait_for_timeout(100)
-
-    bb = header.bounding_box()
-
-    header = page.locator('input[type="search"]')
+    header = page.locator(
+        f'.tabulator-col[tabulator-field="{col_name}"] '
+        '.tabulator-header-filter input[type="search"]'
+    )
+    expect(header).to_have_count(1)
     header.click()
     header.fill('off')
     header.press('Enter')
 
-    # Wait to catch a potential rescroll
-    page.wait_for_timeout(500)
+    # Wait for filtering to be applied, then give some time to catch rescroll.
+    wait_until(lambda: widget.current_view.empty, page)
+    page.wait_for_timeout(300)
 
-    # The table should keep the same scroll position, this fails
-    wait_until(lambda: abs(page.locator(f'text="{col_name}"').bounding_box()['x'] - bb['x']) <= 1, page)
+    # The table should keep the same horizontal scroll position.
+    wait_until(lambda: abs(table_holder.evaluate("el => el.scrollLeft") - scroll_left) <= 1, page)
 
 
 def test_tabulator_header_filter_always_visible(page, df_mixed):
@@ -2485,11 +2489,13 @@ def test_tabulator_header_filters_multiselect(page, df_mixed):
     str_header = page.locator('input[type="search"]')
     str_header.click()
     expect(page.locator('.tabulator-edit-list')).to_have_count(1)
+    page.wait_for_timeout(150)
     cmp, col = 'in', 'str'
     val = ['A', 'D']
     for v in val:
-        item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click()
+        item = page.locator('.tabulator-edit-list-item', has_text=v)
+        expect(item).to_have_count(1)
+        item.first.evaluate("el => el.click()")
     # Validating the filters doesn't have a very nice behavior, you need to lose
     # focus on the multiselect by clicking somewhere else.
     # Delay required before clicking for the focus to be lost and the filters accounted for.
