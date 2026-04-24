@@ -1,4 +1,5 @@
-from typing import Any
+
+import typing as t
 
 from bokeh.core.properties import List, String
 from bokeh.events import ModelEvent
@@ -15,7 +16,7 @@ class ScrollLatestEvent(ModelEvent):
         self.rerender = rerender
         self.scroll_limit = scroll_limit
 
-    def event_values(self) -> dict[str, Any]:
+    def event_values(self) -> dict[str, t.Any]:
         return dict(super().event_values(), rerender=self.rerender, scroll_limit=self.scroll_limit)
 
 

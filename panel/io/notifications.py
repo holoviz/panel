@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import typing as t
 
 import param
 
@@ -14,7 +14,7 @@ from .document import create_doc_if_none_exists
 from .resources import CDN_DIST, CSS_URLS, bundled_files
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -30,7 +30,7 @@ class Notification(param.Parameterized):
 
     message = param.String(default='', constant=True)
 
-    notification_area = param.Parameter(constant=True, precedence=-1)
+    notification_area: t.Any = param.Parameter(constant=True, precedence=-1)  # type: ignore[assignment, ty:invalid-assignment]
 
     notification_type = param.String(default=None, constant=True, label='type')
 
@@ -61,11 +61,15 @@ class NotificationAreaBase(param.Parameterized):
     notifications = param.List(item_type=Notification, doc="""
         A list of notifications to display in the notification area.""")
 
-    position = param.Selector(default='bottom-right', objects=[
+    position: t.Literal[
+        'bottom-right', 'bottom-left', 'bottom-center', 'top-left',
+        'top-right', 'top-center', 'center-center', 'center-left',
+        'center-right',
+    ] = param.Selector(default='bottom-right', objects=[
         'bottom-right', 'bottom-left', 'bottom-center', 'top-left',
         'top-right', 'top-center', 'center-center', 'center-left',
         'center-right'], doc="""
-        Position of the notification area on the screen (e.g., 'top-right', 'bottom-left').""")
+        Position of the notification area on the screen (e.g., 'top-right', 'bottom-left').""")  # type: ignore[assignment, ty:invalid-assignment]
 
     __abstract = True
 

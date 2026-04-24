@@ -102,6 +102,68 @@ def test_gauge_bounds():
     with pytest.raises(ValueError):
         dial.value = 100
 
+
+def test_gauge_creation():
+    gauge = Gauge(name="Test", value=50, bounds=(0, 100))
+    assert gauge.value == 50
+    assert gauge.bounds == (0, 100)
+    assert gauge.name == "Test"
+
+
+def test_gauge_colors():
+    gauge = Gauge(value=75, colors=[(0.4, 'green'), (0.8, 'yellow'), (1, 'red')])
+    assert gauge.colors == [(0.4, 'green'), (0.8, 'yellow'), (1, 'red')]
+
+
+def test_gauge_custom_opts():
+    gauge = Gauge(value=50, custom_opts={'pointer': {'width': 5}})
+    assert gauge.custom_opts == {'pointer': {'width': 5}}
+
+
+def test_gauge_process_param_change():
+    gauge = Gauge(name="G", value=50, bounds=(0, 100))
+    msg = gauge._process_param_change({
+        'value': 50, 'bounds': (0, 100), 'tooltip_format': '{b} : {c}%',
+        'show_ticks': True, 'show_labels': True, 'title_size': 18,
+        'format': '{value}%', 'start_angle': 225, 'end_angle': -45,
+        'num_splits': 10, 'annulus_width': 10,
+    })
+    assert 'data' in msg
+    assert msg['data']['series'][0]['type'] == 'gauge'
+    assert msg['data']['series'][0]['data'][0]['value'] == 50
+    assert msg['data']['series'][0]['min'] == 0
+    assert msg['data']['series'][0]['max'] == 100
+
+
+def test_gauge_process_param_change_with_colors():
+    gauge = Gauge(name="G", value=75, bounds=(0, 100),
+                  colors=[(0.5, 'green'), (1, 'red')])
+    msg = gauge._process_param_change({
+        'value': 75, 'bounds': (0, 100), 'tooltip_format': '{b} : {c}%',
+        'show_ticks': True, 'show_labels': True, 'title_size': 18,
+        'format': '{value}%', 'start_angle': 225, 'end_angle': -45,
+        'num_splits': 10, 'annulus_width': 10,
+        'colors': [(0.5, 'green'), (1, 'red')],
+    })
+    assert msg['data']['series'][0]['axisLine']['lineStyle']['color'] == [
+        (0.5, 'green'), (1, 'red')
+    ]
+
+
+def test_gauge_warns_without_extension(caplog):
+    import logging
+
+    from panel.config import panel_extension
+    original = list(panel_extension._loaded_extensions)
+    try:
+        panel_extension._loaded_extensions.clear()
+        with caplog.at_level(logging.WARNING):
+            Gauge(name="G", value=50, bounds=(0, 100))
+        assert "Gauge requires the ECharts library" in caplog.text
+    finally:
+        panel_extension._loaded_extensions.extend(original)
+
+
 def test_tqdm_color():
     tqdm = Tqdm()
     tqdm.text_pane.styles={'color': 'green'}

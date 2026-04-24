@@ -9,10 +9,8 @@ unit of speech in spoken language analysis.
 """
 from __future__ import annotations
 
+import typing as t
 import uuid
-
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -20,7 +18,9 @@ from panel.widgets import Widget
 
 from ..models.text_to_speech import TextToSpeech as _BkTextToSpeech
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
 
@@ -91,8 +91,8 @@ class Utterance(param.Parameterized):
         spoken. The text may be provided as plain text, or a
         well-formed SSML document.""")
 
-    lang = param.Selector(default="", doc="""
-        The language of the utterance.""")
+    lang: str = param.Selector(default="", doc="""
+        The language of the utterance.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     pitch = param.Number(default=1.0, bounds=(0.0, 2.0), doc="""
         The pitch at which the utterance will be spoken at expressed
@@ -102,8 +102,8 @@ class Utterance(param.Parameterized):
         The speed at which the utterance will be spoken at expressed
         as a number between 0.1 and 10.""" )
 
-    voice = param.Selector(doc="""
-        The voice that will be used to speak the utterance.""")
+    voice: t.Any = param.Selector(doc="""
+        The voice that will be used to speak the utterance.""")  # type: ignore[assignment]
 
     volume = param.Number(default=1.0, bounds=(0.0, 1.0), doc=""" The
         volume that the utterance will be spoken at expressed as a
@@ -216,26 +216,26 @@ class TextToSpeech(Utterance, Widget):
         the process of being spoken — even if TextToSpeak is in a
         paused state.""")
 
-    voices = param.List(readonly=True, doc="""
+    voices: list[Voice] = param.List(item_type=Voice, readonly=True, doc="""
         Returns a list of Voice objects representing all the available
-        voices on the current device.""")
+        voices on the current device.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _voices = param.List()
+    _voices: list[Voice] = param.List(item_type=Voice)  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'auto_speak': None, 'lang': None, 'name': None, 'pitch': None,
         'rate': None, 'speak': None, 'value': None, 'voice': None,
         'voices': None, 'volume': None, '_voices': 'voices',
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkTextToSpeech
+    _widget_type: t.ClassVar[type[Model]] = _BkTextToSpeech
 
-    def _process_param_change(self, msg):
-        speak = msg.get('speak') or ('value' in msg and self.auto_speak)
-        msg = super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        speak = params.get('speak') or ('value' in params and self.auto_speak)
+        props = super()._process_param_change(params)
         if speak:
-            msg['speak'] = self.to_dict()
-        return msg
+            props['speak'] = self.to_dict()
+        return props
 
     @param.depends('_voices', watch=True)
     def _update_voices(self):

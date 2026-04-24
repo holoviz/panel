@@ -1,4 +1,5 @@
-from typing import Any
+
+import typing as t
 
 import pytest
 
@@ -50,8 +51,8 @@ yourself to be taken in just like that!”
 
 Aesop
 """
-_VOICES_NONE: list[dict[str, Any]] = []
-_VOICES_FIREFOX_WIN10: list[dict[str, Any]] = [
+_VOICES_NONE: list[dict[str, t.Any]] = []
+_VOICES_FIREFOX_WIN10: list[dict[str, t.Any]] = [
     {
         "default": False,
         "lang": "en-US",
@@ -67,7 +68,7 @@ _VOICES_FIREFOX_WIN10: list[dict[str, Any]] = [
         "voice_uri": "urn:moz-tts:sapi:Microsoft Zira Desktop - English (United States)?en-US",
     },
 ]
-_VOICES_CHROME_WIN10: list[dict[str, Any]] = [
+_VOICES_CHROME_WIN10: list[dict[str, t.Any]] = [
     {
         "default": True,
         "lang": "en-US",

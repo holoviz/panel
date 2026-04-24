@@ -3,8 +3,7 @@ Defines the CodeEditor widget based on Ace.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
@@ -15,7 +14,9 @@ from ..models.enums import ace_themes
 from ..util import lazy_load
 from .base import Widget
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -32,8 +33,8 @@ class CodeEditor(Widget):
     >>> CodeEditor(value=py_code, language='python', theme='monokai')
     """
 
-    annotations = param.List(default=[], doc="""
-        List of annotations to add to the editor.""")
+    annotations: list[dict[str, t.Any]] = param.List(default=[], item_type=dict, doc="""
+        List of annotations to add to the editor.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     filename = param.String(doc="Filename from which to deduce language")
 
@@ -52,11 +53,12 @@ class CodeEditor(Widget):
 
     soft_tabs = param.Boolean(default=False, doc="Whether to use spaces instead of tabs.")
 
-    theme = param.Selector(default="github_light_default", objects=list(ace_themes), doc="""
+    theme: str = param.Selector(
+        default="github_light_default", objects=list(ace_themes), doc="""
         If no value is provided, it defaults to the current theme
         set by pn.config.theme, as specified in the
         CodeEditor.THEME_CONFIGURATION dictionary. If not defined there, it
-        falls back to the default parameter value.""")
+        falls back to the default parameter value.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     value = param.String(default="", doc="""
         State of the current code in the editor if `on_keyup`. Otherwise, only upon loss of focus,
@@ -65,9 +67,9 @@ class CodeEditor(Widget):
     value_input = param.String(default="", doc="""
         State of the current code updated on every key press. Identical to `value` if `on_keyup`.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
 
-    THEME_CONFIGURATION: ClassVar[dict[str,str]] = {"dark": "github_dark", "default": "github_light_default"}
+    THEME_CONFIGURATION: t.ClassVar[dict[str,str]] = {"dark": "github_dark", "default": "github_light_default"}
 
     def __init__(self, **params):
         if 'readonly' in params:
