@@ -505,6 +505,28 @@ def test_tabulator_editors_bokeh_string(page, df_mixed):
     expect(page.locator('input[type="text"]')).to_have_count(1)
 
 
+def test_tabulator_editor_stays_open_during_resize_redraw(page, df_mixed):
+    widget = Tabulator(df_mixed, editors={'str': StringEditor()})
+
+    serve_component(page, widget)
+    expect(page.locator('.tabulator')).to_have_count(1)
+
+    cell = page.locator('[tabulator-field="str"][role=gridcell]').first
+    cell.click()
+
+    editor = page.locator('input[type="text"]')
+    expect(editor).to_have_count(1)
+
+    viewport = page.viewport_size or {"width": 1280, "height": 720}
+    page.set_viewport_size({
+        "width": max(viewport["width"] - 40, 300),
+        "height": viewport["height"],
+    })
+
+    # A resize-triggered redraw should not close an active editor.
+    expect(editor).to_have_count(1)
+
+
 def test_tabulator_editor_jscode(page, df_mixed):
 
     editor = """

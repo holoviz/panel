@@ -614,7 +614,14 @@ export class DataTabulatorView extends HTMLBoxView {
       if (!this._resize_pending) {
         continue
       }
-      if (this._is_scrolling || this._initializing || this.container === null || this.is_drawing || ![...this._initialized_stylesheets.values()].every(v => v)) {
+      if (
+        this._is_scrolling ||
+        this._initializing ||
+        this.container === null ||
+        this.is_drawing ||
+        this._has_active_editor() ||
+        ![...this._initialized_stylesheets.values()].every(v => v)
+      ) {
         await defer()
         continue
       }
@@ -625,7 +632,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   _resize_redraw(): void {
-    if (this._initializing || this.container === null || this._building) {
+    if (this._initializing || this.container === null || this._building || this._has_active_editor()) {
       return
     }
     const width = this.container.clientWidth
@@ -644,6 +651,14 @@ export class DataTabulatorView extends HTMLBoxView {
       this.restore_scroll()
       this.recompute_page_size()
     })
+  }
+
+  private _has_active_editor(): boolean {
+    if (this.container === null) {
+      return false
+    }
+    // Tabulator marks the edited cell with `tabulator-editing` while an editor is active.
+    return this.container.querySelector(".tabulator-editing") !== null
   }
 
   override stylesheets(): StyleSheetLike[] {
