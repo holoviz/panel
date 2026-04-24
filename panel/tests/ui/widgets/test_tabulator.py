@@ -2484,6 +2484,7 @@ def test_tabulator_header_filters_multiselect(page, df_mixed):
 
     str_header = page.locator('input[type="search"]')
     str_header.click()
+    expect(page.locator('.tabulator-edit-list')).to_have_count(1)
     cmp, col = 'in', 'str'
     val = ['A', 'D']
     for v in val:
@@ -2492,8 +2493,9 @@ def test_tabulator_header_filters_multiselect(page, df_mixed):
     # Validating the filters doesn't have a very nice behavior, you need to lose
     # focus on the multiselect by clicking somewhere else.
     # Delay required before clicking for the focus to be lost and the filters accounted for.
-    page.wait_for_timeout(200)
-    page.locator('text="idx0"').click()
+    # Keep this local to the test: resize redraw can race this blur action in CI.
+    page.wait_for_timeout(350)
+    page.locator('[tabulator-field="int"][role=gridcell]').first.click(force=True)
     expected_filter_df = df_mixed.query(f'{col} {cmp} {val}')
     expected_filter = {'field': col, 'type': cmp, 'value': val}
     expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
