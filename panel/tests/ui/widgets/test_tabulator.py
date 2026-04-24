@@ -1281,16 +1281,25 @@ def test_tabulator_frozen_rows(page):
         use_inner_text=True
     )
 
-    X_bb = page.locator('text="X"').bounding_box()
-    Y_bb = page.locator('text="Y"').bounding_box()
+    x_cell = page.locator('[tabulator-field="col"][role=gridcell]', has_text='X')
+    y_cell = page.locator('[tabulator-field="col"][role=gridcell]', has_text='Y')
+    expect(x_cell).to_be_visible()
+    expect(y_cell).to_be_visible()
+    expect(x_cell).to_have_count(1)
+    expect(y_cell).to_have_count(1)
+    X_bb = x_cell.first.bounding_box()
+    Y_bb = y_cell.first.bounding_box()
 
-    # Scroll to the bottom, and give it a little extra time
-    page.locator('text="T"').scroll_into_view_if_needed()
+    # Scroll the non-frozen area to the bottom.
+    page.locator('.pnx-tabulator .tabulator-tableholder').evaluate(
+        "el => { el.scrollTop = el.scrollHeight; }"
+    )
+    expect(page.locator('[tabulator-field="col"][role=gridcell]', has_text='T')).to_have_count(1)
     page.wait_for_timeout(200)
 
     # Check that the two frozen columns haven't moved after scrolling right
-    assert X_bb == page.locator('text="X"').bounding_box()
-    assert Y_bb == page.locator('text="Y"').bounding_box()
+    assert X_bb == x_cell.first.bounding_box()
+    assert Y_bb == y_cell.first.bounding_box()
 
 
 @pytest.mark.flaky(reruns=3, reruns_delays=2)
