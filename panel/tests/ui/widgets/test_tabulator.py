@@ -959,9 +959,13 @@ def test_tabulator_editable(page, df_mixed):
     cell = page.locator('text="D"')
     cell.click()
     expect(page.locator('input[type="text"]')).to_have_count(1)
+    # Exit edit mode before toggling disabled to avoid racing an active editor teardown.
+    page.locator('[tabulator-field="int"][role=gridcell]').first.click(force=True)
+    expect(page.locator('input[type="text"]')).to_have_count(0)
 
     # Disable the Tabulator to check that all cell are non editable
     widget.disabled = True
+    page.wait_for_timeout(200)
 
     cell = page.locator('text="A"')
     cell.click()
