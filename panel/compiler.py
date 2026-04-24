@@ -359,11 +359,6 @@ def patch_tabulator():
     new = '"click"!==this.options("editTriggerEvent")'
     assert text.count(old) == 1
     text = text.replace(old, new)
-    # https://github.com/olifolkerd/tabulator/pull/4598
-    old = '(i=!0,this.subscribed("table-resize")?this.dispatch("table-resize"):this.redraw())'
-    new = '(i=!0,this.redrawing||(this.redrawing=!0,this.subscribed("table-resize")?this.dispatch("table-resize"):this.redraw(),this.redrawing=!1))'
-    assert text.count(old) == 1
-    text = text.replace(old, new)
     path.write_text(text)
 
 def bundle_resources(verbose=False, external=True):
