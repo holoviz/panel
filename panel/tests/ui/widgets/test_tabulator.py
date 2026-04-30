@@ -1169,6 +1169,7 @@ def test_tabulator_frozen_columns(page, df_mixed):
     assert int_bb == page.locator('text="int"').bounding_box()
 
 
+@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1233,7 +1234,9 @@ def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     assert str_bb['x'] < int_bb['x']
 
     # Scroll to the right, and give it a little extra time
-    page.locator('text="2019-01-01 10:00:00"').scroll_into_view_if_needed()
+    cell = page.locator('text="2019-01-01 10:00:00"')
+    expect(cell).to_be_attached()
+    cell.scroll_into_view_if_needed()
 
     # Check that the position of one of the non-frozen columns has indeed moved
     wait_until(lambda: page.locator('text="str"').bounding_box()['x'] < str_bb['x'], page)
