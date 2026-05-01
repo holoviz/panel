@@ -6,13 +6,10 @@ import dataclasses
 import json
 import os
 import pathlib
+import typing as t
 import uuid
 
-from collections.abc import Sequence
 from html import escape
-from typing import (
-    IO, Any, Literal, cast,
-)
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
@@ -39,6 +36,9 @@ from .resources import (
     _env as _pn_env, bundle_resources, loading_css, set_resource_mode,
 )
 from .state import set_curdoc, state
+
+if t.TYPE_CHECKING:
+    from collections.abc import Sequence
 
 PWA_MANIFEST_TEMPLATE = _pn_env.get_template('site.webmanifest')
 SERVICE_WORKER_TEMPLATE = _pn_env.get_template('serviceWorker.js')
@@ -77,7 +77,7 @@ PWA_IMAGES = [
     ICON_DIR / 'index_background.png'
 ]
 
-Runtimes = Literal['pyodide', 'pyscript', 'pyodide-worker', 'pyscript-worker']
+Runtimes = t.Literal['pyodide', 'pyscript', 'pyodide-worker', 'pyscript-worker']
 
 PRE = """
 import asyncio
@@ -175,9 +175,9 @@ def build_pwa_manifest(files, title=None, **kwargs) -> str:
 
 
 def collect_python_requirements(
-    code: str | os.PathLike | IO,
-    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
-    panel_version: Literal['auto', 'local'] | str = 'auto',
+    code: str | os.PathLike | t.IO,
+    requirements: list[str] | t.Literal['auto'] | os.PathLike = 'auto',
+    panel_version: t.Literal['auto', 'local'] | str = 'auto',
     http_patch: bool = True,
 ) -> list[str]:
     """
@@ -241,7 +241,7 @@ def collect_python_requirements(
             req = Requirement(stripped_req)
         except ValueError as e:
             if stripped_req.endswith('.whl'):
-                req = cast(Requirement, DummyRequirement(stripped_req))
+                req = t.cast('Requirement', DummyRequirement(stripped_req))
             else:
                 raise ValueError(f'Requirements parser raised following error: {e}') from e
 
@@ -268,7 +268,7 @@ def collect_python_requirements(
     return collected_requirements
 
 
-def pack_files(filemap: dict, destination: str | os.PathLike | IO):
+def pack_files(filemap: dict, destination: str | os.PathLike | t.IO):
     """
     Pack files into a zipfile for distribution
 
@@ -309,14 +309,14 @@ def loading_resources(template, inline) -> list[str]:
     return css_resources
 
 def script_to_html(
-    filename: str | os.PathLike | IO,
+    filename: str | os.PathLike | t.IO,
     requirements: list[str] = [],
     app_resources: str | os.PathLike | None = None,
-    js_resources: Literal['auto'] | list[str] = 'auto',
-    css_resources: Literal['auto'] | list[str] | None = 'auto',
+    js_resources: t.Literal['auto'] | list[str] = 'auto',
+    css_resources: t.Literal['auto'] | list[str] | None = 'auto',
     runtime: Runtimes = 'pyodide',
     prerender: bool = True,
-    panel_version: Literal['auto', 'local'] | str = 'auto',
+    panel_version: t.Literal['auto', 'local'] | str = 'auto',
     local_prefix: str = LOCAL_PREFIX,
     manifest: str | None = None,
     inline: bool = False,
@@ -494,12 +494,12 @@ def script_to_html(
 def convert_app(
     app: str | os.PathLike,
     dest_path: str | os.PathLike | None = None,
-    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
+    requirements: list[str] | t.Literal['auto'] | os.PathLike = 'auto',
     resources: list[str] | list[os.PathLike] | None = None,
     runtime: Runtimes = 'pyodide-worker',
     prerender: bool = True,
     manifest: str | None = None,
-    panel_version: Literal['auto', 'local'] | str = 'auto',
+    panel_version: t.Literal['auto', 'local'] | str = 'auto',
     local_prefix: str = LOCAL_PREFIX,
     http_patch: bool = True,
     inline: bool = False,
@@ -598,7 +598,7 @@ def _convert_process_pool(
     apps: Sequence[str | os.PathLike],
     dest_path: os.PathLike | str | None = None,
     max_workers: int = 4,
-    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
+    requirements: list[str] | t.Literal['auto'] | os.PathLike = 'auto',
     **kwargs
 ):
     import multiprocessing as mp
@@ -634,14 +634,14 @@ def convert_apps(
     dest_path: str | os.PathLike | None = None,
     title: str | None = None,
     runtime: Runtimes = 'pyodide-worker',
-    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
+    requirements: list[str] | t.Literal['auto'] | os.PathLike = 'auto',
     resources: list[str] | list[os.PathLike] | None = None,
     prerender: bool = True,
     build_index: bool = True,
     build_pwa: bool = True,
-    pwa_config: dict[Any, Any] = {},
+    pwa_config: dict[t.Any, t.Any] = {},
     max_workers: int = 4,
-    panel_version: Literal['auto', 'local'] | str = 'auto',
+    panel_version: t.Literal['auto', 'local'] | str = 'auto',
     local_prefix: str = LOCAL_PREFIX,
     http_patch: bool = True,
     inline: bool = False,

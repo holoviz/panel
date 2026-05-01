@@ -2,7 +2,8 @@
 The icon module provides a low-level API for rendering chat related icons.
 """
 
-from typing import ClassVar
+
+import typing as t
 
 import param
 
@@ -57,7 +58,7 @@ class ChatReactionIcons(CompositeWidget):
         default=Column, class_=Panel, is_instance=False, doc="""
         The layout to use for the icons. Defaults to Column, which stacks the icons vertically.""")
 
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_reaction_icons.css"]
+    _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/chat_reaction_icons.css"]
 
     _composite_type = Column
 
@@ -156,7 +157,7 @@ class ChatCopyIcon(ReactiveHTML):
         """
     }
 
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_copy_icon.css"]
+    _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/chat_copy_icon.css"]
 
     @param.depends('_request_sync', watch=True)
     def _sync(self):

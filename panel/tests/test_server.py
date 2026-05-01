@@ -1,6 +1,5 @@
 import asyncio
 import datetime as dt
-import importlib
 import logging
 import os
 import pathlib
@@ -27,26 +26,11 @@ from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
 from panel.tests.util import (
-    get_open_ports, reverse_proxy_available, serve_and_request, serve_and_wait,
-    wait_until,
+    get_open_ports, serve_and_request, serve_and_wait, wait_until,
 )
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
 )
-
-
-@pytest.fixture(params=["tornado", "fastapi"])
-def server_implementation(request):
-    try:
-        importlib.import_module(request.param)
-    except Exception:
-        pytest.skip(f'{request.param!r} is not installed')
-    old = serve_and_wait.server_implementation
-    serve_and_wait.server_implementation = request.param
-    try:
-        yield request.param
-    finally:
-        serve_and_wait.server_implementation = old
 
 
 @pytest.mark.xdist_group(name="server")
@@ -1009,7 +993,6 @@ def test_server_template_custom_resources(port):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
-@reverse_proxy_available
 def test_server_template_custom_resources_on_proxy(reverse_proxy):
     template = CustomBootstrapTemplate()
 
@@ -1022,7 +1005,6 @@ def test_server_template_custom_resources_on_proxy(reverse_proxy):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
-@reverse_proxy_available
 def test_server_ico_path_on_proxy(reverse_proxy):
     md = Markdown('# Favicon test')
 
@@ -1045,7 +1027,6 @@ def test_server_template_custom_resources_with_prefix(port):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
-@reverse_proxy_available
 def test_server_template_custom_resources_with_prefix_and_proxy(reverse_proxy):
     (port, proxy) = reverse_proxy
     template = CustomBootstrapTemplate()
@@ -1063,7 +1044,6 @@ def test_server_template_custom_resources_with_prefix_relative_url(port):
 
     assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
-@reverse_proxy_available
 def test_server_template_custom_resources_with_prefix_and_proxy_relative_url(reverse_proxy):
     template = CustomBootstrapTemplate()
 
@@ -1079,7 +1059,6 @@ def test_server_template_custom_resources_with_subpath_and_prefix_relative_url(p
 
     assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
-@reverse_proxy_available
 def test_server_template_custom_resources_with_subpath_and_prefix_and_proxy_relative_url(reverse_proxy):
     template = CustomBootstrapTemplate()
 

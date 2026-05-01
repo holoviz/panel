@@ -4,8 +4,7 @@ bokeh model.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+import typing as t
 
 import numpy as np
 import param
@@ -18,7 +17,9 @@ from ..util.checks import datetime_types, isdatetime
 from ..viewable import Layoutable
 from .base import ModelPane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -61,14 +62,20 @@ class Plotly(ModelPane):
 
     relayout_data = param.Dict(nested_refs=True, doc="Relayout event data from `plotly_relayout` event")
 
-    restyle_data = param.List(nested_refs=True, doc="Restyle event data from `plotly_restyle` event")
+    restyle_data: list[t.Any] = param.List(
+        default=[], nested_refs=True, doc="""
+        Restyle event data from `plotly_restyle` event""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    selected_data = param.Dict(nested_refs=True, doc="Selected event data from `plotly_selected` and `plotly_deselect` events.")
+    selected_data = param.Dict(
+        nested_refs=True, doc="Selected event data from `plotly_selected` and `plotly_deselect` events."
+    )
 
-    viewport = param.Dict(nested_refs=True, doc="""Current viewport state, i.e. the x- and y-axis limits of the displayed plot.
-                          Updated on `plotly_relayout`, `plotly_relayouting` and `plotly_restyle` events.""")
+    viewport = param.Dict(nested_refs=True, doc="""
+        Current viewport state, i.e. the x- and y-axis limits of the displayed plot.
+        Updated on `plotly_relayout`, `plotly_relayouting` and `plotly_restyle` events.""")
 
-    viewport_update_policy = param.Selector(default="mouseup", doc="""
+    viewport_update_policy: t.Literal["mouseup", "continuous", "throttle"] = param.Selector(
+        default="mouseup", doc="""
         Policy by which the viewport parameter is updated during user interactions.
 
         * "mouseup": updates are synchronized when mouse button is
@@ -76,7 +83,7 @@ class Plotly(ModelPane):
         * "continuous": updates are synchronized continually while panning
         * "throttle": updates are synchronized while panning, at
           intervals determined by the viewport_update_throttle parameter
-        """, objects=["mouseup", "continuous", "throttle"])
+        """, objects=["mouseup", "continuous", "throttle"])  # type: ignore[assignment, ty:invalid-assignment]
 
     viewport_update_throttle = param.Integer(default=200, bounds=(0, None), doc="""
         Time interval in milliseconds at which viewport updates are
@@ -85,11 +92,11 @@ class Plotly(ModelPane):
     _render_count = param.Integer(default=0, doc="""
         Number of renders, increment to trigger re-render""")
 
-    priority: ClassVar[float | bool | None] = 0.8
+    priority: t.ClassVar[float | bool | None] = 0.8
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'link_figure': None,
         'object': None,
         'doubleclick_data': None,
@@ -100,10 +107,10 @@ class Plotly(ModelPane):
     }
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
-                hasattr(obj, 'to_plotly_json') or (isinstance(obj, dict)
-                                                   and 'data' in obj and 'layout' in obj))
+    def applies(cls, object: t.Any) -> float | bool | None:
+        return ((isinstance(object, list) and object and all(cls.applies(o) for o in object)) or
+                hasattr(object, 'to_plotly_json') or (isinstance(object, dict)
+                                                   and 'data' in object and 'layout' in object))
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -477,7 +484,7 @@ class Plotly(ModelPane):
         except Exception:
             update_frames = True
 
-        updates: dict[str, Any] = {}
+        updates: dict[str, t.Any] = {}
         if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
             autosize = layout.get('autosize')
             styles = dict(model.styles)

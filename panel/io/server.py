@@ -13,14 +13,11 @@ import pathlib
 import signal
 import sys
 import threading
+import typing as t
 import uuid
 
-from collections.abc import Callable, Mapping
 from functools import partial, wraps
 from html import escape
-from typing import (
-    TYPE_CHECKING, Any, Literal, TypedDict,
-)
 from urllib.parse import urlparse
 
 import bokeh
@@ -78,7 +75,9 @@ from .threads import StoppableThread
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.application.application import SessionContext
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson
@@ -89,10 +88,10 @@ if TYPE_CHECKING:
     from .application import TViewableFuncOrPath
     from .location import Location
 
-    class TokenPayload(TypedDict):
-        headers: dict[str, Any]
-        cookies: dict[str, Any]
-        arguments: dict[str, Any]
+    class TokenPayload(t.TypedDict):
+        headers: dict[str, t.Any]
+        cookies: dict[str, t.Any]
+        arguments: dict[str, t.Any]
 
 
 #---------------------------------------------------------------------
@@ -197,7 +196,7 @@ state._on_session_created_internal.append(_initialize_session_info)
 def html_page_for_render_items(
     bundle: Bundle | tuple[str, str], docs_json: dict[ID, DocJson],
     render_items: list[RenderItem], title: str, template: Template | str | None = None,
-    template_variables: dict[str, Any] = {}
+    template_variables: dict[str, t.Any] = {}
 ) -> str:
     """
     Render an HTML page from a template and Bokeh render items.
@@ -266,7 +265,7 @@ def server_html_page_for_session(
     title: str,
     token: str | None = None,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: dict[str, Any] | None = None,
+    template_variables: dict[str, t.Any] | None = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
@@ -435,7 +434,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             return True, None
         authorized = False
         auth_params = inspect.signature(auth_cb).parameters
-        auth_args: tuple[dict[str, Any] | None] | tuple[dict[str, Any] | None, str]
+        auth_args: tuple[dict[str, t.Any] | None] | tuple[dict[str, t.Any] | None, str]
         if len(auth_params) == 1:
             auth_args = (state.user_info,)
         elif len(auth_params) == 2:
@@ -717,7 +716,7 @@ class ComponentResourceHandler(StaticFileHandler):
         '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path', '_bundle_css'
     ]
 
-    def initialize(self, path: str | Literal['root'] = 'root', default_filename: str | None = None):
+    def initialize(self, path: str | t.Literal['root'] = 'root', default_filename: str | None = None):
         self.root = path
         self.default_filename = default_filename
 

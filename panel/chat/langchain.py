@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+import typing as t
 
 try:
     from langchain.callbacks.base import BaseCallbackHandler
@@ -13,11 +13,13 @@ except ImportError:
     AgentFinish = None
     LLMResult = None
 
-from ..chat.feed import ChatFeed
-from ..chat.interface import ChatInterface
 from ..chat.message import DEFAULT_AVATARS
 from ..layout import Accordion
 from ..util.warnings import deprecated
+
+if t.TYPE_CHECKING:
+    from ..chat.feed import ChatFeed
+    from ..chat.interface import ChatInterface
 
 
 class PanelCallbackHandler(BaseCallbackHandler):
@@ -97,7 +99,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
             )
         return self._message
 
-    def on_llm_start(self, serialized: dict[str, Any], *args, **kwargs):
+    def on_llm_start(self, serialized: dict[str, t.Any], *args, **kwargs):
         self._on_start(serialized, kwargs)
         return super().on_llm_start(serialized, *args, **kwargs)
 
@@ -116,14 +118,14 @@ class PanelCallbackHandler(BaseCallbackHandler):
     def on_llm_error(self, error: Exception | KeyboardInterrupt, *args, **kwargs):
         return super().on_llm_error(error, *args, **kwargs)
 
-    def on_agent_action(self, action: AgentAction, *args, **kwargs: Any) -> Any:
+    def on_agent_action(self, action: AgentAction, *args, **kwargs: t.Any) -> t.Any:
         return super().on_agent_action(action, *args, **kwargs)
 
-    def on_agent_finish(self, finish: AgentFinish, *args, **kwargs: Any) -> Any:
+    def on_agent_finish(self, finish: AgentFinish, *args, **kwargs: t.Any) -> t.Any:
         return super().on_agent_finish(finish, *args, **kwargs)
 
     def on_tool_start(
-        self, serialized: dict[str, Any], input_str: str, *args, **kwargs
+        self, serialized: dict[str, t.Any], input_str: str, *args, **kwargs
     ):
         self._update_active(DEFAULT_AVATARS["tool"], serialized["name"])
         self._stream(f"Tool input: {input_str}")
@@ -140,23 +142,23 @@ class PanelCallbackHandler(BaseCallbackHandler):
         return super().on_tool_error(error, *args, **kwargs)
 
     def on_chain_start(
-        self, serialized: dict[str, Any], inputs: dict[str, Any], *args, **kwargs
+        self, serialized: dict[str, t.Any], inputs: dict[str, t.Any], *args, **kwargs
     ):
         self._disabled_state = self.instance.disabled
         self.instance.disabled = True
         return super().on_chain_start(serialized, inputs, *args, **kwargs)
 
-    def on_chain_end(self, outputs: dict[str, Any], *args, **kwargs):
+    def on_chain_end(self, outputs: dict[str, t.Any], *args, **kwargs):
         self.instance.disabled = self._disabled_state
         return super().on_chain_end(outputs, *args, **kwargs)
 
     def on_retriever_error(
-        self, error: Exception | KeyboardInterrupt, **kwargs: Any
-    ) -> Any:
+        self, error: Exception | KeyboardInterrupt, **kwargs: t.Any
+    ) -> t.Any:
         """Run when Retriever errors."""
         return super().on_retriever_error(error, **kwargs)
 
-    def on_retriever_end(self, documents, **kwargs: Any) -> Any:
+    def on_retriever_end(self, documents, **kwargs: t.Any) -> t.Any:
         """Run when Retriever ends running."""
         objects = [(f"Document {index}", document.page_content) for index, document in enumerate(documents)]
         message = Accordion(*objects, sizing_mode="stretch_width", margin=(10,13,10,5))
@@ -168,15 +170,15 @@ class PanelCallbackHandler(BaseCallbackHandler):
         )
         return super().on_retriever_end(documents=documents, **kwargs)
 
-    def on_text(self, text: str, **kwargs: Any):
+    def on_text(self, text: str, **kwargs: t.Any):
         """Run when text is received."""
         return super().on_text(text, **kwargs)
 
     def on_chat_model_start(
         self,
-        serialized: dict[str, Any],
+        serialized: dict[str, t.Any],
         messages: list,
-        **kwargs: Any
+        **kwargs: t.Any
     ) -> None:
         """
         To prevent the inherited class from raising

@@ -7,10 +7,8 @@ import json
 import os
 import sys
 import time
+import typing as t
 import uuid
-
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
 
 import bokeh
 import js
@@ -42,7 +40,9 @@ from .state import state
 resources.RESOURCE_MODE = 'cdn'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
+
     from bokeh.core.types import ID
 
     from ..template.base import TemplateBase
@@ -129,7 +129,7 @@ if pyodide_http is None:
 
 _tasks = set()
 
-def async_execute(func: Any):
+def async_execute(func: t.Any):
     event_loop = asyncio.get_running_loop()
     if event_loop.is_running():
         task = asyncio.create_task(func())
@@ -245,7 +245,7 @@ def _serialize_buffers(obj, buffers={}):
             return obj.to_base64()
     return obj
 
-def _process_document_events(doc: Document, events: list[Any]):
+def _process_document_events(doc: Document, events: list[t.Any]):
     serializer = Serializer(references=doc.models.synced_references)
     patch_json = PatchJson(events=serializer.encode(events))
     doc.models.flush_synced(lambda model: not serializer.has_ref(model))
@@ -325,7 +325,7 @@ def _convert_json_patch(json_patch):
 # Holds proxied functions so they are not GCed
 _proxies = []
 
-def _link_docs(pydoc: Document, jsdoc: Any) -> None:
+def _link_docs(pydoc: Document, jsdoc: t.Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring that messages
     are passed between them.
@@ -338,7 +338,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         The Javascript Bokeh Document instance to sync.
     """
 
-    event_buffer: list[Any] = []
+    event_buffer: list[t.Any] = []
     blocked: list[float] = []
     def jssync(event, debounce=DEBOUNCE, timeout=TIMEOUT, append=True):
         setter_id = getattr(event, 'setter_id', None)
@@ -397,7 +397,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     except Exception as e:
         print(f'Error raised while processing Document events: {e}')  # noqa: T201
 
-def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None, setter: str | None = None):
+def _link_docs_worker(doc: Document, dispatch_fn: t.Any, msg_id: str | None = None, setter: str | None = None):
     """
     Links the Python document to a dispatch_fn which can be used to
     sync messages between a WebWorker and the main thread in the
@@ -471,7 +471,7 @@ def fetch_binary(url):
     xhr.send()
     return io.BytesIO(xhr.response.to_py().tobytes())
 
-def render_script(obj: Any, target: ID) -> str:
+def render_script(obj: t.Any, target: ID) -> str:
     """
     Generates a script to render the supplied object to the target.
 
@@ -517,7 +517,7 @@ def init_doc() -> None:
     doc._session_context = lambda: MockSessionContext(document=doc)  # type: ignore
     state.curdoc = doc
 
-async def show(obj: Any, target: str) -> None:
+async def show(obj: t.Any, target: str) -> None:
     """
     Renders the object into a DOM node specified by the target.
 
@@ -532,7 +532,7 @@ async def show(obj: Any, target: str) -> None:
     console.log('panel.io.pyodide.show is deprecated in favor of panel.io.pyodide.write')
     await write(target, obj)
 
-async def write(target: str, obj: Any) -> None:
+async def write(target: str, obj: t.Any) -> None:
     """
     Renders the object into a DOM node specified by the target.
 

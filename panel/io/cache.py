@@ -14,13 +14,10 @@ import pickle
 import sys
 import threading
 import time
+import typing as t
 import unittest.mock
 
-from collections.abc import Awaitable, Callable, Hashable
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, TypeVar, cast, overload,
-)
 
 import param
 
@@ -33,12 +30,13 @@ from .state import state
 # Private API
 #---------------------------------------------------------------------
 
-if TYPE_CHECKING:
-    _P = ParamSpec("_P")
-    _R = TypeVar("_R")
-    _CallableT = TypeVar("_CallableT", bound=Callable)
+if t.TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable, Hashable
+    _P = t.ParamSpec("_P")
+    _R = t.TypeVar("_R")
+    _CallableT = t.TypeVar("_CallableT", bound=Callable)
 
-    class _CachedFunc(Protocol[_CallableT]):
+    class _CachedFunc(t.Protocol[_CallableT]):
         def clear(self, func_hashes: list[str | None]=[None]) -> None:
             pass
 
@@ -94,13 +92,13 @@ def _int_to_bytes(i: int) -> bytes:
     num_bytes = (i.bit_length() + 8) // 8
     return i.to_bytes(num_bytes, "little", signed=True)
 
-def _is_native(obj: Any) -> bool:
+def _is_native(obj: t.Any) -> bool:
     return isinstance(obj, _NATIVE_TYPES)
 
-def _is_native_tuple(obj: Any) -> bool:
+def _is_native_tuple(obj: t.Any) -> bool:
     return isinstance(obj, tuple) and all(_is_native_tuple(v) for v in obj)
 
-def _container_hash(obj: Any) -> bytes:
+def _container_hash(obj: t.Any) -> bytes:
     h = hashlib.new("md5")
     h.update(_generate_hash(f'__{type(obj).__name__}'))
     for item in (obj.items() if isinstance(obj, dict) else obj):
@@ -110,14 +108,14 @@ def _container_hash(obj: Any) -> bytes:
 def _slice_hash(x: slice) -> bytes:
     return _container_hash([x.start, x.step, x.stop])
 
-def _partial_hash(obj: Any) -> bytes:
+def _partial_hash(obj: t.Any) -> bytes:
     h = hashlib.new("md5")
     h.update(_generate_hash(obj.args))
     h.update(_generate_hash(obj.func))
     h.update(_generate_hash(obj.keywords))
     return h.digest()
 
-def _pandas_hash(obj: Any) -> bytes:
+def _pandas_hash(obj: t.Any) -> bytes:
     import pandas as pd
 
     if not isinstance(obj, (pd.Series, pd.DataFrame)):
@@ -201,7 +199,7 @@ def _io_hash(obj):
     h.update(_generate_hash(obj.getvalue()))
     return h.digest()
 
-_hash_funcs: dict[str | type[Any] | tuple[type, ...] | Callable[[Any], bool], bytes | Callable[[Any], bytes]] = {
+_hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool], bytes | Callable[[t.Any], bytes]] = {
     # Types
     int          : _int_to_bytes,
     str          : lambda obj: obj.encode(),
@@ -377,12 +375,12 @@ def compute_hash(func, hash_funcs, args, kwargs):
         _HASH_MAP[key] = hash_value
     return hash_value
 
-@overload
+@t.overload
 def cache(
-    func: Literal[None] = ...,
-    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = ...,
+    func: t.Literal[None] = ...,
+    hash_funcs: dict[type[t.Any], Callable[[t.Any], bytes]] | None = ...,
     max_items: int | None = ...,
-    policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
+    policy: t.Literal['FIFO', 'LRU', 'LFU'] = ...,
     ttl: float | None = ...,
     to_disk: bool = ...,
     cache_path: str | os.PathLike | None = ...,
@@ -390,12 +388,12 @@ def cache(
 ) -> Callable[[Callable[_P, _R]], _CachedFunc[Callable[_P, _R]]]:
     ...
 
-@overload
+@t.overload
 def cache(
     func: Callable[_P, _R],
-    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = ...,
+    hash_funcs: dict[type[t.Any], Callable[[t.Any], bytes]] | None = ...,
     max_items: int | None = ...,
-    policy: Literal['FIFO', 'LRU', 'LFU'] = ...,
+    policy: t.Literal['FIFO', 'LRU', 'LFU'] = ...,
     ttl: float | None = ...,
     to_disk: bool = ...,
     cache_path: str | os.PathLike | None = ...,
@@ -405,9 +403,9 @@ def cache(
 
 def cache(
     func: Callable[_P, _R] | None = None,
-    hash_funcs: dict[type[Any], Callable[[Any], bytes]] | None = None,
+    hash_funcs: dict[type[t.Any], Callable[[t.Any], bytes]] | None = None,
     max_items: int | None = None,
-    policy: Literal['FIFO', 'LRU', 'LFU'] = 'LRU',
+    policy: t.Literal['FIFO', 'LRU', 'LFU'] = 'LRU',
     ttl: float | None = None,
     to_disk: bool = False,
     cache_path: str | os.PathLike | None = None,
@@ -530,7 +528,7 @@ def cache(
                     ret, ts, count, _ = func_cache[hash_value]
                     func_cache[hash_value] = (ret, ts, count+1, time)
             else:
-                ret = await cast(Awaitable[Any], func(*args, **kwargs))
+                ret = await t.cast("Awaitable[t.Any]", func(*args, **kwargs))
                 with lock:
                     func_cache[hash_value] = (ret, time, 0, time)
             return ret

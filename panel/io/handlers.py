@@ -9,12 +9,10 @@ import pathlib
 import re
 import sys
 import traceback
+import typing as t
 import urllib.parse as urlparse
 
-from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from types import ModuleType
-from typing import IO, TYPE_CHECKING, Any
 
 import bokeh.command.util
 
@@ -24,8 +22,6 @@ from bokeh.application.handlers.function import (
     FunctionHandler as BokehFunctionHandler,
 )
 from bokeh.application.handlers.handler import Handler, handle_exception
-from bokeh.core.types import PathLike
-from bokeh.document import Document
 from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
@@ -36,7 +32,12 @@ from .profile import profile_ctx
 from .reload import record_modules
 from .state import set_curdoc, state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+    from types import ModuleType
+
+    from bokeh.core.types import PathLike
+    from bokeh.document import Document
     from nbformat import NotebookNode
 
 log = logging.getLogger('panel.io.handlers')
@@ -64,7 +65,7 @@ def _monkeypatch_io(loggers: dict[str, Callable[..., None]] | None) -> Iterator[
         yield
         return
     import bokeh.io as io
-    old: dict[str, Any] = {}
+    old: dict[str, t.Any] = {}
     for f in CodeHandler._io_functions:
         old[f] = getattr(io, f)
         setattr(io, f, loggers[f])
@@ -105,7 +106,7 @@ def display(*args, **kwargs):
         CELL_DISPLAY.extend(args)
 
 def extract_code(
-    filehandle: IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
+    filehandle: t.IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
 ) -> str:
     """
     Extracts Panel application code from a Markdown file.
@@ -336,7 +337,7 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
         old_doc = None
         bk_set_curdoc(doc)
 
-    sessions: list[Any] = []
+    sessions: list[t.Any] = []
 
     def post_check():
         newdoc = state.curdoc
@@ -412,9 +413,9 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
             bk_set_curdoc(old_doc)
 
 def parse_notebook(
-    filename: str | os.PathLike | IO,
+    filename: str | os.PathLike | t.IO,
     preamble: list[str] | None = None
-) -> tuple[NotebookNode, str, dict[str, Any]]:
+) -> tuple[NotebookNode, str, dict[str, t.Any]]:
     """
     Parses a notebook on disk and returns a script.
 

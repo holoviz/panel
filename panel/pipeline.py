@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import sys
 import traceback as tb
+import typing as t
 
 from collections import defaultdict
-from typing import ClassVar
 
 import param
 
@@ -164,7 +164,7 @@ class Pipeline(Viewer):
 
     previous = param.Event()
 
-    _ignored_refs: ClassVar[tuple[str, ...]] = ('next_parameter', 'ready_parameter')
+    _ignored_refs: t.ClassVar[tuple[str, ...]] = ('next_parameter', 'ready_parameter')
 
     def __init__(self, stages=[], graph={}, **params):
         try:
@@ -482,8 +482,8 @@ class Pipeline(Viewer):
 
         edges = []
         for src, tgts in self._graph.items():
-            for t in tgts:
-                edges.append((src, t))
+            for tgt in tgts:
+                edges.append((src, tgt))
 
         nodes = []
         for depth, subnodes in breadths.items():
@@ -592,7 +592,7 @@ class Pipeline(Viewer):
         for source, targets in graph.items():
             if source not in stages:
                 not_found.append(source)
-            not_found += [t for t in targets if t not in stages]
+            not_found += [tgt for tgt in targets if tgt not in stages]
         if not_found:
             raise ValueError(
                 'Pipeline stage(s) %s not found, ensure all stages '

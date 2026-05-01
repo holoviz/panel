@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import typing as t
+
 from collections.abc import Iterable, Mapping
 from inspect import Parameter
 from numbers import Integral, Real
-from typing import Any
 
 empty = Parameter.empty
 
@@ -22,9 +23,9 @@ class fixed(param.Parameterized):
 
     description = param.String(default='')
 
-    value = param.Parameter(doc="Any Python object")
+    value: t.Any = param.Parameter(doc="Any Python object")  # type: ignore[assignment]
 
-    def __init__(self, value: Any, **kwargs: Any):
+    def __init__(self, value: t.Any, **kwargs: t.Any):
         super().__init__(value=value, **kwargs)
 
     def get_interact_value(self):
@@ -37,14 +38,18 @@ class fixed(param.Parameterized):
 
 
 def _get_min_max_value(
-    minimum: int | float, maximum: int | float, value: int | float | None = None, step: int | float | None = None
+    minimum: int | float | None,
+    maximum: int | float | None,
+    value: int | float | None = None,
+    step: int | float | None = None
 ) -> tuple[int | float, int | float, int | float]:
     """Return min, max, value given input values with possible None."""
     # Either min and max need to be given, or value needs to be given
     if value is None:
-        if minimum is None or max is maximum:
+        if minimum is None or maximum is None:
             raise ValueError(f'unable to infer range, value from: ({minimum}, {maximum}, {value})')
 
+        min_val, max_val = minimum, maximum
         diff = maximum - minimum
         value = minimum + (diff / 2)
         # Ensure that value has the same type as diff
@@ -61,20 +66,18 @@ def _get_min_max_value(
             vrange = (-value, 3*value)
         else:
             vrange = (3*value, -value)
-        if minimum is None:
-            minimum = vrange[0]
-        if maximum is None:
-            maximum = vrange[1]
+        min_val = vrange[0] if minimum is None else minimum
+        max_val = vrange[1] if maximum is None else maximum
     if step is not None:
         # ensure value is on a step
-        tick = int((value - minimum) / step)
-        value = minimum + tick * step
-    if not (minimum <= value <= maximum):
-        raise ValueError(f'value must be between min and max (min={minimum}, value={value}, max={maximum})')
-    return minimum, maximum, value
+        tick = int((value - min_val) / step)
+        value = min_val + tick * step
+    if not (min_val <= value <= max_val):
+        raise ValueError(f'value must be between min and max (min={min_val}, value={value}, max={max_val})')
+    return min_val, max_val, value
 
 
-def _matches(o: tuple[Any, ...], pattern: tuple[type, ...]) -> bool:
+def _matches(o: tuple[t.Any, ...], pattern: tuple[type, ...]) -> bool:
     """Match a pattern of types in a sequence."""
     if not len(o) == len(pattern):
         return False
@@ -102,7 +105,7 @@ class widget(param.ParameterizedFunction):
     Widget
     """
 
-    def __call__(self, value: Any, name: str, default=empty, **params):
+    def __call__(self, value: t.Any, name: str, default=empty, **params):
         """Build a ValueWidget instance given an abbreviation or Widget."""
         if isinstance(value, Widget):
             widget = value

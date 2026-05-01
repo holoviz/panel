@@ -5,11 +5,10 @@ from __future__ import annotations
 
 import os
 import pathlib
+import typing as t
 
 from base64 import b64encode
-from collections.abc import Mapping
 from io import BytesIO
-from typing import Any, ClassVar
 
 import numpy as np
 import param
@@ -17,6 +16,9 @@ import param
 from ..models import Audio as _BkAudio, Video as _BkVideo
 from ..util import isfile, isurl
 from .base import ModelPane
+
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class TensorLikeMeta(type):
@@ -64,31 +66,31 @@ class _MediaBase(ModelPane):
     muted = param.Boolean(default=False, doc="""
         When True, it specifies that the output should be muted.""")
 
-    _default_mime: ClassVar[str]
+    _default_mime: t.ClassVar[str]
 
-    _formats: ClassVar[list[str]]
+    _formats: t.ClassVar[list[str]]
 
-    _media_type: ClassVar[str]
+    _media_type: t.ClassVar[str]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'sample_rate': None, 'object': 'value'
     }
 
-    _rerender_params: ClassVar[list[str]] = []
+    _rerender_params: t.ClassVar[list[str]] = []
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
     __abstract = True
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, (pathlib.Path, str)):
-            path = str(obj)
+    def applies(cls, object: t.Any) -> float | bool | None:
+        if isinstance(object, (pathlib.Path, str)):
+            path = str(object)
             if isfile(path) and any(path.endswith('.'+fmt) for fmt in cls._formats):
                 return True
             if isurl(path, cls._formats):
                 return True
-        if hasattr(obj, 'read') or isinstance(obj, bytes):  # Check for file like object (or bytes)
+        if hasattr(object, 'read') or isinstance(object, bytes):  # Check for file like object (or bytes)
             return True
         return False
 
@@ -112,17 +114,17 @@ class _MediaBase(ModelPane):
         wavfile.write(buffer, self.sample_rate, data)
         return buffer
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'js_property_callbacks' in msg:
-            del msg['js_property_callbacks']
-        return msg
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_property_change(props)
+        if 'js_property_callbacks' in params:
+            del params['js_property_callbacks']
+        return params
 
     @classmethod
     def _detect_format(cls, data: bytes):
         return cls._default_mime
 
-    def _transform_object(self, obj: Any) -> dict[str, Any]:
+    def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         fmt = self._default_mime
         if obj is None:
             data = b''
@@ -160,14 +162,14 @@ _VALID_TORCH_DTYPES_FOR_AUDIO = [
 
 _VALID_NUMPY_DTYPES_FOR_AUDIO = [np.int16, np.uint16, np.float32, np.float64]
 
-def _is_1_or_2dim_int_or_float_tensor(obj: Any) -> bool:
+def _is_1_or_2dim_int_or_float_tensor(obj: t.Any) -> bool:
     return (
         isinstance(obj, TensorLike) and
         obj.dim() in (1, 2) and
         str(obj.dtype) in _VALID_TORCH_DTYPES_FOR_AUDIO
     )
 
-def _is_1_or_2dim_int_or_float_ndarray(obj: Any) -> bool:
+def _is_1_or_2dim_int_or_float_ndarray(obj: t.Any) -> bool:
     return (
         isinstance(obj, np.ndarray) and
         obj.ndim in (1, 2) and
@@ -241,10 +243,10 @@ class Audio(_MediaBase):
     _media_type = 'audio'
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return (super().applies(obj)
-            or _is_1_or_2dim_int_or_float_ndarray(obj)
-            or _is_1_or_2dim_int_or_float_tensor(obj)
+    def applies(cls, object: t.Any) -> float | bool | None:
+        return (super().applies(object)
+            or _is_1_or_2dim_int_or_float_ndarray(object)
+            or _is_1_or_2dim_int_or_float_tensor(object)
         )
 
     @classmethod

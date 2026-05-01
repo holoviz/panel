@@ -12,9 +12,7 @@ import shlex
 import signal
 import subprocess
 import sys
-
-from collections.abc import Mapping
-from typing import ClassVar
+import typing as t
 
 import param
 
@@ -23,6 +21,14 @@ from pyviz_comms import JupyterComm
 from ..io.callbacks import PeriodicCallback
 from ..util import edit_readonly, lazy_load
 from .base import Widget
+
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from param.parameterized import Watcher
+    from pyviz_comms import Comm
 
 
 class TerminalSubprocess(param.Parameterized):
@@ -56,12 +62,13 @@ class TerminalSubprocess(param.Parameterized):
 
     _period = param.Integer(default=50, doc="Period length of _periodic_callback")
 
-    _terminal = param.Parameter(constant=True, allow_refs=False, doc="""
-        The Terminal to which the subprocess is connected.""")
+    _terminal: Terminal | None = param.Parameter(constant=True, allow_refs=False, doc="""
+        The Terminal to which the subprocess is connected.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _timeout_sec = param.Integer(default=0)
 
-    _watcher = param.Parameter(doc="Watches the subprocess for user input")
+    _watcher: Watcher = param.Parameter(
+        doc="Watches the subprocess for user input")  # type: ignore[assignment, ty:invalid-assignment]
 
     def __init__(self, terminal, **kwargs):
         super().__init__(_terminal=terminal, kill=self._kill, **kwargs)
@@ -260,7 +267,7 @@ class Terminal(Widget):
 
     _output = param.String(default="")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'clear': None, 'name': None, 'output': None, '_output': 'output',
         'value': None, 'write_to_console': None,
     }
@@ -288,7 +295,10 @@ class Terminal(Widget):
         self.output += cleaned
         return len(self.output)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         Terminal._widget_type = lazy_load(
             'panel.models.terminal', 'Terminal', isinstance(comm, JupyterComm), root
         )
@@ -312,10 +322,10 @@ class Terminal(Widget):
 
     @param.depends('_output', watch=True)
     def _write(self):
-        if self.write_to_console:
+        if self.write_to_console and sys.__stdout__ is not None:
             sys.__stdout__.write(self._output)
 
-    def __repr__(self, depth=None):
+    def __repr__(self, depth: int | None = None):
         return f'Terminal(id={id(self)})'
 
     @property

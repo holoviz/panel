@@ -12,6 +12,7 @@ import shutil
 import sys
 import threading
 import time
+import typing as t
 
 from collections import Counter, defaultdict
 from collections.abc import (
@@ -20,18 +21,13 @@ from collections.abc import (
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from functools import partial, wraps
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, TypeVar,
-)
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
 
 import param
 
-from bokeh.document import Document
 from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
-from param.parameterized import Event, Parameterized
 from pyviz_comms import CommManager as _CommManager
 
 from ..util import decode_token, edit_readonly, parse_timedelta
@@ -39,20 +35,22 @@ from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
     from bokeh.application.application import SessionContext
+    from bokeh.document import Document
     from bokeh.model import Model
     from bokeh.models import ImportedStyleSheet
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.session import ServerSession
     from IPython.display import DisplayHandle
+    from param.parameterized import Event, Parameterized
     from pyviz_comms import Comm
     from tornado.ioloop import IOLoop
 
     from ..template.base import BaseTemplate
-    from ..viewable import Viewable
+    from ..viewable import Renderable
     from ..widgets.indicators import BooleanIndicator
     from .application import TViewableFuncOrPath
     from .browser import BrowserInfo
@@ -62,8 +60,8 @@ if TYPE_CHECKING:
     from .notifications import NotificationAreaBase
     from .server import StoppableThread
 
-    T = TypeVar("T")
-    K = TypeVar('K', bound=Hashable)
+    T = t.TypeVar("T")
+    K = t.TypeVar('K', bound=Hashable)
 
 
 @contextmanager
@@ -89,7 +87,7 @@ def curdoc_locked() -> Document | None:
 
 class _Undefined: pass
 
-Tat: TypeAlias = dt.datetime | Callable[[dt.datetime], dt.datetime] | TIterator[dt.datetime]
+Tat: t.TypeAlias = dt.datetime | Callable[[dt.datetime], dt.datetime] | TIterator[dt.datetime]
 
 class _state(param.Parameterized):
     """
@@ -105,7 +103,7 @@ class _state(param.Parameterized):
        Global location you can use to cache large datasets or expensive computation results
        across multiple client sessions for a given server.""")
 
-    encryption = param.Parameter(default=None, doc="""
+    encryption: t.Any = param.Parameter(default=None, doc="""
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
@@ -113,13 +111,13 @@ class _state(param.Parameterized):
                                        'sessions': {}}, doc="""
        Tracks information and statistics about user sessions.""")
 
-    webdriver = param.Parameter(default=None, doc="""
+    webdriver: t.Any = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
 
     _base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
 
-    _busy_counter = param.List(default=[], doc="""
+    _busy_counter = param.List(default=[], item_type=tuple, doc="""
        Active callbacks currently being processed as (event_id, started_at).""")
 
     _memoize_cache = param.Dict(default={}, doc="""
@@ -137,7 +135,7 @@ class _state(param.Parameterized):
     _hold: bool = False
 
     # Used to ensure that events are not scheduled from the wrong thread
-    _thread_id_: ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()
+    _thread_id_: t.ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()
     _thread_pool = None
 
     # Admin application (remove in Panel 1.0 / Bokeh 3.0)
@@ -146,100 +144,100 @@ class _state(param.Parameterized):
     # Jupyter communication
     _comm_manager: type[_CommManager] = _CommManager
     _jupyter_kernel_context: BokehSessionContext | None = None
-    _kernels: ClassVar[dict[str, tuple[Any, str, str, bool]]] = {}
-    _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
+    _kernels: t.ClassVar[dict[str, tuple[t.Any, str, str, bool]]] = {}
+    _ipykernels: t.ClassVar[WeakKeyDictionary[Document, t.Any]] = WeakKeyDictionary()
 
     # Locations
-    _browser: ClassVar[BrowserInfo | None] = None # Global BrowserInfo, e.g. for notebook context
-    _browsers: ClassVar[WeakKeyDictionary[Document, BrowserInfo]] = WeakKeyDictionary() # Server browser indexed by document
+    _browser: t.ClassVar[BrowserInfo | None] = None # Global BrowserInfo, e.g. for notebook context
+    _browsers: t.ClassVar[WeakKeyDictionary[Document, BrowserInfo]] = WeakKeyDictionary() # Server browser indexed by document
 
     # Locations
-    _location: ClassVar[Location | None] = None # Global location, e.g. for notebook context
-    _locations: ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
+    _location: t.ClassVar[Location | None] = None # Global location, e.g. for notebook context
+    _locations: t.ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
 
     # Notifications
-    _notification: ClassVar[NotificationAreaBase | None] = None # Global location, e.g. for notebook context
-    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationAreaBase]] = WeakKeyDictionary() # Server notifications indexed by document
+    _notification: t.ClassVar[NotificationAreaBase | None] = None # Global location, e.g. for notebook context
+    _notifications: t.ClassVar[WeakKeyDictionary[Document, NotificationAreaBase]] = WeakKeyDictionary() # Server notifications indexed by document
 
     # Templates
-    _template: ClassVar[BaseTemplate | None] = None
-    _templates: ClassVar[WeakKeyDictionary[Document, BaseTemplate]] = WeakKeyDictionary() # Server templates indexed by document
+    _template: t.ClassVar[BaseTemplate | None] = None
+    _templates: t.ClassVar[WeakKeyDictionary[Document, BaseTemplate]] = WeakKeyDictionary() # Server templates indexed by document
 
     # An index of all currently active views
-    _views: ClassVar[dict[str, tuple[Viewable, Model, Document, Comm | None]]] = {}
+    _views: t.ClassVar[dict[str, tuple[Renderable, Model, Document, Comm | None]]] = {}
 
     # For templates to keep reference to their main root
-    _fake_roots: ClassVar[list[str]] = []
+    _fake_roots: t.ClassVar[list[str]] = []
 
     # An index of all currently active servers
-    _servers: ClassVar[dict[str, tuple[Any, TViewableFuncOrPath | dict[str, TViewableFuncOrPath], list[Document]]]] = {}
-    _threads: ClassVar[dict[str, StoppableThread]] = {}
-    _server_config: ClassVar[WeakKeyDictionary[Any, dict[str, Any]]] = WeakKeyDictionary()
+    _servers: t.ClassVar[dict[str, tuple[t.Any, TViewableFuncOrPath | dict[str, TViewableFuncOrPath], list[Document]]]] = {}
+    _threads: t.ClassVar[dict[str, StoppableThread]] = {}
+    _server_config: t.ClassVar[WeakKeyDictionary[t.Any, dict[str, t.Any]]] = WeakKeyDictionary()
 
     # Jupyter display handles
-    _handles: ClassVar[dict[str, tuple[DisplayHandle, list[str]]]] = {}
+    _handles: t.ClassVar[dict[str, tuple[DisplayHandle, list[str]]]] = {}
 
     # Stacks for hashing
     _stacks: WeakKeyDictionary[threading.Thread, _Stack] = WeakKeyDictionary()
 
     # Dictionary of callbacks to be triggered on app load
-    _onload: ClassVar[WeakKeyDictionary[Document, list[tuple[Callable[[], None | Coroutine[Any, Any, None]], bool]]]] = WeakKeyDictionary()
-    _on_session_created: ClassVar[list[Callable[[SessionContext], None]]] = []
-    _on_session_created_internal: ClassVar[list[Callable[[SessionContext], None]]] = []
-    _on_session_destroyed: ClassVar[list[Callable[[SessionContext], None]]] = []
-    _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
-    _connected: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
+    _onload: t.ClassVar[WeakKeyDictionary[Document, list[tuple[Callable[[], None | Coroutine[t.Any, t.Any, None]], bool]]]] = WeakKeyDictionary()
+    _on_session_created: t.ClassVar[list[Callable[[SessionContext], None]]] = []
+    _on_session_created_internal: t.ClassVar[list[Callable[[SessionContext], None]]] = []
+    _on_session_destroyed: t.ClassVar[list[Callable[[SessionContext], None]]] = []
+    _loaded: t.ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
+    _connected: t.ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
     # Module that was run during setup
     _setup_module = None
 
     # Scheduled callbacks
-    _scheduled: ClassVar[dict[str, tuple[TIterator[int] | None, Callable[[], None]]]] = {}
-    _periodic: ClassVar[WeakKeyDictionary[Document, list[PeriodicCallback]]] = WeakKeyDictionary()
-    _change_callbacks: ClassVar[WeakKeyDictionary[Document, dict[str, Callable[[], Coroutine[Any, Any, None]]]]] = WeakKeyDictionary()
+    _scheduled: t.ClassVar[dict[str, tuple[TIterator[int] | None, Callable[[], None]]]] = {}
+    _periodic: t.ClassVar[WeakKeyDictionary[Document, list[PeriodicCallback]]] = WeakKeyDictionary()
+    _change_callbacks: t.ClassVar[WeakKeyDictionary[Document, dict[str, Callable[[], Coroutine[t.Any, t.Any, None]]]]] = WeakKeyDictionary()
 
     # Indicators listening to the busy state
-    _indicators: ClassVar[list[BooleanIndicator]] = []
+    _indicators: t.ClassVar[list[BooleanIndicator]] = []
 
     # Profilers
-    _launching: ClassVar[set[Document]] = set()
+    _launching: t.ClassVar[set[Document]] = set()
     _profiles = param.Dict(default=defaultdict(list))
 
     # Endpoints
-    _rest_endpoints: ClassVar[dict[str, tuple[list[Parameterized], list[str], Callable[[Event], Any]]]] = {}
+    _rest_endpoints: t.ClassVar[dict[str, tuple[list[Parameterized], list[str], Callable[[Event], t.Any]]]] = {}
 
     # Style cache
-    _stylesheets: ClassVar[WeakKeyDictionary[Document, dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
+    _stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
 
     # Loaded extensions
-    _extensions_: ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
+    _extensions_: t.ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
 
     # Locks
-    _cache_locks: ClassVar[dict[str | tuple[Any, ...], threading.Lock]] = {'main': threading.Lock()}
+    _cache_locks: t.ClassVar[dict[str | tuple[t.Any, ...], threading.Lock]] = {'main': threading.Lock()}
 
     # Sessions
-    _sessions: ClassVar[dict[Hashable, ServerSession]] = {}
-    _session_key_funcs: ClassVar[dict[str, Callable[[Any], Any]]] = {}
+    _sessions: t.ClassVar[dict[Hashable, ServerSession]] = {}
+    _session_key_funcs: t.ClassVar[dict[str, Callable[[t.Any], t.Any]]] = {}
 
     # Layout editor
-    _cell_outputs: ClassVar[defaultdict[Hashable, list[Any]]] = defaultdict(list)
-    _cell_layouts: ClassVar[defaultdict[Hashable, dict[str, dict]]] = defaultdict(dict)
-    _session_outputs: ClassVar[WeakKeyDictionary[Document, dict[str, Any]]] = WeakKeyDictionary()
+    _cell_outputs: t.ClassVar[defaultdict[Hashable, list[t.Any]]] = defaultdict(list)
+    _cell_layouts: t.ClassVar[defaultdict[Hashable, dict[str, dict]]] = defaultdict(dict)
+    _session_outputs: t.ClassVar[WeakKeyDictionary[Document, dict[str, t.Any]]] = WeakKeyDictionary()
 
     # Override user info
-    _oauth_user_overrides: ClassVar[dict[str, dict[str, Any]]] = {}
-    _active_users: ClassVar[Counter[str]] = Counter()
+    _oauth_user_overrides: t.ClassVar[dict[str, dict[str, t.Any]]] = {}
+    _active_users: t.ClassVar[Counter[str]] = Counter()
 
     # Paths
-    _rel_paths: ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
-    _base_urls: ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
+    _rel_paths: t.ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
+    _base_urls: t.ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
 
     # Watchers
-    _watch_events: ClassVar[list[asyncio.Event]] = []
-    _busy_cleanup_scheduled: ClassVar[PeriodicCallback | None] = None
+    _watch_events: t.ClassVar[list[asyncio.Event]] = []
+    _busy_cleanup_scheduled: t.ClassVar[PeriodicCallback | None] = None
 
     # Types
-    _notification_type: ClassVar[type[NotificationAreaBase] | None] = None
+    _notification_type: t.ClassVar[type[NotificationAreaBase] | None] = None
 
     def __repr__(self) -> str:
         server_info = []
@@ -584,7 +582,7 @@ class _state(param.Parameterized):
         try:
             with lock:
                 if cache_key in self.cache:
-                    ret, expiry = self.cache.get(cache_key)
+                    ret, expiry = self.cache[cache_key]
                 else:
                     ret, expiry = _Undefined, None
                 if ret is _Undefined or (expiry is not None and expiry < time.monotonic()):
@@ -595,7 +593,7 @@ class _state(param.Parameterized):
         return ret
 
     def add_periodic_callback(
-        self, callback: Callable[[], None] | Coroutine[Any, Any, None],
+        self, callback: Callable[[], None] | Coroutine[t.Any, t.Any, None],
         period: int = 500, count: int | None = None, timeout: int | None = None,
         start: bool = True
     ) -> PeriodicCallback:
@@ -707,8 +705,8 @@ class _state(param.Parameterized):
 
     def execute(
         self,
-        callback: Callable[[], None | Coroutine[Any, Any, None]],
-        schedule: bool | Literal['auto', 'thread'] = 'auto'
+        callback: Callable[[], None | Coroutine[t.Any, t.Any, None]],
+        schedule: bool | t.Literal['auto', 'thread'] = 'auto'
     ) -> None:
         """
         Executes both synchronous and asynchronous callbacks
@@ -793,7 +791,7 @@ class _state(param.Parameterized):
             msg = LOG_USER_MSG.format(msg=msg)
         getattr(_state_logger, level.lower())(msg, *args)
 
-    def onload(self, callback: Callable[[], None | Coroutine[Any, Any, None]], threaded: bool = False):
+    def onload(self, callback: Callable[[], None | Coroutine[t.Any, t.Any, None]], threaded: bool = False):
         """
         Callback that is triggered when a session has been served.
 
@@ -1271,7 +1269,7 @@ class _state(param.Parameterized):
             return self._templates[self.curdoc]
         elif self.curdoc is None and self._template:
             return self._template
-        template = config.template(theme=config.theme)
+        template = config.template(theme=config.theme)  # type: ignore[operator]
         if not config.design:
             config.design = template.design
         if self.curdoc is None:
@@ -1299,7 +1297,7 @@ class _state(param.Parameterized):
         return None if decoded is None else decoded.decode('utf-8')
 
     @property
-    def user_info(self) -> dict[str, Any] | None:
+    def user_info(self) -> dict[str, t.Any] | None:
         """
         Returns the OAuth user information if enabled.
         """
