@@ -5,6 +5,7 @@ import typing as t
 
 import param
 
+from .._param import Margin
 from ..io.resources import CDN_DIST
 from ..layout import Card, Row
 from ..pane.image import ImageBase
@@ -70,7 +71,7 @@ class ChatStep(Card):
         A Panel component to display in the header bar of the Card.
         Will override the given title if defined.""", readonly=True)
 
-    margin = param.Parameter(default=(5, 5, 5, 10), doc="""
+    margin = Margin(default=(5, 5, 5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")

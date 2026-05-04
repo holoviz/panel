@@ -53,11 +53,12 @@ class ChatAreaInput(_PnTextAreaInput):
         doc="If True, pressing the Enter key sends the message, if False it is sent by pressing the Ctrl+Enter.",
     )
 
-    rows = param.Integer(default=1, doc="""
+    rows = param.Integer(default=1, allow_None=True, doc="""
         Number of rows in the text input field.""")
 
     max_rows = param.Integer(
         default=10,
+        allow_None=True,
         doc="""
         When combined with auto_grow this determines the maximum number
         of rows the input area can grow.""",

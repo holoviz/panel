@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 
 from pathlib import Path
@@ -8,6 +10,9 @@ from param.parameterized import iscoroutinefunction, resolve_ref
 
 from ..reactive import ReactiveHTML
 from .base import ListLike
+
+if t.TYPE_CHECKING:
+    from typing_extensions import Self
 
 
 class FlexBox(ListLike, ReactiveHTML):
@@ -96,6 +101,9 @@ class FlexBox(ListLike, ReactiveHTML):
             if not resolve_ref(objects) or iscoroutinefunction(objects):
                 params['objects'] = [panel(pane) for pane in objects]
         super().__init__(**params)
+
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
+        return super().clone(*objects, **params)
 
     def select(self, selector=None):
         """

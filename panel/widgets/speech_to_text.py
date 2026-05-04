@@ -40,12 +40,12 @@ class Language(param.Parameterized):
 
     country = param.String(doc="A country like 'United States'")
 
-    name = param.String(constant=False, doc="""
-        The bcp 47 code uniquely identifying the language. For example
-        'en-US'.""")
-
     family = param.String(doc="""
         The overall language family. For example 'English'.""")
+
+    name: str = param.String(constant=False, allow_None=False, doc="""
+        The bcp 47 code uniquely identifying the language. For example
+        'en-US'.""")  # type: ignore[assignment]
 
     def __str__(self):
         return f"{self.family} - {self.country} ({self.name})"

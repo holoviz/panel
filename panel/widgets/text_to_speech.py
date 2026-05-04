@@ -46,8 +46,8 @@ class Voice(param.Parameterized):
         speech synthesizer service (True), or a remote speech
         synthesizer service (False.)""")
 
-    name = param.String(constant=True, doc="""
-        Returns a human-readable name that represents the voice.""")
+    name: str = param.String(constant=True, doc="""
+        Returns a human-readable name that represents the voice.""")  # type: ignore[assignment]
 
     voice_uri = param.String(constant=True, doc="""
         Returns the type of URI and location of the speech synthesis

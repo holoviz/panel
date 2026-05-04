@@ -32,7 +32,7 @@ import param
 
 from bokeh.models import ColumnDataSource, FixedTicker, Tooltip
 
-from .._param import Align
+from .._param import Align, Margin
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
 from ..models import (
@@ -168,10 +168,10 @@ class BooleanStatus(BooleanIndicator):
         The color of the circle, one of 'primary', 'secondary', 'success', 'info', 'danger',
         'warning', 'light', 'dark'""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    height = param.Integer(default=20, doc="""
+    height = param.Integer(default=20, allow_None=True, doc="""
         height of the circle.""")
 
-    width = param.Integer(default=20, doc="""
+    width = param.Integer(default=20, allow_None=True, doc="""
         Width of the circle.""")
 
     value = param.Boolean(default=False, doc="""
@@ -314,12 +314,12 @@ class Progress(ValueIndicator):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment, ty:invalid-assignment]
 
-    value = param.Integer(default=-1, bounds=(-1, None), doc="""
+    value = param.Integer(default=-1, bounds=(-1, None), allow_None=True, doc="""
         The current value of the progress bar. If set to -1 the progress
         bar will be indeterminate and animate depending on the active
-        parameter.""")
+        parameter.""")  # type: ignore[assignment]
 
-    width = param.Integer(default=300)
+    width = param.Integer(default=300, allow_None=True)
 
     _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/progress.css']
 
@@ -480,7 +480,7 @@ class Gauge(ValueIndicator):
     custom_opts = param.Dict(doc="""
       Additional options to pass to the ECharts Gauge definition.""")
 
-    height = param.Integer(default=300, bounds=(0, None))
+    height = param.Integer(default=300, bounds=(0, None), allow_None=True)
 
     end_angle = param.Number(default=-45, doc="""
       Angle at which the gauge ends.""")
@@ -503,13 +503,13 @@ class Gauge(ValueIndicator):
     tooltip_format = param.String(default='{b} : {c}%', doc="""
       Formatting string for the hover tooltip.""")
 
-    title_size = param.Integer(default=18, doc="""
+    title_size = param.Integer(default=18, allow_None=True, doc="""
       Size of title font.""")
 
-    value = param.Number(default=25, doc="""
+    value = param.Number(default=25, allow_None=True, doc="""
       Value to indicate on the gauge a value within the declared bounds.""")
 
-    width = param.Integer(default=300, bounds=(0, None))
+    width = param.Integer(default=300, bounds=(0, None), allow_None=True)
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {}
 
@@ -628,7 +628,7 @@ class Dial(ValueIndicator):
     format = param.String(default='{value}%', doc="""
       Formatting string for the value indicator and lower/upper bounds.""")
 
-    height = param.Integer(default=250, bounds=(1, None))
+    height = param.Integer(default=250, allow_None=True, bounds=(1, None))
 
     label_color = param.String(default='black', doc="""
       Color for all extraneous labels.""")
@@ -660,7 +660,7 @@ class Dial(ValueIndicator):
     value = param.Number(default=25, allow_None=True, doc="""
       Value to indicate on the dial a value within the declared bounds.""")
 
-    width = param.Integer(default=250, bounds=(1, None))
+    width = param.Integer(default=250, bounds=(1, None), allow_None=True)
 
     _manual_params: t.ClassVar[list[str]] = [
         'value', 'start_angle', 'end_angle', 'bounds',
@@ -867,7 +867,7 @@ class LinearGauge(ValueIndicator):
     format = param.String(default='{value:.2f}%', doc="""
       Formatting string for the value indicator and lower/upper bounds.""")
 
-    height = param.Integer(default=300, bounds=(1, None))
+    height = param.Integer(default=300, bounds=(1, None), allow_None=True)
 
     horizontal = param.Boolean(default=False, doc="""
       Whether to display the linear gauge horizontally.""")
@@ -896,7 +896,7 @@ class LinearGauge(ValueIndicator):
     value = param.Number(default=25, allow_None=True, doc="""
       Value to indicate on the dial a value within the declared bounds.""")
 
-    width = param.Integer(default=125, bounds=(1, None))
+    width = param.Integer(default=125, bounds=(1, None), allow_None=True)
 
     _manual_params = [
         'value', 'bounds', 'format', 'title_size', 'value_size',
@@ -1178,7 +1178,7 @@ class Trend(SyncableData, Indicator):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment, ty:invalid-assignment]
 
-    name = param.String(constant=False, doc="""The name or a short description of the card""")
+    name = param.String(constant=False, doc="""The name or a short description of the card""")  # type: ignore[assignment]
 
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
@@ -1323,12 +1323,12 @@ class Tqdm(Indicator):
     text_pane = param.ClassSelector(class_=Str, precedence=-1, doc="""
         The pane to display the text to.""")
 
-    margin = param.Parameter(default=0, doc="""
+    margin = Margin(default=0, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    width = param.Integer(default=400, bounds=(0, None), doc="""
+    width = param.Integer(default=400, bounds=(0, None), allow_None=True, doc="""
         The width of the component (in pixels). This can be either
         fixed or preferred width, depending on width sizing policy.""")
 

@@ -293,7 +293,7 @@ class Perspective(ModelPane, ReactiveData):
         default=None, item_type=(tuple, list), nested_refs=True, doc="""
       How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    min_width = param.Integer(default=420, bounds=(0, None), doc="""
+    min_width = param.Integer(default=420, bounds=(0, None), allow_None=True, doc="""
         Minimal width of the component (in pixels) if width is adjustable.""")
 
     object = param.Parameter(doc="""

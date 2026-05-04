@@ -398,9 +398,9 @@ class RGGPlot(PNG):
     and wraps the base64-encoded data in a bokeh Div model.
     """
 
-    height = param.Integer(default=400)
+    height = param.Integer(default=400, allow_None=True)
 
-    width = param.Integer(default=400)
+    width = param.Integer(default=400, allow_None=True)
 
     dpi = param.Integer(default=144, bounds=(1, None), doc="""
         Scales the dpi of the ggplot figure.""")

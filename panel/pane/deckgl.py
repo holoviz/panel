@@ -281,9 +281,10 @@ class DeckGL(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        DeckGL._bokeh_model = lazy_load(
+        bk_model = lazy_load(
             'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root
         )
+        DeckGL._bokeh_model = bk_model
         properties = self._get_properties(doc)
         data = properties.pop('data')
         sources: list[ColumnDataSource] = []
@@ -291,7 +292,7 @@ class DeckGL(ModelPane):
         self._update_sources(data, sources)
         properties['layers'] = data.pop('layers', [])
         properties['initialViewState'] = data.pop('initialViewState', {})
-        model = DeckGL._bokeh_model(data=data, **properties)
+        model = bk_model(data=data, **properties)
         root = root or model
         self._link_props(model, ['clickState', 'hoverState', 'viewState'], doc, root, comm)
         self._models[root.ref["id"]] = (model, parent)
