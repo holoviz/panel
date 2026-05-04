@@ -17,7 +17,6 @@ if t.TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-
 class ChatAreaInput(_PnTextAreaInput):
     """
     The `ChatAreaInput` allows entering any multiline string using a text input
@@ -53,7 +52,7 @@ class ChatAreaInput(_PnTextAreaInput):
         doc="If True, pressing the Enter key sends the message, if False it is sent by pressing the Ctrl+Enter.",
     )
 
-    rows = param.Integer(default=1, allow_None=True, doc="""
+    rows = param.Integer(default=1, doc="""
         Number of rows in the text input field.""")
 
     max_rows = param.Integer(

@@ -120,7 +120,7 @@ class Widget(Reactive, WidgetBase):
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
 
-    name = param.String(default='', constant=False, allow_None=True)
+    name: str = param.String(default='', constant=False, allow_None=False)  # type: ignore[assignment]
 
     height = param.Integer(default=None, bounds=(0, None))
 

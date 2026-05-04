@@ -671,10 +671,9 @@ class JSChild(JSComponent):
 
     render_count = param.Integer(default=0)
 
-    # default policy is "children" per your note
-    _render_policy = param.Selector(
+    _render_policy: t.Literal["manual", "children"] = param.Selector(
         default="children",
-        objects=["children", "manual"]
+        objects=["manual", "children"]
     )  # type: ignore[assignment]
 
     _esm = """
