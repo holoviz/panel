@@ -95,7 +95,7 @@ narwhals = ">2"
 numpy = "*"
 packaging = "*"
 pandas = ">=1.2"
-param = ">=2.1.0,<3.0"
+param = ">=2.4.0rc0,<3.0"
 pyviz_comms = ">=2.0.0"
 requests = "*"
 tqdm = ">=4.48.0"
@@ -250,6 +250,9 @@ jupyter_server = "*"
 esbuild = "*"
 packaging = "*"
 
+[feature.test-ui.activation.env]
+PLAYWRIGHT_BROWSERS_PATH = ".pixi/playwright-browsers"
+
 [feature.test-ui.tasks]
 _install-ui = 'playwright install chromium'
 
@@ -352,6 +355,7 @@ jupyterlab-myst = "*"
 jupyterlite-core = "<0.7.0"
 jupyterlite-pyodide-kernel = "*"
 python-build = "*"
+python-libarchive-c = "*"
 
 [feature.lite.tasks]
 lite-build = "bash scripts/jupyterlite/build.sh"

@@ -1,7 +1,10 @@
+
 try:
     import holoviews as hv
 except ImportError:
     hv = None
+
+import typing as t
 
 import param
 import pytest
@@ -21,7 +24,7 @@ from panel.widgets import (
 
 class MockJSComponent(JSComponent):
 
-    value = param.Parameter()
+    value: t.Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
 
 def test_widget_link_bidirectional():

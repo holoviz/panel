@@ -1,3 +1,5 @@
+import typing as t
+
 from pathlib import Path
 
 import param
@@ -28,36 +30,50 @@ class FlexBox(ListLike, ReactiveHTML):
     ... )
     """
 
-    align_content = param.Selector(default='flex-start', objects=[
+    align_content: t.Literal[
+        'normal', 'flex-start', 'flex-end', 'center', 'space-between',
+        'space-around', 'space-evenly', 'stretch', 'start', 'end',
+        'baseline', 'first baseline', 'last baseline'
+    ] = param.Selector(default='flex-start', objects=[
         'normal', 'flex-start', 'flex-end', 'center', 'space-between',
         'space-around', 'space-evenly', 'stretch', 'start', 'end',
         'baseline', 'first baseline', 'last baseline'], doc="""
         Defines how a flex container's lines align when there is extra
-        space in the cross-axis.""")
+        space in the cross-axis.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    align_items = param.Selector(default='flex-start', objects=[
+    align_items: t.Literal[
+        'stretch', 'flex-start', 'flex-end', 'center', 'baseline',
+        'first baseline', 'last baseline', 'start', 'end',
+        'self-start', 'self-end'
+    ] = param.Selector(default='flex-start', objects=[
         'stretch', 'flex-start', 'flex-end', 'center', 'baseline',
         'first baseline', 'last baseline', 'start', 'end',
         'self-start', 'self-end'], doc="""
         Defines the default behavior for how flex items are laid
-        out along the cross axis on the current line.""")
+        out along the cross axis on the current line.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    flex_direction = param.Selector(default='row', objects=[
+    flex_direction: t.Literal[
+        'row', 'row-reverse', 'column', 'column-reverse'
+    ] = param.Selector(default='row', objects=[
         'row', 'row-reverse', 'column', 'column-reverse'], doc="""
         This establishes the main-axis, thus defining the direction
-        flex items are placed in the flex container.""")
+        flex items are placed in the flex container.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    flex_wrap = param.Selector(default='wrap', objects=[
+    flex_wrap: t.Literal['nowrap', 'wrap', 'wrap-reverse'] = param.Selector(
+        default='wrap', objects=[
         'nowrap', 'wrap', 'wrap-reverse'], doc="""
-        Whether and how to wrap items in the flex container.""")
+        Whether and how to wrap items in the flex container.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     gap = param.String(default='', doc="""
         Defines the spacing between flex items, supporting various units (px, em, rem, %, vw/vh).""")
 
-    justify_content = param.Selector(default='flex-start', objects=[
+    justify_content: t.Literal[
+        'flex-start', 'flex-end', 'center', 'space-between', 'space-around',
+        'space-evenly', 'start', 'end', 'left', 'right'
+    ] = param.Selector(default='flex-start', objects=[
         'flex-start', 'flex-end', 'center', 'space-between', 'space-around',
         'space-evenly', 'start', 'end', 'left', 'right'], doc="""
-        Defines the alignment along the main axis.""")
+        Defines the alignment along the main axis.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _template = (Path(__file__).parent / 'flexbox.html').read_text('utf-8')
 

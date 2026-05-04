@@ -6,14 +6,12 @@ from __future__ import annotations
 
 import ast
 import json
+import typing as t
 
 from base64 import b64decode
 from collections.abc import Iterable, Mapping
 from datetime import date, datetime, time as dt_time
 from html import escape
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Type,
-)
 
 import numpy as np
 import param
@@ -30,7 +28,7 @@ from bokeh.models.widgets.inputs import ClearInput
 from pyviz_comms import JupyterComm
 
 from ..config import config
-from ..layout import Column, Panel
+from ..layout import Column
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
     TextInput as _BkTextInput, TimePicker as _BkTimePicker,
@@ -38,13 +36,14 @@ from ..models import (
 from ..util import lazy_load, param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+    from typing_extensions import Self
 
+    from ..layout.base import ListLike, NamedListLike
     from ..models.file_dropper import DeleteEvent, UploadEvent
-    from ..viewable import Viewable
 
 
 class _TextInputBase(Widget):
@@ -69,7 +68,12 @@ class _TextInputBase(Widget):
       or scale mode this will merely be used as a suggestion.""")
 
     @classmethod
-    def from_param(cls, parameter: param.Parameter, onkeyup=False, **params) -> Viewable:
+    def from_param(
+        cls,
+        parameter: param.Parameter,
+        onkeyup: bool = False,
+        **params
+    ) -> Self:  # type: ignore[override]
         """
         Construct a widget from a Parameter and link the two
         bi-directionally.
@@ -106,7 +110,7 @@ class TextInput(_TextInputBase):
     enter_pressed = param.Event(doc="""
         Event when the enter key has been pressed.""")
 
-    _widget_type: ClassVar[type[Model]] = _BkTextInput
+    _widget_type: t.ClassVar[type[Model]] = _BkTextInput
 
     _rename = {'enter_pressed': None}
 
@@ -139,7 +143,7 @@ class PasswordInput(_TextInputBase):
     ... )
     """
 
-    _widget_type: ClassVar[type[Model]] = _BkPasswordInput
+    _widget_type: t.ClassVar[type[Model]] = _BkPasswordInput
 
 
 class TextAreaInput(_TextInputBase):
@@ -171,13 +175,13 @@ class TextAreaInput(_TextInputBase):
     rows = param.Integer(default=2, doc="""
         Number of rows in the text input field.""")
 
-    resizable = param.Selector(
+    resizable: t.Literal["both", "width", "height", False] = param.Selector(
         objects=["both", "width", "height", False], doc="""
         Whether the layout is interactively resizable,
         and if so in which dimensions: `width`, `height`, or `both`.
-        Can only be set during initialization.""")
+        Can only be set during initialization.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _widget_type: ClassVar[type[Model]] = _bkTextAreaInput
+    _widget_type: t.ClassVar[type[Model]] = _bkTextAreaInput
 
 
 class FileInput(Widget):
@@ -236,41 +240,41 @@ class FileInput(Widget):
         The uploaded file(s) stored as a single bytes object if
         multiple is False or a list of bytes otherwise.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'filename': None
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': "'data:' + source.mime_type + ';base64,' + value"
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkFileInput
+    _widget_type: t.ClassVar[type[Model]] = _BkFileInput
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            msg.pop('value')
-        if 'mime_type' in msg:
-            msg.pop('mime_type')
-        return msg
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
+        if 'value' in props:
+            props.pop('value')
+        if 'mime_type' in props:
+            props.pop('mime_type')
+        return props
 
     @property
     def _linked_properties(self) -> tuple[str, ...]:
         properties = super()._linked_properties
         return properties + ('filename',)
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            if isinstance(msg['value'], str):
-                msg['value'] = b64decode(msg['value']) if msg['value'] else None
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params:
+            if isinstance(params['value'], str):
+                params['value'] = b64decode(params['value']) if params['value'] else None
             else:
-                msg['value'] = [b64decode(content) for content in msg['value']]
-        if 'filename' in msg and len(msg['filename']) == 0:
-            msg['filename'] = None
-        if 'mime_type' in msg and len(msg['mime_type']) == 0:
-            msg['mime_type'] = None
-        return msg
+                params['value'] = [b64decode(content) for content in params['value']]
+        if 'filename' in params and len(params['filename']) == 0:
+            params['filename'] = None
+        if 'mime_type' in params and len(params['mime_type']) == 0:
+            params['mime_type'] = None
+        return params
 
     def save(self, filename):
         """
@@ -330,20 +334,20 @@ class FileDropper(Widget):
     >>> FileDropper(accepted_filetypes=['image/*'], multiple=True)
     """
 
-    accepted_filetypes = param.List(default=[], doc="""
+    accepted_filetypes: list[str] = param.List(default=[], item_type=str, doc="""
         List of accepted file types. Can be mime types, file extensions
         or wild cards.For instance ['image/*'] will accept all images.
-        ['.png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")
+        ['.png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     chunk_size = param.Integer(default=10_000_000, doc="""
         Size in bytes per chunk transferred across the WebSocket.""")
 
-    layout = param.Selector(
+    layout: t.Literal["circle", "compact", "integrated"] | None = param.Selector(
         default=None, objects=["circle", "compact", "integrated"], doc="""
         Compact mode will remove padding, integrated mode is used to render
         FilePond as part of a bigger element. Circle mode adjusts the item
         position offsets so buttons and progress indicators don't fall outside
-        of the circular shape.""")
+        of the circular shape.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     max_file_size = param.String(default=None, doc="""
         Maximum size of a file as a string with units given in KB or MB,
@@ -441,41 +445,41 @@ class StaticText(Widget):
     value = param.Parameter(default=None, doc="""
         The current value to be displayed.""")
 
-    _format: ClassVar[str] = '<b>{title}</b>: {value}'
+    _format: t.ClassVar[str] = '<b>{title}</b>: {value}'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'text'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'text'}
 
-    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+    _target_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': 'target.text.split(": ")[0]+": "+value'
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': 'value.split(": ")[1]'
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkDiv
+    _widget_type: t.ClassVar[type[Model]] = _BkDiv
 
     @property
     def _linked_properties(self) -> tuple[str, ...]:
         return ()
 
-    def _init_params(self) -> dict[str, Any]:
+    def _init_params(self) -> dict[str, t.Any]:
         return {
             k: v for k, v in self.param.values().items()
             if k in self._synced_params and (v is not None or k == 'value')
         }
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'text' in msg:
-            text = msg.pop('text')
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
+        if 'text' in props:
+            text = props.pop('text')
             if not isinstance(text, str):
                 text = escape("" if text is None else str(text))
             partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
                 text = self._format.format(title=self.name, value=text.replace(partial, ''))
-            msg['text'] = text
-        return msg
+            props['text'] = text
+        return props
 
 
 class DatePicker(Widget):
@@ -516,13 +520,13 @@ class DatePicker(Widget):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {}
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {}
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'start': 'min_date', 'end': 'max_date'
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkDatePicker
+    _widget_type: t.ClassVar[type[Model]] = _BkDatePicker
 
     def __init__(self, **params):
         # Since options is the standard for other widgets,
@@ -538,15 +542,15 @@ class DatePicker(Widget):
             params["value"] = value
         super().__init__(**params)
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_property_change(props)
         for p in ('start', 'end', 'value'):
-            if p not in msg:
+            if p not in params:
                 continue
-            value = msg[p]
+            value = params[p]
             if isinstance(value, str):
-                msg[p] = datetime.date(datetime.strptime(value, '%Y-%m-%d'))
-        return msg
+                params[p] = datetime.date(datetime.strptime(value, '%Y-%m-%d'))
+        return params
 
 
 class DateRangePicker(Widget):
@@ -587,15 +591,15 @@ class DateRangePicker(Widget):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None, 'mode': None
     }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'start': 'min_date', 'end': 'max_date'
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkDateRangePicker
+    _widget_type: t.ClassVar[type[Model]] = _BkDateRangePicker
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -606,28 +610,28 @@ class DateRangePicker(Widget):
         self.param.value.bounds = (self.start, self.end)
         self.param.value._validate(self.value)
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_property_change(props)
         for p in ('start', 'end', 'value'):
-            if p not in msg:
+            if p not in params:
                 continue
-            value = msg[p]
+            value = params[p]
             if isinstance(value, tuple):
-                msg[p] = tuple(self._convert_string_to_date(v) for v in value)
-        return msg
+                params[p] = tuple(self._convert_string_to_date(v) for v in value)
+        return params
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg and msg['value'] is not None:
-            msg['value'] = tuple(
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
+        if 'value' in props and props['value'] is not None:
+            props['value'] = tuple(
                 v if v is None else self._convert_date_to_string(v)
-                for v in msg['value']
+                for v in props['value']
             )
-        if 'min_date' in msg:
-            msg['min_date'] = self._convert_date_to_string(msg['min_date'])
-        if 'max_date' in msg:
-            msg['max_date'] = self._convert_date_to_string(msg['max_date'])
-        return msg
+        if 'min_date' in props:
+            props['min_date'] = self._convert_date_to_string(props['min_date'])
+        if 'max_date' in props:
+            props['max_date'] = self._convert_date_to_string(props['max_date'])
+        return props
 
     @staticmethod
     def _convert_string_to_date(v):
@@ -675,15 +679,15 @@ class _DatetimePickerBase(Widget):
         Whether to return values as numpy.datetime64. If left unset,
         will be True if value is a numpy.datetime64, else False.""")
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None, 'mode': None
     }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'start': 'min_date', 'end': 'max_date', 'as_numpy_datetime64': None,
     }
 
-    _widget_type: ClassVar[type[Model]] = _bkDatetimePicker
+    _widget_type: t.ClassVar[type[Model]] = _bkDatetimePicker
 
     __abstract = True
 
@@ -731,21 +735,21 @@ class _DatetimePickerBase(Widget):
             self._convert_to_datetime(self.value)
         )
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = self._serialize_value(msg['value'])
-        return msg
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params:
+            params['value'] = self._serialize_value(params['value'])
+        return params
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            msg['value'] = self._deserialize_value(self._convert_to_datetime(msg['value']))
-        if 'min_date' in msg:
-            msg['min_date'] = self._convert_to_datetime(msg['min_date'])
-        if 'max_date' in msg:
-            msg['max_date'] = self._convert_to_datetime(msg['max_date'])
-        return msg
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
+        if 'value' in props:
+            props['value'] = self._deserialize_value(self._convert_to_datetime(props['value']))
+        if 'min_date' in props:
+            props['min_date'] = self._convert_to_datetime(props['min_date'])
+        if 'max_date' in props:
+            props['max_date'] = self._convert_to_datetime(props['max_date'])
+        return props
 
 
 class DatetimePicker(_DatetimePickerBase):
@@ -846,8 +850,9 @@ class _TimeCommon(Widget):
     selectable, and AM/PM depending on the `clock` option.
     """)
 
-    clock = param.Selector(default='12h', objects=['12h', '24h'], doc="""
-        Whether to use 12 hour or 24 hour clock.""")
+    clock: t.Literal['12h', '24h'] = param.Selector(
+        default='12h', objects=['12h', '24h'], doc="""
+        Whether to use 12 hour or 24 hour clock.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     __abstract = True
 
@@ -891,11 +896,11 @@ class TimePicker(_TimeCommon):
         See also https://flatpickr.js.org/formatting/#date-formatting-tokens.
     """)
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'start': 'min_time', 'end': 'max_time', 'format': 'time_format'
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkTimePicker
+    _widget_type: t.ClassVar[type[Model]] = _BkTimePicker
 
 
 class ColorPicker(Widget):
@@ -920,9 +925,9 @@ class ColorPicker(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _widget_type: ClassVar[type[Model]] = _BkColorPicker
+    _widget_type: t.ClassVar[type[Model]] = _BkColorPicker
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'color'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'value': 'color'}
 
 
 class _NumericInputBase(Widget):
@@ -939,15 +944,15 @@ class _NumericInputBase(Widget):
     format = param.ClassSelector(default=None, class_=(str, TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
-    start = param.Parameter(default=None, allow_None=True, doc="""
-        Optional minimum allowable value.""")
+    start: float | int | None = param.Parameter(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    end = param.Parameter(default=None, allow_None=True, doc="""
-        Optional maximum allowable value.""")
+    end: float | int | None = param.Parameter(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
-    _widget_type: ClassVar[type[Model]] = _BkNumericInput
+    _widget_type: t.ClassVar[type[Model]] = _BkNumericInput
 
     __abstract = True
 
@@ -1003,9 +1008,9 @@ class _SpinnerBase(_NumericInputBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value_throttled': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'value_throttled': None}
 
-    _widget_type: ClassVar[type[Model]] = _BkSpinner
+    _widget_type: t.ClassVar[type[Model]] = _BkSpinner
 
     __abstract = True
 
@@ -1027,7 +1032,7 @@ class _SpinnerBase(_NumericInputBase):
         return super()._linked_properties + ('value_throttled',)
 
     def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'value_throttled' in msg:
@@ -1035,22 +1040,22 @@ class _SpinnerBase(_NumericInputBase):
 
         return super()._update_model(events, msg, root, model, doc, comm)
 
-    def _process_param_change(self, msg):
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         # Workaround for -inf serialization errors
-        if 'value' in msg and msg['value'] == float('-inf'):
-            msg['value'] = None
-            msg['value_throttled'] = None
-        return super()._process_param_change(msg)
+        if 'value' in params and params['value'] == float('-inf'):
+            params['value'] = None
+            params['value_throttled'] = None
+        return super()._process_param_change(params)
 
-    def _process_property_change(self, msg):
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         if config.throttled:
-            if "value" in msg:
-                del msg["value"]
-            if "value_throttled" in msg:
-                msg["value"] = msg["value_throttled"]
-        return super()._process_property_change(msg)
+            if "value" in props:
+                del props["value"]
+            if "value_throttled" in props:
+                props["value"] = props["value_throttled"]
+        return super()._process_property_change(props)
 
-    def _process_events(self, events: dict[str, Any]) -> None:
+    def _process_events(self, events: dict[str, t.Any]) -> None:
         if config.throttled:
             events.pop("value", None)
         super()._process_events(events)
@@ -1077,7 +1082,7 @@ class IntInput(_SpinnerBase, _IntInputBase):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
 
 class FloatInput(_SpinnerBase, _FloatInputBase):
@@ -1105,21 +1110,21 @@ class FloatInput(_SpinnerBase, _FloatInputBase):
     value_throttled = param.Number(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
-    def _process_param_change(self, msg):
-        if msg.get('value', False) is None:
-            msg['value'] = float('NaN')
-        if msg.get('value_throttled', False) is None:
-            msg['value_throttled'] = float('NaN')
-        return super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        if params.get('value', False) is None:
+            params['value'] = float('NaN')
+        if params.get('value_throttled', False) is None:
+            params['value_throttled'] = float('NaN')
+        return super()._process_param_change(params)
 
-    def _process_property_change(self, msg):
-        if msg.get('value', False) and np.isnan(msg['value']):
-            msg['value'] = None
-        if msg.get('value_throttled', False) and np.isnan(msg['value_throttled']):
-            msg['value_throttled'] = None
-        return super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        if props.get('value', False) and np.isnan(props['value']):
+            props['value'] = None
+        if props.get('value_throttled', False) and np.isnan(props['value_throttled']):
+            props['value_throttled'] = None
+        return super()._process_property_change(props)
 
 
 class NumberInput(_SpinnerBase):
@@ -1160,10 +1165,11 @@ class LiteralInput(Widget):
     placeholder = param.String(default='', doc="""
       Placeholder for empty input field.""")
 
-    serializer = param.Selector(default='ast', objects=['ast', 'json'], doc="""
+    serializer: t.Literal['ast', 'json'] = param.Selector(
+        default='ast', objects=['ast', 'json'], doc="""
        The serialization (and deserialization) method to use. 'ast'
        uses ast.literal_eval and 'json' uses json.loads and json.dumps.
-    """)
+    """)  # type: ignore[assignment, ty:invalid-assignment]
 
     type = param.ClassSelector(default=None, class_=(type, tuple),
                                is_instance=True, doc="""
@@ -1175,20 +1181,20 @@ class LiteralInput(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'type': None, 'serializer': None
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'serializer': None,
         'value': """JSON.parse(value.replace(/'/g, '"'))"""
     }
 
-    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+    _target_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': """JSON.stringify(value).replace(/,/g, ",").replace(/:/g, ": ")"""
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkTextInput  # noqa
+    _widget_type: t.ClassVar[t.Type[Model]] = _BkTextInput  # noqa
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -1206,11 +1212,11 @@ class LiteralInput(Widget):
             raise ValueError(f'{self.__class__.__name__} expected {types} type, but value \'{new}\' '
                              f'is of type {type(new).__name__}.')
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_property_change(props)
         new_state = ''
-        if 'value' in msg:
-            value = msg.pop('value')
+        if 'value' in params:
+            value = params.pop('value')
             try:
                 if value == '':
                     value = ''
@@ -1239,25 +1245,25 @@ class LiteralInput(Widget):
                         value = self.value
                     else:
                         value = typed_value
-            msg['value'] = value
-        msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
+            params['value'] = value
+        params['name'] = params.get('title', self.name).replace(self._state, '') + new_state
         self._state = new_state
         self.param.trigger('name')
-        return msg
+        return params
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            value = msg['value']
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
+        if 'value' in props:
+            value = props['value']
             if isinstance(value, str):
                 value = repr(value)
             elif self.serializer == 'json':
                 value = json.dumps(value)
             else:
                 value = '' if value is None else str(value)
-            msg['value'] = value
-        msg['title'] = self.name
-        return msg
+            props['value'] = value
+        props['title'] = self.name
+        return props
 
 
 class ArrayInput(LiteralInput):
@@ -1275,18 +1281,18 @@ class ArrayInput(LiteralInput):
     >>> To be determined ...
     """
 
-    max_array_size = param.Number(default=1000, doc="""
+    max_array_size = param.Integer(default=1000, doc="""
         Arrays larger than this limit will be allowed in Python but
         will not be serialized into JavaScript. Although such large
         arrays will thus not be editable in the widget, such a
         restriction helps avoid overwhelming the browser and lets
         other widgets remain usable.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'max_array_size': None
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'serializer': None, 'type': None, 'value': None
     }
 
@@ -1294,29 +1300,29 @@ class ArrayInput(LiteralInput):
         super().__init__(**params)
         self._auto_disabled = False
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg and isinstance(msg['value'], list):
-            msg['value'] = np.asarray(msg['value'])
-        return msg
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params and isinstance(params['value'], list):
+            params['value'] = np.asarray(params['value'])
+        return params
 
-    def _process_param_change(self, msg):
-        if msg.get('disabled', False):
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        if params.get('disabled', False):
             self._auto_disabled = False
-        value = msg.get('value')
+        value = params.get('value')
         if value is None:
-            return super()._process_param_change(msg)
+            return super()._process_param_change(params)
         if value.size <= self.max_array_size:
-            msg['value'] = value.tolist()
+            params['value'] = value.tolist()
             # If array is no longer larger than max_array_size
             # unset disabled
             if self.disabled and self._auto_disabled:
                 self.disabled = False
-                msg['disabled'] = False
+                params['disabled'] = False
                 self._auto_disabled = False
         else:
-            msg['value'] = np.array2string(
-                msg['value'], separator=',',
+            params['value'] = np.array2string(
+                params['value'], separator=',',
                 threshold=self.max_array_size
             )
             if not self.disabled:
@@ -1326,9 +1332,9 @@ class ArrayInput(LiteralInput):
                     "will be disabled."
                 )
                 self.disabled = True
-                msg['disabled'] = True
+                params['disabled'] = True
                 self._auto_disabled = True
-        return super()._process_param_change(msg)
+        return super()._process_param_change(params)
 
 
 class DatetimeInput(LiteralInput):
@@ -1359,11 +1365,11 @@ class DatetimeInput(LiteralInput):
 
     type = datetime
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None
     }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'format': None, 'type': None, 'start': None, 'end': None,
         'serializer': None
     }
@@ -1385,11 +1391,11 @@ class DatetimeInput(LiteralInput):
             raise ValueError(f'DatetimeInput value must be between {start} and {end}, '
                              f'supplied value is {value}')
 
-    def _process_property_change(self, msg):
-        msg = Widget._process_property_change(self, msg)
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = Widget._process_property_change(self, props)
         new_state = ''
-        if 'value' in msg:
-            value = msg.pop('value')
+        if 'value' in params:
+            value = params.pop('value')
             try:
                 value = datetime.strptime(value, self.format)
             except Exception:
@@ -1400,22 +1406,22 @@ class DatetimeInput(LiteralInput):
                                           (self.end is not None and self.end < value)):
                     new_state = ' (out of bounds)'
                     value = self.value
-            msg['value'] = value
-        msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
+            params['value'] = value
+        params['name'] = params.get('title', self.name).replace(self._state, '') + new_state
         self._state = new_state
-        return msg
+        return params
 
-    def _process_param_change(self, msg):
-        msg = Widget._process_param_change(self, msg)
-        if 'value' in msg:
-            value = msg['value']
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = Widget._process_param_change(self, params)
+        if 'value' in props:
+            value = props['value']
             if value is None:
                 value = ''
             else:
-                value = datetime.strftime(msg['value'], self.format)
-            msg['value'] = value
-        msg['title'] = self.name
-        return msg
+                value = datetime.strftime(props['value'], self.format)
+            props['value'] = value
+        props['title'] = self.name
+        return props
 
 
 class DatetimeRangeInput(CompositeWidget):
@@ -1446,7 +1452,7 @@ class DatetimeRangeInput(CompositeWidget):
     format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
         Datetime format used for parsing and formatting the datetime.""")
 
-    _composite_type: ClassVar[type[Panel]] = Column
+    _composite_type: t.ClassVar[type[ListLike] | type[NamedListLike]] = Column
 
     def __init__(self, **params):
         self._text = StaticText(margin=(5, 0, 0, 0), styles={'white-space': 'nowrap'})
@@ -1509,7 +1515,7 @@ class _BooleanWidget(Widget):
 
     _supports_embed: bool = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
 
     __abstract = True
 
@@ -1532,7 +1538,7 @@ class Checkbox(_BooleanWidget):
     >>> Checkbox(name='Works with the tools you know and love', value=True)
     """
 
-    _widget_type: ClassVar[type[Model]] = _BkCheckbox
+    _widget_type: t.ClassVar[type[Model]] = _BkCheckbox
 
 
 class Switch(_BooleanWidget):
@@ -1549,8 +1555,8 @@ class Switch(_BooleanWidget):
     >>> Switch(name='Works with the tools you know and love', value=True)
     """
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'value': 'active'
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkSwitch
+    _widget_type: t.ClassVar[type[Model]] = _BkSwitch

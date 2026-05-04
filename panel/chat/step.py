@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import traceback
-
-from collections.abc import Mapping
-from typing import ClassVar, Literal
+import typing as t
 
 import param
 
@@ -18,6 +16,9 @@ from ..widgets.indicators import BooleanStatus
 from .utils import (
     avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
 )
+
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
 
 DEFAULT_STATUS_BADGES = {
     "pending": lambda: BooleanStatus(value=False, margin=0, color="primary"),
@@ -45,14 +46,14 @@ class ChatStep(Card):
     collapsed_on_success = param.Boolean(default=True, doc="""
         Whether to collapse the card on completion.""")
 
-    context_exception = param.Selector(
+    context_exception: t.Literal["raise", "summary", "verbose", "ignore"] = param.Selector(
         default="raise", objects=["raise", "summary", "verbose", "ignore"], doc="""
         How to handle exceptions raised upon exiting the context manager.
         If "raise", the exception will be raised.
         If "summary", a summary will be sent to the chat step.
         If "verbose", the full traceback will be sent to the chat step.
         If "ignore", the exception will be ignored.
-        """)
+        """)  # type: ignore[assignment, ty:invalid-assignment]
 
     default_badges = param.Dict(default=DEFAULT_STATUS_BADGES, doc="""
         Mapping from status to default status badge; keys must be one of
@@ -80,8 +81,9 @@ class ChatStep(Card):
     running_title = param.String(default=None, doc="""
         Title to display when status is running.""")
 
-    status = param.Selector(default="pending", objects=[
-        "pending", "running", "success", "failed"], doc="""The status of the chat step.""")
+    status: t.Literal["pending", "running", "success", "failed"] = param.Selector(
+        default="pending", objects=[
+        "pending", "running", "success", "failed"], doc="""The status of the chat step.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     success_title = param.String(default=None, doc="""
         Title to display when status is success.""")
@@ -90,7 +92,7 @@ class ChatStep(Card):
         The title of the chat step. Will redirect to default_title on init.
         After, it cannot be set directly; instead use the *_title params.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         "collapsed_on_success": None,
         "context_exception": None,
         "default_badges": None,
@@ -102,7 +104,7 @@ class ChatStep(Card):
         "status": None
     }
 
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_step.css"]
+    _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/chat_step.css"]
 
     def __init__(self, *objects, **params):
         self._instance = None
@@ -217,7 +219,7 @@ class ChatStep(Card):
     def stream_title(
         self,
         token: str,
-        status: Literal["pending", "running", "success", "failed", "default"] = "running",
+        status: t.Literal["pending", "running", "success", "failed", "default"] = "running",
         replace: bool = False
     ):
         """

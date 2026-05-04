@@ -4,8 +4,7 @@ Editable template
 from __future__ import annotations
 
 import pathlib
-
-from typing import TYPE_CHECKING
+import typing as t
 
 import param
 
@@ -15,7 +14,7 @@ from ...config import config
 from ...reactive import ReactiveHTML
 from ..vanilla import VanillaTemplate
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from pyviz_comms import Comm
 
@@ -28,11 +27,11 @@ class TemplateEditor(ReactiveHTML):
     the current layout state with Python.
     """
 
-    layout = param.List(doc="""
+    layout: list[dict[str, t.Any]] = param.List(item_type=dict, doc="""
         The current layout of the template, which is updated by the editor.
         It is a list of dictionaries with the keys 'id', 'width', 'height', and 'visible'.
         The 'id' corresponds to the component's model id, while 'width' and 'height'
-        are in percentage of the grid cell size.""")
+        are in percentage of the grid cell size.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _scripts = {
         'render': """

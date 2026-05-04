@@ -4,27 +4,26 @@ import io
 import os
 import re
 import tempfile
+import typing as t
 import uuid
 
-from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from cProfile import Profile
 from functools import wraps
 from html import escape
-from typing import (
-    TYPE_CHECKING, Literal, ParamSpec, TypeVar,
-)
 
 from ..config import config
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+
     from pyinstrument.session import Session
 
-    _P = ParamSpec("_P")
-    _R = TypeVar("_R")
+    _P = t.ParamSpec("_P")
+    _R = t.TypeVar("_R")
 
-ProfilingEngine = Literal["pyinstrument", "snakeviz", "memray"]
+ProfilingEngine = t.Literal["pyinstrument", "snakeviz", "memray"]
 
 
 def render_pyinstrument(sessions, timeline=False, show_all=False):
@@ -197,7 +196,7 @@ def profiling_tabs(state, allow=None, deny=[]):
 
 
 @contextmanager
-def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[list[Profile | bytes | Session]]:
+def profile_ctx(engine: ProfilingEngine | None = 'pyinstrument') -> Iterator[list[Profile | bytes | Session]]:
     """
     A context manager which profiles the body of the with statement
     with the supplied profiling engine and returns the profiling object

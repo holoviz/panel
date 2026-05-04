@@ -2,15 +2,13 @@ from __future__ import annotations
 
 import datetime as dt
 import inspect
+import typing as t
 import uuid
 
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import partial
 from types import FunctionType, MethodType
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, TypedDict, cast,
-)
 
 import numpy as np
 import param
@@ -41,7 +39,7 @@ from .base import Widget
 from .button import Button
 from .input import TextInput
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import pandas as pd
 
     from bokeh.document import Document
@@ -53,31 +51,31 @@ if TYPE_CHECKING:
     )
     from ..reactive import TDataColumn
 
-    class FilterSpec(TypedDict, total=False):
+    class FilterSpec(t.TypedDict, total=False):
         headerFilter: str | bool
-        headerFilterParams: dict[str, Any]
+        headerFilterParams: dict[str, t.Any]
         headerFilterFunc: str
         headerFilterPlaceholder: str
 
-class ColumnSpec(TypedDict, total=False):
+class ColumnSpec(t.TypedDict, total=False):
     editable: bool | JSCode
     editor: str | CellEditor | JSCode
-    editorParams: dict[str, Any]
+    editorParams: dict[str, t.Any]
     field: str
     frozen: bool
-    headerHozAlign: Literal["center", "left", "right"]
+    headerHozAlign: t.Literal["center", "left", "right"]
     headerSort: bool
     headerTooltip: str
-    hozAlign: Literal["center", "left", "right"]
+    hozAlign: t.Literal["center", "left", "right"]
     formatter: str | CellFormatter | JSCode
-    formatterParams: dict[str, Any]
+    formatterParams: dict[str, t.Any]
     sorter: str
     title: str
     titleFormatter: str | CellFormatter | JSCode
-    titleFormatterParams: dict[str, Any]
+    titleFormatterParams: dict[str, t.Any]
     width: str | int
 
-class GroupSpec(TypedDict):
+class GroupSpec(t.TypedDict):
     columns: Sequence[ColumnSpec]
     title: str
 
@@ -136,14 +134,14 @@ class BaseTable(ReactiveData, Widget):
     row_height = param.Integer(default=40, doc="""
         The height of each table row.""")
 
-    selection = param.List(default=[], doc="""
+    selection = param.List(default=[], item_type=int, doc="""
         The currently selected rows of the table.""")
 
     show_index = param.Boolean(default=True, doc="""
         Whether to show the index column.""")
 
-    sorters = param.List(default=[], doc="""
-        A list of sorters to apply during pagination.""")
+    sorters: list[dict[str, t.Any]] = param.List(default=[], item_type=dict, doc="""
+        A list of sorters to apply during pagination.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     text_align = param.ClassSelector(default={}, nested_refs=True, class_=(dict, str), doc="""
         A mapping from column name to alignment or a fixed column
@@ -158,13 +156,13 @@ class BaseTable(ReactiveData, Widget):
 
     value = param.Parameter(default=None)
 
-    _data_params: ClassVar[list[str]] = ['value']
+    _data_params: t.ClassVar[list[str]] = ['value']
 
-    _manual_params: ClassVar[list[str]] = [
+    _manual_params: t.ClassVar[list[str]] = [
         'formatters', 'editables', 'editors', 'widths', 'titles', 'value', 'show_index'
     ]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'hierarchical': None, 'name': None, 'selection': None
     }
 
@@ -270,7 +268,7 @@ class BaseTable(ReactiveData, Widget):
             if isinstance(data, pd.DataFrame):
                 raise ValueError("DataFrame contains duplicate column names.")
 
-            col_kwargs: dict[str, Any] = {}
+            col_kwargs: dict[str, t.Any] = {}
             kind = data.dtype.kind
             editor: CellEditor
             formatter: CellFormatter | None = self.formatters.get(col)
@@ -377,10 +375,10 @@ class BaseTable(ReactiveData, Widget):
             for prop in (model.properties() - Model.properties()):
                 model.on_change(prop, change_fn)
 
-    def _editor_change(self, attr: str, new: Any, old: Any):
+    def _editor_change(self, attr: str, new: t.Any, old: t.Any):
         self.param.trigger('editors')
 
-    def _formatter_change(self, attr: str, new: Any, old: Any):
+    def _formatter_change(self, attr: str, new: t.Any, old: t.Any):
         self.param.trigger('formatters')
 
     def _update_index_mapping(self):
@@ -408,7 +406,7 @@ class BaseTable(ReactiveData, Widget):
         params = super()._process_param_change(params)
         return params
 
-    def _get_properties(self, doc: Document | None = None) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None = None) -> dict[str, t.Any]:
         properties = super()._get_properties(doc)
         properties['columns'] = self._get_columns()
         properties['source']  = cds = ColumnDataSource(data=self._data)
@@ -420,7 +418,7 @@ class BaseTable(ReactiveData, Widget):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         properties = self._get_properties(doc)
-        model = cast(Model, self._widget_type(**properties))  # type: ignore[misc]
+        model = t.cast("Model", self._widget_type(**properties))  # type: ignore[misc]
         root = root or model
         self._link_props(model.source, ['data'], doc, root, comm)
         self._link_props(model.source.selected, ['indices'], doc, root, comm)
@@ -523,6 +521,8 @@ class BaseTable(ReactiveData, Widget):
                     filters.append(res)
                 continue
             if isinstance(filt, param.Parameter):
+                if filt.name is None:
+                    continue
                 val = getattr(filt.owner, filt.name)
             else:
                 val = filt
@@ -629,7 +629,7 @@ class BaseTable(ReactiveData, Widget):
                 raise ValueError(f"Filter type {op!r} not recognized.")
         return filters
 
-    def add_filter(self, filter: Any, column: str | None = None):
+    def add_filter(self, filter: t.Any, column: str | None = None):
         """
         Adds a filter to the table which can be a static value or
         dynamic parameter based object which will automatically
@@ -721,7 +721,7 @@ class BaseTable(ReactiveData, Widget):
         df = self._filter_dataframe(df, header_filters=False)
         if df is None:
             return [], {}
-        indexes: list[Any]
+        indexes: list[t.Any]
         if isinstance(self.value.index, pd.MultiIndex):
             indexes = [
                 f'level_{i}' if n is None else n
@@ -1047,7 +1047,9 @@ class DataFrame(BaseTable):
     auto_edit = param.Boolean(default=False, doc="""
         Whether clicking on a table cell automatically starts edit mode.""")
 
-    autosize_mode = param.Selector(default='force_fit', objects=[
+    autosize_mode: t.Literal[
+        "none", "fit_columns", "fit_viewport", "force_fit"
+    ] = param.Selector(default='force_fit', objects=[
         "none", "fit_columns", "fit_viewport", "force_fit"], doc="""
 
         Determines the column autosizing mode, as one of the following options:
@@ -1069,7 +1071,7 @@ class DataFrame(BaseTable):
           can get unreadable if there is not enough space available.
 
         ``"none"``
-          Do not automatically compute column widths.""")
+          Do not automatically compute column widths.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     fit_columns = param.Boolean(default=None, doc="""
         Whether columns should expand to the available width. This
@@ -1100,16 +1102,16 @@ class DataFrame(BaseTable):
         return to natural order. Use Shift + click to sort multiple
         columns simultaneously.""")
 
-    _manual_params: ClassVar[list[str]] = BaseTable._manual_params + ['aggregators']
+    _manual_params: t.ClassVar[list[str]] = BaseTable._manual_params + ['aggregators']
 
     _aggregators = {
         'sum': SumAggregator, 'max': MaxAggregator,
         'min': MinAggregator, 'mean': AvgAggregator
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'hierarchical': None}
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'hierarchical': None}
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'sorters': None, 'text_align': None
     }
 
@@ -1158,7 +1160,7 @@ class DataFrame(BaseTable):
                     expanded_aggs.append(agg(field_=str(col)))
         return expanded_aggs
 
-    def _get_properties(self, doc: Document | None = None) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None = None) -> dict[str, t.Any]:
         properties = super()._get_properties(doc)
         if self.hierarchical:
             properties['target'] = ColumnDataSource(data=dict(row_indices=[], labels=[]))
@@ -1215,7 +1217,7 @@ class Tabulator(BaseTable):
         If True, popups will appear within the table container, otherwise
         popups will be appended to the body element of the DOM.""")
 
-    expanded = param.List(default=[], nested_refs=True, doc="""
+    expanded = param.List(default=[], item_type=int, nested_refs=True, doc="""
         List of expanded rows, only applicable if a row_content function
         has been defined.""")
 
@@ -1223,7 +1225,7 @@ class Tabulator(BaseTable):
         Whether to embed the row_content or render it dynamically
         when a row is expanded.""")
 
-    filters = param.List(default=[], doc="""
+    filters = param.List(default=[], item_type=dict, doc="""
         List of client-side filters declared as dictionaries containing
         'field', 'type' and 'value' keys.""")
 
@@ -1234,7 +1236,7 @@ class Tabulator(BaseTable):
         - Dict indicating columns to freeze as keys and their freeze location
         as values, freeze location is either 'right' or 'left'.""")
 
-    frozen_rows = param.List(default=[], nested_refs=True, doc="""
+    frozen_rows = param.List(default=[], item_type=int, nested_refs=True, doc="""
         List indicating the rows to freeze. If set, the
         first N rows will be frozen, which prevents them from scrolling
         out of frame; if set to a negative value the last N rows will be
@@ -1243,7 +1245,7 @@ class Tabulator(BaseTable):
     groups = param.Dict(default={}, nested_refs=True, doc="""
         Dictionary mapping defining the groups.""")
 
-    groupby = param.List(default=[], nested_refs=True, doc="""
+    groupby = param.List(default=[], item_type=str, nested_refs=True, doc="""
         Groups rows in the table by one or more columns.""")
 
     header_align = param.ClassSelector(default={}, nested_refs=True, class_=(dict, str), doc="""
@@ -1258,21 +1260,25 @@ class Tabulator(BaseTable):
         Dictionary mapping from column name to a tooltip to show when
         hovering over the column header.""")
 
-    hidden_columns = param.List(default=[], nested_refs=True, doc="""
-        List of columns to hide.""")
+    hidden_columns = param.List(default=[], item_type=str, nested_refs=True, doc="""
+        List of columns to hide.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    layout = param.Selector(default='fit_data_table', objects=[
+    layout: t.Literal[
+        'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
+        'fit_columns',
+    ] = param.Selector(default='fit_data_table', objects=[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
         'fit_columns'], doc="""
         Describes the column layout mode with one of the following options
         'fit_columns', 'fit_data', 'fit_data_stretch', 'fit_data_fill',
-        'fit_data_table'.""")
+        'fit_data_table'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     initial_page_size = param.Integer(default=20, bounds=(1, None), doc="""
         Initial page size if page_size is None and therefore automatically set.""")
 
-    pagination = param.Selector(default=None, allow_None=True,
-                                      objects=['local', 'remote'], doc="""
+    pagination: t.Literal['local', 'remote'] | None = param.Selector(
+        default=None, allow_None=True,
+        objects=['local', 'remote'], doc="""
         Defines the pagination mode of the Tabulator.
 
           - None
@@ -1282,7 +1288,7 @@ class Tabulator(BaseTable):
               is loaded and then paginated.
           - 'remote' (server-side)
               Pagination is applied remotely, i.e. only the current page
-              is loaded from the server.""")
+              is loaded from the server.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     page = param.Integer(default=1, doc="""
         Currently selected page (indexed starting at 1), if pagination is enabled.""")
@@ -1300,7 +1306,7 @@ class Tabulator(BaseTable):
 
     selection: list[int] = _ListValidateWithCallable(default=[], doc="""
         The currently selected rows of the table. It validates
-        its values against 'selectable_rows' if used.""")
+        its values against 'selectable_rows' if used.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     selectable = param.ClassSelector(
         default=True, class_=(bool, str, int), doc="""
@@ -1330,13 +1336,17 @@ class Tabulator(BaseTable):
         Can either be specified as a simple boolean toggling the behavior
         on and off or as a dictionary specifying the option per column.""")
 
-    theme = param.Selector(
+    theme: t.Literal[
+        'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
+        'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast',
+        'bootstrap5',
+    ] = param.Selector(
         default="simple", objects=[
             'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
             'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast',
             'bootstrap5'
         ], doc="""
-        Tabulator CSS theme to apply to table.""")
+        Tabulator CSS theme to apply to table.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     theme_classes = param.List(default=[], nested_refs=True, item_type=str, doc="""
        List of extra CSS classes to apply to the Tabulator element
@@ -1346,21 +1356,21 @@ class Tabulator(BaseTable):
        Tabulator formatter specification to use for a particular column
        header title.""")
 
-    _data_params: ClassVar[list[str]] = [
+    _data_params: t.ClassVar[list[str]] = [
         'value', 'page', 'page_size', 'pagination', 'sorters', 'filters'
     ]
 
-    _config_params: ClassVar[list[str]] = [
+    _config_params: t.ClassVar[list[str]] = [
         'frozen_columns', 'groups', 'selectable', 'hierarchical', 'sortable'
     ]
 
-    _content_params: ClassVar[list[str]] = _data_params + ['expanded', 'row_content', 'embed_content']
+    _content_params: t.ClassVar[list[str]] = _data_params + ['expanded', 'row_content', 'embed_content']
 
-    _manual_params: ClassVar[list[str]] = BaseTable._manual_params + _config_params
+    _manual_params: t.ClassVar[list[str]] = BaseTable._manual_params + _config_params
 
-    _priority_changes: ClassVar[list[str]] = ['data', 'filters']
+    _priority_changes: t.ClassVar[list[str]] = ['data', 'filters']
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
         'text_align': None, 'header_align': None, 'header_filters': None,
         'header_tooltips': None, 'styles': 'cell_styles',
@@ -1369,7 +1379,7 @@ class Tabulator(BaseTable):
 
     # Determines the maximum size limits beyond which (local, remote)
     # pagination is enabled
-    _MAX_ROW_LIMITS: ClassVar[tuple[int, int]] = (200, 10000)
+    _MAX_ROW_LIMITS: t.ClassVar[tuple[int, int]] = (200, 10000)
 
     _stylesheets = [CSS_URLS['font-awesome']]
 
@@ -1453,7 +1463,7 @@ class Tabulator(BaseTable):
             p._cleanup(root)
         super()._cleanup(root)
 
-    def _process_events(self, events: dict[str, Any]) -> None:
+    def _process_events(self, events: dict[str, t.Any]) -> None:
         if 'expanded' in events:
             self._update_expanded(events.pop('expanded'))
         if events.get('page_size') == 0:  # page_size can't be 0
@@ -1938,7 +1948,7 @@ class Tabulator(BaseTable):
             ilocs = ilocs[len(ilocs) - self.selectable:]
         self.selection = ilocs  # type: ignore
 
-    def _get_properties(self, doc: Document | None = None) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None = None) -> dict[str, t.Any]:
         properties = super()._get_properties(doc)
         properties['configuration'] = self._get_configuration(properties['columns'])
         properties['cell_styles'] = self._get_style_data()
@@ -2065,7 +2075,7 @@ class Tabulator(BaseTable):
         groups: dict[str, GroupSpec] = {}
         columns: Sequence[ColumnSpec | GroupSpec] = []
         selectable = self.selectable
-        if self.row_content:
+        if self.row_content is not None:
             columns.append({
                 "formatter": "expand"
             })
@@ -2184,7 +2194,7 @@ class Tabulator(BaseTable):
 
             if isinstance(index, tuple):
                 children = columns
-                last = cast(GroupSpec, children[-1] if len(children) > 0 else {})
+                last = t.cast("GroupSpec", children[-1] if len(children) > 0 else {})
                 for j, group in enumerate(index[:-1]):
                     group_title = self.titles.get(index[: j + 1], group)
                     if 'title' in last and last['title'] == group_title:
@@ -2196,7 +2206,7 @@ class Tabulator(BaseTable):
                             'columns': [],
                             'title': group_title,
                         })
-                    last = cast(GroupSpec, children[-1])
+                    last = t.cast("GroupSpec", children[-1])
                     if new:
                         children = last['columns']
                 children.append(col_dict)
@@ -2216,7 +2226,7 @@ class Tabulator(BaseTable):
                 columns.append(col_dict)
         return columns
 
-    def _get_configuration(self, columns: list[TableColumn]) -> dict[str, Any]:
+    def _get_configuration(self, columns: list[TableColumn]) -> dict[str, t.Any]:
         """
         Returns the Tabulator configuration.
         """

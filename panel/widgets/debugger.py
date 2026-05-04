@@ -5,9 +5,7 @@ thrown by your Panel callbacks.
 from __future__ import annotations
 
 import logging
-
-from collections.abc import Mapping
-from typing import ClassVar
+import typing as t
 
 import param
 
@@ -16,6 +14,9 @@ from ..io.state import state
 from ..layout import Card, HSpacer, Row
 from ..reactive import ReactiveHTML
 from .terminal import Terminal
+
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class TermFormatter(logging.Formatter):
@@ -116,7 +117,7 @@ class DebuggerButtons(ReactiveHTML):
     clears = param.Integer(default=0, doc="""
         The number of times the terminal has been cleared.""")
 
-    _template: ClassVar[str] = """
+    _template: t.ClassVar[str] = """
     <div style="display: flex;">
       <button class="special_btn clear_btn" id="clear_btn" onclick="${script('click_clear')}" style="width: ${model.width}px;">
         <span class="shown">☐</span>
@@ -128,7 +129,7 @@ class DebuggerButtons(ReactiveHTML):
     </div>
     """
 
-    js_cb: ClassVar[str] = """
+    js_cb: t.ClassVar[str] = """
         var filename = data.debug_name+'.txt'
         console.log('saving debugger terminal output to '+filename)
         var blob = new Blob([data.terminal_output],
@@ -149,12 +150,12 @@ class DebuggerButtons(ReactiveHTML):
         }
         """
 
-    _scripts: ClassVar[dict[str, str | list[str]]] = {
+    _scripts: t.ClassVar[dict[str, str | list[str]]] = {
         'click': js_cb,
         'click_clear': "data.clears += 1"
     }
 
-    _dom_events: ClassVar[dict[str, list[str]]] = {'clear_btn': ['click']}
+    _dom_events: t.ClassVar[dict[str, list[str]]] = {'clear_btn': ['click']}
 
 
 class Debugger(Card):
@@ -190,7 +191,7 @@ class Debugger(Card):
         bounds=(1, None), precedence=-1, doc="""
         Loggers which will be prompted in the debugger terminal.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(
+    _rename: t.ClassVar[Mapping[str, str | None]] = dict(
         Card._rename,
         _number_of_errors=None,
         _number_of_warnings=None,
@@ -201,7 +202,7 @@ class Debugger(Card):
         logger_names=None
     )
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/debugger.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/debugger.css']
 
     def __init__(self, **params):
         super().__init__(**params)

@@ -4,11 +4,10 @@ Layout components to lay out objects in a grid.
 from __future__ import annotations
 
 import math
+import typing as t
 
 from collections import namedtuple
-from collections.abc import Mapping
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -22,7 +21,9 @@ from .base import (
     ListPanel, Panel, _col, _row,
 )
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -53,19 +54,19 @@ class GridBox(ListPanel):
     ncols = param.Integer(default=None, bounds=(0, None),  doc="""
       Number of columns to reflow the layout into.""")
 
-    _bokeh_model: ClassVar[type[Model]] = BkGridBox
+    _bokeh_model: t.ClassVar[type[Model]] = BkGridBox
 
-    _linked_properties: ClassVar[tuple[str,...]] = ()
+    _linked_properties: t.ClassVar[tuple[str,...]] = ()
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'objects': 'children'
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'scroll': None, 'objects': None
     }
 
-    _stylesheets: ClassVar[list[str]] = [
+    _stylesheets: t.ClassVar[list[str]] = [
         f'{CDN_DIST}css/gridbox.css'
     ]
 
@@ -194,7 +195,7 @@ class GridBox(ListPanel):
         return model
 
     def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         from ..io import state
@@ -260,8 +261,9 @@ class GridSpec(Panel):
     objects = ChildDict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
 
-    mode = param.Selector(default='warn', objects=['warn', 'error', 'override'], doc="""
-        Whether to warn, error or simply override on overlapping assignment.""")
+    mode: t.Literal['warn', 'error', 'override'] = param.Selector(
+        default='warn', objects=['warn', 'error', 'override'], doc="""
+        Whether to warn, error or simply override on overlapping assignment.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     ncols = param.Integer(default=None, bounds=(0, None), doc="""
         Limits the number of columns that can be assigned.""")
@@ -269,21 +271,21 @@ class GridSpec(Panel):
     nrows = param.Integer(default=None, bounds=(0, None), doc="""
         Limits the number of rows that can be assigned.""")
 
-    _bokeh_model: ClassVar[type[Model]] = BkGridBox
+    _bokeh_model: t.ClassVar[type[Model]] = BkGridBox
 
     _linked_properties: tuple[str, ...] = ()
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'objects': None, 'mode': None
     }
 
-    _preprocess_params: ClassVar[list[str]] = ['objects']
+    _preprocess_params: t.ClassVar[list[str]] = ['objects']
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/gridspec.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/gridspec.css']
 
     def __init__(self, **params):
         if 'objects' not in params:
