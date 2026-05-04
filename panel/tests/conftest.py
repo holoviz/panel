@@ -175,13 +175,14 @@ def pytest_generate_tests(metafunc):
 def pytest_collection_modifyitems(config, items):
     skipped, selected = [], []
     markers = [m for m in optional_markers if config.getoption(f"--{m}")]
+    not_markers = [m for m in optional_markers if not config.getoption(f"--{m}")]
     empty = not markers
     for item in items:
         if empty and any(m in item.keywords for m in optional_markers):
             skipped.append(item)
         elif empty:
             selected.append(item)
-        elif not empty and any(m in item.keywords for m in markers):
+        elif any(m in item.keywords for m in markers) and not any(m in item.keywords for m in not_markers):
             selected.append(item)
         else:
             skipped.append(item)
