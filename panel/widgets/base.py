@@ -146,7 +146,7 @@ class Widget(Reactive, WidgetBase):
 
     __abstract = True
 
-    def __init__(self, **params: Any):
+    def __init__(self, **params: t.Any):
         if "name" in params and "label" in params:
             warnings.warn(
                 "Both 'name' and 'label' were provided; using 'label' and ignoring 'name'.",
