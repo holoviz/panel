@@ -36,7 +36,7 @@ def makeMixedDataFrame():
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
         "B": [0.0, 1.0, 0.0, 1.0, 0.0],
         "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
-        "D": pd.bdate_range("1/1/2009", periods=5),
+        "D": pd.bdate_range("1/1/2009", periods=5).astype("datetime64[ns]"),
     }
     return pd.DataFrame(data)
 
@@ -273,6 +273,22 @@ def test_tabulator_none_value(document, comm):
 
     assert model.source.data == {}
     assert model.columns == []
+
+
+def test_tabulator_mixed_nat_datetime_serializes():
+    from bokeh.core.json_encoder import serialize_json
+    from bokeh.core.serialization import Serializer
+
+    df = pd.DataFrame({"date": [pd.NaT, 12]})
+    df["date"] = pd.to_datetime(df["date"]).dt.date
+
+    table = Tabulator(df)
+    _, data = table._get_data()
+
+    ser = Serializer()
+    payload = ser.encode(data)
+
+    serialize_json(payload)
 
 
 def test_tabulator_update_none_value(document, comm, df_mixed):

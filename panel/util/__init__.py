@@ -15,15 +15,15 @@ import os
 import pathlib
 import re
 import sys
+import typing as t
 import urllib.parse as urlparse
 
 from collections import OrderedDict, defaultdict
 from collections.abc import MutableMapping, MutableSequence
 from datetime import datetime
-from functools import partial
+from functools import lru_cache, partial
 from html import escape  # noqa
 from importlib import import_module
-from typing import Any, AnyStr
 
 import bokeh
 import bokeh.util.callback_manager
@@ -54,19 +54,19 @@ PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
 class LazyHTMLSanitizer:
     """
-    Wraps bleach.sanitizer.Cleaner lazily importing it on the first
-    call to the clean method.
+    Wraps nh3.clean lazily importing it on the first call to clean.
     """
 
     def __init__(self, **kwargs):
-        self._cleaner = None
+        self._sanitize = None
+        kwargs.pop("strip", None)
         self._kwargs = kwargs
 
     def clean(self, text):
-        if self._cleaner is None:
-            import bleach
-            self._cleaner = bleach.sanitizer.Cleaner(**self._kwargs)
-        return self._cleaner.clean(text)
+        if self._sanitize is None:
+            import nh3
+            self._sanitize = partial(nh3.clean, **self._kwargs)
+        return self._sanitize(text)
 
 HTML_SANITIZER = LazyHTMLSanitizer(strip=True)
 
@@ -144,8 +144,9 @@ def param_reprs(parameterized, skip=None):
     """
     cls = type(parameterized).__name__
     param_reprs = []
-    for p, v in sorted(parameterized.param.values().items()):
+    for p in sorted(parameterized.param):
         default = parameterized.param[p].default
+        v = getattr(parameterized, p)
         equal = v is default
         if not equal:
             if isinstance(v, np.ndarray):
@@ -204,13 +205,13 @@ def datetime_as_utctimestamp(value):
     return value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
 
 
-def parse_query(query: str) -> dict[str, Any]:
+def parse_query(query: str) -> dict[str, t.Any]:
     """
     Parses a url query string, e.g. ?a=1&b=2.1&c=string, converting
     numeric strings to int or float types.
     """
     query_dict = dict(urlparse.parse_qsl(query[1:]))
-    parsed_query: dict[str, Any] = {}
+    parsed_query: dict[str, t.Any] = {}
     for k, v in query_dict.items():
         if v.isdigit():
             parsed_query[k] = int(v)
@@ -254,7 +255,7 @@ def base64url_decode(input):
     return base64.urlsafe_b64decode(input)
 
 
-def decode_token(token: str, signed: bool = True) -> dict[str, Any]:
+def decode_token(token: str, signed: bool = True) -> dict[str, t.Any]:
     """
     Decodes a signed or unsigned JWT token.
     """
@@ -381,7 +382,7 @@ def parse_timedelta(time_str: str) -> dt.timedelta | None:
     return dt.timedelta(**time_params)
 
 
-def fullpath(path: AnyStr | os.PathLike) -> str:
+def fullpath(path: t.AnyStr | os.PathLike) -> str:
     """
     Expanduser and then abspath for a given path.
     """
@@ -412,6 +413,7 @@ def base_version(version: str) -> str:
         return version
 
 
+@lru_cache(maxsize=128)
 def relative_to(path, other_path):
     try:
         pathlib.Path(path).relative_to(other_path)

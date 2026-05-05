@@ -59,6 +59,23 @@ def test_link():
     assert obj2.a == 1
 
 
+def test_link_holoviews_stream():
+    "Link a Reactive object to a HoloViews stream"
+    try:
+        import holoviews as hv
+    except ImportError:
+        pytest.skip("holoviews not available")
+
+    class ReactiveLink(Reactive):
+        selection = param.List(default=[])
+
+    obj = ReactiveLink()
+    stream = hv.streams.Selection1D()
+    obj.link(stream, selection='index')
+    obj.selection = [0, 1]
+    assert stream.index == [0, 1]
+
+
 def test_param_rename():
     "Test that Reactive renames params and properties"
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
-from typing import ClassVar
+import typing as t
 
 import param
 
@@ -13,6 +12,9 @@ from ..models import (
 from ._mixin import TooltipMixin
 from .base import Widget
 from .button import ButtonClick, _ClickButton
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
 
 
 class _ClickableIcon(Widget):
@@ -33,15 +35,15 @@ class _ClickableIcon(Widget):
 
     _widget_type = _PnClickableIcon
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         **TooltipMixin._rename, 'name': 'title',
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'description': None,
     }
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/icon.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/icon.css']
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -117,11 +119,11 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
 
     _widget_type = _PnButtonIcon
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         **TooltipMixin._rename, 'name': 'title', 'clicks': None,
     }
 
-    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+    _target_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'event:button_click': None,
     }
 

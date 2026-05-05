@@ -6,12 +6,10 @@ import dataclasses
 import json
 import os
 import pathlib
+import typing as t
 import uuid
 
-from collections.abc import Sequence
-from typing import (
-    IO, Any, Literal, cast,
-)
+from html import escape
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
@@ -28,7 +26,7 @@ from bokeh.util.serialization import make_id
 from packaging.requirements import Requirement
 
 from .. import __version__, config
-from ..util import base_version, escape
+from ..util import base_version
 from .application import Application, build_single_handler_application
 from .document import MockSessionContext
 from .loading import LOADING_INDICATOR_CSS_CLASS
@@ -39,6 +37,9 @@ from .resources import (
 )
 from .state import set_curdoc, state
 
+if t.TYPE_CHECKING:
+    from collections.abc import Sequence
+
 PWA_MANIFEST_TEMPLATE = _pn_env.get_template('site.webmanifest')
 SERVICE_WORKER_TEMPLATE = _pn_env.get_template('serviceWorker.js')
 WEB_WORKER_TEMPLATE = _pn_env.get_template('pyodide_worker.js')
@@ -47,8 +48,8 @@ WORKER_HANDLER_TEMPLATE = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.28.2'
-PYSCRIPT_VERSION = '2025.8.1'
+PYODIDE_VERSION = 'v0.29.3'
+PYSCRIPT_VERSION = '2026.2.1'
 WHL_PATH = DIST_DIR / 'wheels'
 PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
@@ -76,7 +77,7 @@ PWA_IMAGES = [
     ICON_DIR / 'index_background.png'
 ]
 
-Runtimes = Literal['pyodide', 'pyscript', 'pyodide-worker', 'pyscript-worker']
+Runtimes = t.Literal['pyodide', 'pyscript', 'pyodide-worker', 'pyscript-worker']
 
 PRE = """
 import asyncio
@@ -174,9 +175,9 @@ def build_pwa_manifest(files, title=None, **kwargs) -> str:
 
 
 def collect_python_requirements(
-    code: str | os.PathLike | IO,
-    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
-    panel_version: Literal['auto', 'local'] | str = 'auto',
+    code: str | os.PathLike | t.IO,
+    requirements: list[str] | t.Literal['auto'] | os.PathLike = 'auto',
+    panel_version: t.Literal['auto', 'local'] | str = 'auto',
     http_patch: bool = True,
 ) -> list[str]:
     """
@@ -218,7 +219,7 @@ def collect_python_requirements(
             application = build_single_handler_application(path.absolute())
             source = application._handlers[0]._runner.source
         resolved_reqs = find_requirements(source)
-    elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
+    elif isinstance(requirements, (str, os.PathLike)) and pathlib.Path(requirements).is_file():
         requirements_root = os.path.dirname(requirements)
         resolved_reqs = (
             pathlib.Path(requirements).read_text(encoding='utf-8').splitlines()
@@ -240,7 +241,7 @@ def collect_python_requirements(
             req = Requirement(stripped_req)
         except ValueError as e:
             if stripped_req.endswith('.whl'):
-                req = cast(Requirement, DummyRequirement(stripped_req))
+                req = t.cast('Requirement', DummyRequirement(stripped_req))
             else:
                 raise ValueError(f'Requirements parser raised following error: {e}') from e
 
@@ -267,7 +268,7 @@ def collect_python_requirements(
     return collected_requirements
 
 
-def pack_files(filemap: dict, destination: str | os.PathLike | IO):
+def pack_files(filemap: dict, destination: str | os.PathLike | t.IO):
     """
     Pack files into a zipfile for distribution
 
@@ -308,14 +309,14 @@ def loading_resources(template, inline) -> list[str]:
     return css_resources
 
 def script_to_html(
-    filename: str | os.PathLike | IO,
+    filename: str | os.PathLike | t.IO,
     requirements: list[str] = [],
     app_resources: str | os.PathLike | None = None,
-    js_resources: Literal['auto'] | list[str] = 'auto',
-    css_resources: Literal['auto'] | list[str] | None = 'auto',
+    js_resources: t.Literal['auto'] | list[str] = 'auto',
+    css_resources: t.Literal['auto'] | list[str] | None = 'auto',
     runtime: Runtimes = 'pyodide',
     prerender: bool = True,
-    panel_version: Literal['auto', 'local'] | str = 'auto',
+    panel_version: t.Literal['auto', 'local'] | str = 'auto',
     local_prefix: str = LOCAL_PREFIX,
     manifest: str | None = None,
     inline: bool = False,
@@ -375,6 +376,8 @@ def script_to_html(
 
     # Execution
     post_code = POST_PYSCRIPT if runtime == 'pyscript' else POST
+    # Escape javascript-style format strings.
+    source = source.replace('${', '&#36;{')
     code = '\n'.join([PRE, source, post_code])
     web_worker = None
     if css_resources is None:
@@ -493,12 +496,12 @@ def script_to_html(
 def convert_app(
     app: str | os.PathLike,
     dest_path: str | os.PathLike | None = None,
-    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
+    requirements: list[str] | t.Literal['auto'] | os.PathLike = 'auto',
     resources: list[str] | list[os.PathLike] | None = None,
     runtime: Runtimes = 'pyodide-worker',
     prerender: bool = True,
     manifest: str | None = None,
-    panel_version: Literal['auto', 'local'] | str = 'auto',
+    panel_version: t.Literal['auto', 'local'] | str = 'auto',
     local_prefix: str = LOCAL_PREFIX,
     http_patch: bool = True,
     inline: bool = False,
@@ -597,7 +600,7 @@ def _convert_process_pool(
     apps: Sequence[str | os.PathLike],
     dest_path: os.PathLike | str | None = None,
     max_workers: int = 4,
-    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
+    requirements: list[str] | t.Literal['auto'] | os.PathLike = 'auto',
     **kwargs
 ):
     import multiprocessing as mp
@@ -633,14 +636,14 @@ def convert_apps(
     dest_path: str | os.PathLike | None = None,
     title: str | None = None,
     runtime: Runtimes = 'pyodide-worker',
-    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
+    requirements: list[str] | t.Literal['auto'] | os.PathLike = 'auto',
     resources: list[str] | list[os.PathLike] | None = None,
     prerender: bool = True,
     build_index: bool = True,
     build_pwa: bool = True,
-    pwa_config: dict[Any, Any] = {},
+    pwa_config: dict[t.Any, t.Any] = {},
     max_workers: int = 4,
-    panel_version: Literal['auto', 'local'] | str = 'auto',
+    panel_version: t.Literal['auto', 'local'] | str = 'auto',
     local_prefix: str = LOCAL_PREFIX,
     http_patch: bool = True,
     inline: bool = False,
@@ -723,7 +726,7 @@ def convert_apps(
         'inline': inline,
         'verbose': verbose,
         'compiled': compiled,
-        'local_prefix': local_prefix
+        'local_prefix': local_prefix,
     }
 
     if state._is_pyodide:

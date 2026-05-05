@@ -16,4 +16,5 @@ Integrate with other servers<integrations/index>
 Deploy applications<deployment/index>
 Export apps<export/index>
 Run panel in WebAssembly<wasm/index>
+Convert to desktop or mobile apps<desktop_or_mobile/index>
 ```

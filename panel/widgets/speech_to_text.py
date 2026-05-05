@@ -20,8 +20,7 @@ case is up to you to evaluate.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
@@ -29,7 +28,9 @@ from ..models.speech_to_text import SpeechToText as _BkSpeechToText
 from .base import Widget
 from .button import BUTTON_TYPES
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
 BUTTON_TYPES = BUTTON_TYPES+['light', 'dark']
@@ -319,12 +320,13 @@ class SpeechToText(Widget):
         incoming audio, and attempts to return a RecognitionResult
         using the audio captured so far.""")
 
-    lang = param.Selector(default="", objects=[""] + LANGUAGE_CODES,
-                                allow_None=True, label="Language", doc="""
+    lang: str = param.Selector(
+        default="", objects=[""] + LANGUAGE_CODES,
+        allow_None=True, label="Language", doc="""
         The language of the current SpeechRecognition in BCP 47
         format. For example 'en-US'. If not specified, this defaults
         to the HTML lang attribute value, or the user agent's language
-        setting if that isn't set either.  """)
+        setting if that isn't set either.  """)  # type: ignore[assignment, ty:invalid-assignment]
 
     continuous = param.Boolean(default=False, doc="""
         Controls whether continuous results are returned for each
@@ -354,8 +356,10 @@ class SpeechToText(Widget):
     button_hide = param.Boolean(default=False, label="Hide the Button", doc="""
         If True no button is shown. If False a toggle Start/ Stop button is shown.""")
 
-    button_type = param.Selector(default="light", objects=BUTTON_TYPES, doc="""
-        The button styling.""")
+    button_type: t.Literal[
+        'default', 'primary', 'success', 'warning', 'danger', 'light', 'dark'
+    ] = param.Selector(default="light", objects=BUTTON_TYPES, doc="""
+        The button styling.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     button_not_started = param.String(label="Button Text when not started", doc="""
         The text to show on the button when the SpeechRecognition
@@ -380,23 +384,23 @@ class SpeechToText(Widget):
     speech_started = param.Boolean(constant=True, doc="""
         Returns True if the the User has started speaking and False otherwise.""")
 
-    results = param.List(constant=True, doc="""
-        The `results` as a list of Dictionaries.""")
+    results: list[dict[str, t.Any]] = param.List(constant=True, item_type=dict, doc="""
+        The `results` as a list of Dictionaries.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     value = param.String(default="", constant=True, label="Last Result", doc="""
         The transcipt of the highest confidence RecognitionAlternative
         of the last RecognitionResult. Please note we strip the
         transcript for leading spaces.""")
 
-    _grammars = param.List(constant=True, doc="""
+    _grammars: list[dict] = param.List(constant=True, item_type=dict, doc="""
         List used to transfer the serialized grammars from server to
-        browser.""")
+        browser.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'grammars': None, '_grammars': 'grammars', 'name': None, 'value': None,
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkSpeechToText
+    _widget_type: t.ClassVar[type[Model]] = _BkSpeechToText
 
     def __init__(self, **params):
         super().__init__(**params)

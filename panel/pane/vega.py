@@ -3,11 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import re
 import sys
-
-from collections.abc import Mapping
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
+import typing as t
 
 import numpy as np
 import param
@@ -20,14 +16,16 @@ from .base import ModelPane
 from .image import PDF, SVG, Image
 from .markup import HTML, JSON
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     import narwhals as nw
 
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    VEGA_EXPORT_FORMATS = Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url', 'scenegraph']
+    VEGA_EXPORT_FORMATS = t.Literal['png', 'jpeg', 'svg', 'pdf', 'html', 'url', 'scenegraph']
 
 def ds_as_cds(dataset):
     """
@@ -90,7 +88,7 @@ def _normalize_temporals_on_frame(df: nw.DataFrame) -> nw.DataFrame:
         return df.with_columns(**overrides)
     return df
 
-def ds_to_records(dataset: Any) -> list[dict[str, Any]] | None:
+def ds_to_records(dataset: t.Any) -> list[dict[str, t.Any]] | None:
     import narwhals.stable.v2 as nw
     try:
         df = nw.from_native(dataset)
@@ -218,20 +216,23 @@ class Vega(ModelPane):
     show_actions = param.Boolean(default=False, doc="""
         Whether to show Vega actions.""")
 
-    theme = param.Selector(default=None, allow_None=True, objects=[
+    theme: t.Literal[
+        'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
+        'latimes', 'urbaninstitute', 'googlecharts'
+    ] | None = param.Selector(default=None, allow_None=True, objects=[
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
         'latimes', 'urbaninstitute', 'googlecharts'], doc="""
         A theme to apply to the plot. Must be one of 'excel', 'ggplot2',
         'quartz', 'vox', 'fivethirtyeight', 'dark', 'latimes',
         'urbaninstitute', or 'googlecharts'.
-        """)
+        """)  # type: ignore[assignment, ty:invalid-assignment]
 
-    priority: ClassVar[float | bool | None] = 0.8
+    priority: t.ClassVar[float | bool | None] = 0.8
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'debounce': None, 'object': 'data'}
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -272,10 +273,10 @@ class Vega(ModelPane):
         return False
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, dict) and 'vega' in obj.get('$schema', '').lower():
+    def applies(cls, object: t.Any) -> float | bool | None:
+        if isinstance(object, dict) and 'vega' in object.get('$schema', '').lower():
             return True
-        return cls.is_altair(obj)
+        return cls.is_altair(object)
 
     def export(
         self, fmt: VEGA_EXPORT_FORMATS, as_pane: bool = False, **kwargs: dict
@@ -384,26 +385,24 @@ class Vega(ModelPane):
                 # Handle geometry records types
                 datasets[name] = data
                 continue
-            columns = set(data[0]) if data else []
-            if self.is_altair(self.object):
-                import altair as alt
-                if (not isinstance(self.object.data, (alt.Data, alt.UrlData, type(alt.Undefined))) and
-                    columns == set(self.object.data)):
-                    data = ColumnDataSource.from_df(self.object.data)
-                else:
-                    data = ds_as_cds(data)
-                sources[name] = ColumnDataSource(data=data)
-            else:
-                sources[name] = ColumnDataSource(data=ds_as_cds(data))
+            sources[name] = ColumnDataSource(data=ds_as_cds(data))
         data = json.get('data', {})
         if isinstance(data, dict):
             data = data.pop('values', {})
             if data is not None and not (isinstance(data, dict) and not data):
-                sources['data'] = ColumnDataSource(data=ds_as_cds(data))
+                cds_data = ds_as_cds(data)
+                if 'data' in sources:
+                    sources['data'].data = cds_data
+                else:
+                    sources['data'] = ColumnDataSource(data=cds_data)
         elif isinstance(data, list):
             for d in data:
                 if 'values' in d:
-                    sources[d['name']] = ColumnDataSource(data=ds_as_cds(d.pop('values')))
+                    cds_data = ds_as_cds(d.pop('values'))
+                    if d['name'] in sources:
+                        sources[d['name']].data = cds_data
+                    else:
+                        sources[d['name']] = ColumnDataSource(data=cds_data)
         return sources
 
     def _process_event(self, event):

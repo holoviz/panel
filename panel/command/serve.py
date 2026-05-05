@@ -4,7 +4,6 @@ ways.
 """
 from __future__ import annotations
 
-import argparse
 import ast
 import base64
 import contextlib
@@ -13,8 +12,8 @@ import logging
 import os
 import pathlib
 import sys
+import typing as t
 
-from collections.abc import Iterator
 from glob import glob
 from types import ModuleType
 
@@ -44,7 +43,13 @@ from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
 from ..util import edit_readonly, fullpath
 
+if t.TYPE_CHECKING:
+    import argparse
+
+    from collections.abc import Iterator
+
 log = logging.getLogger(__name__)
+
 
 @contextlib.contextmanager
 def add_sys_path(path: str | os.PathLike) -> Iterator[None]:
@@ -313,7 +318,7 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to add a global loading spinner to the application(s).",
         )),
-    )) # type: ignore[assignment]
+    )) # type: ignore[assignment, ty:invalid-assignment]
 
     # Supported file extensions
     _extensions = ['.py', '.ipynb', '.md']

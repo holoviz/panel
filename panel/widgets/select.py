@@ -7,11 +7,10 @@ from __future__ import annotations
 import itertools
 import re
 import sys
+import typing as t
 
-from collections.abc import Awaitable, Callable, Mapping
 from functools import partial
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -37,15 +36,18 @@ from ..util import (
     PARAM_NAME_PATTERN, indexOf, isIn, unique_iterator,
 )
 from ._mixin import TooltipMixin
-from .base import CompositeWidget, Widget
+from .base import CompositeWidget, Widget, WidgetBase
 from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    from ..layout.base import ListLike
     from ..models.widgets import DoubleClickEvent
 
 
@@ -82,9 +84,9 @@ class SingleSelectBase(SelectBase):
 
     value = param.Parameter(default=None)
 
-    _allows_values: ClassVar[bool] = True
+    _allows_values: t.ClassVar[bool] = True
 
-    _allows_none: ClassVar[bool] = False
+    _allows_none: t.ClassVar[bool] = False
 
     _supports_embed: bool = True
     _restrict: bool = True
@@ -97,63 +99,63 @@ class SingleSelectBase(SelectBase):
         if self.value is None and None not in values and values and not self._allows_none:
             self.value = values[0]
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
         labels, values = self.labels, self.values
         unique = len(set(self.unicode_values)) == len(labels) and self._allows_values
-        if 'value' in msg:
-            val = msg['value']
+        if 'value' in props:
+            val = props['value']
             if isIn(val, values):
                 unicode_values = self.unicode_values if unique else labels
-                msg['value'] = unicode_values[indexOf(val, values)]
+                props['value'] = unicode_values[indexOf(val, values)]
             elif values:
                 self.value = self.param['value'].default if self._allows_none else self.values[0]
                 if not self._allows_none:
-                    del msg['value']
+                    del props['value']
             else:
                 if self._restrict:
                     self.value = self.param['value'].default
                 if self._allows_none:
-                    msg['value'] = self.value
+                    props['value'] = self.value
 
         option_prop = self._property_mapping.get('options', 'options')
         is_list = isinstance(self.param['value'], param.List)
-        if option_prop in msg and not is_list:
+        if option_prop in props and not is_list:
             if isinstance(self.options, dict):
                 if unique and self._allows_values:
                     options = [(v, l) for l,v in zip(labels, self.unicode_values)]
                 else:
                     options = labels
-                msg[option_prop] = options
+                props[option_prop] = options
             else:
-                msg[option_prop] = self.unicode_values
+                props[option_prop] = self.unicode_values
             val = self.value
             if values:
                 if not isIn(val, values) and self._restrict:
                     self.value = self.param['value'].default if self._allows_none else values[0]
             else:
                 self.value = self.param['value'].default
-        return msg
+        return props
 
     @property
     def unicode_values(self):
         return [str(v) for v in self.values]
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_property_change(props)
+        if 'value' in params:
             if not self.values:
                 pass
-            elif msg['value'] == '':
-                msg['value'] = self.values[0] if self.values else None
+            elif params['value'] == '':
+                params['value'] = self.values[0] if self.values else None
             else:
-                if isIn(msg['value'], self.unicode_values):
-                    idx = indexOf(msg['value'], self.unicode_values)
+                if isIn(params['value'], self.unicode_values):
+                    idx = indexOf(params['value'], self.unicode_values)
                 else:
-                    idx = indexOf(msg['value'], self.labels)
-                msg['value'] = self._items[self.labels[idx]]
-        msg.pop('options', None)
-        return msg
+                    idx = indexOf(params['value'], self.labels)
+                params['value'] = self._items[self.labels[idx]]
+        params.pop('options', None)
+        return params
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         if values is None:
@@ -184,10 +186,10 @@ class Select(SingleSelectBase):
     description = param.String(default=None, doc="""
         A description of the widget, which will be displayed as a tooltip.""")
 
-    disabled_options = param.List(default=[], nested_refs=True, doc="""
+    disabled_options: list[t.Any] = param.List(default=[], nested_refs=True, doc="""
         Optional list of ``options`` that are disabled, i.e. unusable and
         un-clickable. If ``options`` is a dictionary the list items must be
-        dictionary values.""")
+        dictionary values.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     groups = param.Dict(default=None, nested_refs=True, doc="""
         Dictionary whose keys are used to visually group the options
@@ -204,15 +206,15 @@ class Select(SingleSelectBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'groups': None,
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'size': None, 'groups': None
     }
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
 
     @property
     def _widget_type(self):
@@ -279,10 +281,10 @@ class Select(SingleSelectBase):
                 ' `groups` parameter, use `options` instead.'
             )
 
-    def _process_param_change(self, msg: dict[str, Any]) -> dict[str, Any]:
-        groups_provided = msg.get('groups') is not None
-        msg = super()._process_param_change(msg)
-        if groups_provided or 'options' in msg and self.groups:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        groups_provided = params.get('groups') is not None
+        props = super()._process_param_change(params)
+        if groups_provided or 'options' in props and self.groups:
             groups: dict[str, list[str | tuple[str, str]]] = self.groups
             if (all(isinstance(values, dict) for values in groups.values()) is False
                and  all(isinstance(values, list) for values in groups.values()) is False):
@@ -304,9 +306,9 @@ class Select(SingleSelectBase):
                             group: [str(v) for v in self.groups[group]]  # type: ignore
                             for group in groups.keys()
                         }
-                    msg['options'] = options
+                    props['options'] = options
                 else:
-                    msg['options'] = {
+                    props['options'] = {
                         group: [(str(value), str(value)) for value in values]
                         for group, values in groups.items()
                     }
@@ -316,7 +318,7 @@ class Select(SingleSelectBase):
                     self.value = values[0]
             else:
                 self.value = None
-        return msg
+        return props
 
     @property
     def labels(self):
@@ -362,18 +364,18 @@ class NestedSelect(CompositeWidget):
     disabled = param.Boolean(default=False, doc="""
         Whether the widget is disabled.""")
 
-    layout = param.Parameter(default=Column, doc="""
+    layout: ListLike | dict[str, t.Any] = param.Parameter(default=Column, doc="""
         The layout type of the widgets. If a dictionary, a "type" key can be provided,
         to specify the layout type of the widgets, and any additional keyword arguments
-        will be used to instantiate the layout.""")
+        will be used to instantiate the layout.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    levels = param.List(doc="""
+    levels: list[t.Any] = param.List(doc="""
         Either a list of strings or a list of dictionaries. If a list of strings, the strings
         are used as the names of the levels. If a list of dictionaries, each dictionary may
         have a "name" key, which is used as the name of the level, a "type" key, which
         is used as the type of widget, and any corresponding widget keyword arguments;
         otherwise, will inherit layoutable keyword arguments from the `NestedSelect` itself, e.g.
-        width, height, and sizing_mode. Must be specified if options is callable.""")
+        width, height, and sizing_mode. Must be specified if options is callable.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     options = param.ClassSelector(class_=(list, dict, FunctionType), doc="""
         The options to select from. The options may be nested dictionaries, lists,
@@ -386,12 +388,12 @@ class NestedSelect(CompositeWidget):
         The value from all the Select widgets; the keys are the levels names.
         If no levels names are specified, the keys are the levels indices.""")
 
-    _widgets = param.List(doc="The nested select widgets.")
+    _widgets: list[WidgetBase] = param.List(item_type=WidgetBase, doc="The nested select widgets.")  # type: ignore[assignment, ty:invalid-assignment]
 
     _max_depth = param.Integer(doc="The number of levels of the nested select widgets.")
 
-    _levels = param.List(doc="""
-        The internal rep of levels to prevent overwriting user provided levels.""")
+    _levels: list[t.Any] = param.List(doc="""
+        The internal rep of levels to prevent overwriting user provided levels.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     @classmethod
     def _infer_params(cls, values, **params):
@@ -743,7 +745,7 @@ class ColorMap(SingleSelectBase):
 
     _rename = {'options': 'items', 'value_name': None}
 
-    _widget_type: ClassVar[type[Model]] = PaletteSelect
+    _widget_type: t.ClassVar[type[Model]] = PaletteSelect
 
     @param.depends('value_name', watch=True, on_init=True)
     def _sync_value_name(self):
@@ -794,27 +796,27 @@ class _MultiSelectBase(SingleSelectBase):
 
     __abstract = True
 
-    def _process_param_change(self, msg):
-        msg = super(SingleSelectBase, self)._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super(SingleSelectBase, self)._process_param_change(params)
         labels, values = self.labels, self.values
-        if 'value' in msg:
-            msg['value'] = [labels[indexOf(v, values)] for v in msg['value']
+        if 'value' in props:
+            props['value'] = [labels[indexOf(v, values)] for v in props['value']
                             if isIn(v, values)]
 
-        if 'options' in msg:
-            msg['options'] = labels
+        if 'options' in props:
+            props['options'] = labels
             if any(not isIn(v, values) for v in self.value):
                 self.value = [v for v in self.value if isIn(v, values)]
-        return msg
+        return props
 
-    def _process_property_change(self, msg):
-        msg = super(SingleSelectBase, self)._process_property_change(msg)
-        if 'value' in msg:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super(SingleSelectBase, self)._process_property_change(props)
+        if 'value' in params:
             labels = self.labels
-            msg['value'] = [self._items[v] for v in msg['value']
-                            if v in labels]
-        msg.pop('options', None)
-        return msg
+            params['value'] = [self._items[v] for v in params['value']
+                               if v in labels]
+        params.pop('options', None)
+        return params
 
 
 class MultiSelect(_MultiSelectBase):
@@ -840,9 +842,9 @@ class MultiSelect(_MultiSelectBase):
         The number of items displayed at once (i.e. determines the
         widget height).""")
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
 
-    _widget_type: ClassVar[type[Model]] = _BkMultiSelect
+    _widget_type: t.ClassVar[type[Model]] = _BkMultiSelect
 
     def __init__(self, **params):
         click_handler = params.pop('on_double_click', None)
@@ -865,7 +867,7 @@ class MultiSelect(_MultiSelectBase):
 
     def on_double_click(
         self, callback: Callable[[param.parameterized.Event], None | Awaitable[None]]
-    ) -> param.parameterized.Watcher:
+    ) -> None:
         """
         Register a callback to be executed when a `MultiSelect` option is double-clicked.
 
@@ -934,9 +936,9 @@ class MultiChoice(_MultiSelectBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _widget_type: ClassVar[type[Model]] = _BkMultiChoice
+    _widget_type: t.ClassVar[type[Model]] = _BkMultiChoice
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/multichoice.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/multichoice.css']
 
 
 class AutocompleteInput(SingleSelectBase):
@@ -975,12 +977,13 @@ class AutocompleteInput(SingleSelectBase):
         Set to False in order to allow users to enter text that is not
         present in the list of completion strings.""")
 
-    search_strategy = param.Selector(default='starts_with',
+    search_strategy: t.Literal['starts_with', 'includes'] = param.Selector(
+        default='starts_with',
         objects=['starts_with', 'includes'], doc="""
         Define how to search the list of completion strings. The default option
         `"starts_with"` means that the user's text must match the start of a
         completion string. Using `"includes"` means that the user's text can
-        match any substring of a completion string.""")
+        match any substring of a completion string.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     value = param.Parameter(default='', allow_None=True, doc="""
       Initial or entered text value updated when <enter> key is pressed.""")
@@ -995,33 +998,33 @@ class AutocompleteInput(SingleSelectBase):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
-    _allows_values: ClassVar[bool] = False
+    _allows_values: t.ClassVar[bool] = False
 
-    _allows_none: ClassVar[bool] = True
+    _allows_none: t.ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
-    _widget_type: ClassVar[type[Model]] = _BkAutocompleteInput
+    _widget_type: t.ClassVar[type[Model]] = _BkAutocompleteInput
 
     @property
     def _restrict(self):
         return self.restrict
 
-    def _process_property_change(self, msg):
-        if not self.restrict and 'value' in msg:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        if not self.restrict and 'value' in props:
             try:
-                return super()._process_property_change(msg)
+                return super()._process_property_change(props)
             except Exception:
-                return Widget._process_property_change(self, msg)
-        return super()._process_property_change(msg)
+                return Widget._process_property_change(self, props)
+        return super()._process_property_change(props)
 
-    def _process_param_change(self, msg):
-        if 'value' in msg and not self.restrict and not isIn(msg['value'], self.values):
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        if 'value' in params and not self.restrict and not isIn(params['value'], self.values):
             with param.parameterized.discard_events(self):
-                props = super()._process_param_change(msg)
-                self.value = props['value'] = msg['value']
+                props = super()._process_param_change(params)
+                self.value = props['value'] = params['value']
         else:
-            props = super()._process_param_change(msg)
+            props = super()._process_param_change(params)
         return props
 
 
@@ -1029,7 +1032,7 @@ class _RadioGroupBase(SingleSelectBase):
 
     _supports_embed = False
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'name': None, 'options': 'labels', 'value': 'active'
     }
 
@@ -1039,34 +1042,34 @@ class _RadioGroupBase(SingleSelectBase):
 
     __abstract = True
 
-    def _process_param_change(self, msg):
-        msg = super(SingleSelectBase, self)._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super(SingleSelectBase, self)._process_param_change(params)
         values = self.values
-        if 'active' in msg:
-            value = msg['active']
+        if 'active' in props:
+            value = props['active']
             if value in values:
-                msg['active'] = indexOf(value, values)
+                props['active'] = indexOf(value, values)
             else:
                 if self.value is not None:
                     self.value = None
-                msg['active'] = None
+                props['active'] = None
 
-        if 'labels' in msg:
-            msg['labels'] = self.labels
+        if 'labels' in props:
+            props['labels'] = self.labels
             value = self.value
             if not isIn(value, values):
                 self.value = None
-        return msg
+        return props
 
-    def _process_property_change(self, msg):
-        msg = super(SingleSelectBase, self)._process_property_change(msg)
-        if 'value' in msg:
-            index = msg['value']
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super(SingleSelectBase, self)._process_property_change(props)
+        if 'value' in params:
+            index = params['value']
             if index is None:
-                msg['value'] = None
+                params['value'] = None
             else:
-                msg['value'] = list(self.values)[index]
-        return msg
+                params['value'] = list(self.values)[index]
+        return params
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         if values is None:
@@ -1098,11 +1101,12 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
     ... )
     """
 
-    orientation = param.Selector(default='horizontal',
+    orientation: t.Literal['horizontal', 'vertical'] = param.Selector(
+        default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
-        Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+        Button group orientation, either 'horizontal' (default) or 'vertical'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {**_RadioGroupBase._rename, **TooltipMixin._rename}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {**_RadioGroupBase._rename, **TooltipMixin._rename}
 
     _source_transforms = {
         'value': "source.labels[value]", 'button_style': None, 'description': None
@@ -1110,7 +1114,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
 
     _supports_embed: bool = True
 
-    _widget_type: ClassVar[type[Model]] = _BkRadioButtonGroup
+    _widget_type: t.ClassVar[type[Model]] = _BkRadioButtonGroup
 
 
 
@@ -1138,7 +1142,7 @@ class RadioBoxGroup(_RadioGroupBase):
 
     _supports_embed: bool = True
 
-    _widget_type: ClassVar[type[Model]] = _BkRadioBoxGroup
+    _widget_type: t.ClassVar[type[Model]] = _BkRadioBoxGroup
 
 
 
@@ -1146,7 +1150,7 @@ class _CheckGroupBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "value.map((index) => source.labels[index])"}
 
@@ -1156,27 +1160,27 @@ class _CheckGroupBase(SingleSelectBase):
 
     __abstract = True
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
         values = self.values
-        if 'active' in msg:
-            msg['active'] = [indexOf(v, values) for v in msg['active']
-                             if isIn(v, values)]
-        if 'labels' in msg:
-            msg['labels'] = self.labels
+        if 'active' in props:
+            props['active'] = [indexOf(v, values) for v in props['active']
+                               if isIn(v, values)]
+        if 'labels' in props:
+            props['labels'] = self.labels
             if any(not isIn(v, values) for v in self.value):
                 self.value = [v for v in self.value if isIn(v, values)]
-            msg["active"] = [indexOf(v, values) for v in self.value
-                             if isIn(v, values)]
-        msg.pop('title', None)
-        return msg
+            props["active"] = [indexOf(v, values) for v in self.value
+                               if isIn(v, values)]
+        props.pop('title', None)
+        return props
 
-    def _process_property_change(self, msg):
-        msg = super(SingleSelectBase, self)._process_property_change(msg)
-        if 'value' in msg:
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super(SingleSelectBase, self)._process_property_change(props)
+        if 'value' in params:
             values = self.values
-            msg['value'] = [values[a] for a in msg['value']]
-        return msg
+            params['value'] = [values[a] for a in params['value']]
+        return params
 
 
 
@@ -1199,18 +1203,19 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
     ... )
     """
 
-    orientation = param.Selector(default='horizontal',
+    orientation: t.Literal['horizontal', 'vertical'] = param.Selector(
+        default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
-        Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+        Button group orientation, either 'horizontal' (default) or 'vertical'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {**_CheckGroupBase._rename, **TooltipMixin._rename}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {**_CheckGroupBase._rename, **TooltipMixin._rename}
 
     _source_transforms = {
         'value': "value.map((index) => source.labels[index])", 'button_style': None,
         'description': None
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkCheckboxButtonGroup
+    _widget_type: t.ClassVar[type[Model]] = _BkCheckboxButtonGroup
 
 
 class CheckBoxGroup(_CheckGroupBase):
@@ -1236,7 +1241,7 @@ class CheckBoxGroup(_CheckGroupBase):
         Whether the items be arrange vertically (``False``) or
         horizontally in-line (``True``).""")
 
-    _widget_type: ClassVar[type[Model]] = _BkCheckboxGroup
+    _widget_type: t.ClassVar[type[Model]] = _BkCheckboxGroup
 
 
 
