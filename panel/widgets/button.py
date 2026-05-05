@@ -4,8 +4,7 @@ events or merely toggling between on-off states.
 """
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+import typing as t
 
 import param
 
@@ -19,7 +18,9 @@ from ..models.widgets import Button as _BkButton
 from ._mixin import TooltipMixin
 from .base import Widget
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -32,19 +33,22 @@ BUTTON_STYLES: list[str] = ['solid', 'outline']
 
 class _ButtonBase(Widget):
 
-    button_type = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
+    button_type: t.Literal[
+        'default', 'primary', 'success', 'warning', 'danger', 'light'
+    ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
-        or 'danger' (red).""")
+        or 'danger' (red).""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    button_style = param.Selector(default='solid', objects=BUTTON_STYLES, doc="""
-        A button style to switch between 'solid', 'outline'.""")
+    button_style: t.Literal['solid', 'outline'] = param.Selector(
+        default='solid', objects=BUTTON_STYLES, doc="""
+        A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'button_style': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'label', 'button_style': None}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'button_style': None}
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'button_style': None}
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
 
     __abstract = True
 
@@ -65,7 +69,7 @@ class IconMixin(Widget):
     icon_size = param.String(default='1em', doc="""
         Size of the icon as a string, e.g. 12px or 1em.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'icon_size': None, '_icon': 'icon', 'icon': None
     }
 
@@ -91,7 +95,7 @@ class _ClickButton(Widget):
 
     __abstract = True
 
-    _event: ClassVar[str] = 'button_click'
+    _event: t.ClassVar[str] = 'button_click'
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -101,7 +105,7 @@ class _ClickButton(Widget):
         self._register_events(self._event, model=model, doc=doc, comm=comm)
         return model
 
-    def js_on_click(self, args: dict[str, Any] = {}, code: str = "") -> Callback:
+    def js_on_click(self, args: dict[str, t.Any] = {}, code: str = "") -> Callback:
         """
         Allows defining a JS callback to be triggered when the button
         is clicked.
@@ -121,7 +125,7 @@ class _ClickButton(Widget):
         from ..links import Callback
         return Callback(self, code={'event:'+self._event: code}, args=args)
 
-    def jscallback(self, args: dict[str, Any] = {}, **callbacks: str) -> Callback:
+    def jscallback(self, args: dict[str, t.Any] = {}, **callbacks: str) -> Callback:
         """
         Allows defining a Javascript (JS) callback to be triggered when a property
         changes on the source object. The keyword arguments define the
@@ -174,19 +178,19 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
     value = param.Event(doc="""
         Toggles from False to True while the event is being processed.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         **TooltipMixin._rename, 'clicks': None, 'name': 'label', 'value': None,
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'button_style': None, 'description': None
     }
 
-    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+    _target_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'event:button_click': None, 'value': None,
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkButton
+    _widget_type: t.ClassVar[type[Model]] = _BkButton
 
     def __init__(self, **params):
         click_handler = params.pop('on_click', None)
@@ -200,7 +204,7 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
 
     def jslink(
         self, target: JSLinkTarget, code: dict[str, str] | None = None,
-        args: dict[str, Any] | None = None, bidirectional: bool = False,
+        args: dict[str, t.Any] | None = None, bidirectional: bool = False,
         **links: str
     ) -> Link:
         """
@@ -285,13 +289,13 @@ class Toggle(_ButtonBase, IconMixin):
     value = param.Boolean(default=False, doc="""
         Whether the button is currently toggled.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'value': 'active', 'name': 'label',
     }
 
     _supports_embed: bool = True
 
-    _widget_type: ClassVar[type[Model]] = _BkToggle
+    _widget_type: t.ClassVar[type[Model]] = _BkToggle
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         return (self, self._models[root.ref['id']][0], [False, True],
@@ -319,20 +323,22 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
     clicked = param.String(default=None, doc="""
       Last menu item that was clicked.""")
 
-    items = param.List(default=[], doc="""
+    items: list[str | tuple[str, str] | None] = param.List(
+        default=[], item_type=(str, tuple, type(None)), doc="""
       Menu items in the dropdown. Allows strings, tuples of the form
-      (title, value) or Nones to separate groups of items.""")
+      (title, value) or Nones to separate groups of items."""
+    )  # type: ignore[assignment, ty:invalid-assignment]
 
     split = param.Boolean(default=False, doc="""
       Whether to add separate dropdown area to button.""")
 
-    _event: ClassVar[str] = 'menu_item_click'
+    _event: t.ClassVar[str] = 'menu_item_click'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'name': 'label', 'items': 'menu', 'clicked': None, 'value': None
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkDropdown
+    _widget_type: t.ClassVar[type[Model]] = _BkDropdown
 
     def __init__(self, **params):
         click_handler = params.pop('on_click', None)

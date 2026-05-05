@@ -91,3 +91,16 @@ button.copybtn:hover {
 video {
   max-width: 100%;
 }
+
+/* Fix: Improve Pyodide badge appearance (#5887) */
+
+/* Right badge - use Panel blue instead of purple */
+.pyodide-badge-right {
+  background-color: var(--holoviz-main-color) !important;
+  color: white;
+}
+
+/* Left badge icon - improve contrast */
+.pyodide-badge-left img {
+  filter: brightness(0) invert(1);
+}

@@ -68,9 +68,7 @@ export class VegaPlotView extends LayoutDOMView {
   }
 
   override remove(): void {
-    if (this.vega_view) {
-      this.vega_view.finalize()
-    }
+    this.vega_view?.finalize()
     super.remove()
   }
 

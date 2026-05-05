@@ -28,4 +28,27 @@ pn.Row(button, pn.bind(indicator, pn.state.param.busy)).servable()
 
 This way we can create a global indicator for the busy state instead of modifying all our callbacks.
 
+## Sync a Boolean indicator with the busy state
+
+If you already have a [`BooleanIndicator`](../../reference/indicators/BooleanStatus.ipynb) such as [`BooleanStatus`](../../reference/indicators/BooleanStatus.ipynb) or [`LoadingSpinner`](../../reference/indicators/LoadingSpinner.ipynb), you can skip the manual `pn.bind` wiring and let `pn.state.sync_busy` update the indicator's `value` directly:
+
+```{pyodide}
+import time
+import panel as pn
+pn.extension() # for notebook
+
+def processing(event):
+    time.sleep(1)
+
+button = pn.widgets.Button(name='Click me!')
+button.on_click(processing)
+
+busy = pn.indicators.LoadingSpinner(value=False, size=30)
+pn.state.sync_busy(busy)
+
+pn.Row(button, busy).servable()
+```
+
+`sync_busy` accepts any indicator whose `value` parameter is `Boolean`, and keeps multiple synced indicators in step with `pn.state.busy`.
+
 ## Relate Resources

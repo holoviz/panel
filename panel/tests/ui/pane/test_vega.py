@@ -9,6 +9,8 @@ except Exception:
 
 altair_available = pytest.mark.skipif(alt is None, reason='Requires altair')
 
+import pandas as pd
+
 from playwright.sync_api import expect
 
 from panel.pane import Vega
@@ -40,6 +42,52 @@ def test_vega_no_console_errors(page):
     page.wait_for_timeout(1000)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+def test_vega_update_inline_data(page):
+    """
+    Ensure new data is rendered when the Vega object is updated with new inline data.
+    """
+    obj = {
+        "$schema": "https://vega.github.io/schema/vega-lite/v3.2.1.json",
+        "mark": "bar",
+        "encoding": {
+            "x": {"field": "month", "type": "ordinal"},
+            "y": {"field": "revenue", "type": "quantitative"},
+        },
+        "width": "container",
+        "data": {
+            "values": pd.DataFrame(
+                {"month": ["Jan", "Feb", "Mar"], "revenue": [100000, 125000, 150000]}
+            )
+        },
+    }
+    vega = Vega(obj)
+
+    serve_component(page, vega)
+
+    vega_plot = page.locator('.vega-embed')
+    expect(vega_plot).to_have_count(1)
+
+    wait_until(lambda: vega_plot.locator('path[aria-label*="Jan"]').count() > 0, page)
+
+    new_obj = {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "mark": "bar",
+        "encoding": {
+            "x": {"field": "month", "type": "ordinal"},
+            "y": {"field": "revenue", "type": "quantitative"},
+        },
+        "width": "container",
+        "data": {
+            "values": pd.DataFrame(
+                {"month": ["Apr", "May", "Jun"], "revenue": [175000, 200000, 225000]}
+            )
+        },
+    }
+    vega.object = new_obj
+    wait_until(lambda: vega_plot.locator('path[aria-label*="Apr"]').count() > 0, page)
+    wait_until(lambda: vega_plot.locator('path[aria-label*="Jan"]').count() == 0, page)
+
 
 @altair_available
 def test_altair_select_point(page, dataframe):

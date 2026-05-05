@@ -6,7 +6,6 @@ import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type {Attrs} from "@bokehjs/core/types"
 import {UIElementView} from "@bokehjs/models/ui/ui_element"
 import {isNumber} from "@bokehjs/core/util/types"
-import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 
 import modal_css from "styles/models/modal.css"
 
@@ -42,6 +41,7 @@ export class ModalView extends BkColumnView {
 
   modal: A11yDialogView
   close_button: HTMLButtonElement
+  content: HTMLElement
 
   override connect_signals(): void {
     super.connect_signals()
@@ -62,8 +62,12 @@ export class ModalView extends BkColumnView {
     return [...super.stylesheets(), modal_css]
   }
 
-  override async update_children(): Promise<void> {
-    await LayoutDOMView.prototype.update_children.call(this)
+  // Route child views into the dialog content container instead of
+  // shadow_el. The inherited update_children() matching optimization
+  // scans shadow_el.children so it won't find existing modal children,
+  // but this is harmless for the small number of children a modal holds.
+  override get self_target() {
+    return this.content ?? this.shadow_el
   }
 
   create_modal(): void {
@@ -93,8 +97,9 @@ export class ModalView extends BkColumnView {
         overflow: "auto",
       },
     } as any)
+    this.content = content
     for (const child_view of this.child_views) {
-      const target = child_view.rendering_target() ?? content
+      const target = child_view.rendering_target() ?? this.content
       child_view.render_to(target)
     }
 

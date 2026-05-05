@@ -6,10 +6,9 @@ from __future__ import annotations
 
 import json
 import sys
+import typing as t
 
 from collections import defaultdict
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
@@ -21,7 +20,9 @@ from pyviz_comms import JupyterComm
 from ..util import is_dataframe, lazy_load
 from .base import ModelPane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -121,22 +122,22 @@ class DeckGL(ModelPane):
         Throttling timeout (in milliseconds) for view state and hover
         events sent from the frontend.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'click_state': 'clickState', 'hover_state': 'hoverState',
         'view_state': 'viewState', 'tooltips': 'tooltip'
     }
 
-    _pydeck_encoders_are_added: ClassVar[bool] = False
+    _pydeck_encoders_are_added: t.ClassVar[bool] = False
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
-    priority: ClassVar[float | bool | None] = None
+    priority: t.ClassVar[float | bool | None] = None
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if cls.is_pydeck(obj):
+    def applies(cls, object: t.Any) -> float | bool | None:
+        if cls.is_pydeck(object):
             return 0.8
-        elif isinstance(obj, (dict, str)):
+        elif isinstance(object, (dict, str)):
             return 0
         return False
 
@@ -250,7 +251,7 @@ class DeckGL(ModelPane):
 
         return data, tooltip, configuration, mapbox_api_key
 
-    def _transform_object(self, obj) -> dict[str, Any]:
+    def _transform_object(self, obj) -> dict[str, t.Any]:
         if self.object is None:
             data, mapbox_api_key, tooltip, configuration = (
                 {}, self.mapbox_api_key, self.tooltips, self.configuration

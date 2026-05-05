@@ -4,8 +4,7 @@ import asyncio
 import logging
 import threading
 import weakref
-
-from typing import TYPE_CHECKING
+import typing as t
 
 from bokeh.document import Document
 from bokeh.protocol.exceptions import ProtocolError
@@ -18,7 +17,7 @@ from bokeh.util.token import (
     generate_jwt_token, generate_session_id, get_token_payload,
 )
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.core.types import ID
     from bokeh.document.events import DocumentPatchedEvent
     from bokeh.server.callbacks import SessionCallback

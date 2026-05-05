@@ -77,6 +77,27 @@ pn.Row(slider, size, select, pn.pane.Markdown(refs=irefs))
 
 In this way we can update both the current `object` and the `styles` **Parameter** of the `Markdown` pane simultaneously.
 
+### Using the bound function as a reference
+
+In some cases it may be tempting to use `watch=True` when calling `pn.bind` to update a component:
+
+```python
+pn.bind(update_value, select, slider, watch=True)
+```
+
+However, this pattern recreates the object whenever the inputs change and is generally considered an anti-pattern.
+
+A better approach is to assign the bound function directly to the component parameter that should update:
+
+```python
+def update_value(select_value, slider_value):
+    return select_value * slider_value
+
+text = pn.widgets.StaticText(value=pn.bind(update_value, select, slider))
+```
+
+This keeps the component reactive while avoiding unnecessary object recreation and ensures that only the relevant parameter is updated.
+
 ## Related Resources
 
 - Learn [how to use generators with `bind`](bind_generators)

@@ -21,6 +21,7 @@ build:
 requirements:
   build:
     - python {{ project['requires-python'] }}
+    - pip
     {% for dep in pyproject['build-system']['requires'] %}
     - {{ dep }}
     {% endfor %}
@@ -40,6 +41,7 @@ test:
     - pytest-rerunfailures <16
     - pytest-xdist
     - esbuild
+    - python-gil
   commands:
     - pip check
     - panel --help

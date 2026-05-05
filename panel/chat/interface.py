@@ -6,11 +6,11 @@ through a frontend input UI.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+import typing as t
+
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
-from typing import Any, ClassVar
 
 import param
 
@@ -18,13 +18,17 @@ from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
 from ..layout.base import ListLike, NamedListLike
 from ..pane.image import ImageBase
-from ..viewable import Viewable
 from ..widgets.base import WidgetBase
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
 from .feed import CallbackState, ChatFeed
 from .input import ChatAreaInput
 from .message import ChatMessage, _FileInputMessage
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ..viewable import Viewable
 
 
 @dataclass
@@ -76,10 +80,10 @@ class ChatInterface(ChatFeed):
     ... )
     """
 
-    auto_send_types = param.List(doc="""
+    auto_send_types: list[type[WidgetBase]] = param.List(item_type=type, doc="""
         The widget types to automatically send when the user presses enter
         or clicks away from the widget. If not provided, defaults to
-        `[TextInput]`.""")
+        `[TextInput]`.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     avatar = param.ClassSelector(class_=(str, BytesIO, bytes, ImageBase), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
@@ -162,8 +166,8 @@ class ChatInterface(ChatFeed):
     _buttons = param.Dict(default={}, doc="""
         The rendered buttons.""")
 
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_interface.css"]
-    _input_type: ClassVar[type[WidgetBase]] = ChatAreaInput
+    _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/chat_interface.css"]
+    _input_type: t.ClassVar[type[WidgetBase]] = ChatAreaInput
 
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
@@ -192,7 +196,7 @@ class ChatInterface(ChatFeed):
         Link the disabled and loading attributes of the chat box to the
         given object.
         """
-        mapping: dict[str, Any] = {"disabled": "disabled", "loading": "loading"}
+        mapping: dict[str, t.Any] = {"disabled": "disabled", "loading": "loading"}
         values = {p: getattr(self, p) for p in mapping}
         self.param.update(values)
         self.link(obj, **mapping)
@@ -598,9 +602,9 @@ class ChatInterface(ChatFeed):
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
         default_role: str = "assistant",
-        custom_serializer: Callable[[ChatMessage], Any] | None = None,
+        custom_serializer: Callable[[ChatMessage], t.Any] | None = None,
         **serialize_kwargs
-    ) -> list[dict[str, Any]]:
+    ) -> list[dict[str, t.Any]]:
         """
         Exports the chat log for use with transformers.
 
@@ -657,7 +661,7 @@ class ChatInterface(ChatFeed):
 
     def send(
         self,
-        value: ChatMessage | dict | Any,
+        value: ChatMessage | dict | t.Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
@@ -704,7 +708,7 @@ class ChatInterface(ChatFeed):
 
     def stream(
         self,
-        value: str | dict | ChatMessage,
+        value: str | dict | ChatMessage | Viewable,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,

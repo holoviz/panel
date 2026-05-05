@@ -7,12 +7,12 @@ import json
 import logging
 import os
 import re
+import typing as t
 import urllib.parse as urlparse
 import uuid
 
 from base64 import urlsafe_b64encode
 from functools import partial
-from typing import ClassVar
 
 import tornado
 
@@ -103,13 +103,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         'grant_type':    'authorization_code'
     }
 
-    _access_token_header: ClassVar[str | None] = None
+    _access_token_header: t.ClassVar[str | None] = None
 
-    _state_cookie: ClassVar[str | None] = None
+    _state_cookie: t.ClassVar[str | None] = None
 
     _error_template = ERROR_TEMPLATE
 
-    _login_endpoint: ClassVar[str] = '/login'
+    _login_endpoint: t.ClassVar[str] = '/login'
 
     @property
     def _SCOPE(self):
@@ -1140,11 +1140,14 @@ class OAuthProvider(BasicAuthProvider):
                 user, refresh_token, handler.application, handler.request,
                 reschedule=is_ws
             )
-            # If user not in overrides refresh failed and we need to
-            # fully reauthenticate
-            if user not in state._oauth_user_overrides:
+            if access_token is None:
+                # Refresh failed, user needs to fully reauthenticate
                 return
-            expires_in = expiry - now_ts
+
+            if expiry is not None:
+                expires_in = expiry - now_ts
+            else:
+                expires_in = None
             OAuthLoginHandler.set_auth_cookies(
                 handler, None, access_token, refresh_token, expires_in
             )
@@ -1178,9 +1181,9 @@ class OAuthProvider(BasicAuthProvider):
         state._active_users[user] -= 1
         if not state._active_users[user]:
             del state._active_users[user]
-            # Don't remove the user override when it is set to None or
-            # is missing, as this means it is being refreshed.
-            if state._oauth_user_overrides.get(user) is not None:
+            # Don't remove the user override when it is empty
+            # as this means it is being refreshed.
+            if state._oauth_user_overrides.get(user, False):
                 del state._oauth_user_overrides[user]
 
     def _schedule_refresh(self, expiry_ts, user, refresh_token, application, request):
