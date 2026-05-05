@@ -1262,6 +1262,7 @@ class LiteralInput(Widget):
             else:
                 value = '' if value is None else str(value)
             props['value'] = value
+        props['title'] = self.label
         return props
 
 
