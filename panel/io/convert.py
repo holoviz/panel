@@ -376,6 +376,8 @@ def script_to_html(
 
     # Execution
     post_code = POST_PYSCRIPT if runtime == 'pyscript' else POST
+    # Escape javascript-style format strings.
+    source = source.replace('${', '&#36;{')
     code = '\n'.join([PRE, source, post_code])
     web_worker = None
     if css_resources is None:
@@ -724,7 +726,7 @@ def convert_apps(
         'inline': inline,
         'verbose': verbose,
         'compiled': compiled,
-        'local_prefix': local_prefix
+        'local_prefix': local_prefix,
     }
 
     if state._is_pyodide:
