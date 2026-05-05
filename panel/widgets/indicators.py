@@ -1191,7 +1191,7 @@ class Trend(SyncableData, Indicator):
     _manual_params: t.ClassVar[list[str]] = ['data']
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'data': None, 'name': 'title', 'selection': None
+        'data': None, 'label': 'title', 'selection': None
     }
 
     _widget_type: t.ClassVar[type[Model]] = _BkTrendIndicator
