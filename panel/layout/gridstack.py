@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import ClassVar
+import typing as t
 
 import param
 
@@ -10,6 +9,9 @@ from ..io.resources import CDN_DIST, bundled_files
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .grid import GridSpec
+
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class GridStack(ReactiveHTML, GridSpec):  # type: ignore[override]
@@ -41,9 +43,9 @@ class GridStack(ReactiveHTML, GridSpec):  # type: ignore[override]
     allow_drag = param.Boolean(default=True, doc="""
         Allow dragging the grid cells.""")
 
-    state = param.List(doc="""
+    state: list[dict[str, t.Any]] = param.List(item_type=dict, doc="""
         Current state of the grid (updated as items are resized and
-        dragged).""")
+        dragged).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     width = param.Integer(default=None)
 
@@ -139,11 +141,11 @@ class GridStack(ReactiveHTML, GridSpec):  # type: ignore[override]
         }
     }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'nrows': 'nrows', 'ncols': 'ncols', 'objects': 'objects'
     }
 
-    _stylesheets: ClassVar[list[str]] = [
+    _stylesheets: t.ClassVar[list[str]] = [
         f'{CDN_DIST}css/gridstack.css'
     ]
 

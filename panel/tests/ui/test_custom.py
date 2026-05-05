@@ -1,6 +1,7 @@
 import os
 import pathlib
 import time
+import typing as t
 
 import param
 import pytest
@@ -82,8 +83,8 @@ class AnyWidgetReactUpdate(AnyWidgetComponent):
 
     _importmap = {
         "imports": {
-            "@anywidget/react": "https://esm.sh/@anywidget/react",
-            "react": "https://esm.sh/react",
+            "@anywidget/react": "https://esm.sh/@anywidget/react?deps=react@18.2.0,react-dom@18.2.0",
+            "react": "https://esm.sh/react@18.2.0",
         }
     }
 
@@ -628,8 +629,8 @@ class JSSendMsg(JSComponent):
     }
     """
 
-    def _handle_msg(self, msg):
-        self.msg = msg
+    def _handle_msg(self, data: t.Any) -> None:
+        self.msg = data
         self.clicks += 1
 
 
@@ -645,8 +646,8 @@ class ReactSendMsg(ReactComponent):
     }
     """
 
-    def _handle_msg(self, msg):
-        self.msg = msg
+    def _handle_msg(self, data: t.Any) -> None:
+        self.msg = data
         self.clicks += 1
 
 
@@ -1128,9 +1129,13 @@ def test_react_child_no_shadow_dom_remove_lifecycle_hook(page):
     expect(page.locator('h1')).to_have_text("Hello")
 
     with page.expect_console_message() as msg_info:
-        example.child = "New"
+        example.child = "# New"
 
     wait_until(lambda: msg_info.value.args[0].json_value() == "Removed", page)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("New ¶")
 
 
 class JSDefaultExport(JSComponent):

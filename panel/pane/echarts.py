@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import sys
+import typing as t
 
 from collections import defaultdict
-from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -16,7 +15,9 @@ from ..util import lazy_load
 from ..viewable import Viewable
 from .base import ModelPane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -37,25 +38,27 @@ class ECharts(ModelPane):
     object = param.Parameter(default=None, doc="""
         The Echarts object being wrapped. Can be an Echarts dictionary or a pyecharts chart""")
 
-    options = param.Parameter(default=None, doc="""
+    options: dict[str, t.Any] | None = param.Dict(default=None, doc="""
         An optional dict of options passed to Echarts.setOption. Allows to fine-tune the rendering behavior.
         For example, you might want to use `options={ "replaceMerge": ['series'] })` when updating
         the `objects` with a value containing a smaller number of series.
-        """)
+        """)  # type: ignore[assignment, ty:invalid-assignment]
 
-    renderer = param.Selector(default="canvas", objects=["canvas", "svg"], doc="""
-       Whether to render as HTML canvas or SVG""")
+    renderer: t.Literal["canvas", "svg"] = param.Selector(
+        default="canvas", objects=["canvas", "svg"], doc="""
+       Whether to render as HTML canvas or SVG""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    theme = param.Selector(default="default", objects=["default", "light", "dark"], doc="""
-       Theme to apply to plots.""")
+    theme: t.Literal["default", "light", "dark"] = param.Selector(
+        default="default", objects=["default", "light", "dark"], doc="""
+       Theme to apply to plots.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    priority: ClassVar[float | bool | None] = None
+    priority: t.ClassVar[float | bool | None] = None
 
-    _rename: ClassVar[Mapping[str, str | None]] = {"object": "data"}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {"object": "data"}
 
-    _rerender_params: ClassVar[list[str]] = []
+    _rerender_params: t.ClassVar[list[str]] = []
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -63,10 +66,10 @@ class ECharts(ModelPane):
         self._js_callbacks = defaultdict(list)
 
     @classmethod
-    def applies(cls, obj: Any, **params) -> float | bool | None:
-        if isinstance(obj, dict):
+    def applies(cls, object: t.Any, **params) -> float | bool | None:
+        if isinstance(object, dict):
             return 0
-        elif cls.is_pyecharts(obj):
+        elif cls.is_pyecharts(object):
             return 0.8
         return None
 
@@ -126,8 +129,8 @@ class ECharts(ModelPane):
             props['sizing_mode'] = 'stretch_both'
         return props
 
-    def _get_properties(self, document: Document | None) -> dict[str, Any]:
-        props = super()._get_properties(document)
+    def _get_properties(self, doc: Document | None) -> dict[str, t.Any]:
+        props = super()._get_properties(doc)
         props['event_config'] = {
             event: list(queries) for event, queries in self._py_callbacks.items()
         }

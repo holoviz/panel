@@ -3,7 +3,7 @@ Defines custom VegaPlot bokeh model to render Vega json plots.
 """
 from __future__ import annotations
 
-from typing import Literal
+import typing as t
 
 from bokeh.core.enums import enumeration
 from bokeh.core.properties import (
@@ -20,7 +20,7 @@ VEGA_VERSION = "6.1.2"
 VEGA_LITE_VERSION = "6.3.0"
 VEGA_EMBED_VERSION = "7.0.2"
 
-VegaThemeType = Literal[
+VegaThemeType = t.Literal[
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
         'latimes', 'urbaninstitute', 'googlecharts', 'powerbi', 'carbonwhite', 'carbong10', 'carbong90', 'carbong100']
 VegaTheme = enumeration(VegaThemeType)

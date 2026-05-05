@@ -1,4 +1,5 @@
-from typing import Any
+
+import typing as t
 
 from bokeh.core.properties import Bool
 from bokeh.events import ModelEvent
@@ -50,5 +51,5 @@ class ModalDialogEvent(ModelEvent):
         self.open = open
         super().__init__(model=model)
 
-    def event_values(self) -> dict[str, Any]:
+    def event_values(self) -> dict[str, t.Any]:
         return dict(super().event_values(), open=self.open)

@@ -3,7 +3,7 @@ requires = [
     "hatchling",
     "hatch-vcs",
     "param >=2.1.0",
-    "bokeh >=3.7.0,<3.9.0",
+    "bokeh >=3.7.0,<3.10.0",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
@@ -48,7 +48,7 @@ classifiers = [
 ]
 
 dependencies = [
-    'bokeh >=3.7.0,<3.9.0',
+    'bokeh >=3.7.0,<3.10.0',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
     'markdown',
@@ -171,6 +171,7 @@ select = [
     "W",
     "PIE",
     "T20",
+    "TC",
     "RUF006",
     "UP004",
     "UP006",
@@ -194,6 +195,9 @@ unfixable = [
 "panel/pane/vtk/synchronizable_*.py" = ["T201"]
 "scripts/*.py" = ["T201"]
 "hatch_build.py" = ["T201"]
+
+[tool.ty.rules]
+unused-type-ignore-comment = "ignore"
 
 [tool.isort]
 force_grid_wrap = 4
@@ -297,8 +301,12 @@ module = [
     "setuptools_scm.*",
     "snakeviz.*",
     "streamz.*",
+    "textual",
     "traitlets.*",
     "tranquilizer.*",
+    "textual.*",
+    "reacton",
+    "reacton.*",
     "uvicorn.*",
     "vtk.*",
     "watchfiles.*"
