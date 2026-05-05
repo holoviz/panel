@@ -36,7 +36,6 @@ def test_multi_select_double_click(page):
 
     wait_until(lambda: bool(clicks) and clicks[0].option == 'B', page)
 
-
 def test_nested_select_update_options(page):
     n = NestedSelect(options={"a": {"b": ["c", "d"]}})
 
