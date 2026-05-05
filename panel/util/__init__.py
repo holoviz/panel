@@ -54,19 +54,19 @@ PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
 class LazyHTMLSanitizer:
     """
-    Wraps bleach.sanitizer.Cleaner lazily importing it on the first
-    call to the clean method.
+    Wraps nh3.clean lazily importing it on the first call to clean.
     """
 
     def __init__(self, **kwargs):
-        self._cleaner = None
+        self._sanitize = None
+        kwargs.pop("strip", None)
         self._kwargs = kwargs
 
     def clean(self, text):
-        if self._cleaner is None:
-            import bleach
-            self._cleaner = bleach.sanitizer.Cleaner(**self._kwargs)
-        return self._cleaner.clean(text)
+        if self._sanitize is None:
+            import nh3
+            self._sanitize = partial(nh3.clean, **self._kwargs)
+        return self._sanitize(text)
 
 HTML_SANITIZER = LazyHTMLSanitizer(strip=True)
 
