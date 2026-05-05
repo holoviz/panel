@@ -90,7 +90,11 @@ def _deserialize_state(b64_state):
         return {}
 
 
-def _validate_next_url(next_url):
+@t.overload
+def _validate_next_url(next_url: str) -> str: ...
+@t.overload
+def _validate_next_url(next_url: None) -> None: ...
+def _validate_next_url(next_url: str | None) -> str | None:
     """
     Validate that next_url is a same-origin path. Raises HTTPError(400)
     if it carries a scheme, netloc, or backslash (which some browsers
