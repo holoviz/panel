@@ -1471,7 +1471,7 @@ class TooltipIcon(Widget):
         The description in the tooltip.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'label': 'name',
+        'label': None,
         'name': None,
         'value': 'description',
     }
