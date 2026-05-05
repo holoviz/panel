@@ -32,7 +32,6 @@ def test_embed_param_jslink(document, comm):
     cbs = list(model.select({'type': CustomJS}))
     assert len(cbs) == 2
     cb1, cb2 = cbs
-    breakpoint()
     cb1, cb2 = (cb1, cb2) if select._models[ref][0] is cb1.args['target'] else (cb2, cb1)
     assert cb1.code == """
     var value = source['active'];
