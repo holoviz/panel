@@ -19,7 +19,7 @@ def increment(e):
         obj.object = str(e.new)
 
 column_0 = pn.FlexBox(*['0']*100)
-button = pn.widgets.Button(name='Increment', on_click=increment)
+button = pn.widgets.Button(label='Increment', on_click=increment)
 
 pn.Column(column_0, button).servable()
 ```
@@ -40,7 +40,7 @@ def increment(e):
         obj.object = str(e.new)
 
 column_1 = pn.FlexBox(*['0']*100)
-button = pn.widgets.Button(name='Increment', on_click=increment)
+button = pn.widgets.Button(label='Increment', on_click=increment)
 
 pn.Column(column_1, button).servable()
 ```
@@ -64,7 +64,7 @@ def increment(e):
                 obj.object = str(e.new)
 
 column_2 = pn.FlexBox(*['0']*100)
-button = pn.widgets.Button(name='Increment', on_click=increment)
+button = pn.widgets.Button(label='Increment', on_click=increment)
 
 pn.Column(column_2, button).servable()
 ```

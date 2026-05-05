@@ -43,7 +43,7 @@ def test_button_click(page):
     ids=["Button", "CheckButtonGroup", "RadioButtonGroup"],
 )
 def test_button_tooltip(page, button_fn, button_locator, description):
-    pn_button = button_fn(name="test", description=description, description_delay=0)
+    pn_button = button_fn(label="test", description=description, description_delay=0)
 
     serve_component(page, pn_button)
 
@@ -74,7 +74,7 @@ def test_button_tooltip(page, button_fn, button_locator, description):
     ids=["Button", "CheckButtonGroup", "RadioButtonGroup"],
 )
 def test_button_tooltip_with_delay(page, button_fn, button_locator):
-    pn_button = button_fn(name="test", description="Test", description_delay=300)
+    pn_button = button_fn(label="test", description="Test", description_delay=300)
 
     exp = Expect()
     exp.set_options(timeout=200)

@@ -88,7 +88,7 @@ For an object attribute to be powered by Param you must declare it as a *Paramet
 ```python
 class P(param.Parameterized):
     x = param.Number()  # Good
-    w1 = pn.widgets.FloatSlider()  # Very likely you DO NOT want this
+    w1 = ()  # Very likely you DO NOT want this
     w2 = param.ClassSelector(class_=pn.widgets.FloatSlider)  # Much better!
 
 ```

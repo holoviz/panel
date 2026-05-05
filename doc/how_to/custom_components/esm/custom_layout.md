@@ -68,14 +68,14 @@ class SplitJS(JSComponent):
 pn.extension("codeeditor")
 
 split_js = SplitJS(
-    left=pn.widgets.CodeEditor(
+    left=(
         value="Left!",
         sizing_mode="stretch_both",
         margin=0,
         theme="monokai",
         language="python",
     ),
-    right=pn.widgets.CodeEditor(
+    right=(
         value="Right",
         sizing_mode="stretch_both",
         margin=0,
@@ -140,14 +140,14 @@ class SplitReact(ReactComponent):
 pn.extension("codeeditor")
 
 split_react = SplitReact(
-    left=pn.widgets.CodeEditor(
+    left=(
         value="Left!",
         sizing_mode="stretch_both",
         margin=0,
         theme="monokai",
         language="python",
     ),
-    right=pn.widgets.CodeEditor(
+    right=(
         value="Right",
         sizing_mode="stretch_both",
         margin=0,
@@ -225,14 +225,14 @@ class SplitAnyWidget(AnyWidgetComponent):
 pn.extension("codeeditor")
 
 split_anywidget = SplitAnyWidget(
-    left=pn.widgets.CodeEditor(
+    left=(
         value="Left!",
         sizing_mode="stretch_both",
         margin=0,
         theme="monokai",
         language="python",
     ),
-    right=pn.widgets.CodeEditor(
+    right=(
         value="Right",
         sizing_mode="stretch_both",
         margin=0,

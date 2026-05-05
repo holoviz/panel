@@ -39,7 +39,7 @@ def run(event):
             time.sleep(0.01)
             progress.value = i
 
-button = pn.widgets.Button(name="Run", on_click=run)
+button = pn.widgets.Button(label="Run", on_click=run)
 progress = pn.indicators.Progress(value=100, active=False, bar_color="dark")
 pn.Row(button, progress)
 ```
@@ -60,7 +60,7 @@ def run(event):
         progress.bar_color = "dark"
         progress.active = False
 
-button = pn.widgets.Button(name="Run", on_click=run)
+button = pn.widgets.Button(label="Run", on_click=run)
 progress = pn.indicators.Progress(value=100, active=False, bar_color="dark")
 pn.Row(button, progress)
 ```
@@ -156,7 +156,7 @@ Set `loading=pn.state.param.busy` to overlay a spinner while processing to let t
 def process_load(event):
     time.sleep(3)
 
-button = pn.widgets.Button(name="Click me", on_click=process_load)
+button = pn.widgets.Button(label="Click me", on_click=process_load)
 widget_box = pn.WidgetBox(button, loading=pn.state.param.busy, height=300, width=300)
 widget_box
 ```
@@ -171,7 +171,7 @@ def compute(event):
         time.sleep(3)
         layout.append("Computation complete!")
 
-button = pn.widgets.Button(name="Compute", on_click=compute)
+button = pn.widgets.Button(label="Compute", on_click=compute)
 layout = pn.Column("Click below to compute", button)
 
 layout
@@ -190,7 +190,7 @@ def compute(event):
     finally:
         layout.loading = False
 
-button = pn.widgets.Button(name="Compute", on_click=compute)
+button = pn.widgets.Button(label="Compute", on_click=compute)
 layout = pn.Column("Click below to compute", button)
 
 layout
@@ -222,7 +222,7 @@ def compute(divisor):
 busy = pn.widgets.LoadingSpinner(width=10, height=10)
 text = pn.widgets.StaticText()
 
-slider = pn.widgets.IntSlider(name="Divisor")
+slider = pn.widgets.IntSlider(label="Divisor")
 output = pn.bind(compute, slider)
 
 layout = pn.Column(pn.Row(busy, text), slider, output)
@@ -281,7 +281,7 @@ def add_point(clicks):
     data.append((np.random.random(), (np.random.random())))
     return hv.Scatter(data)
 
-button = pn.widgets.Button(name="Add point")
+button = pn.widgets.Button(label="Add point")
 plot = hv.DynamicMap(pn.bind(add_point, button.param.clicks))
 pn.Column(button, plot)
 ```
@@ -302,7 +302,7 @@ def add_point(clicks):
     data.append((np.random.random(), (np.random.random())))
     return hv.Scatter(data)
 
-button = pn.widgets.Button(name="Add point")
+button = pn.widgets.Button(label="Add point")
 plot = pn.bind(add_point, button.param.clicks)
 pn.Column(button, plot)
 ```
@@ -345,7 +345,7 @@ Imagine Panel components as placeholders and use them as such, rather than re-cr
 def randomize(event):
     df_pane.object = pd.DataFrame(np.random.randn(10, 3), columns=list("ABC"))
 
-button = pn.widgets.Button(name="Compute", on_click=randomize)
+button = pn.widgets.Button(label="Compute", on_click=randomize)
 df_pane = pn.pane.DataFrame()
 button.param.trigger("clicks")  # initialize
 
@@ -360,7 +360,7 @@ If your callback returns a Panel object rather than the underlying object being 
 def randomize(clicks):
     return pn.pane.DataFrame(pd.DataFrame(np.random.randn(10, 3), columns=list("ABC")))
 
-button = pn.widgets.Button(name="Compute")
+button = pn.widgets.Button(label="Compute")
 df_pane = pn.bind(randomize, button.param.clicks)
 button.param.trigger("clicks")  # initialize
 

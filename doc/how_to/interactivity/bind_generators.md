@@ -22,7 +22,7 @@ A *generator* function is a function that use `yield` to *return* results as the
 In the example below we add a `Button` to trigger some calculation. Initially the calculation hasn't yet run, so we check the value provided by the `Button` indicating whether a calculation has been triggered and while it is `False` we `yield` some text and `return`. However, when the `Button` is clicked the function is called again with `run=True` and we kick off some calculation. As this calculation progresses we can `yield` updates and then once the calculation is successful we `yield` again with the final result:
 
 ```{pyodide}
-run = pn.widgets.Button(name="Press to run calculation", align='center')
+run = pn.widgets.Button(label="Press to run calculation", align='center')
 
 def runner(run):
     if not run:

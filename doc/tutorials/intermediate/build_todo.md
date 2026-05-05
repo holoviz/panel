@@ -41,7 +41,7 @@ class Task(pn.viewable.Viewer):
 
     def __panel__(self):
         completed = pn.widgets.Checkbox.from_param(
-            self.param.completed, name="", align="center", sizing_mode="fixed"
+            self.param.completed, label="", align="center", sizing_mode="fixed"
         )
         content = pn.pane.Markdown(object=self.param.value)
         return pn.Row(completed, content, sizing_mode="stretch_width")
@@ -109,11 +109,11 @@ class TaskInput(pn.viewable.Viewer):
 
     def __panel__(self):
         text_input = pn.widgets.TextInput(
-            name="Task", placeholder="Enter a task", sizing_mode="stretch_width"
+            label="Task", placeholder="Enter a task", sizing_mode="stretch_width"
         )
         text_input_has_value = pn.rx(self._no_value)(text_input.param.value_input)
         submit_task = pn.widgets.Button(
-            name="Add",
+            label="Add",
             align="center",
             button_type="primary",
             width=BUTTON_WIDTH,
@@ -170,7 +170,7 @@ class TaskListEditor(pn.viewable.Viewer):
         task_input = TaskInput()
         pn.bind(self.value.add_task, task_input.param.value, watch=True)
         clear = pn.widgets.Button(
-            name="Remove All",
+            label="Remove All",
             button_type="primary",
             button_style="outline",
             width=BUTTON_WIDTH,
@@ -239,7 +239,7 @@ class Task(pn.viewable.Viewer):
 
     def __panel__(self):
         completed = pn.widgets.Checkbox.from_param(
-            self.param.completed, name="", align="center", sizing_mode="fixed"
+            self.param.completed, label="", align="center", sizing_mode="fixed"
         )
         content = pn.pane.Markdown(object=self.param.value)
         return pn.Row(completed, content, sizing_mode="stretch_width")
@@ -309,11 +309,11 @@ class TaskInput(pn.viewable.Viewer):
 
     def __panel__(self):
         text_input = pn.widgets.TextInput(
-            name="Task", placeholder="Enter a task", sizing_mode="stretch_width"
+            label="Task", placeholder="Enter a task", sizing_mode="stretch_width"
         )
         text_input_has_value = pn.rx(self._no_value)(text_input.param.value_input)
         submit_task = pn.widgets.Button(
-            name="Add",
+            label="Add",
             align="center",
             button_type="primary",
             width=BUTTON_WIDTH,
@@ -385,7 +385,7 @@ class TaskListEditor(pn.viewable.Viewer):
         task_input = TaskInput()
         pn.bind(self.value.add_task, task_input.param.value, watch=True)
         clear = pn.widgets.Button(
-            name="Remove All",
+            label="Remove All",
             button_type="primary",
             button_style="outline",
             width=BUTTON_WIDTH,

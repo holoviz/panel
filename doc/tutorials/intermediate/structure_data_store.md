@@ -55,12 +55,12 @@ class DataStore(Viewer):
             dtype = self.data.dtypes[filt]
             if dtype.kind == "f":
                 widget = pn.widgets.RangeSlider(
-                    name=filt, start=dfx[filt].min(), end=dfx[filt].max()
+                    label=filt, start=dfx[filt].min(), end=dfx[filt].max()
                 )
                 condition = dfx[filt].between(*widget.rx())
             else:
                 options = dfx[filt].unique().tolist()
-                widget = pn.widgets.MultiChoice(name=filt, options=options)
+                widget = pn.widgets.MultiChoice(label=filt, options=options)
                 condition = dfx[filt].isin(widget.rx().rx.where(widget, options))
             dfx = dfx[condition]
             widgets.append(widget)
@@ -159,25 +159,25 @@ class Indicators(View):
         return pn.FlexBox(
             pn.indicators.Number(
                 value=self.data_store.total_capacity / 1e6,
-                name="Total Capacity (GW)",
+                label="Total Capacity (GW)",
                 format="{value:,.2f}",
                 **style
             ),
             pn.indicators.Number(
                 value=self.data_store.count,
-                name="Count",
+                label="Count",
                 format="{value:,.0f}",
                 **style
             ),
             pn.indicators.Number(
                 value=self.data_store.avg_capacity,
-                name="Avg. Capacity (kW)",
+                label="Avg. Capacity (kW)",
                 format="{value:,.2f}",
                 **style
             ),
             pn.indicators.Number(
                 value=self.data_store.avg_rotor_diameter,
-                name="Avg. Rotor Diameter (m)",
+                label="Avg. Rotor Diameter (m)",
                 format="{value:,.2f}",
                 **style
             ),

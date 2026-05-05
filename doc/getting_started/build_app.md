@@ -86,9 +86,9 @@ Great! Now, let's explore how different values for `window` and `sigma` affect t
 Let's create some Panel slider widgets to explore the range of parameter values:
 
 ```{pyodide}
-variable_widget = pn.widgets.Select(name="variable", value="Temperature", options=list(data.columns))
-window_widget = pn.widgets.IntSlider(name="window", value=30, start=1, end=60)
-sigma_widget = pn.widgets.IntSlider(name="sigma", value=10, start=0, end=20)
+variable_widget = pn.widgets.Select(label="variable", value="Temperature", options=list(data.columns))
+window_widget = pn.widgets.IntSlider(label="window", value=30, start=1, end=60)
+sigma_widget = pn.widgets.IntSlider(label="sigma", value=10, start=0, end=20)
 ```
 
 Now, let's link these widgets to our plotting function so that updates to the widgets rerun the function. We can achieve this easily in Panel using `pn.bind`:
@@ -177,9 +177,9 @@ def get_plot(variable="Temperature", window=30, sigma=10):
         height=300, legend=False, color=PRIMARY_COLOR
     ) * highlight.hvplot.scatter(color=SECONDARY_COLOR, padding=0.1, legend=False)
 
-variable_widget = pn.widgets.Select(name="variable", value="Temperature", options=list(data.columns))
-window_widget = pn.widgets.IntSlider(name="window", value=30, start=1, end=60)
-sigma_widget = pn.widgets.IntSlider(name="sigma", value=10, start=0, end=20)
+variable_widget = pn.widgets.Select(label="variable", value="Temperature", options=list(data.columns))
+window_widget = pn.widgets.IntSlider(label="window", value=30, start=1, end=60)
+sigma_widget = pn.widgets.IntSlider(label="sigma", value=10, start=0, end=20)
 
 bound_plot = pn.bind(
     get_plot, variable=variable_widget, window=window_widget, sigma=sigma_widget

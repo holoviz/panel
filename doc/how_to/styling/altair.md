@@ -42,8 +42,8 @@ def plot(theme, color):
     )
 
 themes = sorted(alt.theme.names())
-theme = pn.widgets.Select(value="dark", options=themes, name="Theme")
-color = pn.widgets.ColorPicker(value="#F08080", name="Color")
+theme = pn.widgets.Select(value="dark", options=themes, label="Theme")
+color = pn.widgets.ColorPicker(value="#F08080", label="Color")
 
 pn.Column(
     pn.Row(theme, color),

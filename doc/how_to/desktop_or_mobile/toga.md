@@ -98,7 +98,7 @@ class MyPanelApp(toga.App):
     def create_panel_app(self):
         """Create your Panel application."""
         slider = pn.widgets.IntSlider(
-            name='Value',
+            label='Value',
             start=0,
             end=100,
             value=50

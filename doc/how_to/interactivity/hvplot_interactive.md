@@ -22,8 +22,8 @@ import panel as pn
 
 pn.extension('tabulator')
 
-species_widget = pn.widgets.Select(name="species", options=["Adelie", "Gentoo", "Chinstrap"])
-year_widget = pn.widgets.IntSlider(name="year", start=2007, end=2009)
+species_widget = pn.widgets.Select(label="species", options=["Adelie", "Gentoo", "Chinstrap"])
+year_widget = pn.widgets.IntSlider(label="year", start=2007, end=2009)
 ```
 
 Let's then use these to filter the data. We first wrap the `df` in `pn.rx` as `df_rx` and pass the `species_widget` as the `species` parameter and the `year_widget` as the `year` parameter. In our case, we want the year always to be greater than or equal to the widget's value.
@@ -39,7 +39,7 @@ df_rx.head()
 Similarly we can use other pandas features in the same way.
 
 ```{pyodide}
-head_widget = pn.widgets.IntSlider(name="Head", start=1, end=10)
+head_widget = pn.widgets.IntSlider(label="Head", start=1, end=10)
 
 df_rx.head(head_widget)
 ```

@@ -33,7 +33,7 @@ slider = pn.widgets.IntSlider(
     value=5,
     start=1,
     end=10,
-    name="Rating"
+    label="Rating"
 )
 
 def generate_stars(rating=5):

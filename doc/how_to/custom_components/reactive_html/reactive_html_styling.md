@@ -34,7 +34,7 @@ class SensorLayout(ReactiveHTML):
     """]
 
 dial = pn.widgets.Dial(
-    name="°C", value=37, format="{value}", colors=[(0.40, "green"), (1, "red")], bounds=(0, 100),
+    label="°C", value=37, format="{value}", colors=[(0.40, "green"), (1, "red")], bounds=(0, 100),
 )
 SensorLayout(
     object=dial, name="Temperature",
