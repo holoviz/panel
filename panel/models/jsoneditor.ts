@@ -5,6 +5,8 @@ import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {HTMLBox, HTMLBoxView} from "./layout"
 import type {Attrs} from "@bokehjs/core/types"
 
+import jsoneditor_css from "styles/models/jsoneditor.css"
+
 export class JSONEditEvent extends ModelEvent {
   constructor(readonly data: any) {
     super()
@@ -49,6 +51,7 @@ export class JSONEditorView extends HTMLBoxView {
 
   override stylesheets(): StyleSheetLike[] {
     const styles = super.stylesheets()
+    styles.push(jsoneditor_css)
     for (const css of this.model.css) {
       styles.push(new ImportedStyleSheet(css))
     }

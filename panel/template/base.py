@@ -6,13 +6,11 @@ from __future__ import annotations
 
 import os
 import sys
+import typing as t
 import uuid
 
 from functools import partial
 from pathlib import Path, PurePath
-from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Literal, cast,
-)
 
 import jinja2
 import param
@@ -52,7 +50,7 @@ from ..viewable import (
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
     from jinja2 import Template as _Template
@@ -92,17 +90,17 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                                 constant=True, is_instance=False, instantiate=False)
 
     # Dictionary of property overrides by Viewable type
-    modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
+    modifiers: t.ClassVar[dict[type[Viewable], dict[str, t.Any]]] = {}
 
     #############
     # Resources #
     #############
 
     # pathlib.Path pointing to local CSS file(s)
-    _css: ClassVar[list[Path | str]] = []
+    _css: t.ClassVar[list[Path | str]] = []
 
     # pathlib.Path pointing to local JS file(s)
-    _js: ClassVar[Path | str | list[Path | str] | None] = None
+    _js: t.ClassVar[Path | str | list[Path | str] | None] = None
 
     # External resources
     _resources = {
@@ -119,7 +117,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             p: v for p, v in params.items() if p in _base_config.param
         }
         self._render_items: dict[str, tuple[Renderable, list[str]]]  = {}
-        self._render_variables: dict[str, Any] = {}
+        self._render_variables: dict[str, t.Any] = {}
         if (
             'design' not in params
             and self.param.design.default in (None, Design, Native)
@@ -342,7 +340,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
     def resolve_resources(
         self,
-        cdn: bool | Literal['auto'] = 'auto',
+        cdn: bool | t.Literal['auto'] = 'auto',
         extras: dict[str, dict[str, str]] | None = None
     ) -> ResourcesType:
         """
@@ -396,6 +394,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 js = f'{state.rel_path}/{js}'
             js_modules[rname] = js
         for i, css in enumerate(list(self.config.css_files)):
+            css = t.cast("str", css)
             if '//' not in css and state.rel_path:
                 css = f'{state.rel_path}/{css}'
             css_files[f'config_{i}'] = css
@@ -419,7 +418,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = f'{dist_path}bundled/{tmpl_name}/{css_file}{version_suffix}'
             elif isurl(css):
-                css_files[f'base_{css_file}'] = cast("str", css)
+                css_files[f'base_{css_file}'] = t.cast("str", css)
             elif resolve_custom_path(self, css):
                 css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
 
@@ -441,14 +440,14 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / js_name).is_file():
                 js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
             elif isurl(js):
-                js_files[f'base_{js_name}'] = cast("str", js)
+                js_files[f'base_{js_name}'] = t.cast("str", js)
             elif resolve_custom_path(self, js):
                 js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
 
         return resource_types
 
     def save(
-        self, filename: str | os.PathLike | IO, title: str | None = None,
+        self, filename: str | os.PathLike | t.IO, title: str | None = None,
         resources=None, embed: bool = False, max_states: int = 1000,
         max_opts: int = 3, embed_json: bool = False, json_prefix: str='',
         save_path: str='./', load_path: str | None = None
@@ -587,9 +586,9 @@ class TemplateActions(ReactiveHTML):
         The number of times the close modal action has been triggered.
         This is used to trigger the close modal script.""")
 
-    _template: ClassVar[str] = ""
+    _template: t.ClassVar[str] = ""
 
-    _scripts: ClassVar[dict[str, list[str] | str]] = {
+    _scripts: t.ClassVar[dict[str, list[str] | str]] = {
         'open_modal': ["""
           document.getElementById('pn-Modal').style.display = 'block'
           window.dispatchEvent(new Event('resize'));
@@ -612,8 +611,9 @@ class BasicTemplate(BaseTemplate):
                                          allow_None=True, doc="""
         Visual indicator of application busy state.""")
 
-    collapsed_sidebar = param.Selector(default=False, constant=True, doc="""
-        Whether the sidebar (if present) is initially collapsed.""")
+    collapsed_sidebar: t.Literal[True, False] = param.Selector(
+        default=False, constant=True, doc="""
+        Whether the sidebar (if present) is initially collapsed.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
@@ -685,9 +685,10 @@ class BasicTemplate(BaseTemplate):
         Specifies the base URL for all relative URLs in a
         page. Default is '', i.e. not the domain.""")
 
-    base_target = param.Selector(default="_self",
+    base_target: t.Literal["_blank", "_self", "_parent", "_top"] = param.Selector(
+        default="_self",
         objects=["_blank", "_self", "_parent", "_top"], doc="""
-        Specifies the base Target for all relative URLs in a page.""")
+        Specifies the base Target for all relative URLs in a page.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     header_background = param.String(doc="""
         Optional header background color override.""")
@@ -704,7 +705,7 @@ class BasicTemplate(BaseTemplate):
     #############
 
     # pathlib.Path pointing to local Jinja2 template
-    _template: ClassVar[Path | None] = None
+    _template: t.ClassVar[Path | None] = None
 
     __abstract = True
 
@@ -968,7 +969,7 @@ class Template(BaseTemplate):
 
     def __init__(
         self, template: str | _Template, nb_template: str | _Template | None = None,
-        items: dict[str, Any] | None = None, **params
+        items: dict[str, t.Any] | None = None, **params
     ):
         super().__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
@@ -979,7 +980,7 @@ class Template(BaseTemplate):
     # Public API
     #----------------------------------------------------------------
 
-    def add_panel(self, name: str, panel: Any, tags: list[str] = []) -> None:
+    def add_panel(self, name: str, panel: t.Any, tags: list[str] = []) -> None:
         """
         Add panels to the Template, which may then be referenced by
         the given name using the jinja2 embed macro.
@@ -1002,7 +1003,7 @@ class Template(BaseTemplate):
         self._render_items[name] = (rendered, tags)
         self._layout[0].object = repr(self) # type: ignore
 
-    def add_variable(self, name: str, value: Any) -> None:
+    def add_variable(self, name: str, value: t.Any) -> None:
         """
         Add parameters to the template, which may then be referenced
         by the given name in the Jinja2 template.

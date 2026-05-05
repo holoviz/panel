@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
@@ -9,7 +8,9 @@ from ..models.feed import Feed as PnFeed, ScrollButtonClick, ScrollLatestEvent
 from ..util import edit_readonly, isIn
 from .base import Column
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -40,7 +41,9 @@ class Feed(Column):
         When scrolled halfway into the buffer, the feed will automatically
         load additional objects while unloading objects on the opposite side.""")
 
-    scroll = param.Selector(
+    scroll: t.Literal[
+        False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"
+    ] = param.Selector(
         default="y",
         objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
         doc="""Whether to add scrollbars if the content overflows the size
@@ -51,17 +54,17 @@ class Feed(Column):
         If "x" or "y", will always add scrollbars in the respective
         direction. If False, overflowing content will be clipped.
         If True, will only add scrollbars in the direction of the container,
-        (e.g. Column: vertical, Row: horizontal).""")
+        (e.g. Column: vertical, Row: horizontal).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     visible_range = param.Range(readonly=True, doc="""
         Read-only upper and lower bounds of the currently visible feed objects.
         This list is automatically updated based on scrolling.""")
 
-    _bokeh_model: ClassVar[type[Model]] = PnFeed
+    _bokeh_model: t.ClassVar[type[Model]] = PnFeed
 
     _direction = 'vertical'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'objects': 'children', 'visible_range': 'visible_children',
         'load_buffer': None,
     }
@@ -125,16 +128,16 @@ class Feed(Column):
         self._register_events('scroll_button_click', model=model, doc=doc, comm=comm)
         return model
 
-    def _process_property_change(self, msg):
-        if 'visible_children' in msg:
-            visible = msg.pop('visible_children')
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        if 'visible_children' in props:
+            visible = props.pop('visible_children')
             for model, _ in self._models.values():
                 refs = [c.ref['id'] for c in model.children]
                 if visible and visible[0] in refs:
                     indexes = sorted(refs.index(v) for v in visible if v in refs)
                     break
             else:
-                return super()._process_property_change(msg)
+                return super()._process_property_change(props)
             offset = self._synced_range[0]
             n = len(self.objects)
             visible_range = [
@@ -143,12 +146,12 @@ class Feed(Column):
             ]
             if visible_range[0] >= visible_range[1]:
                 visible_range[0] = visible_range[1] - self.load_buffer
-            msg['visible_range'] = tuple(visible_range)
-        return super()._process_property_change(msg)
+            props['visible_range'] = tuple(visible_range)
+        return super()._process_property_change(props)
 
-    def _process_param_change(self, msg):
-        msg.pop('visible_range', None)
-        return super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        params.pop('visible_range', None)
+        return super()._process_param_change(params)
 
     def _get_objects(
         self, model: Model, old_objects: list[Viewable], doc: Document,

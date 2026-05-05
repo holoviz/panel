@@ -7,14 +7,13 @@ from __future__ import annotations
 import json
 import os
 import sys
+import typing as t
 import uuid
 import warnings
 
-from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import partial
 from html import escape
-from typing import TYPE_CHECKING, Any, Literal
 
 import bokeh
 import bokeh.embed.notebook
@@ -48,7 +47,9 @@ from .resources import (
 )
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from bokeh.protocol.message import Message
     from bokeh.server.server import Server
     from jinja2 import Template
@@ -265,7 +266,7 @@ def render_mimebundle(
     return render_model(model, comm, resources)
 
 
-def mimebundle_to_html(bundle: dict[str, Any]) -> str:
+def mimebundle_to_html(bundle: dict[str, t.Any]) -> str:
     """
     Converts a MIME bundle into HTML.
     """
@@ -415,7 +416,7 @@ def block_comm() -> Iterator:
 def load_notebook(
     inline: bool = True,
     reloading: bool = False,
-    enable_mathjax: bool | Literal['auto'] = 'auto',
+    enable_mathjax: bool | t.Literal['auto'] = 'auto',
     load_timeout: int = 5000
 ) -> None:
     from IPython.display import publish_display_data
@@ -455,7 +456,7 @@ def load_notebook(
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
 
 
-def show_server(panel: Any, notebook_url: str, port: int = 0) -> Server:
+def show_server(panel: t.Any, notebook_url: str, port: int = 0) -> Server:
     """
     Displays a bokeh server inline in the notebook.
 
@@ -506,7 +507,7 @@ def show_server(panel: Any, notebook_url: str, port: int = 0) -> Server:
 def render_embed(
     panel, max_states: int = 1000, max_opts: int = 3, json: bool = False,
     json_prefix: str = '', save_path: str = './', load_path: str | None = None,
-    progress: bool = True, states: dict[Widget, list[Any]] = {}
+    progress: bool = True, states: dict[Widget, list[t.Any]] = {}
 ) -> Mimebundle:
     """
     Renders a static version of a panel in a notebook by evaluating
@@ -548,7 +549,7 @@ def show_embed(panel, *args, **kwargs):
     from IPython.display import publish_display_data
     return publish_display_data(render_embed(panel, *args, **kwargs))
 
-def ipywidget(obj: Any, doc=None, **kwargs: Any):
+def ipywidget(obj: t.Any, doc=None, **kwargs: t.Any):
     """
     Returns an ipywidget model which renders the Panel object.
 

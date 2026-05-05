@@ -4,8 +4,8 @@ pytestmark = pytest.mark.ui
 
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import (
-    EditableFloatSlider, EditableIntSlider, EditableRangeSlider,
-    IntRangeSlider,
+    EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatSlider,
+    IntRangeSlider, IntSlider,
 )
 
 
@@ -313,3 +313,46 @@ def test_intrangeslider(page):
         page.keyboard.press("ArrowRight")
 
     wait_until(lambda: widget.value == (4, 10), page)
+
+
+@pytest.mark.parametrize(
+    "widget_cls",
+    [FloatSlider, IntSlider, EditableFloatSlider, EditableIntSlider],
+    ids=["FloatSlider", "IntSlider", "EditableFloatSlider", "EditableIntSlider"]
+)
+def test_slider_color_preserved_in_accordion(page, widget_cls):
+    """
+    Test that slider bar color is preserved when accordion is collapsed
+    and expanded. Regression test for:
+    https://github.com/holoviz/panel/issues/7565
+    """
+    import panel as pn
+
+    slider = widget_cls(disabled=False)
+    accordion = pn.Accordion(("Slider", slider))
+    accordion.active = [0]
+
+    serve_component(page, accordion)
+
+    page.locator(".noUi-target").first.wait_for(state="visible")
+
+    initial_color = page.locator(".noUi-connect").first.evaluate(
+        "el => getComputedStyle(el).backgroundColor"
+    )
+
+    accordion_element = page.locator(".accordion").first
+    accordion_element.wait_for()
+    accordion_element.click()
+    page.wait_for_timeout(300)
+
+    accordion_element.click()
+    page.locator(".noUi-target").first.wait_for(state="visible", timeout=10000)
+
+    restored_color = page.locator(".noUi-connect").first.evaluate(
+        "el => getComputedStyle(el).backgroundColor"
+    )
+
+    assert initial_color == restored_color, (
+        f"Slider color changed after accordion collapse/expand: "
+        f"before={initial_color!r}, after={restored_color!r}"
+    )

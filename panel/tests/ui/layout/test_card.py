@@ -207,6 +207,27 @@ def test_card_widget_not_collapsed(page, card_components):
     assert not card.collapsed
 
 
+def test_card_widget_spacebar_not_collapsed(page, card_components):
+    # Fixes https://github.com/holoviz/panel/issues/8358
+    w1, w2 = card_components
+    card = Card(w1, header=Row(w2))
+
+    serve_component(page, card)
+
+    text_input = page.locator('.bk-input[type="text"]')
+    expect(text_input).to_have_count(1)
+
+    text_input.click()
+
+    text_input.press("F")
+    text_input.press("Space")
+    text_input.press("B")
+    text_input.press("Enter")
+
+    wait_until(lambda: w2.value == 'F B', page)
+    assert not card.collapsed
+
+
 def test_card_child_visible(page, card_components):
     w1, w2 = card_components
     w1.visible = False

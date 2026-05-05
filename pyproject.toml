@@ -170,6 +170,7 @@ select = [
     "W",
     "PIE",
     "T20",
+    "TC",
     "RUF006",
     "UP004",
     "UP006",
@@ -193,6 +194,9 @@ unfixable = [
 "panel/pane/vtk/synchronizable_*.py" = ["T201"]
 "scripts/*.py" = ["T201"]
 "hatch_build.py" = ["T201"]
+
+[tool.ty.rules]
+unused-type-ignore-comment = "ignore"
 
 [tool.isort]
 force_grid_wrap = 4
@@ -296,8 +300,12 @@ module = [
     "setuptools_scm.*",
     "snakeviz.*",
     "streamz.*",
+    "textual",
     "traitlets.*",
     "tranquilizer.*",
+    "textual.*",
+    "reacton",
+    "reacton.*",
     "uvicorn.*",
     "vtk.*",
     "watchfiles.*"

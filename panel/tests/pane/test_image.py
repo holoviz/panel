@@ -337,3 +337,27 @@ def test_image_caption(document, comm):
     model = png.get_root(document, comm)
     assert 'Some Caption' in model.text
     assert 'figcaption' in model.text
+
+
+@pytest.mark.parametrize('cls,data', [
+    (PNG, b'\x89PNG\r\n\x1a\n'),        # Valid PNG header but truncated before IHDR dimensions
+    (GIF, b'GIF89a'),                     # Valid GIF header but truncated before dimensions
+    (ICO, b'\x00\x00\x01\x00\x01'),      # Valid ICO header but truncated before entry
+], ids=['png', 'gif', 'ico'])
+def test_imgshape_truncated_data(cls, data):
+    with pytest.raises(ValueError, match="insufficient data"):
+        cls._imgshape(data)
+
+
+def test_imgshape_jpg_no_sof_marker():
+    # JPEG with valid SOI marker but no SOF marker (just SOI + SOS)
+    data = b'\xff\xd8\xff\xda' + b'\x00' * 10
+    with pytest.raises(ValueError, match="no SOF marker found"):
+        JPG._imgshape(data)
+
+
+def test_imgshape_avif_no_ispe_box():
+    # AVIF data without an ispe box
+    data = b'\x00\x00\x00\x1cftypavifall' + b'\x00' * 50
+    with pytest.raises(ValueError, match="no 'ispe' box found"):
+        AVIF._imgshape(data)

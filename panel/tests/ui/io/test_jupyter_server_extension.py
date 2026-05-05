@@ -10,11 +10,12 @@ from playwright.sync_api import expect
 
 from panel.tests.util import wait_until
 
-pytestmark = [pytest.mark.jupyter, pytest.mark.flaky(max_runs=3)]
+pytestmark = pytest.mark.jupyter
 
 
 def test_jupyter_server(page, jupyter_preview):
-    page.goto(f"{jupyter_preview}/app.py", timeout=30000)
+    page.goto(f"{jupyter_preview}/app.py")
+    page.wait_for_load_state('networkidle')
 
     assert page.text_content('pre') == '0'
 
@@ -28,14 +29,17 @@ def test_jupyter_server(page, jupyter_preview):
 
 
 def test_jupyter_server_custom_resources(page, jupyter_preview):
-    page.goto(f"{jupyter_preview}/app.py", timeout=30000)
+    page.goto(f"{jupyter_preview}/app.py")
+    page.wait_for_load_state('networkidle')
 
     assert page.locator('.bk-Row').evaluate("""(element) =>
         window.getComputedStyle(element).getPropertyValue('background-color')""") == 'rgb(128, 0, 128)'
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_jupyter_server_kernel_error(page, jupyter_preview):
-    page.goto(f"{jupyter_preview}/app.py?kernel=blah", timeout=30000)
+    page.goto(f"{jupyter_preview}/app.py?kernel=blah")
+    page.wait_for_load_state('networkidle')
 
     expect(page.locator('#error-type')).to_have_text("Kernel Error")
     expect(page.locator('#error')).to_have_text("No such kernel 'blah'")
@@ -50,7 +54,8 @@ def test_jupyter_server_kernel_error(page, jupyter_preview):
 
 
 def test_jupyter_server_session_arg_theme(page, jupyter_preview):
-    page.goto(f"{jupyter_preview}/app.py?theme=dark", timeout=30000)
+    page.goto(f"{jupyter_preview}/app.py?theme=dark")
+    page.wait_for_load_state('networkidle')
 
     expect(page.locator('body')).to_have_css('color', 'rgb(0, 0, 0)')
 
