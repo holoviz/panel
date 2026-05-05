@@ -44,7 +44,11 @@ class _ButtonBase(Widget):
         default='solid', objects=BUTTON_STYLES, doc="""
         A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'label', 'button_style': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        **Widget._rename,
+        'label': 'label',
+        'button_style': None,
+    }
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'button_style': None}
 
@@ -179,7 +183,8 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
         Toggles from False to True while the event is being processed.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, 'clicks': None, 'name': 'label', 'value': None,
+        **TooltipMixin._rename, 'clicks': None, 'value': None,
+        **_ButtonBase._rename,
     }
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
@@ -290,7 +295,9 @@ class Toggle(_ButtonBase, IconMixin):
         Whether the button is currently toggled.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'value': 'active', 'name': 'label',
+        **Widget._rename,
+        'label': 'label',
+        'value': 'active',
     }
 
     _supports_embed: bool = True
@@ -335,7 +342,9 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
     _event: t.ClassVar[str] = 'menu_item_click'
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'name': 'label', 'items': 'menu', 'clicked': None, 'value': None
+        **Widget._rename,
+        'label': 'label',
+        'items': 'menu', 'clicked': None, 'value': None
     }
 
     _widget_type: t.ClassVar[type[Model]] = _BkDropdown
@@ -358,7 +367,7 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
         if isinstance(event, MenuItemClick):
             item = event.item
         elif isinstance(event, ButtonClick):
-            item = self.name
+            item = self.label
         self.clicked = item
 
     def on_click(

@@ -32,6 +32,7 @@ def test_embed_param_jslink(document, comm):
     cbs = list(model.select({'type': CustomJS}))
     assert len(cbs) == 2
     cb1, cb2 = cbs
+    breakpoint()
     cb1, cb2 = (cb1, cb2) if select._models[ref][0] is cb1.args['target'] else (cb2, cb1)
     assert cb1.code == """
     var value = source['active'];
@@ -505,11 +506,11 @@ def test_embed_slider_str_jslink(document, comm):
 
 
 def test_embed_merged_sliders(document, comm):
-    s1 = IntSlider(name='A', start=1, end=10, value=1)
+    s1 = IntSlider(label='A', start=1, end=10, value=1)
     t1 = StaticText()
     s1.param.watch(lambda event: setattr(t1, 'value', event.new), 'value')
 
-    s2 = IntSlider(name='A', start=1, end=10, value=1)
+    s2 = IntSlider(label='A', start=1, end=10, value=1)
     t2 = StaticText()
     s2.param.watch(lambda event: setattr(t2, 'value', event.new), 'value')
 

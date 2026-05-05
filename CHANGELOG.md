@@ -1,5 +1,43 @@
 # Releases
 
+## Version 1.9.0
+
+Panel 1.9.0 adds comprehensive **param 2.4** type annotation support and upgrades the **Tabulator** widget to version 6.4. This release also introduces dark theme support for the **JSONEditor** widget and includes several bug fixes for Tabulator, ReactComponent initialization, and ECharts, plus general performance optimizations.
+
+Many thanks to the contributors to this release including: @philippjfr, @hoxbro, @AtharvaJaiswal005, @ghostiee-11, @ahuang11, @mvanhorn, @zhangdomi, @nfomferra, and @buteom3.
+
+### 🚀 Features
+- Add full type annotation compatibility for **param 2.4** ([#8561](https://github.com/holoviz/panel/pull/8561))
+- Update `Tabulator` to version 6.4 ([#8568](https://github.com/holoviz/panel/pull/8568))
+- Add dark theme support for `JSONEditor` widget ([#8444](https://github.com/holoviz/panel/pull/8444))
+
+### ✨ Enhancements
+- Optimize `Tabulator` resize events ([#8528](https://github.com/holoviz/panel/pull/8528))
+- General performance optimizations ([#8547](https://github.com/holoviz/panel/pull/8547))
+- Add extensions to the reference gallery ([#8541](https://github.com/holoviz/panel/pull/8541))
+
+### 🐛 Bug Fixes
+- Fix `Tabulator` scroll reset when filtering on patch ([#8531](https://github.com/holoviz/panel/pull/8531))
+- Fix DataFrame comparison in `Tabulator.from_param` ([#8539](https://github.com/holoviz/panel/pull/8539))
+- Fix `ReactComponent` initialization issues ([#8552](https://github.com/holoviz/panel/pull/8552))
+- Fix `Gauge`/ECharts crash when the ECharts library is not yet loaded ([#8515](https://github.com/holoviz/panel/pull/8515))
+- Fix string formatting in `NotImplementedError` messages ([#8536](https://github.com/holoviz/panel/pull/8536))
+- Improve Pyodide badge appearance ([#8519](https://github.com/holoviz/panel/pull/8519))
+
+### 📦 Compatibility & Dependency Updates
+- Bump param to 2.4.0
+- Bump dompurify from 3.3.2 to 3.4.0 ([#8559](https://github.com/holoviz/panel/pull/8559))
+
+### 📚 Documentation
+- Document `pn.state.sync_busy` in the busy indicator how-to guide ([#8564](https://github.com/holoviz/panel/pull/8564))
+- Add Panel extensions documentation ([#8529](https://github.com/holoviz/panel/pull/8529))
+
+### 🧪 Tests & Maintenance
+- Add FastAPI UI test ([#8558](https://github.com/holoviz/panel/pull/8558))
+- Fix failing Jupyter UI test on Windows ([#8563](https://github.com/holoviz/panel/pull/8563))
+- Align CI build and docs actions with other HoloViz repos ([#8532](https://github.com/holoviz/panel/pull/8532))
+
+
 ## Version 1.8.10
 
 Panel 1.8.10 focuses on stability improvements across widgets, plotting integrations, and server behavior. It includes fixes for Tabulator serialization, Param widget updates, Plotly and Vega regressions, and several UI issues. This release also improves compatibility with **Bokeh 3.9**, enhances error reporting when serving apps, and addresses a security issue in `panel.js`.

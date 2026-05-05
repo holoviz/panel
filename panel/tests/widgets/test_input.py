@@ -17,7 +17,7 @@ from panel.widgets import (
 
 def test_checkbox(document, comm):
 
-    checkbox = Checkbox(value=True, name='Checkbox')
+    checkbox = Checkbox(value=True, label='Checkbox')
 
     widget = checkbox.get_root(document, comm=comm)
 
@@ -34,7 +34,7 @@ def test_checkbox(document, comm):
 
 
 def test_date_picker(document, comm):
-    date_picker = DatePicker(name='DatePicker', value=date(2018, 9, 2),
+    date_picker = DatePicker(label='DatePicker', value=date(2018, 9, 2),
                              start=date(2018, 9, 1), end=date(2018, 9, 10))
 
     widget = date_picker.get_root(document, comm=comm)
@@ -62,7 +62,7 @@ def test_date_picker(document, comm):
 def test_date_picker_options(document, comm):
     options = [date(2018, 9, 1), date(2018, 9, 2), date(2018, 9, 3)]
     datetime_picker = DatePicker(
-        name='DatetimePicker', value=date(2018, 9, 2),
+        label='DatetimePicker', value=date(2018, 9, 2),
         options=options
     )
     assert datetime_picker.value == date(2018, 9, 2)
@@ -70,7 +70,7 @@ def test_date_picker_options(document, comm):
 
 
 def test_daterange_picker(document, comm):
-    date_range_picker = DateRangePicker(name='DateRangePicker',
+    date_range_picker = DateRangePicker(label='DateRangePicker',
                                         value=(date(2018, 9, 2), date(2018, 9, 3)),
                                         start=date(2018, 9, 1),
                                         end=date(2018, 9, 10))
@@ -107,7 +107,7 @@ def test_daterange_picker(document, comm):
 
 def test_datetime_picker(document, comm):
     datetime_picker = DatetimePicker(
-        name='DatetimePicker', value=datetime(2018, 9, 2, 1, 5),
+        label='DatetimePicker', value=datetime(2018, 9, 2, 1, 5),
         start=date(2018, 9, 1), end=datetime(2018, 9, 10)
     )
 
@@ -144,7 +144,7 @@ def test_datetime_picker(document, comm):
 def test_datetime_picker_options(document, comm):
     options = [datetime(2018, 9, 1), datetime(2018, 9, 2), datetime(2018, 9, 3)]
     datetime_picker = DatetimePicker(
-        name='DatetimePicker', value=datetime(2018, 9, 2, 1, 5),
+        label='DatetimePicker', value=datetime(2018, 9, 2, 1, 5),
         options=options
     )
     assert datetime_picker.value == datetime(2018, 9, 2, 1, 5)
@@ -153,7 +153,7 @@ def test_datetime_picker_options(document, comm):
 
 def test_datetime_range_picker(document, comm):
     datetime_range_picker = DatetimeRangePicker(
-        name='DatetimeRangePicker', value=(datetime(2018, 9, 2, 1, 5), datetime(2018, 9, 2, 1, 6)),
+        label='DatetimeRangePicker', value=(datetime(2018, 9, 2, 1, 5), datetime(2018, 9, 2, 1, 6)),
         start=date(2018, 9, 1), end=datetime(2018, 9, 10)
     )
 
@@ -187,7 +187,7 @@ def test_datetime_range_picker(document, comm):
 
 
 def test_time_picker(document, comm):
-    time_picker = TimePicker(name='Time Picker', value=dt_time(hour=18), format='H:i K')
+    time_picker = TimePicker(label='Time Picker', value=dt_time(hour=18), format='H:i K')
     assert time_picker.value == dt_time(hour=18)
     assert time_picker.format == 'H:i K'
     assert time_picker.start is None
@@ -195,7 +195,7 @@ def test_time_picker(document, comm):
 
 
 def test_time_picker_str(document, comm):
-    time_picker = TimePicker(name='Time Picker', value="08:28", start='00:00', end='12:00')
+    time_picker = TimePicker(label='Time Picker', value="08:28", start='00:00', end='12:00')
     assert time_picker.value == "08:28"
     assert time_picker.format == 'H:i'
     assert time_picker.start == "00:00"
@@ -218,7 +218,7 @@ def test_file_input(document, comm):
 
 def test_literal_input(document, comm):
 
-    literal = LiteralInput(value={}, type=dict, name='Literal')
+    literal = LiteralInput(value={}, type=dict, label='Literal')
 
     widget = literal.get_root(document, comm=comm)
 
@@ -261,7 +261,7 @@ def test_literal_input_inheritance():
 
 def test_static_text(document, comm):
 
-    text = StaticText(value='ABC', name='Text:')
+    text = StaticText(value='ABC', label='Text:')
 
     widget = text.get_root(document, comm=comm)
 
@@ -275,7 +275,7 @@ def test_static_text(document, comm):
     assert widget.text == '<b>Text:</b>: ABC'
 
 def test_static_text_no_sync(document, comm):
-    text = StaticText(value='ABC', name='Text:')
+    text = StaticText(value='ABC', label='Text:')
 
     widget = text.get_root(document, comm=comm)
 
@@ -284,7 +284,7 @@ def test_static_text_no_sync(document, comm):
 
 def test_static_text_empty(document, comm):
 
-    text = StaticText(name='Text:')
+    text = StaticText(label='Text:')
 
     widget = text.get_root(document, comm=comm)
 
@@ -292,7 +292,7 @@ def test_static_text_empty(document, comm):
 
 def test_static_text_repr(document, comm):
 
-    text = StaticText(value=StaticText, name='Text:')
+    text = StaticText(value=StaticText, label='Text:')
 
     widget = text.get_root(document, comm=comm)
 
@@ -302,7 +302,7 @@ def test_static_text_repr(document, comm):
 
 def test_text_input(document, comm):
 
-    text = TextInput(value='ABC', name='Text:')
+    text = TextInput(value='ABC', label='Text:')
 
     widget = text.get_root(document, comm=comm)
 
@@ -320,7 +320,7 @@ def test_datetime_input(document, comm):
     dt_input = DatetimeInput(value=datetime(2018, 1, 1),
                              start=datetime(2017, 12, 31),
                              end=datetime(2018, 1, 10),
-                             name='Datetime')
+                             label='Datetime')
 
     widget = dt_input.get_root(document, comm=comm)
 
@@ -352,48 +352,48 @@ def test_datetime_range_input(document, comm):
     dt_input = DatetimeRangeInput(
         value=(datetime(2018, 1, 1), datetime(2018, 1, 3)),
         start=datetime(2017, 12, 31), end=datetime(2018, 1, 10),
-        name='Datetime')
+        label='Datetime')
 
     composite = dt_input.get_root(document, comm=comm)
     label, start, end = composite.children
 
     assert isinstance(composite, dt_input._composite_type._bokeh_model)
-    assert label.text == 'Datetime'
+    assert label.text == '<b>Datetime</b>: '
     assert start.value == '2018-01-01 00:00:00'
     assert end.value == '2018-01-03 00:00:00'
 
     dt_input._start._process_events({'value': '2018-01-01 00:00:01'})
     assert dt_input.value == (datetime(2018, 1, 1, 0, 0, 1), datetime(2018, 1, 3))
-    assert label.text == 'Datetime'
+    assert label.text == '<b>Datetime</b>: '
 
     dt_input._start._process_events({'value': '2018-01-01 00:00:01a'})
     assert dt_input.value == (datetime(2018, 1, 1, 0, 0, 1), datetime(2018, 1, 3))
-    assert label.text == 'Datetime (invalid)'
+    assert label.text == '<b>Datetime</b>:  (invalid)'
 
     dt_input._start._process_events({'value': '2018-01-11 00:00:00'})
     assert dt_input.value == (datetime(2018, 1, 1, 0, 0, 1), datetime(2018, 1, 3))
-    assert label.text == 'Datetime (out of bounds)'
+    assert label.text == '<b>Datetime</b>:  (out of bounds)'
 
     dt_input._end._process_events({'value': '2018-01-11 00:00:00a'})
     assert dt_input.value == (datetime(2018, 1, 1, 0, 0, 1), datetime(2018, 1, 3))
-    assert label.text == 'Datetime (out of bounds) (invalid)'
+    assert label.text == '<b>Datetime</b>:  (out of bounds) (invalid)'
 
     dt_input._start._process_events({'value': '2018-01-02 00:00:00'})
     dt_input._end._process_events({'value': '2018-01-03 00:00:00'})
     assert dt_input.value == (datetime(2018, 1, 2), datetime(2018, 1, 3))
-    assert label.text == 'Datetime'
+    assert label.text == '<b>Datetime</b>: '
 
     dt_input._start._process_events({'value': '2018-01-05 00:00:00'})
     assert dt_input.value == (datetime(2018, 1, 2), datetime(2018, 1, 3))
-    assert label.text == 'Datetime (start of range must be <= end)'
+    assert label.text == '<b>Datetime</b>:  (start of range must be <= end)'
 
     dt_input._start._process_events({'value': '2018-01-01 00:00:00'})
     assert dt_input.value == (datetime(2018, 1, 1), datetime(2018, 1, 3))
-    assert label.text == 'Datetime'
+    assert label.text == '<b>Datetime</b>: '
 
 
 def test_int_input(document, comm):
-    int_input = IntInput(name='Int input')
+    int_input = IntInput(label='Int input')
     widget = int_input.get_root(document, comm=comm)
 
     assert isinstance(widget, int_input._widget_type)
@@ -421,7 +421,7 @@ def test_int_input(document, comm):
 
 
 def test_float_input(document, comm):
-    float_input = FloatInput(value=0.4, name="Float input")
+    float_input = FloatInput(value=0.4, label="Float input")
     widget = float_input.get_root(document, comm=comm)
 
     assert isinstance(widget, float_input._widget_type)
@@ -449,7 +449,7 @@ def test_float_input(document, comm):
 
 
 def test_array_input(document, comm):
-    array_input = ArrayInput(value=np.array([1, 2, 3]),  name="Array input", max_array_size=3)
+    array_input = ArrayInput(value=np.array([1, 2, 3]),  label="Array input", max_array_size=3)
     widget = array_input.get_root(document, comm=comm)
 
     assert isinstance(widget, array_input._widget_type)
@@ -486,7 +486,7 @@ def test_file_input_save_one_file(document, comm, tmpdir):
 
 def test_int_input_placeholder(document, comm):
 
-    int_input = IntInput(placeholder='Foo', name='IntInput')
+    int_input = IntInput(placeholder='Foo', label='IntInput')
 
     widget = int_input.get_root(document, comm=comm)
 

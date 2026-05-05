@@ -365,7 +365,7 @@ class Number(ValueIndicator):
     title_size = param.String(default='18pt', doc="""
         The size of the title given by the label.""")
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': 'label'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None}
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'colors': None, 'default_color': None,
@@ -1470,7 +1470,11 @@ class TooltipIcon(Widget):
     value = param.ClassSelector(default="Description", class_=(str, Tooltip), doc="""
         The description in the tooltip.""")
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'description'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        'label': 'name',
+        'name': None,
+        'value': 'description',
+    }
 
     _widget_type = _BkTooltipIcon
 

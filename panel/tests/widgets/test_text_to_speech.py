@@ -259,7 +259,7 @@ def test_can_set_voices():
 
 
 def manualtest_get_app():
-    text_to_speech = TextToSpeech(name="Speaker", value=TEXT, auto_speak=False)
+    text_to_speech = TextToSpeech(label="Speaker", value=TEXT, auto_speak=False)
     speaker_settings = pn.Param(
         text_to_speech,
         parameters=[

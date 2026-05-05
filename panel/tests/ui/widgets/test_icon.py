@@ -343,7 +343,7 @@ def test_button_icon_tooltip(page):
 
 
 def test_button_icon_name(page):
-    button = ButtonIcon(name="Like")
+    button = ButtonIcon(label="Like")
     serve_component(page, button)
 
     assert button.name == "Like"
@@ -351,7 +351,7 @@ def test_button_icon_name(page):
 
 
 def test_button_icon_name_dynamically(page):
-    button = ButtonIcon(name="Like")
+    button = ButtonIcon(label="Like")
     serve_component(page, button)
 
     assert button.name == "Like"

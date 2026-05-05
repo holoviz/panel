@@ -474,7 +474,7 @@ class Param(Pane):
         label = ''
         if self_or_cls.show_labels or issubclass(widget_class, _ButtonBase):
             label = p_obj.label or ''
-        kw = dict(disabled=p_obj.constant, name=label)
+        kw = dict(disabled=p_obj.constant, label=label)
         if self_or_cls.hide_constant:
             kw['visible'] = not p_obj.constant
 
@@ -705,10 +705,14 @@ class Param(Pane):
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
             and (self_or_cls.expand_button or (self_or_cls.expand_button is None and not self_or_cls.expand))):
             toggle = Toggle(
-                name='\u22EE', button_type='primary',
-                disabled=not is_parameterized(value), max_height=30,
-                max_width=20, height_policy='fit', align='end',
-                margin=(0, 0, 5, 10)
+                align='end',
+                button_type='primary',
+                disabled=not is_parameterized(value),
+                height_policy='fit',
+                label='\u22EE',
+                margin=(0, 0, 5, 10),
+                max_height=30,
+                max_width=20
             )
             width = widget.width
             widget.param.update(

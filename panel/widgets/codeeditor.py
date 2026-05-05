@@ -67,7 +67,9 @@ class CodeEditor(Widget):
     value_input = param.String(default="", doc="""
         State of the current code updated on every key press. Identical to `value` if `on_keyup`.""")
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        "value": "code", "value_input": "code_input", "name": None, "label": None,
+    }
 
     THEME_CONFIGURATION: t.ClassVar[dict[str,str]] = {"dark": "github_dark", "default": "github_light_default"}
 

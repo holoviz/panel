@@ -156,15 +156,15 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     def _build_layout(self) -> Column:
         str_repr = Str(repr(self))
         server_info = HTML('')
-        button = Button(name='Launch server')
+        button = Button(label='Launch server')
         def launch(event):
             if self._server:
-                button.name = 'Launch server'
+                button.label = 'Launch server'
                 server_info.object = ''
                 self._server.stop()
                 self._server = None
             else:
-                button.name = 'Stop server'
+                button.label = 'Stop server'
                 self._server = self._get_server(start=True, show=True)
                 server_info.object = _server_info.format(port=self._server.port)
         button.param.watch(launch, 'clicks')

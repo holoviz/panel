@@ -14,7 +14,7 @@ pytestmark = pytest.mark.ui
 
 
 def test_button_click(page):
-    button = Button(name='Click')
+    button = Button(label='Click')
 
     events = []
     def cb(event):

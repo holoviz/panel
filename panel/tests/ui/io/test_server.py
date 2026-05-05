@@ -85,6 +85,6 @@ def test_server_reuse_sessions_with_session_key_func(page, reuse_sessions):
 
 @pytest.mark.filterwarnings("ignore:remove second argument of ws_handler:DeprecationWarning")
 def test_fastapi_server(page, server_implementation):
-    slider = IntSlider(name="Slider", start=0, end=10, value=3)
+    slider = IntSlider(label="Slider", start=0, end=10, value=3)
     serve_component(page, slider)
     expect(page.locator(".noUi-target")).to_be_visible()

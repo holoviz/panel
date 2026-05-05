@@ -42,7 +42,8 @@ class Textual(Pane):
 
     def __init__(self, object=None, **params):
         super().__init__(object=object, **params)
-        self._terminal = Terminal(**{p: v for p, v in self.param.values().items() if p in Viewable.param})
+        kwargs = {p: v for p, v in self.param.values().items() if p in Viewable.param and p != "name"}
+        self._terminal = Terminal(**kwargs)
         self._internal_callbacks.append(
             self.param.watch(self._link_terminal_params, list(Viewable.param))
         )
