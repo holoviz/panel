@@ -83,16 +83,16 @@ def _normalize_button_appearance_constructor_params(params: dict[str, t.Any]) ->
 
 def _merge_color_button_type_aliases_in_param_change(params: dict[str, t.Any]) -> None:
     if "color" in params and "button_type" in params:
-        params.pop("color")
-    elif "color" in params:
-        params["button_type"] = params.pop("color")
+        params.pop("button_type")
+    elif "button_type" in params:
+        params["color"] = params.pop("button_type")
 
 
 def _merge_variant_button_style_aliases_in_param_change(params: dict[str, t.Any]) -> None:
     if "variant" in params and "button_style" in params:
-        params.pop("variant")
-    elif "variant" in params:
-        params["button_style"] = params.pop("variant")
+        params.pop("button_style")
+    elif "button_style" in params:
+        params["variant"] = params.pop("button_style")
 
 
 def _merge_button_appearance_aliases_in_param_change(params: dict[str, t.Any]) -> None:
@@ -102,12 +102,12 @@ def _merge_button_appearance_aliases_in_param_change(params: dict[str, t.Any]) -
 
 def _sync_color_button_type_alias_post_init(owner: param.Parameterized) -> None:
     if owner.color != owner.button_type:  # type: ignore[attr-defined]
-        owner.color = owner.button_type  # type: ignore[attr-defined]
+        owner.button_type = owner.color  # type: ignore[attr-defined]
 
 
 def _sync_variant_button_style_alias_post_init(owner: param.Parameterized) -> None:
     if owner.variant != owner.button_style:  # type: ignore[attr-defined]
-        owner.variant = owner.button_style  # type: ignore[attr-defined]
+        owner.button_style = owner.variant  # type: ignore[attr-defined]
 
 
 def _sync_button_appearance_aliases_post_init(owner: param.Parameterized) -> None:
@@ -118,7 +118,7 @@ def _sync_button_appearance_aliases_post_init(owner: param.Parameterized) -> Non
 def _register_color_button_type_sync_watchers(owner: param.Parameterized) -> None:
     def _sync_color_from_button_type(event: param.parameterized.Event) -> None:
         self = event.obj
-        if self.color != self.button_type:  # type: ignore[attr-defined]
+        if self.color != self.button_type and self.button_type is not None:  # type: ignore[attr-defined]
             self.color = self.button_type  # type: ignore[attr-defined]
 
     def _sync_button_type_from_color(event: param.parameterized.Event) -> None:
@@ -135,7 +135,7 @@ def _register_color_button_type_sync_watchers(owner: param.Parameterized) -> Non
 def _register_variant_button_style_sync_watchers(owner: param.Parameterized) -> None:
     def _sync_variant_from_button_style(event: param.parameterized.Event) -> None:
         self = event.obj
-        if self.variant != self.button_style:  # type: ignore[attr-defined]
+        if self.variant != self.button_style and self.button_style is not None:  # type: ignore[attr-defined]
             self.variant = self.button_style  # type: ignore[attr-defined]
 
     def _sync_button_style_from_variant(event: param.parameterized.Event) -> None:
