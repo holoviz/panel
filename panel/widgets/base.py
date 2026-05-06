@@ -42,6 +42,12 @@ class WidgetBase(param.Parameterized):
     e.g. it may be used as a mix-in to a PyComponent or JSComponent.
     """
 
+    label = param.String(default='', doc="""
+       The label for the widget.""")
+
+    name = param.String(default='', constant=False, doc="""
+       Alias for label.""")
+
     value: t.Any = param.Parameter(allow_None=True, doc="""
         The widget value which the widget type resolves to when used
         as a reactive param reference.""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -107,6 +113,25 @@ class WidgetBase(param.Parameterized):
         """
         return cls(**cls._infer_params(values, **params))
 
+    def __init__(self, **params: t.Any):
+        if "name" in params and "label" in params:
+            warnings.warn(
+                "Both 'name' and 'label' were provided; using 'label' and ignoring 'name'.",
+                PendingDeprecationWarning,
+                stacklevel=2,
+            )
+            params["name"] = params["label"]
+        elif "name" in params:
+            warnings.warn(
+                "'name' is deprecated and will be removed in a future release. Use 'label' instead.",
+                PendingDeprecationWarning,
+                stacklevel=2,
+            )
+            params["label"] = params["name"]
+        else:
+            params["name"] = params.get("label", "")
+        super().__init__(**params)
+
     @property
     def rx(self):
         return self.param.value.rx
@@ -120,12 +145,6 @@ class Widget(Reactive, WidgetBase):
 
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
-
-    label = param.String(default='', doc="""
-       The label for the widget.""")
-
-    name = param.String(default='', constant=False, doc="""
-       Alias for label.""")
 
     height = param.Integer(default=None, bounds=(0, None))
 
@@ -149,22 +168,6 @@ class Widget(Reactive, WidgetBase):
     __abstract = True
 
     def __init__(self, **params: t.Any):
-        if "name" in params and "label" in params:
-            warnings.warn(
-                "Both 'name' and 'label' were provided; using 'label' and ignoring 'name'.",
-                PendingDeprecationWarning,
-                stacklevel=2,
-            )
-            params["name"] = params["label"]
-        elif "name" in params:
-            warnings.warn(
-                "'name' is deprecated and will be removed in a future release. Use 'label' instead.",
-                PendingDeprecationWarning,
-                stacklevel=2,
-            )
-            params["label"] = params["name"]
-        else:
-            params["name"] = params.get("label", "")
         if '_supports_embed' in params:
             self._supports_embed = params.pop('_supports_embed')
         if '_param_pane' in params:
