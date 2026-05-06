@@ -673,14 +673,11 @@ class IntRangeSlider(RangeSlider):
     ... )
     """
 
-    start = param.Integer(default=0, doc="""
-        The lower bound.""")
+    start = param.Integer(default=0, doc="The lower bound.")  # type: ignore[assignment]
 
-    end = param.Integer(default=1, doc="""
-        The upper bound.""")
+    end = param.Integer(default=1, doc="The upper bound.")  # type: ignore[assignment]
 
-    step = param.Integer(default=1, doc="""
-        The step size""")
+    step = param.Integer(default=1, doc="The step size.")  # type: ignore[assignment]
 
     def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_property_change(props)

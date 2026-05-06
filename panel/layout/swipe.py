@@ -12,6 +12,9 @@ from ..reactive import ReactiveHTML
 from ..viewable import Children
 from .base import ListLike
 
+if t.TYPE_CHECKING:
+    from typing_extensions import Self
+
 
 class Swipe(ListLike, ReactiveHTML):
     """
@@ -142,6 +145,9 @@ class Swipe(ListLike, ReactiveHTML):
     @after.setter
     def after(self, after):
         self[1] = after
+
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
+        return super().clone(*objects, **params)
 
     def select(self, selector=None):
         """

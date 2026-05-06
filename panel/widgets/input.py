@@ -959,14 +959,14 @@ class _NumericInputBase(Widget):
 
 class _IntInputBase(_NumericInputBase):
 
-    value = param.Integer(default=0, allow_None=True, doc="""
-        The current value of the spinner.""")
+    value: int | None = param.Integer(default=0, allow_None=True, doc="""
+        The current value of the spinner.""")  # type: ignore[assignment]
 
-    start = param.Integer(default=None, allow_None=True, doc="""
-        Optional minimum allowable value.""")
+    start: int | None = param.Integer(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")  # type: ignore[assignment]
 
-    end = param.Integer(default=None, allow_None=True, doc="""
-        Optional maximum allowable value.""")
+    end: int | None = param.Integer(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")  # type: ignore[assignment]
 
     mode = param.String(default='int', constant=True, doc="""
         Define the type of number which can be enter in the input""")
@@ -977,13 +977,13 @@ class _IntInputBase(_NumericInputBase):
 class _FloatInputBase(_NumericInputBase):
 
     value = param.Number(default=0, allow_None=True, doc="""
-        The current value of the spinner.""")
+        The current value of the spinner.""")  # type: ignore[assignment]
 
-    start = param.Number(default=None, allow_None=True, doc="""
-        Optional minimum allowable value.""")
+    start = param.Number(default=None, doc="""
+        Optional minimum allowable value.""")  # type: ignore[assignment]
 
-    end = param.Number(default=None, allow_None=True, doc="""
-        Optional maximum allowable value.""")
+    end = param.Number(default=None, doc="""
+        Optional maximum allowable value.""")  # type: ignore[assignment]
 
     mode = param.String(default='float', constant=True, doc="""
         Define the type of number which can be enter in the input""")
@@ -1076,8 +1076,7 @@ class IntInput(_SpinnerBase, _IntInputBase):
     >>> IntInput(name='Value', value=100, start=0, end=1000, step=10)
     """
 
-    step = param.Integer(default=1, doc="""
-        The step size.""")
+    step = param.Integer(default=1, doc="The step size.")
 
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
@@ -1104,8 +1103,7 @@ class FloatInput(_SpinnerBase, _FloatInputBase):
     placeholder = param.String(default='', doc="""
         Placeholder when the value is empty.""")
 
-    step = param.Number(default=0.1, doc="""
-        The step size.""")
+    step = param.Number(default=0.1, doc="The step size.")
 
     value_throttled = param.Number(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
@@ -1363,7 +1361,7 @@ class DatetimeInput(LiteralInput):
     format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
         Datetime format used for parsing and formatting the datetime.""")
 
-    type = datetime
+    type = datetime  # type: ignore[assignment]
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None

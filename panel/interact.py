@@ -66,7 +66,7 @@ class interactive(Pane):
 
     default_layout = param.ClassSelector(
         default=Column, class_=ListLike, is_instance=False
-    )
+    )  # type: ignore[assignment]
 
     manual_update = param.Boolean(default=False, doc="""
         Whether to update manually by clicking on button.""")

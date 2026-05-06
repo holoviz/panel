@@ -10,6 +10,10 @@ from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .base import ListLike
 
+if t.TYPE_CHECKING:
+    from typing_extensions import Self
+
+
 POSITIONS = [
     'center',
     'left-top',
@@ -231,6 +235,9 @@ class FloatPanel(ListLike, ReactiveHTML):
 
     def __init__(self, *objects, name='', **params):
         super().__init__(objects=list(objects), name=name, **params)
+
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
+        return super().clone(*objects, **params)
 
     def select(self, selector=None):
         """

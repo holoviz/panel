@@ -29,7 +29,10 @@ class ReactTemplate(BasicTemplate):
 
     breakpoints = param.Dict(default={'lg': 1200, 'md': 996, 'sm': 768, 'xs': 480, 'xxs': 0})
 
-    main = param.ClassSelector(class_=GridSpec, constant=True, doc="""
+    main = param.ClassSelector(
+        class_=GridSpec,  # type: ignore[arg-type]
+        constant=True,
+        doc="""
         A list-like container which populates the main area.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     row_height = param.Integer(default=150)

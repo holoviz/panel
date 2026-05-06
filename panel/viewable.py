@@ -885,7 +885,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     # Public API
     #----------------------------------------------------------------
 
-    def clone(self, *objects: t.Any, **params) -> Self:
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
         """
         Makes a copy of the object sharing the same parameters.
 

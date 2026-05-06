@@ -49,7 +49,7 @@ class PlayerBase(Widget):
     step = param.Integer(default=1, doc="""
         Number of frames to step forward and back by on each event.""")
 
-    height = param.Integer(default=80)
+    height = param.Integer(default=80, allow_None=True)
 
     value_align: t.Literal["start", "center", "end"] = param.Selector(
         objects=["start", "center", "end"], doc="""
