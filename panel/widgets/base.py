@@ -6,6 +6,7 @@ parameters.
 from __future__ import annotations
 
 import typing as t
+import warnings
 
 import numpy as np
 import param  # type: ignore
@@ -18,7 +19,8 @@ from .._param import Margin
 from ..io.state import state
 from ..layout.base import Row
 from ..reactive import Reactive
-from ..util import unique_iterator
+from ..util import edit_readonly, unique_iterator
+from ..util.warnings import find_stack_level
 from ..viewable import Layoutable, Viewable
 
 if t.TYPE_CHECKING:
@@ -40,6 +42,12 @@ class WidgetBase(param.Parameterized):
     implementing the methods associated with a Reactive Panel component,
     e.g. it may be used as a mix-in to a PyComponent or JSComponent.
     """
+
+    label = param.String(default='', doc="""
+       The label for the widget.""")
+
+    name = param.String(default='', constant=False, doc="""
+       Alias for label.""")
 
     value: t.Any = param.Parameter(allow_None=True, doc="""
         The widget value which the widget type resolves to when used
@@ -69,8 +77,8 @@ class WidgetBase(param.Parameterized):
 
     @classmethod
     def _infer_params(cls, values, **params):
-        if 'name' not in params and getattr(values, 'name', None):
-            params['name'] = values.name
+        if 'label' not in params and getattr(values, 'name', None):
+            params['label'] = values.name
         if 'start' in cls.param and 'start' not in params:
             params['start'] = np.nanmin(values)
         if 'end' in cls.param and 'end' not in params:
@@ -106,6 +114,26 @@ class WidgetBase(param.Parameterized):
         """
         return cls(**cls._infer_params(values, **params))
 
+    def __init__(self, **params: t.Any):
+        if "name" in params and "label" in params:
+            warnings.warn(
+                "Both 'name' and 'label' were provided; using 'label' and ignoring 'name'. "
+                "Widget.name is deprecated and will be removed in version 2.0.",
+                PendingDeprecationWarning,
+                stacklevel=find_stack_level(),
+            )
+            params["name"] = params["label"]
+        elif "name" in params:
+            warnings.warn(
+                "Widget.name is deprecated and will be removed in version 2.0. Use 'label' instead.",
+                PendingDeprecationWarning,
+                stacklevel=find_stack_level(),
+            )
+            params["label"] = params["name"]
+        else:
+            params["name"] = params.get("label", "")
+        super().__init__(**params)
+
     @property
     def rx(self):
         return self.param.value.rx
@@ -120,8 +148,6 @@ class Widget(Reactive, WidgetBase):
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
 
-    name = param.String(default='', constant=False)
-
     height = param.Integer(default=None, bounds=(0, None))
 
     width = param.Integer(default=None, bounds=(0, None))
@@ -131,7 +157,12 @@ class Widget(Reactive, WidgetBase):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    name = param.String(default='', constant=False, doc="""
+       Alias for label.""")
+
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': 'title', 'name': None}
+
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'name': None}
 
     # Whether the widget supports embedding
     _supports_embed: bool = False
@@ -142,8 +173,6 @@ class Widget(Reactive, WidgetBase):
     __abstract = True
 
     def __init__(self, **params: t.Any):
-        if 'name' not in params:
-            params['name'] = ''
         if '_supports_embed' in params:
             self._supports_embed = params.pop('_supports_embed')
         if '_param_pane' in params:
@@ -151,6 +180,19 @@ class Widget(Reactive, WidgetBase):
         else:
             self._param_pane = None
         super().__init__(**params)
+        self._internal_callbacks.extend([
+            self.param.watch(self._sync__label, ['name']),
+            self.param.watch(self._sync__name, ['label'])
+        ])
+
+    def _sync__label(self, event):
+        if self.label != self.name:
+            self.label = self.name
+
+    def _sync__name(self, event):
+        if self.label != self.name:
+            with edit_readonly(self):
+                self.name = self.label
 
     @property
     def _linked_properties(self) -> tuple[str, ...]:

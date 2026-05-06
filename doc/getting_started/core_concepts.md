@@ -251,7 +251,7 @@ To craft an interactive application, you'll typically add widget components (suc
 ```{pyodide}
 import panel as pn
 
-x = pn.widgets.IntSlider(name='x', start=0, end=100)
+x = pn.widgets.IntSlider(label='x', start=0, end=100)
 
 def square(x):
     return f'{x} squared is {x**2}'
@@ -272,8 +272,8 @@ While the binding approach above works, it can be somewhat heavy-handed. Wheneve
 ```{pyodide}
 import panel as pn
 
-x = pn.widgets.IntSlider(name='x', start=0, end=100)
-background = pn.widgets.ColorPicker(name='Background', value='lightgray')
+x = pn.widgets.IntSlider(label='x', start=0, end=100)
+background = pn.widgets.ColorPicker(label='Background', value='lightgray')
 
 def square(x):
     return f'{x} squared is {x**2}'
@@ -312,11 +312,11 @@ import panel as pn
 pn.extension(template='fast')
 
 freq = pn.widgets.FloatSlider(
-    name='Frequency', start=0, end=10, value=5
+    label='Frequency', start=0, end=10, value=5
 ).servable(target='sidebar')
 
 ampl = pn.widgets.FloatSlider(
-    name='Amplitude', start=0, end=1, value=0.5
+    label='Amplitude', start=0, end=1, value=0.5
 ).servable(target='sidebar')
 
 def plot(freq, ampl):

@@ -19,7 +19,7 @@ def test_list_constructor(widget):
 @pytest.mark.parametrize('widget', [AutocompleteInput, Select])
 def test_select_float_option_with_equality(widget):
     opts = {'A': 3.14, '1': 2.0}
-    select = widget(options=opts, value=3.14, name='Select')
+    select = widget(options=opts, value=3.14, label='Select')
     assert select.value == 3.14
 
     select.value = 2
@@ -31,7 +31,7 @@ def test_select_float_option_with_equality(widget):
 @pytest.mark.parametrize('widget', [AutocompleteInput, Select])
 def test_select_text_option_with_equality(widget):
     opts = {'A': 'ABC', '1': 'DEF'}
-    select = widget(options=opts, value='DEF', name='Select')
+    select = widget(options=opts, value='DEF', label='Select')
     assert select.value == 'DEF'
 
     select.value = 'ABC'
@@ -57,18 +57,18 @@ def test_select_from_index(document, comm):
 
     assert select.options == ['A', 'B', 'C']
     assert select.value == 'A'
-    assert select.name == 'index'
+    assert select.label == 'index'
 
 def test_select_from_series(document, comm):
     select = Select.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
     assert select.options == ['A', 'B', 'C']
     assert select.value == 'A'
-    assert select.name == 'Series'
+    assert select.label == 'Series'
 
 def test_select(document, comm):
     opts = {'A': 'a', '1': 1}
-    select = Select(options=opts, value=opts['1'], name='Select')
+    select = Select(options=opts, value=opts['1'], label='Select')
 
     widget = select.get_root(document, comm=comm)
 
@@ -89,7 +89,7 @@ def test_select(document, comm):
 
 def test_autocomplete(document, comm):
     opts = {'A': 'a', '1': 1}
-    select = AutocompleteInput(options=opts, value=opts['1'], name='Autocomplete')
+    select = AutocompleteInput(options=opts, value=opts['1'], label='Autocomplete')
 
     widget = select.get_root(document, comm=comm)
 
@@ -110,7 +110,7 @@ def test_autocomplete(document, comm):
 
 def test_autocomplete_unrestricted(document, comm):
     opts = {'A': 'a', '1': 1}
-    select = AutocompleteInput(options=opts, value=opts['1'], name='Autocomplete', restrict=False)
+    select = AutocompleteInput(options=opts, value=opts['1'], label='Autocomplete', restrict=False)
 
     widget = select.get_root(document, comm=comm)
 
@@ -130,7 +130,7 @@ def test_autocomplete_unrestricted(document, comm):
 
 def test_autocomplete_restricted_reset_on_new_options(document, comm):
     opts = {'A': 'a', '1': 1}
-    select = AutocompleteInput(options=opts, value=1, name='Autocomplete', restrict=True)
+    select = AutocompleteInput(options=opts, value=1, label='Autocomplete', restrict=True)
 
     widget = select.get_root(document, comm=comm)
 
@@ -139,7 +139,7 @@ def test_autocomplete_restricted_reset_on_new_options(document, comm):
 
 def test_autocomplete_unrestricted_no_reset_on_new_options(document, comm):
     opts = {'A': 'a', '1': 1}
-    select = AutocompleteInput(options=opts, value=1, name='Autocomplete', restrict=False)
+    select = AutocompleteInput(options=opts, value=1, label='Autocomplete', restrict=False)
 
     widget = select.get_root(document, comm=comm)
 
@@ -158,7 +158,7 @@ def test_select_parameterized_option_labels(widget):
 
 def test_select_groups_list_options(document, comm):
     groups = dict(a=[1, 2], b=[3])
-    select = Select(value=groups['a'][0], groups=groups, name='Select')
+    select = Select(value=groups['a'][0], groups=groups, label='Select')
 
     widget = select.get_root(document, comm=comm)
 
@@ -179,7 +179,7 @@ def test_select_groups_list_options(document, comm):
 
 def test_select_groups_dict_options(document, comm):
     groups = dict(A=dict(a=1, b=2), B=dict(c=3))
-    select = Select(value=groups['A']['a'], groups=groups, name='Select')
+    select = Select(value=groups['A']['a'], groups=groups, label='Select')
 
     widget = select.get_root(document, comm=comm)
 
@@ -200,7 +200,7 @@ def test_select_groups_dict_options(document, comm):
 
 def test_select_change_groups(document, comm):
     groups = dict(A=dict(a=1, b=2), B=dict(c=3))
-    select = Select(value=groups['A']['a'], groups=groups, name='Select')
+    select = Select(value=groups['A']['a'], groups=groups, label='Select')
 
     widget = select.get_root(document, comm=comm)
 
@@ -218,25 +218,25 @@ def test_select_change_groups(document, comm):
 def test_select_groups_error_with_options():
     # Instantiate with groups and options
     with pytest.raises(ValueError):
-        Select(options=[1, 2], groups=dict(a=[1], b=[2]), name='Select')
+        Select(options=[1, 2], groups=dict(a=[1], b=[2]), label='Select')
 
     opts = [1, 2, 3]
     groups = dict(a=[1, 2], b=[3])
 
     # Instamtiate with options and then update groups
-    select = Select(options=opts, name='Select')
+    select = Select(options=opts, label='Select')
     with pytest.raises(ValueError):
         select.groups = groups
 
     # Instantiate with groups and then update options
-    select = Select(groups=groups, name='Select')
+    select = Select(groups=groups, label='Select')
     with pytest.raises(ValueError):
         select.options = opts
 
 @pytest.mark.parametrize('widget', [AutocompleteInput, Select])
 def test_select_change_options(widget, document, comm):
     opts = {'A': 'a', '1': 1}
-    select = widget(options=opts, value=opts['1'], name='Select')
+    select = widget(options=opts, value=opts['1'], label='Select')
 
     widget = select.get_root(document, comm=comm)
 
@@ -251,7 +251,7 @@ def test_select_change_options(widget, document, comm):
 @pytest.mark.parametrize('widget', [AutocompleteInput, Select])
 def test_select_non_hashable_options(widget, document, comm):
     opts = {'A': np.array([1, 2, 3]), '1': np.array([3, 4, 5])}
-    select = widget(options=opts, value=opts['1'], name='Select')
+    select = widget(options=opts, value=opts['1'], label='Select')
 
     widget = select.get_root(document, comm=comm)
 
@@ -266,7 +266,7 @@ def test_select_non_hashable_options(widget, document, comm):
 
 def test_select_mutables(document, comm):
     opts = {'A': [1,2,3], 'B': [2,4,6], 'C': dict(a=1,b=2)}
-    select = Select(options=opts, value=opts['B'], name='Select')
+    select = Select(options=opts, value=opts['B'], label='Select')
 
     widget = select.get_root(document, comm=comm)
 
@@ -288,7 +288,7 @@ def test_select_mutables(document, comm):
 
 def test_select_change_options_on_watch(document, comm):
     select = Select(options={'A': 'A', '1': 1, 'C': object},
-                    value='A', name='Select')
+                    value='A', label='Select')
 
     def set_options(event):
         if event.new == 1:
@@ -654,9 +654,9 @@ def test_nested_select_custom_widgets(document, comm):
     assert isinstance(widget_1, Select)
     assert isinstance(widget_2, DiscreteSlider)
     assert widget_0.width == 250
-    assert widget_0.name == "Name"
-    assert widget_1.name == "Variable"
-    assert widget_2.name == "lvl"
+    assert widget_0.label == "Name"
+    assert widget_1.label == "Variable"
+    assert widget_2.label == "lvl"
     assert widget_0.options == ["Andrew", "Ben"]
     assert widget_1.options == ["temp", "vorticity"]
     assert widget_2.options == [1000, 925, 700, 500, 300]
@@ -966,18 +966,18 @@ def test_multi_select_from_index():
 
     assert select.options == ['A', 'B', 'C']
     assert select.value == []
-    assert select.name == 'index'
+    assert select.label == 'index'
 
 def test_multi_select_from_series(document, comm):
     select = MultiSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
     assert select.options == ['A', 'B', 'C']
     assert select.value == []
-    assert select.name == 'Series'
+    assert select.label == 'Series'
 
 def test_multi_select(document, comm):
     select = MultiSelect(options={'A': 'A', '1': 1, 'C': object},
-                         value=[object, 1], name='Select')
+                         value=[object, 1], label='Select')
 
     widget = select.get_root(document, comm=comm)
 
@@ -1000,7 +1000,7 @@ def test_multi_select(document, comm):
 
 def test_multi_choice(document, comm):
     choice = MultiChoice(options={'A': 'A', '1': 1, 'C': object},
-                         value=[object, 1], name='MultiChoice')
+                         value=[object, 1], label='MultiChoice')
 
     widget = choice.get_root(document, comm=comm)
 
@@ -1023,7 +1023,7 @@ def test_multi_choice(document, comm):
 
 def test_multi_select_change_options(document, comm):
     select = MultiSelect(options={'A': 'A', '1': 1, 'C': object},
-                         value=[object, 1], name='Select')
+                         value=[object, 1], label='Select')
 
     def set_options(event):
         if event.new == [1]:
@@ -1040,22 +1040,22 @@ def test_multi_select_change_options(document, comm):
 def test_toggle_group_error_init(document, comm):
     with pytest.raises(ValueError):
         ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
-                    value=1, name='RadioButtonGroup',
+                    value=1, label='RadioButtonGroup',
                     widget_type='button', behavior='check')
 
     with pytest.raises(ValueError):
         ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
-                    value=[1, object], name='RadioButtonGroup',
+                    value=[1, object], label='RadioButtonGroup',
                     widget_type='button', behavior='radio')
 
     with pytest.raises(ValueError):
         ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
-                    value=[1, object], name='RadioButtonGroup',
+                    value=[1, object], label='RadioButtonGroup',
                     widget_type='buttons')
 
     with pytest.raises(ValueError):
         ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
-                    value=[1, object], name='RadioButtonGroup',
+                    value=[1, object], label='RadioButtonGroup',
                     behavior='checks')
 
 
@@ -1063,7 +1063,7 @@ def test_toggle_group_check(document, comm):
 
     for widget_type in ToggleGroup._widgets_type:
         select = ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
-                             value=[1, object], name='CheckButtonGroup',
+                             value=[1, object], label='CheckButtonGroup',
                              widget_type=widget_type, behavior='check')
 
         widget = select.get_root(document, comm=comm)
@@ -1097,7 +1097,7 @@ def test_toggle_group_radio(document, comm):
 
     for widget_type in ToggleGroup._widgets_type:
         select = ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
-                             value=1, name='RadioButtonGroup',
+                             value=1, label='RadioButtonGroup',
                              widget_type=widget_type, behavior='radio')
 
         widget = select.get_root(document, comm=comm)

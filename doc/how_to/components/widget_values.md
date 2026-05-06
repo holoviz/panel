@@ -13,7 +13,7 @@ Let's first create a `TextInput` widget:
 import panel as pn
 pn.extension() # for notebook
 
-widget = pn.widgets.TextInput(name='A widget', value='A string')
+widget = pn.widgets.TextInput(label='A widget', value='A string')
 widget
 ```
 

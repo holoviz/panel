@@ -26,7 +26,7 @@ column
 Next, we add a few more widgets:
 
 ```{pyodide}
-column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(name='Tick this!')])
+column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(label='Tick this!')])
 
 column
 ```
@@ -34,7 +34,7 @@ column
 Now, we change our mind and replace the ``Checkbox`` with a button:
 
 ```{pyodide}
-column[4] = pn.widgets.Button(name='Click here')
+column[4] = pn.widgets.Button(label='Click here')
 
 column
 ```
@@ -61,8 +61,8 @@ pn.extension() # for notebook
 
 column = pn.Column('some text', pn.widgets.FloatSlider())
 column.append('* Item 1\n* Item 2')
-column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(name='Tick this!')])
-column[4] = pn.widgets.Button(name='Click here')
+column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(label='Tick this!')])
+column[4] = pn.widgets.Button(label='Click here')
 column.pop(1)
 
 column
@@ -150,7 +150,7 @@ Then, place an image and a ``Column`` of widgets under the plot:
 gridspec[3, 2] = pn.Column(
     pn.widgets.FloatSlider(),
     pn.widgets.ColorPicker(),
-    pn.widgets.Toggle(name='Toggle Me!'))
+    pn.widgets.Toggle(label='Toggle Me!'))
 gridspec[3, 1] = 'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png'
 
 gridspec
@@ -181,7 +181,7 @@ gridspec[1:3, 1:3] = p1
 gridspec[3, 2] = pn.Column(
     pn.widgets.FloatSlider(),
     pn.widgets.ColorPicker(),
-    pn.widgets.Toggle(name='Toggle Me!'))
+    pn.widgets.Toggle(label='Toggle Me!'))
 gridspec[3, 1] = 'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png'
 
 del gridspec[0, :3]

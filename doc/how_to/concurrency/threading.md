@@ -16,7 +16,7 @@ def button_click(event):
     time.sleep(2) # Simulate long running operation
     print(f'Finished processing {event.new}th click.')
 
-button = pn.widgets.Button(name='Click me!')
+button = pn.widgets.Button(label='Click me!')
 
 button.on_click(button_click)
 ```

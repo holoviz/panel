@@ -11,7 +11,7 @@ How to use indicators
 ---------------------
 
 >>> pn.indicators.Number(
-...    name='Rate', value=72, format='{value}%',
+...    label='Rate', value=72, format='{value}%',
 ...    colors=[(80, 'green'), (100, 'red')]
 ... )
 """
@@ -75,7 +75,7 @@ class Indicator(Widget):
 
     _linked_properties: tuple[str,...] = ()
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None}
 
     __abstract = True
 
@@ -227,7 +227,7 @@ class LoadingSpinner(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename = {'name': 'text'}
+    _rename = {'label': 'text'}
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'color': None, 'bgcolor': None, 'size': None
@@ -343,7 +343,7 @@ class Number(ValueIndicator):
 
     :Example:
 
-    >>> Number(name='Rate', value=72, format='{value}%', colors=[(80, 'green'), (100, 'red')]
+    >>> Number(label='Rate', value=72, format='{value}%', colors=[(80, 'green'), (100, 'red')]
     """
 
     default_color = param.String(default='currentcolor', doc="""
@@ -363,9 +363,9 @@ class Number(ValueIndicator):
         How to format nan values.""")
 
     title_size = param.String(default='18pt', doc="""
-        The size of the title given by the name.""")
+        The size of the title given by the label.""")
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'name'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None}
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'colors': None, 'default_color': None,
@@ -386,7 +386,7 @@ class Number(ValueIndicator):
             return props
         font_size = props.pop('font_size', self.font_size)
         title_font_size = props.pop('title_size', self.title_size)
-        name = props.pop('name', self.name)
+        label = props.pop('label', self.label)
         format = props.pop('format', self.format)
         value = props.pop('value', self.value)
         nan_format = props.pop('nan_format', self.nan_format)
@@ -399,9 +399,9 @@ class Number(ValueIndicator):
             value = float('nan')
         value = format.format(value=value).replace('nan', nan_format)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
-        if self.name:
+        if self.label:
             title_font_size = props.pop('title_size', self.title_size)
-            text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
+            text = f'<div style="font-size: {title_font_size}; color: {color}">{label}</div>\n{text}'
         props['text'] = escape(text)
         return props
 
@@ -418,7 +418,7 @@ class String(ValueIndicator):
         The size of number itself.""")
 
     title_size = param.String(default='18pt', doc="""
-        The size of the title given by the name.""")
+        The size of the title given by the label.""")
 
     value: str | None = param.String(default=None, allow_None=True, doc="""
         The string to display""")  # type: ignore[assignment, ty:invalid-assignment]
@@ -442,13 +442,13 @@ class String(ValueIndicator):
             return props
         font_size = props.pop('font_size', self.font_size)
         title_font_size = props.pop('title_size', self.title_size)
-        name = props.pop('name', self.name)
+        label = props.pop('label', self.label)
         value = props.pop('value', self.value)
         color = props.pop('default_color', self.default_color)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
-        if self.name:
+        if self.label:
             title_font_size = props.pop('title_size', self.title_size)
-            text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
+            text = f'<div style="font-size: {title_font_size}; color: {color}">{label}</div>\n{text}'
         props['text'] = escape(text)
         return props
 
@@ -464,7 +464,7 @@ class Gauge(ValueIndicator):
     :Example:
 
     >>> pn.extension('echarts')
-    >>> Gauge(name='Speed', value=79, bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
+    >>> Gauge(label='Speed', value=79, bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
     """
 
     annulus_width = param.Integer(default=10, doc="""
@@ -564,7 +564,7 @@ class Gauge(ValueIndicator):
                 'startAngle': props.pop('start_angle', self.start_angle),
                 'endAngle': props.pop('end_angle', self.end_angle),
                 'splitNumber': props.pop('num_splits', self.num_splits),
-                'data': [{'value': props.pop('value', self.value), 'name': self.name}],
+                'data': [{'value': props.pop('value', self.value), 'name': self.label}],
                 'axisLine': {
                     'lineStyle': {
                         'width': props.pop('annulus_width', self.annulus_width),
@@ -603,7 +603,7 @@ class Dial(ValueIndicator):
 
     :Example:
 
-    >>> Dial(name='Speed', value=79, format="{value} km/h", bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
+    >>> Dial(label='Speed', value=79, format="{value} km/h", bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
     """
 
     annulus_width = param.Number(default=0.2, doc="""
@@ -755,7 +755,7 @@ class Dial(ValueIndicator):
         text_data= {
             'x':    np.array([0, 0, tminx, tmaxx]),
             'y':    np.array([-.2, -.5, tminy, tmaxy]),
-            'text': [self.name, value, min_value, max_value],
+            'text': [self.label, value, min_value, max_value],
             'rot':  np.array([0, 0, tmin_angle, tmax_angle]),
             'size': [title_size, value_size, tick_size, tick_size],
             'color': [self.label_color, color, self.label_color, self.label_color]
@@ -913,7 +913,7 @@ class LinearGauge(ValueIndicator):
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
         'background': 'background_fill_color',
-        'name': 'name',
+        'label': 'name',
         'show_boundaries': None,
         'default_color': None
     }
@@ -1141,7 +1141,7 @@ class Trend(SyncableData, Indicator):
     :Example:
 
     >>> data = {'x': np.arange(50), 'y': np.random.randn(50).cumsum()}
-    >>> Trend(name='Price', data=data, plot_type='area', width=200, height=200)
+    >>> Trend(label='Price', data=data, plot_type='area', width=200, height=200)
     """
 
     data: t.Any = param.Parameter(doc="""
@@ -1178,7 +1178,7 @@ class Trend(SyncableData, Indicator):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment, ty:invalid-assignment]
 
-    name = param.String(constant=False, doc="""The name or a short description of the card""")
+    label = param.String(constant=False, doc="""The label or a short description of the card""")
 
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
@@ -1191,7 +1191,7 @@ class Trend(SyncableData, Indicator):
     _manual_params: t.ClassVar[list[str]] = ['data']
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'data': None, 'name': 'title', 'selection': None
+        'data': None, 'label': 'title', 'selection': None
     }
 
     _widget_type: t.ClassVar[type[Model]] = _BkTrendIndicator
@@ -1470,7 +1470,11 @@ class TooltipIcon(Widget):
     value = param.ClassSelector(default="Description", class_=(str, Tooltip), doc="""
         The description in the tooltip.""")
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'description'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        'label': None,
+        'name': None,
+        'value': 'description',
+    }
 
     _widget_type = _BkTooltipIcon
 

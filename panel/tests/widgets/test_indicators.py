@@ -6,7 +6,7 @@ from panel.widgets.indicators import (
 
 
 def test_number_none(document, comm):
-    number = Number(value=None, name='Value')
+    number = Number(value=None, label='Value')
 
     model = number.get_root(document, comm)
 
@@ -52,7 +52,7 @@ def test_dial_thresholds(document, comm):
 
 
 def test_dial_none(document, comm):
-    dial = Dial(value=None, name='Value')
+    dial = Dial(value=None, label='Value')
 
     model = dial.get_root(document, comm)
 
@@ -104,10 +104,10 @@ def test_gauge_bounds():
 
 
 def test_gauge_creation():
-    gauge = Gauge(name="Test", value=50, bounds=(0, 100))
+    gauge = Gauge(label="Test", value=50, bounds=(0, 100))
     assert gauge.value == 50
     assert gauge.bounds == (0, 100)
-    assert gauge.name == "Test"
+    assert gauge.label == "Test"
 
 
 def test_gauge_colors():
@@ -121,7 +121,7 @@ def test_gauge_custom_opts():
 
 
 def test_gauge_process_param_change():
-    gauge = Gauge(name="G", value=50, bounds=(0, 100))
+    gauge = Gauge(label="G", value=50, bounds=(0, 100))
     msg = gauge._process_param_change({
         'value': 50, 'bounds': (0, 100), 'tooltip_format': '{b} : {c}%',
         'show_ticks': True, 'show_labels': True, 'title_size': 18,
@@ -136,7 +136,7 @@ def test_gauge_process_param_change():
 
 
 def test_gauge_process_param_change_with_colors():
-    gauge = Gauge(name="G", value=75, bounds=(0, 100),
+    gauge = Gauge(label="G", value=75, bounds=(0, 100),
                   colors=[(0.5, 'green'), (1, 'red')])
     msg = gauge._process_param_change({
         'value': 75, 'bounds': (0, 100), 'tooltip_format': '{b} : {c}%',
@@ -158,7 +158,7 @@ def test_gauge_warns_without_extension(caplog):
     try:
         panel_extension._loaded_extensions.clear()
         with caplog.at_level(logging.WARNING):
-            Gauge(name="G", value=50, bounds=(0, 100))
+            Gauge(label="G", value=50, bounds=(0, 100))
         assert "Gauge requires the ECharts library" in caplog.text
     finally:
         panel_extension._loaded_extensions.extend(original)

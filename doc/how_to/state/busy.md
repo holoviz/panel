@@ -17,7 +17,7 @@ def processing(event):
     # Some longer running task
     time.sleep(1)
 
-button = pn.widgets.Button(name='Click me!')
+button = pn.widgets.Button(label='Click me!')
 button.on_click(processing)
 
 def indicator(busy):
@@ -40,7 +40,7 @@ pn.extension() # for notebook
 def processing(event):
     time.sleep(1)
 
-button = pn.widgets.Button(name='Click me!')
+button = pn.widgets.Button(label='Click me!')
 button.on_click(processing)
 
 busy = pn.indicators.LoadingSpinner(value=False, size=30)

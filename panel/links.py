@@ -690,7 +690,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
             else:
                 src_prop = src_specs[0]
                 if isinstance(source, Reactive):
-                    src_prop = source._rename.get(src_prop, src_prop)
+                    src_prop = source._property_mapping.get(src_prop, src_prop)
                 src_spec = (None, src_prop)
             tgt_specs = tgt_spec.split('.')
             if len(tgt_specs) > 1:
@@ -698,7 +698,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
             else:
                 tgt_prop = tgt_specs[0]
                 if isinstance(target, Reactive):
-                    tgt_prop = target._rename.get(tgt_prop, tgt_prop)
+                    tgt_prop = target._property_mapping.get(tgt_prop, tgt_prop)
                 tgt_spec = (None, tgt_prop)
             specs.append((src_spec, tgt_spec, None))
         return specs

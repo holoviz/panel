@@ -80,10 +80,10 @@ add_task("Inspect the blades")
 add_task("Inspect the nacelle")
 add_task("Tighten the bolts")
 
-text_input = pn.widgets.TextInput(name="Task", placeholder="Enter a task")
+text_input = pn.widgets.TextInput(label="Task", placeholder="Enter a task")
 
 submit_task = pn.widgets.Button(
-    name="Add",
+    label="Add",
     align="center",
     button_type="primary",
     width=BUTTON_WIDTH,
@@ -91,7 +91,7 @@ submit_task = pn.widgets.Button(
     disabled=pn.bind(can_add, text_input.param.value_input)
 )
 clear = pn.widgets.Button(
-    name="Remove All",
+    label="Remove All",
     button_type="primary",
     button_style="outline",
     width=BUTTON_WIDTH,

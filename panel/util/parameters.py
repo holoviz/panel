@@ -19,6 +19,8 @@ def should_inherit(parameterized: param.Parameterized, p: str, v: t.Any) -> t.An
 def get_params_to_inherit(parameterized: param.Parameterized) -> dict:
     params = {}
     for p in parameterized.param:
+        if p == 'name':
+            continue
         v = getattr(parameterized, p)
         if should_inherit(parameterized, p, v):
             params[p] = v

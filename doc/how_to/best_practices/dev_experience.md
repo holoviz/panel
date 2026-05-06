@@ -28,7 +28,7 @@ Be sure to bind `obj.param.{parameter}` (the Parameter object), not just `{param
 def show_clicks(clicks):
     return f"Number of clicks: {clicks}"
 
-button = pn.widgets.Button(name="Click me!")
+button = pn.widgets.Button(label="Click me!")
 clicks = pn.bind(show_clicks, button.param.clicks)
 pn.Row(button, clicks)
 ```
@@ -41,7 +41,7 @@ Binding to `{parameter}` will bind to the single current value of the parameter,
 def show_clicks(clicks):
     return f"Number of clicks: {clicks}"
 
-button = pn.widgets.Button(name="Click me!")
+button = pn.widgets.Button(label="Click me!")
 clicks = pn.bind(show_clicks, button.clicks)  # not button.clicks!
 pn.Row(button, clicks)
 ```
@@ -173,17 +173,17 @@ class ExampleApp(pn.viewable.Viewer):
             value=self.param.width,
             start=self.param["width"].bounds[0],
             end=self.param["width"].bounds[1],
-            name=self.param["width"].label,
+            label=self.param["width"].label,
         )
         height_input = pn.widgets.IntInput(
             value=self.param.height,
             start=self.param["height"].bounds[0],
             end=self.param["height"].bounds[1],
-            name=self.param["height"].label,
+            label=self.param["height"].label,
         )
         color_picker = pn.widgets.ColorPicker(
             value=self.param.color,
-            name=self.param["color"].label,
+            label=self.param["color"].label,
             width=200,
         )
         return pn.Column(
@@ -331,7 +331,7 @@ For functions that trigger side effects, i.e. do not return anything (or return 
 def print_clicks(clicks):
     print(f"Number of clicks: {clicks}")
 
-button = pn.widgets.Button(name="Click me!")
+button = pn.widgets.Button(label="Click me!")
 pn.bind(print_clicks, button.param.clicks, watch=True)
 button
 ```
@@ -345,7 +345,7 @@ def print_clicks(event):
     clicks = event.new
     print(f"Number of clicks: {clicks}")
 
-button = pn.widgets.Button(name="Click me!", on_click=print_clicks)
+button = pn.widgets.Button(label="Click me!", on_click=print_clicks)
 button
 ```
 
@@ -358,7 +358,7 @@ def print_clicks(event):
     clicks = event.new
     print(f"Number of clicks: {clicks}")
 
-button = pn.widgets.Button(name="Click me!")
+button = pn.widgets.Button(label="Click me!")
 button.param.watch(print_clicks, "clicks")
 button
 ```

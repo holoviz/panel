@@ -1030,9 +1030,11 @@ class ChatFeed(ListPanel):
             Additional parameters to pass to the timeout button.
         """
         async def _prepare_prompt(*args) -> None:
-            input_button_params = button_params or {}
-            if "name" not in input_button_params:
-                input_button_params["name"] = "Submit"
+            input_button_params = dict(button_params or {})
+            if "label" not in input_button_params and "name" in input_button_params:
+                input_button_params["label"] = input_button_params.pop("name")
+            if "label" not in input_button_params:
+                input_button_params["label"] = "Submit"
             if "margin" not in input_button_params:
                 input_button_params["margin"] = (5, 10)
             if "button_type" not in input_button_params:
@@ -1060,9 +1062,11 @@ class ChatFeed(ListPanel):
                     break
                 await asyncio.sleep(0.1)
             else:
-                input_timeout_button_params = timeout_button_params or {}
-                if "name" not in input_timeout_button_params:
-                    input_timeout_button_params["name"] = timeout_message
+                input_timeout_button_params = dict(timeout_button_params or {})
+                if "label" not in input_timeout_button_params and "name" in input_timeout_button_params:
+                    input_timeout_button_params["label"] = input_timeout_button_params.pop("name")
+                if "label" not in input_timeout_button_params:
+                    input_timeout_button_params["label"] = timeout_message
                 if "button_type" not in input_timeout_button_params:
                     input_timeout_button_params["button_type"] = "light"
                 if "icon" not in input_timeout_button_params:

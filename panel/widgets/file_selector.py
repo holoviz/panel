@@ -230,26 +230,26 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
                   if p not in ('name', 'height', 'margin', 'loading') and getattr(self, p) is not None}
 
         self._back = Button(
-            name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
+            label='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
             align='end', on_click=self._go_back, sizing_mode=None
         )
         self._forward = Button(
-            name='▶', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
+            label='▶', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
             align='end', on_click=self._go_forward, sizing_mode=None
         )
         self._up = Button(
-            name='⬆', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
+            label='⬆', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
             align='end', on_click=self._go_up, sizing_mode=None
         )
         self._directory = TextInput.from_param(
             self.param.directory, margin=(5, 10, 0, 0), width_policy='max', height_policy='max', sizing_mode=None
         )
         self._go = Button(
-            name='⬇', disabled=True, width=40, height=40, margin=(5, 5, 0, 0),
+            label='⬇', disabled=True, width=40, height=40, margin=(5, 5, 0, 0),
             align='end', on_click=self._update_files, sizing_mode=None
         )
         self._reload = Button(
-            name='↻', width=40, height=40, margin=(5, 0, 0, 10), align='end',
+            label='↻', width=40, height=40, margin=(5, 0, 0, 10), align='end',
             on_click=self._update_files, sizing_mode=None
         )
         self._nav_bar = Row(

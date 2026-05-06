@@ -89,7 +89,7 @@ class FeatureInput(WidgetBase, PyComponent):
 
     def _new_widget(self, feature, value):
         widget = pn.widgets.FloatInput(
-            name=feature, value=value, sizing_mode="stretch_width"
+            label=feature, value=value, sizing_mode="stretch_width"
         )
         pn.bind(self._update_value, widget, watch=True)
         return widget

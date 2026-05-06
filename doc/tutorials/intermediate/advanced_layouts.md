@@ -188,15 +188,15 @@ CARD_STYLE = """
   padding: 5px 10px;
 }"""
 
-manufacturers = pn.widgets.MultiChoice(options=df.t_manu.unique().rx.pipe(list), name='Manufacturer')
-year = pn.widgets.IntRangeSlider(start=df.p_year.min().rx.pipe(int), end=df.p_year.max().rx.pipe(int), name='Year')
+manufacturers = pn.widgets.MultiChoice(options=df.t_manu.unique().rx.pipe(list), label='Manufacturer')
+year = pn.widgets.IntRangeSlider(start=df.p_year.min().rx.pipe(int), end=df.p_year.max().rx.pipe(int), label='Year')
 columns = ['p_name', 't_state', 't_county', 'p_year', 't_manu', 'p_cap']
 
 filtered = df[columns][df.t_manu.isin(manufacturers.rx.where(manufacturers, df.t_manu.unique())) & df.p_year.between(*year.rx())]
 
-count = pn.indicators.Number(name='Turbine Count', value=filtered.rx.len(), format='{value:,d} TWh', stylesheets=[CARD_STYLE])
-total_cap = pn.indicators.Number(name='Total Capacity', value=filtered.p_cap.mean(), format='{value:.2f} TWh', stylesheets=[CARD_STYLE])
-modal_year = pn.indicators.Number(name='Modal Year', value=filtered.p_year.mode().iloc[0], stylesheets=[CARD_STYLE])
+count = pn.indicators.Number(label='Turbine Count', value=filtered.rx.len(), format='{value:,d} TWh', stylesheets=[CARD_STYLE])
+total_cap = pn.indicators.Number(label='Total Capacity', value=filtered.p_cap.mean(), format='{value:.2f} TWh', stylesheets=[CARD_STYLE])
+modal_year = pn.indicators.Number(label='Modal Year', value=filtered.p_year.mode().iloc[0], stylesheets=[CARD_STYLE])
 
 widgets = pn.Column(manufacturers, year, stylesheets=[CARD_STYLE], margin=10)
 table = pn.widgets.Tabulator(filtered, stylesheets=[CARD_STYLE], max_width=500)

@@ -41,7 +41,7 @@ class VideoStream(Widget):
 
     :Example:
 
-    >>> VideoStream(name='Video Stream', timeout=100)
+    >>> VideoStream(label='Video Stream', timeout=100)
     """
 
     format: t.Literal['png', 'jpeg'] = param.Selector(
@@ -60,7 +60,7 @@ class VideoStream(Widget):
 
     _widget_type: t.ClassVar[type[Model]] = _BkVideoStream
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None}
 
     def snapshot(self):
         """
@@ -154,7 +154,7 @@ class FileDownload(IconMixin):
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
         'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks',
-        'value': None
+        'value': None, 'label': 'label'
     }
 
     _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
@@ -345,7 +345,7 @@ class JSONEditor(Widget):
         JSON data to be edited.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'value': 'data'
+        'label': None, 'value': 'data'
     }
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
