@@ -20,6 +20,7 @@ from ..io.state import state
 from ..layout.base import Row
 from ..reactive import Reactive
 from ..util import edit_readonly, unique_iterator
+from ..util.warnings import find_stack_level
 from ..viewable import Layoutable, Viewable
 
 if t.TYPE_CHECKING:
@@ -118,14 +119,14 @@ class WidgetBase(param.Parameterized):
             warnings.warn(
                 "Both 'name' and 'label' were provided; using 'label' and ignoring 'name'.",
                 PendingDeprecationWarning,
-                stacklevel=2,
+                stacklevel=find_stack_level(),
             )
             params["name"] = params["label"]
         elif "name" in params:
             warnings.warn(
                 "'name' is deprecated and will be removed in a future release. Use 'label' instead.",
                 PendingDeprecationWarning,
-                stacklevel=2,
+                stacklevel=find_stack_level(),
             )
             params["label"] = params["name"]
         else:
