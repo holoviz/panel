@@ -180,7 +180,7 @@ class Param(Pane):
         usually to update the default Parameter values of the
         underlying parameterized object.""")
 
-    name = param.String(default='', constant=False, doc="""
+    name = param.String(default='', constant=False, allow_None=True, doc="""
         Title of the pane.""")
 
     object = param.Parameter(default=None, allow_refs=False, doc="""
@@ -474,7 +474,7 @@ class Param(Pane):
         label = ''
         if self_or_cls.show_labels or issubclass(widget_class, _ButtonBase):
             label = p_obj.label or ''
-        kw = dict(disabled=p_obj.constant, name=label)
+        kw = dict(disabled=p_obj.constant, label=label)
         if self_or_cls.hide_constant:
             kw['visible'] = not p_obj.constant
 
@@ -522,10 +522,11 @@ class Param(Pane):
                         widget_class = widget_class(p_obj)
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
-            if hasattr(widget_class, 'fixed_start') and getattr(p_obj, 'bounds', None):
-                kw['fixed_start'] = p_obj.bounds[0]
-            if hasattr(widget_class, 'fixed_end') and getattr(p_obj, 'bounds', None):
-                kw['fixed_end'] = p_obj.bounds[1]
+            pbounds = getattr(p_obj, 'bounds', None)
+            if hasattr(widget_class, 'fixed_start') and isinstance(pbounds, tuple) and len(pbounds) >= 1:
+                kw['fixed_start'] = pbounds[0]
+            if hasattr(widget_class, 'fixed_end') and isinstance(pbounds, tuple) and len(pbounds) >= 2:
+                kw['fixed_end'] = pbounds[1]
 
         if p_obj.doc:
             kw['description'] = textwrap.dedent(p_obj.doc).strip()
@@ -705,10 +706,14 @@ class Param(Pane):
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
             and (self_or_cls.expand_button or (self_or_cls.expand_button is None and not self_or_cls.expand))):
             toggle = Toggle(
-                name='\u22EE', button_type='primary',
-                disabled=not is_parameterized(value), max_height=30,
-                max_width=20, height_policy='fit', align='end',
-                margin=(0, 0, 5, 10)
+                align='end',
+                color='primary',
+                disabled=not is_parameterized(value),
+                height_policy='fit',
+                label='\u22EE',
+                margin=(0, 0, 5, 10),
+                max_height=30,
+                max_width=20
             )
             width = widget.width
             widget.param.update(

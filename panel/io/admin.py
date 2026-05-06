@@ -119,10 +119,10 @@ class _LogTabulator(Tabulator):
 
 
 # Set up logging
-session_filter = MultiSelect(name='Filter by session', options=[])
-message_filter = TextInput(name='Filter by message')
-level_filter = MultiSelect(name="Filter by level", options=["DEBUG", "INFO", "WARNING", "ERROR"])
-app_filter = TextInput(name='Filter by app')
+session_filter = MultiSelect(label='Filter by session', options=[])
+message_filter = TextInput(label='Filter by message')
+level_filter = MultiSelect(label="Filter by level", options=["DEBUG", "INFO", "WARNING", "ERROR"])
+app_filter = TextInput(label='Filter by app')
 
 data = Data()
 log_data_handler = LogDataHandler(data)
@@ -157,13 +157,13 @@ def _clear_log_filters(*events):
     message_filter.value = ""
 
 
-reset_filter = Button(name="Clear filters")
+reset_filter = Button(label="Clear filters")
 reset_filter.on_click(_clear_log_filters)
 
 
 download_filename, download_button = log_terminal.download_menu(
-    text_kwargs={'name': 'Enter filename for logfile', 'value': 'log.csv'},
-    button_kwargs={'name': 'Download logfile'}
+    text_kwargs={'label': 'Enter filename for logfile', 'value': 'log.csv'},
+    button_kwargs={'label': 'Download logfile'}
 )
 
 

@@ -229,7 +229,8 @@ class Audio(_MediaBase):
     object = param.ClassSelector(default='', class_=(str, bytes, pathlib.Path, BytesIO, np.ndarray, TensorLike),
                                  allow_None=True, doc="""
         The audio file either local or remote, a 1- or 2-dim NumPy ndarray or a 1- or 2-dim Torch Tensor
-        or a bytes or BytesIO object.""")
+        or a bytes or BytesIO object.""")  # type: ignore[assignment]
+
 
     sample_rate = param.Integer(default=44100, doc="""
         The sample_rate of the audio when given a NumPy array or Torch tensor.""")
@@ -302,10 +303,10 @@ class Video(_MediaBase):
     """
 
     object = param.ClassSelector(default='', class_=(str, pathlib.Path, BytesIO, bytes), allow_None=True, doc="""
-        The video file either local or remote as a string or URL or as a bytes or BytesIO object.""")
+        The video file either local or remote as a string or URL or as a bytes or BytesIO object.""")  # type: ignore[assignment]
 
-    volume = param.Integer(default=100, bounds=(0, 100), doc="""
-        The volume of the media player.""")
+    volume: int = param.Integer(default=100, bounds=(0, 100), doc="""
+        The volume of the media player.""")  # type: ignore[assignment]
 
     _bokeh_model = _BkVideo
 

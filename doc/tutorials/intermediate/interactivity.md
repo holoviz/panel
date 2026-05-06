@@ -35,7 +35,7 @@ turbines = pn.cache(pd.read_csv)(data_url)
 
 cols = pn.widgets.MultiChoice(
     options=turbines.columns.to_list(), value=['p_name', 't_state', 't_county', 'p_year', 't_manu', 'p_cap'],
-    width=500, height=100, name='Columns'
+    width=500, height=100, label='Columns'
 )
 ```
 
@@ -96,10 +96,10 @@ cols = pn.widgets.MultiChoice(
     value=["p_name", "t_state", "t_county", "p_year", "t_manu", "p_cap"],
     width=500,
     height=100,
-    name="Columns",
+    label="Columns",
 )
 p_year_options = sorted(int(year) for year in turbines.p_year.unique() if not pd.isna(year))
-p_year = pn.widgets.Select(value=max(p_year_options), options=p_year_options, name="Year")
+p_year = pn.widgets.Select(value=max(p_year_options), options=p_year_options, label="Year")
 
 p_cap_bounds = (turbines.p_cap.min(), turbines.p_cap.max())
 p_cap = pn.widgets.RangeSlider(value=p_cap_bounds, start=p_cap_bounds[0], end=p_cap_bounds[1])
@@ -133,18 +133,18 @@ cols = pn.widgets.MultiChoice(
     value=["p_name", "t_state", "t_county", "p_year", "t_manu", "p_cap"],
     width=500,
     height=100,
-    name="Columns",
+    label="Columns",
 )
 p_year_options = sorted(
     int(year) for year in turbines.p_year.unique() if not pd.isna(year)
 )
 p_year = pn.widgets.Select(
-    value=max(p_year_options), options=p_year_options, name="Year"
+    value=max(p_year_options), options=p_year_options, label="Year"
 )
 
 p_cap_bounds = (turbines.p_cap.min(), turbines.p_cap.max())
 p_cap = pn.widgets.RangeSlider(
-    value=p_cap_bounds, start=p_cap_bounds[0], end=p_cap_bounds[1], name="Capacity"
+    value=p_cap_bounds, start=p_cap_bounds[0], end=p_cap_bounds[1], label="Capacity"
 )
 
 table = pn.widgets.Tabulator(turbines[cols.value], page_size=5, pagination="remote")

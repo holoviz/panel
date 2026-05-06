@@ -58,7 +58,7 @@ def plot(chart_type="line"):
 
 
 chart_type = pn.widgets.RadioBoxGroup(
-    name="Chart Type", options=["bar", "line"], inline=True
+    label="Chart Type", options=["bar", "line"], inline=True
 )
 chart = ChartJSComponent(
     object=pn.bind(plot, chart_type), height=400, sizing_mode="stretch_width"
@@ -116,7 +116,7 @@ def data(chart_type="line"):
 
 
 chart_type = pn.widgets.RadioBoxGroup(
-    name="Chart Type", options=["bar", "line"], inline=True
+    label="Chart Type", options=["bar", "line"], inline=True
 )
 chart = ChartReactComponent(
     object=pn.bind(data, chart_type), height=600, sizing_mode="stretch_width"
@@ -176,7 +176,7 @@ def data(chart_type="line"):
 
 
 chart_type = pn.widgets.RadioBoxGroup(
-    name="Chart Type", options=["bar", "line"], inline=True
+    label="Chart Type", options=["bar", "line"], inline=True
 )
 chart = AnyWidgetComponent(
     object=pn.bind(data, chart_type), height=400, sizing_mode="stretch_width"

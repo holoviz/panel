@@ -29,7 +29,7 @@ outer_style = {
 }
 
 pn.indicators.Number(
-    name="Wind Speed",
+    label="Wind Speed",
     value=8.6,
     format="{value} m/s",
     colors=[(10, "green"), (100, "red")],
@@ -72,7 +72,7 @@ div:nth-child(2) {
 """
 
 pn.indicators.Number(
-    name="Wind Speed",
+    label="Wind Speed",
     value=8.6,
     format="{value} m/s",
     colors=[(10, "green"), (100, "red")],

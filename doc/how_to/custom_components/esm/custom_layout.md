@@ -255,19 +255,19 @@ Let's verify that the layout will automatically update when the `object` is chan
 :::{tab-item} `JSComponent`
 
 ```{pyodide}
-split_js.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
+split_js.right = pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
 :::
 
 :::{tab-item} `ReactComponent`
 ```{pyodide}
-split_react.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
+split_react.right = pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
 :::
 
 :::{tab-item} `AnyWidgetComponent`
 ```{pyodide}
-split_anywidget.right=pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
+split_anywidget.right = pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
 :::
 
@@ -279,7 +279,7 @@ Now, let's change it back:
 
 :::{tab-item} `JSComponent`
 ```{pyodide}
-split_js.right=pn.widgets.CodeEditor(
+split_js.right = pn.widgets.CodeEditor(
     value="Right",
     sizing_mode="stretch_both",
     margin=0,
@@ -291,7 +291,7 @@ split_js.right=pn.widgets.CodeEditor(
 
 :::{tab-item} `ReactComponent`
 ```{pyodide}
-split_react.right=pn.widgets.CodeEditor(
+split_react.right = pn.widgets.CodeEditor(
     value="Right",
     sizing_mode="stretch_both",
     margin=0,
@@ -303,7 +303,7 @@ split_react.right=pn.widgets.CodeEditor(
 
 :::{tab-item} `AnyWidgetComponent`
 ```{pyodide}
-split_anywidget.right=pn.widgets.CodeEditor(
+split_anywidget.right = pn.widgets.CodeEditor(
     value="Right",
     sizing_mode="stretch_both",
     margin=0,
@@ -321,7 +321,7 @@ Now, let's change it back:
 
 :::{tab-item} `JSComponent`
 ```{pyodide}
-split_js.right=pn.widgets.CodeEditor(
+split_js.right = pn.widgets.CodeEditor(
     value="Right",
     sizing_mode="stretch_both",
     margin=0,
@@ -333,7 +333,7 @@ split_js.right=pn.widgets.CodeEditor(
 
 :::{tab-item} `ReactComponent`
 ```{pyodide}
-split_react.right=pn.widgets.CodeEditor(
+split_react.right = pn.widgets.CodeEditor(
     value="Right",
     sizing_mode="stretch_both",
     margin=0,

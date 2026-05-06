@@ -113,7 +113,7 @@ task_runner = SessionTaskRunner(worker=example_worker)
 def add_task(event):
     task_runner.append("task")
 
-button = pn.widgets.Button(name="Add Task", on_click=add_task, button_type="primary")
+button = pn.widgets.Button(label="Add Task", on_click=add_task, color="primary")
 
 pn.Column(button, task_runner).servable()
 ```

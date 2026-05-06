@@ -551,9 +551,12 @@ class NestedSelect(CompositeWidget):
         if isinstance(level, int):
             return Select, widget_kwargs
         elif isinstance(level, str):
-            return Select, {"name": level, **widget_kwargs}
+            return Select, {"label": level, **widget_kwargs}
         widget_type = level.get("type", Select)
         widget_kwargs.update({k: v for k, v in level.items() if k != "type"})
+        _legacy_nm = widget_kwargs.pop("name", None)
+        if _legacy_nm is not None:
+            widget_kwargs.setdefault("label", _legacy_nm)
         return widget_type, widget_kwargs
 
     def _lookup_value(self, i, options, values, name=None, error=False):
@@ -694,7 +697,7 @@ class NestedSelect(CompositeWidget):
                         curr_options = options
                     curr_value = self._lookup_value(
                         i, curr_options, set_values,
-                        name=curr_select.name, error=True
+                        name=curr_select.label, error=True
                     )
 
                     with param.discard_events(self):
@@ -1002,7 +1005,7 @@ class AutocompleteInput(SingleSelectBase):
 
     _allows_none: t.ClassVar[bool] = True
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': 'title', 'options': 'completions'}
 
     _widget_type: t.ClassVar[type[Model]] = _BkAutocompleteInput
 
@@ -1033,7 +1036,7 @@ class _RadioGroupBase(SingleSelectBase):
     _supports_embed = False
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'options': 'labels', 'value': 'active'
+        'label': None, 'options': 'labels', 'value': 'active'
     }
 
     _source_transforms = {'value': "source.labels[value]"}
@@ -1097,7 +1100,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
 
     >>> RadioButtonGroup(
     ...     name='Plotting library', options=['Matplotlib', 'Bokeh', 'Plotly'],
-    ...     button_type='success'
+    ...     color='success'
     ... )
     """
 
@@ -1109,7 +1112,8 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
     _rename: t.ClassVar[Mapping[str, str | None]] = {**_RadioGroupBase._rename, **TooltipMixin._rename}
 
     _source_transforms = {
-        'value': "source.labels[value]", 'button_style': None, 'description': None
+        'value': "source.labels[value]", 'button_style': None, 'color': None,
+        'variant': None, 'description': None,
     }
 
     _supports_embed: bool = True
@@ -1150,7 +1154,7 @@ class _CheckGroupBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None, 'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "value.map((index) => source.labels[index])"}
 
@@ -1212,6 +1216,7 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
 
     _source_transforms = {
         'value': "value.map((index) => source.labels[index])", 'button_style': None,
+        'color': None, 'variant': None,
         'description': None
     }
 
@@ -1348,8 +1353,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
         # Define buttons
         self._buttons = {
-            False: Button(name='\u276e\u276e', width=50, sizing_mode=None),
-            True: Button(name='\u276f\u276f', width=50, sizing_mode=None)
+            False: Button(label='\u276e\u276e', width=50, sizing_mode=None),
+            True: Button(label='\u276f\u276f', width=50, sizing_mode=None)
         }
 
         self._buttons[False].param.watch(self._apply_selection, 'clicks')

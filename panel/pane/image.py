@@ -29,7 +29,7 @@ _tasks = set()
 
 class FileBase(HTMLBasePane):
 
-    embed = param.Boolean(default=False, doc="""
+    embed: bool = param.Boolean(default=False, doc="""
         Whether to embed the file as base64.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     filetype: t.ClassVar[str]

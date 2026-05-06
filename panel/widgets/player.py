@@ -49,7 +49,7 @@ class PlayerBase(Widget):
     step = param.Integer(default=1, doc="""
         Number of frames to step forward and back by on each event.""")
 
-    height = param.Integer(default=80)
+    height = param.Integer(default=80, allow_None=True)
 
     value_align: t.Literal["start", "center", "end"] = param.Selector(
         objects=["start", "center", "end"], doc="""
@@ -70,8 +70,6 @@ class PlayerBase(Widget):
     visible_loop_options = param.List(default=[
         'once', 'loop', 'reflect'
     ], doc="The loop options to display on the player.")
-
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': "title"}
 
     _widget_type: t.ClassVar[type[Model]] = _BkPlayer
 
@@ -176,8 +174,6 @@ class DiscretePlayer(PlayerBase, SelectBase):
     value = param.Parameter(doc="Current player value")
 
     value_throttled: t.Any = param.Parameter(constant=True, doc="Current player value")  # type: ignore[assignment, ty:invalid-assignment]
-
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'value': None, 'value_throttled': None}
 

@@ -818,6 +818,9 @@ class ListPanel(ListLike, Panel):
         for p in self.objects:
             p._cleanup(root)
 
+    def clone(self, *objects: t.Any, **params: t.Any):
+        return super().clone(*objects, **params)
+
 
 class NamedListPanel(NamedListLike, Panel):
 
@@ -861,6 +864,9 @@ class NamedListPanel(NamedListLike, Panel):
         super()._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
+
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
+        return super().clone(*objects, **params)
 
 
 class Row(ListPanel):

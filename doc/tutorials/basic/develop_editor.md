@@ -83,7 +83,7 @@ pn.extension(design="material")
 
 component = pn.panel("Hello World")
 layout = pn.Column(
-    component, pn.widgets.IntSlider(value=2, start=0, end=10, name="Value")
+    component, pn.widgets.IntSlider(value=2, start=0, end=10, label="Value")
 )
 print(layout)
 layout.servable()

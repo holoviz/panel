@@ -20,7 +20,7 @@ pn.extension()
 value1 =   pn.widgets.Spinner(value=0, width=75)
 operator = pn.widgets.Select(value='*', options=['*', '+'], width=50, align='center')
 value2 =   pn.widgets.Spinner(value=0, width=75)
-button =   pn.widgets.Button(name='=', width=50)
+button =   pn.widgets.Button(label='=', width=50)
 result =   pn.widgets.StaticText(value='0', width=50, align='center')
 
 button.jscallback(clicks="""

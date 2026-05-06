@@ -3903,7 +3903,7 @@ def test_selection_indices_on_paginated_and_filtered_data(page, df_strings, pagi
         page_size=6,
     )
 
-    descr_filter = TextInput(name='descr', value='cut')
+    descr_filter = TextInput(label='descr', value='cut')
 
     def contains_filter(df, pattern=None):
         if not pattern:
@@ -3952,7 +3952,7 @@ def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_string
         page_size=6,
     )
 
-    descr_filter = TextInput(name='descr', value='cut')
+    descr_filter = TextInput(label='descr', value='cut')
 
     def contains_filter(df, pattern=None):
         if not pattern:

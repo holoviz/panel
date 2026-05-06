@@ -63,7 +63,11 @@ class TextEditor(Widget):
         State of the current text updated on every key press. Identical to `value` if `on_keyup`.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
+<<<<<<< improve_texteditor
         'name': 'name', 'value': 'text', 'value_input': 'text_input',
+=======
+        'label': 'name', 'value': 'text'
+>>>>>>> main
     }
 
     def _get_model(

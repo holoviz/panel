@@ -5,6 +5,7 @@ events or merely toggling between on-off states.
 from __future__ import annotations
 
 import typing as t
+import warnings
 
 import param
 
@@ -15,6 +16,7 @@ from bokeh.models.ui import SVGIcon, TablerIcon
 from ..io.resources import CDN_DIST
 from ..links import Callback
 from ..models.widgets import Button as _BkButton
+from ..util.warnings import find_stack_level
 from ._mixin import TooltipMixin
 from .base import Widget
 
@@ -31,6 +33,127 @@ if t.TYPE_CHECKING:
 BUTTON_TYPES: list[str] = ['default', 'primary', 'success', 'warning', 'danger', 'light']
 BUTTON_STYLES: list[str] = ['solid', 'outline']
 
+
+def _normalize_color_button_type_constructor_params(params: dict[str, t.Any]) -> None:
+    if "color" in params and "button_type" in params:
+        warnings.warn(
+            "Both 'color' and 'button_type' were provided; using 'color' "
+            "and ignoring 'button_type'. Note that 'button_type' is deprecated and 'color' "
+            "should be preferred. 'button_type' will be removed in version 2.0.",
+            PendingDeprecationWarning,
+            stacklevel=find_stack_level(),
+        )
+        params.pop("button_type")
+    elif "button_type" in params:
+        warnings.warn(
+            "button_type is deprecated and will be removed in version 2.0. Use 'color' instead.",
+            PendingDeprecationWarning,
+            stacklevel=find_stack_level(),
+        )
+        params["color"] = params["button_type"]
+    elif "color" in params:
+        params["button_type"] = params["color"]
+
+
+def _normalize_variant_button_style_constructor_params(params: dict[str, t.Any]) -> None:
+    if "variant" in params and "button_style" in params:
+        warnings.warn(
+            "Both 'variant' and 'button_style' were provided; using 'variant' "
+            "and ignoring 'button_style'. Note that 'button_style' is deprecated and 'color' "
+            "should be preferred. 'button_style' will be removed in version 2.0.",
+            PendingDeprecationWarning,
+            stacklevel=find_stack_level(),
+        )
+        params.pop("button_style")
+    elif "button_style" in params:
+        warnings.warn(
+            "button_style is deprecated and will be removed in version 2.0. Use 'variant' instead.",
+            PendingDeprecationWarning,
+            stacklevel=find_stack_level(),
+        )
+        params["variant"] = params["button_style"]
+    elif "variant" in params:
+        params["button_style"] = params["variant"]
+
+
+def _normalize_button_appearance_constructor_params(params: dict[str, t.Any]) -> None:
+    _normalize_color_button_type_constructor_params(params)
+    _normalize_variant_button_style_constructor_params(params)
+
+
+def _merge_color_button_type_aliases_in_param_change(params: dict[str, t.Any]) -> None:
+    if "color" in params and "button_type" in params:
+        params.pop("button_type")
+    elif "button_type" in params:
+        params["color"] = params.pop("button_type")
+
+
+def _merge_variant_button_style_aliases_in_param_change(params: dict[str, t.Any]) -> None:
+    if "variant" in params and "button_style" in params:
+        params.pop("button_style")
+    elif "button_style" in params:
+        params["variant"] = params.pop("button_style")
+
+
+def _merge_button_appearance_aliases_in_param_change(params: dict[str, t.Any]) -> None:
+    _merge_color_button_type_aliases_in_param_change(params)
+    _merge_variant_button_style_aliases_in_param_change(params)
+
+
+def _sync_color_button_type_alias_post_init(owner: param.Parameterized) -> None:
+    if owner.color != owner.button_type:  # type: ignore[attr-defined]
+        owner.button_type = owner.color  # type: ignore[attr-defined]
+
+
+def _sync_variant_button_style_alias_post_init(owner: param.Parameterized) -> None:
+    if owner.variant != owner.button_style:  # type: ignore[attr-defined]
+        owner.button_style = owner.variant  # type: ignore[attr-defined]
+
+
+def _sync_button_appearance_aliases_post_init(owner: param.Parameterized) -> None:
+    _sync_color_button_type_alias_post_init(owner)
+    _sync_variant_button_style_alias_post_init(owner)
+
+
+def _register_color_button_type_sync_watchers(owner: param.Parameterized) -> None:
+    def _sync_color_from_button_type(event: param.parameterized.Event) -> None:
+        self = event.obj
+        if self.color != self.button_type and self.button_type is not None:  # type: ignore[attr-defined]
+            self.color = self.button_type  # type: ignore[attr-defined]
+
+    def _sync_button_type_from_color(event: param.parameterized.Event) -> None:
+        self = event.obj
+        if self.button_type != self.color:  # type: ignore[attr-defined]
+            self.button_type = self.color  # type: ignore[attr-defined]
+
+    owner._internal_callbacks.extend([
+        owner.param.watch(_sync_color_from_button_type, ['button_type']),
+        owner.param.watch(_sync_button_type_from_color, ['color']),
+    ])
+
+
+def _register_variant_button_style_sync_watchers(owner: param.Parameterized) -> None:
+    def _sync_variant_from_button_style(event: param.parameterized.Event) -> None:
+        self = event.obj
+        if self.variant != self.button_style and self.button_style is not None:  # type: ignore[attr-defined]
+            self.variant = self.button_style  # type: ignore[attr-defined]
+
+    def _sync_button_style_from_variant(event: param.parameterized.Event) -> None:
+        self = event.obj
+        if self.button_style != self.variant:  # type: ignore[attr-defined]
+            self.button_style = self.variant  # type: ignore[attr-defined]
+
+    owner._internal_callbacks.extend([
+        owner.param.watch(_sync_variant_from_button_style, ['button_style']),
+        owner.param.watch(_sync_button_style_from_variant, ['variant']),
+    ])
+
+
+def _register_button_appearance_sync_watchers(owner: param.Parameterized) -> None:
+    _register_color_button_type_sync_watchers(owner)
+    _register_variant_button_style_sync_watchers(owner)
+
+
 class _ButtonBase(Widget):
 
     button_type: t.Literal[
@@ -38,21 +161,48 @@ class _ButtonBase(Widget):
     ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
-        or 'danger' (red).""")  # type: ignore[assignment, ty:invalid-assignment]
+        or 'danger' (red). The same value is exposed as ``color``.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     button_style: t.Literal['solid', 'outline'] = param.Selector(
         default='solid', objects=BUTTON_STYLES, doc="""
-        A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment, ty:invalid-assignment]
+        A button style to switch between 'solid', 'outline'. The same value is
+        exposed as ``variant``.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'label', 'button_style': None}
+    color: t.Literal[
+        'default', 'primary', 'success', 'warning', 'danger', 'light'
+    ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
+        Semantic color of the button; alias for ``button_type``.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'button_style': None}
+    variant: t.Literal['solid', 'outline'] = param.Selector(
+        default='solid', objects=BUTTON_STYLES, doc="""
+        Visual variant of the button; alias for ``button_style`` ('solid' or
+        'outline').""")  # type: ignore[assignment, ty:invalid-assignment]
+
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        **Widget._rename,
+        'label': 'label',
+        'button_style': None,
+        'color': None,
+        'variant': None,
+    }
+
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
+        'button_style': None, 'color': None, 'variant': None,
+    }
 
     _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
 
     __abstract = True
 
+    def __init__(self, **params: t.Any):
+        _normalize_button_appearance_constructor_params(params)
+        super().__init__(**params)
+        _register_button_appearance_sync_watchers(self)
+        _sync_button_appearance_aliases_post_init(self)
+
     def _process_param_change(self, params):
+        params = dict(params)
+        _merge_button_appearance_aliases_in_param_change(params)
         if 'button_style' in params or 'css_classes' in params:
             params['css_classes'] = [
                 params.pop('button_style', self.button_style)
@@ -169,7 +319,7 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
 
     :Example:
 
-    >>> pn.widgets.Button(name='Click me', icon='caret-right', button_type='primary')
+    >>> pn.widgets.Button(name='Click me', icon='caret-right', color='primary')
     """
 
     clicks = param.Integer(default=0, doc="""
@@ -179,11 +329,12 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
         Toggles from False to True while the event is being processed.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, 'clicks': None, 'name': 'label', 'value': None,
+        **TooltipMixin._rename, 'clicks': None, 'value': None,
+        **_ButtonBase._rename,
     }
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
-        'button_style': None, 'description': None
+        'button_style': None, 'color': None, 'variant': None, 'description': None,
     }
 
     _target_transforms: t.ClassVar[Mapping[str, str | None]] = {
@@ -283,14 +434,16 @@ class Toggle(_ButtonBase, IconMixin):
 
     :Example:
 
-    >>> Toggle(name='Toggle', button_type='success')
+    >>> Toggle(name='Toggle', color='success')
     """
 
     value = param.Boolean(default=False, doc="""
         Whether the button is currently toggled.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'value': 'active', 'name': 'label',
+        **Widget._rename,
+        'label': 'label',
+        'value': 'active',
     }
 
     _supports_embed: bool = True
@@ -317,7 +470,7 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
     :Example:
 
     >>> menu_items = [('Option A', 'a'), ('Option B', 'b'), None, ('Option C', 'c')]
-    >>> MenuButton(name='Dropdown', items=menu_items, button_type='primary')
+    >>> MenuButton(name='Dropdown', items=menu_items, color='primary')
     """
 
     clicked = param.String(default=None, doc="""
@@ -335,7 +488,9 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
     _event: t.ClassVar[str] = 'menu_item_click'
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'name': 'label', 'items': 'menu', 'clicked': None, 'value': None
+        **Widget._rename,
+        'label': 'label',
+        'items': 'menu', 'clicked': None, 'value': None
     }
 
     _widget_type: t.ClassVar[type[Model]] = _BkDropdown
@@ -358,7 +513,7 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
         if isinstance(event, MenuItemClick):
             item = event.item
         elif isinstance(event, ButtonClick):
-            item = self.name
+            item = self.label
         self.clicked = item
 
     def on_click(

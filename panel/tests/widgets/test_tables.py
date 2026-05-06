@@ -913,7 +913,7 @@ def test_selection_indices_on_remote_paginated_and_filtered_data(document, comm,
         width=400
     )
 
-    descr_filter = TextInput(name='descr')
+    descr_filter = TextInput(label='descr')
 
     def contains_filter(df, pattern=None):
         if not pattern:
@@ -2456,7 +2456,7 @@ def test_tabulator_function_filter_selection(document, comm):
     df = df_strings()
     tbl = Tabulator(df)
 
-    descr_filter = TextInput(name='descr', value='')
+    descr_filter = TextInput(label='descr', value='')
 
     def contains_filter(df, pattern=None):
         if not pattern:
@@ -2631,24 +2631,24 @@ def test_tabulator_download_menu_default():
     assert isinstance(button, Button)
 
     assert filename.value == 'table.csv'
-    assert filename.name == 'Filename'
-    assert button.name == 'Download'
+    assert filename.label == 'Filename'
+    assert button.label == 'Download'
 
 def test_tabulator_download_menu_custom_kwargs():
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
     filename, button = table.download_menu(
-        text_kwargs={'name': 'Enter filename', 'value': 'file.csv'},
-        button_kwargs={'name': 'Download table'},
+        text_kwargs={'label': 'Enter filename', 'value': 'file.csv'},
+        button_kwargs={'label': 'Download table'},
     )
 
     assert isinstance(filename, TextInput)
     assert isinstance(button, Button)
 
     assert filename.value == 'file.csv'
-    assert filename.name == 'Enter filename'
-    assert button.name == 'Download table'
+    assert filename.label == 'Enter filename'
+    assert button.label == 'Download table'
 
 def test_tabulator_patch_event():
     df = makeMixedDataFrame()

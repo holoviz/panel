@@ -215,7 +215,7 @@ class Debugger(Card):
         smode = 'stretch_width' if self.height else 'stretch_both'
         height = self.height or self.min_height
         terminal = Terminal(
-            min_height=200, sizing_mode=smode, name=self.name,
+            min_height=200, sizing_mode=smode, label=self.name,
             margin=0, height=(height-70) if height else None
         )
 

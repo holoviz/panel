@@ -164,9 +164,9 @@ def profiling_tabs(state, allow=None, deny=[]):
     if config.profiler == 'pyinstrument':
         def update_pyinstrument(*args):
             update_profiles(timeline=timeline.value, show_all=show_all.value)
-        timeline = Checkbox(name='Enable timeline', margin=(5, 0))
+        timeline = Checkbox(label='Enable timeline', margin=(5, 0))
         timeline.param.watch(update_pyinstrument, 'value')
-        show_all = Checkbox(name='Show All', margin=(5, 0))
+        show_all = Checkbox(label='Show All', margin=(5, 0))
         show_all.param.watch(update_pyinstrument, 'value')
         config_panel = Row(
             timeline,
@@ -176,7 +176,7 @@ def profiling_tabs(state, allow=None, deny=[]):
     elif config.profiler == 'memray':
         def update_memray(*args):
             update_profiles(reporter=reporter.value)
-        reporter = Select(name='Reporter', options=['flamegraph', 'table', 'tree'], value='tree')
+        reporter = Select(label='Reporter', options=['flamegraph', 'table', 'tree'], value='tree')
         reporter.param.watch(update_memray, 'value')
         config_panel = reporter
     else:

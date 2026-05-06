@@ -90,6 +90,28 @@ def _deserialize_state(b64_state):
         return {}
 
 
+@t.overload
+def _validate_next_url(next_url: str) -> str: ...
+@t.overload
+def _validate_next_url(next_url: None) -> None: ...
+def _validate_next_url(next_url: str | None) -> str | None:
+    """
+    Validate that next_url is a same-origin path. Raises HTTPError(400)
+    if it carries a scheme, netloc, or backslash (which some browsers
+    treat as '/'). Returns the (possibly base_url-prefixed) value, or
+    None when the input is empty.
+    """
+    if not next_url:
+        return None
+    urlinfo = urlparse.urlparse(next_url)
+    if urlinfo.scheme or urlinfo.netloc or '\\' in next_url:
+        log.warning("Rejecting tampered next_url: %r", next_url)
+        raise HTTPError(400, "Invalid next url")
+    if state.base_url and not next_url.startswith(state.base_url):
+        next_url = next_url.replace('/', state.base_url, 1)
+    return next_url
+
+
 class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
 
     _API_BASE_HEADERS = {
@@ -322,22 +344,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         root_url = self.request.uri.replace(self._login_endpoint, '').split('?')[0]
         if not root_url.endswith('/'):
             root_url += '/'
-        next_url = original_next_url = self.get_argument('next', root_url)
-        if state.base_url and not next_url.startswith(state.base_url):
-            next_url = original_next_url = next_url.replace('/', state.base_url, 1)
-        if next_url:
-            # avoid browsers treating \ as /
-            next_url = next_url.replace('\\', urlparse.quote('\\'))
-            # disallow hostname-having urls,
-            # force absolute path redirect
-            urlinfo = urlparse.urlparse(next_url)
-            next_url = urlinfo._replace(
-                scheme='', netloc='', path='/' + urlinfo.path.lstrip('/')
-            ).geturl()
-            if next_url != original_next_url:
-                log.warning(
-                    "Ignoring next_url %r, using %r", original_next_url, next_url
-                )
+        next_url = _validate_next_url(self.get_argument('next', root_url))
         return _serialize_state(
             {'state_id': uuid.uuid4().hex, 'next_url': next_url or state.base_url}
         )
@@ -544,10 +551,8 @@ class PasswordLoginHandler(GenericLoginHandler):
         except Exception:
             errormessage = ""
 
-        next_url = self.get_argument('next', None)
+        next_url = _validate_next_url(self.get_argument('next', None))
         if next_url:
-            if state.base_url and not next_url.startswith(state.base_url):
-                next_url = next_url.replace('/', state.base_url, 1)
             self.set_cookie("next_url", next_url)
         html = self._login_template.render(
             errormessage=errormessage,
@@ -564,7 +569,7 @@ class PasswordLoginHandler(GenericLoginHandler):
             username=username,
             password=password
         )
-        next_url = self.get_cookie("next_url", state.base_url)
+        next_url = _validate_next_url(self.get_cookie("next_url", state.base_url))
         self.redirect(next_url)
 
 
@@ -863,10 +868,8 @@ class BasicLoginHandler(RequestHandler):
             errormessage = self.get_argument("error")
         except Exception:
             errormessage = ""
-        next_url = self.get_argument('next', state.base_url)
+        next_url = _validate_next_url(self.get_argument('next', state.base_url))
         if next_url:
-            if state.base_url and not next_url.startswith(state.base_url):
-                next_url = next_url.replace('/', state.base_url, 1)
             self.set_cookie("next_url", next_url)
         html = self._login_template.render(
             login_endpoint=self._login_endpoint,
@@ -897,7 +900,7 @@ class BasicLoginHandler(RequestHandler):
         auth = self._validate(username, password)
         if auth:
             self.set_current_user(username)
-            next_url = self.get_cookie("next_url", state.base_url)
+            next_url = _validate_next_url(self.get_cookie("next_url", state.base_url))
             self.redirect(next_url)
         else:
             error_msg = "?error=" + tornado.escape.url_escape("Invalid username or password!")
@@ -1140,11 +1143,14 @@ class OAuthProvider(BasicAuthProvider):
                 user, refresh_token, handler.application, handler.request,
                 reschedule=is_ws
             )
-            # If user not in overrides refresh failed and we need to
-            # fully reauthenticate
-            if user not in state._oauth_user_overrides:
+            if access_token is None:
+                # Refresh failed, user needs to fully reauthenticate
                 return
-            expires_in = expiry - now_ts
+
+            if expiry is not None:
+                expires_in = expiry - now_ts
+            else:
+                expires_in = None
             OAuthLoginHandler.set_auth_cookies(
                 handler, None, access_token, refresh_token, expires_in
             )

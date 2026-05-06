@@ -66,7 +66,7 @@ class interactive(Pane):
 
     default_layout = param.ClassSelector(
         default=Column, class_=ListLike, is_instance=False
-    )
+    )  # type: ignore[assignment]
 
     manual_update = param.Boolean(default=False, doc="""
         Whether to update manually by clicking on button.""")
@@ -101,7 +101,7 @@ class interactive(Pane):
 
         widgets = self.widgets_from_abbreviations(new_kwargs)
         if self.manual_update:
-            widgets.append(('manual', Button(name=self.manual_name)))
+            widgets.append(('manual', Button(label=self.manual_name)))
         self._widgets = dict(widgets)
         pane = self.object(**self.kwargs)
         if isinstance(pane, Viewable):
@@ -216,7 +216,7 @@ class interactive(Pane):
             if isinstance(abbrev, fixed):
                 widget_obj = abbrev
             else:
-                widget_obj = widget(abbrev, name=name, default=default)
+                widget_obj = widget(abbrev, name, default=default)
             if not (isinstance(widget_obj, WidgetBase) or isinstance(widget_obj, fixed)):
                 if widget_obj is None:
                     continue

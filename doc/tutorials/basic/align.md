@@ -23,7 +23,7 @@ pn.extension()
 
 pn.Column(
     pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
-    pn.widgets.Button(name="Stop the Turbine", icon="hand-stop",),
+    pn.widgets.Button(label="Stop the Turbine", icon="hand-stop",),
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()
 ```
@@ -47,7 +47,7 @@ pn.extension()
 
 pn.Column(
     pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
-    pn.widgets.Button(name="Stop the Turbine", icon="hand-stop", align="center"),
+    pn.widgets.Button(label="Stop the Turbine", icon="hand-stop", align="center"),
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()
 ```
@@ -67,7 +67,7 @@ pn.Column(
     pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
     pn.Row(
         pn.Spacer(sizing_mode="stretch_width"),
-        pn.widgets.Button(name="Stop the Turbine", icon="hand-stop"),
+        pn.widgets.Button(label="Stop the Turbine", icon="hand-stop"),
         pn.Spacer(sizing_mode="stretch_width")
     ),
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black", "border-radius": "5px"}
@@ -87,7 +87,7 @@ margin = int((400-147)/2) # The Button is 147 pixels wide
 
 pn.Column(
     pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
-    pn.widgets.Button(name="Stop the Turbine", icon="hand-stop", margin=(5,margin)),
+    pn.widgets.Button(label="Stop the Turbine", icon="hand-stop", margin=(5,margin)),
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()
 ```

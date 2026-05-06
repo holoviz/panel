@@ -46,8 +46,8 @@ class Voice(param.Parameterized):
         speech synthesizer service (True), or a remote speech
         synthesizer service (False.)""")
 
-    name = param.String(constant=True, doc="""
-        Returns a human-readable name that represents the voice.""")
+    name: str = param.String(constant=True, doc="""
+        Returns a human-readable name that represents the voice.""")  # type: ignore[assignment]
 
     voice_uri = param.String(constant=True, doc="""
         Returns the type of URI and location of the speech synthesis
@@ -184,7 +184,7 @@ class TextToSpeech(Utterance, Widget):
 
     :Example:
 
-    >>> TextToSpeech(name="Speech Synthesis", value="Data apps are nice")
+    >>> TextToSpeech(label="Speech Synthesis", value="Data apps are nice")
     """
 
     auto_speak = param.Boolean(default=True, doc="""
@@ -223,6 +223,8 @@ class TextToSpeech(Utterance, Widget):
     _voices: list[Voice] = param.List(item_type=Voice)  # type: ignore[assignment, ty:invalid-assignment]
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
+        **{k: v for k, v in Widget._rename.items() if k != 'label'},
+        'label': None,
         'auto_speak': None, 'lang': None, 'name': None, 'pitch': None,
         'rate': None, 'speak': None, 'value': None, 'voice': None,
         'voices': None, 'volume': None, '_voices': 'voices',
@@ -249,7 +251,7 @@ class TextToSpeech(Utterance, Widget):
     def __repr__(self, depth=None):
         # We need to do this because otherwise a error is raised when used in notebook
         # due to infinite recursion
-        return f'TextToSpeech(name={self.name!r})'
+        return f'TextToSpeech(label={self.label!r})'
 
     def __str__(self):
-        return f'TextToSpeech(name={self.name!r})'
+        return f'TextToSpeech(label={self.label!r})'

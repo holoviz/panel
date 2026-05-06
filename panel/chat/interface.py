@@ -41,7 +41,7 @@ class _ChatButtonData:
     ----------
     index : int
         The index of the button.
-    name : str
+    label : str
         The name of the button.
     icon : str
         The icon to display.
@@ -56,7 +56,7 @@ class _ChatButtonData:
     """
 
     index: int
-    name: str
+    label: str
     icon: str
     objects: list
     buttons: list
@@ -244,7 +244,7 @@ class ChatInterface(ChatFeed):
             icon = properties.get("icon") or default_properties.get("icon")
             self._button_data[name] = _ChatButtonData(
                 index=index,
-                name=name,
+                label=name,
                 icon=icon,
                 objects=[],
                 buttons=[],
@@ -269,9 +269,10 @@ class ChatInterface(ChatFeed):
         self._widgets = {}
         new_widgets = []
         for widget in widgets:
-            key = widget.name or widget.__class__.__name__
             if isinstance(widget, type):  # check if instantiated
                 widget = widget()
+            label = getattr(widget, "label", "") or ""
+            key = label or widget.__class__.__name__
             if self._widgets.get(key) is not widget:
                 self._widgets[key] = widget
                 new_widgets.append(widget)
@@ -310,7 +311,7 @@ class ChatInterface(ChatFeed):
 
             self._buttons = {}
             for button_data in self._button_data.values():
-                action = button_data.name
+                action = button_data.label
                 try:
                     visible = self.param[f'show_{action}'] if action != "stop" else False
                 except KeyError:
@@ -318,8 +319,8 @@ class ChatInterface(ChatFeed):
                 show_name_expr = self.param.show_button_name.rx()
                 show_tooltip_expr = self.param.show_button_tooltips.rx()
                 button = Button(
-                    name=show_name_expr.rx.where(button_data.name.title(), ""),
-                    description=show_tooltip_expr.rx.where(f"Click to {button_data.name.lower()}", None),
+                    label=show_name_expr.rx.where(button_data.label.title(), ""),
+                    description=show_tooltip_expr.rx.where(f"Click to {button_data.label.lower()}", None),
                     icon=button_data.icon,
                     sizing_mode="stretch_width",
                     max_width=show_name_expr.rx.where(90, 45),
@@ -469,14 +470,14 @@ class ChatInterface(ChatFeed):
         for button in button_data.buttons:
             if active and button_data.objects:
                 button_update = {
-                    "button_type": "warning",
-                    "name": "Revert",
+                    "color": "warning",
+                    "label": "Revert",
                     "width": 90,
                 }
             else:
                 button_update = {
-                    "button_type": "default",
-                    "name": button_data.name.title() if self.show_button_name else "",
+                    "color": "default",
+                    "label": button_data.label.title() if self.show_button_name else "",
                     "width": 90 if self.show_button_name else 45,
                 }
             button.param.update(button_update)

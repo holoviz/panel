@@ -24,8 +24,8 @@ template = pn.template.BootstrapTemplate(title='Bootstrap Template')
 
 # Data and Widgets
 xs = np.linspace(0, np.pi)
-freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
-phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
+freq = pn.widgets.FloatSlider(label="Frequency", start=0, end=10, value=2)
+phase = pn.widgets.FloatSlider(label="Phase", start=0, end=np.pi)
 
 # Interactive data pipeline
 def sine(freq, phase):
@@ -44,7 +44,7 @@ template.header.append('## Header')
 template.modal.append("## This is a modal")
 
 # Create a button
-modal_btn = pn.widgets.Button(name="Click for modal")
+modal_btn = pn.widgets.Button(label="Click for modal")
 
 # Callback that will open the modal when the button is clicked
 def about_callback(event):

@@ -14,8 +14,8 @@ pytestmark = pytest.mark.ui
 @pytest.fixture
 def card_components():
     # widgets with mock css classes for easy search for elements in the Card
-    w1 = FloatSlider(name='Slider', css_classes=['class_w1'])
-    w2 = TextInput(name='Text:', css_classes=['class_w2'])
+    w1 = FloatSlider(label='Slider', css_classes=['class_w1'])
+    w2 = TextInput(label='Text:', css_classes=['class_w2'])
     return w1, w2
 
 
@@ -103,7 +103,7 @@ def test_card_objects(page, card_components):
     expect(card_header).to_have_class('card-header')
     expect(w2_object).to_have_class('bk-panel-models-widgets-TextInput class_w2')
 
-    w3 = TextInput(name='Text:', css_classes=['class_w3'])
+    w3 = TextInput(label='Text:', css_classes=['class_w3'])
     card.append(w3)
 
     expect(card_elements).to_have_count(3)

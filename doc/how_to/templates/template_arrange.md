@@ -23,8 +23,8 @@ import panel as pn
 
 # Data and Widgets
 xs = np.linspace(0, np.pi)
-freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
-phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
+freq = pn.widgets.FloatSlider(label="Frequency", start=0, end=10, value=2)
+phase = pn.widgets.FloatSlider(label="Phase", start=0, end=np.pi)
 
 # Interactive data pipeline
 def sine(freq, phase):

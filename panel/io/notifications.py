@@ -335,14 +335,14 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
             Button, ColorPicker, NumberInput, Select, TextInput,
         )
 
-        msg = TextInput(name='Message', value='This is a message', **params)
-        duration = NumberInput(name='Duration', value=0, end=10000, **params)
+        msg = TextInput(label='Message', value='This is a message', **params)
+        duration = NumberInput(label='Duration', value=0, end=10000, **params)
         ntype = Select(
-            name='Type', options=['info', 'warning', 'error', 'success', 'custom'],
+            label='Type', options=['info', 'warning', 'error', 'success', 'custom'],
             value='info', **params
         )
-        background = ColorPicker(name='Color', value='#000000', **params)
-        button = Button(name='Notify', **params)
+        background = ColorPicker(label='Color', value='#000000', **params)
+        button = Button(label='Notify', **params)
         notifications = cls()
         button.js_on_click(
             args={

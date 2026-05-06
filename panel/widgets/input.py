@@ -447,7 +447,7 @@ class StaticText(Widget):
 
     _format: t.ClassVar[str] = '<b>{title}</b>: {value}'
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'text'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None, 'value': 'text'}
 
     _target_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': 'target.text.split(": ")[0]+": "+value'
@@ -475,9 +475,9 @@ class StaticText(Widget):
             text = props.pop('text')
             if not isinstance(text, str):
                 text = escape("" if text is None else str(text))
-            partial = self._format.replace('{value}', '').format(title=self.name)
-            if self.name:
-                text = self._format.format(title=self.name, value=text.replace(partial, ''))
+            partial = self._format.replace('{value}', '').format(title=self.label)
+            if self.label:
+                text = self._format.format(title=self.label, value=text.replace(partial, ''))
             props['text'] = text
         return props
 
@@ -959,14 +959,14 @@ class _NumericInputBase(Widget):
 
 class _IntInputBase(_NumericInputBase):
 
-    value = param.Integer(default=0, allow_None=True, doc="""
-        The current value of the spinner.""")
+    value: int | None = param.Integer(default=0, allow_None=True, doc="""
+        The current value of the spinner.""")  # type: ignore[assignment]
 
-    start = param.Integer(default=None, allow_None=True, doc="""
-        Optional minimum allowable value.""")
+    start: int | None = param.Integer(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")  # type: ignore[assignment]
 
-    end = param.Integer(default=None, allow_None=True, doc="""
-        Optional maximum allowable value.""")
+    end: int | None = param.Integer(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")  # type: ignore[assignment]
 
     mode = param.String(default='int', constant=True, doc="""
         Define the type of number which can be enter in the input""")
@@ -977,13 +977,13 @@ class _IntInputBase(_NumericInputBase):
 class _FloatInputBase(_NumericInputBase):
 
     value = param.Number(default=0, allow_None=True, doc="""
-        The current value of the spinner.""")
+        The current value of the spinner.""")  # type: ignore[assignment]
 
-    start = param.Number(default=None, allow_None=True, doc="""
-        Optional minimum allowable value.""")
+    start = param.Number(default=None, doc="""
+        Optional minimum allowable value.""")  # type: ignore[assignment]
 
-    end = param.Number(default=None, allow_None=True, doc="""
-        Optional maximum allowable value.""")
+    end = param.Number(default=None, doc="""
+        Optional maximum allowable value.""")  # type: ignore[assignment]
 
     mode = param.String(default='float', constant=True, doc="""
         Define the type of number which can be enter in the input""")
@@ -1076,8 +1076,7 @@ class IntInput(_SpinnerBase, _IntInputBase):
     >>> IntInput(name='Value', value=100, start=0, end=1000, step=10)
     """
 
-    step = param.Integer(default=1, doc="""
-        The step size.""")
+    step = param.Integer(default=1, doc="The step size.")
 
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
@@ -1104,8 +1103,7 @@ class FloatInput(_SpinnerBase, _FloatInputBase):
     placeholder = param.String(default='', doc="""
         Placeholder when the value is empty.""")
 
-    step = param.Number(default=0.1, doc="""
-        The step size.""")
+    step = param.Number(default=0.1, doc="The step size.")
 
     value_throttled = param.Number(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
@@ -1246,9 +1244,9 @@ class LiteralInput(Widget):
                     else:
                         value = typed_value
             params['value'] = value
-        params['name'] = params.get('title', self.name).replace(self._state, '') + new_state
+        params['label'] = params.get('title', self.label).replace(self._state, '') + new_state
         self._state = new_state
-        self.param.trigger('name')
+        self.param.trigger('label')
         return params
 
     def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
@@ -1262,7 +1260,7 @@ class LiteralInput(Widget):
             else:
                 value = '' if value is None else str(value)
             props['value'] = value
-        props['title'] = self.name
+        props['title'] = self.label
         return props
 
 
@@ -1363,7 +1361,7 @@ class DatetimeInput(LiteralInput):
     format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
         Datetime format used for parsing and formatting the datetime.""")
 
-    type = datetime
+    type = datetime  # type: ignore[assignment]
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None
@@ -1407,7 +1405,7 @@ class DatetimeInput(LiteralInput):
                     new_state = ' (out of bounds)'
                     value = self.value
             params['value'] = value
-        params['name'] = params.get('title', self.name).replace(self._state, '') + new_state
+        params['label'] = params.get('title', self.label).replace(self._state, '') + new_state
         self._state = new_state
         return params
 
@@ -1420,7 +1418,6 @@ class DatetimeInput(LiteralInput):
             else:
                 value = datetime.strftime(props['value'], self.format)
             props['value'] = value
-        props['title'] = self.name
         return props
 
 
@@ -1468,9 +1465,17 @@ class DatetimeRangeInput(CompositeWidget):
         self._update_widgets()
         self._update_label()
 
-    @param.depends('name', '_start.name', '_end.name', watch=True)
+    @param.depends('label', '_start.label', '_end.label', watch=True)
     def _update_label(self):
-        self._text.value = f'{self.name}{self._start.name}{self._end.name}{self._msg}'
+        def _child_suffix(child: DatetimeInput) -> str:
+            lbl = child.label or ""
+            base = self.label or ""
+            if base and lbl.startswith(base):
+                return lbl[len(base) :]
+            return lbl
+
+        self._text.label = self.label
+        self._text.value = f"{_child_suffix(self._start)}{_child_suffix(self._end)}{self._msg}"
 
     @param.depends('_start.value', '_end.value', watch=True)
     def _update(self):
@@ -1500,6 +1505,7 @@ class DatetimeRangeInput(CompositeWidget):
         try:
             self._updating = True
             params = {k: v for k, v in self.param.values().items() if k in filters}
+            params.pop("label", None)
             start_params = dict(params, value=self.value[0])
             end_params = dict(params, value=self.value[1])
             self._start.param.update(**start_params)
@@ -1515,7 +1521,11 @@ class _BooleanWidget(Widget):
 
     _supports_embed: bool = True
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        **Widget._rename,
+        'value': 'active',
+        'label': 'label',
+    }
 
     __abstract = True
 
@@ -1556,7 +1566,8 @@ class Switch(_BooleanWidget):
     """
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'value': 'active'
+        **_BooleanWidget._rename,
+        'value': 'active',
     }
 
     _widget_type: t.ClassVar[type[Model]] = _BkSwitch

@@ -56,10 +56,6 @@ class _SliderBase(Widget):
         Whether the slider should go from left-to-right ('ltr') or
         right-to-left ('rtl').""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    name = param.String(default=None, constant=False, doc="""
-        The name of the widget. Also used as the label of the widget. If not set,
-        the widget has no label.""")  # type: ignore[assignment, ty:invalid-assignment]
-
     orientation: t.Literal['horizontal', 'vertical'] = param.Selector(
         default='horizontal', objects=['horizontal', 'vertical'],
         doc="""
@@ -158,7 +154,7 @@ class ContinuousSlider(_SliderBase):
         if is_composite:
             layout_opts['show_value'] = False
         else:
-            layout_opts['name'] = self.name
+            layout_opts['label'] = self.label
 
         value = values[np.argmin(np.abs(np.array(values)-self.value))]
         dw = DiscreteSlider(options=values, value=value,  **layout_opts)
@@ -203,7 +199,8 @@ class FloatSlider(ContinuousSlider):
          The value of the slider. Updated when the handle is released.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'value_throttled': None
+        **Widget._rename,
+        'value_throttled': None,
     }
 
 
@@ -235,7 +232,8 @@ class IntSlider(ContinuousSlider):
         The value of the slider. Updated when the handle is released""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'value_throttled': None
+        **Widget._rename,
+        'value_throttled': None,
     }
 
     def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
@@ -291,7 +289,8 @@ class DateSlider(_SliderBase):
         Datetime format used for parsing and formatting the date.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'as_datetime': None, 'value_throttled': None
+        **Widget._rename,
+        'as_datetime': None, 'value_throttled': None
     }
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
@@ -423,7 +422,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._slider = None
         self._composite = Column(self._text, self._slider)
         self._update_options()
-        self.param.watch(self._update_options, ['options', 'formatter', 'name'])
+        self.param.watch(self._update_options, ['options', 'formatter', 'label'])
         self.param.watch(self._update_value, 'value')
         self.param.watch(self._update_value, 'value_throttled')
         self.param.watch(self._update_style, self._style_params)
@@ -432,7 +431,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         values, labels = self.values, self.labels
         if not self.options and self.value is None:
             value = 0
-            label = (f'{self.name}: ' if self.name else '') + '<b>-</b>'
+            label = (f'{self.label}: ' if self.label else '') + '<b>-</b>'
         elif self.value not in values:
             value = 0
             self.value = values[0]
@@ -535,6 +534,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
         event.name is either value or value_throttled.
         """
+        if event.name not in ('value', 'value_throttled'):
+            return
         if self._syncing:
             return
         try:
@@ -556,7 +557,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     @property
     def labels(self):
         """The list of labels to display"""
-        title = (self.name + ': ' if self.name else '')
+        title = (self.label + ': ' if self.label else '')
         if isinstance(self.options, dict):
             return [title + (f'<b>{o}</b>') for o in self.options]
         else:
@@ -645,7 +646,8 @@ class RangeSlider(_RangeSliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A format string or bokeh TickFormatter.""")
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None, 'value_throttled': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        **Widget._rename, 'value_start': None, 'value_end': None, 'value_throttled': None}
 
     _widget_type: t.ClassVar[type[Model]] = _BkRangeSlider
 
@@ -671,14 +673,11 @@ class IntRangeSlider(RangeSlider):
     ... )
     """
 
-    start = param.Integer(default=0, doc="""
-        The lower bound.""")
+    start = param.Integer(default=0, doc="The lower bound.")  # type: ignore[assignment]
 
-    end = param.Integer(default=1, doc="""
-        The upper bound.""")
+    end = param.Integer(default=1, doc="The upper bound.")  # type: ignore[assignment]
 
-    step = param.Integer(default=1, doc="""
-        The step size""")
+    step = param.Integer(default=1, doc="The step size.")  # type: ignore[assignment]
 
     def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_property_change(props)
@@ -746,7 +745,7 @@ class DateRangeSlider(_SliderBase):
     }
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'value_start': None, 'value_end': None,
+        **Widget._rename, 'value_start': None, 'value_end': None,
         'value_throttled': None
     }
 
@@ -948,10 +947,10 @@ class _EditableContinuousSlider(CompositeWidget):
     def _update_disabled(self):
         self._slider.disabled = self.disabled
 
-    @param.depends('name', watch=True)
+    @param.depends('label', watch=True)
     def _update_name(self):
-        if self.name:
-            label = f'{self.name}:'
+        if self.label:
+            label = f'{self.label}:'
             margin = (0, 10, 0, 0)
         else:
             label = ''
@@ -980,6 +979,8 @@ class _EditableContinuousSlider(CompositeWidget):
         self._value_edit.value = self.value
 
     def _sync_value(self, event):
+        if event.name not in ('value', 'value_throttled'):
+            return
         with param.edit_constant(self):
             self.param.update(**{event.name: event.new})
 
@@ -1199,10 +1200,10 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self._start_edit.disabled = (not self.editable[0]) or self.disabled
         self._end_edit.disabled = (not self.editable[1]) or self.disabled
 
-    @param.depends('name', watch=True)
+    @param.depends('label', watch=True)
     def _update_name(self):
-        if self.name:
-            label = f'{self.name}:'
+        if self.label:
+            label = f'{self.label}:'
             margin = (0, 10, 0, 0)
         else:
             label = ''
@@ -1219,7 +1220,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             self._end_edit.width = w
 
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
-                   'show_value', 'tooltips', 'name', 'format', watch=True)
+                   'show_value', 'tooltips', 'label', 'format', watch=True)
     def _update_slider(self):
         self._slider.param.update(
             format=self.format,
@@ -1241,10 +1242,14 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self._end_edit.value = self.value[1]
 
     def _sync_value(self, event):
+        if event.name not in ('value', 'value_throttled'):
+            return
         with param.edit_constant(self):
             self.param.update(**{event.name: event.new})
 
     def _sync_start_value(self, event):
+        if event.name not in ('value', 'value_throttled'):
+            return
         if event.name == 'value':
             end = self.value[1] if self.value else self.end
         else:
@@ -1255,6 +1260,8 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             )
 
     def _sync_end_value(self, event):
+        if event.name not in ('value', 'value_throttled'):
+            return
         if event.name == 'value':
             start = self.value[0] if self.value else self.start
         else:
