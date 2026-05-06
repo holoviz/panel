@@ -105,3 +105,23 @@ def test_toggle(document, comm):
 
     toggle.value = True
     assert widget.active == True
+
+
+def test_button_color_alias_synced():
+    button = Button(label="x", color="primary")
+    assert button.button_type == "primary"
+    assert button.color == "primary"
+    button.button_type = "danger"
+    assert button.color == "danger"
+    button.color = "success"
+    assert button.button_type == "success"
+
+
+def test_button_variant_alias_synced():
+    button = Button(label="x", variant="outline")
+    assert button.button_style == "outline"
+    assert button.variant == "outline"
+    button.button_style = "solid"
+    assert button.variant == "solid"
+    button.variant = "outline"
+    assert button.button_style == "outline"

@@ -1037,8 +1037,8 @@ class ChatFeed(ListPanel):
                 input_button_params["label"] = "Submit"
             if "margin" not in input_button_params:
                 input_button_params["margin"] = (5, 10)
-            if "button_type" not in input_button_params:
-                input_button_params["button_type"] = "primary"
+            if "color" not in input_button_params:
+                input_button_params["color"] = "primary"
             if "icon" not in input_button_params:
                 input_button_params["icon"] = "check"
             submit_button = Button(**input_button_params)
@@ -1067,8 +1067,8 @@ class ChatFeed(ListPanel):
                     input_timeout_button_params["label"] = input_timeout_button_params.pop("name")
                 if "label" not in input_timeout_button_params:
                     input_timeout_button_params["label"] = timeout_message
-                if "button_type" not in input_timeout_button_params:
-                    input_timeout_button_params["button_type"] = "light"
+                if "color" not in input_timeout_button_params:
+                    input_timeout_button_params["color"] = "light"
                 if "icon" not in input_timeout_button_params:
                     input_timeout_button_params["icon"] = "x"
                 with param.parameterized.batch_call_watchers(self):

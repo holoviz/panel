@@ -120,7 +120,7 @@ power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-submit = pn.widgets.Button(label="Submit", button_type="primary")
+submit = pn.widgets.Button(label="Submit", color="primary")
 
 def result(clicked):
     if clicked:

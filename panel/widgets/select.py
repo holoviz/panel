@@ -1100,7 +1100,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
 
     >>> RadioButtonGroup(
     ...     name='Plotting library', options=['Matplotlib', 'Bokeh', 'Plotly'],
-    ...     button_type='success'
+    ...     color='success'
     ... )
     """
 
@@ -1112,7 +1112,8 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
     _rename: t.ClassVar[Mapping[str, str | None]] = {**_RadioGroupBase._rename, **TooltipMixin._rename}
 
     _source_transforms = {
-        'value': "source.labels[value]", 'button_style': None, 'description': None
+        'value': "source.labels[value]", 'button_style': None, 'color': None,
+        'variant': None, 'description': None,
     }
 
     _supports_embed: bool = True
@@ -1215,6 +1216,7 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
 
     _source_transforms = {
         'value': "value.map((index) => source.labels[index])", 'button_style': None,
+        'color': None, 'variant': None,
         'description': None
     }
 

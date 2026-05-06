@@ -28,7 +28,7 @@ pn.Column(
     pn.widgets.FloatSlider(label="Slider"),
     pn.widgets.TextInput(label="TextInput"),
     pn.widgets.Select(label="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
-    pn.widgets.Button(label="Click me!", icon="hand-click", button_type="primary"),
+    pn.widgets.Button(label="Click me!", icon="hand-click", color="primary"),
 ).servable()
 ```
 
@@ -54,7 +54,7 @@ pn.Column(
     pn.widgets.FloatSlider(label="Slider"),
     pn.widgets.TextInput(label="TextInput"),
     pn.widgets.Select(label="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
-    pn.widgets.Button(label="Click me!", icon="hand-click", button_type="primary"),
+    pn.widgets.Button(label="Click me!", icon="hand-click", color="primary"),
     styles={"background": "#181818"} # styles only necessary in the Panel docs
 ).servable()
 ```
@@ -77,7 +77,7 @@ pn.Column(
     pn.widgets.FloatSlider(label="Slider"),
     pn.widgets.TextInput(label="TextInput"),
     pn.widgets.Select(label="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
-    pn.widgets.Button(label="Click me!", icon="hand-click", button_type="primary"),
+    pn.widgets.Button(label="Click me!", icon="hand-click", color="primary"),
 ).servable()
 ```
 

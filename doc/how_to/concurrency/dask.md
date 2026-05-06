@@ -103,7 +103,7 @@ async def get_client():
     )
 
 n_input = pn.widgets.IntInput(value=0, width=100, sizing_mode="fixed", label="n")
-submit_button = pn.widgets.Button(label="SUBMIT", button_type="primary", align="end")
+submit_button = pn.widgets.Button(label="SUBMIT", color="primary", align="end")
 terminal_widget = pn.widgets.Terminal(
     height=200,
 )

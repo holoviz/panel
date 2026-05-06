@@ -28,7 +28,7 @@ action_example = ActionExample()
 
 pn.Row(
     pn.Column(
-        pn.panel(action_example, show_name=False, margin=0, widgets={"action": {"button_type": "primary"}, "number": {"disabled": True}}),
+        pn.panel(action_example, show_name=False, margin=0, widgets={"action": {"color": "primary"}, "number": {"disabled": True}}),
         '**Click the button** to trigger an update in the output.'
     ),
     action_example.get_number,

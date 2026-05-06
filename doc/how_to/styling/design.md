@@ -37,7 +37,7 @@ def create_components(design):
             label='Select', options=['Biology', 'Chemistry', 'Physics'], design=design
         ),
         pn.widgets.Button(
-            label='Click me!', icon='hand-click', button_type='primary', design=design
+            label='Click me!', icon='hand-click', color='primary', design=design
         )
     )
 

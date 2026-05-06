@@ -34,7 +34,7 @@ pn.extension()
 pn.widgets.Button(
     label="Refresh",
     icon="refresh",
-    button_type="primary",
+    color="primary",
     description="Click to refresh the data",
 ).servable()
 ```

@@ -55,10 +55,10 @@ pn.Row(
     pn.Column(
         "## Loading",
         pn.Column(
-            pn.widgets.Button(label="Loading", loading=True, button_type="primary"),
+            pn.widgets.Button(label="Loading", loading=True, color="primary"),
             pn.WidgetBox(
                 pn.widgets.Checkbox(label="Checked", value=True),
-                pn.widgets.Button(label="Submit", button_type="primary"),
+                pn.widgets.Button(label="Submit", color="primary"),
                 loading=True, margin=(10,10),
             ),
         ),

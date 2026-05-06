@@ -85,15 +85,15 @@ text_input = pn.widgets.TextInput(label="Task", placeholder="Enter a task")
 submit_task = pn.widgets.Button(
     label="Add",
     align="center",
-    button_type="primary",
+    color="primary",
     width=BUTTON_WIDTH,
     sizing_mode="fixed",
     disabled=pn.bind(can_add, text_input.param.value_input)
 )
 clear = pn.widgets.Button(
     label="Remove All",
-    button_type="primary",
-    button_style="outline",
+    color="primary",
+    variant="outline",
     width=BUTTON_WIDTH,
     sizing_mode="fixed",
     visible=pn.bind(has_tasks, state_changed_count)

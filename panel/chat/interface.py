@@ -470,13 +470,13 @@ class ChatInterface(ChatFeed):
         for button in button_data.buttons:
             if active and button_data.objects:
                 button_update = {
-                    "button_type": "warning",
+                    "color": "warning",
                     "label": "Revert",
                     "width": 90,
                 }
             else:
                 button_update = {
-                    "button_type": "default",
+                    "color": "default",
                     "label": button_data.label.title() if self.show_button_name else "",
                     "width": 90 if self.show_button_name else 45,
                 }
