@@ -14,8 +14,8 @@ pytestmark = pytest.mark.ui
 @pytest.fixture
 def accordion_components():
     # divs with mock css classes for easy search for elements in the Accordion
-    d0 = Div(label='Div 0', text='Text 0')
-    d1 = Div(label='Div 1', text='Text 1')
+    d0 = Div(name='Div 0', text='Text 0')
+    d1 = Div(name='Div 1', text='Text 1')
     return d0, d1
 
 
@@ -169,7 +169,7 @@ def test_accordion_extend(page, accordion_components):
     accordion_elements = page.locator('.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
 
-    d2 = Div(label='Div 2', text='Text 2')
+    d2 = Div(name='Div 2', text='Text 2')
     additional_list = [d2]
     # add new list of elements to the accordion
     accordion.extend(additional_list)
@@ -213,7 +213,7 @@ def test_accordion_insert(page, accordion_components):
     expect(d0_object).to_contain_text(d0.name)
     expect(d1_object).to_contain_text(d1.name)
 
-    inserted_div = Div(label='Inserted Div', text='Inserted text')
+    inserted_div = Div(name='Inserted Div', text='Inserted text')
     # insert new component
     accordion.insert(index=1, pane=inserted_div)
     expect(accordion_elements).to_have_count(len(accordion_components) + 1)
