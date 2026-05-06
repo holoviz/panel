@@ -42,7 +42,7 @@ import panel as pn
 
 pn.extension(sizing_mode="stretch_width", template="bootstrap")
 
-bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
+bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, label="Bins")
 
 pn.Column(bins, pn.pane.Str(bins)).servable()
 ```

@@ -85,19 +85,30 @@ def test_tooltip_text_updates(page):
     expect(tooltip).to_have_text("Updated")
 
 
+def _wait_for_echarts(page, timeout=30000):
+    """Wait for the ECharts JS module to be loaded on the page.
+
+    Gauge renders via ECharts. serve_component only waits for the Panel
+    websocket and networkidle, not for the ECharts module fetch. On slow
+    CI runners the canvas can appear well after networkidle, so polling
+    for `window.echarts` is the reliable readiness signal.
+    """
+    page.wait_for_function("typeof window.echarts !== 'undefined'", timeout=timeout)
+
+
 def test_gauge_renders(page):
-    gauge = Gauge(name="Speed", value=75, bounds=(0, 200))
+    gauge = Gauge(label="Speed", value=75, bounds=(0, 200))
 
     serve_component(page, gauge)
 
-    # Wait for ECharts to load and render a canvas element
+    _wait_for_echarts(page)
     expect(page.locator("canvas")).to_have_count(1, timeout=10000)
 
 
 def test_gauge_does_not_crash_other_widgets(page):
     """Regression test: Gauge should not crash other widgets on the page."""
-    gauge = Gauge(name="G", value=50, bounds=(0, 100))
-    slider = pn.widgets.IntSlider(name="Slider", value=25, start=0, end=100)
+    gauge = Gauge(label="G", value=50, bounds=(0, 100))
+    slider = pn.widgets.IntSlider(label="Slider", value=25, start=0, end=100)
     col = pn.Column(gauge, slider)
 
     serve_component(page, col)
@@ -105,14 +116,16 @@ def test_gauge_does_not_crash_other_widgets(page):
     # The slider must render even if Gauge is on the same page
     expect(page.locator(".noUi-target")).to_have_count(1, timeout=10000)
     # Gauge canvas should also eventually render
+    _wait_for_echarts(page)
     expect(page.locator("canvas")).to_have_count(1, timeout=10000)
 
 
 def test_gauge_value_update(page):
-    gauge = Gauge(name="G", value=25, bounds=(0, 100))
+    gauge = Gauge(label="G", value=25, bounds=(0, 100))
 
     serve_component(page, gauge)
 
+    _wait_for_echarts(page)
     expect(page.locator("canvas")).to_have_count(1, timeout=10000)
 
     # Update value and verify no crash

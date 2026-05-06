@@ -705,7 +705,8 @@ class TestChatFeedPromptUser:
         await asyncio.wait_for(prompt_and_wait(), timeout=5.0)
 
         submit_button = chat_feed.objects[-1].object[1]
-        assert submit_button.name == "Timed out"
+        assert submit_button.label == "Timed out"
+        assert submit_button.color == "light"
         assert submit_button.button_type == "light"
         assert submit_button.icon == "x"
 
@@ -717,7 +718,7 @@ class TestChatFeedPromptUser:
 
         custom_button_params = {
             "name": "Custom Submit",
-            "button_type": "success",
+            "color": "success",
             "icon": "arrow-right"
         }
 
@@ -728,7 +729,8 @@ class TestChatFeedPromptUser:
         await asyncio.wait_for(prompt_and_check(), timeout=5.0)
 
         submit_button = chat_feed.objects[-1].object[1]
-        assert submit_button.name == "Custom Submit"
+        assert submit_button.label == "Custom Submit"
+        assert submit_button.color == "success"
         assert submit_button.button_type == "success"
         assert submit_button.icon == "arrow-right"
 
@@ -740,7 +742,7 @@ class TestChatFeedPromptUser:
 
         custom_timeout_params = {
             "name": "Custom Timeout",
-            "button_type": "danger",
+            "color": "danger",
             "icon": "alert-triangle"
         }
 
@@ -752,7 +754,8 @@ class TestChatFeedPromptUser:
         await asyncio.wait_for(prompt_and_wait(), timeout=5.0)
 
         submit_button = chat_feed.objects[-1].object[1]
-        assert submit_button.name == "Custom Timeout"
+        assert submit_button.label == "Custom Timeout"
+        assert submit_button.color == "danger"
         assert submit_button.button_type == "danger"
         assert submit_button.icon == "alert-triangle"
 

@@ -198,7 +198,7 @@ def test_autoload_js(port):
 
 
 def test_server_async_callbacks(server_implementation):
-    button = Button(name='Click')
+    button = Button(label='Click')
 
     counts = []
 
@@ -358,7 +358,7 @@ def test_server_periodic_async_callback(server_implementation, threads):
         count[0] += 1
 
     def app():
-        button = Button(name='Click')
+        button = Button(label='Click')
         state.add_periodic_callback(cb, 100)
         def loaded():
             state._schedule_on_load(state.curdoc, None)
@@ -796,7 +796,7 @@ def test_server_thread_pool_defer_load(server_implementation, threads):
 
 
 async def test_server_text_input_update_before_click_event(server_implementation):
-    button = Button(name='Click')
+    button = Button(label='Click')
     text_input = TextInput()
 
     called = []
@@ -825,8 +825,8 @@ async def test_server_text_input_update_before_click_event(server_implementation
 
 @pytest.mark.flaky(max_runs=3)
 def test_server_thread_pool_change_event(server_implementation, threads):
-    button = Button(name='Click')
-    button2 = Button(name='Click')
+    button = Button(label='Click')
+    button2 = Button(label='Click')
 
     counts = []
 
@@ -890,7 +890,7 @@ def test_server_thread_pool_periodic(server_implementation, threads):
         count[0] -= 1
 
     def app():
-        button = Button(name='Click')
+        button = Button(label='Click')
         state.add_periodic_callback(cb, 100)
         def loaded():
             state._schedule_on_load(state.curdoc, None)
@@ -907,7 +907,7 @@ def test_server_thread_pool_onload(threads):
     counts = []
 
     def app(count=[0]):
-        button = Button(name='Click')
+        button = Button(label='Click')
         def onload():
             count[0] += 1
             counts.append(count[0])
@@ -930,7 +930,7 @@ def test_server_thread_pool_onload(threads):
 
 
 def test_server_thread_pool_busy(server_implementation, threads):
-    button = Button(name='Click')
+    button = Button(label='Click')
     clicks = []
 
     def cb(event):
@@ -958,7 +958,7 @@ def test_server_async_onload(threads):
     counts = []
 
     def app(count=[0]):
-        button = Button(name='Click')
+        button = Button(label='Click')
         async def onload():
             count[0] += 1
             counts.append(count[0])

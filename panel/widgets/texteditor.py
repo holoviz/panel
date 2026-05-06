@@ -50,7 +50,7 @@ class TextEditor(Widget):
     value = param.String(default="", doc="State of the current text in the editor")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'name': 'name', 'value': 'text'
+        'label': 'name', 'value': 'text'
     }
 
     def _get_model(

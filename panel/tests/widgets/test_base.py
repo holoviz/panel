@@ -111,7 +111,7 @@ def test_widget_triggers_events(document, comm):
     """
     Ensure widget events don't get swallowed in comm mode
     """
-    text = TextInput(value='ABC', name='Text:')
+    text = TextInput(value='ABC', label='Text:')
 
     widget = text.get_root(document, comm=comm)
     document.add_root(widget)
@@ -138,7 +138,7 @@ def test_widget_from_param_cls():
 
     widget = TextInput.from_param(Test.param.a)
     assert isinstance(widget, TextInput)
-    assert widget.name == 'A'
+    assert widget.label == 'A'
 
     Test.a = 'abc'
     assert widget.value == 'abc'
@@ -154,7 +154,7 @@ def test_widget_from_param_negative_precedence():
 
     widget = TextInput.from_param(Test.param.a)
     assert isinstance(widget, TextInput)
-    assert widget.name == 'A'
+    assert widget.label == 'A'
 
     Test.a = 'abc'
     assert widget.value == 'abc'
@@ -171,7 +171,7 @@ def test_widget_from_param_instance():
     test = Test()
     widget = TextInput.from_param(test.param.a)
     assert isinstance(widget, TextInput)
-    assert widget.name == 'A'
+    assert widget.label == 'A'
 
     test.a = 'abc'
     assert widget.value == 'abc'
@@ -188,7 +188,7 @@ def test_widget_from_param_instance_with_kwargs():
     test = Test()
     widget = FloatSlider.from_param(test.param.a, start=0.3, end=5.2)
     assert isinstance(widget, FloatSlider)
-    assert widget.name == 'A'
+    assert widget.label == 'A'
     assert widget.start == 0.3
     assert widget.end == 5.2
     assert widget.value == 3.14
@@ -205,6 +205,6 @@ def test_infer_params_attribute_error():
         name = param.String(default='World', doc="Name to greet")
 
     with pytest.raises(ValueError) as excinfo:
-        TextInput.from_param(MyComponent.name, name='Name Input')
+        TextInput.from_param(MyComponent.name, label='Name Input')
 
     assert str(excinfo.value) == "TextInput.from_param only accepts Parameter types, provided value is of type <class 'str'>."

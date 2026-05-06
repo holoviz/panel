@@ -621,7 +621,7 @@ def test_param_widget_type(document, comm):
     assert isinstance(wb, EditableFloatSlider)
     assert wb.value == 1.2
     assert (wb.fixed_start, wb.fixed_end) == (0, 5)
-    assert wb.name == 'B'
+    assert wb.label == 'B'
 
 
 def test_param_throttled(document, comm):
@@ -1691,9 +1691,9 @@ def test_sorted():
 
     my_class = MyClass()
     _, input1, input2, input3 = Param(my_class, sort=True)
-    assert input1.name=="aaa"
-    assert input2.name=="bbb"
-    assert input3.name=="zzz"
+    assert input1.label == "aaa"
+    assert input2.label == "bbb"
+    assert input3.label == "zzz"
 
 def test_sorted_func():
     class MyClass(param.Parameterized):
@@ -1705,9 +1705,9 @@ def test_sorted_func():
     def sort_func(x):
         return x[1].label[::-1]
     _, input1, input2, input3 = Param(my_class, sort=sort_func)
-    assert input1.name=="cba"
-    assert input2.name=="acb"
-    assert input3.name=="bac"
+    assert input1.label == "cba"
+    assert input2.label == "acb"
+    assert input3.label == "bac"
 
 
 def test_param_editablerangeslider_with_bounds():

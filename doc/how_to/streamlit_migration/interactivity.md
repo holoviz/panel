@@ -88,7 +88,7 @@ def plot(data, bins):
     return fig
 
 data = np.random.normal(1, 1, size=100)
-bins_input = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
+bins_input = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, label="Bins")
 bplot = pn.bind(plot, data=data, bins=bins_input)
 
 pn.Column(bins_input, bplot).servable()
@@ -172,7 +172,7 @@ def run_calculation(running, calculation):
     calc = calculation_a if calculation == "A" else calculation_b
     with run_input.param.update(loading=True):
         yield pn.indicators.LoadingSpinner(
-            value=True, size=50, name='Running... Please Wait!'
+            value=True, size=50, label='Running... Please Wait!'
         )
         time_start = time.perf_counter()
         result = calc()
@@ -185,11 +185,11 @@ def run_calculation(running, calculation):
         The function took {time_end - time_start:1.1f} seconds to complete
         """
 
-calculation_input = pn.widgets.RadioBoxGroup(name="Calculation", options=["A", "B"])
+calculation_input = pn.widgets.RadioBoxGroup(label="Calculation", options=["A", "B"])
 run_input = pn.widgets.Button(
-    name="Press to run calculation",
+    label="Press to run calculation",
     icon="caret-right",
-    button_type="primary",
+    color="primary",
     width=250,
 )
 pn.Column(
@@ -246,11 +246,11 @@ def run_calculation(running, calculation):
         The function took {time_end - time_start:1.1f} seconds to complete.
         """
 
-calculation_input = pn.widgets.RadioBoxGroup(name="Calculation", options=["A", "B"])
+calculation_input = pn.widgets.RadioBoxGroup(label="Calculation", options=["A", "B"])
 run_input = pn.widgets.Button(
-    name="Press to run calculation",
+    label="Press to run calculation",
     icon="caret-right",
-    button_type="primary",
+    color="primary",
     width=250,
 )
 pn.Column(
@@ -323,8 +323,8 @@ def results(running):
         layout[-1] = result
         yield layout
 
-run_input = pn.widgets.Button(name="Run model")
-loading = pn.widgets.LoadingSpinner(value=True, size=50, name="Running... Please Wait!")
+run_input = pn.widgets.Button(label="Run model")
+loading = pn.widgets.LoadingSpinner(value=True, size=50, label="Running... Please Wait!")
 layout = pn.Column("Calculation did not run yet")
 
 pn.Column(run_input, pn.bind(results, run_input)).servable()

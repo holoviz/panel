@@ -158,7 +158,7 @@ print(pn.panel("Hello World"))
 
 ```python
 component = pn.Column(
-    "Hello World", pn.widgets.IntSlider(value=2, end=10, name="Value")
+    "Hello World", pn.widgets.IntSlider(value=2, end=10, label="Value")
 )
 print(component)
 ```

@@ -71,8 +71,6 @@ class PlayerBase(Widget):
         'once', 'loop', 'reflect'
     ], doc="The loop options to display on the player.")
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': "title"}
-
     _widget_type: t.ClassVar[type[Model]] = _BkPlayer
 
     _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/player.css"]
@@ -176,8 +174,6 @@ class DiscretePlayer(PlayerBase, SelectBase):
     value = param.Parameter(doc="Current player value")
 
     value_throttled: t.Any = param.Parameter(constant=True, doc="Current player value")  # type: ignore[assignment, ty:invalid-assignment]
-
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'value': None, 'value_throttled': None}
 

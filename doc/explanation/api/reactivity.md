@@ -26,9 +26,9 @@ Let's take the example of a form that allows us to register a new user and their
 ```{pyodide}
 import panel as pn
 
-user   = pn.widgets.TextInput(name='User')
-age    = pn.widgets.IntSlider(name='Age', start=0, end=100)
-submit = pn.widgets.Button(name='Submit')
+user   = pn.widgets.TextInput(label='User')
+age    = pn.widgets.IntSlider(label='Age', start=0, end=100)
+submit = pn.widgets.Button(label='Submit')
 
 widgets = pn.Column(user, age, submit)
 md = pn.pane.Markdown()
@@ -70,9 +70,9 @@ In the reactive approach things are much simpler; the three inputs are bound to 
 ```{pyodide}
 import panel as pn
 
-user   = pn.widgets.TextInput(name='User')
-age    = pn.widgets.IntSlider(name='Age', start=0, end=100)
-submit = pn.widgets.Button(name='Submit')
+user   = pn.widgets.TextInput(label='User')
+age    = pn.widgets.IntSlider(label='Age', start=0, end=100)
+submit = pn.widgets.Button(label='Submit')
 
 widgets = pn.Column(user, age, submit)
 
@@ -269,7 +269,7 @@ Let us, for example, extend our simple addition app with a button that triggers 
 ```{pyodide}
 a = pn.widgets.FloatSlider()
 b = pn.widgets.FloatSlider()
-button = pn.widgets.Button(name='Calculate')
+button = pn.widgets.Button(label='Calculate')
 
 str_pane = pn.pane.Str(f'{a.value} + {b.value} = {a.value+b.value}')
 
@@ -286,7 +286,7 @@ Defining a click handler using the `on_click` method to trigger the computation 
 ```{pyodide}
 a_slider = pn.widgets.FloatSlider()
 b_slider = pn.widgets.FloatSlider()
-button = pn.widgets.Button(name='Calculate')
+button = pn.widgets.Button(label='Calculate')
 
 def add(a, b, compute):
     if not compute:
@@ -301,7 +301,7 @@ Reactive expressions also have a mechanism to condition an event being emitted o
 ```{pyodide}
 a_slider = pn.widgets.FloatSlider()
 b_slider = pn.widgets.FloatSlider()
-button = pn.widgets.Button(name='Calculate')
+button = pn.widgets.Button(label='Calculate')
 
 out = pn.rx('{a} + {b} = {c}').format(
     a=a_slider, b=b_slider, c=a_slider.rx()+b_slider.rx()

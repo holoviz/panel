@@ -379,7 +379,7 @@ class HoloViews(Pane):
         else:
             key = tuple(w.value for w in widgets)
             if plot.dynamic:
-                widget_dims = [w.name for w in widgets]
+                widget_dims = [w.label for w in widgets]
                 dim_labels = [kdim.pprint_label for kdim in plot.dimensions]
                 key = [key[widget_dims.index(kdim)] if kdim in widget_dims else None
                        for kdim in dim_labels]
@@ -748,7 +748,7 @@ class HoloViews(Pane):
                     widget_type = widget_type or cls._resolve_widget('discrete', dynamic, default_widgets)
                 default = vals[0] if dim.default is None else dim.default
                 widget_name = dim.pprint_label
-                widget_kwargs = dict(dict(name=widget_name, options=options, value=default), **widget_kwargs)
+                widget_kwargs = dict(dict(label=widget_name, options=options, value=default), **widget_kwargs)
                 widget = widget_type(**widget_kwargs)
             elif dim.range != (None, None):
                 start, end = dim.range
@@ -767,13 +767,13 @@ class HoloViews(Pane):
                     step = 0.1 if dim.step is None else dim.step
                 widget_kwargs = dict(
                     dict(
-                        step=step, name=dim.label, start=dim.range[0],
+                        step=step, label=dim.label, start=dim.range[0],
                         end=dim.range[1], value=default
                     ), **widget_kwargs
                 )
                 widget = widget_type(**widget_kwargs)
             if widget is not None:
-                widget.param.name.constant = True
+                widget.param.label.constant = True
                 widgets.append(widget)
         if widgets_type == 'scrubber':
             widgets = [cls._resolve_widget('scrubber', dynamic, default_widgets)(length=nframes, width=550)]

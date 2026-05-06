@@ -48,14 +48,14 @@ pn.state.template.param.update(site="Panel in the Browser", title="XGBoost Examp
 
 iris_df = load_iris(as_frame=True)
 
-trees = pn.widgets.IntSlider(start=2, end=30, name="Number of trees")
+trees = pn.widgets.IntSlider(start=2, end=30, label="Number of trees")
 
 def pipeline(trees):
     model = XGBClassifier(max_depth=2, n_estimators=trees)
     model.fit(iris_df.data, iris_df.target)
     accuracy = round(accuracy_score(iris_df.target, model.predict(iris_df.data)) * 100, 1)
     return pn.indicators.Number(
-        name="Test score",
+        label="Test score",
         value=accuracy,
         format="{value}%",
         colors=[(97.5, "red"), (99.0, "orange"), (100, "green")],

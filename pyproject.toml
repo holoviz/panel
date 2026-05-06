@@ -57,7 +57,7 @@ dependencies = [
     'mdit-py-plugins',
     'narwhals >=2',
     'requests',
-    'bleach',
+    'nh3',
     'typing_extensions',
     'pandas >=1.2',
     'packaging',
@@ -94,7 +94,6 @@ tests = [
 mypy = [
     "mypy",
     "pandas-stubs",
-    "types-bleach",
     "types-croniter",
     "types-Markdown",
     "types-psutil",

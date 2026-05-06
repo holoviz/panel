@@ -248,7 +248,7 @@ class Syncable(Renderable):
         Parameters that can be linked in JavaScript via source transforms.
         """
         return [
-            p for p in self._synced_params if self._rename.get(p, False) is not None
+            p for p in self._synced_params if self._property_mapping.get(p, False) is not None
             and self._source_transforms.get(p, False) is not None and
             p not in ('design', 'stylesheets')
         ]

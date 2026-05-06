@@ -36,7 +36,7 @@ class _ClickableIcon(Widget):
     _widget_type = _PnClickableIcon
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, 'name': 'title',
+        **TooltipMixin._rename, 'label': 'title',
     }
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
@@ -44,9 +44,6 @@ class _ClickableIcon(Widget):
     }
 
     _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/icon.css']
-
-    def __init__(self, **params):
-        super().__init__(**params)
 
     @param.depends('icon', 'active_icon', watch=True, on_init=True)
     def _update_icon(self):
@@ -120,7 +117,7 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
     _widget_type = _PnButtonIcon
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, 'name': 'title', 'clicks': None,
+        **TooltipMixin._rename, 'label': 'title', 'clicks': None,
     }
 
     _target_transforms: t.ClassVar[Mapping[str, str | None]] = {

@@ -21,7 +21,13 @@ from ..models import (
 )
 from ..util import lazy_load
 from .base import Widget
-from .button import BUTTON_STYLES, BUTTON_TYPES, IconMixin
+from .button import (
+    BUTTON_STYLES, BUTTON_TYPES, IconMixin,
+    _merge_button_appearance_aliases_in_param_change,
+    _normalize_button_appearance_constructor_params,
+    _register_button_appearance_sync_watchers,
+    _sync_button_appearance_aliases_post_init,
+)
 from .indicators import Progress  # noqa
 
 if t.TYPE_CHECKING:
@@ -41,7 +47,7 @@ class VideoStream(Widget):
 
     :Example:
 
-    >>> VideoStream(name='Video Stream', timeout=100)
+    >>> VideoStream(label='Video Stream', timeout=100)
     """
 
     format: t.Literal['png', 'jpeg'] = param.Selector(
@@ -60,7 +66,7 @@ class VideoStream(Widget):
 
     _widget_type: t.ClassVar[type[Model]] = _BkVideoStream
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None}
 
     def snapshot(self):
         """
@@ -97,11 +103,22 @@ class FileDownload(IconMixin):
     ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
-        or 'danger' (red).""")  # type: ignore[assignment, ty:invalid-assignment]
+        or 'danger' (red). The same value is exposed as ``color``.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     button_style: t.Literal['solid', 'outline'] = param.Selector(
         default='solid', objects=BUTTON_STYLES, doc="""
-        A button style to switch between 'solid', 'outline'.""")  # type: ignore[assignment, ty:invalid-assignment]
+        A button style to switch between 'solid', 'outline'. The same value is
+        exposed as ``variant``.""")  # type: ignore[assignment, ty:invalid-assignment]
+
+    color: t.Literal[
+        'default', 'primary', 'success', 'warning', 'danger', 'light'
+    ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
+        Semantic color of the button; alias for ``button_type``.""")  # type: ignore[assignment, ty:invalid-assignment]
+
+    variant: t.Literal['solid', 'outline'] = param.Selector(
+        default='solid', objects=BUTTON_STYLES, doc="""
+        Visual variant of the button; alias for ``button_style`` ('solid' or
+        'outline').""")  # type: ignore[assignment, ty:invalid-assignment]
 
     callback = param.Callable(default=None, allow_refs=False, doc="""
         A callable that returns the file path or file-like object.""")
@@ -153,8 +170,8 @@ class FileDownload(IconMixin):
     }
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks',
-        'value': None
+        'callback': None, 'button_style': None, 'color': None, 'variant': None,
+        'file': None, '_clicks': 'clicks', 'value': None, 'label': 'label'
     }
 
     _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
@@ -164,7 +181,10 @@ class FileDownload(IconMixin):
     def __init__(self, file=None, **params):
         self._default_label = 'label' not in params
         self._synced = False
+        _normalize_button_appearance_constructor_params(params)
         super().__init__(file=file, **params)
+        _register_button_appearance_sync_watchers(self)
+        _sync_button_appearance_aliases_post_init(self)
         if self.embed:
             self._transfer()
         self._update_label()
@@ -172,6 +192,8 @@ class FileDownload(IconMixin):
             self._update_filename()
 
     def _process_param_change(self, params):
+        params = dict(params)
+        _merge_button_appearance_aliases_in_param_change(params)
         if 'button_style' in params or 'css_classes' in params:
             params['css_classes'] = [
                 params.pop('button_style', self.button_style)
@@ -345,7 +367,7 @@ class JSONEditor(Widget):
         JSON data to be edited.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'value': 'data'
+        'label': None, 'value': 'data'
     }
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

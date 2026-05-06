@@ -26,7 +26,7 @@ p = figure(width=300, height=300)
 xs = np.linspace(0, 10)
 r = p.line(xs, np.sin(xs))
 
-width_slider = pn.widgets.FloatSlider(name='Line Width', start=0.1, end=10)
+width_slider = pn.widgets.FloatSlider(label='Line Width', start=0.1, end=10)
 width_slider.jslink(r.glyph, value='line_width')
 
 pn.Column(width_slider, p)
@@ -52,8 +52,8 @@ import holoviews.plotting.bokeh
 
 colors = ["black", "red", "blue", "green", "gray"]
 
-size_widget = pn.widgets.FloatSlider(value=8, start=3, end=20, name='Size')
-color_widget = pn.widgets.Select(name='Color', options=colors, value='black')
+size_widget = pn.widgets.FloatSlider(value=8, start=3, end=20, label='Size')
+color_widget = pn.widgets.Select(label='Color', options=colors, value='black')
 
 points = hv.Points(np.random.rand(10, 2)).options(padding=0.1, line_color='black')
 

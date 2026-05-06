@@ -8,11 +8,11 @@ from panel.widgets import IntSlider, Trend
 
 
 def test_constructor():
-    Trend(name="Test")
+    Trend(label="Test")
 
 
 def manualtest_constructor():
-    return Trend(name="Test")
+    return Trend(label="Test")
 
 
 def test_trend_auto_value(document, comm):
@@ -45,7 +45,7 @@ def manualtest_app():
     data = {"x": [1, 2, 3, 4, 5], "y": [3800, 3700, 3800, 3900, 4000]}
 
     trend = Trend(
-        name="Panel Users",
+        label="Panel Users",
         value=4000,
         value_change=0.51,
         data=data,
