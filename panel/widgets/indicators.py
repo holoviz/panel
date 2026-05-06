@@ -913,7 +913,7 @@ class LinearGauge(ValueIndicator):
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
         'background': 'background_fill_color',
-        'label': 'label',
+        'label': 'name',
         'show_boundaries': None,
         'default_color': None
     }
