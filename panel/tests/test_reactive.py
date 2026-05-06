@@ -144,7 +144,7 @@ def test_text_input_controls():
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
     assert len(wb1) == 8
-    name, value, disabled, *(ws) = wb1
+    name, label, value, disabled, *(ws) = wb1
 
     assert isinstance(value, TextInput)
     text_input.value = "New value"
