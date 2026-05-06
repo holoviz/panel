@@ -155,6 +155,9 @@ class Widget(Reactive, WidgetBase):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
+    name = param.String(default='', constant=False, doc="""
+       Alias for label.""")
+
     _rename: t.ClassVar[Mapping[str, str | None]] = {'label': 'title', 'name': None}
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'name': None}
