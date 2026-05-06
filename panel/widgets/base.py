@@ -163,8 +163,8 @@ class Widget(Reactive, WidgetBase):
                 stacklevel=2,
             )
             params["label"] = params["name"]
-        elif "label" not in params:
-            params["label"] = ""
+        else:
+            params["name"] = params.get("label", "")
         if '_supports_embed' in params:
             self._supports_embed = params.pop('_supports_embed')
         if '_param_pane' in params:

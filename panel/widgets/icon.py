@@ -45,9 +45,6 @@ class _ClickableIcon(Widget):
 
     _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/icon.css']
 
-    def __init__(self, **params):
-        super().__init__(**params)
-
     @param.depends('icon', 'active_icon', watch=True, on_init=True)
     def _update_icon(self):
         if not self.icon:
