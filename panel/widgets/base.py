@@ -117,14 +117,15 @@ class WidgetBase(param.Parameterized):
     def __init__(self, **params: t.Any):
         if "name" in params and "label" in params:
             warnings.warn(
-                "Both 'name' and 'label' were provided; using 'label' and ignoring 'name'.",
+                "Both 'name' and 'label' were provided; using 'label' and ignoring 'name'. "
+                "Widget.name is deprecated and will be removed in version 2.0.",
                 PendingDeprecationWarning,
                 stacklevel=find_stack_level(),
             )
             params["name"] = params["label"]
         elif "name" in params:
             warnings.warn(
-                "'name' is deprecated and will be removed in a future release. Use 'label' instead.",
+                "Widget.name is deprecated and will be removed in version 2.0. Use 'label' instead.",
                 PendingDeprecationWarning,
                 stacklevel=find_stack_level(),
             )
