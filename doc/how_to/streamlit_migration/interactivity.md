@@ -189,7 +189,7 @@ calculation_input = pn.widgets.RadioBoxGroup(label="Calculation", options=["A", 
 run_input = pn.widgets.Button(
     label="Press to run calculation",
     icon="caret-right",
-    button_type="primary",
+    color="primary",
     width=250,
 )
 pn.Column(
@@ -250,7 +250,7 @@ calculation_input = pn.widgets.RadioBoxGroup(label="Calculation", options=["A", 
 run_input = pn.widgets.Button(
     label="Press to run calculation",
     icon="caret-right",
-    button_type="primary",
+    color="primary",
     width=250,
 )
 pn.Column(

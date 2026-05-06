@@ -115,7 +115,7 @@ class TaskInput(pn.viewable.Viewer):
         submit_task = pn.widgets.Button(
             label="Add",
             align="center",
-            button_type="primary",
+            color="primary",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
             disabled=text_input_has_value,
@@ -171,8 +171,8 @@ class TaskListEditor(pn.viewable.Viewer):
         pn.bind(self.value.add_task, task_input.param.value, watch=True)
         clear = pn.widgets.Button(
             label="Remove All",
-            button_type="primary",
-            button_style="outline",
+            color="primary",
+            variant="outline",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
             visible=self.value.param.has_tasks,
@@ -315,7 +315,7 @@ class TaskInput(pn.viewable.Viewer):
         submit_task = pn.widgets.Button(
             label="Add",
             align="center",
-            button_type="primary",
+            color="primary",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
             disabled=text_input_has_value,
@@ -386,8 +386,8 @@ class TaskListEditor(pn.viewable.Viewer):
         pn.bind(self.value.add_task, task_input.param.value, watch=True)
         clear = pn.widgets.Button(
             label="Remove All",
-            button_type="primary",
-            button_style="outline",
+            color="primary",
+            variant="outline",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
             visible=self.value.param.has_tasks,

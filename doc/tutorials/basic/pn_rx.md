@@ -102,7 +102,7 @@ wind_speed = pn.widgets.FloatSlider(
 efficiency = pn.widgets.FloatInput(
     value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))"
 )
-submit = pn.widgets.Button(label="Submit", button_type="primary")
+submit = pn.widgets.Button(label="Submit", color="primary")
 
 power = wind_speed.rx() * efficiency.rx()
 

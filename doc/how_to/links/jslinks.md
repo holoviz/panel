@@ -70,7 +70,7 @@ text_input.value = "Markdown display"
 To respond to click events, we'll demonstrate an example of using `js_on_click`. This example will open a URL from the ``TextInput`` widget value in a new browser tab:
 
 ```{pyodide}
-button = pn.widgets.Button(label='Open URL', button_type = 'primary')
+button = pn.widgets.Button(label='Open URL', color = 'primary')
 url = pn.widgets.TextInput(label='URL', value = 'https://holoviz.org/')
 button.js_on_click(args={'target': url}, code='window.open(target.value)')
 pn.Row(url, button)

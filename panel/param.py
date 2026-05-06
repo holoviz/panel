@@ -706,7 +706,7 @@ class Param(Pane):
             and (self_or_cls.expand_button or (self_or_cls.expand_button is None and not self_or_cls.expand))):
             toggle = Toggle(
                 align='end',
-                button_type='primary',
+                color='primary',
                 disabled=not is_parameterized(value),
                 height_policy='fit',
                 label='\u22EE',

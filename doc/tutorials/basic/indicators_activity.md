@@ -29,7 +29,7 @@ import panel as pn
 
 pn.extension()
 
-pn.widgets.Button(label="Loading", loading=True, button_type="primary").servable()
+pn.widgets.Button(label="Loading", loading=True, color="primary").servable()
 ```
 
 It also works for composed components.
@@ -43,7 +43,7 @@ pn.extension()
 
 pn.WidgetBox(
     pn.widgets.Checkbox(label="Checked", value=True),
-    pn.widgets.Button(label="Submit", button_type="primary"),
+    pn.widgets.Button(label="Submit", color="primary"),
     loading=True, margin=(10,10),
 ).servable()
 ```
@@ -67,7 +67,7 @@ data = pd.DataFrame([
     ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
 )
 
-button = pn.widgets.Button(label="Submit", button_type="primary")
+button = pn.widgets.Button(label="Submit", color="primary")
 
 def get_figure(running):
     if not running:
@@ -104,7 +104,7 @@ import panel as pn
 
 pn.extension(sizing_mode="stretch_width", loading_indicator=True)
 
-button = pn.widgets.Button(label="Submit", button_type="primary")
+button = pn.widgets.Button(label="Submit", color="primary")
 
 data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
@@ -148,7 +148,7 @@ import panel as pn
 
 pn.extension(sizing_mode="stretch_width")
 
-button = pn.widgets.Button(label="Submit", button_type="primary")
+button = pn.widgets.Button(label="Submit", color="primary")
 
 data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
@@ -185,7 +185,7 @@ import panel as pn
 
 pn.extension(sizing_mode="stretch_width", defer_load=True, loading_indicator=True)
 
-button = pn.widgets.Button(label="Submit", button_type="primary")
+button = pn.widgets.Button(label="Submit", color="primary")
 
 data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
@@ -254,7 +254,7 @@ import panel as pn
 
 pn.extension()
 
-button = pn.widgets.Button(label="Submit", button_type="primary")
+button = pn.widgets.Button(label="Submit", color="primary")
 
 running_indicator = pn.indicators.LoadingSpinner(
     value=False, height=25, width=25, color="secondary", visible=True
@@ -299,7 +299,7 @@ import panel as pn
 
 pn.extension()
 
-button = pn.widgets.Button(label="Submit", button_type="primary")
+button = pn.widgets.Button(label="Submit", color="primary")
 
 running_indicator = pn.indicators.LoadingSpinner(
     value=False, height=25, width=25, color="secondary", visible=False
@@ -337,7 +337,7 @@ pn.extension()
 is_running = pn.rx(False)
 
 button = pn.widgets.Button(
-    label="Submit", button_type="primary", disabled=is_running, loading=is_running
+    label="Submit", color="primary", disabled=is_running, loading=is_running
 )
 
 running_indicator = pn.indicators.LoadingSpinner(
