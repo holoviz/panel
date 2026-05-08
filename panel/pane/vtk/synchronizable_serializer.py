@@ -3,9 +3,8 @@ import hashlib
 import io
 import struct
 import time
+import typing as t
 import zipfile
-
-from typing import Any
 
 import vtk
 
@@ -435,7 +434,7 @@ def getReferenceId(ref):
 
 # -----------------------------------------------------------------------------
 
-dataArrayShaMapping: dict[str, dict[str, Any]] = {}
+dataArrayShaMapping: dict[str, dict[str, t.Any]] = {}
 
 
 def digest(array):

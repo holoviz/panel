@@ -24,8 +24,8 @@ import panel as pn
 template = pn.template.BootstrapTemplate(title='Bootstrap Template')
 
 xs = np.linspace(0, np.pi)
-freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
-phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
+freq = pn.widgets.FloatSlider(label="Frequency", start=0, end=10, value=2)
+phase = pn.widgets.FloatSlider(label="Phase", start=0, end=np.pi)
 
 def sine(freq, phase):
     return pd.DataFrame(dict(y=np.sin(xs*freq+phase)), index=xs)
@@ -79,8 +79,8 @@ import panel as pn
 pn.extension(template='bootstrap')
 
 xs = np.linspace(0, np.pi)
-freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2).servable(target='sidebar')
-phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi).servable(target='sidebar')
+freq = pn.widgets.FloatSlider(label="Frequency", start=0, end=10, value=2).servable(target='sidebar')
+phase = pn.widgets.FloatSlider(label="Phase", start=0, end=np.pi).servable(target='sidebar')
 
 def sine(freq, phase):
     return pd.DataFrame(dict(y=np.sin(xs*freq+phase)), index=xs)

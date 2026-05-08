@@ -50,7 +50,7 @@ class Stage2b(param.Parameterized):
 
     c = param.Number(default=5, precedence=-1, bounds=(0, None))
 
-    root = param.Parameter(default=0.1)
+    root: float = param.Parameter(default=0.1)  # type: ignore[assignment, ty:invalid-assignment]
 
     @param.depends('c', 'root')
     def view(self):

@@ -32,9 +32,9 @@ import panel as pn
 pn.extension()
 
 pn.widgets.Button(
-    name="Refresh",
+    label="Refresh",
     icon="refresh",
-    button_type="primary",
+    color="primary",
     description="Click to refresh the data",
 ).servable()
 ```
@@ -60,7 +60,7 @@ pn.widgets.TextInput(
     description="The text given to the AI",
     disabled=True,
     max_length=15,
-    name="Prompt",
+    label="Prompt",
     placeholder="What is Python?",
 ).servable()
 ```
@@ -80,7 +80,7 @@ pn.extension()
 
 pn.widgets.Select(
     description="Select a Technology",
-    name="Study",
+    label="Study",
     options=["Wind Turbine", "Solar Panel", "Battery Storage"],
 ).servable()
 ```
@@ -94,7 +94,7 @@ pn.extension()
 
 pn.widgets.RadioButtonGroup(
     description="Select a Technology",
-    name="Study",
+    label="Study",
     options=["Wind Turbine", "Solar Panel", "Battery Storage"],
 ).servable()
 ```

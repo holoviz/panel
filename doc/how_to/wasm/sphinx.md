@@ -53,7 +53,7 @@ and then you can use the `pyodide` as an RST directive:
 
    import panel as pn
 
-   slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
+   slider = pn.widgets.FloatSlider(start=0, end=10, label='Amplitude')
 
    def callback(new):
        return f'Amplitude is: {new}'
@@ -71,7 +71,7 @@ import panel as pn
 
 
 ```{pyodide}
-slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
+slider = pn.widgets.FloatSlider(start=0, end=10, label='Amplitude')
 
 def callback(new):
     return f'Amplitude is: {new}'

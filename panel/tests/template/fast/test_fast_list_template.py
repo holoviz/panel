@@ -34,7 +34,7 @@ def test_accent():
 
 def test_template_right_sidebar():
     tmpl = FastListTemplate()
-    button = Button(name="Click me", button_type="primary")
+    button = Button(label="Click me", color="primary")
     tmpl.right_sidebar.append(button)
 
     assert len(tmpl._render_items) == 5

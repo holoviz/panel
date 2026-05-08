@@ -20,7 +20,7 @@ pn.extension(template='material')
 pn.state.template.title = 'Optional Auth'
 
 if pn.state.user == 'guest':
-    button = pn.widgets.Button(name='Login').servable(target='header')
+    button = pn.widgets.Button(label='Login').servable(target='header')
     button.js_on_click(code='window.location.href="/login"')
 
 pn.Column(f'# Hello {pn.state.user}!', pn.state.user_info).servable()

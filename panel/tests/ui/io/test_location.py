@@ -25,9 +25,9 @@ def verify_document_location(expected_location, page):
 def test_set_url_params_update_document(page):
     def app():
         """Simple app to set url by widgets' values"""
-        w1 = FloatSlider(name='Slider', start=0, end=10)
-        w2 = TextInput(name='Text')
-        w3 = RangeSlider(name='RangeSlider', start=0, end=10)
+        w1 = FloatSlider(label='Slider', start=0, end=10)
+        w2 = TextInput(label='Text')
+        w3 = RangeSlider(label='RangeSlider', start=0, end=10)
         widgets = pn.Row(w1, w2, w3)
 
         if pn.state.location:
@@ -68,7 +68,7 @@ def test_set_url_params_update_document(page):
 def test_set_hash_update_document(page):
     def app():
         """simple app to set hash at onload"""
-        widget = TextInput(name='Text')
+        widget = TextInput(label='Text')
 
         def cb():
             pn.state.location.hash = '#123'
@@ -92,7 +92,7 @@ def test_set_hash_update_document(page):
 
 
 def test_set_document_location_update_state(page):
-    widget = TextInput(name='Text')
+    widget = TextInput(label='Text')
 
     def app():
         if pn.state.location:

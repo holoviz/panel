@@ -52,9 +52,9 @@ from bokeh.sampledata.autompg import autompg
 
 columns = list(autompg.columns[:-2])
 
-x = pn.widgets.Select(value='mpg', options=columns, name='x')
-y = pn.widgets.Select(value='hp', options=columns, name='y')
-color = pn.widgets.ColorPicker(name='Color', value='#AA0505')
+x = pn.widgets.Select(value='mpg', options=columns, label='x')
+y = pn.widgets.Select(value='hp', options=columns, label='y')
+color = pn.widgets.ColorPicker(label='Color', value='#AA0505')
 
 pn.Row(
     pn.Column('## MPG Explorer', x, y, color),
@@ -67,9 +67,9 @@ Notice how here we were able to bind widget values to the existing method `autom
 If you are writing code specifically for building an app, and do not wish to keep domain and GUI code separate even in one direction, the functionality of `pn.bind` is also available as a decorator `@pn.depends`:
 
 ```{pyodide}
-x = pn.widgets.Select(value='mpg', options=columns, name='x')
-y = pn.widgets.Select(value='hp', options=columns, name='y')
-color = pn.widgets.ColorPicker(name='Color', value='#AA0505')
+x = pn.widgets.Select(value='mpg', options=columns, label='x')
+y = pn.widgets.Select(value='hp', options=columns, label='y')
+color = pn.widgets.ColorPicker(label='Color', value='#AA0505')
 
 @pn.depends(x, y, color)
 def plot(xval, yval, colorval):

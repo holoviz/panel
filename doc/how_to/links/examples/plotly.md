@@ -16,7 +16,7 @@ layout = {'width': 600, 'height': 500, 'margin': {'l': 8, 'b': 8, 'r': 8, 't': 8
 fig = dict(data=contour, layout=layout)
 plotly_pane = pn.pane.Plotly(fig, width=600, height=500)
 
-buttons = pn.widgets.RadioButtonGroup(value='Medium', options=['Low', 'Medium', 'High'], button_type="success")
+buttons = pn.widgets.RadioButtonGroup(value='Medium', options=['Low', 'Medium', 'High'], color="success")
 
 range_callback = """
 var ncontours = [2, 5, 10]
