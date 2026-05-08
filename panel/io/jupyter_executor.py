@@ -3,10 +3,10 @@ from __future__ import annotations
 import asyncio
 import html
 import os
+import typing as t
 import weakref
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
 
 import tornado
 
@@ -29,7 +29,7 @@ from .resources import Resources
 from .server import server_html_page_for_session
 from .state import set_curdoc, state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document.events import DocumentPatchedEvent
 
 
@@ -101,7 +101,7 @@ class PanelExecutor(WSHandler):
             self.exception = e
             self.session = None
 
-    def _get_payload(self, token: str) -> dict[str, Any]:
+    def _get_payload(self, token: str) -> dict[str, t.Any]:
         payload = get_token_payload(token)
         if ('cookies' in payload and 'headers' in payload
             and 'Cookie' not in payload['headers']):
@@ -138,11 +138,11 @@ class PanelExecutor(WSHandler):
         except Exception as e:
             self._internal_error(f"server failed to handle a message: {e}")
 
-    def _internal_error(self, msg: str) -> None:
-        self.comm.send(msg, {'status': 'internal_error'})
+    def _internal_error(self, message: str) -> None:
+        self.comm.send(message, {'status': 'internal_error'})
 
-    def _protocol_error(self, msg: str) -> None:
-        self.comm.send(msg, {'status': 'protocol_error'})
+    def _protocol_error(self, message: str) -> None:
+        self.comm.send(message, {'status': 'protocol_error'})
 
     def _create_server_session(self) -> tuple[ServerSession, str | None]:
         doc = Document()
@@ -181,7 +181,7 @@ class PanelExecutor(WSHandler):
         return session, runner.error_detail
 
     async def write_message(  # type: ignore
-        self, message: bytes | str | dict[str, Any],
+        self, message: bytes | str | dict[str, t.Any],
         binary: bool = False, locked: bool = True
     ) -> None:
         metadata = {'binary': binary}

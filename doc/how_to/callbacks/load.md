@@ -90,7 +90,7 @@ class AppState(param.Parameterized):
 
 def loading_indicator(label):
     return pn.indicators.LoadingSpinner(
-        value=True, name=label, size=25, align="center"
+        value=True, label=label, size=25, align="center"
     )
 
 def short_running_task():

@@ -20,7 +20,7 @@ def calculate_power(wind_speed, efficiency):
     )
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
 efficiency = 0.3
@@ -50,9 +50,9 @@ def calculate_power(wind_speed, efficiency):
     )
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))")
+efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
@@ -79,9 +79,9 @@ def calculate_power(wind_speed, efficiency):
     )
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))")
+efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
@@ -112,15 +112,15 @@ def calculate_power(wind_speed, efficiency):
     )
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))")
+efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-submit = pn.widgets.Button(name="Submit", button_type="primary")
+submit = pn.widgets.Button(label="Submit", color="primary")
 
 def result(clicked):
     if clicked:
@@ -156,7 +156,7 @@ def calculate_power(wind_speed, efficiency):
     )
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
 efficiency = 0.3
@@ -192,7 +192,7 @@ def format_power_gen(wind_speed, efficiency, power):
     )
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
 efficiency = 0.3
@@ -229,13 +229,13 @@ import panel as pn
 
 pn.extension()
 
-submit = pn.widgets.Button(name="Start the wind turbine")
+submit = pn.widgets.Button(label="Start the wind turbine")
 
 def start_stop_wind_turbine(clicked):
     if submit.clicks % 2:
-        submit.name = "Start the wind turbine"
+        submit.label = "Start the wind turbine"
     else:
-        submit.name = "Stop the wind turbine"
+        submit.label = "Stop the wind turbine"
 
 pn.bind(start_stop_wind_turbine, submit, watch=True)
 
@@ -243,7 +243,7 @@ pn.Column(submit).servable()
 ```
 
 ```{warning}
-In the example provided, our side effect directly modifies the UI by altering the name of the Button. However, this approach indicates poor architectural design.
+In the example provided, our side effect directly modifies the UI by altering the label of the `Button`. However, this approach indicates poor architectural design.
 
 It's advisable to avoid directly updating the UI through side effects. Instead, focus on updating the application's *state*, allowing the UI to respond automatically to any changes in the state. The concept of state will be explored further in the subsequent section.
 ```
@@ -256,15 +256,15 @@ import panel as pn
 
 pn.extension()
 
-submit = pn.widgets.Button(name="Start the wind turbine")
+submit = pn.widgets.Button(label="Start the wind turbine")
 
 def start_stop_wind_turbine(clicked):
     with submit.param.update(loading=True, disabled=True):
         time.sleep(2)
         if bool(submit.clicks%2):
-            submit.name = "Start the wind turbine"
+            submit.label = "Start the wind turbine"
         else:
-            submit.name = "Stop the wind turbine"
+            submit.label = "Stop the wind turbine"
 
 pn.bind(start_stop_wind_turbine, submit, watch=True)
 
@@ -284,16 +284,16 @@ import panel as pn
 
 pn.extension()
 
-submit = pn.widgets.Button(name="Start the wind turbine")
+submit = pn.widgets.Button(label="Start the wind turbine")
 
 async def start_stop_wind_turbine(clicked):
     with submit.param.update(loading=True, disabled=True):
         result = await asyncio.to_thread(sleep, 5)
 
         if submit.clicks % 2:
-            submit.name = "Start the wind turbine"
+            submit.label = "Start the wind turbine"
         else:
-            submit.name = "Stop the wind turbine"
+            submit.label = "Stop the wind turbine"
 
 pn.bind(start_stop_wind_turbine, submit, watch=True)
 

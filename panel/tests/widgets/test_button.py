@@ -5,7 +5,7 @@ from panel.widgets.icon import ButtonIcon
 
 
 def test_button(document, comm):
-    button = Button(name='Button')
+    button = Button(label='Button')
 
     widget = button.get_root(document, comm=comm)
 
@@ -17,7 +17,7 @@ def test_button(document, comm):
 
 
 def test_button_event(document, comm):
-    button = Button(name='Button')
+    button = Button(label='Button')
 
     widget = button.get_root(document, comm=comm)
 
@@ -52,7 +52,7 @@ def test_menu_button(document, comm):
 
 def test_button_on_click_kwarg(document, comm):
     events = []
-    button = Button(name='Button', on_click=lambda e: events.append(e))
+    button = Button(label='Button', on_click=lambda e: events.append(e))
     button.get_root(document, comm=comm)
     button._process_event(None)
     assert len(events) == 1
@@ -78,7 +78,7 @@ def test_button_icon_on_click_kwarg(document, comm):
 
 
 def test_button_jscallback_clicks(document, comm):
-    button = Button(name='Button')
+    button = Button(label='Button')
     code = 'console.log("Clicked!")'
     button.jscallback(clicks=code)
 
@@ -91,7 +91,7 @@ def test_button_jscallback_clicks(document, comm):
 
 
 def test_toggle(document, comm):
-    toggle = Toggle(name='Toggle', value=True)
+    toggle = Toggle(label='Toggle', value=True)
 
     widget = toggle.get_root(document, comm=comm)
 
@@ -105,3 +105,23 @@ def test_toggle(document, comm):
 
     toggle.value = True
     assert widget.active == True
+
+
+def test_button_color_alias_synced():
+    button = Button(label="x", color="primary")
+    assert button.button_type == "primary"
+    assert button.color == "primary"
+    button.button_type = "danger"
+    assert button.color == "danger"
+    button.color = "success"
+    assert button.button_type == "success"
+
+
+def test_button_variant_alias_synced():
+    button = Button(label="x", variant="outline")
+    assert button.button_style == "outline"
+    assert button.variant == "outline"
+    button.button_style = "solid"
+    assert button.variant == "solid"
+    button.variant = "outline"
+    assert button.button_style == "outline"

@@ -1,6 +1,7 @@
 import os
 import pathlib
 import time
+import typing as t
 
 import param
 import pytest
@@ -628,8 +629,8 @@ class JSSendMsg(JSComponent):
     }
     """
 
-    def _handle_msg(self, msg):
-        self.msg = msg
+    def _handle_msg(self, data: t.Any) -> None:
+        self.msg = data
         self.clicks += 1
 
 
@@ -645,8 +646,8 @@ class ReactSendMsg(ReactComponent):
     }
     """
 
-    def _handle_msg(self, msg):
-        self.msg = msg
+    def _handle_msg(self, data: t.Any) -> None:
+        self.msg = data
         self.clicks += 1
 
 
@@ -670,11 +671,10 @@ class JSChild(JSComponent):
 
     render_count = param.Integer(default=0)
 
-    # default policy is "children" per your note
-    _render_policy = param.ObjectSelector(
+    _render_policy: t.Literal["manual", "children"] = param.Selector(
         default="children",
         objects=["manual", "children"]
-    )
+    )  # type: ignore[assignment]
 
     _esm = """
     export function render({ model }) {
@@ -772,7 +772,7 @@ def test_react_child_no_shadow_dom(page):
     wait_until(lambda: example.render_count == 1, page)
 
 
-class JSChildren(ListLike, JSComponent):
+class JSChildren(ListLike, JSComponent):  # type: ignore[misc]
 
     objects = Children()
 
@@ -798,7 +798,7 @@ class JSChildrenNoReturn(JSChildren):
       model.render_count += 1
     }"""
 
-class ReactChildren(ListLike, ReactComponent):
+class ReactChildren(ListLike, ReactComponent):  # type: ignore[misc]
 
     objects = Children()
 

@@ -1,8 +1,7 @@
 import json
 import os
 import pathlib
-
-from typing import Any
+import typing as t
 
 import param
 
@@ -148,6 +147,32 @@ nbsite_gallery_conf = {
                 'indicators',
                 'templates',
                 'custom_components',
+                {
+                    'path': 'extensions',
+                    'title': 'Extensions',
+                    'items': [
+                        {
+                            'title': 'panel-material-ui',
+                            'url': 'https://panel-material-ui.holoviz.org',
+                        },
+                        {
+                            'title': 'panel-graphic-walker',
+                            'url': 'https://github.com/holoviz/panel-graphic-walker',
+                        },
+                        {
+                            'title': 'panel-reactflow',
+                            'url': 'https://panel-extensions.github.io/panel-reactflow/',
+                        },
+                        {
+                            'title': 'panel-splitjs',
+                            'url': 'https://github.com/holoviz/panel-splitjs',
+                        },
+                        {
+                            'title': 'panel-web-llm',
+                            'url': 'https://github.com/holoviz/panel-web-llm',
+                        },
+                    ]
+                },
             ],
             'titles': {
                 'Vega': 'Altair & Vega',
@@ -307,15 +332,15 @@ def setup_mystnb(app):
     for name, default, field in NbParserConfig().as_triple():
         if not field.metadata.get("sphinx_exclude"):
             # TODO add types?
-            app.add_config_value(f"nb_{name}", default, "env", Any)  # type: ignore[arg-type]
+            app.add_config_value(f"nb_{name}", default, "env", t.Any)  # type: ignore[arg-type]
             if "legacy_name" in field.metadata:
                 app.add_config_value(
                     f"{field.metadata['legacy_name']}",
                     _UNSET,
                     "env",
-                    Any,  # type: ignore[arg-type]
+                    t.Any,  # type: ignore[arg-type]
                 )
-    app.add_config_value("nb_render_priority", _UNSET, "env", Any)  # type: ignore[arg-type]
+    app.add_config_value("nb_render_priority", _UNSET, "env", t.Any)  # type: ignore[arg-type]
     create_mystnb_config(app)
 
     # add post-transform for selecting mime type from a bundle

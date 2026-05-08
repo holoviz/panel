@@ -25,9 +25,9 @@ from bokeh.sampledata.autompg import autompg
 
 columns = list(autompg.columns[:-2])
 
-x = pn.widgets.Select(value='mpg', options=columns, name='x')
-y = pn.widgets.Select(value='hp', options=columns, name='y')
-color = pn.widgets.ColorPicker(name='Color', value='#880588')
+x = pn.widgets.Select(value='mpg', options=columns, label='x')
+y = pn.widgets.Select(value='hp', options=columns, label='y')
+color = pn.widgets.ColorPicker(label='Color', value='#880588')
 
 layout = pn.Row(
     pn.Column('## MPG Explorer', x, y, color),

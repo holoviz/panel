@@ -116,7 +116,7 @@ slider_css = """
 }
 """
 
-pn.widgets.FloatSlider(name='Number', stylesheets=[slider_css])
+pn.widgets.FloatSlider(label='Number', stylesheets=[slider_css])
 ```
 
 Alternatively you can also modify the class default like this:

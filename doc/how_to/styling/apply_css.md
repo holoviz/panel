@@ -26,7 +26,7 @@ custom_style = {
     'box-shadow': '5px 5px 5px #bcbcbc'
 }
 
-pn.widgets.FloatSlider(name='Number', styles=custom_style)
+pn.widgets.FloatSlider(label='Number', styles=custom_style)
 ```
 
 ## `stylesheets`
@@ -51,7 +51,7 @@ stylesheet = """
 """
 
 pn.widgets.FloatSlider(
-    name='Number', styles=custom_style, stylesheets=[stylesheet]
+    label='Number', styles=custom_style, stylesheets=[stylesheet]
 )
 ```
 
@@ -101,7 +101,7 @@ stylesheet = """
 """
 
 pn.widgets.FloatSlider(
-    name='Number', styles=custom_style, stylesheets=[stylesheet]
+    label='Number', styles=custom_style, stylesheets=[stylesheet]
 )
 ```
 
@@ -113,7 +113,7 @@ You can either provide a full URL to the stylesheet and host it yourself or you 
 
 ```{pyodide}
 pn.widgets.FloatSlider(
-    name='Number', stylesheets=['https://assets.holoviz.org/panel/how_to/styling/noUi.css']
+    label='Number', stylesheets=['https://assets.holoviz.org/panel/how_to/styling/noUi.css']
 )
 ```
 
@@ -137,7 +137,7 @@ color_stylesheet = """
 """
 
 pn.Column(
-    *(pn.widgets.FloatSlider(name='Number', stylesheets=[stylesheet, color_stylesheet], css_classes=[cls])
+    *(pn.widgets.FloatSlider(label='Number', stylesheets=[stylesheet, color_stylesheet], css_classes=[cls])
       for cls in ('red', 'green', 'blue'))
 )
 ```

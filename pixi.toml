@@ -85,7 +85,7 @@ esbuild = "*"
 nomkl = "*"
 pip = "*"
 # Required
-bleach = "*"
+nh3 = "*"
 bokeh = ">=3.7.0,<3.10.0a0"
 linkify-it-py = "*"
 markdown = "*"
@@ -95,7 +95,7 @@ narwhals = ">2"
 numpy = "*"
 packaging = "*"
 pandas = ">=1.2"
-param = ">=2.1.0,<3.0"
+param = ">=2.4.0rc3,<3.0"
 pyviz_comms = ">=2.0.0"
 requests = "*"
 tqdm = ">=4.48.0"
@@ -214,7 +214,7 @@ watchfiles = "*"
 # Test dependencies
 altair = "*"
 anywidget = "*"
-bokeh-fastapi = ">=0.1.5"
+bokeh-fastapi = ">=0.1.8"
 bokeh_sampledata = "*"
 caddy = "*"
 cryptography = "*"
@@ -250,6 +250,9 @@ jupyter_server = "*"
 esbuild = "*"
 packaging = "*"
 
+[feature.test-ui.activation.env]
+PLAYWRIGHT_BROWSERS_PATH = ".pixi/playwright-browsers"
+
 [feature.test-ui.tasks]
 _install-ui = 'playwright install chromium'
 
@@ -264,7 +267,6 @@ depends-on = ["_install-ui"]
 mypy = "*"
 pytest = "*"
 pandas-stubs = "*"
-types-bleach = "*"
 types-croniter = "*"
 types-Markdown = "*"
 types-psutil = "*"
@@ -286,7 +288,7 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 
 [feature.doc.dependencies]
 lxml = "*"
-nbsite = ">=0.8.6rc9"
+nbsite = ">=0.9.0a20"
 selenium = "*"
 numpydoc = "*"
 pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
@@ -352,6 +354,7 @@ jupyterlab-myst = "*"
 jupyterlite-core = "<0.7.0"
 jupyterlite-pyodide-kernel = "*"
 python-build = "*"
+python-libarchive-c = "*"
 
 [feature.lite.tasks]
 lite-build = "bash scripts/jupyterlite/build.sh"

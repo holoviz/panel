@@ -5,10 +5,8 @@ parameters.
 """
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, TypeVar,
-)
+import typing as t
+import warnings
 
 import numpy as np
 import param  # type: ignore
@@ -21,17 +19,20 @@ from .._param import Margin
 from ..io.state import state
 from ..layout.base import Row
 from ..reactive import Reactive
-from ..util import unique_iterator
+from ..util import edit_readonly, unique_iterator
+from ..util.warnings import find_stack_level
 from ..viewable import Layoutable, Viewable
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    from ..layout.base import ListPanel
+    from ..layout.base import ListLike, NamedListLike
 
-    T = TypeVar('T')
+    T = t.TypeVar('T')
 
 
 class WidgetBase(param.Parameterized):
@@ -42,9 +43,15 @@ class WidgetBase(param.Parameterized):
     e.g. it may be used as a mix-in to a PyComponent or JSComponent.
     """
 
-    value = param.Parameter(allow_None=True, doc="""
+    label = param.String(default='', doc="""
+       The label for the widget.""")
+
+    name = param.String(default='', constant=False, doc="""
+       Alias for label.""")
+
+    value: t.Any = param.Parameter(allow_None=True, doc="""
         The widget value which the widget type resolves to when used
-        as a reactive param reference.""")
+        as a reactive param reference.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     __abstract = True
 
@@ -70,8 +77,8 @@ class WidgetBase(param.Parameterized):
 
     @classmethod
     def _infer_params(cls, values, **params):
-        if 'name' not in params and getattr(values, 'name', None):
-            params['name'] = values.name
+        if 'label' not in params and getattr(values, 'name', None):
+            params['label'] = values.name
         if 'start' in cls.param and 'start' not in params:
             params['start'] = np.nanmin(values)
         if 'end' in cls.param and 'end' not in params:
@@ -107,6 +114,26 @@ class WidgetBase(param.Parameterized):
         """
         return cls(**cls._infer_params(values, **params))
 
+    def __init__(self, **params: t.Any):
+        if "name" in params and "label" in params:
+            warnings.warn(
+                "Both 'name' and 'label' were provided; using 'label' and ignoring 'name'. "
+                "Widget.name is deprecated and will be removed in version 2.0.",
+                PendingDeprecationWarning,
+                stacklevel=find_stack_level(),
+            )
+            params["name"] = params["label"]
+        elif "name" in params:
+            warnings.warn(
+                "Widget.name is deprecated and will be removed in version 2.0. Use 'label' instead.",
+                PendingDeprecationWarning,
+                stacklevel=find_stack_level(),
+            )
+            params["label"] = params["name"]
+        else:
+            params["name"] = params.get("label", "")
+        super().__init__(**params)
+
     @property
     def rx(self):
         return self.param.value.rx
@@ -121,8 +148,6 @@ class Widget(Reactive, WidgetBase):
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
 
-    name = param.String(default='', constant=False)
-
     height = param.Integer(default=None, bounds=(0, None))
 
     width = param.Integer(default=None, bounds=(0, None))
@@ -132,19 +157,22 @@ class Widget(Reactive, WidgetBase):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    name = param.String(default='', constant=False, doc="""
+       Alias for label.""")
+
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': 'title', 'name': None}
+
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'name': None}
 
     # Whether the widget supports embedding
     _supports_embed: bool = False
 
     # Declares the Bokeh model type of the widget
-    _widget_type: ClassVar[type[Model] | None] = None
+    _widget_type: t.ClassVar[type[Model] | None] = None
 
     __abstract = True
 
-    def __init__(self, **params: Any):
-        if 'name' not in params:
-            params['name'] = ''
+    def __init__(self, **params: t.Any):
         if '_supports_embed' in params:
             self._supports_embed = params.pop('_supports_embed')
         if '_param_pane' in params:
@@ -152,6 +180,19 @@ class Widget(Reactive, WidgetBase):
         else:
             self._param_pane = None
         super().__init__(**params)
+        self._internal_callbacks.extend([
+            self.param.watch(self._sync__label, ['name']),
+            self.param.watch(self._sync__name, ['label'])
+        ])
+
+    def _sync__label(self, event):
+        if self.label != self.name:
+            self.label = self.name
+
+    def _sync__name(self, event):
+        if self.label != self.name:
+            with edit_readonly(self):
+                self.name = self.label
 
     @property
     def _linked_properties(self) -> tuple[str, ...]:
@@ -160,7 +201,7 @@ class Widget(Reactive, WidgetBase):
             props.remove('description')
         return tuple(props)
 
-    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         params = super()._process_param_change(params)
         if self._widget_type is not None and 'stylesheets' in params:
             css = getattr(self._widget_type, '__css__', [])
@@ -189,7 +230,7 @@ class Widget(Reactive, WidgetBase):
     ) -> Model:
         if self._widget_type is None:
             raise NotImplementedError(
-                'Widget {type(self).__name__} did not define a _widget_type'
+                f'Widget {type(self).__name__} did not define a _widget_type'
             )
         model = self._widget_type(**self._get_properties(doc))
         root = root or model
@@ -198,8 +239,8 @@ class Widget(Reactive, WidgetBase):
         return model
 
     def _get_embed_state(
-        self, root: Model, values: list[Any] | None = None, max_opts: int = 3
-    ) -> tuple[Widget, Model, list[Any], Callable[[Model], Any], str, str]:
+        self, root: Model, values: list[t.Any] | None = None, max_opts: int = 3
+    ) -> tuple[Widget, Model, list[t.Any], Callable[[Model], t.Any], str, str]:
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -237,7 +278,7 @@ class CompositeWidget(Widget):
     widgets
     """
 
-    _composite_type: ClassVar[type[ListPanel]] = Row
+    _composite_type: t.ClassVar[type[ListLike] | type[NamedListLike]] = Row
 
     _linked_properties: tuple[str, ...] = ()
 
@@ -300,7 +341,7 @@ class CompositeWidget(Widget):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def __contains__(self, object: Any) -> bool:
+    def __contains__(self, object: t.Any) -> bool:
         return object in self._composite.objects
 
     @property

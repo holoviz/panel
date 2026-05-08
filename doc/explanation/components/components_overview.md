@@ -130,16 +130,16 @@ text.value_input
 slider.param.value_throttled
 ```
 
-#### `name`
+#### `label`
 
-Most widgets can have a caption that is set with the `name` *Parameter*.
+Most widgets can have a caption that is set with the `label` parameter. The `name` parameter is deprecated but is still accepted as an alias for `label`.
 
 ```{pyodide}
-pn.widgets.Button(name='Click me!')
+pn.widgets.Button(label='Click me!')
 ```
 
 ```{pyodide}
-pn.widgets.TextInput(name='Age:')
+pn.widgets.TextInput(label='Age:')
 ```
 
 #### `description`
@@ -148,7 +148,7 @@ The `description` *Parameter* was added in Panel 1.0 to some widgets. It adds a 
 
 ```{pyodide}
 pn.widgets.Select(
-    name='Mode', description='<ul><li>Mode 1: ...</li><li>Mode 2: ...</li></ul>',
+    label='Mode', description='<ul><li>Mode 1: ...</li><li>Mode 2: ...</li></ul>',
     options=[1, 2]
 )
 ```
@@ -199,7 +199,7 @@ Indicators are useful to show transient state (e.g. progress bar), a numerical i
 
 ```{pyodide}
 i_number = pn.indicators.Number(
-    name='Total Amount', value=3.5, format='{value}K',
+    label='Total Amount', value=3.5, format='{value}K',
     colors=[(5, 'green'), (10, 'red')]
 )
 i_number
@@ -247,13 +247,13 @@ column.append('* Item 1\n* Item 2')
 Then we add a few more widgets.
 
 ```{pyodide}
-column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(name='Tick this!')])
+column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(label='Tick this!')])
 ```
 
 And finally we change our mind and replace the `Checkbox` with a button.
 
 ```{pyodide}
-column[4] = pn.widgets.Button(name='Click here')
+column[4] = pn.widgets.Button(label='Click here')
 ```
 
 The ability to add, remove, and replace items using list operations opens up the possibility of building rich and responsive GUIs with the ease of manipulating a Python list! You can inspect the structure of a layout calling `print`.
@@ -298,7 +298,7 @@ gspec[3:5, 1] = 'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transpa
 gspec[4:5, 2] = pn.Column(
     pn.widgets.FloatSlider(),
     pn.widgets.ColorPicker(),
-    pn.widgets.Toggle(name='Toggle Me!'))
+    pn.widgets.Toggle(label='Toggle Me!'))
 
 gspec
 ```
@@ -330,7 +330,7 @@ p_md.loading = False
 Sometimes it's useful to just completely hide a component, for instance to hide some advanced options. Again that's very easy to do, just set the `visible` *Parameter* to `False` on a component you want to hide.
 
 ```{pyodide}
-w_text = pn.widgets.TextInput(name='Advanced')
+w_text = pn.widgets.TextInput(label='Advanced')
 w_text
 ```
 
@@ -350,7 +350,7 @@ custom_style = {
     'box-shadow': '5px 5px 5px #bcbcbc'
 }
 
-pn.widgets.FloatSlider(name='Number', styles=custom_style)
+pn.widgets.FloatSlider(label='Number', styles=custom_style)
 ```
 
 #### Size and responsivity
@@ -362,7 +362,7 @@ A few *Parameters* allow to control the size and responsivity of components, inc
 The `margin` *Parameter* can be used to create space around an element defined as the number of pixels at the (top, right, bottom, and left). When you set it with a single value, the margin is going to be applied to each side of the element. `margin` allows for more fine-grained distributio of the margin.
 
 ```{pyodide}
-pn.widgets.Button(name='Click', margin=(25, 0, 0, 0))
+pn.widgets.Button(label='Click', margin=(25, 0, 0, 0))
 ```
 
 #### `align`

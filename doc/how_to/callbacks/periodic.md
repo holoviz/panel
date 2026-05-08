@@ -43,7 +43,7 @@ In a notebook or bokeh server context we should now see the plot update periodic
 Other nice features on a periodic callback are the ability to check the number of executions using the `cb.counter` property and the ability to toggle the callback on and off simply by setting the `running` parameter. This makes it possible to link a widget to the running state:
 
 ```{pyodide}
-toggle = pn.widgets.Toggle(name='Toggle callback', value=True)
+toggle = pn.widgets.Toggle(label='Toggle callback', value=True)
 
 toggle.link(cb, bidirectional=True, value='running')
 toggle
@@ -69,7 +69,7 @@ def panel_app():
     p = figure()
     p.line(x="x", y="y", source=source)
     cb = pn.state.add_periodic_callback(partial(update, source), 200, timeout=5000)
-    toggle = pn.widgets.Toggle(name='Toggle callback', value=True)
+    toggle = pn.widgets.Toggle(label='Toggle callback', value=True)
     toggle.link(cb, bidirectional=True, value='running')
     return pn.Column(pn.pane.Bokeh(p), toggle)
 

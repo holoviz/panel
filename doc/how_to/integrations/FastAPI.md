@@ -52,7 +52,7 @@ from panel.io.fastapi import add_application
 
 @add_application('/panel', app=app, title='My Panel App')
 def create_panel_app():
-    slider = pn.widgets.IntSlider(name='Slider', start=0, end=10, value=3)
+    slider = pn.widgets.IntSlider(label='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
 ```
 
@@ -74,7 +74,7 @@ async def read_root():
 
 @add_application('/panel', app=app, title='My Panel App')
 def create_panel_app():
-    slider = pn.widgets.IntSlider(name='Slider', start=0, end=10, value=3)
+    slider = pn.widgets.IntSlider(label='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
 ```
 
@@ -149,7 +149,7 @@ async def read_root():
     return {"Hello": "World"}
 
 def create_panel_app():
-    slider = pn.widgets.IntSlider(name='Slider', start=0, end=10, value=3)
+    slider = pn.widgets.IntSlider(label='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
 
 add_applications({

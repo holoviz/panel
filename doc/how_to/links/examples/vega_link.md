@@ -47,21 +47,21 @@ imdb = {
 vega = pn.pane.Vega(imdb, height=425)
 
 # Declare range slider to adjust the color limits
-color_lims = pn.widgets.RangeSlider(name='Color limits', start=0, end=125, value=(0, 40), step=1)
+color_lims = pn.widgets.RangeSlider(label='Color limits', start=0, end=125, value=(0, 40), step=1)
 color_lims.jslink(vega, code={'value': """
 target.data.encoding.color.scale = {domain: source.value};
 target.properties.data.change.emit()
 """});
 
 # Declare slider to control the number of bins along the x-axis
-imdb_bins = pn.widgets.IntSlider(name='IMDB Ratings Bins', start=0, end=125, value=60, step=25)
+imdb_bins = pn.widgets.IntSlider(label='IMDB Ratings Bins', start=0, end=125, value=60, step=25)
 imdb_bins.jslink(vega, code={'value': """
 target.data.encoding.x.bin.maxbins = source.value;
 target.properties.data.change.emit()
 """});
 
 # Declare slider to control the number of bins along the y-axis
-tomato_bins = pn.widgets.IntSlider(name='Rotten Tomato Ratings Bins', start=0, end=125, value=40, step=25)
+tomato_bins = pn.widgets.IntSlider(label='Rotten Tomato Ratings Bins', start=0, end=125, value=40, step=25)
 tomato_bins.jslink(vega, code={'value': """
 target.data.encoding.y.bin.maxbins = source.value;
 target.properties.data.change.emit()

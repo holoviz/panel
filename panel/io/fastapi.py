@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import socket
+import typing as t
 import uuid
 
 from functools import wraps
-from typing import TYPE_CHECKING, Any, cast
 
 from ..config import config
 from .application import build_applications
@@ -28,7 +28,7 @@ except ImportError as e:
         raise ImportError(msg) from None
     raise e
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.application import Application as BkApplication
     from bokeh.document.events import DocumentPatchedEvent
     from bokeh.protocol.message import Message
@@ -72,7 +72,7 @@ def add_liveness_handler(app, endpoint: str, applications: dict[str, BkApplicati
             return {str(request.url.path): True}
 
 def add_history_handler(app, endpoint):
-    @app.get(endpoint, response_model=dict[str, int | dict[str, Any]])
+    @app.get(endpoint, response_model=dict[str, int | dict[str, t.Any]])
     async def history_handler(request: Request):
         return state.session_info
 
@@ -121,10 +121,11 @@ def add_applications(
         Additional keyword arguments to pass to the BokehFastAPI application
     """
     apps = build_applications(panel, title=title, location=location, admin=admin)
-    ws_origins = kwargs.pop('websocket_origin', [])
+    ws_origins = kwargs.pop('websocket_origin', None)
     if ws_origins and not isinstance(ws_origins, list):
         ws_origins = [ws_origins]
-    kwargs['websocket_origins'] = ws_origins
+    if ws_origins:
+        kwargs['websocket_origins'] = ws_origins
 
     application = BokehFastAPI(apps, app=app, **kwargs)
     if session_history is not None:
@@ -141,7 +142,7 @@ def add_applications(
         # ComponentResourceHandler.parse_url_path only ever accesses
         # self._resource_attrs, which fortunately is a class attribute. Thus, we can
         # get away with using the method without actually instantiating the class
-        self_ = cast(ComponentResourceHandler, ComponentResourceHandler)
+        self_ = t.cast("ComponentResourceHandler", ComponentResourceHandler)
         resolved_path = ComponentResourceHandler.parse_url_path(self_, path)
         return FileResponse(resolved_path)
 

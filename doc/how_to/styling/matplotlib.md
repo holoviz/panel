@@ -42,8 +42,8 @@ def plot(style, color):
 
 
 styles = sorted(plt.style.available)
-style = pn.widgets.Select(value="dark_background", options=styles, name="Style")
-color = pn.widgets.ColorPicker(value="#F08080", name="Color")
+style = pn.widgets.Select(value="dark_background", options=styles, label="Style")
+color = pn.widgets.ColorPicker(value="#F08080", label="Color")
 
 pn.Column(
     pn.Row(style, color),

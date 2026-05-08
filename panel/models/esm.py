@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+import typing as t
 
 import bokeh.core.properties as bp
 
@@ -21,7 +21,7 @@ class DataEvent(ModelEvent):
         self.data = data
         super().__init__(model=model)
 
-    def event_values(self) -> dict[str, Any]:
+    def event_values(self) -> dict[str, t.Any]:
         return dict(super().event_values(), data=self.data)
 
 

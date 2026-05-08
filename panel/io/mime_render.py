@@ -19,11 +19,11 @@ import copy
 import io
 import sys
 import traceback
+import typing as t
 
 from contextlib import redirect_stderr, redirect_stdout
 from html import escape
 from textwrap import dedent
-from typing import IO, Any
 
 #---------------------------------------------------------------------
 # Import API
@@ -123,10 +123,10 @@ def _display(*objs, **kwargs):
 
 def exec_with_return(
     code: str,
-    global_context: dict[str, Any] | None = None,
-    stdout: IO | None = None,
-    stderr: IO | None = None
-) -> Any:
+    global_context: dict[str, t.Any] | None = None,
+    stdout: t.IO | None = None,
+    stderr: t.IO | None = None
+) -> t.Any:
     """
     Executes a code snippet and returns the resulting output of the
     last line.

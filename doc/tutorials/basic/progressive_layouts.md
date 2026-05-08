@@ -32,7 +32,7 @@ def classify(image):
     return random.choice(OPTIONS)
 
 # Components
-run = pn.widgets.Button(name="Submit", button_type="primary")
+run = pn.widgets.Button(label="Submit", color="primary")
 
 progress_message = pn.Row(
     pn.indicators.LoadingSpinner(
@@ -78,7 +78,7 @@ def classify(image):
     return random.choice(OPTIONS)
 
 # Components
-run = pn.widgets.Button(name="Submit", button_type="primary")
+run = pn.widgets.Button(label="Submit", color="primary")
 
 progress_message = pn.Row(
     pn.indicators.LoadingSpinner(
@@ -143,7 +143,7 @@ def run_classification(_):
 # Components
 click_submit = pn.pane.Markdown("Click Submit", visible=show_submit_message)
 run = pn.widgets.Button(
-    name="Submit", button_type="primary", on_click=run_classification
+    label="Submit", color="primary", on_click=run_classification
 )
 progress_message = pn.Row(
     pn.indicators.LoadingSpinner(
@@ -180,7 +180,7 @@ def classify(image):
     return random.choice(OPTIONS)
 
 # Components
-run = pn.widgets.Button(name="Submit", button_type="primary")
+run = pn.widgets.Button(label="Submit", color="primary")
 
 progress_message = pn.Row(
     pn.indicators.LoadingSpinner(
@@ -255,8 +255,8 @@ def classify_all(_):
 # Components
 click_submit = pn.pane.Markdown("Click Submit", visible=show_submit_message)
 run = pn.widgets.Button(
-    name="Submit",
-    button_type="primary",
+    label="Submit",
+    color="primary",
     on_click=classify_all,
     disabled=is_running,
     loading=is_running,

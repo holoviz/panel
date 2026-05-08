@@ -6,13 +6,10 @@ from __future__ import annotations
 import base64
 import json
 import sys
+import typing as t
 import zipfile
 
 from abc import abstractmethod
-from collections.abc import Mapping
-from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar,
-)
 from urllib.request import urlopen
 
 import numpy as np
@@ -28,7 +25,9 @@ from ..base import Pane
 from ..plot import Bokeh
 from .enums import PRESET_CMAPS
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -64,8 +63,8 @@ class AbstractVTK(Pane):
     camera = param.Dict(nested_refs=True, doc="""
       State of the rendered VTK camera.""")
 
-    color_mappers = param.List(nested_refs=True, doc="""
-      Color mapper of the actor in the scene""")
+    color_mappers: list[t.Any] = param.List(nested_refs=True, doc="""
+      Color mapper of the actor in the scene""")  # type: ignore[assignment, ty:invalid-assignment]
 
     orientation_widget = param.Boolean(default=False, doc="""
       Activate/Deactivate the orientation widget display.""")
@@ -76,16 +75,16 @@ class AbstractVTK(Pane):
 
     __abstract = True
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'axes' in msg and msg['axes'] is not None:
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
+        if 'axes' in props and props['axes'] is not None:
             VTKAxes = sys.modules['panel.models.vtk'].VTKAxes
-            axes = msg['axes']
-            msg['axes'] = VTKAxes(**axes)
-        return msg
+            axes = props['axes']
+            props['axes'] = VTKAxes(**axes)
+        return props
 
     def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         if 'axes' in msg and msg['axes'] is not None:
@@ -242,7 +241,7 @@ class BaseVTKRenderWindow(AbstractVTK):
 
     _applies_kw = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
 
     __abstract = True
 
@@ -253,12 +252,12 @@ class BaseVTKRenderWindow(AbstractVTK):
         rws.initializeSerializers()
 
     @classmethod
-    def applies(cls, obj, **kwargs):
+    def applies(cls, object, **kwargs):
         if 'vtk' not in sys.modules and 'vtkmodules' not in sys.modules:
             return False
         else:
             import vtk
-            return isinstance(obj, vtk.vtkRenderWindow)
+            return isinstance(object, vtk.vtkRenderWindow)
 
     def get_renderer(self):
         """
@@ -373,9 +372,9 @@ class VTKRenderWindow(BaseVTKRenderWindow):
     _updates = True
 
     @classmethod
-    def applies(cls, obj, **kwargs):
+    def applies(cls, object, **kwargs):
         serialize_on_instantiation = kwargs.get('serialize_on_instantiation', False)
-        return (super().applies(obj, **kwargs) and
+        return (super().applies(object, **kwargs) and
                 serialize_on_instantiation)
 
     def __init__(self, object=None, **params):
@@ -429,15 +428,15 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
 
     _one_time_reset = param.Boolean(default=False)
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(_one_time_reset='one_time_reset',
+    _rename: t.ClassVar[Mapping[str, str | None]] = dict(_one_time_reset='one_time_reset',
                    **BaseVTKRenderWindow._rename)
 
     _updates = True
 
     @classmethod
-    def applies(cls, obj, **kwargs):
+    def applies(cls, object, **kwargs):
         serialize_on_instantiation = kwargs.get('serialize_on_instantiation', False)
-        return super().applies(obj, **kwargs) and not serialize_on_instantiation
+        return super().applies(object, **kwargs) and not serialize_on_instantiation
 
     def __init__(self, object=None, **params):
         if object is None:
@@ -560,8 +559,9 @@ class VTKVolume(AbstractVTK):
     controller_expanded = param.Boolean(default=True, doc="""
         If True the volume controller panel options is expanded in the view""")
 
-    colormap = param.Selector(default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
-        Name of the colormap used to transform pixel value in color.""")
+    colormap: str = param.Selector(
+        default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
+        Name of the colormap used to transform pixel value in color.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     diffuse = param.Number(default=0.7, step=1e-2, doc="""
         Value to control the diffuse Lighting. It relies on both the
@@ -580,14 +580,15 @@ class VTKVolume(AbstractVTK):
         Parameter to adjust the opacity of the volume based on the
         gradient between voxels.""")
 
-    interpolation = param.Selector(default='fast_linear', objects=['fast_linear','linear','nearest'], doc="""
+    interpolation: t.Literal['fast_linear', 'linear', 'nearest'] = param.Selector(
+        default='fast_linear', objects=['fast_linear','linear','nearest'], doc="""
         interpolation type for sampling a volume. `nearest`
         interpolation will snap to the closest voxel, `linear` will
         perform trilinear interpolation to compute a scalar value from
         surrounding voxels.  `fast_linear` under WebGL 1 will perform
         bilinear interpolation on X and Y but use nearest for Z. This
         is slightly faster than full linear at the cost of no Z axis
-        linear interpolation.""")
+        linear interpolation.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     mapper = param.Dict(doc="Lookup Table in format {low, high, palette}")
 
@@ -644,9 +645,9 @@ class VTKVolume(AbstractVTK):
         Integer parameter to control the position of the slice normal
         to the Z direction.""")
 
-    _serializers: dict[type, Any] = {}
+    _serializers: dict[type, t.Any] = {}
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'max_data_size': None, 'spacing': None, 'origin': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'max_data_size': None, 'spacing': None, 'origin': None}
 
     _updates = True
 
@@ -656,15 +657,15 @@ class VTKVolume(AbstractVTK):
         self._update(None, None)
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if ((isinstance(obj, np.ndarray) and obj.ndim == 3) or
-            any([isinstance(obj, k) for k in cls._serializers.keys()])):
+    def applies(cls, object: t.Any) -> float | bool | None:
+        if ((isinstance(object, np.ndarray) and object.ndim == 3) or
+            any([isinstance(object, k) for k in cls._serializers.keys()])):
             return True
         elif 'vtk' not in sys.modules and 'vtkmodules' not in sys.modules:
             return False
         else:
             import vtk
-            return isinstance(obj, vtk.vtkImageData)
+            return isinstance(object, vtk.vtkImageData)
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -694,29 +695,29 @@ class VTKVolume(AbstractVTK):
         else:
             return self.object.GetDimensions()
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
         if self.object is not None:
             slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
-            for k, v in msg.items():
+            for k, v in props.items():
                 sub_dim = self._subsample_dimensions
                 ori_dim = self._orginal_dimensions
                 if k in slice_params:
                     index = slice_params[k]
-                    msg[k] = int(np.round(v * sub_dim[index] / ori_dim[index]))
-        return msg
+                    props[k] = int(np.round(v * sub_dim[index] / ori_dim[index]))
+        return props
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_property_change(props)
         if self.object is not None:
-            slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
-            for k, v in msg.items():
+            slice_params = {'slice_i': 0, 'slice_j': 1, 'slice_k': 2}
+            for k, v in params.items():
                 sub_dim = self._subsample_dimensions
                 ori_dim = self._orginal_dimensions
                 if k in slice_params:
                     index = slice_params[k]
-                    msg[k] = int(np.round(v * ori_dim[index] / sub_dim[index]))
-        return msg
+                    params[k] = int(np.round(v * ori_dim[index] / sub_dim[index]))
+        return params
 
     def _update(self, ref: str, model: Model) -> None:
         self._volume_data = self._get_volume_data()
@@ -826,7 +827,7 @@ class VTKJS(AbstractVTK):
                  notebook context if they interact with already
                  bound keys.""")
 
-    _serializers: dict[type, Any] = {}
+    _serializers: dict[type, t.Any] = {}
 
     _updates = True
 
@@ -835,8 +836,8 @@ class VTKJS(AbstractVTK):
         self._vtkjs = None
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, str) and obj.endswith('.vtkjs'):
+    def applies(cls, object: t.Any) -> float | bool | None:
+        if isinstance(object, str) and object.endswith('.vtkjs'):
             return True
         return None
 
@@ -879,7 +880,7 @@ class VTKJS(AbstractVTK):
         data_url, vtkjs = self._get_vtkjs()
         model.update(data_url=data_url, data=vtkjs)
 
-    def export_vtkjs(self, filename: str | IO ='vtk_panel.vtkjs'):
+    def export_vtkjs(self, filename: str | t.IO ='vtk_panel.vtkjs'):
         """
         Exports current VTK data to .vtkjs file.
 

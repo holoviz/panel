@@ -10,12 +10,11 @@ import logging
 import sys
 import threading
 import time
+import typing as t
 import weakref
 
-from collections.abc import Callable, Iterator, Sequence
 from contextlib import ExitStack, contextmanager
 from functools import partial, wraps
-from typing import TYPE_CHECKING, Any
 from weakref import WeakKeyDictionary
 
 from bokeh.application.application import SessionContext
@@ -29,12 +28,12 @@ from .loading import LOADING_INDICATOR_CSS_CLASS
 from .model import monkeypatch_events  # noqa: F401 API import
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from asyncio.futures import Future
+    from collections.abc import Callable, Iterator, Sequence
 
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
-    from bokeh.document import Document
     from bokeh.protocol.message import Message
     from bokeh.server.connection import ServerConnection
     from pyviz_comms import Comm
@@ -53,7 +52,7 @@ _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
 _panel_last_cleanup = None
 _write_tasks: list[asyncio.Task] = []
 
-extra_socket_handlers: dict[type, Callable[[Any], None]] = {}
+extra_socket_handlers: dict[type, Callable[[t.Any], None]] = {}
 
 @dataclasses.dataclass
 class Request:
@@ -636,7 +635,7 @@ def immediate_dispatch(doc: Document | None = None):
     doc.callbacks._held_events = old_events
 
 @contextmanager
-def freeze_doc(doc: Document, model: HasProps, properties: dict[str, Any], force: bool = False):
+def freeze_doc(doc: Document, model: HasProps, properties: dict[str, t.Any], force: bool = False):
     """
     Freezes the document model references if any of the properties
     are themselves a model.

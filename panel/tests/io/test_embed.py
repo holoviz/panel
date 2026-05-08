@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import typing as t
 
 from io import StringIO
 
@@ -504,11 +505,11 @@ def test_embed_slider_str_jslink(document, comm):
 
 
 def test_embed_merged_sliders(document, comm):
-    s1 = IntSlider(name='A', start=1, end=10, value=1)
+    s1 = IntSlider(label='A', start=1, end=10, value=1)
     t1 = StaticText()
     s1.param.watch(lambda event: setattr(t1, 'value', event.new), 'value')
 
-    s2 = IntSlider(name='A', start=1, end=10, value=1)
+    s2 = IntSlider(label='A', start=1, end=10, value=1)
     t2 = StaticText()
     s2.param.watch(lambda event: setattr(t2, 'value', event.new), 'value')
 
@@ -621,7 +622,8 @@ def test_embed_widget_from_param_class(document, comm):
     from panel.widgets import RadioButtonGroup
 
     class Test(param.Parameterized):
-        fn = param.Selector(default="sin", objects=["sin", "cos"])
+        fn: t.Literal["sin", "cos"] = param.Selector(
+            default="sin", objects=["sin", "cos"])  # type: ignore[assignment, ty:invalid-assignment]
 
     # Create widget from class parameter
     widget = RadioButtonGroup.from_param(Test.param.fn)
@@ -644,7 +646,8 @@ def test_embed_widget_from_param_instance(document, comm):
     from panel.widgets import RadioButtonGroup
 
     class Test(param.Parameterized):
-        fn = param.Selector(default="sin", objects=["sin", "cos"])
+        fn: t.Literal["sin", "cos"] = param.Selector(
+            default="sin", objects=["sin", "cos"])  # type: ignore[assignment, ty:invalid-assignment]
 
     # Create widget from instance parameter
     test = Test()
