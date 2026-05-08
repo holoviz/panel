@@ -143,8 +143,8 @@ def test_text_input_controls():
     assert len(controls) == 2
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
-    assert len(wb1) == 7
-    name, value, disabled, *(ws) = wb1
+    assert len(wb1) == 8
+    name, label, value, disabled, *(ws) = wb1
 
     assert isinstance(value, TextInput)
     text_input.value = "New value"
@@ -154,18 +154,22 @@ def test_text_input_controls():
 
     not_checked = []
     for w in ws:
-        if w.name == 'Value input':
+        if w.label == 'Value input':
             assert isinstance(w, TextInput)
-        elif w.name == 'Placeholder':
+        elif w.label == 'Placeholder':
             assert isinstance(w, TextInput)
             text_input.placeholder = "Test placeholder..."
             assert w.value == "Test placeholder..."
-        elif w.name == 'Max length':
+        elif w.label == 'Max length':
             assert isinstance(w, IntInput)
-        elif w.name == 'Description':
+        elif w.label == 'Description':
             assert isinstance(w, TextInput)
             text_input.description = "Test description..."
             assert w.value == "Test description..."
+        elif w.label == 'Label':
+            assert isinstance(w, TextInput)
+            text_input.description = "Test label..."
+            assert w.value == ""
         else:
             not_checked.append(w)
 
@@ -173,8 +177,8 @@ def test_text_input_controls():
 
     assert isinstance(wb2, WidgetBox)
 
-    params1 = {w.name.replace(" ", "_").lower() for w in wb2 if len(w.name)}
-    params2 = set(Viewable.param) - {"background", "design", "stylesheets", "loading"}
+    params1 = {w.label.replace(" ", "_").lower() for w in wb2 if len(w.label)}
+    params2 = set(Viewable.param) - {"background", "design", "stylesheets", "loading", "name"}
     # Background should be moved when Layoutable.background is removed.
 
     assert not len(params1 - params2)
@@ -265,8 +269,8 @@ async def test_pass_bind_multi_async_generator_by_reference():
     assert text_input.width == 121
 
 def test_pass_refs():
-    slider = IntSlider(value=5, start=1, end=10, name='Number')
-    size = IntSlider(value=12, start=6, end=24, name='Size')
+    slider = IntSlider(value=5, start=1, end=10, label='Number')
+    size = IntSlider(value=12, start=6, end=24, label='Size')
 
     def refs(number, size):
         return {

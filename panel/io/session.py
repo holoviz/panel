@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import logging
-
-from typing import TYPE_CHECKING
+import typing as t
 
 from bokeh.document import Document
 from bokeh.server.contexts import BokehSessionContext, _RequestProxy
@@ -10,7 +9,7 @@ from bokeh.server.session import ServerSession
 from bokeh.settings import settings
 from bokeh.util.token import generate_jwt_token, generate_session_id
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document.events import DocumentPatchedEvent
     from bokeh.server.callbacks import SessionCallback
 

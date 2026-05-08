@@ -36,29 +36,29 @@ pn.Row(
         "## Progress",
         pn.Column(
             pn.indicators.Progress(
-                name="Progress", value=20, width=150, bar_color="secondary"
+                label="Progress", value=20, width=150, bar_color="secondary"
             ),
             pn.indicators.Progress(
-                name="Progress", active=True, width=150, bar_color="secondary"
+                label="Progress", active=True, width=150, bar_color="secondary"
             ),
         ),
     ),
     pn.Column(
         "## Disabled",
         pn.Column(
-            pn.widgets.Button(name="Loading", icon="progress", disabled=True),
+            pn.widgets.Button(label="Loading", icon="progress", disabled=True),
             pn.widgets.Button(
-                name="Loading", icon="progress", disabled=True, stylesheets=[SPIN_CSS]
+                label="Loading", icon="progress", disabled=True, stylesheets=[SPIN_CSS]
             ),
         ),
     ),
     pn.Column(
         "## Loading",
         pn.Column(
-            pn.widgets.Button(name="Loading", loading=True, button_type="primary"),
+            pn.widgets.Button(label="Loading", loading=True, color="primary"),
             pn.WidgetBox(
-                pn.widgets.Checkbox(name="Checked", value=True),
-                pn.widgets.Button(name="Submit", button_type="primary"),
+                pn.widgets.Checkbox(label="Checked", value=True),
+                pn.widgets.Button(label="Submit", color="primary"),
                 loading=True, margin=(10,10),
             ),
         ),

@@ -57,7 +57,7 @@ def test_template_pass_config_params_constructor(document):
 
 def test_template_multi_refs():
     tmpl = VanillaTemplate()
-    button = Button(name="Click me", button_type="primary")
+    button = Button(label="Click me", color="primary")
     tmpl.sidebar.append(button)
     tmpl.main.append(button)
 

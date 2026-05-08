@@ -1,7 +1,8 @@
 """
 Custom bokeh Markup models.
 """
-from typing import Any
+
+import typing as t
 
 from bokeh.core.properties import (
     Bool, Dict, Either, Float, Int, List, Null, String,
@@ -19,7 +20,7 @@ class HTMLStreamEvent(ModelEvent):
         self.start = start
         super().__init__(model=model)
 
-    def event_values(self) -> dict[str, Any]:
+    def event_values(self) -> dict[str, t.Any]:
         return dict(super().event_values(), patch=self.patch, start=self.start)
 
 

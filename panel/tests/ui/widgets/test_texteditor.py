@@ -196,3 +196,74 @@ def test_texteditor_link(page):
         lambda: widget.value == '<p>xxx</p><p></p><p><a href="http://example.com" rel="noopener noreferrer" target="_blank">yyy</a></p>',
         page
     )
+
+
+def test_texteditor_value_input_updates_on_keyup(page):
+    # value_input is always live, regardless of on_keyup
+    widget = TextEditor()
+
+    serve_component(page, widget)
+
+    page.locator('.ql-editor').fill('test')
+    wait_until(lambda: widget.value_input == '<p>test</p>', page)
+
+
+def test_texteditor_on_keyup_false_defers_value(page):
+    # With on_keyup=False, value should not update on keystroke.
+    # value_input still updates live.
+    widget = TextEditor(on_keyup=False)
+
+    serve_component(page, widget)
+
+    page.locator('.ql-editor').fill('test')
+    wait_until(lambda: widget.value_input == '<p>test</p>', page)
+    # value should still be the initial empty string
+    assert widget.value == ''
+
+
+def test_texteditor_on_keyup_false_commits_on_blur(page):
+    widget = TextEditor(on_keyup=False)
+
+    serve_component(page, widget)
+
+    editor = page.locator('.ql-editor')
+    editor.fill('test')
+    # Move focus away to trigger Quill's blur (null selection-change).
+    page.locator('body').click(position={'x': 0, 'y': 0})
+    wait_until(lambda: widget.value == '<p>test</p>', page)
+
+
+def test_texteditor_on_keyup_false_commits_on_ctrl_enter(page):
+    widget = TextEditor(on_keyup=False)
+
+    serve_component(page, widget)
+
+    editor = page.locator('.ql-editor')
+    editor.fill('test')
+    ctrl_key = 'Meta' if sys.platform == 'darwin' else 'Control'
+    editor.press(f'{ctrl_key}+Enter')
+    wait_until(lambda: widget.value == '<p>test</p>', page)
+
+
+def test_texteditor_selection_updates_on_select(page):
+    widget = TextEditor(value='<p>hello world</p>')
+
+    serve_component(page, widget)
+
+    # Select the word "world"
+    page.get_by_text('world').dblclick()
+    wait_until(lambda: widget.selection.get('text') == 'world', page)
+
+
+def test_texteditor_selection_clears_on_deselect(page):
+    widget = TextEditor(value='<p>hello world</p>')
+
+    serve_component(page, widget)
+
+    # First select "world"
+    page.get_by_text('world').dblclick()
+    wait_until(lambda: widget.selection.get('text') == 'world', page)
+
+    # Click outside to deselect; Quill fires selection-change with null range.
+    page.locator('body').click(position={'x': 0, 'y': 0})
+    wait_until(lambda: widget.selection == {}, page)

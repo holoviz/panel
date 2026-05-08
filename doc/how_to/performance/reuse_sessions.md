@@ -36,10 +36,10 @@ pn.state.template.title = f'{city} Weather'
 
 pn.FlexBox(
     pn.Card(pn.indicators.Number(
-        name='Temperature', value=random.randint(-20, 45), format='{value} °C'
+        label='Temperature', value=random.randint(-20, 45), format='{value} °C'
     ), hide_header=True),
     pn.Card(pn.indicators.Number(
-        name='Humidity', value=random.randint(0, 100), format='{value}%'
+        label='Humidity', value=random.randint(0, 100), format='{value}%'
     ), hide_header=True)
 ).servable()
 ```

@@ -278,38 +278,38 @@ def test_holoviews_widgets_from_dynamicmap(document, comm):
     assert len(widgets) == len(kdims)
 
     assert isinstance(widgets[0], EditableFloatSlider)
-    assert widgets[0].name == 'A'
+    assert widgets[0].label == 'A'
     assert widgets[0].start == range_dim.range[0]
     assert widgets[0].end == range_dim.range[1]
     assert widgets[0].value == range_dim.range[0]
     assert widgets[0].step == 0.1
 
     assert isinstance(widgets[1], EditableFloatSlider)
-    assert widgets[1].name == 'B'
+    assert widgets[1].label == 'B'
     assert widgets[1].start == range_step_dim.range[0]
     assert widgets[1].end == range_step_dim.range[1]
     assert widgets[1].value == range_step_dim.range[0]
     assert widgets[1].step == range_step_dim.step
 
     assert isinstance(widgets[2], EditableFloatSlider)
-    assert widgets[2].name == 'C'
+    assert widgets[2].label == 'C'
     assert widgets[2].start == range_default_dim.range[0]
     assert widgets[2].end == range_default_dim.range[1]
     assert widgets[2].value == range_default_dim.default
     assert widgets[2].step == 0.1
 
     assert isinstance(widgets[3], Select)
-    assert widgets[3].name == 'D'
+    assert widgets[3].label == 'D'
     assert widgets[3].options == value_dim.values
     assert widgets[3].value == value_dim.values[0]
 
     assert isinstance(widgets[4], Select)
-    assert widgets[4].name == 'E'
+    assert widgets[4].label == 'E'
     assert widgets[4].options == value_default_dim.values
     assert widgets[4].value == value_default_dim.default
 
     assert isinstance(widgets[5], DiscreteSlider)
-    assert widgets[5].name == 'F'
+    assert widgets[5].label == 'F'
     assert widgets[5].options == {str(v): v for v in value_numeric_dim.values}
     assert widgets[5].value == value_numeric_dim.default
 
@@ -338,38 +338,38 @@ def test_holoviews_widgets_from_dynamicmap_overrides(document, comm):
     assert len(widgets) == len(kdims)
 
     assert isinstance(widgets[0], FloatInput)
-    assert widgets[0].name == 'A'
+    assert widgets[0].label == 'A'
     assert widgets[0].start == range_dim.range[0]
     assert widgets[0].end == range_dim.range[1]
     assert widgets[0].value == range_dim.range[0]
     assert widgets[0].step == 0.1
 
     assert isinstance(widgets[1], FloatInput)
-    assert widgets[1].name == 'B'
+    assert widgets[1].label == 'B'
     assert widgets[1].start == range_step_dim.range[0]
     assert widgets[1].end == range_step_dim.range[1]
     assert widgets[1].value == range_step_dim.range[0]
     assert widgets[1].step == range_step_dim.step
 
     assert isinstance(widgets[2], IntInput)
-    assert widgets[2].name == 'C'
+    assert widgets[2].label == 'C'
     assert widgets[2].start == range_default_dim.range[0]
     assert widgets[2].end == range_default_dim.range[1]
     assert widgets[2].value == range_default_dim.default
     assert widgets[2].step == 1
 
     assert isinstance(widgets[3], RadioButtonGroup)
-    assert widgets[3].name == 'D'
+    assert widgets[3].label == 'D'
     assert widgets[3].options == value_dim.values
     assert widgets[3].value == value_dim.values[0]
 
     assert isinstance(widgets[4], RadioButtonGroup)
-    assert widgets[4].name == 'E'
+    assert widgets[4].label == 'E'
     assert widgets[4].options == value_default_dim.values
     assert widgets[4].value == value_default_dim.default
 
     assert isinstance(widgets[5], RadioBoxGroup)
-    assert widgets[5].name == 'F'
+    assert widgets[5].label == 'F'
     assert widgets[5].options == {value_numeric_dim.pprint_value(v): v for v in value_numeric_dim.values}
     assert widgets[5].value == value_numeric_dim.default
 
@@ -382,16 +382,16 @@ def test_holoviews_with_widgets(document, comm):
     layout = hv_pane.get_root(document, comm)
     model = layout.children[0]
     assert len(hv_pane.widget_box.objects) == 2
-    assert hv_pane.widget_box.objects[0].name == 'X'
-    assert hv_pane.widget_box.objects[1].name == 'Y'
+    assert hv_pane.widget_box.objects[0].label == 'X'
+    assert hv_pane.widget_box.objects[1].label == 'Y'
 
     assert hv_pane._models[layout.ref['id']][0] is model
 
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['A', 'B'])
     hv_pane.object = hmap
     assert len(hv_pane.widget_box.objects) == 2
-    assert hv_pane.widget_box.objects[0].name == 'A'
-    assert hv_pane.widget_box.objects[1].name == 'B'
+    assert hv_pane.widget_box.objects[0].label == 'A'
+    assert hv_pane.widget_box.objects[1].label == 'B'
 
 
 @hv_available
@@ -451,16 +451,16 @@ def test_holoviews_with_widgets_not_shown(document, comm):
     layout = layout_obj.get_root(document, comm)
     model = layout.children[0]
     assert len(hv_pane.widget_box.objects) == 2
-    assert hv_pane.widget_box.objects[0].name == 'X'
-    assert hv_pane.widget_box.objects[1].name == 'Y'
+    assert hv_pane.widget_box.objects[0].label == 'X'
+    assert hv_pane.widget_box.objects[1].label == 'Y'
 
     assert hv_pane._models[layout.ref['id']][0] is model
 
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['A', 'B'])
     hv_pane.object = hmap
     assert len(hv_pane.widget_box.objects) == 2
-    assert hv_pane.widget_box.objects[0].name == 'A'
-    assert hv_pane.widget_box.objects[1].name == 'B'
+    assert hv_pane.widget_box.objects[0].label == 'A'
+    assert hv_pane.widget_box.objects[1].label == 'B'
 
 
 @hv_available
@@ -550,12 +550,12 @@ def test_holoviews_widgets_from_holomap():
     widgets, _ = HoloViews.widgets_from_dimensions(hmap)
 
     assert isinstance(widgets[0], DiscreteSlider)
-    assert widgets[0].name == 'X'
+    assert widgets[0].label == 'X'
     assert widgets[0].options == {str(i): i for i in range(3)}
     assert widgets[0].value == 0
 
     assert isinstance(widgets[1], Select)
-    assert widgets[1].name == 'Y'
+    assert widgets[1].label == 'Y'
     assert widgets[1].options == ['A', 'B', 'C']
     assert widgets[1].value == 'A'
 
@@ -567,7 +567,7 @@ def test_holoviews_date_slider_widgets_from_holomap():
     widgets, _ = HoloViews.widgets_from_dimensions(hmap)
 
     assert isinstance(widgets[0], DiscreteSlider)
-    assert widgets[0].name == 'X'
+    assert widgets[0].label == 'X'
     assert widgets[0].options == {
         '2016-01-01 00:00:00': dt.datetime(2016, 1, 1),
         '2016-01-02 00:00:00': dt.datetime(2016, 1, 2),
@@ -583,7 +583,7 @@ def test_holoviews_widgets_explicit_widget_type_override():
     widgets, _ = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': Select})
 
     assert isinstance(widgets[0], Select)
-    assert widgets[0].name == 'X'
+    assert widgets[0].label == 'X'
     assert widgets[0].options == {str(i): i for i in range(3)}
     assert widgets[0].value == 0
 

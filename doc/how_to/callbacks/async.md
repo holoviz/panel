@@ -26,7 +26,7 @@ import asyncio
 
 pn.extension()
 
-button = pn.widgets.Button(name='Click me!')
+button = pn.widgets.Button(label='Click me!')
 text = pn.widgets.StaticText()
 
 async def run_async(event):
@@ -96,7 +96,7 @@ import numpy as np
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 
-button = pn.widgets.Button(name='Click me!')
+button = pn.widgets.Button(label='Click me!')
 
 p = figure(width=500, height=300)
 cds = ColumnDataSource(data={'x': [0], 'y': [0]})

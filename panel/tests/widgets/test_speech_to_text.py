@@ -122,7 +122,7 @@ def test_can_create_result_from_list():
 
 def manualtest_get_advanced_app():
     src = "#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige | bisque | black | blue | brown | chocolate | coral | crimson | cyan | fuchsia | ghostwhite | gold | goldenrod | gray | green | indigo | ivory | khaki | lavender | lime | linen | magenta | maroon | moccasin | navy | olive | orange | orchid | peru | pink | plum | purple | red | salmon | sienna | silver | snow | tan | teal | thistle | tomato | turquoise | violet | white | yellow ;" # noqa
-    speech_to_text = SpeechToText(button_type="success", continuous=True)
+    speech_to_text = SpeechToText(color="success", continuous=True)
 
     grammar_list = GrammarList()
     grammar_list.add_from_string(src, 1)
@@ -153,7 +153,7 @@ def manualtest_get_advanced_app():
                 "audio_started",
                 "sound_started",
                 "speech_started",
-                "button_type",
+                "color",
                 "button_hide",
                 "button_started",
                 "button_not_started",
@@ -182,7 +182,7 @@ def manualtest_get_advanced_app():
 
 
 def manualtest_get_color_app():
-    speech_to_text_color = SpeechToText(button_type="light", continuous=True)
+    speech_to_text_color = SpeechToText(color="light", continuous=True)
 
     colors = [
         "aqua",

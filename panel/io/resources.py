@@ -13,14 +13,12 @@ import os
 import pathlib
 import re
 import textwrap
+import typing as t
 import uuid
 
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING, ClassVar, Literal, TypedDict,
-)
 
 import bokeh.embed.wrappers
 
@@ -40,16 +38,16 @@ from ..config import config, panel_extension as extension
 from ..util import _descendents, isurl, url_path
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.resources import Urls
 
-    class TarballType(TypedDict, total=False):
+    class TarballType(t.TypedDict, total=False):
         tar: str
         src: str
         dest: str
         exclude: list[str]
 
-    class ResourcesType(TypedDict, total=False):
+    class ResourcesType(t.TypedDict, total=False):
         css: dict[str, str]
         font: dict[str, str]
         js: dict[str, str]
@@ -58,11 +56,11 @@ if TYPE_CHECKING:
         tarball: dict[str, TarballType]
         bundle: bool
 
-    MODES = Literal['inline', 'cdn', 'server', 'relative', 'absolute', 'server-dev', 'relative-dev', 'absolute-dev']
+    MODES = t.Literal['inline', 'cdn', 'server', 'relative', 'absolute', 'server-dev', 'relative-dev', 'absolute-dev']
 
 logger = logging.getLogger(__name__)
 
-ResourceAttr = Literal["__css__", "__javascript__"]
+ResourceAttr = t.Literal["__css__", "__javascript__"]
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
@@ -110,7 +108,7 @@ LOGOUT_TEMPLATE = _env.get_template('logout.html')
 BASIC_LOGIN_TEMPLATE = _env.get_template('basic_login.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
-CDN_ROOT = "https://cdn.holoviz.org/panel/"
+CDN_ROOT = config.cdn_root
 CDN_URL = f"{CDN_ROOT}{JS_VERSION}/"
 CDN_DIST = f"{CDN_URL}dist/"
 DOC_DIST = "https://panel.holoviz.org/_static/"
@@ -194,7 +192,7 @@ def set_resource_mode(mode: MODES | None):
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
 
-def get_dist_path(cdn: bool | Literal['auto'] = 'auto') -> str:
+def get_dist_path(cdn: bool | t.Literal['auto'] = 'auto') -> str:
     cdn = use_cdn() if cdn == 'auto' else cdn
     if cdn:
         dist_path = CDN_DIST
@@ -460,7 +458,7 @@ def bundle_resources(
     resources: BkResources,
     notebook: bool = False,
     reloading: bool = False,
-    enable_mathjax: bool | Literal['auto'] = 'auto'
+    enable_mathjax: bool | t.Literal['auto'] = 'auto'
 ):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
@@ -549,7 +547,7 @@ class ResourceComponent:
     that have to be resolved.
     """
 
-    _resources: ClassVar[ResourcesType] = {
+    _resources: t.ClassVar[ResourcesType] = {
         'css': {},
         'font': {},
         'js': {},
@@ -599,7 +597,7 @@ class ResourceComponent:
 
     def resolve_resources(
         self,
-        cdn: bool | Literal['auto'] = 'auto',
+        cdn: bool | t.Literal['auto'] = 'auto',
         extras: dict[str, dict[str, str]] | None = None
     ) -> ResourcesType:
         """

@@ -41,7 +41,7 @@ Taking up the previous example.
 
 ```{pyodide}
 pn.Param(CustomExample.param, widgets={
-    'select_string': {'widget_type': pn.widgets.RadioButtonGroup, 'button_type': 'success'},
+    'select_string': {'widget_type': pn.widgets.RadioButtonGroup, 'color': 'success'},
     'autocomplete_string': {'widget_type': pn.widgets.AutocompleteInput, 'placeholder': 'Find a color...'},
     'select_number': pn.widgets.DiscretePlayer}
 )

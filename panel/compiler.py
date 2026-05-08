@@ -20,6 +20,7 @@ from bokeh.model import Model
 
 from .config import config, panel_extension
 from .io.resources import RESOURCE_URLS
+from .models.tabulator import TABULATOR_VERSION
 from .reactive import ReactiveHTML
 from .template.base import BasicTemplate
 from .theme import Design
@@ -351,16 +352,11 @@ def bundle_icons(verbose=False, external=True, download_list=None):
         shutil.copyfile(icon, dest_dir / os.path.basename(icon))
 
 def patch_tabulator():
-    path = BUNDLE_DIR / 'datatabulator' / 'tabulator-tables@6.3.1' / 'dist' / 'js' / 'tabulator.min.js'
+    path = BUNDLE_DIR / 'datatabulator' / f'tabulator-tables@{TABULATOR_VERSION}' / 'dist' / 'js' / 'tabulator.min.js'
     text = path.read_text()
     # https://github.com/olifolkerd/tabulator/issues/4421
     old = '"focus"!==this.options("editTriggerEvent")&&"click"!==this.options("editTriggerEvent")'
     new = '"click"!==this.options("editTriggerEvent")'
-    assert text.count(old) == 1
-    text = text.replace(old, new)
-    # https://github.com/olifolkerd/tabulator/pull/4598
-    old = '(i=!0,this.subscribed("table-resize")?this.dispatch("table-resize"):this.redraw())'
-    new = '(i=!0,this.redrawing||(this.redrawing=!0,this.subscribed("table-resize")?this.dispatch("table-resize"):this.redraw(),this.redrawing=!1))'
     assert text.count(old) == 1
     text = text.replace(old, new)
     path.write_text(text)
