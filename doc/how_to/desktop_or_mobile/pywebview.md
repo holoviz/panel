@@ -89,7 +89,7 @@ def create_app():
         # import webview
         # webview.windows[0].destroy()
 
-    exit_btn = pn.widgets.Button(name="Exit", on_click=exit_app, button_type="primary")
+    exit_btn = pn.widgets.Button(label="Exit", on_click=exit_app, color="primary")
 
     return pn.Column(
         "# Desktop Panel Application",

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import typing as t
 
 from textual._xterm_parser import XTermParser
-from textual.app import App
 from textual.driver import Driver
 from textual.events import Resize
 from textual.geometry import Size
+
+if t.TYPE_CHECKING:
+    from textual.app import App
 
 
 class PanelDriver(Driver):

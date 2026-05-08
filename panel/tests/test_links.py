@@ -1,7 +1,10 @@
+
 try:
     import holoviews as hv
 except ImportError:
     hv = None
+
+import typing as t
 
 import param
 import pytest
@@ -21,7 +24,7 @@ from panel.widgets import (
 
 class MockJSComponent(JSComponent):
 
-    value = param.Parameter()
+    value: t.Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
 
 def test_widget_link_bidirectional():
@@ -401,7 +404,7 @@ def test_link_with_customcode(document, comm):
 
 
 def test_callback_unwatch():
-    button = Button(name="Test")
+    button = Button(label="Test")
     cb = button.js_on_click(args=dict(url="google.com"), code="window.open(url, '_blank');")
 
     assert len(Callback.registry.get(button, [])) == 1
@@ -413,7 +416,7 @@ def test_callback_unwatch():
 
 
 def test_callback_unwatch_multiple_callbacks():
-    button = Button(name="Test")
+    button = Button(label="Test")
     cb1 = button.js_on_click(args=dict(url1="url1"), code="console.log('1');")
     cb2 = button.js_on_click(args=dict(url2="url2"), code="console.log('2');")
 

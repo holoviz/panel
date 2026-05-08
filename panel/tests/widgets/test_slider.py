@@ -36,11 +36,11 @@ def test_float_slider_from_series():
     assert slider.start == 1.1
     assert slider.end == 2.2
     assert slider.value == 1.1
-    assert slider.name == 'Series'
+    assert slider.label == 'Series'
 
 def test_float_slider(document, comm):
 
-    slider = FloatSlider(start=0.1, end=0.5, value=0.4, name='Slider')
+    slider = FloatSlider(start=0.1, end=0.5, value=0.4, label='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
@@ -72,7 +72,7 @@ def test_float_slider(document, comm):
 
 def test_int_slider(document, comm):
 
-    slider = IntSlider(start=0, end=3, value=1, name='Slider')
+    slider = IntSlider(start=0, end=3, value=1, label='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
@@ -92,7 +92,7 @@ def test_int_slider(document, comm):
     assert widget.value == 0
 
     # Testing that value matches start value if value not set.
-    slider_2 = IntSlider(start=1, end=3, name='Slider_2')
+    slider_2 = IntSlider(start=1, end=3, label='Slider_2')
     widget_2 = slider_2.get_root(document, comm=comm)
     assert widget_2.value == widget_2.start
 
@@ -128,11 +128,11 @@ def test_range_slider_from_series():
     assert slider.start == 1.1
     assert slider.end == 2.2
     assert slider.value == (1.1, 2.2)
-    assert slider.name == 'Series'
+    assert slider.label == 'Series'
 
 def test_range_slider(document, comm):
 
-    slider = RangeSlider(start=0., end=3, value=(0, 3), name='Slider')
+    slider = RangeSlider(start=0., end=3, value=(0, 3), label='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
@@ -163,7 +163,7 @@ def test_range_slider(document, comm):
 
 
 def test_date_slider(document, comm):
-    date_slider = DateSlider(name='DateSlider',
+    date_slider = DateSlider(label='DateSlider',
                              value=date(2018, 9, 4),
                              start=date(2018, 9, 1), end=date(2018, 9, 10))
 
@@ -208,7 +208,7 @@ def test_date_slider(document, comm):
 @pytest.mark.parametrize("value", [date(2018, 9, 4), datetime(2018, 9, 4)])
 def test_datetime_slider(document, comm, value, start, end):
     datetime_slider = DatetimeSlider(
-        name='DatetimeSlider',
+        label='DatetimeSlider',
         value=value,
         start=start,
         end=end,
@@ -259,7 +259,7 @@ def test_datetime_slider_np_datetime64(document, comm):
     value = np.datetime64('2018-09-04')
 
     datetime_slider = DatetimeSlider(
-        name='DatetimeSlider',
+        label='DatetimeSlider',
         value=value,
         start=start,
         end=end,
@@ -306,7 +306,7 @@ def test_datetime_slider_param_as_datetime_is_readonly():
     assert DatetimeSlider.param.as_datetime.readonly
     assert DatetimeSlider().param.as_datetime.readonly
     datetime_slider = DatetimeSlider(
-        name='DatetimeSlider',
+        label='DatetimeSlider',
         value=datetime(2018, 9, 4),
         start=datetime(2018, 9, 1),
         end=datetime(2018, 9, 10),
@@ -315,7 +315,7 @@ def test_datetime_slider_param_as_datetime_is_readonly():
 
 
 def test_date_range_slider(document, comm):
-    date_slider = DateRangeSlider(name='DateRangeSlider',
+    date_slider = DateRangeSlider(label='DateRangeSlider',
                                   value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
                                   start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
 
@@ -358,7 +358,7 @@ def test_date_range_slider(document, comm):
 
 
 def test_datetime_range_slider(document, comm):
-    datetime_slider = DatetimeRangeSlider(name='DatetimeRangeSlider',
+    datetime_slider = DatetimeRangeSlider(label='DatetimeRangeSlider',
                                   value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
                                   start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
     widget = datetime_slider.get_root(document, comm=comm)
@@ -397,7 +397,7 @@ def test_datetime_range_slider(document, comm):
 
 
 def test_discrete_slider(document, comm):
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', value=1,
                                      options=[0.1, 1, 10, 100])
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -433,7 +433,7 @@ def test_discrete_slider(document, comm):
 
 
 def test_discrete_slider_label_update(document, comm):
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', value=1,
                                      options=[0.1, 1, 10, 100])
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -444,19 +444,19 @@ def test_discrete_slider_label_update(document, comm):
 
 
 def test_discrete_slider_name_update(document, comm):
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', value=1,
                                      options=[0.1, 1, 10, 100])
 
 
     box = discrete_slider.get_root(document, comm=comm)
 
-    discrete_slider.name = 'Blah'
+    discrete_slider.label = 'Blah'
 
     assert box.children[0].text == 'Blah: <b>1</b>'
 
 
 def test_discrete_slider_no_options(document, comm):
-    discrete_slider = DiscreteSlider(name='DiscreteSlider')
+    discrete_slider = DiscreteSlider(label='DiscreteSlider')
 
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -476,7 +476,7 @@ def test_discrete_slider_no_options(document, comm):
 
 
 def test_discrete_slider_single_option(document, comm):
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', options=[0])
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', options=[0])
 
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -497,7 +497,7 @@ def test_discrete_slider_single_option(document, comm):
 
 def test_discrete_slider_disabled(document, comm):
     # Check that the widget can be disabled on instantiation
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', options=[0, 1], disabled=True)
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', options=[0, 1], disabled=True)
 
     box = discrete_slider.get_root(document, comm=comm)
 
@@ -527,7 +527,7 @@ def test_discrete_slider_disabled(document, comm):
 
 def test_discrete_date_slider(document, comm):
     dates = {f'2016-01-0{i}': datetime(2016, 1, i) for i in range(1, 4)}
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=dates['2016-01-02'],
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', value=dates['2016-01-02'],
                                      options=dates)
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -566,7 +566,7 @@ def test_discrete_date_slider(document, comm):
 
 def test_discrete_slider_options_dict(document, comm):
     options = {'0.1': 0.1, '1': 1, '10': 10, '100': 100}
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', value=1,
                                      options=options)
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -611,7 +611,7 @@ def test_discrete_slider_options_dict(document, comm):
 def test_editable_slider(document, comm,
     editableslider, start, end, step, val1, val2, val3, diff1):
 
-    slider = editableslider(start=start, end=end, value=val1, name='Slider')
+    slider = editableslider(start=start, end=end, value=val1, label='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
@@ -657,7 +657,7 @@ def test_editable_slider(document, comm,
         slider.value = val3
         assert input_widget.value == slider_widget.value == val3
 
-    slider.name = 'New Slider'
+    slider.label = 'New Slider'
 
     assert static_widget.text == 'New Slider:'
 
@@ -706,7 +706,7 @@ def test_editable_slider_none_value_no_error(editableslider):
 def test_editable_rangeslider(document, comm,
     editableslider, start, end, step, val1, val2, val3, diff1):
 
-    slider = editableslider(start=start, end=end, value=val1, name='Slider')
+    slider = editableslider(start=start, end=end, value=val1, label='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
@@ -750,7 +750,7 @@ def test_editable_rangeslider(document, comm,
         slider.value = val3
         assert (input_widget_start.value, input_widget_end.value) == slider_widget.value == val3
 
-    slider.name = 'New Slider'
+    slider.label = 'New Slider'
 
     assert static_widget.text == 'New Slider:'
 
@@ -797,7 +797,7 @@ def test_editable_slider_bounds(
         slider = editableslider(
             start=start, end=end,
             fixed_start=fixed_start, fixed_end=fixed_end,
-            value=val_init, name='Slider'
+            value=val_init, label='Slider'
         )
     except Exception:
         assert fail_init
@@ -824,7 +824,7 @@ def test_editable_rangeslider_bounds(
         slider = editableslider(
             start=start, end=end,
             fixed_start=fixed_start, fixed_end=fixed_end,
-            value=val_init, name='Slider'
+            value=val_init, label='Slider'
         )
     except Exception:
         assert fail_init
@@ -953,7 +953,7 @@ def test_date_range_slider_start_end_explicit_conversion(document, comm):
     max_val = pd.Timestamp('2024-04-29 15:30:00+0200')
 
     date_slider = DateRangeSlider(
-        name='Dates',
+        label='Dates',
         start=min_val,
         end=max_val,
         value=(min_val, max_val),

@@ -5,12 +5,13 @@ import importlib.util
 import os
 import re
 import sys
-
-from collections.abc import Iterable
-from typing import Any
+import typing as t
 
 import numpy as np
 import param
+
+if t.TYPE_CHECKING:
+    from collections.abc import Iterable
 
 __all__ = (
     "datetime_types",
@@ -37,7 +38,7 @@ def isfile(path: str | os.PathLike) -> bool:
         return False
 
 
-def isurl(obj: Any, formats: Iterable[str] | None = None) -> bool:
+def isurl(obj: t.Any, formats: Iterable[str] | None = None) -> bool:
     if not isinstance(obj, str):
         return False
     lower = obj.lower()
@@ -97,7 +98,7 @@ def is_parameterized(obj) -> bool:
             (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
 
 
-def is_holoviews(obj: Any) -> bool:
+def is_holoviews(obj: t.Any) -> bool:
     """
     Whether the object is a HoloViews type that can be rendered.
     """
@@ -126,7 +127,7 @@ def isdatetime(value) -> bool:
         return isinstance(value, datetime_types)
 
 
-def is_number(s: Any) -> bool:
+def is_number(s: t.Any) -> bool:
     try:
         float(s)
         return True

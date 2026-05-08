@@ -3,9 +3,9 @@ Layout component to lay out objects in a set of tabs.
 """
 from __future__ import annotations
 
+import typing as t
+
 from collections import defaultdict
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -15,7 +15,9 @@ from ..models.tabs import Tabs as BkTabs
 from ..viewable import Layoutable
 from .base import NamedListPanel
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
 
@@ -44,31 +46,31 @@ class Tabs(NamedListPanel):
     dynamic = param.Boolean(default=False, doc="""
         Dynamically populate only the active tab.""")
 
-    tabs_location = param.Selector(
+    tabs_location: t.Literal['above', 'below', 'left', 'right'] = param.Selector(
         default='above', objects=['above', 'below', 'left', 'right'], doc="""
-        The location of the tabs relative to the tab contents.""")
+        The location of the tabs relative to the tab contents.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     height = param.Integer(default=None, bounds=(0, None))
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    _bokeh_model: ClassVar[type[Model]] = BkTabs
+    _bokeh_model: t.ClassVar[type[Model]] = BkTabs
 
-    _direction: ClassVar[str | None] = None
+    _direction: t.ClassVar[str | None] = None
 
-    _js_transforms: ClassVar[Mapping[str, str]] = {'tabs': """
+    _js_transforms: t.ClassVar[Mapping[str, str]] = {'tabs': """
     var ids = [];
     for (var t of value) {{ ids.push(t.id) }};
     var value = ids;
     """}
 
-    _manual_params: ClassVar[list[str]] = ['closable']
+    _manual_params: t.ClassVar[list[str]] = ['closable']
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'closable': None, 'dynamic': None, 'name': None, 'objects': 'tabs'
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'dynamic': None, 'objects': None
     }
 

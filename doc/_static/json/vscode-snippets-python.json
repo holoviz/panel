@@ -8,7 +8,7 @@
 			"",
 			"TEXT = \"Panel\"",
 			"",
-			"length = pn.widgets.IntSlider(value=len(TEXT), end=len(TEXT), name=\"length\")",
+			"length = pn.widgets.IntSlider(value=len(TEXT), end=len(TEXT), label=\"length\")",
 			"",
 			"def text(value):",
 			"    return TEXT[:value]",

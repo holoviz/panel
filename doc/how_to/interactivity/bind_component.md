@@ -20,7 +20,7 @@ pn.extension("tabulator")
 
 df = pd.read_csv("https://datasets.holoviz.org/penguins/v1/penguins.csv")
 
-slider = pn.widgets.IntSlider(value=5, start=1, end=10, name='page_size')
+slider = pn.widgets.IntSlider(value=5, start=1, end=10, label='page_size')
 tabulator = pn.widgets.Tabulator(df, page_size=slider, pagination="remote")
 
 pn.Column(slider, tabulator)
@@ -60,9 +60,9 @@ If you want to update multiple *Parameters* at the same time you can pass a reac
 
 
 ```{pyodide}
-slider = pn.widgets.IntSlider(value=5, start=1, end=10, name='Number')
-select = pn.widgets.RadioButtonGroup(value="⭐", options=["⭐", "🐘"], name='String', align='center')
-size = pn.widgets.IntSlider(value=12, start=6, end=24, name='Size')
+slider = pn.widgets.IntSlider(value=5, start=1, end=10, label='Number')
+select = pn.widgets.RadioButtonGroup(value="⭐", options=["⭐", "🐘"], label='String', align='center')
+size = pn.widgets.IntSlider(value=12, start=6, end=24, label='Size')
 
 def refs(string, number, size):
     return {

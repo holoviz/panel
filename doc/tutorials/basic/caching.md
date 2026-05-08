@@ -188,7 +188,7 @@ def algo(value):
     sleep(1)
     return value
 
-slider = pn.widgets.IntSlider(name="Value", value=2, start=0, end=10)
+slider = pn.widgets.IntSlider(label="Value", value=2, start=0, end=10)
 pn.Column(
     slider, pn.bind(algo, slider)
 ).servable()

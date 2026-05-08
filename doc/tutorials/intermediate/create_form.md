@@ -110,11 +110,11 @@ def create_form():
         stylesheets=["p {margin-bottom: 0}"]
     )
 
-    name_input = pn.widgets.TextInput.from_param(form_state.param.name, name="Name*", placeholder="User Name")
-    email_input = pn.widgets.TextInput.from_param(form_state.param.email, name="Email*", placeholder="Email Address")
+    name_input = pn.widgets.TextInput.from_param(form_state.param.name, label="Name*", placeholder="User Name")
+    email_input = pn.widgets.TextInput.from_param(form_state.param.email, label="Email*", placeholder="Email Address")
     message_input = pn.widgets.TextAreaInput.from_param(form_state.param["message"], placeholder="An optional message")
 
-    submit_button = pn.widgets.Button(name="Send", on_click=form_state.submit, button_type="primary")
+    submit_button = pn.widgets.Button(label="Send", on_click=form_state.submit, color="primary")
 
     return pn.Column(
         header,
@@ -236,11 +236,11 @@ def create_form():
         stylesheets=["p {margin-bottom: 0}"]
     )
 
-    name_input = pn.widgets.TextInput.from_param(form_state.param.name, name="Name*", placeholder="User Name")
-    email_input = pn.widgets.TextInput.from_param(form_state.param.email, name="Email*", placeholder="Email Address")
+    name_input = pn.widgets.TextInput.from_param(form_state.param.name, label="Name*", placeholder="User Name")
+    email_input = pn.widgets.TextInput.from_param(form_state.param.email, label="Email*", placeholder="Email Address")
     message_input = pn.widgets.TextAreaInput.from_param(form_state.param["message"], placeholder="An optional message")
 
-    submit_button = pn.widgets.Button(name="Send", on_click=form_state.submit, button_type="primary")
+    submit_button = pn.widgets.Button(label="Send", on_click=form_state.submit, color="primary")
 
     return pn.Column(
         header,

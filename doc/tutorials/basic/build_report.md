@@ -104,31 +104,31 @@ header = pn.Row(
 indicators = pn.FlexBox(
     pn.indicators.Number(
         value=total_capacity / 1e6,
-        name="Total Capacity (GW)",
+        label="Total Capacity (GW)",
         format="{value:,.0f}",
         styles=CARD_STYLE,
     ),
     pn.indicators.Number(
         value=avg_capacity,
-        name="Avg. Capacity (MW)",
+        label="Avg. Capacity (MW)",
         format="{value:,.1f}",
         styles=CARD_STYLE,
     ),
     pn.indicators.Number(
         value=avg_rotor_diameter,
-        name="Avg. Rotor Diameter (m)",
+        label="Avg. Rotor Diameter (m)",
         format="{value:,.0f}",
         styles=CARD_STYLE,
     ),
     pn.indicators.Number(
         value=avg_rotor_diameter,
-        name="Avg. Rotor Diameter (m)",
+        label="Avg. Rotor Diameter (m)",
         format="{value:,.0f}",
         styles=CARD_STYLE,
     ),
     pn.indicators.Number(
         value=count,
-        name="Count",
+        label="Count",
         format="{value:,.0f}",
         styles=CARD_STYLE,
     ),
@@ -301,31 +301,31 @@ Here, we define some styling constants and create a header for the report, which
 indicators = pn.FlexBox(
     pn.indicators.Number(
         value=total_capacity / 1e6,
-        name="Total Capacity (GW)",
+        label="Total Capacity (GW)",
         format="{value:,.0f}",
         styles=CARD_STYLE,
     ),
     pn.indicators.Number(
         value=avg_capacity,
-        name="Avg. Capacity (MW)",
+        label="Avg. Capacity (MW)",
         format="{value:,.1f}",
         styles=CARD_STYLE,
     ),
     pn.indicators.Number(
         value=avg_rotor_diameter,
-        name="Avg. Rotor Diameter (m)",
+        label="Avg. Rotor Diameter (m)",
         format="{value:,.0f}",
         styles=CARD_STYLE,
     ),
     pn.indicators.Number(
         value=avg_rotor_diameter,
-        name="Avg. Rotor Diameter (m)",
+        label="Avg. Rotor Diameter (m)",
         format="{value:,.0f}",
         styles=CARD_STYLE,
     ),
     pn.indicators.Number(
         value=count,
-        name="Count",
+        label="Count",
         format="{value:,.0f}",
         styles=CARD_STYLE,
     ),

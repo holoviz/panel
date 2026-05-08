@@ -1,8 +1,7 @@
 import json
 import os
 import pathlib
-
-from typing import Any
+import typing as t
 
 import param
 
@@ -333,15 +332,15 @@ def setup_mystnb(app):
     for name, default, field in NbParserConfig().as_triple():
         if not field.metadata.get("sphinx_exclude"):
             # TODO add types?
-            app.add_config_value(f"nb_{name}", default, "env", Any)  # type: ignore[arg-type]
+            app.add_config_value(f"nb_{name}", default, "env", t.Any)  # type: ignore[arg-type]
             if "legacy_name" in field.metadata:
                 app.add_config_value(
                     f"{field.metadata['legacy_name']}",
                     _UNSET,
                     "env",
-                    Any,  # type: ignore[arg-type]
+                    t.Any,  # type: ignore[arg-type]
                 )
-    app.add_config_value("nb_render_priority", _UNSET, "env", Any)  # type: ignore[arg-type]
+    app.add_config_value("nb_render_priority", _UNSET, "env", t.Any)  # type: ignore[arg-type]
     create_mystnb_config(app)
 
     # add post-transform for selecting mime type from a bundle

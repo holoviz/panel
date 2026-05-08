@@ -70,7 +70,7 @@ export class EChartsView extends HTMLBoxView {
     }
     this._clear_loading_timer()
     super.render()
-    this.container = div({style: {height: "100%", width: "100%"}}) as HTMLDivElement
+    this.container = div({style: {height: "100%", width: "100%"}})
     this.shadow_el.append(this.container)
 
     if ((window as any).echarts == null) {
@@ -92,7 +92,7 @@ export class EChartsView extends HTMLBoxView {
         color: "#888",
         fontSize: "14px",
       },
-    }) as HTMLDivElement
+    })
     this._loading_el.textContent = "Loading ECharts..."
     this.container.append(this._loading_el)
   }

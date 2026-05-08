@@ -71,7 +71,7 @@ def test_reactive_esm_sync_dataframe(document, comm):
 
 class ESMBundle(ReactiveESM):
 
-    _bundle_path = "esm.js"
+    _bundle_path = "esm.js"  # type: ignore[assignment]
 
 
 def test_esm_bundle_resource_path():
@@ -213,7 +213,7 @@ def test_reactive_esm_children_pane_replace(document, comm):
 
 class ESMOverride(ReactiveESM):
 
-    width = param.Integer(default=42)
+    width = param.Integer(default=42, allow_None=True)
 
 def test_esm_parameter_override(document, comm):
     esm = ESMOverride()

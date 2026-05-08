@@ -5,16 +5,13 @@ The message module provides a low-level API for rendering chat messages.
 from __future__ import annotations
 
 import datetime
+import typing as t
 
-from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, TypedDict, Union,
-)
 from zoneinfo import ZoneInfo
 
 import param
@@ -41,19 +38,21 @@ from .utils import (
     avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
 )
 
-Avatar = Union[str, BytesIO, bytes, ImageBase]
+Avatar = t.Union[str, BytesIO, bytes, ImageBase]
 AvatarDict = dict[str, Avatar]
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    class MessageParams(TypedDict, total=False):
+    class MessageParams(t.TypedDict, total=False):
         avatar: Avatar
         user: str
-        object: Any
-        value: Any
+        object: t.Any
+        value: t.Any
 
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
@@ -199,7 +198,7 @@ class ChatMessage(Pane):
     object = param.Parameter(allow_refs=False, doc="""
         The message contents. Can be any Python object that panel can display.""")
 
-    reactions = param.List(doc="""
+    reactions = param.List(item_type=str, doc="""
         Reactions to associate with the message.""")
 
     reaction_icons = param.ClassSelector(class_=ChatReactionIcons, doc="""
@@ -247,13 +246,13 @@ class ChatMessage(Pane):
         from the object."""
     )
 
-    user = param.Parameter(default="User", doc="""
-        Name of the user who sent the message.""")
+    user: str = param.Parameter(default="User", doc="""
+        Name of the user who sent the message.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_message.css"]
+    _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
     # Declares whether Pane supports updates to the Bokeh model
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
         self._exit_stack = ExitStack()
@@ -414,9 +413,9 @@ class ChatMessage(Pane):
 
     def _select_renderer(
         self,
-        contents: Any,
+        contents: t.Any,
         mime_type: str,
-    ) -> tuple[Any, type[Pane] | Callable[..., Pane | ServableMixin]]:
+    ) -> tuple[t.Any, type[Pane] | Callable[..., Pane | ServableMixin]]:
         """
         Determine the renderer to use based on the mime type.
         """
@@ -535,7 +534,7 @@ class ChatMessage(Pane):
         self._internal = True
         return object_panel
 
-    def _render_avatar(self) -> HTML | Image:
+    def _render_avatar(self) -> Viewable:
         """
         Render the avatar pane as some HTML text or Image pane.
         """
@@ -574,7 +573,7 @@ class ChatMessage(Pane):
     def _update_reaction_icons(self, _):
         self._icons_row[-1] = self._render_reaction_icons()
 
-    def _update(self, ref, old_models):
+    def _update(self, ref: str, model: "Model") -> None:
         """
         Internals will be updated inplace.
         """
@@ -679,7 +678,7 @@ class ChatMessage(Pane):
 
     def update(
         self,
-        value: MessageParams | ChatMessage | Any,
+        value: MessageParams | ChatMessage | t.Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
     ):
@@ -713,7 +712,7 @@ class ChatMessage(Pane):
                     "Cannot set user or avatar when explicitly sending "
                     "a ChatMessage. Set them directly on the ChatMessage."
                 )
-            updates = value.param.values()
+            updates = t.cast("MessageParams", value.param.values())
         else:
             updates["object"] = value
         self.param.update(**updates)
