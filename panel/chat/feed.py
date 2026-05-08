@@ -42,6 +42,7 @@ if t.TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    from ..layout.base import ListLike
     from ..widgets import Widget
 
 
@@ -237,6 +238,7 @@ class ChatFeed(ListPanel):
         The previous disabled state of the feed.""")
 
     _card_type: t.ClassVar[type[Card]] = Card
+    _feed_type: t.ClassVar[type[ListLike]] = Feed
     _message_type: t.ClassVar[type[ChatMessage]] = ChatMessage
     _step_type: t.ClassVar[type[ChatStep]] = ChatStep
 
@@ -285,7 +287,7 @@ class ChatFeed(ListPanel):
             visible=self.param.visible,
         )
         # we separate out chat log for the auto scroll feature
-        self._chat_log = Feed(
+        self._chat_log = self._feed_type(
             *self.objects,
             load_buffer=self.load_buffer,
             auto_scroll_limit=self.auto_scroll_limit,
