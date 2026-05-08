@@ -13,14 +13,11 @@ import pathlib
 import signal
 import sys
 import threading
+import typing as t
 import uuid
 
-from collections.abc import Callable, Mapping
 from functools import partial, wraps
 from html import escape
-from typing import (
-    TYPE_CHECKING, Any, Literal, TypedDict,
-)
 from urllib.parse import urlparse
 
 import bokeh
@@ -78,7 +75,9 @@ from .threads import StoppableThread
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.application.application import SessionContext
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson
@@ -89,10 +88,10 @@ if TYPE_CHECKING:
     from .application import TViewableFuncOrPath
     from .location import Location
 
-    class TokenPayload(TypedDict):
-        headers: dict[str, Any]
-        cookies: dict[str, Any]
-        arguments: dict[str, Any]
+    class TokenPayload(t.TypedDict):
+        headers: dict[str, t.Any]
+        cookies: dict[str, t.Any]
+        arguments: dict[str, t.Any]
 
 
 #---------------------------------------------------------------------
@@ -197,7 +196,7 @@ state._on_session_created_internal.append(_initialize_session_info)
 def html_page_for_render_items(
     bundle: Bundle | tuple[str, str], docs_json: dict[ID, DocJson],
     render_items: list[RenderItem], title: str, template: Template | str | None = None,
-    template_variables: dict[str, Any] = {}
+    template_variables: dict[str, t.Any] = {}
 ) -> str:
     """
     Render an HTML page from a template and Bokeh render items.
@@ -266,7 +265,7 @@ def server_html_page_for_session(
     title: str,
     token: str | None = None,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: dict[str, Any] | None = None,
+    template_variables: dict[str, t.Any] | None = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
@@ -435,7 +434,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             return True, None
         authorized = False
         auth_params = inspect.signature(auth_cb).parameters
-        auth_args: tuple[dict[str, Any] | None] | tuple[dict[str, Any] | None, str]
+        auth_args: tuple[dict[str, t.Any] | None] | tuple[dict[str, t.Any] | None, str]
         if len(auth_params) == 1:
             auth_args = (state.user_info,)
         elif len(auth_params) == 2:
@@ -480,6 +479,13 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated
     async def get(self, *args, **kwargs):
+        prefix = self.application.prefix
+        if prefix and self.request.path == prefix and not prefix.endswith('/'):
+            query_string = self.request.query if self.request.query else ''
+            redirect_url = f'{prefix}/' + (f'?{query_string}' if query_string else '')
+            self.redirect(redirect_url)
+            return
+
         # Run global authorization callback
         payload = self._generate_token_payload()
         if config.authorize_callback:
@@ -506,16 +512,25 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
                 secret_key=self.application.secret_key,
                 signed=self.application.sign_sessions
             )
-            payload = get_token_payload(session.token)
-            payload.update(payload)
-            del payload['session_expiry']
+            extra_payload = get_token_payload(session.token)
+            extra_payload.update(payload)
+            del extra_payload['session_expiry']
             token = generate_jwt_token(
                 session_id,
                 secret_key=app.secret_key,
                 signed=app.sign_sessions,
                 expiration=app.session_token_expiration,
-                extra_payload=payload
+                extra_payload=extra_payload
             )
+            if config.reuse_sessions == 'warm':
+                state.execute(
+                    partial(
+                        self.application_context.create_session_if_needed,
+                        session_id,
+                        self.request,
+                        token
+                    )
+                )
         else:
             token = session.token
         logger.info(LOG_SESSION_CREATED, id(session.document))
@@ -594,14 +609,14 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
                 index = self.index
                 apps = []
                 for slug in self.applications.keys():
+                    default_title = slug[1:]
                     slug = (
                         slug
                         if self.request.uri.endswith("/") or not self.prefix
                         else f"{self.prefix}{slug}"
                     )
                     # Try to get custom application page card title from config
-                    # using as default value the application page slug
-                    default_title = slug[1:].replace("_", " ").title()
+                    # using as default value the application name
                     title = config.index_titles.get(slug, default_title)
                     apps.append((slug, title))
                 apps = sorted(apps, key=lambda app: app[1])
@@ -669,8 +684,11 @@ bokeh.server.tornado.create_static_handler = create_static_handler
 # Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
 # support the WindowsProactorEventLoopPolicy so we restore it,
 # unless we detect we are running on jupyter_server.
+# get_event_loop_policy, WindowsProactorEventLoopPolicy, WindowsProactorEventLoopPolicy
+# is deprecated in Python 3.14.
 if (
     sys.platform == 'win32' and
+    sys.version_info < (3, 14, 0) and
     tornado.version_info >= (6, 1) and
     type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy and
     (('jupyter_server' not in sys.modules and
@@ -698,7 +716,7 @@ class ComponentResourceHandler(StaticFileHandler):
         '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path', '_bundle_css'
     ]
 
-    def initialize(self, path: str | Literal['root'] = 'root', default_filename: str | None = None):
+    def initialize(self, path: str | t.Literal['root'] = 'root', default_filename: str | None = None):
         self.root = path
         self.default_filename = default_filename
 
@@ -893,7 +911,7 @@ def get_static_routes(static_dirs):
         if not os.path.isdir(path):
             raise ValueError(f"Cannot serve non-existent path {path}")
         patterns.append(
-            (rf"{slug}/(.*)", AuthenticatedStaticFileHandler, {"path": path})
+            (rf"{slug}/(.*)", AuthenticatedStaticFileHandler, {"path": path, "default_filename": "index.html"})
         )
     patterns.append((
         f'/{COMPONENT_PATH}(.*)', ComponentResourceHandler, {}

@@ -54,7 +54,7 @@ class EditableRange(Viewer):
 
     @param.depends('value', 'width', watch=True)
     def _sync_widgets(self):
-        self._start_input.name = self.name
+        self._start_input.label = self.name
         self._start_input.value = self.value[0]
         self._end_input.value = self.value[1]
         self._start_input.width = self.width//2
@@ -94,7 +94,7 @@ class EditableRange(Viewer):
 
     @param.depends('value', 'width', watch=True)
     def _sync_widgets(self):
-        self._start_input.name = self.name
+        self._start_input.label = self.name
         self._start_input.value = self.value[0]
         self._end_input.value = self.value[1]
         self._start_input.width = self.width//2

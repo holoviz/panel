@@ -1,6 +1,7 @@
 import os
 
 from base64 import b64decode, b64encode
+from html import escape
 from io import BytesIO, StringIO
 from pathlib import Path
 
@@ -9,10 +10,10 @@ import pytest
 from requests.exceptions import MissingSchema
 
 from panel.pane import (
-    GIF, ICO, JPG, PDF, PNG, SVG, WebP,
+    AVIF, GIF, ICO, JPG, PDF, PNG, SVG, WebP,
 )
-from panel.pane.markup import escape
 
+AVIF_FILE = 'https://assets.holoviz.org/panel/samples/avif_sample.avif'
 JPG_FILE = 'https://assets.holoviz.org/panel/samples/jpg_sample.jpg'
 JPEG_FILE = 'https://assets.holoviz.org/panel/samples/jpeg_sample.jpeg'
 PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
@@ -61,6 +62,13 @@ def test_svg_pane(document, comm):
 
 
 twopixel = dict(\
+    avif= b'AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZgAAAOptZXRhAAAAAAAAACFoZGx' + \
+          b'yAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAABAAAAImlsb2' + \
+          b'MAAAAAREAAAQABAAAAAAEOAAEAAAAAAAAAIgAAACNpaW5mAAAAAAABAAAAFWluZ' + \
+          b'mUCAAAAAAEAAGF2MDEAAAAAamlwcnAAAABLaXBjbwAAAAxhdjFDgSACAAAAABNj' + \
+          b'b2xybmNseAABAA0AAIAAAAAUaXNwZQAAAAAAAAACAAAAAQAAABBwaXhpAAAAAAM' + \
+          b'ICAgAAAAXaXBtYQAAAAAAAAABAAEEgQIDBAAAACptZGF0EgAKBzgAJpAQ0AIyFR' + \
+          b'gACiiihQABAABsnSRm9hs9BNOQ9A==',
     gif = b'R0lGODlhAgABAPAAAEQ6Q2NYYCH5BAAAAAAAIf8LSW1hZ2VNYWdpY2sNZ2FtbWE' + \
           b'9MC40NTQ1NQAsAAAAAAIAAQAAAgIMCgA7',
     png = b'iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAAFElEQVQIHQEJAPb' + \
@@ -79,7 +87,7 @@ twopixel = dict(\
           )
 
 
-@pytest.mark.parametrize('t', [PNG, JPG, GIF, ICO, WebP], ids=lambda t: t.name.lower())
+@pytest.mark.parametrize('t', [AVIF, PNG, JPG, GIF, ICO, WebP], ids=lambda t: t.name.lower())
 def test_imgshape(t):
     w, h = t._imgshape(b64decode(twopixel[t.name.lower()]))
     assert w == 2
@@ -329,3 +337,27 @@ def test_image_caption(document, comm):
     model = png.get_root(document, comm)
     assert 'Some Caption' in model.text
     assert 'figcaption' in model.text
+
+
+@pytest.mark.parametrize('cls,data', [
+    (PNG, b'\x89PNG\r\n\x1a\n'),        # Valid PNG header but truncated before IHDR dimensions
+    (GIF, b'GIF89a'),                     # Valid GIF header but truncated before dimensions
+    (ICO, b'\x00\x00\x01\x00\x01'),      # Valid ICO header but truncated before entry
+], ids=['png', 'gif', 'ico'])
+def test_imgshape_truncated_data(cls, data):
+    with pytest.raises(ValueError, match="insufficient data"):
+        cls._imgshape(data)
+
+
+def test_imgshape_jpg_no_sof_marker():
+    # JPEG with valid SOI marker but no SOF marker (just SOI + SOS)
+    data = b'\xff\xd8\xff\xda' + b'\x00' * 10
+    with pytest.raises(ValueError, match="no SOF marker found"):
+        JPG._imgshape(data)
+
+
+def test_imgshape_avif_no_ispe_box():
+    # AVIF data without an ispe box
+    data = b'\x00\x00\x00\x1cftypavifall' + b'\x00' * 50
+    with pytest.raises(ValueError, match="no 'ispe' box found"):
+        AVIF._imgshape(data)

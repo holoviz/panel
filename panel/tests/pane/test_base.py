@@ -1,4 +1,3 @@
-import param
 import pytest
 
 import panel as pn
@@ -17,6 +16,7 @@ from panel.param import (
     Param, ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
 )
 from panel.tests.util import check_layoutable_properties
+from panel.util import _descendents
 
 SKIP_PANES = (
     Bokeh, ChatMessage, HoloViews, Interactive, IPyWidget, Param,
@@ -24,7 +24,7 @@ SKIP_PANES = (
     interactive
 )
 
-all_panes = [w for w in param.concrete_descendents(PaneBase).values()
+all_panes = [w for w in _descendents(PaneBase, concrete=True)
              if not w.__name__.startswith('_') and not
              issubclass(w, SKIP_PANES)
              and w.__module__.startswith('panel')]

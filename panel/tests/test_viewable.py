@@ -5,13 +5,14 @@ from panel import config
 from panel.interact import interactive
 from panel.pane import Markdown, Str, panel as panel_fn
 from panel.param import ParamMethod
+from panel.util import _descendents
 from panel.viewable import (
     Child, Children, Viewable, Viewer, is_viewable_param,
 )
 
 from .util import jb_available
 
-all_viewables = [w for w in param.concrete_descendents(Viewable).values()
+all_viewables = [w for w in _descendents(Viewable, concrete=True)
                if not w.__name__.startswith('_') and
                not issubclass(w, interactive)]
 
@@ -46,7 +47,7 @@ def test_viewable_signature(viewable):
         pytest.skip('Signature already set by Param')
     assert 'params' in parameters
     try:
-        assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD, annotation='Any')
+        assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD, annotation='t.Any')
     except Exception:
         assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD)
 

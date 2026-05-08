@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import sys
 import traceback as tb
+import typing as t
 
 from collections import defaultdict
-from typing import ClassVar
 
 import param
 
 from .layout import Column, Row
 from .pane import HoloViews, Markdown
-from .param import Param
 from .util import param_reprs
 from .viewable import Viewer
 from .widgets import Button, Select
@@ -161,11 +160,11 @@ class Pipeline(Viewer):
         Whether to show the header with the title, network diagram,
         and buttons.""")
 
-    next = param.Action(default=lambda x: x.param.trigger('next'))
+    next = param.Event()
 
-    previous = param.Action(default=lambda x: x.param.trigger('previous'))
+    previous = param.Event()
 
-    _ignored_refs: ClassVar[tuple[str, ...]] = ('next_parameter', 'ready_parameter')
+    _ignored_refs: t.ClassVar[tuple[str, ...]] = ('next_parameter', 'ready_parameter')
 
     def __init__(self, stages=[], graph={}, **params):
         try:
@@ -189,10 +188,10 @@ class Pipeline(Viewer):
         # Declare UI components
         self._progress_sel = hv.streams.Selection1D()
         self._progress_sel.add_subscriber(self._set_stage)
-        self.prev_button = Param(self.param.previous).layout[0]
+        self.prev_button = Button.from_param(self.param.previous)
         self.prev_button.width = 125
         self.prev_selector = Select(width=125)
-        self.next_button = Param(self.param.next).layout[0]
+        self.next_button = Button.from_param(self.param.next)
         self.next_button.width = 125
         self.next_selector = Select(width=125)
         self.prev_button.disabled = True
@@ -387,7 +386,7 @@ class Pipeline(Viewer):
             self.next_button.disabled = True
         else:
             ready = kwargs.get('ready_parameter', self.ready_parameter)
-            disabled = (not getattr(stage, ready)) if ready in stage.param else False
+            disabled = (not getattr(self._state, ready)) if ready in self._state.param else False
             self.next_button.disabled = disabled
 
     def _get_error_button(self, e):
@@ -399,7 +398,7 @@ class Pipeline(Viewer):
                          (msg, ''.join(tb_list[-5:-1]), tb_list[-1]))
         else:
             traceback = msg or "Undefined error, enable debug mode."
-        button = Button(name='Error', button_type='danger', width=100,
+        button = Button(label='Error', color='danger', width=100,
                         align='center', margin=(0, 0, 0, 5))
         button.js_on_click(code=f"alert(`{traceback}`)")
         return button
@@ -410,7 +409,8 @@ class Pipeline(Viewer):
         self._stage = self._next_stage
         self.stage.loading = True
         try:
-            self.stage[0] = self._init_stage()
+            if self._stage is not None:
+                self.stage[0] = self._init_stage()
         except Exception as e:
             self._error = self._stage
             self._stage = prev_stage
@@ -482,8 +482,8 @@ class Pipeline(Viewer):
 
         edges = []
         for src, tgts in self._graph.items():
-            for t in tgts:
-                edges.append((src, t))
+            for tgt in tgts:
+                edges.append((src, tgt))
 
         nodes = []
         for depth, subnodes in breadths.items():
@@ -592,7 +592,7 @@ class Pipeline(Viewer):
         for source, targets in graph.items():
             if source not in stages:
                 not_found.append(source)
-            not_found += [t for t in targets if t not in stages]
+            not_found += [tgt for tgt in targets if tgt not in stages]
         if not_found:
             raise ValueError(
                 'Pipeline stage(s) %s not found, ensure all stages '

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import pathlib
-
-from collections.abc import Callable
+import typing as t
 
 import param
 
@@ -18,6 +17,9 @@ from ..widgets.indicators import Dial, Number, String
 from .base import (
     DarkTheme, DefaultTheme, Design, Inherit,
 )
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
 
 COLLAPSED_SVG_ICON = """
 <svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
@@ -139,9 +141,11 @@ class FastWrapper(ReactiveHTML):
     using the Fast design system have access to the Fast CSS variables.
     """
 
-    object = Child()
+    object = Child(doc="""
+        The Panel component to wrap with the Fast design provider.""")
 
-    style = param.ClassSelector(class_=FastStyle)
+    style = param.ClassSelector(class_=FastStyle, doc="""
+        The style to apply to the Fast design provider""")
 
     _template = '<div id="fast-wrapper" class="fast-wrapper">${object}</div>'
 

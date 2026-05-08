@@ -11,7 +11,7 @@ from bokeh.models.sources import DataSource
 from ..config import config
 from ..util import classproperty
 
-VIZZU_VERSION = "0.15"
+VIZZU_VERSION = "0.17.1"
 
 class VizzuEvent(ModelEvent):
 

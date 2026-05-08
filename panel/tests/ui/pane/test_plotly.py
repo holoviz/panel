@@ -247,7 +247,7 @@ def test_plotly_select_data(page, plotly_2d_plot):
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
     expect(plotly_plot).to_have_count(1)
 
-    page.locator('a.modebar-btn[data-val="select"]').click()
+    page.locator('button.modebar-btn[data-val="select"]').click()
 
     bbox = page.locator('.js-plotly-plot .plot-container.plotly').bounding_box()
 
@@ -272,6 +272,49 @@ def test_plotly_select_data(page, plotly_2d_plot):
     assert 'x' in selected['range']
     assert 'y' in selected['range']
 
+
+
+def test_plotly_click_data_add_trace(page):
+    # Regression test for https://github.com/holoviz/panel/issues/8470
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=[0, 1, 2, 3], y=[0, 1, 2, 3], mode='markers'))
+    fig.update_layout(uirevision='keep')
+
+    pane = Plotly(fig)
+
+    def on_click(event):
+        if event.new is None:
+            return
+        pt = event.new['points'][0]
+        fig.add_trace(go.Scatter(
+            x=[pt['x']], y=[pt['y']], mode='markers', showlegend=False,
+        ))
+
+    pane.param.watch(on_click, 'click_data')
+
+    serve_component(page, pane)
+
+    point = page.locator('.js-plotly-plot path.point').first
+    expect(point).to_be_visible()
+
+    for _ in range(3):
+        point.click(force=True)
+        page.wait_for_timeout(100)
+
+    GET_TRACE_COUNT_JS = """() => {
+        function find(root) {
+          for (const d of root.querySelectorAll('div')) {
+            if (d.data && Array.isArray(d.data)) return d.data.length;
+          }
+          for (const el of root.querySelectorAll('*')) {
+            if (el.shadowRoot) { const r = find(el.shadowRoot); if (r !== null) return r; }
+          }
+          return null;
+        }
+        return find(document);
+    }"""
+
+    wait_until(lambda: page.evaluate(GET_TRACE_COUNT_JS) > 1, page)
 
 
 def test_plotly_img_plot(page, plotly_img_plot):

@@ -93,8 +93,9 @@ def test_okta_oauth(py_file, page):
         port = wait_for_port(p.stdout)
         page.goto(f"http://localhost:{port}")
 
-        page.locator('input[name="username"]').fill(okta_user)
-        page.locator('input[name="password"]').fill(okta_password)
+        page.locator('input[name="identifier"]').fill(okta_user)
+        page.locator('input[type="submit"]').click(force=True)
+        page.locator('input[type="password"]').fill(okta_password)
         page.locator('input[type="submit"]').click(force=True)
 
         expect(page.locator('.markdown')).to_have_text(okta_user, timeout=10000)

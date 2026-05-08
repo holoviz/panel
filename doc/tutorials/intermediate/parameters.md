@@ -196,7 +196,7 @@ import panel as pn
 
 pn.extension()
 
-data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
+data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz'
 
 df = pn.cache(pd.read_csv)(data_url)
 
@@ -215,7 +215,7 @@ import panel as pn
 
 pn.extension()
 
-data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
+data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz'
 
 df = pn.cache(pd.read_csv)(data_url)
 
@@ -236,7 +236,7 @@ import numpy as np
 
 pn.extension()
 
-data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
+data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz'
 df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)
@@ -244,9 +244,9 @@ dfrx = pn.rx(df)
 cols  = pn.widgets.MultiChoice(
     options=df.columns.to_list(), value=['p_name', 't_state', 't_county', 'p_year', 'p_cap'], height=300
 )
-nrows = pn.widgets.IntSlider(start=5, end=20, step=5, value=15, name='Samples')
+nrows = pn.widgets.IntSlider(start=5, end=20, step=5, value=15, label='Samples')
 style = pn.rx('color: white; background-color: {color}')
-color = pn.widgets.ColorPicker(value='darkblue', name='Highlight color')
+color = pn.widgets.ColorPicker(value='darkblue', label='Highlight color')
 
 def highlight_max(s, props=''):
     if s.dtype.kind not in 'f':
@@ -271,7 +271,7 @@ import numpy as np
 
 pn.extension()
 
-data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
+data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz'
 df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)
@@ -279,9 +279,9 @@ dfrx = pn.rx(df)
 cols  = pn.widgets.MultiChoice(
     options=df.columns.to_list(), value=['p_name', 't_state', 't_county', 'p_year', 'p_cap'], height=300
 )
-nrows = pn.widgets.IntSlider(start=5, end=20, step=5, value=15, name='Samples')
+nrows = pn.widgets.IntSlider(start=5, end=20, step=5, value=15, label='Samples')
 style = pn.rx('color: white; background-color: {color}')
-color = pn.widgets.ColorPicker(value='darkblue', name='Highlight color')
+color = pn.widgets.ColorPicker(value='darkblue', label='Highlight color')
 
 def highlight_max(s, props=''):
     if s.dtype.kind not in 'f':
@@ -313,7 +313,7 @@ import panel as pn
 
 pn.extension()
 
-intslider = pn.widgets.IntSlider(value=10, start=5, end=100, step=10, name="Font Size")
+intslider = pn.widgets.IntSlider(value=10, start=5, end=100, step=10, label="Font Size")
 
 styles_rx = {"font-size": pn.rx("{value}px").format(value=intslider)}
 markdown = pn.pane.Markdown("We love dataviz!", styles=styles_rx)
@@ -329,7 +329,7 @@ import panel as pn
 
 pn.extension()
 
-intslider = pn.widgets.IntSlider(value=10, start=5, end=100, step=10, name="Font Size")
+intslider = pn.widgets.IntSlider(value=10, start=5, end=100, step=10, label="Font Size")
 
 def styles(font_size):
     return {"font-size": f"{font_size}px"}
@@ -348,7 +348,7 @@ import panel as pn
 
 pn.extension()
 
-intslider = pn.widgets.IntSlider(value=10, start=5, end=100, step=10, name="Font Size")
+intslider = pn.widgets.IntSlider(value=10, start=5, end=100, step=10, label="Font Size")
 
 def styles(font_size):
     return {"font-size": f"{font_size}px"}

@@ -4,7 +4,6 @@ ways.
 """
 from __future__ import annotations
 
-import argparse
 import ast
 import base64
 import contextlib
@@ -13,8 +12,8 @@ import logging
 import os
 import pathlib
 import sys
+import typing as t
 
-from collections.abc import Iterator
 from glob import glob
 from types import ModuleType
 
@@ -44,7 +43,13 @@ from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
 from ..util import edit_readonly, fullpath
 
+if t.TYPE_CHECKING:
+    import argparse
+
+    from collections.abc import Iterator
+
 log = logging.getLogger(__name__)
+
 
 @contextlib.contextmanager
 def add_sys_path(path: str | os.PathLike) -> Iterator[None]:
@@ -303,14 +308,17 @@ class Serve(_BkServe):
             type    = str
         )),
         ('--reuse-sessions', Argument(
-            action  = 'store_true',
+            action  = 'store',
             help    = "Whether to reuse sessions when serving the initial request.",
+            default = False,
+            const   = True,
+            nargs   = "?"
         )),
         ('--global-loading-spinner', Argument(
             action  = 'store_true',
             help    = "Whether to add a global loading spinner to the application(s).",
         )),
-    )) # type: ignore[assignment]
+    )) # type: ignore[assignment, ty:invalid-assignment]
 
     # Supported file extensions
     _extensions = ['.py', '.ipynb', '.md']
@@ -325,7 +333,7 @@ class Serve(_BkServe):
                 applications['/'] = applications[f'/{index}']
         return super().customize_applications(args, applications)
 
-    def warm_applications(self, applications, reuse_sessions, error=True, initialize_session=True):
+    def warm_applications(self, applications, reuse_sessions, error=True, initialize_session=True, index=None):
         from ..io.session import generate_session
         for path, app in applications.items():
             try:
@@ -341,6 +349,10 @@ class Serve(_BkServe):
                 else:
                     state._session_key_funcs[path] = lambda r: r.path
                     state._sessions[path] = session
+                    if index and index.endswith('.py'):
+                        index_path, _ = os.path.splitext(os.path.basename(index))
+                        if path == f'/{index_path}':
+                            state._sessions['/'] = session
                     session.block_expiration()
                 state._on_load(None)
             _cleanup_doc(session.document, destroy=not reuse_sessions)
@@ -453,10 +465,10 @@ class Serve(_BkServe):
             if config.autoreload:
                 with record_modules(list(applications.values())):
                     self.warm_applications(
-                        applications, args.reuse_sessions, error=False, initialize_session=initialize_session
+                        applications, args.reuse_sessions, error=False, initialize_session=initialize_session, index=kwargs['index']
                     )
             else:
-                self.warm_applications(applications, args.reuse_sessions, initialize_session=initialize_session)
+                self.warm_applications(applications, args.reuse_sessions, initialize_session=initialize_session, index=kwargs['index'])
 
         # Disable Tornado's autoreload
         if args.dev:

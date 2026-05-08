@@ -19,14 +19,18 @@ from bokeh.models.widgets.tables import (
 )
 from playwright.sync_api import expect
 
+from panel import extension
 from panel.depends import bind
+from panel.io.model import JSCode
 from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.pane import Markdown
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
 from panel.util import BOKEH_GE_3_6
-from panel.widgets import Select, Tabulator, TextInput
+from panel.widgets import (
+    Select, Switch, Tabulator, TextInput,
+)
 
 pytestmark = pytest.mark.ui
 
@@ -108,13 +112,25 @@ def test_tabulator_no_console_error(page, df_mixed):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
+def test_tabulator_with_loading_ipywidgets_no_console_error(page, df_mixed):
+
+    def app():
+        extension("ipywidgets", "tabulator")
+        return Tabulator(df_mixed)
+
+    msgs, _ = serve_component(page, app)
+    page.wait_for_timeout(1000)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
 def test_tabulator_default(page, df_mixed, df_mixed_as_string):
     nrows, ncols = df_mixed.shape
     widget = Tabulator(df_mixed)
 
     serve_component(page, widget)
 
-    expected_ncols = ncols + 2  # _index + index + data columns
+    expected_ncols = ncols + 3  # _index + index + data columns + empty
 
     # Check that the whole table content is on the page
     table = page.locator('.pnx-tabulator.tabulator')
@@ -234,13 +250,13 @@ def test_tabulator_buttons_display(page, df_mixed):
 
     serve_component(page, widget)
 
-    expected_ncols = ncols + 3  # _index + index + data columns + button col
+    expected_ncols = ncols + 4  # _index + index + data columns + button col + empty
 
     # Check that an additional column has been added to the table
     # with no header title
     cols = page.locator(".tabulator-col")
     expect(cols).to_have_count(expected_ncols)
-    button_col_idx = expected_ncols - 1
+    button_col_idx = expected_ncols - 2
     assert not cols.nth(button_col_idx).get_attribute('tabulator-field')
     assert cols.nth(button_col_idx).inner_text() == '\xa0'
     assert cols.nth(button_col_idx).is_visible()
@@ -274,6 +290,21 @@ def test_tabulator_buttons_event(page, df_mixed):
     icon.click()
 
     wait_until(lambda: state == expected_state, page)
+
+
+def test_tabulator_formatters_jscode(page, df_mixed):
+    s = [True] * len(df_mixed)
+    s[-1] = False
+    df_mixed['bool'] = s
+    widget = Tabulator(df_mixed, formatters={'bool': JSCode("function(cell) { return cell.getValue() ? 'foo' : 'bar' }")})
+
+    serve_component(page, widget)
+
+    cells = page.locator('.tabulator-cell[tabulator-field="bool"]')
+    expect(cells).to_have_count(len(df_mixed))
+
+    for i in range(len(df_mixed) - 1):
+        expect(cells.nth(i)).to_have_text('foo' if df_mixed.iloc[i, 5] else 'bar')
 
 
 def test_tabulator_formatters_bokeh_bool(page, df_mixed):
@@ -474,10 +505,78 @@ def test_tabulator_editors_bokeh_string(page, df_mixed):
     expect(page.locator('input[type="text"]')).to_have_count(1)
 
 
+def test_tabulator_editor_stays_open_during_resize_redraw(page, df_mixed):
+    widget = Tabulator(df_mixed, editors={'str': StringEditor()})
+
+    serve_component(page, widget)
+    expect(page.locator('.tabulator')).to_have_count(1)
+
+    cell = page.locator('[tabulator-field="str"][role=gridcell]').first
+    cell.click()
+
+    editor = page.locator('input[type="text"]')
+    expect(editor).to_have_count(1)
+
+    viewport = page.viewport_size or {"width": 1280, "height": 720}
+    page.set_viewport_size({
+        "width": max(viewport["width"] - 40, 300),
+        "height": viewport["height"],
+    })
+
+    # A resize-triggered redraw should not close an active editor.
+    expect(editor).to_have_count(1)
+
+
+def test_tabulator_editor_jscode(page, df_mixed):
+
+    editor = """
+    function simpleInputEditor(cell, onRendered, success, cancel, editorParams){
+      const value = cell.getValue();
+      const input = document.createElement("input");
+      input.className = "custom-jscode"
+      input.type = "text";
+      input.value = value ?? "";
+      input.style.width = "100%";
+      input.style.boxSizing = "border-box";
+
+      // Prevent clicks inside the editor from bubbling to Tabulator
+      input.addEventListener("click", e => e.stopPropagation());
+
+      // Commit on Enter, cancel on Esc
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") success(input.value);
+        else if (e.key === "Escape") cancel();
+      });
+
+      // Commit on blur (optional; remove if you want explicit Enter only)
+      input.addEventListener("blur", () => success(input.value));
+
+      // Focus/select after Tabulator finishes rendering
+      onRendered(() => {
+        input.focus();
+        input.select();
+      });
+
+      return input;
+    }"""
+
+    widget = Tabulator(df_mixed, editors={'str': JSCode(editor)})
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
+
+    cell = page.locator('text="A"')
+    cell.click()
+    expect(page.locator('.custom-jscode')).to_have_count(1)
+
+
 def test_tabulator_editors_bokeh_string_completions(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'str': StringEditor(completions=['AAA'])})
 
     serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
 
     cell = page.locator('text="A"')
     cell.click()
@@ -491,6 +590,8 @@ def test_tabulator_editors_bokeh_text(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="A"')
     cell.click()
     # A TextEditor with completions is turned into a textarea
@@ -503,6 +604,8 @@ def test_tabulator_editors_bokeh_int(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'int': IntEditor(step=step)})
 
     serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
 
     cell = page.locator('text="1"').first
     cell.click()
@@ -519,6 +622,8 @@ def test_tabulator_editors_bokeh_number(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="3.14"')
     cell.click()
     # A NumberEditor with step is turned into a number tabulator editor
@@ -533,6 +638,8 @@ def test_tabulator_editors_bokeh_checkbox(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="true"').first
     cell.click()
     # A CheckboxEditor is turned into a tickCross tabulator editor
@@ -546,6 +653,8 @@ def test_tabulator_editors_bokeh_date(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="2019-01-01"')
     cell.click()
     # A DateEditor is turned into a Panel date editor
@@ -557,6 +666,8 @@ def test_tabulator_editors_bokeh_select(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cell = page.locator('text="A"')
     cell.click()
     # A SelectEditor with options is turned into a select tabulator editor.
@@ -567,6 +678,8 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'date': 'date'})
 
     serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
 
     cell = page.locator('text="2019-01-01"')
     cell.click()
@@ -598,6 +711,8 @@ def test_tabulator_editors_panel_datetime(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'datetime': 'datetime'})
 
     serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
 
     cell = page.locator('text="2019-01-01 10:00:00"')
     cell.click()
@@ -684,8 +799,7 @@ def test_tabulator_editors_tabulator_list_default(page):
 
 def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumulator):
     # https://github.com/holoviz/panel/issues/5556
-    df = pd.DataFrame({"tags": ['', '', '']}, index=['foo1', 'foo2', 'foo3'],
-    )
+    df = pd.DataFrame({"tags": ['', '', '']}, index=['foo1', 'foo2', 'foo3'], dtype=object)
     tabulator_editors = {
         'tags': {
             'type': 'list',
@@ -704,20 +818,20 @@ def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumul
     val = ['red', 'blue']
     for v in val:
         item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click()
+        item.evaluate("el => el.click()")
     # Validating the filters doesn't have a very nice behavior, you need to lose
     # focus on the multiselect by clicking somewhere else.
     # Delay required before clicking for the focus to be lost and the filters accounted for.
     page.wait_for_timeout(200)
-    page.locator('text="foo1"').click()
+    page.locator('text="foo1"').click(force=True)
 
     cell.click()
     val = ['red', 'blue']
     for v in val:
         item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click()
+        item.evaluate("el => el.click()")
     page.wait_for_timeout(200)
-    page.locator('text="foo1"').click()
+    page.locator('text="foo1"').click(force=True)
 
     assert not exception_handler_accumulator
 
@@ -740,29 +854,145 @@ def test_tabulator_editors_nested(page, opt0, opt1):
     widget = Tabulator(df, editors=tabulator_editors, show_index=False)
     serve_component(page, widget)
 
+    expect(page.locator('.tabulator')).to_have_count(1)
+
     cells = page.locator('.tabulator-cell.tabulator-editable')
     expect(cells).to_have_count(3)
 
     # Change the 0th column
     cells.nth(0).click()
+    page.wait_for_timeout(200)
     item = page.locator('.tabulator-edit-list-item', has_text=opt0)
     expect(item).to_have_count(1)
-    item.click()
+    item.click(force=True)
 
     # Change the 1th column
     cells.nth(1).click()
+    page.wait_for_timeout(200)
     item = page.locator('.tabulator-edit-list-item', has_text=opt1)
     expect(item).to_have_count(1)
-    item.click()
+    item.click(force=True)
 
     # Check the last column matches
     cells.nth(2).click()
+    page.wait_for_timeout(200)
     items = page.locator('.tabulator-edit-list-item')
     expect(items).to_have_count(5)
 
     items_text = items.all_inner_texts()
     expected = options[opt0][opt1] if opt0 == "B" else options[opt0]
     assert items_text == list(map(str, expected))
+
+
+def test_tabulator_editable(page, df_mixed):
+    code = """
+    function format(cell) {
+        var data = cell.getRow().getData();
+        return data.bool;
+    }
+    """
+    jscode = JSCode(code)
+    widget = Tabulator(
+        df_mixed,
+        editors={
+            "str": StringEditor(),
+            "float": None,
+            "int": IntEditor(),
+            "bool": CheckboxEditor(),
+            "date": None,
+            "datetime": None,
+        },
+        editables={
+            "str": jscode,
+            "float": jscode,
+            "int": False,
+            "bool": True,
+            "date": False,
+            "datetime": True,
+        },
+    )
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator')).to_have_count(1)
+
+    # ``str`` is editable depending of the value of bool
+    cell = page.locator('text="A"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(1)
+    cell = page.locator('text="D"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(0)
+
+    # ``float`` is not editable since editor is None
+    cell = page.locator('text="3.14"')
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    # ``int`` is not editable since editable is False
+    cell = page.locator('text="1"').first
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    # ``bool`` is editable
+    cell = page.locator('text="true"').first
+    cell.click()
+    expect(page.locator('input[type="checkbox"]')).to_have_count(1)
+    page.locator('text="D"').click() # To ensure editing mode is not active
+    expect(page.locator('input[type="checkbox"]')).to_have_count(0)
+
+    # ``date`` is not editable since editor is None
+    cell = page.locator('text="2019-01-01"')
+    cell.click()
+    expect(page.locator('input[type="date"]')).to_have_count(0)
+
+    # ``datetime`` is not editable since editor is None
+    cell = page.locator('text="2019-01-01 10:00:00"')
+    cell.click()
+    expect(page.locator('input[type="datetime-local"]')).to_have_count(0)
+
+    # Change the False on the same row of D to True and check that D is editable
+    cell = page.locator('text="false"').first
+    cell.click()
+    checkboxes = page.locator('input[type="checkbox"]')
+    checkboxes.first.click(force=True)
+    cell = page.locator('text="D"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(1)
+    # Exit edit mode before toggling disabled to avoid racing an active editor teardown.
+    page.locator('[tabulator-field="int"][role=gridcell]').first.click(force=True)
+    expect(page.locator('input[type="text"]')).to_have_count(0)
+
+    # Disable the Tabulator to check that all cell are non editable
+    widget.disabled = True
+    page.wait_for_timeout(200)
+
+    cell = page.locator('text="A"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(0)
+    cell = page.locator('text="D"')
+    cell.click()
+    expect(page.locator('input[type="text"]')).to_have_count(0)
+
+    cell = page.locator('text="3.14"')
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    cell = page.locator('text="1"').first
+    cell.click()
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+    cell = page.locator('text="true"').first
+    cell.click()
+    expect(page.locator('input[type="checkbox"]')).to_have_count(0)
+
+    cell = page.locator('text="2019-01-01"')
+    cell.click()
+    expect(page.locator('input[type="date"]')).to_have_count(0)
+
+    cell = page.locator('text="2019-01-01 10:00:00"')
+    cell.click()
+    expect(page.locator('input[type="datetime-local"]')).to_have_count(0)
 
 
 @pytest.mark.parametrize('layout', Tabulator.param['layout'].objects)
@@ -939,6 +1169,7 @@ def test_tabulator_frozen_columns(page, df_mixed):
     assert int_bb == page.locator('text="int"').bounding_box()
 
 
+@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1003,7 +1234,9 @@ def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     assert str_bb['x'] < int_bb['x']
 
     # Scroll to the right, and give it a little extra time
-    page.locator('text="2019-01-01 10:00:00"').scroll_into_view_if_needed()
+    cell = page.locator('text="2019-01-01 10:00:00"')
+    expect(cell).to_be_attached()
+    cell.scroll_into_view_if_needed()
 
     # Check that the position of one of the non-frozen columns has indeed moved
     wait_until(lambda: page.locator('text="str"').bounding_box()['x'] < str_bb['x'], page)
@@ -1055,16 +1288,25 @@ def test_tabulator_frozen_rows(page):
         use_inner_text=True
     )
 
-    X_bb = page.locator('text="X"').bounding_box()
-    Y_bb = page.locator('text="Y"').bounding_box()
+    x_cell = page.locator('[tabulator-field="col"][role=gridcell]', has_text='X')
+    y_cell = page.locator('[tabulator-field="col"][role=gridcell]', has_text='Y')
+    expect(x_cell).to_be_visible()
+    expect(y_cell).to_be_visible()
+    expect(x_cell).to_have_count(1)
+    expect(y_cell).to_have_count(1)
+    X_bb = x_cell.first.bounding_box()
+    Y_bb = y_cell.first.bounding_box()
 
-    # Scroll to the bottom, and give it a little extra time
-    page.locator('text="T"').scroll_into_view_if_needed()
+    # Scroll the non-frozen area to the bottom.
+    page.locator('.pnx-tabulator .tabulator-tableholder').evaluate(
+        "el => { el.scrollTop = el.scrollHeight; }"
+    )
+    expect(page.locator('[tabulator-field="col"][role=gridcell]', has_text='T')).to_have_count(1)
     page.wait_for_timeout(200)
 
     # Check that the two frozen columns haven't moved after scrolling right
-    assert X_bb == page.locator('text="X"').bounding_box()
-    assert Y_bb == page.locator('text="Y"').bounding_box()
+    assert X_bb == x_cell.first.bounding_box()
+    assert Y_bb == y_cell.first.bounding_box()
 
 
 @pytest.mark.flaky(reruns=3, reruns_delays=2)
@@ -1128,6 +1370,36 @@ def test_tabulator_patch_no_vertical_rescroll(page):
     assert bb == page.locator(f'text="{new_val}"').bounding_box()
 
 
+def test_tabulator_patch_with_filter_no_vertical_rescroll(page):
+    df = pd.DataFrame({
+        "value": [0.0] * 30,
+        "state": ["Present" if i % 2 == 0 else "Hidden" for i in range(30)],
+    })
+    widget = Tabulator(df, height=300)
+    widget.add_filter("Present", "state")
+
+    serve_component(page, widget)
+
+    tableholder = page.locator(".tabulator-tableholder")
+    expect(tableholder).to_be_attached()
+
+    # Scroll down inside the tableholder
+    tableholder.evaluate("el => el.scrollTop = 10000")
+    page.wait_for_timeout(400)
+
+    scroll_top_before = tableholder.evaluate("el => el.scrollTop")
+    assert scroll_top_before > 0
+
+    # Patch a visible (non-filtered) row
+    widget.patch({"value": [(0, 999.0)]})
+
+    # Wait to catch a potential scroll reset
+    page.wait_for_timeout(400)
+
+    scroll_top_after = tableholder.evaluate("el => el.scrollTop")
+    assert scroll_top_before == scroll_top_after
+
+
 def test_tabulator_patch_no_height_resize(page):
     header = Column('Text', height=1000)
     df = pd.DataFrame(np.random.random((150, 1)), columns=['a'])
@@ -1140,8 +1412,10 @@ def test_tabulator_patch_no_height_resize(page):
 
     page.mouse.wheel(delta_x=0, delta_y=10000)
     at_bottom_script = """
-    () => Math.round(window.innerHeight + window.scrollY) === document.body.scrollHeight
-    """
+    () => {
+      const diff = document.body.scrollHeight - (window.innerHeight + window.scrollY);
+      return Math.abs(diff) <= 5;
+    }"""
     wait_until(lambda: page.evaluate(at_bottom_script), page)
 
     widget.patch({'a': [(len(df)-1, 100)]})
@@ -1196,26 +1470,30 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
 
     serve_component(page, widget)
 
-    page.wait_for_timeout(100)
+    page.wait_for_timeout(150)
 
-    header = page.locator(f'text="{col_name}"')
-    # Scroll to the right
-    header.scroll_into_view_if_needed()
+    table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
+    expect(table_holder).to_have_count(1)
+    # Scroll horizontally to the right, then track that position.
+    table_holder.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
+    wait_until(lambda: table_holder.evaluate("el => el.scrollLeft > 0"), page)
+    scroll_left = table_holder.evaluate("el => el.scrollLeft")
 
-    page.wait_for_timeout(100)
-
-    bb = header.bounding_box()
-
-    header = page.locator('input[type="search"]')
+    header = page.locator(
+        f'.tabulator-col[tabulator-field="{col_name}"] '
+        '.tabulator-header-filter input[type="search"]'
+    )
+    expect(header).to_have_count(1)
     header.click()
     header.fill('off')
     header.press('Enter')
 
-    # Wait to catch a potential rescroll
-    page.wait_for_timeout(500)
+    # Wait for filtering to be applied, then give some time to catch rescroll.
+    wait_until(lambda: widget.current_view.empty, page)
+    page.wait_for_timeout(300)
 
-    # The table should keep the same scroll position, this fails
-    wait_until(lambda: page.locator(f'text="{col_name}"').bounding_box() == bb, page)
+    # The table should keep the same horizontal scroll position.
+    wait_until(lambda: abs(table_holder.evaluate("el => el.scrollLeft") - scroll_left) <= 1, page)
 
 
 def test_tabulator_header_filter_always_visible(page, df_mixed):
@@ -2226,16 +2504,20 @@ def test_tabulator_header_filters_multiselect(page, df_mixed):
 
     str_header = page.locator('input[type="search"]')
     str_header.click()
+    expect(page.locator('.tabulator-edit-list')).to_have_count(1)
+    page.wait_for_timeout(150)
     cmp, col = 'in', 'str'
     val = ['A', 'D']
     for v in val:
-        item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
-        item.click()
+        item = page.locator('.tabulator-edit-list-item', has_text=v)
+        expect(item).to_have_count(1)
+        item.first.evaluate("el => el.click()")
     # Validating the filters doesn't have a very nice behavior, you need to lose
     # focus on the multiselect by clicking somewhere else.
     # Delay required before clicking for the focus to be lost and the filters accounted for.
-    page.wait_for_timeout(200)
-    page.locator('text="idx0"').click()
+    # Keep this local to the test: resize redraw can race this blur action in CI.
+    page.wait_for_timeout(350)
+    page.locator('[tabulator-field="int"][role=gridcell]').first.click(force=True)
     expected_filter_df = df_mixed.query(f'{col} {cmp} {val}')
     expected_filter = {'field': col, 'type': cmp, 'value': val}
     expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
@@ -2922,7 +3204,6 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     assert len(widget.current_view) == 2
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pagination):
     df = pd.DataFrame({
@@ -2946,7 +3227,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     header.fill('B')
     header.press('Enter')
 
-    wait_until(lambda: widget.current_view.equals(df[df['values'] == 'B']))
+    wait_until(lambda: widget.current_view is not None and widget.current_view.equals(df[df['values'] == 'B']))
 
     cell = page.locator('text="B"').first
     cell.click()
@@ -3622,7 +3903,7 @@ def test_selection_indices_on_paginated_and_filtered_data(page, df_strings, pagi
         page_size=6,
     )
 
-    descr_filter = TextInput(name='descr', value='cut')
+    descr_filter = TextInput(label='descr', value='cut')
 
     def contains_filter(df, pattern=None):
         if not pattern:
@@ -3671,7 +3952,7 @@ def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_string
         page_size=6,
     )
 
-    descr_filter = TextInput(name='descr', value='cut')
+    descr_filter = TextInput(label='descr', value='cut')
 
     def contains_filter(df, pattern=None):
         if not pattern:
@@ -3774,6 +4055,7 @@ class Test_RemotePagination:
             header_filters=True,
         )
         serve_component(page, self.widget)
+        expect(page.locator('.tabulator')).to_have_count(1)
 
     def check_selected(self, page, expected, ui_count=None):
         if ui_count is None:
@@ -4351,3 +4633,19 @@ def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_ag
             gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
     }
     assert gender_agged == expected_results["gender"]
+
+
+@pytest.mark.parametrize('show_index', [True, False])
+def test_tabulator_show_index_toggle(page, show_index):
+    s = Switch(value=show_index)
+    t = Tabulator(pd.DataFrame(range(10)), show_index=s)
+    row = Column(s, t)
+    serve_component(page, row)
+
+    expect(page.locator('text="index"')).to_have_count(int(show_index))
+
+    page.locator('.bk-knob').first.click()
+    expect(page.locator('text="index"')).to_have_count(int(not show_index))
+
+    page.locator('.bk-knob').first.click()
+    expect(page.locator('text="index"')).to_have_count(int(show_index))

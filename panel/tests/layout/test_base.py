@@ -1,3 +1,6 @@
+
+import typing as t
+
 import param
 import pytest
 
@@ -11,10 +14,11 @@ from panel.layout.base import ListPanel, NamedListPanel
 from panel.pane import Bokeh, Markdown
 from panel.param import Param
 from panel.tests.util import check_layoutable_properties
+from panel.util import _descendents
 from panel.widgets import Debugger, MultiSelect
 
 excluded = (NamedListPanel, Debugger, ChatInterface)
-all_panels = [w for w in param.concrete_descendents(ListPanel).values()
+all_panels = [w for w in _descendents(ListPanel, concrete=True)
                if not w.__name__.startswith('_') and not issubclass(w, excluded)]
 
 @pytest.mark.parametrize('panel', all_panels)
@@ -497,9 +501,8 @@ def test_widgetbox(document, comm):
 
 
 def test_layout_with_param_setitem(document, comm):
-    import param
     class TestClass(param.Parameterized):
-        select = param.Selector(default=0, objects=[0,1])
+        select: t.Literal[0, 1] = param.Selector(default=0, objects=[0, 1])  # type: ignore[assignment, ty:invalid-assignment]
 
         def __init__(self, **params):
             super().__init__(**params)

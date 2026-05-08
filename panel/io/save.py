@@ -4,10 +4,7 @@ Defines utilities to save panel objects to files as HTML or PNG.
 from __future__ import annotations
 
 import io
-import os
-
-from collections.abc import Iterable
-from typing import IO, TYPE_CHECKING, Any
+import typing as t
 
 import bokeh
 
@@ -31,11 +28,17 @@ from .resources import (
 )
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    import os
+
+    from collections.abc import Iterable
+
     from bokeh.embed.standalone import ThemeLike
     from jinja2 import Template
 
+    from ..template.base import BaseTemplate
     from ..viewable import Viewable
+    from .resources import MODES
 
 #---------------------------------------------------------------------
 # Private API
@@ -60,10 +63,10 @@ bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
 
 def save_png(
     model: UIElement | Document,
-    filename: str | os.PathLike | IO,
+    filename: str | os.PathLike | t.IO,
     resources: BkResources = CDN,
     template=None,
-    template_variables: dict[str, Any] | None = None,
+    template_variables: dict[str, t.Any] | None = None,
     timeout: int = 5
 ) -> None:
     """
@@ -144,9 +147,12 @@ def _title_from_models(models: Iterable[Model], title: str) -> str:
     return DEFAULT_TITLE
 
 def file_html(
-    models: Model | Document | list[Model], resources: BkResources | None,
-    title: str | None = None, template: Template | str = BASE_TEMPLATE,
-    template_variables: dict[str, Any] = {}, theme: ThemeLike = None,
+    models: Model | Document | list[Model],
+    resources: BkResources,
+    title: str | None = None,
+    template: Template | str = BASE_TEMPLATE,
+    template_variables: dict[str, t.Any] = {},
+    theme: ThemeLike = None,
     _always_new: bool = False
 ):
     models_seq = []
@@ -175,12 +181,22 @@ def file_html(
 #---------------------------------------------------------------------
 
 def save(
-    panel: Viewable | Document, filename: str | os.PathLike | IO, title: str | None = None,
-    resources: BkResources | None = None, template: Template | str | None = None,
-    template_variables: dict[str, Any] | None = None, embed: bool = False,
-    max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
-    json_prefix: str = '', save_path: str = './', load_path: str | None = None,
-    progress: bool = True, embed_states={}, as_png=None,
+    panel: Viewable | Document | BaseTemplate,
+    filename: str | os.PathLike | t.IO,
+    title: str | None = None,
+    resources: BkResources | None = None,
+    template: Template | str | None = None,
+    template_variables: dict[str, t.Any] | None = None,
+    embed: bool = False,
+    max_states: int = 1000,
+    max_opts: int = 3,
+    embed_json: bool = False,
+    json_prefix: str = '',
+    save_path: str = './',
+    load_path: str | None = None,
+    progress: bool = True,
+    embed_states={},
+    as_png: bool | None = None,
     **kwargs
 ) -> None:
     """
@@ -188,7 +204,7 @@ def save(
 
     Parameters
     ----------
-    panel: Viewable
+    panel: Viewable | bokeh.document.Document | panel.template.base.BaseTemplate
       The Panel Viewable to save to file
     filename: str or file-like object
       Filename to save the plot to
@@ -236,6 +252,7 @@ def save(
     else:
         doc = Document()
 
+    mode: MODES
     if resources is None:
         resources = CDN
         mode = 'cdn'
@@ -292,11 +309,11 @@ def save(
     if template_variables:
         kwargs['template_variables'] = template_variables
 
-    resources = Resources.from_bokeh(resources, absolute=True)
+    save_resources = Resources.from_bokeh(resources, absolute=True)
 
     # Set resource mode
-    with set_resource_mode(resources):
-        html = file_html(doc, resources, title, **kwargs)
+    with set_resource_mode(save_resources.mode):
+        html = file_html(doc, save_resources, title, **kwargs)
     if hasattr(filename, 'write'):
         if isinstance(filename, io.BytesIO):
             html = html.encode('utf-8')

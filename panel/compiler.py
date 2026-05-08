@@ -14,16 +14,17 @@ import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from functools import cache, partial
 
-import param
 import requests
 
 from bokeh.model import Model
 
 from .config import config, panel_extension
 from .io.resources import RESOURCE_URLS
+from .models.tabulator import TABULATOR_VERSION
 from .reactive import ReactiveHTML
 from .template.base import BasicTemplate
 from .theme import Design
+from .util import _descendents
 
 BASE_DIR = pathlib.Path(__file__).parent
 BUNDLE_DIR = pathlib.Path(__file__).parent / 'dist' / 'bundled'
@@ -204,7 +205,8 @@ def bundle_resource_urls(verbose=False, external=True, download_list=None):
 
 def bundle_templates(verbose=False, external=True, download_list=None):
     # Bundle Template resources
-    for name, template in param.concrete_descendents(BasicTemplate).items():
+    for template in _descendents(BasicTemplate, concrete=True):
+        name = template.__name__
         if verbose:
             print(f'Bundling {name} resources')
 
@@ -252,7 +254,8 @@ def bundle_templates(verbose=False, external=True, download_list=None):
 
 def bundle_themes(verbose=False, external=True, download_list=None):
     # Bundle design stylesheets
-    for name, design in param.concrete_descendents(Design).items():
+    for design in _descendents(Design, concrete=True):
+        name = design.__name__
         if verbose:
             print(f'Bundling {name} design resources')
 
@@ -275,7 +278,7 @@ def bundle_models(verbose=False, external=True, download_list=None):
 
     # Extract Model dependencies
     js_files, css_files, resource_files = {}, {}, {}
-    reactive = param.concrete_descendents(ReactiveHTML).values()
+    reactive = _descendents(ReactiveHTML, concrete=True)
     models = (
         list(Model.model_class_reverse_map.items()) +
         [(f'{m.__module__}.{m.__name__}', m) for m in reactive]
@@ -349,16 +352,11 @@ def bundle_icons(verbose=False, external=True, download_list=None):
         shutil.copyfile(icon, dest_dir / os.path.basename(icon))
 
 def patch_tabulator():
-    path = BUNDLE_DIR / 'datatabulator' / 'tabulator-tables@6.3.1' / 'dist' / 'js' / 'tabulator.min.js'
+    path = BUNDLE_DIR / 'datatabulator' / f'tabulator-tables@{TABULATOR_VERSION}' / 'dist' / 'js' / 'tabulator.min.js'
     text = path.read_text()
     # https://github.com/olifolkerd/tabulator/issues/4421
     old = '"focus"!==this.options("editTriggerEvent")&&"click"!==this.options("editTriggerEvent")'
     new = '"click"!==this.options("editTriggerEvent")'
-    assert text.count(old) == 1
-    text = text.replace(old, new)
-    # https://github.com/olifolkerd/tabulator/pull/4598
-    old = '(i=!0,this.subscribed("table-resize")?this.dispatch("table-resize"):this.redraw())'
-    new = '(i=!0,this.redrawing||(this.redrawing=!0,this.subscribed("table-resize")?this.dispatch("table-resize"):this.redraw(),this.redrawing=!1))'
     assert text.count(old) == 1
     text = text.replace(old, new)
     path.write_text(text)

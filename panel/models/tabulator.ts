@@ -1,6 +1,7 @@
 import {display, undisplay} from "@bokehjs/core/dom"
 import {sum} from "@bokehjs/core/util/arrayable"
-import {isArray, isBoolean, isString, isNumber} from "@bokehjs/core/util/types"
+import {defer} from "@bokehjs/core/util/defer"
+import {isArray, isBoolean, isFunction, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
@@ -16,7 +17,7 @@ import {debounce} from "debounce"
 import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
 import {HTMLBox, HTMLBoxView} from "./layout"
-import {schedule_when} from "./util"
+import {schedule_when, transformJsPlaceholders} from "./util"
 
 import tabulator_css from "styles/models/tabulator.css"
 
@@ -365,6 +366,9 @@ function clone_column(group: any): any {
   return {...group, columns: group_columns}
 }
 
+/** Ignore Tabulator redraw after `after_resize` when `this.el` client size changes by at most this many pixels per axis. */
+const EL_CLIENT_RESIZE_EPSILON_PX = 3
+
 export class DataTabulatorView extends HTMLBoxView {
   declare model: DataTabulator
 
@@ -377,6 +381,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _updating_sort: boolean = false
   _updating_page_size: boolean = false
   _selection_updating: boolean = false
+  _selection_pending: boolean = true
   _last_selected_row: any = null
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0
@@ -384,16 +389,18 @@ export class DataTabulatorView extends HTMLBoxView {
   _applied_styles: boolean = false
   _building: boolean = false
   _redrawing: boolean = false
-  _debounced_redraw: any = null
+  /** Coalesced resize redraw; waits for `this.root.ready` (Bokeh view async chain) before redrawing. */
+  _resize_pending: boolean = false
+  _resize_flush: Promise<void> | null = null
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
   _is_scrolling: boolean = false
   _automatic_page_size: boolean = false
+  _last_after_resize_el_width: number | null = null
+  _last_after_resize_el_height: number | null = null
 
   override connect_signals(): void {
     super.connect_signals()
-
-    this._debounced_redraw = debounce(() => this._resize_redraw(), 20, false)
     const {
       configuration, layout, columns, groupby, visible, download,
       children, expanded, cell_styles, hidden_columns, page_size,
@@ -474,10 +481,11 @@ export class DataTabulatorView extends HTMLBoxView {
       this._restore_scroll = "horizontal"
       this._selection_updating = true
       this._updating_scroll = true
-      this.setData()
-      this._updating_scroll = false
-      this._selection_updating = false
-      this.postUpdate()
+      void this.setData().then(() => {
+        this._selection_updating = false
+        this.postUpdate()
+        this.restore_scroll()
+      })
     })
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
@@ -520,7 +528,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   override invalidate_render(): void {
-    this.tabulator.destroy()
+    this.tabulator?.destroy()
     this.tabulator = null
     this.rerender_()
   }
@@ -542,36 +550,115 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   get is_drawing(): boolean {
-    return this._building || this._redrawing || !this.root.has_finished()
+    return this._building || this._redrawing || !this.has_finished()
   }
 
   override after_layout(): void {
     super.after_layout()
     if (this.tabulator != null && this._initializing && !this.is_drawing) {
       this._initializing = false
-      this._resize_redraw()
+      if (this._selection_pending) {
+        this.setSelection()
+      }
+      this._request_resize_redraw()
     }
   }
 
   override after_resize(): void {
     super.after_resize()
-    if (!this._is_scrolling && !this._initializing && !this.is_drawing) {
-      this._debounced_redraw()
+    if (this._is_scrolling || this._initializing || this.is_drawing) {
+      return
+    }
+    const w = this.el.clientWidth
+    const h = this.el.clientHeight
+    if (
+      this._last_after_resize_el_width !== null &&
+      this._last_after_resize_el_height !== null &&
+      Math.abs(w - this._last_after_resize_el_width) <= EL_CLIENT_RESIZE_EPSILON_PX &&
+      Math.abs(h - this._last_after_resize_el_height) <= EL_CLIENT_RESIZE_EPSILON_PX
+    ) {
+      return
+    }
+    this._last_after_resize_el_width = w
+    this._last_after_resize_el_height = h
+    this._request_resize_redraw()
+  }
+
+  /**
+   * Defer Tabulator redraw until the Bokeh root view’s `ready` promise settles — it chains async
+   * work from connected signals (similar in spirit to waiting out `has_finished` / layout churn)
+   * without polling `root.is_idle`.
+   */
+  private _request_resize_redraw(): void {
+    this._resize_pending = true
+    if (this._resize_flush !== null) {
+      return
+    }
+    this._resize_flush = this._flush_resize_when_root_ready()
+    void this._resize_flush.finally(() => {
+      this._resize_flush = null
+      if (this._resize_pending) {
+        this._request_resize_redraw()
+      }
+    })
+  }
+
+  private async _flush_resize_when_root_ready(): Promise<void> {
+    while (true) {
+      if (!this._resize_pending) {
+        return
+      }
+      await this.root.ready
+      // `remove()` can clear `_resize_pending` while awaiting `root.ready`.
+      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- cleared asynchronously in `remove()` */
+      if (!this._resize_pending) {
+        continue
+      }
+      if (
+        this._is_scrolling ||
+        this._initializing ||
+        this.container === null ||
+        this.is_drawing ||
+        this._has_active_editor() ||
+        ![...this._initialized_stylesheets.values()].every(v => v)
+      ) {
+        await defer()
+        continue
+      }
+      this._resize_pending = false
+      this._resize_redraw()
+      return
     }
   }
 
   _resize_redraw(): void {
-    if (this._initializing || !this.container || this._building) {
+    if (this._initializing || this.container === null || this._building || this._has_active_editor()) {
       return
     }
     const width = this.container.clientWidth
     const height = this.container.clientHeight
-    if (!width || !height) {
+    if (!(width > 0 && height > 0)) {
       return
     }
+    this.record_scroll()
+    this._updating_scroll = true
     this.redraw(true, true)
-    this.restore_scroll()
-    this.recompute_page_size()
+    requestAnimationFrame(() => {
+      this._initializing = false
+      if (this._selection_pending) {
+        this.setSelection()
+      }
+      this.restore_scroll()
+      this.recompute_page_size()
+    })
+  }
+
+  private _has_active_editor(): boolean {
+    if (this.container === null) {
+      return false
+    }
+    // Tabulator marks the edited cell with `tabulator-editing` while an editor is active.
+    return this.container.querySelector(".tabulator-editing") !== null
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -585,11 +672,19 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
+  override remove(): void {
+    this._resize_pending = false
+    this._last_after_resize_el_width = null
+    this._last_after_resize_el_height = null
+    this.tabulator?.destroy()
+    super.remove()
+  }
+
   override render(): void {
-    if (this.tabulator != null) {
-      this.tabulator.destroy()
-    }
+    this.tabulator?.destroy()
     super.render()
+    this._last_after_resize_el_width = null
+    this._last_after_resize_el_height = null
     this._initializing = true
     this._building = true
     const container = div({style: {display: "contents"}})
@@ -713,18 +808,12 @@ export class DataTabulatorView extends HTMLBoxView {
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
     }
-    this._building = false
-    schedule_when(() => {
-      const initializing = this._initializing
-      this._initializing = false
-      if (initializing) {
-        this._resize_redraw()
-      }
-    }, () => this.root.has_finished() && [...this._initialized_stylesheets.values()].every(v => v))
+    this._initializing = this._building = false
+    this._request_resize_redraw()
   }
 
   recompute_page_size(): void {
-    if (!this.model.pagination || this.model.page_size !== null || this._automatic_page_size) {
+    if (!this.model.pagination || (this.model.page_size !== null && !this._automatic_page_size) || this._initializing || !this.tabulator) {
       return
     }
     this._automatic_page_size = true
@@ -753,7 +842,7 @@ export class DataTabulatorView extends HTMLBoxView {
         const remaining = table_height - height
         page_size += Math.floor(remaining / Math.min(...heights))
         if (responsive) {
-          page_size -= 2
+          page_size -= 1
         }
       }
       this._updating_page_size = true
@@ -812,7 +901,7 @@ export class DataTabulatorView extends HTMLBoxView {
     // Only use selectable mode if explicitly requested otherwise manually handle selections
     const selectableRows = this.model.select_mode === "toggle" ? true : NaN
     const configuration = {
-      ...this.model.configuration,
+      ...transformJsPlaceholders(this.model.configuration),
       index: "_index",
       nestedFieldSeparator: false,
       movableColumns: false,
@@ -824,6 +913,7 @@ export class DataTabulatorView extends HTMLBoxView {
       paginationMode: this.model.pagination,
       paginationSize: this.model.page_size || 20,
       paginationInitialPage: 1,
+      popupContainer: this.model.container_popup && this.container,
       groupBy: this.groupBy,
       frozenRows: (row: any) => {
         return (this.model.frozen_rows.length > 0) ? this.model.frozen_rows.includes(row._row.data._index) : false
@@ -925,7 +1015,7 @@ export class DataTabulatorView extends HTMLBoxView {
         this._update_children()
         this.resize_table()
       }
-    }, () => this.root.has_finished())
+    }, () => this.has_finished())
   }
 
   resize_table(): void {
@@ -993,7 +1083,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
   getColumns(): any {
     this.columns = new Map()
-    const config_columns: (any[] | undefined) = this.model.configuration?.columns
+    const config_columns: (any[] | undefined) = transformJsPlaceholders(this.model.configuration?.columns)
     const columns = []
     columns.push({field: "_index", frozen: true, visible: false})
     if (config_columns != null) {
@@ -1116,7 +1206,14 @@ export class DataTabulatorView extends HTMLBoxView {
         }
       }
       tab_column.visible = (tab_column.visible != false && !this.model.hidden_columns.includes(column.field))
-      tab_column.editable = () => (this.model.editable && (editor.default_view != null))
+      const originalEditable = tab_column.editable
+      if (isFunction(originalEditable)) {
+        tab_column.editable = (cell: any) => (this.model.editable && (editor.default_view != null) && originalEditable(cell))
+      } else if (isBoolean(originalEditable)) {
+        tab_column.editable = () => (this.model.editable && (editor.default_view != null) && originalEditable)
+      } else {
+        tab_column.editable = () => (this.model.editable && (editor.default_view != null))
+      }
       if (tab_column.headerFilter) {
         if (isBoolean(tab_column.headerFilter) && isString(tab_column.editor)) {
           tab_column.headerFilter = tab_column.editor
@@ -1151,6 +1248,11 @@ export class DataTabulatorView extends HTMLBoxView {
         },
       }
       columns.push(button_column)
+    }
+    if (this.model.container_popup && (this.model.layout !== "fit_data_stretch")) {
+      // We insert an empty last column to ensure select editor is rendered in correct position
+      // see: https://github.com/holoviz/panel/issues/7295
+      columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", sorter: null})
     }
     return columns
   }
@@ -1199,20 +1301,17 @@ export class DataTabulatorView extends HTMLBoxView {
     const last_row = rows[rows.length-1]
     const start = ((last_row?.data._index) || 0)
     this._updating_page = true
-    const promise = this.setData()
-    if (this.model.follow) {
-      promise.then(() => {
+    void this.setData().then(() => {
+      if (this.model.follow) {
         if (this.model.pagination) {
           this.tabulator.setPage(Math.ceil(this.tabulator.rowManager.getDataCount() / (this.model.page_size || 20)))
         }
         if (last_row) {
           this.tabulator.scrollToRow(start, "top", false)
         }
-        this._updating_page = false
-      })
-    } else {
-      this._updating_page = true
-    }
+      }
+      this._updating_page = false
+    })
   }
 
   postUpdate(): void {
@@ -1349,9 +1448,14 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setSelection(): void {
-    if (this.tabulator == null || this._initializing || this._selection_updating || !this.tabulator.initialized) {
+    if (this._selection_updating) {
       return
     }
+    if (this.tabulator == null || this._initializing || !this.tabulator.initialized) {
+      this._selection_pending = true
+      return
+    }
+    this._selection_pending = false
 
     const indices = this.model.source.selected.indices
     const current_indices: any = this.tabulator.getSelectedData().map((row: any) => row._index)
@@ -1381,11 +1485,11 @@ export class DataTabulatorView extends HTMLBoxView {
     if (horizontal) {
       opts.left = this._lastHorizontalScrollbarLeftPosition
     }
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       this._updating_scroll = true
       this.tabulator.rowManager.element.scrollTo(opts)
       this._updating_scroll = false
-    }, 0)
+    })
   }
 
   // Update model
@@ -1552,6 +1656,7 @@ export namespace DataTabulator {
     sorters: p.Property<any[]>
     cell_styles: p.Property<any>
     theme_classes: p.Property<string[]>
+    container_popup: p.Property<boolean>
   }
 }
 
@@ -1598,6 +1703,7 @@ export class DataTabulator extends HTMLBox {
       sorters:        [ List(Any),              [] ],
       cell_styles:    [ Any,                     {} ],
       theme_classes:  [ List(Str),           [] ],
+      container_popup: [ Bool, true ],
     }))
   }
 }

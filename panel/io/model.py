@@ -4,10 +4,7 @@ Utilities for manipulating bokeh models.
 from __future__ import annotations
 
 import textwrap
-
-from collections.abc import Iterable, Sequence
-from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any
+import typing as t
 
 import numpy as np
 
@@ -22,13 +19,12 @@ from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource, FlexBox, Model
 from bokeh.protocol.messages.patch_doc import patch_doc
 
-from ..util.warnings import deprecated
 from .state import state
 
-if TYPE_CHECKING:
-    from bokeh.core.enums import HoldPolicyType
+if t.TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
     from bokeh.protocol.message import Message
-    from pyviz_comms import Comm
 
 #---------------------------------------------------------------------
 # Private API
@@ -39,10 +35,10 @@ class comparable_array(np.ndarray):
     Array subclass that allows comparisons.
     """
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         return np.array_equal(self, other, equal_nan=True)
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: t.Any) -> bool:
         return not np.array_equal(self, other, equal_nan=True)
 
 def monkeypatch_events(events: Sequence[DocumentChangedEvent]) -> None:
@@ -65,9 +61,19 @@ def monkeypatch_events(events: Sequence[DocumentChangedEvent]) -> None:
 # Public API
 #---------------------------------------------------------------------
 
+class JSCode:
+
+    def __init__(self, js_code):
+        self.js_code = js_code
+
+try:
+    Serializer.register(JSCode, lambda obj, __: f"--x_x--0_0--{obj.js_code}--x_x--0_0--")  # type: ignore
+except AssertionError:
+    pass
+
 def diff(
     doc: Document, binary: bool = True, events: list[DocumentChangedEvent] | None = None
-) -> Message[Any] | None:
+) -> Message[t.Any] | None:
     """
     Returns a json diff required to update an existing plot with
     the latest plot data.
@@ -187,29 +193,3 @@ def apply_changes_without_dispatch(doc, model, changes):
             e.new is not changes[e.attr]
         ]
         doc.callbacks._hold = hold_value
-
-@contextmanager
-def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
-    """
-    Context manager that holds events on a particular Document
-    allowing them all to be collected and dispatched when the context
-    manager exits. This allows multiple events on the same object to
-    be combined if the policy is set to 'combine'.
-
-    Parameters
-    ----------
-    doc: Document
-        The Bokeh Document to hold events on.
-    policy: HoldPolicyType
-        One of 'combine', 'collect' or None determining whether events
-        setting the same property are combined or accumulated to be
-        dispatched when the context manager exits.
-    comm: Comm
-        The Comm to dispatch events on when the context manager exits.
-    """
-    deprecated(
-        '1.7.0', 'panel.io.model.hold', 'panel.io.document.hold',
-        warn_version='1.6.0'
-    )
-    from .document import hold
-    yield hold(doc, policy, comm)

@@ -3,7 +3,7 @@ The Swipe layout enables you to quickly compare two panels
 """
 from __future__ import annotations
 
-from typing import ClassVar
+import typing as t
 
 import param
 
@@ -11,6 +11,9 @@ from ..io.resources import CDN_DIST
 from ..reactive import ReactiveHTML
 from ..viewable import Children
 from .base import ListLike
+
+if t.TYPE_CHECKING:
+    from typing_extensions import Self
 
 
 class Swipe(ListLike, ReactiveHTML):
@@ -30,14 +33,20 @@ class Swipe(ListLike, ReactiveHTML):
     slider_color = param.Color(default="black", doc="""
         The color of the slider""")
 
+    start = param.Integer(default=0, bounds=(0, 100), doc="""
+        Limits the minimum percentage the swipe handler can be moved to.""")
+
+    end = param.Integer(default=100, bounds=(0, 100), doc="""
+        Limits the maximum percentage the swipe handler can be moved to.""")
+
     value = param.Integer(default=50, bounds=(0, 100), doc="""
         The percentage of the *after* panel to show.""")
 
-    _before = param.Parameter()
+    _before: t.Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
-    _after = param.Parameter()
+    _after: t.Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
-    _direction: ClassVar[str | None] = 'vertical'
+    _direction: t.ClassVar[str | None] = 'vertical'
 
     _template = """
     <div id="container" class="swipe-container">
@@ -71,6 +80,12 @@ class Swipe(ListLike, ReactiveHTML):
              current = e.clientX
              start = view.el.getBoundingClientRect().left
              value = parseInt(((current-start)/ container.clientWidth)*100)
+             if (data.start != null) {
+               value = Math.max(data.start, value)
+             }
+             if (data.end != null) {
+               value = Math.min(data.end, value)
+             }
              data.value = Math.max(0, Math.min(value, 100))
            }
            let e = event || window.event;
@@ -90,7 +105,7 @@ class Swipe(ListLike, ReactiveHTML):
         """
     }
 
-    _stylesheets: ClassVar[list[str]] = [
+    _stylesheets: t.ClassVar[list[str]] = [
         f'{CDN_DIST}css/swipe.css'
     ]
 
@@ -111,6 +126,10 @@ class Swipe(ListLike, ReactiveHTML):
         self._before = self.before
         self._after = self.after
 
+    @param.depends('start', 'end', watch=True, on_init=True)
+    def _sync_bounds(self):
+        self.param.value.bounds = (self.start, self.end)
+
     @property
     def before(self):
         return self[0] if len(self) else None
@@ -126,6 +145,9 @@ class Swipe(ListLike, ReactiveHTML):
     @after.setter
     def after(self, after):
         self[1] = after
+
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
+        return super().clone(*objects, **params)
 
     def select(self, selector=None):
         """

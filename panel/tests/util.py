@@ -25,7 +25,6 @@ from packaging.version import Version
 
 import panel as pn
 
-from panel.io.compile import check_cli_tool
 from panel.io.server import serve
 from panel.io.state import state
 
@@ -68,7 +67,6 @@ ON_POSIX = 'posix' in sys.builtin_module_names
 
 linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 unix_only = pytest.mark.skipif(platform.system() == 'Windows', reason="Only supported on unix-like systems")
-reverse_proxy_available = pytest.mark.skipif(not check_cli_tool('caddy'), reason="No reverse proxy available")
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
@@ -161,6 +159,9 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
     # Hide this function traceback from the pytest output if the test fails
     __tracebackhide__ = True
 
+    if page:
+        page.wait_for_load_state('networkidle')
+
     start = time.time()
 
     def timed_out():
@@ -230,10 +231,13 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
     # Hide this function traceback from the pytest output if the test fails
     __tracebackhide__ = True
 
-    start = time.time()
+    if page:
+        await page.wait_for_load_state('networkidle')
+
+    start = time.monotonic()
 
     def timed_out():
-        elapsed = time.time() - start
+        elapsed = time.monotonic() - start
         elapsed_ms = elapsed * 1000
         return elapsed_ms > timeout
 
@@ -257,7 +261,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
             # None is returned when the function has an assert
             if result is None:
                 return
-            # When the function returns True or False
+            # When the function returns True
             if result:
                 return
             if timed_out():
@@ -315,6 +319,7 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
     wait_for_server(port, prefix=prefix)
     if page:
         page.wait_for_function("document.readyState === 'complete'", timeout=5000)
+        page.wait_for_load_state('networkidle')
     return port
 
 serve_and_wait.server_implementation = 'tornado'
@@ -330,6 +335,7 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
 
     if page and wait:
         page.wait_for_function("document.readyState === 'complete'", timeout=5000)
+        page.wait_for_load_state('networkidle')
     return msgs, port
 
 

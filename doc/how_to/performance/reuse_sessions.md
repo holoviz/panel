@@ -16,6 +16,8 @@ panel serve app.py --reuse-sessions --global-loading-spinner
 
 :::{tip}
 If you want to warm up the server with the cached sessions you can also provide the `--warm` option.
+
+Optionally you can also configure `--reuse-sessions warm`, which will warm the session even before the Websocket request requesting it arrives.
 :::
 
 ## More complex cases
@@ -34,10 +36,10 @@ pn.state.template.title = f'{city} Weather'
 
 pn.FlexBox(
     pn.Card(pn.indicators.Number(
-        name='Temperature', value=random.randint(-20, 45), format='{value} °C'
+        label='Temperature', value=random.randint(-20, 45), format='{value} °C'
     ), hide_header=True),
     pn.Card(pn.indicators.Number(
-        name='Humidity', value=random.randint(0, 100), format='{value}%'
+        label='Humidity', value=random.randint(0, 100), format='{value}%'
     ), hide_header=True)
 ).servable()
 ```

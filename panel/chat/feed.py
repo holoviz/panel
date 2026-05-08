@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import asyncio
 import traceback
+import typing as t
 
-from collections.abc import Callable
 from enum import Enum
 from functools import partial
 from inspect import (
@@ -16,33 +16,33 @@ from inspect import (
     iscoroutinefunction, isgenerator, isgeneratorfunction, ismethod,
 )
 from io import BytesIO
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
 
 import param
 
 from .._param import Margin
 from ..io.resources import CDN_DIST
 from ..layout import (
-    Column, Feed, ListPanel, WidgetBox,
+    Column, Feed, ListLike, ListPanel, WidgetBox,
 )
 from ..layout.card import Card
 from ..pane.image import SVG, ImageBase
 from ..pane.markup import HTML, Markdown
 from ..util import to_async_gen
 from ..viewable import Children, Viewable
-from ..widgets import Widget
 from ..widgets.button import Button
 from ._param import CallbackException
 from .icon import ChatReactionIcons
 from .message import ChatMessage
 from .step import ChatStep
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+
+    from ..widgets import Widget
 
 
 PLACEHOLDER_SVG = """
@@ -153,9 +153,9 @@ class ChatFeed(ListPanel):
         `show_avatar`, `show_user`, and `show_timestamp`. Params passed
         that are not ChatFeed params will be forwarded into `message_params`.""")
 
-    header = param.Parameter(doc="""
+    header: t.Any = param.Parameter(doc="""
         The header of the chat feed; commonly used for the title.
-        Can be a string, pane, or widget.""")
+        Can be a string, pane, or widget.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     margin = Margin(default=5, doc="""
         Allows to create additional space around the component. May
@@ -225,21 +225,22 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
-    _callback_state = param.Selector(objects=list(CallbackState), doc="""
-        The current state of the callback.""")
+    _callback_state: CallbackState = param.Selector(
+        objects=list(CallbackState), doc="""
+        The current state of the callback.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _prompt_trigger = param.Event(doc="Triggers the prompt input.")
 
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
 
-    _disabled_stack = param.List(doc="""
+    _disabled_stack = param.List(item_type=bool, doc="""
         The previous disabled state of the feed.""")
 
-    _card_type: ClassVar[type[Card]] = Card
-    _message_type: ClassVar[type[ChatMessage]] = ChatMessage
-    _step_type: ClassVar[type[ChatStep]] = ChatStep
+    _card_type: t.ClassVar[type[Card]] = Card
+    _message_type: t.ClassVar[type[ChatMessage]] = ChatMessage
+    _step_type: t.ClassVar[type[ChatStep]] = ChatStep
 
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_feed.css"]
+    _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
         # Task management for proper cancellation
@@ -350,7 +351,7 @@ class ChatFeed(ListPanel):
         return model
 
     def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         return
@@ -413,7 +414,8 @@ class ChatFeed(ListPanel):
             try:
                 if self.loading:
                     return
-                self.remove(self._placeholder)
+                if self._placeholder is not None:
+                    self.remove(self._placeholder)
             except ValueError:
                 pass
 
@@ -468,7 +470,7 @@ class ChatFeed(ListPanel):
         return message
 
     def _upsert_message(
-        self, value: Any, message: ChatMessage | None = None, callback_id: int | None = None
+        self, value: t.Any, message: ChatMessage | None = None, callback_id: int | None = None
     ) -> ChatMessage | None:
         """
         Replace the placeholder message with the response or update
@@ -516,7 +518,7 @@ class ChatFeed(ListPanel):
         self._replace_placeholder(new_message)
         return new_message
 
-    def _gather_callback_args(self, message: ChatMessage) -> Any:
+    def _gather_callback_args(self, message: ChatMessage) -> t.Any:
         """
         Extracts the contents from the message's panel object.
         """
@@ -555,7 +557,7 @@ class ChatFeed(ListPanel):
         elif len(callback_args) == 0:
             raise ValueError("Function should have at least one argument")
 
-    async def _serialize_response(self, response: Any, callback_id: int) -> ChatMessage | None:
+    async def _serialize_response(self, response: t.Any, callback_id: int) -> ChatMessage | None:
         """
         Serializes the response by iterating over it and
         updating the message's value.
@@ -680,7 +682,7 @@ class ChatFeed(ListPanel):
             if not self.adaptive or len(self._callback_ids) == 0:
                 self._callback_state = CallbackState.STOPPED
         except Exception as e:
-            send_kwargs: dict[str, Any] = dict(user="Exception", respond=False)
+            send_kwargs: dict[str, t.Any] = dict(user="Exception", respond=False)
             if callable(self.callback_exception):
                 if iscoroutinefunction(self.callback_exception):
                     await self.callback_exception(e, self)
@@ -726,7 +728,7 @@ class ChatFeed(ListPanel):
 
     def send(
         self,
-        value: ChatMessage | dict | Any,
+        value: ChatMessage | dict | t.Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
@@ -781,7 +783,7 @@ class ChatFeed(ListPanel):
 
     def stream(
         self,
-        value: str | dict | ChatMessage,
+        value: str | dict | ChatMessage | Viewable,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
@@ -800,7 +802,7 @@ class ChatFeed(ListPanel):
 
         Parameters
         ----------
-        value : str | dict | ChatMessage
+        value : str | dict | ChatMessage | Viewable
             The new token value to stream.
         user : str | None
             The user to stream as; overrides the message's user if provided.
@@ -866,7 +868,12 @@ class ChatFeed(ListPanel):
             self._callback_state = CallbackState.IDLE
             self._run_post_hook(event.obj)
 
-    def _build_steps_layout(self, step, layout_params, default_layout):
+    def _build_steps_layout(
+        self,
+        step: ChatStep,
+        layout_params: dict[str, t.Any] | None,
+        default_layout: t.Literal["card", "column"]
+    ) -> ListLike:
         layout_params = layout_params or {}
         input_layout_params = dict(
             min_width=100,
@@ -902,9 +909,9 @@ class ChatFeed(ListPanel):
         append: bool = True,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
-        steps_layout: Column | Card | None = None,
-        default_layout: Literal["column", "card"] = "card",
-        layout_params: dict | None = None,
+        steps_layout: ListLike | None = None,
+        default_layout: t.Literal["column", "card"] = "card",
+        layout_params: dict[str, t.Any] | None = None,
         last_messages: int = 1,
         **step_params
     ) -> ChatStep:
@@ -924,7 +931,7 @@ class ChatFeed(ListPanel):
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message's avatar if provided.
             Will default to the avatar parameter. Only applicable if steps is "new".
-        steps_layout : Column | None
+        steps_layout : ListLike | None
             An existing layout of steps to stream to, if None is provided
             it will default to the last Column of steps or create a new one.
         default_layout : str
@@ -975,7 +982,12 @@ class ChatFeed(ListPanel):
 
         if steps_layout is None:
             steps_layout = self._build_steps_layout(step, layout_params, default_layout)
-            self.stream(steps_layout, user=user or self.callback_user, avatar=avatar, trigger_post_hook=False)
+            self.stream(
+                t.cast("ListPanel", steps_layout),
+                user=user or self.callback_user,
+                avatar=avatar,
+                trigger_post_hook=False
+            )
         else:
             steps_layout.append(step)
             self._chat_log.scroll_to_latest(scroll_limit=self.auto_scroll_limit)
@@ -1018,13 +1030,15 @@ class ChatFeed(ListPanel):
             Additional parameters to pass to the timeout button.
         """
         async def _prepare_prompt(*args) -> None:
-            input_button_params = button_params or {}
-            if "name" not in input_button_params:
-                input_button_params["name"] = "Submit"
+            input_button_params = dict(button_params or {})
+            if "label" not in input_button_params and "name" in input_button_params:
+                input_button_params["label"] = input_button_params.pop("name")
+            if "label" not in input_button_params:
+                input_button_params["label"] = "Submit"
             if "margin" not in input_button_params:
                 input_button_params["margin"] = (5, 10)
-            if "button_type" not in input_button_params:
-                input_button_params["button_type"] = "primary"
+            if "color" not in input_button_params:
+                input_button_params["color"] = "primary"
             if "icon" not in input_button_params:
                 input_button_params["icon"] = "check"
             submit_button = Button(**input_button_params)
@@ -1048,11 +1062,13 @@ class ChatFeed(ListPanel):
                     break
                 await asyncio.sleep(0.1)
             else:
-                input_timeout_button_params = timeout_button_params or {}
-                if "name" not in input_timeout_button_params:
-                    input_timeout_button_params["name"] = timeout_message
-                if "button_type" not in input_timeout_button_params:
-                    input_timeout_button_params["button_type"] = "light"
+                input_timeout_button_params = dict(timeout_button_params or {})
+                if "label" not in input_timeout_button_params and "name" in input_timeout_button_params:
+                    input_timeout_button_params["label"] = input_timeout_button_params.pop("name")
+                if "label" not in input_timeout_button_params:
+                    input_timeout_button_params["label"] = timeout_message
+                if "color" not in input_timeout_button_params:
+                    input_timeout_button_params["color"] = "light"
                 if "icon" not in input_timeout_button_params:
                     input_timeout_button_params["icon"] = "x"
                 with param.parameterized.batch_call_watchers(self):
@@ -1113,7 +1129,7 @@ class ChatFeed(ListPanel):
             self._replace_placeholder(None)
         return cancelled
 
-    def undo(self, count: int = 1) -> list[Any]:
+    def undo(self, count: int = 1) -> list[t.Any]:
         """
         Removes the last `count` of messages from the chat log and returns them.
 
@@ -1133,7 +1149,7 @@ class ChatFeed(ListPanel):
         self._chat_log.objects = messages[:-count]
         return undone_entries
 
-    def clear(self) -> list[Any]:
+    def clear(self) -> list[t.Any]:
         """
         Clears the chat log and returns the messages that were cleared.
 
@@ -1152,7 +1168,7 @@ class ChatFeed(ListPanel):
         default_role: str = "assistant",
         custom_serializer: Callable | None = None,
         **serialize_kwargs
-    ) -> list[dict[str, Any]]:
+    ) -> list[dict[str, t.Any]]:
         """
         Exports the chat log for use with transformers.
         """
@@ -1185,9 +1201,9 @@ class ChatFeed(ListPanel):
 
             if custom_serializer:
                 content = custom_serializer(message.object)
-                if not isinstance(content, str):
+                if not isinstance(content, (str, bytes, list)):
                     raise ValueError(
-                        f"The provided custom_serializer must return a string; "
+                        f"The provided custom_serializer must return a string, bytes, or list; "
                         f"it returned a {type(content)} type"
                     )
             else:
@@ -1220,7 +1236,7 @@ class ChatFeed(ListPanel):
         self,
         exclude_users: list[str] | None = None,
         filter_by: Callable | None = None,
-        format: Literal["transformers"] = "transformers",
+        format: t.Literal["transformers"] = "transformers",
         custom_serializer: Callable | None = None,
         limit: int | None = None,
         **serialize_kwargs

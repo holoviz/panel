@@ -3,10 +3,10 @@ Miscellaneous widgets which do not fit into the other main categories.
 """
 from __future__ import annotations
 
+import typing as t
+
 from base64 import b64encode
-from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -21,10 +21,20 @@ from ..models import (
 )
 from ..util import lazy_load
 from .base import Widget
-from .button import BUTTON_STYLES, BUTTON_TYPES, IconMixin
+from .button import (
+    BUTTON_STYLES, BUTTON_TYPES, IconMixin,
+    _merge_button_appearance_aliases_in_param_change,
+    _normalize_button_appearance_constructor_params,
+    _register_button_appearance_sync_watchers,
+    _sync_button_appearance_aliases_post_init,
+)
 from .indicators import Progress  # noqa
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    import os
+
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
 
@@ -37,12 +47,13 @@ class VideoStream(Widget):
 
     :Example:
 
-    >>> VideoStream(name='Video Stream', timeout=100)
+    >>> VideoStream(label='Video Stream', timeout=100)
     """
 
-    format = param.Selector(default='png', objects=['png', 'jpeg'],
-                                  doc="""
-        The file format as which the video is returned.""")
+    format: t.Literal['png', 'jpeg'] = param.Selector(
+        default='png', objects=['png', 'jpeg'],
+        doc="""
+        The file format as which the video is returned.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     paused = param.Boolean(default=False, doc="""
         Whether the video is currently paused""")
@@ -53,9 +64,9 @@ class VideoStream(Widget):
     value = param.String(default='', doc="""
         A base64 representation of the video stream snapshot.""")
 
-    _widget_type: ClassVar[type[Model]] = _BkVideoStream
+    _widget_type: t.ClassVar[type[Model]] = _BkVideoStream
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None}
 
     def snapshot(self):
         """
@@ -87,13 +98,27 @@ class FileDownload(IconMixin):
         Whether to download on the initial click or allow for
         right-click save as.""")
 
-    button_type = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
+    button_type: t.Literal[
+        'default', 'primary', 'success', 'warning', 'danger', 'light'
+    ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
         A button theme; should be one of 'default' (white), 'primary'
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
-        or 'danger' (red).""")
+        or 'danger' (red). The same value is exposed as ``color``.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    button_style = param.Selector(default='solid', objects=BUTTON_STYLES, doc="""
-        A button style to switch between 'solid', 'outline'.""")
+    button_style: t.Literal['solid', 'outline'] = param.Selector(
+        default='solid', objects=BUTTON_STYLES, doc="""
+        A button style to switch between 'solid', 'outline'. The same value is
+        exposed as ``variant``.""")  # type: ignore[assignment, ty:invalid-assignment]
+
+    color: t.Literal[
+        'default', 'primary', 'success', 'warning', 'danger', 'light'
+    ] = param.Selector(default='default', objects=BUTTON_TYPES, doc="""
+        Semantic color of the button; alias for ``button_type``.""")  # type: ignore[assignment, ty:invalid-assignment]
+
+    variant: t.Literal['solid', 'outline'] = param.Selector(
+        default='solid', objects=BUTTON_STYLES, doc="""
+        Visual variant of the button; alias for ``button_style`` ('solid' or
+        'outline').""")  # type: ignore[assignment, ty:invalid-assignment]
 
     callback = param.Callable(default=None, allow_refs=False, doc="""
         A callable that returns the file path or file-like object.""")
@@ -102,12 +127,12 @@ class FileDownload(IconMixin):
         The data being transferred.""")
 
     embed = param.Boolean(default=False, doc="""
-        Whether to embed the file on initialization.""")
+        Whether to embed the file on initialization.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    file = param.Parameter(default=None, doc="""
+    file: str | os.PathLike | t.IO | None = param.Parameter(default=None, doc="""
         The file, Path, file-like object or file contents to transfer.  If
         the file is not pointing to a file on disk a filename must
-        also be provided.""")
+        also be provided.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     filename = param.String(default=None, doc="""
         A filename which will also be the default name when downloading
@@ -119,7 +144,7 @@ class FileDownload(IconMixin):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
-    _clicks = param.Integer(default=0)
+    _clicks = param.Integer(default=0, doc="Internal counter for button clicks.")
 
     _transfers = param.Integer(default=0)
 
@@ -144,19 +169,22 @@ class FileDownload(IconMixin):
         }
     }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks',
-        'value': None
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        'callback': None, 'button_style': None, 'color': None, 'variant': None,
+        'file': None, '_clicks': 'clicks', 'value': None, 'label': 'label'
     }
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
 
-    _widget_type: ClassVar[type[Model]] = _BkFileDownload
+    _widget_type: t.ClassVar[type[Model]] = _BkFileDownload
 
     def __init__(self, file=None, **params):
         self._default_label = 'label' not in params
         self._synced = False
+        _normalize_button_appearance_constructor_params(params)
         super().__init__(file=file, **params)
+        _register_button_appearance_sync_watchers(self)
+        _sync_button_appearance_aliases_post_init(self)
         if self.embed:
             self._transfer()
         self._update_label()
@@ -164,6 +192,8 @@ class FileDownload(IconMixin):
             self._update_filename()
 
     def _process_param_change(self, params):
+        params = dict(params)
+        _merge_button_appearance_aliases_in_param_change(params)
         if 'button_style' in params or 'css_classes' in params:
             params['css_classes'] = [
                 params.pop('button_style', self.button_style)
@@ -175,12 +205,14 @@ class FileDownload(IconMixin):
         self._default_label = False
 
     @property
-    def _is_file_path(self)->bool:
+    def _is_file_path(self) -> bool:
         return isinstance(self.file, (str, Path))
 
     @property
-    def _file_path(self)->Path:
-        return Path(self.file)
+    def _file_path(self) -> Path | None:
+        if isinstance(self.file, (str, Path)):
+            return Path(self.file)
+        return None
 
     @param.depends('file', watch=True)
     def _update_filename(self):
@@ -196,7 +228,7 @@ class FileDownload(IconMixin):
             else:
                 try:
                     filename = self.filename or self._file_path.name
-                except TypeError:
+                except (TypeError, AttributeError):
                     raise ValueError('Must provide filename if file-like '
                                      'object is provided.') from None
                 label = f'{label} {filename}'
@@ -219,6 +251,8 @@ class FileDownload(IconMixin):
             if filename is None:
                 filename = fileobj.name
         elif hasattr(fileobj, 'read'):
+            if hasattr(fileobj, 'seek'):
+                fileobj.seek(0)
             bdata = fileobj.read()
             if not isinstance(bdata, bytes):
                 bdata = bdata.encode("utf-8")
@@ -296,7 +330,9 @@ class JSONEditor(Widget):
         etc. functionality. true by default. Applicable in all types
         of mode.""")
 
-    mode = param.Selector(default='tree', objects=[
+    mode: t.Literal[
+        "tree", "view", "form", "text", "preview"
+    ] = param.Selector(default='tree', objects=[
         "tree", "view", "form", "text", "preview"], doc="""
         Sets the editor mode. In 'view' mode, the data and
         datastructure is read-only. In 'form' mode, only the value can
@@ -305,15 +341,15 @@ class JSONEditor(Widget):
         shows the data as plain text. The 'preview' mode can handle
         large JSON documents up to 500 MiB. It shows a preview of the
         data, and allows to transform, sort, filter, format, or
-        compact the data.""")
+        compact the data.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     search = param.Boolean(default=True, doc="""
         Enables a search box in the upper right corner of the
         JSONEditor. true by default. Only applicable when mode is
         'tree', 'view', or 'form'.""")
 
-    selection = param.List(default=[], doc="""
-        Current selection.""")
+    selection: list[str] = param.List(default=[], item_type=str, doc="""
+        Current selection.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     schema = param.Dict(default=None, doc="""
         Validate the JSON object against a JSON schema. A JSON schema
@@ -322,16 +358,16 @@ class JSONEditor(Widget):
 
         See http://json-schema.org/ for more information.""")
 
-    templates = param.List(doc="""
+    templates: list[dict[str, t.Any]] = param.List(item_type=dict, doc="""
         Array of templates that will appear in the context menu, Each
         template is a json object precreated that can be added as a
-        object value to any node in your document.""")
+        object value to any node in your document.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     value = param.Parameter(default={}, doc="""
         JSON data to be edited.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'value': 'data'
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        'label': None, 'value': 'data'
     }
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -339,4 +375,9 @@ class JSONEditor(Widget):
             "panel.models.jsoneditor", "JSONEditor", isinstance(comm, JupyterComm)
         )
         model = super()._get_model(doc, root, parent, comm)
+        self._register_events('json_edit', model=model, doc=doc, comm=comm)
         return model
+
+    def _process_event(self, event) -> None:
+        if event.event_name == 'json_edit':
+            self.value  = event.data

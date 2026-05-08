@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import typing as t
 
 from io import StringIO
 
@@ -504,11 +505,11 @@ def test_embed_slider_str_jslink(document, comm):
 
 
 def test_embed_merged_sliders(document, comm):
-    s1 = IntSlider(name='A', start=1, end=10, value=1)
+    s1 = IntSlider(label='A', start=1, end=10, value=1)
     t1 = StaticText()
     s1.param.watch(lambda event: setattr(t1, 'value', event.new), 'value')
 
-    s2 = IntSlider(name='A', start=1, end=10, value=1)
+    s2 = IntSlider(label='A', start=1, end=10, value=1)
     t2 = StaticText()
     s2.param.watch(lambda event: setattr(t2, 'value', event.new), 'value')
 
@@ -611,3 +612,53 @@ def test_embed_widget_disabled(document, comm):
     with config.set(embed=True):
         model = panel.get_root(document, comm)
     assert embed_state(panel, model, document) is None
+
+
+
+def test_embed_widget_from_param_class(document, comm):
+    """Test that widgets created via from_param on class parameters can be embedded."""
+    import param
+
+    from panel.widgets import RadioButtonGroup
+
+    class Test(param.Parameterized):
+        fn: t.Literal["sin", "cos"] = param.Selector(
+            default="sin", objects=["sin", "cos"])  # type: ignore[assignment, ty:invalid-assignment]
+
+    # Create widget from class parameter
+    widget = RadioButtonGroup.from_param(Test.param.fn)
+    panel = Row(widget)
+
+    # Should not raise AttributeError when embedding
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+
+    # embed_state should succeed (returns None when no state to embed)
+    result = embed_state(panel, model, document)
+    # Since this widget was created via class method, param_to_jslink should
+    # return early and not create any jslinks
+    assert result is None
+
+def test_embed_widget_from_param_instance(document, comm):
+    """Test that widgets created via from_param on instance parameters can be embedded."""
+    import param
+
+    from panel.widgets import RadioButtonGroup
+
+    class Test(param.Parameterized):
+        fn: t.Literal["sin", "cos"] = param.Selector(
+            default="sin", objects=["sin", "cos"])  # type: ignore[assignment, ty:invalid-assignment]
+
+    # Create widget from instance parameter
+    test = Test()
+    widget = RadioButtonGroup.from_param(test.param.fn)
+    panel = Row(widget)
+
+    # Should not raise AttributeError when embedding
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+
+    # embed_state should succeed without raising AttributeError
+    # Returns None when there are no widgets with state to embed
+    result = embed_state(panel, model, document)
+    assert result is None  # No embeddable state for simple widgets without links

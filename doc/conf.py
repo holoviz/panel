@@ -1,8 +1,7 @@
 import json
 import os
 import pathlib
-
-from typing import Any
+import typing as t
 
 import param
 
@@ -148,6 +147,32 @@ nbsite_gallery_conf = {
                 'indicators',
                 'templates',
                 'custom_components',
+                {
+                    'path': 'extensions',
+                    'title': 'Extensions',
+                    'items': [
+                        {
+                            'title': 'panel-material-ui',
+                            'url': 'https://panel-material-ui.holoviz.org',
+                        },
+                        {
+                            'title': 'panel-graphic-walker',
+                            'url': 'https://github.com/holoviz/panel-graphic-walker',
+                        },
+                        {
+                            'title': 'panel-reactflow',
+                            'url': 'https://panel-extensions.github.io/panel-reactflow/',
+                        },
+                        {
+                            'title': 'panel-splitjs',
+                            'url': 'https://github.com/holoviz/panel-splitjs',
+                        },
+                        {
+                            'title': 'panel-web-llm',
+                            'url': 'https://github.com/holoviz/panel-web-llm',
+                        },
+                    ]
+                },
             ],
             'titles': {
                 'Vega': 'Altair & Vega',
@@ -263,17 +288,33 @@ def _get_pyodide_version():
     raise NotImplementedError(F"{PYODIDE_VERSION=} is not valid")
 
 def update_versions(app, docname, source):
+    from panel.models.deckgl import DECKGL_VERSION
+    from panel.models.echarts import ECHARTS_VERSION
+    from panel.models.katex import KATEX_VERSION
+    from panel.models.perspective import PERSPECTIVE_VERSION
+    from panel.models.plotly import PLOTLY_VERSION
     from panel.models.tabulator import TABULATOR_VERSION
+    from panel.models.vega import VEGA_LITE_VERSION, VEGA_VERSION
     from panel.models.vizzu import VIZZU_VERSION
+    from panel.models.vtk import VTK_VERSION
 
     # Inspired by: https://stackoverflow.com/questions/8821511
     version_replace = {
-        "{{PANEL_VERSION}}" : PY_VERSION,
-        "{{BOKEH_VERSION}}" : BOKEH_VERSION,
-        "{{PYSCRIPT_VERSION}}" : PYSCRIPT_VERSION,
-        "{{PYODIDE_VERSION}}" : _get_pyodide_version(),
-        "{{TABULATOR_VERSION}}" : TABULATOR_VERSION,
-        "{{VIZZU_VERSION}}" : VIZZU_VERSION,
+        "{{PANEL_VERSION}}": PY_VERSION,
+        "{{BOKEH_VERSION}}": BOKEH_VERSION,
+        "{{PYSCRIPT_VERSION}}": PYSCRIPT_VERSION,
+        "{{PYODIDE_VERSION}}": _get_pyodide_version(),
+        "{{DECKGL_VERSION}}": DECKGL_VERSION,
+        "{{ECHARTS_VERSION}}": ECHARTS_VERSION,
+        "{{KATEX_VERSION}}": KATEX_VERSION,
+        "{{PERSPECTIVE_VERSION}}": PERSPECTIVE_VERSION,
+        "{{PLOTLY_VERSION}}": PLOTLY_VERSION,
+        "{{TABULATOR_VERSION}}": TABULATOR_VERSION,
+        "{{TABULATOR_VERSION_WWW}}" : ".".join(TABULATOR_VERSION.split(".")[:2]),
+        "{{VEGA_VERSION}}": VEGA_VERSION,
+        "{{VEGA_LITE_VERSION}}": VEGA_LITE_VERSION,
+        "{{VIZZU_VERSION}}": VIZZU_VERSION,
+        "{{VTK_VERSION}}": VTK_VERSION,
     }
 
     for old, new in version_replace.items():
@@ -291,15 +332,15 @@ def setup_mystnb(app):
     for name, default, field in NbParserConfig().as_triple():
         if not field.metadata.get("sphinx_exclude"):
             # TODO add types?
-            app.add_config_value(f"nb_{name}", default, "env", Any)  # type: ignore[arg-type]
+            app.add_config_value(f"nb_{name}", default, "env", t.Any)  # type: ignore[arg-type]
             if "legacy_name" in field.metadata:
                 app.add_config_value(
                     f"{field.metadata['legacy_name']}",
                     _UNSET,
                     "env",
-                    Any,  # type: ignore[arg-type]
+                    t.Any,  # type: ignore[arg-type]
                 )
-    app.add_config_value("nb_render_priority", _UNSET, "env", Any)  # type: ignore[arg-type]
+    app.add_config_value("nb_render_priority", _UNSET, "env", t.Any)  # type: ignore[arg-type]
     create_mystnb_config(app)
 
     # add post-transform for selecting mime type from a bundle

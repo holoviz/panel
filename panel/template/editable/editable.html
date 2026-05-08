@@ -161,6 +161,7 @@
   }
 
   // Initialize grid
+  const container = document.getElementById('main-grid')
   const layout = getFromLS('grid-layout') || {{ muuri_layout|json  }}
   const ids = layout.map(s => s.id)
   const grid = new Muuri('.muuri-grid', {
@@ -172,8 +173,10 @@
     dragHandle: '.muuri-handle.drag',
     layout: {fillGaps: true}
   }).on('dragInit', function () {
+    container.classList.add('muuri-no-select')
     undo_stack.push({action: "drag", items: grid.getItems()})
   }).on('dragEnd', function () {
+    container.classList.remove('muuri-no-select')
     const last_event = undo_stack.pop()
     if (last_event.action == "move") {
       undo_stack.push(last_event)

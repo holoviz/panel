@@ -9,30 +9,35 @@ import pathlib
 import re
 import sys
 import traceback
+import typing as t
 import urllib.parse as urlparse
 
-from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from types import ModuleType
-from typing import IO, TYPE_CHECKING, Any
 
 import bokeh.command.util
 
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.application.handlers.code_runner import CodeRunner
+from bokeh.application.handlers.function import (
+    FunctionHandler as BokehFunctionHandler,
+)
 from bokeh.application.handlers.handler import Handler, handle_exception
-from bokeh.core.types import PathLike
-from bokeh.document import Document
 from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
 from ..config import config
+from ..util import BOKEH_GE_3_8
 from .mime_render import MIME_RENDERERS
 from .profile import profile_ctx
 from .reload import record_modules
-from .state import state
+from .state import set_curdoc, state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+    from types import ModuleType
+
+    from bokeh.core.types import PathLike
+    from bokeh.document import Document
     from nbformat import NotebookNode
 
 log = logging.getLogger('panel.io.handlers')
@@ -55,9 +60,12 @@ def _patch_ipython_display():
         pass
 
 @contextmanager
-def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> Iterator[None]:
+def _monkeypatch_io(loggers: dict[str, Callable[..., None]] | None) -> Iterator[None]:
+    if loggers is None:
+        yield
+        return
     import bokeh.io as io
-    old: dict[str, Any] = {}
+    old: dict[str, t.Any] = {}
     for f in CodeHandler._io_functions:
         old[f] = getattr(io, f)
         setattr(io, f, loggers[f])
@@ -98,7 +106,7 @@ def display(*args, **kwargs):
         CELL_DISPLAY.extend(args)
 
 def extract_code(
-    filehandle: IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
+    filehandle: t.IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
 ) -> str:
     """
     Extracts Panel application code from a Markdown file.
@@ -322,17 +330,17 @@ def _create_copy_button(full_error_text):
 
     return copy_button
 
-def run_app(handler, module, doc, post_run=None, allow_empty=False):
+def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = False):
     try:
         old_doc = curdoc()
     except RuntimeError:
         old_doc = None
         bk_set_curdoc(doc)
 
-    sessions = []
+    sessions: list[t.Any] = []
 
     def post_check():
-        newdoc = curdoc()
+        newdoc = state.curdoc
         # Do not let curdoc track modules when autoreload is enabled
         # otherwise it will erroneously complain that there is
         # a memory leak
@@ -345,31 +353,55 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
 
     try:
         state._launching.add(doc)
-        with _monkeypatch_io(handler._loggers):
-            with patch_curdoc(doc):
-                with profile_ctx(config.profiler) as sessions:
-                    with record_modules(handler=handler):
-                        runner = handler._runner
-                        if runner.error:
-                            from ..pane import Alert
-                            Alert(
-                                f'<b>{runner.error}</b>\n<pre style="overflow-y: auto">{runner.error_detail}</pre>',
-                                alert_type='danger', margin=5, sizing_mode='stretch_width'
-                            ).servable()
-                        else:
-                            handler._runner.run(module, post_check)
-                            if post_run:
-                                post_run()
-                if not doc.roots and not allow_empty and config.autoreload and doc not in state._templates:
-                    from ..pane import Alert
+        with (
+            _monkeypatch_io(getattr(handler, '_loggers', None)),
+            patch_curdoc(doc),
+            set_curdoc(doc),
+            profile_ctx(config.profiler) as sessions,
+            record_modules(handler=handler)
+        ):
+            runner = getattr(handler, '_runner', None)
+            if isinstance(handler, FunctionHandler):
+                from ..pane import Alert
+                try:
+                    handler._func(doc)
+                except Exception as e:
+                    error_message = ''.join(traceback.format_exception(None, e, e.__traceback__))
+                    print(error_message)  # noqa
                     Alert(
-                        ('<b>Application did not publish any contents</b>\n\n<span>'
-                        'Ensure you have marked items as servable or added models to '
-                        'the bokeh document manually.'),
+                        f'<b>{type(e).__name__}</b>\n<pre style="overflow-y: auto">{str(error_message)}</pre>',
                         alert_type='danger', margin=5, sizing_mode='stretch_width'
                     ).servable()
+            elif runner is None or runner.error:
+                from ..pane import Alert
+                if runner is None:
+                    error, detail = 'Missing runner', 'Application handler did not provide a way to run the application.'
+                else:
+                    error, detail = runner.error, runner.error_detail
+                Alert(
+                    f'<b>{error}</b>\n<pre style="overflow-y: auto">{detail}</pre>',
+                    alert_type='danger', margin=5, sizing_mode='stretch_width'
+                ).servable()
+            else:
+                handler._runner.run(module, post_check)
+                if post_run:
+                    post_run()
+            if not doc.roots and not allow_empty and config.autoreload and doc not in state._templates:
+                from ..pane import Alert
+                Alert(
+                    ('<b>Application did not publish any contents</b>\n\n<span>'
+                     'Ensure you have marked items as servable or added models to '
+                     'the bokeh document manually.'),
+                    alert_type='danger', margin=5, sizing_mode='stretch_width'
+                ).servable()
+            if BOKEH_GE_3_8:
+                doc.config.update(
+                    reconnect_session=config.reconnect == True,
+                    notifications=None,
+                    notify_connection_status=False
+                )
     finally:
-        if config.profiler:
+        if config.profiler and doc.session_context is not None:
             try:
                 path = doc.session_context.request.path
                 state._profiles[(path, config.profiler)] += sessions
@@ -381,9 +413,9 @@ def run_app(handler, module, doc, post_run=None, allow_empty=False):
             bk_set_curdoc(old_doc)
 
 def parse_notebook(
-    filename: str | os.PathLike | IO,
+    filename: str | os.PathLike | t.IO,
     preamble: list[str] | None = None
-) -> tuple[NotebookNode, str, dict[str, Any]]:
+) -> tuple[NotebookNode, str, dict[str, t.Any]]:
     """
     Parses a notebook on disk and returns a script.
 
@@ -468,6 +500,25 @@ def parse_notebook(
 #---------------------------------------------------------------------
 # Handler classes
 #---------------------------------------------------------------------
+
+class FunctionHandler(BokehFunctionHandler):
+
+    def modify_document(self, doc: Document) -> None:
+        ''' Execute the configured ``func`` to modify the document.
+
+        After this method is first executed, ``safe_to_fork`` will return
+        ``False``.
+
+        '''
+        try:
+            run_app(self, None, doc)
+        except Exception as e:
+            if self._trap_exceptions:
+                handle_exception(self, e)
+            else:
+                raise
+        finally:
+            self._safe_to_fork = False
 
 class PanelCodeRunner(CodeRunner):
 

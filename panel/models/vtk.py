@@ -14,7 +14,9 @@ from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
 
-vtk_cdn = f"{config.npm_cdn}/vtk.js@30.1.0/vtk.js"
+VTK_VERSION = "30.1.0"
+
+vtk_cdn = f"{config.npm_cdn}/vtk.js@{VTK_VERSION}/vtk.js"
 
 
 class VTKAxes(Model):

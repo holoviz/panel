@@ -236,7 +236,7 @@ class GoogleMapViewer(Viewer):
         return self._layout
 
 
-country = pn.widgets.Select(options=["Germany", "Nigeria", "Thailand"], name="Country")
+country = pn.widgets.Select(options=["Germany", "Nigeria", "Thailand"], label="Country")
 view = GoogleMapViewer(name="Google Map viewer", country=country)
 pn.Column(country, view).servable()
 ```

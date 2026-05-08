@@ -84,7 +84,28 @@ export class AcePlotView extends HTMLBoxView {
 
   _update_code_from_model(): void {
     if (this._editor && this._editor.getValue() != this.model.code) {
-      this._editor.setValue(this.model.code)
+      // Save the current cursor position
+      const cursorPosition = this._editor.getCursorPosition()
+      const scrollTop = this._editor.session.getScrollTop()
+      const scrollLeft = this._editor.session.getScrollLeft()
+
+      // Update the value without selecting all text
+      // The second parameter (-1) keeps cursor where it is
+      this._editor.setValue(this.model.code, -1)
+
+      // Restore cursor position only if it's valid in the new content
+      const newRowCount = this._editor.session.getLength()
+      if (cursorPosition.row < newRowCount) {
+        const newRowLength = this._editor.session.getLine(cursorPosition.row).length
+        const newColumn = Math.min(cursorPosition.column, newRowLength)
+        this._editor.moveCursorToPosition({row: cursorPosition.row, column: newColumn})
+      } else {
+        // If the cursor was beyond the new document length, move to end
+        this._editor.moveCursorToPosition({row: newRowCount - 1, column: this._editor.session.getLine(newRowCount - 1).length})
+      }
+      this._editor.clearSelection()
+      this._editor.session.setScrollTop(scrollTop)
+      this._editor.session.setScrollLeft(scrollLeft)
     }
   }
 
@@ -105,7 +126,9 @@ export class AcePlotView extends HTMLBoxView {
   }
 
   _update_theme(): void {
-    this._editor.setTheme(`ace/theme/${this.model.theme}`)
+    if (this._editor) {
+      this._editor.setTheme(`ace/theme/${this.model.theme}`)
+    }
   }
 
   _update_filename(): void {
@@ -118,10 +141,16 @@ export class AcePlotView extends HTMLBoxView {
   _update_language(): void {
     if (this.model.language != null) {
       this._editor.session.setMode(`ace/mode/${this.model.language}`)
+      // Re-apply annotations after mode change, since setMode may
+      // spawn a new worker that would overwrite user annotations.
+      this._add_annotations()
     }
   }
 
   _add_annotations(): void {
+    // Toggle the Ace worker BEFORE setting annotations, because
+    // disabling the worker clears the session's annotations.
+    this._editor.session.setUseWorker(this.model.annotations.length === 0)
     this._editor.session.setAnnotations(this.model.annotations)
   }
 

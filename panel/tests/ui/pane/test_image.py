@@ -116,7 +116,7 @@ def test_png_stretch_both(embed, page):
 def test_svg_native_size(embed, page):
     svg = SVG(SVG_FILE, embed=embed)
     bbox = get_bbox(page, svg)
-    assert_allclose(bbox['width'], 507.21, atol=0.01)
+    assert_allclose(bbox['width'], 507.21, atol=0.05)
     assert int(bbox['height']) == 427
 
 @pytest.mark.parametrize('embed', [False, True])

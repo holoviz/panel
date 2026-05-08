@@ -1,5 +1,6 @@
 import asyncio
 import os
+import typing as t
 
 import pandas as pd
 import param
@@ -322,7 +323,8 @@ def test_integer_param(document, comm):
 
 def test_object_selector_param(document, comm):
     class Test(param.Parameterized):
-        a = param.Selector(default='b', objects=[1, 'b', 'c'])
+        a: t.Literal[1, 'b', 'c'] = param.Selector(
+            default='b', objects=[1, 'b', 'c'])  # type: ignore[assignment, ty:invalid-assignment]
 
     test = Test()
     test_pane = Param(test)
@@ -406,9 +408,27 @@ def test_action_param(document, comm):
 
     # Check that the action is actually executed
     pn_button = test_pane.layout[1]
-    pn_button.clicks = 1
+    pn_button.param.trigger('value')
 
     assert test.b == 2
+
+
+def test_action_param_triggers_once(document, comm):
+    class Test(param.Parameterized):
+        a = param.Action(default=lambda x: x.param.trigger('a'))
+        b = param.List(default=[])
+
+        @param.depends('a', watch=True)
+        def _record_a(self):
+            self.b.append(True)
+
+    test = Test()
+    test_pane = Param(test)
+
+    pn_button = test_pane.layout[1]
+    pn_button._process_event(None)
+
+    assert len(test.b) == 1
 
 
 def test_number_param_overrides(document, comm):
@@ -428,7 +448,8 @@ def test_number_param_overrides(document, comm):
 
 def test_object_selector_param_overrides(document, comm):
     class Test(param.Parameterized):
-        a = param.Selector(default='b', objects=[1, 'b', 'c'])
+        a: t.Literal[1, 'b', 'c'] = param.Selector(
+            default='b', objects=[1, 'b', 'c'])  # type: ignore[assignment, ty:invalid-assignment]
 
     test = Test()
     test_pane = Param(test, widgets={'a': {'options': ['b', 'c'], 'value': 'c'}})
@@ -440,6 +461,69 @@ def test_object_selector_param_overrides(document, comm):
     assert select.value == 'c'
     assert select.disabled == False
 
+
+def test_integer_param_exclusive_bounds(document, comm):
+    class Test(param.Parameterized):
+        a = param.Integer(default=1, bounds=(0, 10), inclusive_bounds=(False, False))
+
+    test = Test()
+    test_pane = Param(test)
+    model = test_pane.get_root(document, comm=comm)
+
+    widget = model.children[1]
+    assert isinstance(widget, Slider)
+    assert widget.start == 1
+    assert widget.end == 9
+    assert widget.value == 1
+    assert widget.disabled == False
+
+def test_number_param_exclusive_bounds(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1, bounds=(0, 10), inclusive_bounds=(False, False))
+
+    test = Test()
+    test_pane = Param(test)
+    model = test_pane.get_root(document, comm=comm)
+
+    widget = model.children[1]
+    assert isinstance(widget, Slider)
+    assert widget.start == 0
+    assert widget.end == 10
+    assert widget.value == 1
+    assert widget.disabled == False
+
+    widget.value = 0.1
+    assert test.a == 0.1
+
+    widget.value = 0
+    assert widget.value == 0.1
+
+    widget.value = 10
+    assert widget.value == 0.1
+
+def test_range_param_exclusive_bounds(document, comm):
+    class Test(param.Parameterized):
+        a = param.Range(default=(1, 9), bounds=(0, 10), inclusive_bounds=(False, False))
+
+    test = Test()
+    test_pane = Param(test)
+    model = test_pane.get_root(document, comm=comm)
+
+    widget = model.children[1]
+    assert isinstance(widget, BkRangeSlider)
+    assert widget.start == 0
+    assert widget.end == 10
+    assert widget.value == (1, 9)
+    assert widget.disabled == False
+
+    widget.value = (0.1, 9.9)
+    assert test.a == (0.1, 9.9)
+
+    widget.value = (0, 9.9)
+    assert widget.value == (0.1, 9.9)
+
+    widget.value = (0.1, 10)
+    assert widget.value == (0.1, 9.9)
 
 def test_number_input_none_support():
     class Test(param.Parameterized) :
@@ -547,7 +631,7 @@ def test_param_widget_type(document, comm):
     assert isinstance(wb, EditableFloatSlider)
     assert wb.value == 1.2
     assert (wb.fixed_start, wb.fixed_end) == (0, 5)
-    assert wb.name == 'B'
+    assert wb.label == 'B'
 
 
 def test_param_throttled(document, comm):
@@ -642,7 +726,7 @@ def test_param_event_parameter(document, comm):
     test = Test()
     test_pane = Param(test)
 
-    test_pane._widgets['e']._process_events({'clicks': 1})
+    test_pane._widgets['e']._process_event({'clicks': 1})
 
     # Check that a watcher was set on the button that depends on e
     assert l == [1]
@@ -961,7 +1045,7 @@ def test_expand_param_subobject(document, comm):
 
 def test_switch_param_subobject(document, comm):
     class Test(param.Parameterized):
-        a = param.Selector()
+        a: t.Any = param.Selector()  # type: ignore[assignment, ty:invalid-assignment]
 
     o1 = Test(name='Subobject 1')
     o2 = Test(name='Subobject 2')
@@ -1151,7 +1235,7 @@ class View(param.Parameterized):
 
     a = param.Integer(default=0)
 
-    b = param.Parameter()
+    b: t.Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
     @param.depends('a')
     def view(self):
@@ -1565,7 +1649,8 @@ def test_set_widget_autocompleteinput(document, comm):
     class Test(param.Parameterized):
         # Testing with default='' and check_on_set=False since this feels
         # like the most sensible default config for Selector -> AutocompleteInput
-        choice = param.Selector(default='', objects=['a', 'b'], check_on_set=False)
+        choice: t.Literal['a', 'b'] = param.Selector(
+            default='', objects=['a', 'b'], check_on_set=False)  # type: ignore[assignment, ty:invalid-assignment]
 
     test = Test()
     test_pane = Param(test, widgets={'choice': AutocompleteInput})
@@ -1593,7 +1678,8 @@ def test_set_widget_autocompleteinput_empty_objects(document, comm):
     class Test(param.Parameterized):
         # Testing with default='' and check_on_set=False since this feels
         # like the most sensible default config for Selector -> AutocompleteInput
-        choice = param.Selector(default='', objects=[], check_on_set=False)
+        choice: t.Any = param.Selector(
+            default='', objects=[], check_on_set=False)  # type: ignore[assignment, ty:invalid-assignment]
 
     test = Test()
     test_pane = Param(test, widgets={'choice': AutocompleteInput})
@@ -1615,9 +1701,9 @@ def test_sorted():
 
     my_class = MyClass()
     _, input1, input2, input3 = Param(my_class, sort=True)
-    assert input1.name=="aaa"
-    assert input2.name=="bbb"
-    assert input3.name=="zzz"
+    assert input1.label == "aaa"
+    assert input2.label == "bbb"
+    assert input3.label == "zzz"
 
 def test_sorted_func():
     class MyClass(param.Parameterized):
@@ -1629,9 +1715,9 @@ def test_sorted_func():
     def sort_func(x):
         return x[1].label[::-1]
     _, input1, input2, input3 = Param(my_class, sort=sort_func)
-    assert input1.name=="cba"
-    assert input2.name=="acb"
-    assert input3.name=="bac"
+    assert input1.label == "cba"
+    assert input2.label == "acb"
+    assert input3.label == "bac"
 
 
 def test_param_editablerangeslider_with_bounds():
@@ -1980,3 +2066,25 @@ async def test_async_skip_param(document, comm):
     button.param.trigger('value')
     await asyncio.sleep(0.01)
     assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+
+
+@pytest.mark.parametrize('param_type,initial_value,user_input,expected_value', [
+    (param.Boolean, False, True, False),
+    (param.Number, 0, 7, 5),
+])
+def test_param_widget_updates_from_own_callback(document, comm, param_type, initial_value, user_input, expected_value):
+    class TestClass(param.Parameterized):
+        value = param_type(default=initial_value)
+
+        @param.depends('value', watch=True)
+        def update(self):
+            self.value = expected_value
+
+    instance = TestClass()
+    param_pane = Param(instance, parameters=['value'])
+    widget = param_pane._widgets['value']
+
+    widget.value = user_input
+
+    assert instance.value == expected_value
+    assert widget.value == expected_value

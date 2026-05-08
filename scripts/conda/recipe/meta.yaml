@@ -21,6 +21,7 @@ build:
 requirements:
   build:
     - python {{ project['requires-python'] }}
+    - pip
     {% for dep in pyproject['build-system']['requires'] %}
     - {{ dep }}
     {% endfor %}
@@ -37,8 +38,10 @@ test:
   requires:
     - pip
     - pytest-asyncio
-    - pytest-rerunfailures
+    - pytest-rerunfailures <16
     - pytest-xdist
+    - esbuild
+    - python-gil
   commands:
     - pip check
     - panel --help

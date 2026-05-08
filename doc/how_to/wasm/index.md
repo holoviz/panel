@@ -53,8 +53,8 @@ Note that since Panel is built on Bokeh server and Tornado it is also possible t
 :hidden:
 :maxdepth: 2
 
-convert
 standalone
+convert
 sphinx
 jupyterlite
 ```

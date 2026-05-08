@@ -161,3 +161,17 @@ def test_console_output_disable_error(document, comm, get_display_handle):
 
         pane._cleanup(model)
         assert model.ref['id'] not in state._handles
+
+
+def test_env_var_npm_cdn():
+    with set_env_var("PANEL_NPM_CDN", "https://cdn.jsdelivr.net/npm"):
+        assert config.npm_cdn == "https://cdn.jsdelivr.net/npm"
+    with set_env_var("PANEL_NPM_CDN", "https://unpkg.com"):
+        assert config.npm_cdn == "https://unpkg.com"
+
+
+def test_config_set_npm_cdn():
+    with config.set(npm_cdn = "https://cdn.jsdelivr.net/npm"):
+        assert config.npm_cdn == "https://cdn.jsdelivr.net/npm"
+    with config.set(npm_cdn = "https://unpkg.com"):
+        assert config.npm_cdn == "https://unpkg.com"

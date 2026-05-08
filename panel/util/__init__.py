@@ -7,6 +7,7 @@ import ast
 import asyncio
 import base64
 import datetime as dt
+import inspect
 import json
 import logging
 import numbers
@@ -14,21 +15,23 @@ import os
 import pathlib
 import re
 import sys
+import typing as t
 import urllib.parse as urlparse
 
 from collections import OrderedDict, defaultdict
 from collections.abc import MutableMapping, MutableSequence
 from datetime import datetime
-from functools import partial
+from functools import lru_cache, partial
 from html import escape  # noqa
 from importlib import import_module
-from typing import Any, AnyStr
 
 import bokeh
+import bokeh.util.callback_manager
 import numpy as np
 import param
 
 from bokeh.core.has_props import _default_resolver
+from bokeh.core.property.bases import Property
 from bokeh.model import Model
 from packaging.version import Version
 
@@ -45,24 +48,25 @@ log = logging.getLogger('panel.util')
 
 bokeh_version = Version(Version(bokeh.__version__).base_version)
 BOKEH_GE_3_6 = bokeh_version >= Version('3.6')
+BOKEH_GE_3_8 = bokeh_version >= Version('3.8')
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
 class LazyHTMLSanitizer:
     """
-    Wraps bleach.sanitizer.Cleaner lazily importing it on the first
-    call to the clean method.
+    Wraps nh3.clean lazily importing it on the first call to clean.
     """
 
     def __init__(self, **kwargs):
-        self._cleaner = None
+        self._sanitize = None
+        kwargs.pop("strip", None)
         self._kwargs = kwargs
 
     def clean(self, text):
-        if self._cleaner is None:
-            import bleach
-            self._cleaner = bleach.sanitizer.Cleaner(**self._kwargs)
-        return self._cleaner.clean(text)
+        if self._sanitize is None:
+            import nh3
+            self._sanitize = partial(nh3.clean, **self._kwargs)
+        return self._sanitize(text)
 
 HTML_SANITIZER = LazyHTMLSanitizer(strip=True)
 
@@ -140,8 +144,9 @@ def param_reprs(parameterized, skip=None):
     """
     cls = type(parameterized).__name__
     param_reprs = []
-    for p, v in sorted(parameterized.param.values().items()):
+    for p in sorted(parameterized.param):
         default = parameterized.param[p].default
+        v = getattr(parameterized, p)
         equal = v is default
         if not equal:
             if isinstance(v, np.ndarray):
@@ -200,13 +205,13 @@ def datetime_as_utctimestamp(value):
     return value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
 
 
-def parse_query(query: str) -> dict[str, Any]:
+def parse_query(query: str) -> dict[str, t.Any]:
     """
     Parses a url query string, e.g. ?a=1&b=2.1&c=string, converting
     numeric strings to int or float types.
     """
     query_dict = dict(urlparse.parse_qsl(query[1:]))
-    parsed_query: dict[str, Any] = {}
+    parsed_query: dict[str, t.Any] = {}
     for k, v in query_dict.items():
         if v.isdigit():
             parsed_query[k] = int(v)
@@ -250,7 +255,7 @@ def base64url_decode(input):
     return base64.urlsafe_b64decode(input)
 
 
-def decode_token(token: str, signed: bool = True) -> dict[str, Any]:
+def decode_token(token: str, signed: bool = True) -> dict[str, t.Any]:
     """
     Decodes a signed or unsigned JWT token.
     """
@@ -377,7 +382,7 @@ def parse_timedelta(time_str: str) -> dt.timedelta | None:
     return dt.timedelta(**time_params)
 
 
-def fullpath(path: AnyStr | os.PathLike) -> str:
+def fullpath(path: t.AnyStr | os.PathLike) -> str:
     """
     Expanduser and then abspath for a given path.
     """
@@ -408,6 +413,7 @@ def base_version(version: str) -> str:
         return version
 
 
+@lru_cache(maxsize=128)
 def relative_to(path, other_path):
     try:
         pathlib.Path(path).relative_to(other_path)
@@ -543,3 +549,58 @@ def camel_to_kebab(name):
     kebab_case = re.sub(r'([a-z0-9])([A-Z])', r'\1-\2', name)
     kebab_case = re.sub(r'([A-Z]+)([A-Z][a-z0-9])', r'\1-\2', kebab_case)
     return kebab_case.lower()
+
+
+def _is_abstract(class_: type) -> bool:
+    """Added from Param."""
+    if inspect.isabstract(class_):
+        return True
+    try:
+        return class_.abstract
+    except AttributeError:
+        return False
+
+
+def _descendents(class_: type, concrete: bool = False) -> list[type]:
+    """Added from Param to be used instead of concrete_descendents that clobber
+    class names."""
+    if not isinstance(class_, type):
+        raise TypeError(f"descendents expected a class object, not {type(class_).__name__}")
+    q = [class_]
+    out: list[type] = []
+    while len(q):
+        x = q.pop(0)
+        out.insert(0, x)
+        try:
+            subclasses = x.__subclasses__()
+        except TypeError:
+            # TypeError raised when __subclasses__ is called on unbound methods,
+            # on `type` for example.
+            continue
+        for b in subclasses:
+            if b not in q and b not in out:
+                q.append(b)
+    return [kls for kls in out if not (concrete and _is_abstract(kls))][::-1]
+
+
+_orig_check_callback = bokeh.util.callback_manager._check_callback
+_orig_nargs = bokeh.util.callback_manager._nargs
+
+def set_bokeh_validation(validate: bool):
+    """
+    Sets the bokeh validation mode for properties and callbacks.
+
+    Parameters
+    ----------
+    validate: bool
+        Whether to enable validation.
+    """
+    Property._should_validate = validate
+    if validate:
+        bokeh.util.callback_manager._check_callback = _orig_check_callback
+        bokeh.util.callback_manager._nargs = _orig_nargs
+    else:
+        def _check_callback(callback, fargs, what=None): return
+        def _nargs(fn): return 1
+        bokeh.util.callback_manager._check_callback = _check_callback
+        bokeh.util.callback_manager._nargs = _nargs

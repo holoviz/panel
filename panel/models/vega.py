@@ -3,7 +3,7 @@ Defines custom VegaPlot bokeh model to render Vega json plots.
 """
 from __future__ import annotations
 
-from typing import Literal
+import typing as t
 
 from bokeh.core.enums import enumeration
 from bokeh.core.properties import (
@@ -16,11 +16,13 @@ from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 
-VegaThemeType = Literal[
-    'excel', 'ggplot2', 'quartz', 'vox',
-    'fivethirtyeight', 'dark', 'latimes',
-    'urbaninstitute', 'googlecharts'
-]
+VEGA_VERSION = "6.1.2"
+VEGA_LITE_VERSION = "6.3.0"
+VEGA_EMBED_VERSION = "7.0.2"
+
+VegaThemeType = t.Literal[
+        'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
+        'latimes', 'urbaninstitute', 'googlecharts', 'powerbi', 'carbonwhite', 'carbong10', 'carbong90', 'carbong100']
 VegaTheme = enumeration(VegaThemeType)
 
 class VegaEvent(ModelEvent):
@@ -39,9 +41,9 @@ class VegaPlot(LayoutDOM):
     """
 
     __javascript_raw__ = [
-        f"{config.npm_cdn}/vega@5",
-        f"{config.npm_cdn}/vega-lite@5",
-        f"{config.npm_cdn}/vega-embed@6"
+        f"{config.npm_cdn}/vega@{VEGA_VERSION}",
+        f"{config.npm_cdn}/vega-lite@{VEGA_LITE_VERSION}",
+        f"{config.npm_cdn}/vega-embed@{VEGA_EMBED_VERSION}"
     ]
 
     @classproperty
@@ -58,9 +60,9 @@ class VegaPlot(LayoutDOM):
 
     __js_require__ = {
         'paths': {
-            "vega-embed":  f"{config.npm_cdn}/vega-embed@6/build/vega-embed.min",
-            "vega-lite": f"{config.npm_cdn}/vega-lite@5/build/vega-lite.min",
-            "vega": f"{config.npm_cdn}/vega@5/build/vega.min"
+            "vega-embed":  f"{config.npm_cdn}/vega-embed@{VEGA_EMBED_VERSION}/build/vega-embed.min",
+            "vega-lite": f"{config.npm_cdn}/vega-lite@{VEGA_LITE_VERSION}/build/vega-lite.min",
+            "vega": f"{config.npm_cdn}/vega@{VEGA_VERSION}/build/vega.min"
         },
         'exports': {'vega-embed': 'vegaEmbed', 'vega': 'vega', 'vega-lite': 'vl'}
     }

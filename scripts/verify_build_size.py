@@ -10,7 +10,7 @@ EXPECTED_SIZES_MB = {
 }
 
 GLOB_PATH = {
-    "conda": "dist/*.tar.bz2",
+    "conda": "dist/*.conda",
     "npm": "panel/*.tgz",
     "sdist": "dist/*.tar.gz",
     "whl": "dist/*.whl",
