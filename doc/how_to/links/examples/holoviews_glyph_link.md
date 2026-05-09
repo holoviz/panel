@@ -19,10 +19,10 @@ colors = ["black", "red", "blue", "green", "gray"]
 markers = list(MarkerType)
 
 # Define widget for properties we want to change
-alpha_widget = pn.widgets.FloatSlider(value=0.5, start=0, end=1, name='Alpha')
-size_widget = pn.widgets.FloatSlider(value=12, start=3, end=20, name='Size')
-color_widget = pn.widgets.ColorPicker(value='#f80000', name='Color')
-marker_widget = pn.widgets.Select(options=markers, value='circle', name='Marker')
+alpha_widget = pn.widgets.FloatSlider(value=0.5, start=0, end=1, label='Alpha')
+size_widget = pn.widgets.FloatSlider(value=12, start=3, end=20, label='Size')
+color_widget = pn.widgets.ColorPicker(value='#f80000', label='Color')
+marker_widget = pn.widgets.Select(options=markers, value='circle', label='Marker')
 
 # Declare a Points object and apply some options
 points = hv.Points(np.random.randn(200, 2)).options(

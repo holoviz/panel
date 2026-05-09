@@ -205,6 +205,7 @@ export class ReactComponentView extends ReactiveESMView {
     // children changing order we must force an update in the
     // React component to ensure anything depending on the DOM
     // structure (e.g. emotion caches) is updated
+    if (!this.model.use_shadow_dom) { this._apply_visible() }
     super.r_after_render()
     if (this.use_shadow_dom) {
       this.force_update()
@@ -265,8 +266,10 @@ export class ReactComponentView extends ReactiveESMView {
     for (const child of this.model.children) {
       const callbacks = this._child_callbacks.get(child) || []
       const new_children = new_views.get(child) || []
-      for (const callback of callbacks) {
-        callback(new_children)
+      if (new_children) {
+        for (const callback of callbacks) {
+          callback(new_children)
+        }
       }
     }
     this._update_children()
@@ -409,27 +412,6 @@ async function render(id) {
 
     componentDidMount() {
       const view = this.view
-      if (view == null) { return }
-      for (const view of this.props.parent._scheduled_removals) { view.remove() }
-      this.props.parent._scheduled_removals = []
-      if (this.use_shadow_dom) {
-        this.updateElement()
-        this.props.parent.rerender_(view)
-        this.props.parent._child_rendered.set(view, true)
-        this.props.parent.notify_mount(this.props.name, view.model.id)
-      } else {
-        view.patch_container(this.containerRef.current)
-        view.model.render_module.then(async (mod) => {
-          this.setState(
-            {rendered: await mod.default.render(view.model.id)},
-            () => {
-              this.props.parent.notify_mount(this.props.name, view.model.id)
-              this.view.r_after_render()
-              this.view.after_rendered()
-            }
-          )
-        })
-      }
       this.render_callback = (new_views) => {
         const view = this.view
         if (!view) {
@@ -460,6 +442,27 @@ async function render(id) {
         }
       }
       this.props.parent.on_child_render(this.props.name, this.render_callback)
+      if (view == null) { return }
+      for (const rview of this.props.parent._scheduled_removals) { rview.remove() }
+      this.props.parent._scheduled_removals = []
+      if (this.use_shadow_dom) {
+        this.updateElement()
+        this.props.parent.rerender_(view)
+        this.props.parent._child_rendered.set(view, true)
+        this.props.parent.notify_mount(this.props.name, view.model.id)
+      } else {
+        view.patch_container(this.containerRef.current)
+        view.model.render_module.then(async (mod) => {
+          this.setState(
+            {rendered: await mod.default.render(view.model.id)},
+            () => {
+              this.props.parent.notify_mount(this.props.name, view.model.id)
+              this.view.r_after_render()
+              this.view.after_rendered()
+            }
+          )
+        })
+      }
     }
 
     componentWillUnmount() {
@@ -526,10 +529,11 @@ async function render(id) {
             return () => react_proxy.off(prop, cb)
           }, [])
 
+          let initialized = React.useRef(false)
           React.useEffect(() => {
-            if (!target.model.events.includes(resolvedProp)) {
+            if (!target.model.events.includes(resolvedProp) && initialized.current) {
               targetModel.setv({ [resolvedProp]: value })
-            }
+            } else { initialized.current = true }
           }, [value])
 
           return [value, setValue]
@@ -547,7 +551,7 @@ async function render(id) {
           React.useEffect(() => {
             target.on_child_render(child, () => {
               const current_models = data_model.attributes[child]
-              const previous_models = children_state.map(child => child.props.index)
+              const previous_models = children_state.map(child => child.props.id)
               if (current_models.some((model, i) => model.id !== previous_models[i])) {
                 set_children(current_models.map((model, i) => (
                   React.createElement(Child, { parent: target, name: child, key: model.id, id: model.id })

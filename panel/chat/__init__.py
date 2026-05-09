@@ -29,7 +29,8 @@ For more detail see the Reference Gallery guide.
 https://panel.holoviz.org/reference/chat/ChatInterface.html
 """
 
-from typing import TYPE_CHECKING
+
+import typing as t
 
 from .feed import ChatFeed  # noqa
 from .icon import ChatReactionIcons  # noqa
@@ -59,5 +60,5 @@ def __getattr__(name):
 
 __dir__ = lambda: list(__all__)
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from . import langchain

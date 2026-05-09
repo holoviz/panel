@@ -4,27 +4,26 @@ import io
 import os
 import re
 import tempfile
+import typing as t
 import uuid
 
-from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from cProfile import Profile
 from functools import wraps
-from typing import (
-    TYPE_CHECKING, Literal, ParamSpec, TypeVar,
-)
+from html import escape
 
 from ..config import config
-from ..util import escape
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+
     from pyinstrument.session import Session
 
-    _P = ParamSpec("_P")
-    _R = TypeVar("_R")
+    _P = t.ParamSpec("_P")
+    _R = t.TypeVar("_R")
 
-ProfilingEngine = Literal["pyinstrument", "snakeviz", "memray"]
+ProfilingEngine = t.Literal["pyinstrument", "snakeviz", "memray"]
 
 
 def render_pyinstrument(sessions, timeline=False, show_all=False):
@@ -165,9 +164,9 @@ def profiling_tabs(state, allow=None, deny=[]):
     if config.profiler == 'pyinstrument':
         def update_pyinstrument(*args):
             update_profiles(timeline=timeline.value, show_all=show_all.value)
-        timeline = Checkbox(name='Enable timeline', margin=(5, 0))
+        timeline = Checkbox(label='Enable timeline', margin=(5, 0))
         timeline.param.watch(update_pyinstrument, 'value')
-        show_all = Checkbox(name='Show All', margin=(5, 0))
+        show_all = Checkbox(label='Show All', margin=(5, 0))
         show_all.param.watch(update_pyinstrument, 'value')
         config_panel = Row(
             timeline,
@@ -177,7 +176,7 @@ def profiling_tabs(state, allow=None, deny=[]):
     elif config.profiler == 'memray':
         def update_memray(*args):
             update_profiles(reporter=reporter.value)
-        reporter = Select(name='Reporter', options=['flamegraph', 'table', 'tree'], value='tree')
+        reporter = Select(label='Reporter', options=['flamegraph', 'table', 'tree'], value='tree')
         reporter.param.watch(update_memray, 'value')
         config_panel = reporter
     else:
@@ -197,7 +196,7 @@ def profiling_tabs(state, allow=None, deny=[]):
 
 
 @contextmanager
-def profile_ctx(engine: ProfilingEngine = 'pyinstrument') -> Iterator[list[Profile | bytes | Session]]:
+def profile_ctx(engine: ProfilingEngine | None = 'pyinstrument') -> Iterator[list[Profile | bytes | Session]]:
     """
     A context manager which profiles the body of the with statement
     with the supplied profiling engine and returns the profiling object

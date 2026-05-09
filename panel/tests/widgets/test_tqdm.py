@@ -68,7 +68,7 @@ def get_tqdm_app():
         for _ in tqdm(range(10)):
             time.sleep(0.2)
 
-    button = pn.widgets.Button(name="Run Loop", button_type="primary")
+    button = pn.widgets.Button(label="Run Loop", color="primary")
     button.on_click(run)
 
     # Register Pandas. This gives DataFrame.progress_apply method
@@ -79,7 +79,7 @@ def get_tqdm_app():
     def run_df(*events):
         df.progress_apply(lambda x: x ** 2)
 
-    pandas_button = pn.widgets.Button(name="Pandas Apply", button_type="success")
+    pandas_button = pn.widgets.Button(label="Pandas Apply", color="success")
     pandas_button.on_click(run_df)
 
     component = pn.Column(button, pandas_button, tqdm, sizing_mode="stretch_width")
@@ -101,7 +101,7 @@ def get_tqdm_app_simple():
         for _ in tqdm(range(10)):
             time.sleep(0.2)
 
-    button = pn.widgets.Button(name="Run Loop", button_type="primary")
+    button = pn.widgets.Button(label="Run Loop", color="primary")
     button.on_click(run)
     return pn.Column(
         tqdm, button

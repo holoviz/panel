@@ -47,7 +47,7 @@ def test_viewable_signature(viewable):
         pytest.skip('Signature already set by Param')
     assert 'params' in parameters
     try:
-        assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD, annotation='Any')
+        assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD, annotation='t.Any')
     except Exception:
         assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD)
 

@@ -20,7 +20,7 @@ pn.extension("tabulator")
 
 df = pd.read_csv("https://datasets.holoviz.org/penguins/v1/penguins.csv")
 
-slider = pn.widgets.IntSlider(value=5, start=1, end=10, name='page_size')
+slider = pn.widgets.IntSlider(value=5, start=1, end=10, label='page_size')
 tabulator = pn.widgets.Tabulator(df, page_size=slider, pagination="remote")
 
 pn.Column(slider, tabulator)
@@ -60,9 +60,9 @@ If you want to update multiple *Parameters* at the same time you can pass a reac
 
 
 ```{pyodide}
-slider = pn.widgets.IntSlider(value=5, start=1, end=10, name='Number')
-select = pn.widgets.RadioButtonGroup(value="⭐", options=["⭐", "🐘"], name='String', align='center')
-size = pn.widgets.IntSlider(value=12, start=6, end=24, name='Size')
+slider = pn.widgets.IntSlider(value=5, start=1, end=10, label='Number')
+select = pn.widgets.RadioButtonGroup(value="⭐", options=["⭐", "🐘"], label='String', align='center')
+size = pn.widgets.IntSlider(value=12, start=6, end=24, label='Size')
 
 def refs(string, number, size):
     return {
@@ -76,6 +76,27 @@ pn.Row(slider, size, select, pn.pane.Markdown(refs=irefs))
 ```
 
 In this way we can update both the current `object` and the `styles` **Parameter** of the `Markdown` pane simultaneously.
+
+### Using the bound function as a reference
+
+In some cases it may be tempting to use `watch=True` when calling `pn.bind` to update a component:
+
+```python
+pn.bind(update_value, select, slider, watch=True)
+```
+
+However, this pattern recreates the object whenever the inputs change and is generally considered an anti-pattern.
+
+A better approach is to assign the bound function directly to the component parameter that should update:
+
+```python
+def update_value(select_value, slider_value):
+    return select_value * slider_value
+
+text = pn.widgets.StaticText(value=pn.bind(update_value, select, slider))
+```
+
+This keeps the component reactive while avoiding unnecessary object recreation and ensures that only the relevant parameter is updated.
 
 ## Related Resources
 

@@ -18,7 +18,7 @@ import panel as pn
 pn.extension()
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
 efficiency = 0.3
@@ -44,7 +44,7 @@ import panel as pn
 pn.extension()
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
 efficiency = 0.3
@@ -70,9 +70,9 @@ import panel as pn
 pn.extension()
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))")
+efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = wind_speed.rx() * efficiency.rx()
 
@@ -97,12 +97,12 @@ import panel as pn
 pn.extension()
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 efficiency = pn.widgets.FloatInput(
-    value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))"
+    value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))"
 )
-submit = pn.widgets.Button(name="Submit", button_type="primary")
+submit = pn.widgets.Button(label="Submit", color="primary")
 
 power = wind_speed.rx() * efficiency.rx()
 
@@ -133,7 +133,7 @@ import panel as pn
 pn.extension()
 
 wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 efficiency = 0.3
 
@@ -170,7 +170,7 @@ is_stopped = pn.rx(True)
 
 rx_name = is_stopped.rx.where("Start the wind turbine", "Stop the wind turbine")
 
-submit = pn.widgets.Button(name=rx_name)
+submit = pn.widgets.Button(label=rx_name)
 
 def toggle_wind_turbine(clicked):
     is_stopped.rx.value = not is_stopped.rx.value
@@ -201,7 +201,7 @@ pn.extension()
 is_stopped = pn.rx(True)
 
 submit = pn.widgets.Button(
-    name=is_stopped.rx.where("Start the wind turbine", "Stop the wind turbine"),
+    label=is_stopped.rx.where("Start the wind turbine", "Stop the wind turbine"),
 )
 
 async def start_stop_wind_turbine(clicked):

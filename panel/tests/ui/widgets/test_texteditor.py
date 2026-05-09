@@ -65,25 +65,19 @@ def test_texteditor_enter_value(page):
 def test_texteditor_regression_copy_paste(page, browser):
     # https://github.com/holoviz/panel/issues/5545
     widget = TextEditor()
-    html = HTML('test')
 
-    serve_component(page, Column(html, widget))
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
 
-    page.get_by_text('test').select_text()
+    serve_component(page, widget)
+
+    page.evaluate("navigator.clipboard.writeText('test')")
 
     ctrl_key = 'Meta' if sys.platform == 'darwin' else 'Control'
-    page.get_by_text('test').press(f'{ctrl_key}+KeyC')
-
     page.locator('.ql-editor').press(f'{ctrl_key}+KeyV')
 
     expect(page.locator('.ql-container')).to_have_text('test')
-    # Quill v2 changed the way copied content is parsed and can preserve
-    # more of the copied html.
-    expected = '<p><span style="color: rgb(33, 37, 41);">test</span></p>'
-    if browser.browser_type.name == 'firefox':
-        # Copy/paste on firefox works a bit differently
-        expected = '<p>test</p>'
-    wait_until(lambda: widget.value == expected, page)
+
+    wait_until(lambda: widget.value == '<p>test</p>', page)
 
 
 def test_texteditor_regression_preserve_formatting_on_view_change(page):
@@ -202,3 +196,74 @@ def test_texteditor_link(page):
         lambda: widget.value == '<p>xxx</p><p></p><p><a href="http://example.com" rel="noopener noreferrer" target="_blank">yyy</a></p>',
         page
     )
+
+
+def test_texteditor_value_input_updates_on_keyup(page):
+    # value_input is always live, regardless of on_keyup
+    widget = TextEditor()
+
+    serve_component(page, widget)
+
+    page.locator('.ql-editor').fill('test')
+    wait_until(lambda: widget.value_input == '<p>test</p>', page)
+
+
+def test_texteditor_on_keyup_false_defers_value(page):
+    # With on_keyup=False, value should not update on keystroke.
+    # value_input still updates live.
+    widget = TextEditor(on_keyup=False)
+
+    serve_component(page, widget)
+
+    page.locator('.ql-editor').fill('test')
+    wait_until(lambda: widget.value_input == '<p>test</p>', page)
+    # value should still be the initial empty string
+    assert widget.value == ''
+
+
+def test_texteditor_on_keyup_false_commits_on_blur(page):
+    widget = TextEditor(on_keyup=False)
+
+    serve_component(page, widget)
+
+    editor = page.locator('.ql-editor')
+    editor.fill('test')
+    # Move focus away to trigger Quill's blur (null selection-change).
+    page.locator('body').click(position={'x': 0, 'y': 0})
+    wait_until(lambda: widget.value == '<p>test</p>', page)
+
+
+def test_texteditor_on_keyup_false_commits_on_ctrl_enter(page):
+    widget = TextEditor(on_keyup=False)
+
+    serve_component(page, widget)
+
+    editor = page.locator('.ql-editor')
+    editor.fill('test')
+    ctrl_key = 'Meta' if sys.platform == 'darwin' else 'Control'
+    editor.press(f'{ctrl_key}+Enter')
+    wait_until(lambda: widget.value == '<p>test</p>', page)
+
+
+def test_texteditor_selection_updates_on_select(page):
+    widget = TextEditor(value='<p>hello world</p>')
+
+    serve_component(page, widget)
+
+    # Select the word "world"
+    page.get_by_text('world').dblclick()
+    wait_until(lambda: widget.selection.get('text') == 'world', page)
+
+
+def test_texteditor_selection_clears_on_deselect(page):
+    widget = TextEditor(value='<p>hello world</p>')
+
+    serve_component(page, widget)
+
+    # First select "world"
+    page.get_by_text('world').dblclick()
+    wait_until(lambda: widget.selection.get('text') == 'world', page)
+
+    # Click outside to deselect; Quill fires selection-change with null range.
+    page.locator('body').click(position={'x': 0, 'y': 0})
+    wait_until(lambda: widget.selection == {}, page)

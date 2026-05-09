@@ -50,7 +50,7 @@ def get_widgets(model, skip_none=True, **kwargs):
         if v is None and skip_none:
             continue
 
-        ps = dict(name=p, value=v, **kwargs)
+        ps = dict(label=p, value=v, **kwargs)
         if 'alpha' in p:
             w = pn.widgets.FloatSlider(start=0, end=1, **ps)
         elif 'color' in p:

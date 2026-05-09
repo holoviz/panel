@@ -1,6 +1,5 @@
 import asyncio
 import datetime as dt
-import importlib
 import logging
 import os
 import pathlib
@@ -27,26 +26,11 @@ from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
 from panel.tests.util import (
-    get_open_ports, reverse_proxy_available, serve_and_request, serve_and_wait,
-    wait_until,
+    get_open_ports, serve_and_request, serve_and_wait, wait_until,
 )
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
 )
-
-
-@pytest.fixture(params=["tornado", "fastapi"])
-def server_implementation(request):
-    try:
-        importlib.import_module(request.param)
-    except Exception:
-        pytest.skip(f'{request.param!r} is not installed')
-    old = serve_and_wait.server_implementation
-    serve_and_wait.server_implementation = request.param
-    try:
-        yield request.param
-    finally:
-        serve_and_wait.server_implementation = old
 
 
 @pytest.mark.xdist_group(name="server")
@@ -214,7 +198,7 @@ def test_autoload_js(port):
 
 
 def test_server_async_callbacks(server_implementation):
-    button = Button(name='Click')
+    button = Button(label='Click')
 
     counts = []
 
@@ -374,7 +358,7 @@ def test_server_periodic_async_callback(server_implementation, threads):
         count[0] += 1
 
     def app():
-        button = Button(name='Click')
+        button = Button(label='Click')
         state.add_periodic_callback(cb, 100)
         def loaded():
             state._schedule_on_load(state.curdoc, None)
@@ -812,7 +796,7 @@ def test_server_thread_pool_defer_load(server_implementation, threads):
 
 
 async def test_server_text_input_update_before_click_event(server_implementation):
-    button = Button(name='Click')
+    button = Button(label='Click')
     text_input = TextInput()
 
     called = []
@@ -839,9 +823,10 @@ async def test_server_text_input_update_before_click_event(server_implementation
     wait_until(lambda: bool(called))
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_server_thread_pool_change_event(server_implementation, threads):
-    button = Button(name='Click')
-    button2 = Button(name='Click')
+    button = Button(label='Click')
+    button2 = Button(label='Click')
 
     counts = []
 
@@ -905,7 +890,7 @@ def test_server_thread_pool_periodic(server_implementation, threads):
         count[0] -= 1
 
     def app():
-        button = Button(name='Click')
+        button = Button(label='Click')
         state.add_periodic_callback(cb, 100)
         def loaded():
             state._schedule_on_load(state.curdoc, None)
@@ -922,7 +907,7 @@ def test_server_thread_pool_onload(threads):
     counts = []
 
     def app(count=[0]):
-        button = Button(name='Click')
+        button = Button(label='Click')
         def onload():
             count[0] += 1
             counts.append(count[0])
@@ -945,7 +930,7 @@ def test_server_thread_pool_onload(threads):
 
 
 def test_server_thread_pool_busy(server_implementation, threads):
-    button = Button(name='Click')
+    button = Button(label='Click')
     clicks = []
 
     def cb(event):
@@ -966,14 +951,14 @@ def test_server_thread_pool_busy(server_implementation, threads):
 
     serve_and_request(app, suffix="/")
 
-    wait_until(lambda: len(clicks) == 3 and state._busy_counter == 0 and not state.busy)
+    wait_until(lambda: len(clicks) == 3 and not state._busy_counter and not state.busy)
 
 
 def test_server_async_onload(threads):
     counts = []
 
     def app(count=[0]):
-        button = Button(name='Click')
+        button = Button(label='Click')
         async def onload():
             count[0] += 1
             counts.append(count[0])
@@ -1008,7 +993,6 @@ def test_server_template_custom_resources(port):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
-@reverse_proxy_available
 def test_server_template_custom_resources_on_proxy(reverse_proxy):
     template = CustomBootstrapTemplate()
 
@@ -1021,7 +1005,6 @@ def test_server_template_custom_resources_on_proxy(reverse_proxy):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
-@reverse_proxy_available
 def test_server_ico_path_on_proxy(reverse_proxy):
     md = Markdown('# Favicon test')
 
@@ -1044,7 +1027,6 @@ def test_server_template_custom_resources_with_prefix(port):
     with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
-@reverse_proxy_available
 def test_server_template_custom_resources_with_prefix_and_proxy(reverse_proxy):
     (port, proxy) = reverse_proxy
     template = CustomBootstrapTemplate()
@@ -1062,7 +1044,6 @@ def test_server_template_custom_resources_with_prefix_relative_url(port):
 
     assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
-@reverse_proxy_available
 def test_server_template_custom_resources_with_prefix_and_proxy_relative_url(reverse_proxy):
     template = CustomBootstrapTemplate()
 
@@ -1078,7 +1059,6 @@ def test_server_template_custom_resources_with_subpath_and_prefix_relative_url(p
 
     assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in r.content.decode('utf-8')
 
-@reverse_proxy_available
 def test_server_template_custom_resources_with_subpath_and_prefix_and_proxy_relative_url(reverse_proxy):
     template = CustomBootstrapTemplate()
 

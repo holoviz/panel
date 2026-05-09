@@ -3,7 +3,7 @@ The Swipe layout enables you to quickly compare two panels
 """
 from __future__ import annotations
 
-from typing import ClassVar
+import typing as t
 
 import param
 
@@ -11,6 +11,9 @@ from ..io.resources import CDN_DIST
 from ..reactive import ReactiveHTML
 from ..viewable import Children
 from .base import ListLike
+
+if t.TYPE_CHECKING:
+    from typing_extensions import Self
 
 
 class Swipe(ListLike, ReactiveHTML):
@@ -39,11 +42,11 @@ class Swipe(ListLike, ReactiveHTML):
     value = param.Integer(default=50, bounds=(0, 100), doc="""
         The percentage of the *after* panel to show.""")
 
-    _before = param.Parameter()
+    _before: t.Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
-    _after = param.Parameter()
+    _after: t.Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
-    _direction: ClassVar[str | None] = 'vertical'
+    _direction: t.ClassVar[str | None] = 'vertical'
 
     _template = """
     <div id="container" class="swipe-container">
@@ -102,7 +105,7 @@ class Swipe(ListLike, ReactiveHTML):
         """
     }
 
-    _stylesheets: ClassVar[list[str]] = [
+    _stylesheets: t.ClassVar[list[str]] = [
         f'{CDN_DIST}css/swipe.css'
     ]
 
@@ -142,6 +145,9 @@ class Swipe(ListLike, ReactiveHTML):
     @after.setter
     def after(self, after):
         self[1] = after
+
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
+        return super().clone(*objects, **params)
 
     def select(self, selector=None):
         """

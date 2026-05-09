@@ -2,13 +2,18 @@ import time
 
 import pytest
 
+try:
+    from playwright.sync_api import expect
+
+    pytestmark = pytest.mark.ui
+except ImportError:
+    pytestmark = pytest.mark.skip("playwright not available")
+
 import panel as pn
 
 from panel.tests.util import serve_component, wait_until
 from panel.util import parse_query
 from panel.widgets import FloatSlider, RangeSlider, TextInput
-
-pytestmark = pytest.mark.ui
 
 
 def verify_document_location(expected_location, page):
@@ -20,9 +25,9 @@ def verify_document_location(expected_location, page):
 def test_set_url_params_update_document(page):
     def app():
         """Simple app to set url by widgets' values"""
-        w1 = FloatSlider(name='Slider', start=0, end=10)
-        w2 = TextInput(name='Text')
-        w3 = RangeSlider(name='RangeSlider', start=0, end=10)
+        w1 = FloatSlider(label='Slider', start=0, end=10)
+        w2 = TextInput(label='Text')
+        w3 = RangeSlider(label='RangeSlider', start=0, end=10)
         widgets = pn.Row(w1, w2, w3)
 
         if pn.state.location:
@@ -63,7 +68,7 @@ def test_set_url_params_update_document(page):
 def test_set_hash_update_document(page):
     def app():
         """simple app to set hash at onload"""
-        widget = TextInput(name='Text')
+        widget = TextInput(label='Text')
 
         def cb():
             pn.state.location.hash = '#123'
@@ -87,7 +92,7 @@ def test_set_hash_update_document(page):
 
 
 def test_set_document_location_update_state(page):
-    widget = TextInput(name='Text')
+    widget = TextInput(label='Text')
 
     def app():
         if pn.state.location:
@@ -105,3 +110,26 @@ def test_set_document_location_update_state(page):
 
     # confirm value of the text input widget
     wait_until(lambda: widget.value == 'Text Value', page)
+
+
+def test_set_nested_pathname_then_load_markdown_no_console_errors(page):
+    markdown_text = "Dynamically loaded markdown"
+
+    def app():
+        layout = pn.Column(pn.pane.Markdown("Initial markdown"))
+
+        def cb():
+            pn.state.location.pathname = "/foo/bar"
+            layout.append(pn.pane.Markdown(markdown_text))
+
+        pn.state.onload(cb)
+        return layout
+
+    msgs, _ = serve_component(page, app)
+
+    expect(page.locator(".markdown")).to_have_count(2)
+
+    assert [
+        msg for msg in msgs
+        if msg.type == 'error' and 'favicon' not in msg.location['url']
+    ] == []

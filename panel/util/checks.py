@@ -3,13 +3,15 @@ from __future__ import annotations
 import datetime as dt
 import importlib.util
 import os
+import re
 import sys
-
-from collections.abc import Iterable
-from typing import Any
+import typing as t
 
 import numpy as np
 import param
+
+if t.TYPE_CHECKING:
+    from collections.abc import Iterable
 
 __all__ = (
     "datetime_types",
@@ -36,13 +38,21 @@ def isfile(path: str | os.PathLike) -> bool:
         return False
 
 
-def isurl(obj: Any, formats: Iterable[str] | None = None) -> bool:
+def isurl(obj: t.Any, formats: Iterable[str] | None = None) -> bool:
     if not isinstance(obj, str):
         return False
-    lower_string = obj.lower().split('?')[0].split('#')[0]
-    return (
-        lower_string.startswith(("http://", "https://"))
-    ) and (formats is None or any(lower_string.endswith('.'+fmt) for fmt in formats))
+    lower = obj.lower()
+    parts = lower.split('?', 1)
+    path = parts[0].split('#')[0]
+    if not path.startswith(("http://", "https://")):
+        return False
+    if formats is None:
+        return True
+    if any(path.endswith('.'+fmt) for fmt in formats):
+        return True
+    # Check query string for format extension (e.g. ?v=/path/to/video.mp4)
+    query = parts[1] if len(parts) > 1 else ''
+    return any(re.search(r'\.' + fmt + r'(?![a-z0-9])', query) for fmt in formats)
 
 
 def is_dataframe(obj) -> bool:
@@ -64,7 +74,6 @@ def is_mpl_axes(obj) -> bool:
         return False
     from matplotlib.axes import Axes
     return isinstance(obj, Axes)
-
 
 def isIn(obj, objs):
     """
@@ -89,7 +98,7 @@ def is_parameterized(obj) -> bool:
             (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
 
 
-def is_holoviews(obj: Any) -> bool:
+def is_holoviews(obj: t.Any) -> bool:
     """
     Whether the object is a HoloViews type that can be rendered.
     """
@@ -118,7 +127,7 @@ def isdatetime(value) -> bool:
         return isinstance(value, datetime_types)
 
 
-def is_number(s: Any) -> bool:
+def is_number(s: t.Any) -> bool:
     try:
         float(s)
         return True

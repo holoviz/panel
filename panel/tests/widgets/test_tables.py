@@ -36,7 +36,7 @@ def makeMixedDataFrame():
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
         "B": [0.0, 1.0, 0.0, 1.0, 0.0],
         "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
-        "D": pd.bdate_range("1/1/2009", periods=5),
+        "D": pd.bdate_range("1/1/2009", periods=5).astype("datetime64[ns]"),
     }
     return pd.DataFrame(data)
 
@@ -273,6 +273,22 @@ def test_tabulator_none_value(document, comm):
 
     assert model.source.data == {}
     assert model.columns == []
+
+
+def test_tabulator_mixed_nat_datetime_serializes():
+    from bokeh.core.json_encoder import serialize_json
+    from bokeh.core.serialization import Serializer
+
+    df = pd.DataFrame({"date": [pd.NaT, 12]})
+    df["date"] = pd.to_datetime(df["date"]).dt.date
+
+    table = Tabulator(df)
+    _, data = table._get_data()
+
+    ser = Serializer()
+    payload = ser.encode(data)
+
+    serialize_json(payload)
 
 
 def test_tabulator_update_none_value(document, comm, df_mixed):
@@ -897,7 +913,7 @@ def test_selection_indices_on_remote_paginated_and_filtered_data(document, comm,
         width=400
     )
 
-    descr_filter = TextInput(name='descr')
+    descr_filter = TextInput(label='descr')
 
     def contains_filter(df, pattern=None):
         if not pattern:
@@ -2440,7 +2456,7 @@ def test_tabulator_function_filter_selection(document, comm):
     df = df_strings()
     tbl = Tabulator(df)
 
-    descr_filter = TextInput(name='descr', value='')
+    descr_filter = TextInput(label='descr', value='')
 
     def contains_filter(df, pattern=None):
         if not pattern:
@@ -2615,24 +2631,24 @@ def test_tabulator_download_menu_default():
     assert isinstance(button, Button)
 
     assert filename.value == 'table.csv'
-    assert filename.name == 'Filename'
-    assert button.name == 'Download'
+    assert filename.label == 'Filename'
+    assert button.label == 'Download'
 
 def test_tabulator_download_menu_custom_kwargs():
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
     filename, button = table.download_menu(
-        text_kwargs={'name': 'Enter filename', 'value': 'file.csv'},
-        button_kwargs={'name': 'Download table'},
+        text_kwargs={'label': 'Enter filename', 'value': 'file.csv'},
+        button_kwargs={'label': 'Download table'},
     )
 
     assert isinstance(filename, TextInput)
     assert isinstance(button, Button)
 
     assert filename.value == 'file.csv'
-    assert filename.name == 'Enter filename'
-    assert button.name == 'Download table'
+    assert filename.label == 'Enter filename'
+    assert button.label == 'Download table'
 
 def test_tabulator_patch_event():
     df = makeMixedDataFrame()

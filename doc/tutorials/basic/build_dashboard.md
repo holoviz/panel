@@ -78,12 +78,12 @@ def filter_data(t_manu, year):
 # Filters
 
 t_manu = pn.widgets.Select(
-    name="Manufacturer",
+    label="Manufacturer",
     value="Vestas",
     options=sorted(top_manufacturers),
     description="The name of the manufacturer",
 )
-p_year = pn.widgets.IntSlider(name="Year", value=max_year, start=min_year, end=max_year)
+p_year = pn.widgets.IntSlider(label="Year", value=max_year, start=min_year, end=max_year)
 
 # Transform Data 2
 
@@ -112,30 +112,30 @@ image = pn.pane.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_su
 
 indicators = pn.FlexBox(
     pn.indicators.Number(
-        value=count, name="Count", format="{value:,.0f}", styles=styles
+        value=count, label="Count", format="{value:,.0f}", styles=styles
     ),
     pn.indicators.Number(
         value=total_capacity / 1e6,
-        name="Total Capacity (GW)",
+        label="Total Capacity (GW)",
         format="{value:,.1f}",
         styles=styles,
     ),
     pn.indicators.Number(
         value=avg_capacity/1e3,
-        name="Avg. Capacity (MW)",
+        label="Avg. Capacity (MW)",
         format="{value:,.1f}",
         styles=styles,
     ),
     pn.indicators.Number(
         value=avg_rotor_diameter,
-        name="Avg. Rotor Diameter (m)",
+        label="Avg. Rotor Diameter (m)",
         format="{value:,.1f}",
         styles=styles,
     ),
 )
 
 plot = pn.pane.HoloViews(fig, sizing_mode="stretch_both", name="Plot")
-table = pn.widgets.Tabulator(df, sizing_mode="stretch_both", name="Table")
+table = pn.widgets.Tabulator(df, sizing_mode="stretch_both", label="Table")
 
 # Layout Data
 
@@ -226,12 +226,12 @@ def filter_data(t_manu, year):
 
 ```{pyodide}
 t_manu = pn.widgets.Select(
-    name="Manufacturer",
+    label="Manufacturer",
     value="Vestas",
     options=sorted(top_manufacturers),
     description="The name of the manufacturer",
 )
-p_year = pn.widgets.IntSlider(name="Year", value=max_year, start=min_year, end=max_year)
+p_year = pn.widgets.IntSlider(label="Year", value=max_year, start=min_year, end=max_year)
 ```
 
 - `t_manu`: This widget is a select dropdown for choosing the manufacturer.
@@ -274,23 +274,23 @@ image = pn.pane.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_su
 
 indicators = pn.FlexBox(
     pn.indicators.Number(
-        value=count, name="Count", format="{value:,.0f}", styles=styles
+        value=count, label="Count", format="{value:,.0f}", styles=styles
     ),
     pn.indicators.Number(
         value=total_capacity / 1e6,
-        name="Total Capacity (TW)",
+        label="Total Capacity (TW)",
         format="{value:,.1f}",
         styles=styles,
     ),
     pn.indicators.Number(
         value=avg_capacity/1e3,
-        name="Avg. Capacity (MW)",
+        label="Avg. Capacity (MW)",
         format="{value:,.1f}",
         styles=styles,
     ),
     pn.indicators.Number(
         value=avg_rotor_diameter,
-        name="Avg. Rotor Diameter (m)",
+        label="Avg. Rotor Diameter (m)",
         format="{value:,.1f}",
         styles=styles,
     ),
@@ -304,7 +304,7 @@ indicators = pn.FlexBox(
 
 ```{pyodide}
 plot = pn.pane.HoloViews(fig, sizing_mode="stretch_both", name="Plot")
-table = pn.widgets.Tabulator(df, sizing_mode="stretch_both", name="Table")
+table = pn.widgets.Tabulator(df, sizing_mode="stretch_both", label="Table")
 ```
 
 - `plot`: This variable stores a HoloViews plot pane displaying the bar plot.

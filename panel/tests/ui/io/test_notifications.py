@@ -20,7 +20,7 @@ def test_notifications_no_template(page):
 
     def app():
         config.notifications = True
-        button = Button(name='Display error')
+        button = Button(label='Display error')
         button.on_click(callback)
         return button
 
@@ -37,7 +37,7 @@ def test_notifications_multiple(page):
 
     def app():
         config.notifications = True
-        button = Button(name='Display error')
+        button = Button(label='Display error')
         button.on_click(callback)
         return button
 
@@ -54,7 +54,7 @@ def test_notifications_with_template(page):
         state.notifications.error('MyError')
 
     with config.set(notifications=True):
-        button = Button(name='Display error')
+        button = Button(label='Display error')
         button.on_click(callback)
         tmpl = BootstrapTemplate()
         tmpl.main.append(button)
@@ -77,7 +77,7 @@ def test_ready_notification(page):
 def test_disconnect_notification(page):
     def app():
         config.disconnect_notification = 'Disconnected!'
-        button = Button(name='Stop server')
+        button = Button(label='Stop server')
         button.js_on_click(code="""
         Bokeh.documents[0].event_manager.send_event({'event_name': 'connection_lost', 'publish': false})
         """)
@@ -98,7 +98,7 @@ def test_reconnect_notification(page):
         config.reconnect = True
         config.disconnect_notification = 'Disconnected!'
         col = Column()
-        button = Button(name='Stop server', on_click=lambda _: col.append('Foo'))
+        button = Button(label='Stop server', on_click=lambda _: col.append('Foo'))
         col.append(button)
         return col
 

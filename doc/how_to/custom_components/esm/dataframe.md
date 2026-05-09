@@ -55,7 +55,7 @@ def data(event):
     ["Afshin", "afshin@mail.com", "(353) 22 87 8356", random.uniform(0, 1)]
   ], columns= ["Name", "Email", "Phone Number", "Random"])
 
-update_button = pn.widgets.Button(name="UPDATE", button_type="primary")
+update_button = pn.widgets.Button(label="UPDATE", color="primary")
 
 grid = GridJS(object=pn.bind(data, update_button), sizing_mode="stretch_width")
 
@@ -123,7 +123,7 @@ def data(event):
     ["Afshin", "afshin@mail.com", "(353) 22 87 8356", random.uniform(0, 1)]
   ], columns= ["Name", "Email", "Phone Number", "Random"])
 
-update_button = pn.widgets.Button(name="UPDATE", button_type="primary")
+update_button = pn.widgets.Button(label="UPDATE", color="primary")
 
 grid = GridJS(object=pn.bind(data, update_button), sizing_mode="stretch_width")
 
