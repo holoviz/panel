@@ -416,7 +416,7 @@ def test_in_process_change_event_cleaned_up(document, comm):
     assert document not in checkbox._in_process__events
 
 def test_rapid_toggle_disabled(document, comm):
-    button = Button(name="dummy")
+    button = Button(label="dummy")
     model = button.get_root(document, comm)
 
     assert model.disabled is False
@@ -430,7 +430,7 @@ def test_rapid_toggle_disabled(document, comm):
     assert 'disabled' not in button._events
 
 def test_rapid_toggle_disabled_repeated(document, comm):
-    button = Button(name="dummy")
+    button = Button(label="dummy")
     model = button.get_root(document, comm)
 
     for _ in range(5):
