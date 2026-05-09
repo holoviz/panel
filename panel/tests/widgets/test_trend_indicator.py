@@ -1,5 +1,8 @@
 import random
 
+import numpy as np
+import pandas as pd
+
 from panel import (
     Column, Param, Row, WidgetBox, state,
 )
@@ -24,6 +27,22 @@ def test_trend_auto_value(document, comm):
 
     assert model.value == 4000
     assert model.value_change == ((4000/3900) - 1)
+
+
+def test_trend_date_range_x_axis(document, comm):
+    data = pd.DataFrame({
+        "Date": pd.date_range(start="2020-01-01", periods=5, freq="ME"),
+        "Sales": [100, 120, 150, 130, 110],
+    })
+
+    trend = Trend(data=data, plot_x="Date", plot_y="Sales")
+    model = trend.get_root(document, comm)
+
+    x_data = model.source.data["Date"]
+    assert len(x_data) == 5
+    assert x_data.dtype == np.float64
+    assert x_data[0] == 0.0
+    assert model.value == 110
 
 
 def test_trend_auto_value_stream(document, comm):
