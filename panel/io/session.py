@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
-import weakref
 import typing as t
+import weakref
 
 from bokeh.document import Document
 from bokeh.protocol.exceptions import ProtocolError
