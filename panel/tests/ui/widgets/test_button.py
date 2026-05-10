@@ -109,9 +109,9 @@ def test_button_tooltip_with_delay(page, button_fn, button_locator):
 
 
 def test_widget_disabled_toggle(page):
-    dummy_button = Button(name="dummy", button_type='primary')
+    dummy_button = Button(label="dummy", color='primary')
     dummy_text = TextAreaInput()
-    toggle_button = Button(name="toggle")
+    toggle_button = Button(label="toggle")
 
     def toggle(_):
         dummy_button.disabled = True
