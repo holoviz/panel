@@ -377,10 +377,18 @@ class Syncable(Renderable):
                 del msg[attr]
                 continue
             elif attr in self._events:
-                # Do not override a property value that was just changed
-                # on the frontend
-                del self._events[attr]
-                continue
+                # Compare against the last frontend-originated value
+                # to distinguish a boomerang echo from a newer Python
+                # update. Matching values are dropped; differing
+                # values fall through so the Python update wins.
+                frontend_value = self._events.pop(attr)
+                try:
+                    is_boomerang = bool(value == frontend_value)
+                except Exception:
+                    is_boomerang = value is frontend_value
+                if is_boomerang:
+                    del msg[attr]
+                    continue
 
             # Bokeh raises UnsetValueError if the value is Undefined.
             try:
