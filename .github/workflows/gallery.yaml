@@ -1,21 +1,27 @@
 name: gallery
 
 on:
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows: [packages]
     types:
       - completed
   workflow_dispatch:
     inputs:
       target:
-        description: 'Build and deploy gallery'
+        description: "Build and deploy gallery"
         type: choice
         options:
-        - dev
-        - main
-        - dryrun
+          - dev
+          - main
+          - dryrun
         required: true
         default: dryrun
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy_gallery:
@@ -26,9 +32,10 @@ jobs:
         shell: bash -el {0}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Set and echo git ref
         id: vars
         env:
@@ -36,7 +43,7 @@ jobs:
         run: |
           echo "Deploying from ref $HEAD_BRANCH"
           echo "tag=$HEAD_BRANCH" >> $GITHUB_OUTPUT
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4
         with:
           miniconda-version: "latest"
           auto-update-conda: true
@@ -60,12 +67,14 @@ jobs:
             (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
             (github.event_name == 'workflow_run' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
           )
+        env:
+          TAG: ${{ steps.vars.outputs.tag || '0.0.1dev' }}
         run: |
           conda activate test
           ae5 login --hostname holoviz-demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
           ae5 deployment stop panel-gallery-dev --yes || :
           ae5 project delete panel-gallery-dev --yes || :
-          ae5 project upload examples/gallery --name panel-gallery-dev --tag ${{ steps.vars.outputs.tag || '0.0.1dev' }}
+          ae5 project upload examples/gallery --name panel-gallery-dev --tag "${TAG}"
           ae5 deployment start panel-gallery-dev --endpoint panel-gallery-dev --command dev --public --resource-profile large --wait
       - name: Upload and deploy prod gallery
         if: |
@@ -74,10 +83,12 @@ jobs:
             (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
             (github.event_name == 'workflow_run' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')) && contains(steps.vars.outputs.tag, 'v'))
           )
+        env:
+          TAG: ${{ steps.vars.outputs.tag }}
         run: |
           conda activate test
           ae5 login --hostname holoviz-demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
           ae5 deployment stop panel-gallery --yes || :
           ae5 project delete panel-gallery --yes || :
-          ae5 project upload examples/gallery --name panel-gallery --tag ${{ steps.vars.outputs.tag }}
+          ae5 project upload examples/gallery --name panel-gallery --tag "${TAG}"
           ae5 deployment start panel-gallery --endpoint panel-gallery --command prod --public --resource-profile extra_large --wait
