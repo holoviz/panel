@@ -32,7 +32,7 @@ jobs:
         shell: bash -el {0}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -43,7 +43,7 @@ jobs:
         run: |
           echo "Deploying from ref $HEAD_BRANCH"
           echo "tag=$HEAD_BRANCH" >> $GITHUB_OUTPUT
-      - uses: conda-incubator/setup-miniconda@v4
+      - uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4
         with:
           miniconda-version: "latest"
           auto-update-conda: true
