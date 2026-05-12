@@ -25,6 +25,12 @@ defaults:
   run:
     shell: bash -e {0}
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   DISPLAY: ":99.0"
 
@@ -33,7 +39,7 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-lock@v1
 
   docs_build:
     name: Build Documentation
@@ -41,7 +47,7 @@ jobs:
     runs-on: "macos-latest"
     timeout-minutes: 180
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
         with:
           environments: docs
           opengl: true
