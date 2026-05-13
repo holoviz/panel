@@ -26,7 +26,6 @@ from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
 from ..config import config
-from ..util import BOKEH_GE_3_8
 from .mime_render import MIME_RENDERERS
 from .profile import profile_ctx
 from .reload import record_modules
@@ -394,12 +393,11 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
                      'the bokeh document manually.'),
                     alert_type='danger', margin=5, sizing_mode='stretch_width'
                 ).servable()
-            if BOKEH_GE_3_8:
-                doc.config.update(
-                    reconnect_session=config.reconnect == True,
-                    notifications=None,
-                    notify_connection_status=False
-                )
+            doc.config.update(
+                reconnect_session=config.reconnect == True,
+                notifications=None,
+                notify_connection_status=False
+            )
     finally:
         if config.profiler and doc.session_context is not None:
             try:
