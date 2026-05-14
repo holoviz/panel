@@ -19,7 +19,8 @@ from panel.io import state
 from panel.io.application import Application
 from panel.io.resources import DIST_DIR, JS_VERSION
 from panel.io.server import (
-    INDEX_HTML, _path_template_to_tornado_route, get_server, set_curdoc,
+    INDEX_HTML, RootHandler, _path_template_to_tornado_route, get_server,
+    set_curdoc,
 )
 from panel.layout import Row
 from panel.models import HTML as BkHTML
@@ -147,16 +148,36 @@ def test_server_root_handler():
 
     assert 'href="./app"' in r.content.decode('utf-8')
 
-def test_server_root_handler_does_not_redirect_wildcard(port):
+@pytest.mark.parametrize(
+    'route',
+    [
+        '/user/([^/]+)',
+        '/org/([^/]+)/user/([^/]+)',
+        '/api/v1/projects/([^/]+)/runs/([^/]+)',
+    ],
+)
+def test_server_root_handler_does_not_redirect_wildcard(port, route):
     html = Markdown('# Title')
 
     r = serve_and_request(
-        {'/user/([^/]+)': html}, port=port, use_index=True, index=INDEX_HTML, suffix='/'
+        {route: html}, port=port, use_index=True, index=INDEX_HTML, suffix='/'
     )
 
     assert not r.history
     assert r.status_code == 200
-    assert 'href="./user/([^/]+)"' in r.content.decode('utf-8')
+    assert f'href=".{route}"' in r.content.decode('utf-8')
+
+
+def test_root_handler_concrete_route_detection():
+    assert RootHandler._is_concrete_route('/app')
+    assert RootHandler._is_concrete_route('/a/b/c/app')
+    assert RootHandler._is_concrete_route(r'/literal/\(name\)')
+    assert RootHandler._is_concrete_route(r'/a/b/\(literal\)/c')
+    assert not RootHandler._is_concrete_route('/user/([^/]+)')
+    assert not RootHandler._is_concrete_route('/a/b/([^/]+)/c')
+    assert not RootHandler._is_concrete_route('/user/{name}')
+    assert not RootHandler._is_concrete_route('/a/b/{name}/c')
+
 
 @pytest.mark.parametrize('path', ["/app", "/nested/app"])
 def test_server_ico_handling(path, port):
@@ -654,7 +675,39 @@ def test_server_route_params(port, server_implementation):
     assert app_urls == ['/user/alice', '/user/bob']
 
 
-def test_server_route_params_path_templates(port, server_implementation):
+@pytest.mark.parametrize(
+    ('route', 'requests_and_expected'),
+    [
+        (
+            '/user/{name}',
+            [
+                ('/user/alice', {'name': 'alice'}),
+                ('/user/bob', {'name': 'bob'}),
+            ],
+        ),
+        (
+            '/org/{org}/team/{team}/user/{name}',
+            [
+                ('/org/acme/team/eng/user/alice', {'org': 'acme', 'team': 'eng', 'name': 'alice'}),
+                ('/org/holoviz/team/viz/user/bob', {'org': 'holoviz', 'team': 'viz', 'name': 'bob'}),
+            ],
+        ),
+        (
+            '/v1/projects/{project}/runs/{run}/artifacts/{artifact}',
+            [
+                (
+                    '/v1/projects/panel/runs/123/artifacts/report',
+                    {'project': 'panel', 'run': '123', 'artifact': 'report'}
+                ),
+                (
+                    '/v1/projects/hvplot/runs/456/artifacts/metrics',
+                    {'project': 'hvplot', 'run': '456', 'artifact': 'metrics'}
+                ),
+            ],
+        ),
+    ],
+)
+def test_server_route_params_path_templates(port, server_implementation, route, requests_and_expected):
     route_params = []
     app_urls = []
 
@@ -663,12 +716,12 @@ def test_server_route_params_path_templates(port, server_implementation):
         app_urls.append(state.app_url)
         return 'route'
 
-    serve_and_wait({'/user/{name}': app}, port=port)
-    requests.get(f"http://localhost:{port}/user/alice")
-    requests.get(f"http://localhost:{port}/user/bob")
+    serve_and_wait({route: app}, port=port)
+    for suffix, _expected in requests_and_expected:
+        requests.get(f"http://localhost:{port}{suffix}")
 
-    assert route_params == [{'name': 'alice'}, {'name': 'bob'}]
-    assert app_urls == ['/user/alice', '/user/bob']
+    assert route_params == [expected for _, expected in requests_and_expected]
+    assert app_urls == [suffix for suffix, _ in requests_and_expected]
 
 
 def test_server_route_params_path_converter_path(port, server_implementation):
@@ -806,6 +859,16 @@ def test_fastapi_synthetic_request_preserves_cookies(monkeypatch, port):
     [
         ('/user/{name}', '/user/alice', '/user/alice'),
         ('/nested/app/{name}', '/nested/app/alice', '/nested/app/alice'),
+        (
+            '/org/{org}/team/{team}/user/{name}',
+            '/org/acme/team/eng/user/alice',
+            '/org/acme/team/eng/user/alice'
+        ),
+        (
+            '/v1/projects/{project}/runs/{run}/artifacts/{artifact}',
+            '/v1/projects/panel/runs/123/artifacts/report',
+            '/v1/projects/panel/runs/123/artifacts/report'
+        ),
     ]
 )
 def test_server_app_url_context(port, server_implementation, route, suffix, expected_app_url):
@@ -821,17 +884,33 @@ def test_server_app_url_context(port, server_implementation, route, suffix, expe
     assert app_urls == [expected_app_url]
 
 
-def test_server_app_url_context_with_prefix(port, server_implementation):
+@pytest.mark.parametrize(
+    ('route', 'suffix', 'expected_app_url'),
+    [
+        ('/nested/app/{name}', '/prefix/nested/app/alice', '/prefix/nested/app/alice'),
+        (
+            '/org/{org}/team/{team}/user/{name}',
+            '/prefix/org/acme/team/eng/user/alice',
+            '/prefix/org/acme/team/eng/user/alice'
+        ),
+        (
+            '/v1/projects/{project}/runs/{run}/artifacts/{artifact}',
+            '/prefix/v1/projects/panel/runs/123/artifacts/report',
+            '/prefix/v1/projects/panel/runs/123/artifacts/report'
+        ),
+    ],
+)
+def test_server_app_url_context_with_prefix(port, server_implementation, route, suffix, expected_app_url):
     app_urls = []
 
     def app():
         app_urls.append(state.app_url)
         return 'route'
 
-    serve_and_wait({'/nested/app/{name}': app}, port=port, prefix='/prefix')
-    requests.get(f"http://localhost:{port}/prefix/nested/app/alice")
+    serve_and_wait({route: app}, port=port, prefix='/prefix')
+    requests.get(f"http://localhost:{port}{suffix}")
 
-    assert app_urls == ['/prefix/nested/app/alice']
+    assert app_urls == [expected_app_url]
 
 
 @pytest.mark.parametrize(
@@ -839,6 +918,16 @@ def test_server_app_url_context_with_prefix(port, server_implementation):
     [
         ('/user/{name}', '/proxy/user/alice', '/user/alice'),
         ('/nested/app/{name}', '/proxy/nested/app/alice', '/nested/app/alice'),
+        (
+            '/org/{org}/team/{team}/user/{name}',
+            '/proxy/org/acme/team/eng/user/alice',
+            '/org/acme/team/eng/user/alice'
+        ),
+        (
+            '/v1/projects/{project}/runs/{run}/artifacts/{artifact}',
+            '/proxy/v1/projects/panel/runs/123/artifacts/report',
+            '/v1/projects/panel/runs/123/artifacts/report'
+        ),
     ]
 )
 def test_server_app_url_context_on_proxy(
@@ -857,7 +946,29 @@ def test_server_app_url_context_on_proxy(
     assert app_urls == [expected_app_url]
 
 
-def test_server_app_url_context_on_proxy_with_prefix(reverse_proxy, server_implementation):
+@pytest.mark.parametrize(
+    ('route', 'suffix', 'expected_app_url'),
+    [
+        (
+            '/nested/app/{name}',
+            '/proxy/prefix/nested/app/alice',
+            '/prefix/nested/app/alice'
+        ),
+        (
+            '/org/{org}/team/{team}/user/{name}',
+            '/proxy/prefix/org/acme/team/eng/user/alice',
+            '/prefix/org/acme/team/eng/user/alice'
+        ),
+        (
+            '/v1/projects/{project}/runs/{run}/artifacts/{artifact}',
+            '/proxy/prefix/v1/projects/panel/runs/123/artifacts/report',
+            '/prefix/v1/projects/panel/runs/123/artifacts/report'
+        ),
+    ],
+)
+def test_server_app_url_context_on_proxy_with_prefix(
+    reverse_proxy, server_implementation, route, suffix, expected_app_url
+):
     app_urls = []
 
     def app():
@@ -865,10 +976,10 @@ def test_server_app_url_context_on_proxy_with_prefix(reverse_proxy, server_imple
         return 'route'
 
     port, proxy = reverse_proxy
-    serve_and_wait({'/nested/app/{name}': app}, port=port, proxy=proxy, prefix='/prefix')
-    requests.get(f"http://localhost:{proxy}/proxy/prefix/nested/app/alice")
+    serve_and_wait({route: app}, port=port, proxy=proxy, prefix='/prefix')
+    requests.get(f"http://localhost:{proxy}{suffix}")
 
-    assert app_urls == ['/prefix/nested/app/alice']
+    assert app_urls == [expected_app_url]
 
 
 @pytest.mark.xdist_group(name="server")
