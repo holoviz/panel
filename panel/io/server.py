@@ -774,11 +774,12 @@ class AuthenticatedStaticFileHandler(StaticFileHandler):
 # Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
 def create_static_handler(prefix, key, app):
     # patch
-    key = '/__patchedroot' if key == '/' else key
+    is_root = key == '/'
+    key = '/__patchedroot' if is_root else key
 
     route = prefix
     static_route = "/static/(?P<static_path>.*)" if "(?P<" in key else "/static/(.*)"
-    route += static_route if key == "/" else key + static_route
+    route += static_route if is_root else key + static_route
     if app.static_path is not None:
         return (route, StaticFileHandler, {"path" : app.static_path})
     return (route, StaticHandler, {})
