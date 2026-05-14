@@ -29,7 +29,7 @@ from .io.resources import (
     BASIC_LOGIN_TEMPLATE, CDN_DIST, ERROR_TEMPLATE, LOGOUT_TEMPLATE, _env,
 )
 from .io.state import state
-from .util import base64url_encode, decode_token
+from .util import HTML_SANITIZER, base64url_encode, decode_token
 
 log = logging.getLogger(__name__)
 
@@ -505,7 +505,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             title='Panel: Authentication Error',
             error_type='Authentication Error',
             error=error,
-            error_msg=error_msg,
+            error_msg=HTML_SANITIZER.clean(error_msg),
             oauth_logout_link=self._OAUTH_LOGOUT_URL,
         ))
 

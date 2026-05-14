@@ -55,6 +55,7 @@ from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
 from ..config import config
+from ..util import HTML_SANITIZER
 from .resources import DIST_DIR, ERROR_TEMPLATE, _env
 from .server import COMPONENT_PATH, ComponentResourceHandler
 from .state import state
@@ -304,7 +305,7 @@ class PanelJupyterHandler(PanelBaseHandler):
                 base_url=f'{root_url}/',
                 error_type="Kernel Error",
                 error="Failed to start application",
-                error_msg=str(e),
+                error_msg=HTML_SANITIZER.clean(str(e)),
                 title="Panel: Kernel Error"
             )
             self.finish(html)
